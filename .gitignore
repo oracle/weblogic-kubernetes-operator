@@ -1,3 +1,4 @@
+.wercker
 mark/*
 *.fpr
 */target/*
