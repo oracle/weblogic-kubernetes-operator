@@ -29,6 +29,6 @@ Short documentation, when sufficient. Link to documentation, if applicable
 
 Documentation for APIs is provided here:
 
-* [Javadoc](https://oracle.github.io/WebLogic-kubernetes-operator/apidocs/index.html) for the operator.
+* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
 * [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
