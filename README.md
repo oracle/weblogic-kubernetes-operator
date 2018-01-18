@@ -17,7 +17,21 @@ As part of Oracle’s ongoing commitment to open source in general, and to Kuber
 
 # Important terms
 
-write me
+In this documentation, several important terms are used and are intended to have a specific meaning.  These terms are typeset in *italics*.
+
+## IMPORTANT TERMS USED IN THIS DOCUMENT
+|Term	| Definition |
+| --- | --- |
+| Cluster	| Since this term is ambiguous, it will be prefixed to indicate which type of cluster is meant.  A WebLogic cluster is a group of managed servers that together host some application or component and which are able to share load and state between them.  A Kubernetes cluster is a group of machines (“nodes”) that all host Kubernetes resources like pods and services and which appear to the external user as a single entity.  If the term “cluster” is not prefixed, it should be assumed to mean a Kubernetes cluster. |
+| Domain	| A WebLogic domain is a group of related applications and resources along with the configuration information necessary to run them. |
+| Ingress	| A Kubernetes ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
+| Job	 | write me |
+| Namespace	| A Kubernetes namespace is a named entity that can be used to group together related objects, e.g. pods and services. |
+| Operator	| A Kubernetes operator is a piece of software that performs management of complex applications. |
+|Pod	| A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, e.g. a web server or database. |
+| Secret	| A Kubernetes secret is a named object that can store secret information like usernames, passwords, X.509 certificates, or any other arbitrary data. |
+|Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
+
 
 # Getting Started
 
