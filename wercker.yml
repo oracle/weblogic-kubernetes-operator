@@ -13,3 +13,11 @@ build:
         name: echo
         code: |
           echo "This is a placeholder - not implemented yet."
+          echo "master is: $KUBERNETES_MASTER"
+    - kubectl:
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        #username: $KUBERNETES_USERNAME
+        certificate-authority: $CERTIFICATE_AUTHORITY
+        insecure-skip-tls-verify: true
+        command: get all

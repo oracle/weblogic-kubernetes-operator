@@ -1,3 +1,4 @@
+env.sh
 .wercker
 mark/*
 *.fpr
