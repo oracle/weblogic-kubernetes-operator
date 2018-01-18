@@ -2,4 +2,4 @@
 
 Test text
 
-[test link](docs/docs.md)
+[test link](https://oracle.github.io/weblogic-kubernetes-operator/docs.md)
