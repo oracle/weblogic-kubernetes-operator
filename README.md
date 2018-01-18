@@ -17,7 +17,7 @@ As part of Oracle’s ongoing commitment to open source in general, and to Kuber
 
 # Getting Started
 
-Before using the operator, it is highly recommended to read the [design philosophy](https://oracle.github.io/site/design.md) to develop an understanding of the operator's design, and the [architectural overview](https://oracle.github.io/site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.
+Before using the operator, it is highly recommended to read the [design philosophy](https://oracle.github.io/weblogic-kubernetes-operator/site/design.md) to develop an understanding of the operator's design, and the [architectural overview](https://oracle.github.io/weblogic-kubernetes-operator/site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.
 
 
 # Requirements
