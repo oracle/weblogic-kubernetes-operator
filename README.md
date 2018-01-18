@@ -15,6 +15,10 @@ Oracle has been working with the WebLogic community to find ways to make it is e
 
 As part of Oracle’s ongoing commitment to open source in general, and to Kubernetes and the Cloud Native Computing Foundation specifically, Oracle has open sourced the Operator and is committed to enhancing it with additional features.  Oracle welcomes feedback, issues, pull requests, and feature requests from the WebLogic community.
 
+# Important terms
+
+write me
+
 # Getting Started
 
 Before using the operator, it is highly recommended to read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.  It is also worth reading the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
@@ -45,7 +49,7 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 
 Note: Minikube is not supported.
 
-#Restrictions
+# Restrictions
 
 The following features are not certified or supported in the Technology Preview release at the time of writing:
 
@@ -83,7 +87,95 @@ The overall process of installing and configuring the *operator* and using it to
 *	Customizing the domain parameters file
 *	Creating a WebLogic domain
 
-These steps are explained in detail in the linked pages. Example files are provided in the `kubernetes` directory in this repository.
+These steps are explained in detail [here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
+
+# Using the operator's REST services
+
+# Creating a WebLogic domain with the operator
+
+# Manually creating a WebLogic domain
+
+# Exporting WebLogic metrics to Prometheus
+
+# Starting up the domain
+
+# Using WLST
+
+# Scaling a cluster
+
+# Shutting down a domain
+
+# Load balancing with the Traefik Ingress Controller
+
+# Exporting operator logs to ELK
+
+# Removing a domain
+
+To permanently remove a domain from a Kubernetes *cluster*, first shut down the domain using the instructions provided above in the section titled “Shutting down a domain”, then remove the *persistent volume claim* and the *persistent volume* using these commands:
+
+```
+kubectl delete pvc PVC-NAME
+kubectl delete pv PV-NAME
+```
+
+Find the names of the *persistent volume claim* and the *persistent volume* in the *domain custom resource* YAML file, or if it is not available, check for the `domainUID` in the metadata on the *persistent volumes*.
+
+To permanently delete the actual *domain* configuration, delete the physical volume using the appropriate tools.  For example, if the *persistent volume* used the `HostPath provider`, delete the corresponding directory on the Kubernetes master.
+
+Be aware that there may be metric data from the *domain* in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
+
+# Removing the operator
+
+To remove the operator from a Kubernetes cluster, issue the following commands:
+
+```
+kubectl delete deploy weblogic-operator –n NAMESPACE
+kubectl delete service external-weblogic-operator-service –n NAMESPACE
+kubectl delete service internal-weblogic-operator-service –n NAMESPACE
+```
+
+Replace `NAMESPACE` with the *namespace* that the *operator* is running in.
+
+To remove more than one *operator*, repeat these steps for each *operator namespace*.
 
 
 # Developer Guide
+
+
+# Contributing to the operator
+
+Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the *operator*, or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended to create an issue and discuss the proposed changes with the existing developers first.
+
+If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.
+
+If you have any questions about a possible submission, feel free to open an issue too.
+
+## Contributing to the Oracle Kubernetes Operator for WebLogic repository
+
+Pull requests can be made under The Oracle Contributor Agreement (OCA) which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
+
+For pull requests to be accepted, the bottom of the commit message must have the following line using the contributor’s name and e-mail address as it appears in the OCA Signatories list.
+
+```
+Signed-off-by: Your Name <you@example.org>
+```
+
+This can be automatically added to pull requests by committing with:
+
+```
+git commit --signoff
+```
+
+Only pull requests from committers that can be verified as having signed the OCA can be accepted.
+
+## Pull request process
+
+*	Fork the repository.
+*	Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, e.g. `1234-fixes`.
+*	Ensure that any documentation is updated with the changes that are required by your fix.
+*	Ensure that any samples are updated if the base image has been changed.
+*	Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.
+
+## Introducing a new dependency
+
+Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic, will most likely be rejected.
