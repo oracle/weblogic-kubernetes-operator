@@ -86,7 +86,9 @@ Documentation for APIs is provided here:
 
 * [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
-# Installation
+# User guide
+
+## Installation
 
 Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.
 
@@ -103,47 +105,47 @@ The overall process of installing and configuring the *operator* and using it to
 
 These steps are explained in detail [here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
 
-# Using the operator's REST services
+## Using the operator's REST services
 
 Please refer to [Using the operator's REST services](site/rest.md).
 
-# Creating a WebLogic domain with the operator
+## Creating a WebLogic domain with the operator
 
 Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md).
 
-# Manually creating a WebLogic domain
+## Manually creating a WebLogic domain
 
 Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md).
 
-# Exporting WebLogic metrics to Prometheus
+## Exporting WebLogic metrics to Prometheus
 
 Please refer to [Prometheus integration](site/prometheus.md).
 
-# Starting up the domain
+## Starting up the domain
 
 Please refer to [Startup up a WebLogic domain](site/starting-domain.md).
 
-# Using WLST
+## Using WLST
 
 Please refer to [Using WLST](site/wlst.md).
 
-# Scaling a cluster
+## Scaling a cluster
 
 Please refer to [Scaling a WebLogic cluster](site/scaling.md).
 
-# Shutting down a domain
+## Shutting down a domain
 
 Please refer to [Shutting down a domain](site/shutdown-domain.md).
 
-# Load balancing with the Traefik ingress controller
+## Load balancing with the Traefik ingress controller
 
 Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md).
 
-# Exporting operator logs to ELK
+## Exporting operator logs to ELK
 
 Please refer to [ELK integration](site/elk.md).
 
-# Removing a domain
+## Removing a domain
 
 To permanently remove a domain from a Kubernetes *cluster*, first shut down the domain using the instructions provided above in the section titled “Shutting down a domain”, then remove the *persistent volume claim* and the *persistent volume* using these commands:
 
@@ -158,7 +160,7 @@ To permanently delete the actual *domain* configuration, delete the physical vol
 
 Be aware that there may be metric data from the *domain* in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
 
-# Removing the operator
+## Removing the operator
 
 To remove the operator from a Kubernetes cluster, issue the following commands:
 
@@ -176,7 +178,7 @@ To remove more than one *operator*, repeat these steps for each *operator namesp
 # Developer Guide
 
 
-# Contributing to the operator
+## Contributing to the operator
 
 Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the *operator*, or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended to create an issue and discuss the proposed changes with the existing developers first.
 
@@ -184,7 +186,7 @@ If you want to submit a pull request to fix a bug or enhance an existing feature
 
 If you have any questions about a possible submission, feel free to open an issue too.
 
-## Contributing to the Oracle Kubernetes Operator for WebLogic repository
+### Contributing to the Oracle Kubernetes Operator for WebLogic repository
 
 Pull requests can be made under The Oracle Contributor Agreement (OCA) which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
 
@@ -202,7 +204,7 @@ git commit --signoff
 
 Only pull requests from committers that can be verified as having signed the OCA can be accepted.
 
-## Pull request process
+### Pull request process
 
 *	Fork the repository.
 *	Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, e.g. `1234-fixes`.
@@ -210,6 +212,6 @@ Only pull requests from committers that can be verified as having signed the OCA
 *	Ensure that any samples are updated if the base image has been changed.
 *	Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.
 
-## Introducing a new dependency
+### Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic, will most likely be rejected.
