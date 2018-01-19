@@ -1,5 +1,10 @@
-Startup of the domain is controlled by settings in the domain custom resource.  The domain creation job (if used) will have created a domain custom resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.
-An example of the domain custom resource YAML file is shown below:
+# Starting up a WebLogic domain
+
+Startup of the *domain* is controlled by settings in the *domain custom resource*.  The *domain* creation *job* (if used) will have created a *domain custom resource* YAML file. If the domain was created manually, this YAML file will also need to be created manually.
+
+An example of the *domain custom resource* YAML file is shown below:
+
+```
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
@@ -80,32 +85,19 @@ spec:
   # Uncomment to export the T3Channel as a service
   # exportT3Channels:
   # - T3Channel
+```
+
 write me
-How the operator determines which servers to start
+
+## How the operator determines which servers to start
+
 The operator determines which servers to start using the following logic:
-»	If startupControl is set to ALL, then all servers will be started.
-»	If startupControl is set to SPECIFIED, then:
-»	The administration server will be started.
-»	Each server listed in a serverStartup section will be brought up to state that is specified in the desiredState in that section, RUNNING or ADMIN.
-»	For each cluster listed in a clusterStartup section, a number of servers in that cluster equal to the replicas setting will be brought up to state that is specified in the desiredState in that section, RUNNING or ADMIN.  If replicas is not specified in the clusterStartup, then the top-level replicas field in the domain custom resource will be used instead.
-»	If startupControl is set to AUTO, then:
-»	The operator will perform as if startupControl were set to SPECIFIED.
-»	For all clusters that do not have a clusterStartup section, a number of servers in that cluster equal to the top-level replicas setting will be brought up to RUNNING state.
 
-
-The domain custom resource YAML file
-Remove/update – done by the job/script
-An example YAML file is generated here from domain-custom-resource-template.yaml which you can copy and modify to suit your needs.
-The domainUID must be unique across the entire Kubernetes Cluster. Each WebLogic Domain must have its own unique domainUID.
-Note that this does not have to be the same as the Domain Name, it is allowed to have multiple Domains with the same Domain Name, but they must have different domainUID's.
-You should refer to the additional documentation included in the example file to complete your customizations.
-Creating the Domain Custom Resource
-Once you have the file ready, you can create the Custom Resouce with this command:
-kubectl apply -f FILENAME
-Replace FILENAME with the name of your YAML file.
-You can check the Domain Custom Resource was created with this command:
-kubectl get domains
-You can see details of the Domain Custom Resource with this command:
-kubectl describe domain DOMAINUID
-When you create the Domain Custom Resource, the Operator will notice it and will start up the Admin Server in the Domain, plus any additional servers that you have requested in the YAML file.
-If any of the servers happen to fail, they will be restarted by Kubernetes.
+*	If `startupControl` is set to `ALL`, then all servers will be started.
+*	If `startupControl` is set to `SPECIFIED`, then:
+  *	The administration server will be started.
+  *	Each server listed in a `serverStartup` section will be brought up to state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.
+  *	For each cluster listed in a `clusterStartup` section, a number of servers in that cluster equal to the `replicas` setting will be brought up to state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.  If `replicas` is not specified in `clusterStartup`, then the top-level `replicas` field in the *domain custom resource* will be used instead.
+*	If `startupControl` is set to `AUTO`, then:
+  *	The *operator* will perform as if `startupControl` were set to `SPECIFIED`.
+  *	For all *clusters* that do not have a `clusterStartup` section, a number of servers in that *cluster* equal to the top-level `replicas` setting will be brought up to `RUNNING` state.
