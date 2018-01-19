@@ -5,28 +5,40 @@
 #  Wercker build file for Oracle WebLogic Server Kubernetes Operator
 #
 
-box: debian
+box:
+  id: store/oracle/serverjre
+  username: $DOCKER_USERNAME
+  password: $DOCKER_PASSWORD
+  tag: 8
 
+# This is the main build pipeline that builds the codebase and runs unit tests.
 build:
   steps:
     - script:
-        name: echo
+        name: Hello
         code: |
-          # echo "Installing wget..."
-          # apt-get update
-          # apt-get -y install wget
-          # echo "Installing CA root certs for kubectl authentication..."
-          # mkdir -p /usr/local/share/ca-certificates/cacert.org
-          # wget -P /usr/local/share/ca-certificates/cacert.org \
-          #         http://www.cacert.org/certs/root.crt \
-          #         http://www.cacert.org/certs/class3.crt
-          # echo $CERTIFICATE_AUTHORITY > /usr/local/share/ca-certificates/oke.crt
-          # update-ca-certificates
+          echo "Building Oracle WebLogic Server Kubernetes Operator..."
+    - script:
+      name: Install pre-reqs
+      code: |
+        yum -y install tar gzip
+    - java/maven:
+        goals: clean install
+        version: 3.5.2
 
+# This pipeline runs the integration tests against a real k8s cluster.
+integration-test:
+  steps:
     - kubectl:
         server: $KUBERNETES_MASTER
         token: $KUBERNETES_TOKEN
-        #username: $KUBERNETES_USERNAME
-        #certificate-authority: $CERTIFICATE_AUTHORITY
         insecure-skip-tls-verify: true
         command: get all
+
+# This pipeline promotes the docker image
+promote-image:
+  steps:
+    - script:
+      name: echo
+      code: |
+        echo "I don't do anything yet"
