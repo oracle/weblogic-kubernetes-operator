@@ -1,3 +1,5 @@
+# Using the operator's REST services
+
 Write me
 REST api to list the domains and clusters
 basically GET .../operator/latest/domains and GET .../operator/latest/domains/<domainUid>/clusters

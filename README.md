@@ -105,23 +105,43 @@ These steps are explained in detail [here](site/installation.md). Example files 
 
 # Using the operator's REST services
 
+Please refer to [Using the operator's REST services](site/rest.md).
+
 # Creating a WebLogic domain with the operator
+
+Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md).
 
 # Manually creating a WebLogic domain
 
+Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md).
+
 # Exporting WebLogic metrics to Prometheus
+
+Please refer to [Prometheus integration](site/prometheus.md).
 
 # Starting up the domain
 
+Please refer to [Startup up a WebLogic domain](site/starting-domain.md).
+
 # Using WLST
+
+Please refer to [Using WLST](site/wlst.md).
 
 # Scaling a cluster
 
+Please refer to [Scaling a WebLogic cluster](site/scaling.md).
+
 # Shutting down a domain
 
-# Load balancing with the Traefik Ingress Controller
+Please refer to [Shutting down a domain](site/shutdown-domains.md).
+
+# Load balancing with the Traefik ingress controller
+
+Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md).
 
 # Exporting operator logs to ELK
+
+Please refer to [ELK integration](site/elk.md).
 
 # Removing a domain
 
