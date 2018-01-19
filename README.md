@@ -107,43 +107,52 @@ These steps are explained in detail [here](site/installation.md). Example files 
 
 ## Using the operator's REST services
 
-Please refer to [Using the operator's REST services](site/rest.md).
+The *operator* provides a REST API that can be used to obtain information about the configuration and to initiate scaling actions. Please refer to [Using the operator's REST services](site/rest.md) for details of how to use the REST APIs.
 
 ## Creating a WebLogic domain with the operator
 
-Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md).
+Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic *domain* with the *operator*.
 
 ## Manually creating a WebLogic domain
 
-Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md).
+If preferred, a *domain* can be created manually, i.e. without using the scripts provided with the *operator*.  As long as the *domain* follows the guidelines, it can still be managed by the *operator*.  Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md) for details.  A good example of when manual *domain* creation may be preferred is when a user already has a set of existing WLST scripts that are used to create *domains* and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications.
 
 ## Exporting WebLogic metrics to Prometheus
 
-Please refer to [Prometheus integration](site/prometheus.md).
+The *operator* includes the ability to export WebLogic metrics to Prometheus.  This allows metrics to be displays in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
 
 ## Starting up the domain
 
-Please refer to [Startup up a WebLogic domain](site/starting-domain.md).
+The *operator* will automatically start up *domains* that it is aware of, based on the configuration in the *domain custom resource*.  Please refer to [Startup up a WebLogic domain](site/starting-domain.md) for details.
 
 ## Using WLST
 
-Please refer to [Using WLST](site/wlst.md).
+When creating a *domain* there is an option to expose a T3 channel outside of the Kubernetes *cluster* to allow remote WLST access.  Please refer to [Using WLST](site/wlst.md) for more information about how to use WLST with a *domain* running in Kubernetes.
 
 ## Scaling a cluster
 
-Please refer to [Scaling a WebLogic cluster](site/scaling.md).
+The *operator* provides the ability to scale up or down WebLogic *clusters*.  There are several ways to initiate scaling, including:
+
+* Updating the *domain custom resource* directly (using `kubectl`).
+* Calling the *operator's* REST `scale` API, e.g. from `curl`.
+* Using a WLDF rule and script action to call the *operator's* REST `scale` API.
+* Using a Prometheus alert action to call the *operator's* REST `scale` API.
+
+Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more information.
 
 ## Shutting down a domain
 
-Please refer to [Shutting down a domain](site/shutdown-domain.md).
+Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a *domain* running in Kubernetes.
 
 ## Load balancing with the Traefik ingress controller
 
-Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md).
+The initial "Technology Preview" release of the *operator* supports only the Traefik load balancer/ingress controller.  Support for other load balancers is planned in the future.
+Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md) for information about current capabilities.
 
 ## Exporting operator logs to ELK
 
-Please refer to [ELK integration](site/elk.md).
+The *operator* provides an option to export its log files to the ELK stack.
+Please refer to [ELK integration](site/elk.md) for information about this capability.
 
 ## Removing a domain
 
