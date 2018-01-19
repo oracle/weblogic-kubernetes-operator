@@ -133,7 +133,7 @@ Please refer to [Scaling a WebLogic cluster](site/scaling.md).
 
 # Shutting down a domain
 
-Please refer to [Shutting down a domain](site/shutdown-domains.md).
+Please refer to [Shutting down a domain](site/shutdown-domain.md).
 
 # Load balancing with the Traefik ingress controller
 
