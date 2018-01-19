@@ -82,7 +82,7 @@ The following parameters must be provided in the input file:
 | persistenceVolumeClaimName	| Name of the Kubernetes persistent volume claim for this domain.	| pv001-claim |
 | persistenceVolumeName	| Name of the Kubernetes persistent volume for this domain.	| pv001 |
 | productionModeEnabled	| Boolean indicating if production mode is enabled for the domain.	true
-secretsMountPath	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
+| secretsMountPath |	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
 | secretName	| Name of the Kubernetes secret for the Admin Server's username and password. |	domain1-weblogic-credentials |
 | T3ChannelPort	| Port for the T3Channel of the NetworkAccessPoint.	| 7002 |
 | namespace	| The Kubernetes namespace to create the domain in.	| default |
