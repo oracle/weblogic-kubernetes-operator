@@ -186,8 +186,9 @@ To remove more than one *operator*, repeat these steps for each *operator namesp
 
 # Developer Guide
 
+Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, etc.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
-## Contributing to the operator
+##Contributing to the operator
 
 Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the *operator*, or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended to create an issue and discuss the proposed changes with the existing developers first.
 
@@ -195,7 +196,7 @@ If you want to submit a pull request to fix a bug or enhance an existing feature
 
 If you have any questions about a possible submission, feel free to open an issue too.
 
-### Contributing to the Oracle Kubernetes Operator for WebLogic repository
+## Contributing to the Oracle Kubernetes Operator for WebLogic repository
 
 Pull requests can be made under The Oracle Contributor Agreement (OCA) which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
 
@@ -213,7 +214,7 @@ git commit --signoff
 
 Only pull requests from committers that can be verified as having signed the OCA can be accepted.
 
-### Pull request process
+## Pull request process
 
 *	Fork the repository.
 *	Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, e.g. `1234-fixes`.
@@ -221,6 +222,6 @@ Only pull requests from committers that can be verified as having signed the OCA
 *	Ensure that any samples are updated if the base image has been changed.
 *	Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.
 
-### Introducing a new dependency
+## Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic, will most likely be rejected.

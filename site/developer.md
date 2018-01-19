@@ -68,6 +68,17 @@ Write me
 
 Write me
 
+## Coding standards
+
+This project has adopted the following coding standards:
+
+* All indents are two spaces.
+* Javadoc must be provided for all public packages, classes and methods and must include all parameters and returns.
+* All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
+* The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
+* Before throwing an exception, there should be a call to `LOGGER.throwing(e)` to log the exception.
+* write me
+
 ## Source code structure
 
 Write me
