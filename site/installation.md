@@ -31,10 +31,7 @@ The following parameters must be provided in the input file:
 | --- | --- | --- |
 | externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the *operator* will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to custom-cert. | |
 | externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to custom-cert. | |
-| externalRestOption	| Write me.  Allowed values:
-* none Write me
-* self-signed-cert The *operator* will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set.
-* custom-cert Write me.  If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
+| externalRestOption	| Write me.  Allowed values: <br/>* none Write me <br/>* self-signed-cert The *operator* will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>* custom-cert Write me.  If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
 | externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ...
 Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
 | namespace	| The Kubernetes *namespace* that the *operator* will be deployed in.  It is recommended that a *namespace* be created for the *operator* rather than using the `default` namespace.	| weblogic-operator |
