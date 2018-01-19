@@ -26,6 +26,17 @@ build:
         goals: clean install
         version: 3.5.2
 
+# RUN mkdir /operator
+# ENV PATH=$PATH:/operator
+#
+# COPY src/main/scripts/* /operator/
+# ADD target/weblogic-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-operator.jar
+#
+# WORKDIR /operator/
+#
+# CMD ["operator.sh"]
+
+
 # This pipeline runs the integration tests against a real k8s cluster.
 integration-test:
   steps:

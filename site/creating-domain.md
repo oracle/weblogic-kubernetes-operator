@@ -142,7 +142,9 @@ The simplest case is where the `HostPath` provider is used.  This can be either 
 
 ## YAML files created by the script
 
-Write me
+The script will create a Kubernetes YAML file that is then used to create a Kubernetes *job* which will perform the actual work to create the *domain*.  The *job* will start a *pod* with the standard WebLogic Server Docker image and will execute some BASH and WLST scripts to create the *domain*.  
+
+Here is the first part of that YAML file:
 
 ```
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
@@ -192,9 +194,154 @@ spec:
 (many more lines omitted)
 ```
 
+The lines omitted at the end contain the actual scripts that are executed in this container.  These should generally not be modified, except by developers.  
+
+write more about the file
+
+
 ## Verifying the domain creation
 
-Write me
+The script will verify the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to build familiarity with the various Kubernetes objects that were created by the script.
+
+### Verify the domain custom resource
+
+To check the *domain custom resource* was created, use this command:
+
+```
+kubectl describe domain DOMAINUID -n NAMESPACE
+```
+
+Replace `DOMAINUID` with the `domainUID` and replace `NAMESPACE` with the *namespace* the *domain* was created in.  The output of this command will provide details of the *domain*, as shown in this example:
+
+```
+$ kubectl describe domain domain1 -n domain1
+Name:         domain1
+Namespace:    domain1
+Labels:       <none>
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v1","kind":"Domain","metadata":{"annotations":{},"name":"domain1","namespace":"domain1"},"spec":{"adminSecret":{"name":"...
+API Version:  weblogic.oracle/v1
+Kind:         Domain
+Metadata:
+  Cluster Name:        
+  Creation Timestamp:  2018-01-18T17:27:49Z
+  Generation:          0
+  Resource Version:    2748848
+  Self Link:           /apis/weblogic.oracle/v1/namespaces/domain1/domains/domain1
+  UID:                 e79bd64f-fc74-11e7-b3f3-0021f64c21ba
+Spec:
+  Admin Secret:
+    Name:  domain1-weblogic-credentials
+  As Env:
+  As Name:  admin-server
+  As Port:  7001
+  Cluster Startup:
+    Cluster Name:   cluster-1
+    Desired State:  RUNNING
+    Env:
+      Name:     JAVA_OPTIONS
+      Value:    -Dweblogic.StdoutDebugEnabled=false
+      Name:     USER_MEM_ARGS
+      Value:    -Xms64m -Xmx256m
+    Replicas:   2
+  Domain Name:  base_domain
+  Domain UID:   domain1
+  Export T3 Channels:
+    T3Channel
+  Image:              store/oracle/weblogic:12.2.1.3
+  Image Pull Policy:  IfNotPresent
+  Replicas:           1
+  Server Startup:
+    Desired State:  RUNNING
+    Env:
+      Name:         JAVA_OPTIONS
+      Value:        -Dweblogic.StdoutDebugEnabled=false
+      Name:         USER_MEM_ARGS
+      Value:        -Xms64m -Xmx256m
+    Server Name:    admin-server
+  Startup Control:  AUTO
+Status:
+  Available Clusters:
+    cluster-1
+  Available Servers:
+    managed-server2
+    managed-server1
+    admin-server
+  Conditions:
+    Last Transition Time:  2018-01-18T17:30:18.818Z
+    Reason:                ServersReady
+    Status:                True
+    Type:                  Available
+  Start Time:              2018-01-18T17:27:49.040Z
+  Unavailable Clusters:
+  Unavailable Servers:
+Events:  <none>
+```
+
+In the "Status" section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps just the administration server but no managed servers.  The *operator* will start up the administration server first and wait for it to become ready before starting managed servers.
+
+### Verify pods
+
+The following command can be used to see the *pods* running the servers:
+
+```
+kubectl get pods -n NAMESPACE
+```
+
+Here is an example of the output of this command:
+
+```
+$ kubectl get pods -n domain1
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          22h
+domain1-managed-server1   1/1       Running   0          22h
+domain1-managed-server2   1/1       Running   0          22h
+```
+
+### Verify services
+
+The following command can be used to see the *services* for the *domain*:
+
+```
+kubectl get services -n NAMESPACE
+```
+
+Here is an exmaple of the output of this command:
+
+```
+$ kubectl get services -n domain1
+NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
+domain1-admin-server                        ClusterIP   10.100.202.99    <none>        7001/TCP          22h
+domain1-admin-server-extchannel-t3channel   NodePort    10.98.239.197    <none>        30012:30012/TCP   22h
+domain1-managed-server1                     ClusterIP   10.100.184.148   <none>        8001/TCP          22h
+domain1-managed-server2                     ClusterIP   10.108.114.41    <none>        8001/TCP          22h
+```
+
+### Verify ingresses
+
+The following command can be used to see the *ingresses* for the *domain*:
+
+```
+kubectl describe ing -n domain1
+```
+
+Here is an example of the output of this command:
+
+```
+$ kubectl describe ing -n domain1
+Name:             domain1-cluster-1
+Namespace:        domain1
+Address:          
+Default backend:  default-http-backend:80 (<none>)
+Rules:
+  Host  Path  Backends
+  ----  ----  --------
+  *     
+        /   domain1-managed-server1:8001 (<none>)
+        /   domain1-managed-server2:8001 (<none>)
+Annotations:
+Events:  <none>
+```
+
 
 ## Configuring the domain readiness
 
