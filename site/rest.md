@@ -9,7 +9,7 @@ Most of the services access a `GET`, for example:
 
 All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  The `X-Requested-By` header is not required.  Callers should pass in the `Accept:/application/json` header.
 
-If using `curl`, the `-k` option can be used to bypass the check to verify that the *operator's certificate` is trusted (instead of `curl --cacert`).
+If using `curl`, the `-k` option can be used to bypass the check to verify that the *operator's certificate* is trusted (instead of `curl --cacert`).
 
 Here is a small BASH script that may help to prepare the necessary token, certificates, etc., to call the *operator's* REST services:
 
@@ -44,9 +44,10 @@ cat curl.err
 cat curl.out | jq .
 ```
 
-To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debuggin information in addition to the response.  Here is an example of the output of this script:
+To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information in addition to the response.  Here is an example of the output of this script:
 
-``$ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters
+```
+$ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters
 Ready to call operator REST APIs
 Note: Unnecessary use of -X or --request, GET is already inferred.
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
