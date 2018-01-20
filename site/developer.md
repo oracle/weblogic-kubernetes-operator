@@ -49,20 +49,82 @@ The Javadoc is also available in the GitHub repository at [https://oracle.github
 
 ## Running integration tests
 
-Write me
+The project includes integration tests that can be run against a Kubernetes *cluster*.  If you want to use these tests, you will need to provide your own Kubernetes *cluster*.  You will need to obtain the kube.config file for an admin user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.x and 1.8.x currently.  There are some issues with 1.9, which are being worked on.
 
-## Manually testing the operator
+To run the tests, uncomment the following `execution` in the `pom.xml` and update the `KUBECONFIG` to point to your kube config file.
 
-Write me
+```
+<!--
+<execution>
+  <id>kubernetes-config</id>
+  <phase>test</phase>
+  <goals>
+      <goal>test</goal>
+  </goals>
+  <configuration>
+      <argLine>${surefireArgLine} -Xms512m -Xmx1500m</argLine>
+      <environmentVariables>
+          <KUBECONFIG>
+              ${project.basedir}/your.kube.config
+          </KUBECONFIG>
+      </environmentVariables>
+  </configuration>
+</execution>
+-->
+```
+
+These test assume that the RBAC definitions exist on the Kubernetes *cluster*.  To create them, update the inputs file and run the *operator* installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
+
+```
+./create-weblogic-operator.sh -g -i create-operator-inputs.yaml
+```
+
+This will create a file called `rbac.yaml` which you will need to apply to your cluster:
+
+```
+kubectl apply -f rbac.yaml
+```
+
+Once this is done, and the `execution` is uncommented, the tests will run against your cluster.
 
 ## Running the operator from an IDE
 
 The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
+
 Configure the IDE to run the class `oracle.kubernetes.operator.Main`.
+
+You may need to create a directory called `/operator` on your machine.  Please be aware that the *operator* code is targeted to Linux, and while it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes *cluster* and use remote debugging instead.
 
 ## Running the operator in a Kubernetes cluster
 
-Write me
+To run the *operator* in a Kubernetes *cluster* you need to build the Docker image and then deploy it to your *cluster*.
+
+After you have run the build (i.e. `mvn clean install`), create the Docker image as follows:
+
+```
+docker build -t weblogic-kubernetes-operator:markxnelson --no-cache=true .
+```
+
+We recommend that you use a tag other than `latest` to make it easy to tell your image apart from the "real" one.  In the example above, we just put in the github ID of the developer.
+
+Next upload your image to your Kubernetes server as follows:
+
+```
+# on your build machine
+docker save weblogic-kubernetes-operator:markxnelson > operator.tar
+scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
+# on the Kubernetes server
+docker load < /some/path/operator.tar
+```
+
+Verify you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
+
+To create the Kuberentes YAML file to deploy the *operator*, update the inputs file (`create-operator-inputs.yaml`) and make sure the `imagePullPolicy` is set to `Never` and the `image` matches the name you used in your `docker build` command.  Then run the *operator* installation script to deploy the *operator*:
+
+```
+./create-weblogic-operator.sh -i create-operator-inputs.yaml
+```
+
 
 ## Attaching a remote debugger to the operator
 
