@@ -25,6 +25,7 @@ build:
     - java/maven:
         goals: clean install
         version: 3.5.2
+        cache_repo: true
 
 # RUN mkdir /operator
 # ENV PATH=$PATH:/operator
