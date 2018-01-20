@@ -12,7 +12,6 @@ In order to obtain the *operator* Docker image from the Oracle Container Registr
 
 ```
 kubectl create secret docker-registry SECRET_NAME
-  -n NAMESPACE  
   --docker-server=container-registry.oracle.com
   --docker-username=YOUR_USERNAME
   --docker-password=YOUR_PASSWORD
@@ -23,13 +22,11 @@ Please create your secret as shown below:
 
 ```
 kubectl create secret docker-registry earlybird-secret
-  -n NAMESPACE
   --docker-server=quay.io
   --docker-username=earlybird
   --docker-password=welcome1
   --docker-email=mark.x.nelson@gmail.com
 ```
-
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
 
