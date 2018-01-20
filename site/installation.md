@@ -4,6 +4,8 @@
 
 The *operator* Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com](https://container-registry.oracle.com) and clicking on the Register link.
 
+**ATTENTION EARLY ACCESS USERS** You will not need to register for Oracle Container Registry for early access.
+
 ## Setting up secrets to access the Oracle Container Registry
 
 In order to obtain the *operator* Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command:
@@ -16,6 +18,18 @@ kubectl create secret docker-registry SECRET_NAME
   --docker-password=YOUR_PASSWORD
   --docker-email=YOUR_EMAIL
 ```
+**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.  
+Please create your secret as shown below:
+
+```
+kubectl create secret docker-registry earlybird-secret
+  -n NAMESPACE
+  --docker-server=quay.io
+  --docker-username=earlybird
+  --docker-password=welcome1
+  --docker-email=mark.x.nelson@gmail.com
+```
+
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
 

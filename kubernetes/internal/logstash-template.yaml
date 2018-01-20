@@ -1,0 +1,33 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: apps/v1beta1 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: %NAMESPACE%
+  labels:
+    app: logstash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+      - name: logstash
+        image: logstash:5 
+        args: ["-f", "/logs/logstash.conf"]
+        volumeMounts:
+        - mountPath: /logs
+          name: log-dir
+      volumes:
+      - name: log-dir
+        persistentVolumeClaim:
+          claimName: elk-pvc
+
+
