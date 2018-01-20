@@ -88,6 +88,18 @@ Documentation for APIs is provided here:
 
 # User guide
 
+## Prefer to see it rather than read about it?
+
+If you would rather see the developers demonstrating the *operator* rather than reading the documentation, then here are your videos:
+
+* [Installing the operator](https://youtu.be/Ndh3GkQy9H4)
+* [Creating a WebLogic domain with the operator](https://youtu.be/wp_DZsG5FbI)
+* [Scaling with WLDF](https://youtu.be/Q8iZi2e9HvU)
+* [Prometheus integration](https://youtu.be/D7KWVXzzqx8)
+* watch this space, more to come! 
+
+Like what you see?  Read on for all the nitty-gritty details...
+
 ## Installation
 
 Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.
