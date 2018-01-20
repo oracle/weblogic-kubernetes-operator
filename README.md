@@ -1,5 +1,7 @@
 # Oracle WebLogic Server Kubernetes Operator
 
+[![wercker status](https://app.wercker.com/status/6381f32f663a4da75a8e012a407f7b22/s/master "wercker status")](https://app.wercker.com/project/byKey/6381f32f663a4da75a8e012a407f7b22)
+
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads – many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
 
 Oracle has been working with the WebLogic community to find ways to make it is easy as possible for organizations using WebLogic to run important workloads to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  The Technology Preview release of the Operator provides a number of features to assist with the management of WebLogic Domains in a Kubernetes environment, including:
@@ -200,7 +202,7 @@ To remove more than one *operator*, repeat these steps for each *operator namesp
 
 Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, etc.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
-Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of what kind of features we would like to add to the *operator*.  Maybe you will see something you would like to contribute to! 
+Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of what kind of features we would like to add to the *operator*.  Maybe you will see something you would like to contribute to!
 
 # Contributing to the operator
 

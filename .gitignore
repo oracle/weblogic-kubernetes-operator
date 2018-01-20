@@ -40,6 +40,5 @@ release.properties
 **/install-helper-test-tmp/*
 **/.DS_Store
 dependency-reduced-pom.xml
-build
 *.ipr
 *.iws
