@@ -96,7 +96,7 @@ If you would rather see the developers demonstrating the *operator* rather than 
 * [Creating a WebLogic domain with the operator](https://youtu.be/wp_DZsG5FbI)
 * [Scaling with WLDF](https://youtu.be/Q8iZi2e9HvU)
 * [Prometheus integration](https://youtu.be/D7KWVXzzqx8)
-* watch this space, more to come! 
+* watch this space, more to come!
 
 Like what you see?  Read on for all the nitty-gritty details...
 
@@ -199,6 +199,8 @@ To remove more than one *operator*, repeat these steps for each *operator namesp
 # Developer Guide
 
 Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, etc.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
+
+Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of what kind of features we would like to add to the *operator*.  Maybe you will see something you would like to contribute to! 
 
 # Contributing to the operator
 
