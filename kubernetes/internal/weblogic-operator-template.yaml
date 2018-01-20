@@ -77,10 +77,9 @@ spec:
       %ELK_INTEGRATION_PREFIX%  persistentVolumeClaim:
       %ELK_INTEGRATION_PREFIX%    claimName: elk-pvc
       # Update the imagePullSecrets with the name of your Kubernetes secret containing
-      # your credentials for the Docker Store/Oracle Container Registry.
-      #### artifactory credentials during internal development phase
+      # your credentials for the Oracle Container Registry.
       imagePullSecrets:
-      - name: wlsldi-secret
+      - name: earlybird-secret
 
 ---
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%apiVersion: v1
