@@ -65,7 +65,7 @@
                             <sources>
                                 <source>${src-generated-swagger}</source>
                                 <source>${project.build.sourceDirectory}</source>
-                                <source>src/build/java</source>
+                                <source>${project.build.sourceDirectory}/../../build/java</source>
                             </sources>
                         </configuration>
                     </execution>
