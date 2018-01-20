@@ -24,7 +24,6 @@ build:
         yum -y install tar gzip
     - java/maven:
         goals: clean install
-        debug: true
         version: 3.5.2
         cache_repo: true
 
