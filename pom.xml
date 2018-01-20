@@ -270,7 +270,7 @@
                                     <sources>
                                         <source>${src-generated-swagger}</source>
                                         <source>${project.build.sourceDirectory}</source>
-                                        <source>src/build/java</source>
+                                        <source>${basedir}/src/build/java</source>
                                     </sources>
                                 </configuration>
                             </execution>
