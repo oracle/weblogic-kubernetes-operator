@@ -95,8 +95,8 @@ Documentation for APIs is provided here:
 If you would rather see the developers demonstrating the *operator* rather than reading the documentation, then here are your videos:
 
 * [Installing the operator](https://youtu.be/B5UmY2xAJnk) includes the installation and also shows using the *operator's* REST API.
-* [Creating a WebLogic domain with the operator](#) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, ingresses, pods, load balancers, etc.
-* [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](#)
+* [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, ingresses, pods, load balancers, etc.
+* [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
 * [Using WLST against a domain running in Kubernetes](#)
 * [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic metrics to Prometheus and creating a Prometheus alert to trigger scaling
