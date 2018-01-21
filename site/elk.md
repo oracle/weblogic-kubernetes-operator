@@ -1,5 +1,7 @@
 # ELK integration
 
+**ATTENTION EARLY ACCESS USERS** This page is not ready for general consumption yet, we have some rough notes in here, we are working on writing better doc for how to set up this integration.
+
 TODO Update this whole section
 Turn on Logstash in operator
 Add the ENABLE_LOGSTASH env in weblogic-operator.yaml to the env section
