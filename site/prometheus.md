@@ -1,4 +1,6 @@
-# Prometheus integration 
+# Prometheus integration
+
+**ATTENTION EARLY ACCESS USERS** This page is not ready for general consumption yet, we have some rough notes in here, we are working on writing better doc for how to set up this integration. 
 
 ### Prometheus/Grafana Weblogic Cluster setup ###
 
