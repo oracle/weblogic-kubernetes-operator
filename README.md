@@ -1,6 +1,6 @@
 # Oracle WebLogic Server Kubernetes Operator
 
-[![wercker status](https://app.wercker.com/status/6381f32f663a4da75a8e012a407f7b22/s/master "wercker status")](https://app.wercker.com/project/byKey/6381f32f663a4da75a8e012a407f7b22) Built with [Wercker](http://www.wercker.com) 
+[![wercker status](https://app.wercker.com/status/6381f32f663a4da75a8e012a407f7b22/s/master "wercker status")](https://app.wercker.com/project/byKey/6381f32f663a4da75a8e012a407f7b22) Built with [Wercker](http://www.wercker.com)
 
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads – many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
 
@@ -96,8 +96,16 @@ If you would rather see the developers demonstrating the *operator* rather than 
 
 * [Installing the operator](https://youtu.be/Ndh3GkQy9H4)
 * [Creating a WebLogic domain with the operator](https://youtu.be/wp_DZsG5FbI)
-* [Scaling with WLDF](https://youtu.be/Q8iZi2e9HvU)
-* [Prometheus integration](https://youtu.be/D7KWVXzzqx8)
+* [Accessing the WebLogic administration console and deploying an application](#)
+* [Verifying the load balancing for a web application](#)
+* [Scaling a WebLogic domain with the operator](#)
+* [Scaling a WebLogic Domain with WLDF](https://youtu.be/Q8iZi2e9HvU)
+* [Using the operator's REST APIs](#)
+* [Using WLST against a domain running in Kubernetes](#)
+* [Viewing the operator's logs in Kibana](#)
+* [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic metrics to Prometheus and creating a Prometheus alert to trigger scaling
+* [Shutting down a domain](#)
+* [Deleting a domain](#)
 * watch this space, more to come!
 
 Like what you see?  Read on for all the nitty-gritty details...
