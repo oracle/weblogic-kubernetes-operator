@@ -14,16 +14,21 @@ In order to obtain the *operator* Docker image from the Oracle Container Registr
 
 ```
 kubectl create secret docker-registry SECRET_NAME
+  -n NAMESPACE
   --docker-server=container-registry.oracle.com
   --docker-username=YOUR_USERNAME
   --docker-password=YOUR_PASSWORD
   --docker-email=YOUR_EMAIL
 ```
+
+Note that you can create the `docker-registry` *secrets* in the `default` *namespace* by omitting the `-n NAMESPACE`, or if you prefer you can create it in the *namespace* you plan to run the *operator* in. 
+
 **ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.  
 Please create your secret as shown below:
 
 ```
 kubectl create secret docker-registry earlybird-secret
+  -n weblogic-operator
   --docker-server=quay.io
   --docker-username=earlybird
   --docker-password=welcome1
