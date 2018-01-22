@@ -2,6 +2,8 @@
 
 The WebLogic *domain* must be installed into the folder that will be mounted as `shared/domain`. The recommended approach is to use the provided `create-domain-job.sh` script, however instructions are also provided for manually installing and configuring a WebLogic domain (see [Manually creating a domain](manually-creating-domain.md)).
 
+Note that there is a short video demonstration of the domain creation process available [here](https://youtu.be/Ey7o8ldKv9Y).
+
 ## Important considerations and restrictions for WebLogic domains in Kubernetes
 
 When running a WebLogic *domain* in Kubernetes, there are some additional considerations that must be taken into account to ensure correct functioning:

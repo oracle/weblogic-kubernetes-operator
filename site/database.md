@@ -1,0 +1,78 @@
+# Running the Oracle Database in Kubernetes
+
+**ATTENTION EARLY ACCES USERS** this page is a work in progress.  We will update this with either better details about how to put the datafiles onto a persistent volume, or a pointer to the official Oracle Database Kubernetes pages, or both.
+
+write me
+
+```
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: database
+  namespace: domain2
+  labels:
+    app: database
+    version: 12.1.0.2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+      version: 12.1.0.2
+  template:
+    metadata:
+      name: database
+      labels:
+        app: database
+        version: 12.1.0.2
+    spec:
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      containers:
+      - name: database
+        command:
+        - /home/oracle/setup/dockerInit.sh
+        image: container-registry.oracle.com/database/enterprise:12.1.0.2
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: 10Gi
+        ports:
+        - containerPort: 1521
+          hostPort: 1521
+        volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
+        env:
+          - name: DB_SID
+            value: OraDoc
+          - name: DB_PDB
+            value: OraPdb
+          - name: DB_PASSWD
+            value: Welcome1
+          - name: DB_DOMAIN
+            value: my.domain.com
+          - name: DB_BUNDLE
+            value: basic
+          - name: DB_MEMORY
+            value: 8g
+      imagePullSecrets:
+      - name: regsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: domain2
+spec:
+  selector:
+    app: database
+    version: 12.1.0.2
+  ports:
+  - protocol: TCP
+    port: 1521
+    targetPort: 1521
+```

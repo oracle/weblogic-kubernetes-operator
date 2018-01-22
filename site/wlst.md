@@ -1,5 +1,7 @@
 # Using WLST
 
+Note that a video demonstration of using WLST to create a data source is available [here](https://youtu.be/eY-KXEk8rI4).
+
 WebLogic Scripting Tool (WLST) can be used to manage a *domain* running in Kubernetes.  If the *domain* was configured to expose a T3 channel using the `exposeAdminT3Channel` setting when creating the *domain*, then the matching T3 *service* can be used to connect.  For example, if the `domainUID` is `domain1`, and the administration server name is `admin-server`, then the *service* would be called:
 
 ```

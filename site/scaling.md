@@ -53,6 +53,8 @@ In response to a change to either `replicas` property, in the *domain custom res
 
 ## Initiating a scaling operation from WLDF
 
+Note that there is a video demonstration of scaling with WLDF available [here](https://youtu.be/Q8iZi2e9HvU).
+
 Write me
 
 ## Initiating a scaling operation from Prometheus

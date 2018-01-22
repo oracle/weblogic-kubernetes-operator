@@ -97,8 +97,8 @@ If you would rather see the developers demonstrating the *operator* rather than 
 * [Installing the operator](https://youtu.be/B5UmY2xAJnk) includes the installation and also shows using the *operator's* REST API.
 * [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, ingresses, pods, load balancers, etc.
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
+* [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4), this example shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
-* [Using WLST against a domain running in Kubernetes](#)
 * [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic metrics to Prometheus and creating a Prometheus alert to trigger scaling
 * [Shutting down a domain](#)
 * [Deleting a domain](#)
@@ -122,6 +122,8 @@ The overall process of installing and configuring the *operator* and using it to
 *	Creating a WebLogic domain
 
 These steps are explained in detail [here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
+
+If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page](database.md) for information about how to run the Oracle database in Kubernetes.
 
 ## Using the operator's REST services
 

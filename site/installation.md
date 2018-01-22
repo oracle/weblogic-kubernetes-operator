@@ -1,5 +1,7 @@
 # Installation
 
+Note that there is a short video demonstration of the installation process available [here](https://youtu.be/B5UmY2xAJnk).
+
 ## Register for access to the Oracle Container Registry
 
 The *operator* Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com](https://container-registry.oracle.com) and clicking on the Register link.
