@@ -123,7 +123,7 @@ The overall process of installing and configuring the *operator* and using it to
 
 These steps are explained in detail [here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
 
-If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page](database.md) for information about how to run the Oracle database in Kubernetes.
+If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page](site/database.md) for information about how to run the Oracle database in Kubernetes.
 
 ## Using the operator's REST services
 
