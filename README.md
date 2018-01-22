@@ -4,16 +4,16 @@
 
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads – many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
 
-Oracle has been working with the WebLogic community to find ways to make it is easy as possible for organizations using WebLogic to run important workloads to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  The Technology Preview release of the Operator provides a number of features to assist with the management of WebLogic Domains in a Kubernetes environment, including:
+Oracle has been working with the WebLogic community to find ways to make it as easy as possible for organizations using WebLogic to run important workloads to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  The Technology Preview release of the Operator provides a number of features to assist with the management of WebLogic domains in a Kubernetes environment, including:
 
-*	A mechanism to create a WebLogic Domain on a Kubernetes Persistent Volume,
-*	A mechanism to define a WebLogic Domain as a Kubernetes resource (using a Kubernetes Custom Resource Definition),
+*	A mechanism to create a WebLogic domain on a Kubernetes persistent volume,
+*	A mechanism to define a WebLogic domain as a Kubernetes resource (using a Kubernetes custom resource definition),
 *	The ability to automatically start servers based on declarative startup parameters and desired states,
-*	The ability to automatically expose the WebLogic Administration Console outside the Kubernetes Cluster (if desired),
-*	The ability to automatically expose T3 Channels outside the Kubernetes Cluster (if desired),
-*	The ability to automatically expose HTTP paths on a WebLogic Cluster outside the Kubernetes Cluster with load balancing, and to update the load balancer when Managed Servers in the WebLogic Cluster are started or stop,
-*	The ability to scale a WebLogic Cluster by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus/Grafana or other rules, and
-*	The ability to publish Operator and WebLogic logs into ElasticSearch and interact with them in Kibana.
+*	The ability to automatically expose the WebLogic Server Administration Console outside the Kubernetes cluster (if desired),
+*	The ability to automatically expose T3 channels outside the Kubernetes domain (if desired),
+*	The ability to automatically expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing, and to update the load balancer when Managed Servers in the WebLogic domain are started or stop,
+*	The ability to scale a WebLogic domain by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus/Grafana or other rules, and
+*	The ability to publish Operator and WebLogic Server logs into ElasticSearch and interact with them in Kibana.
 
 As part of Oracle’s ongoing commitment to open source in general, and to Kubernetes and the Cloud Native Computing Foundation specifically, Oracle has open sourced the Operator and is committed to enhancing it with additional features.  Oracle welcomes feedback, issues, pull requests, and feature requests from the WebLogic community.
 
@@ -24,9 +24,9 @@ In this documentation, several important terms are used and are intended to have
 ## IMPORTANT TERMS USED IN THIS DOCUMENT
 |Term	| Definition |
 | --- | --- |
-| Cluster	| Since this term is ambiguous, it will be prefixed to indicate which type of cluster is meant.  A WebLogic cluster is a group of managed servers that together host some application or component and which are able to share load and state between them.  A Kubernetes cluster is a group of machines (“nodes”) that all host Kubernetes resources like pods and services and which appear to the external user as a single entity.  If the term “cluster” is not prefixed, it should be assumed to mean a Kubernetes cluster. |
+| Cluster	| Since this term is ambiguous, it will be prefixed to indicate which type of cluster is meant.  A WebLogic cluster is a group of Managed Servers that together host some application or component and which are able to share load and state between them.  A Kubernetes cluster is a group of machines (“nodes”) that all host Kubernetes resources like pods and services and which appear to the external user as a single entity.  If the term “cluster” is not prefixed, it should be assumed to mean a Kubernetes cluster. |
 | Domain	| A WebLogic domain is a group of related applications and resources along with the configuration information necessary to run them. |
-| Ingress	| A Kubernetes ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
+| Ingress	| A Kubernetes Ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
 | Job	 | write me |
 | Namespace	| A Kubernetes namespace is a named entity that can be used to group together related objects, e.g. pods and services. |
 | Operator	| A Kubernetes operator is a piece of software that performs management of complex applications. |
@@ -47,12 +47,12 @@ The *operator* can configure *services* to expose WebLogic applications and feat
 *	Use custom channels to restrict the protocols that are exposed.
 *	Is load balancing required?
 *	Is certificate-based integrity needed?
-*	How will users authenticate?  
+*	How will users authenticate?
 * Is the network channel encrypted?
 
 While it is natural to expose web applications outside the *cluster*, exposing administrative features like the administration console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a *pod* in the *cluster*.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes *cluster* and therefore more secure.
 
-Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.  
+Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.
 
 # Requirements
 
@@ -70,15 +70,15 @@ Note: Minikube is not supported.
 The following features are not certified or supported in the Technology Preview release at the time of writing:
 
 *	Whole Server Migration
-*	Consensus Leasing
+*	Consensus leasing
 *	Node Manager (although it is used internally for the liveness probe and to start WLS Servers)
-*	Dynamic Clusters (the current certification only covers configured clusters, certification of Dynamic Clusters is planned at a future date)
+*	Dynamic domains (the current certification only covers configured clusters, certification of dynamic clusters is planned at a future date)
 *	Multicast
-*	If using a Host Path Persistent Volume, then it must have read/write/many permissions for all container/pods in the WebLogic deployment
+*	If using a `hostPath` persistent volume, then it must have read/write/many permissions for all container/pods in the WebLogic deployment
 *	Multitenancy
-*	Production Redeployment
+*	Production redeployment
 
-Please consult MyOracle Support Note XXXXX for up to date information about what features of WebLogic are supported in Kubernetes environments.
+Please consult My Oracle Support Note XXXXX for up to date information about the features of WebLogic Server that are supported in Kubernetes environments.
 
 # API documentation
 
@@ -99,7 +99,7 @@ If you would rather see the developers demonstrating the *operator* rather than 
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
 * [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4), this example shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
-* [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic metrics to Prometheus and creating a Prometheus alert to trigger scaling
+* [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic Server metrics to Prometheus and creating a Prometheus alert to trigger scaling
 * [Shutting down a domain](#)
 * [Deleting a domain](#)
 * watch this space, more to come!
@@ -112,11 +112,11 @@ Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that th
 
 The overall process of installing and configuring the *operator* and using it to manage WebLogic *domains* consists of the following steps.  The provided scripts will perform most of these steps, but some must be performed manually:
 
-*	Register for access to the Oracle Container Registry
+*	Registering for access to the Oracle Container Registry
 * Setting up secrets to access the Oracle Container Registry
 *	Customizing the operator parameters file
 *	Deploying the operator to a Kubernetes cluster
-*	Setting up secrets for the admin server credentials
+*	Setting up secrets for the Administration Server credentials
 *	Creating a persistent volume for a WebLogic domain
 *	Customizing the domain parameters file
 *	Creating a WebLogic domain
@@ -127,7 +127,7 @@ If you need an Oracle database in your Kubernetes cluster, e.g. because your web
 
 ## Using the operator's REST services
 
-The *operator* provides a REST API that can be used to obtain information about the configuration and to initiate scaling actions. Please refer to [Using the operator's REST services](site/rest.md) for details of how to use the REST APIs.
+The *operator* provides a REST API that can be used to obtain information about the configuration and to initiate scaling actions. Please refer to [Using the operator's REST services](site/rest.md) for details about how to use the REST APIs.
 
 ## Creating a WebLogic domain with the operator
 
@@ -139,7 +139,7 @@ If preferred, a *domain* can be created manually, i.e. without using the scripts
 
 ## Exporting WebLogic metrics to Prometheus
 
-The *operator* includes the ability to export WebLogic metrics to Prometheus.  This allows metrics to be displays in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
+The *operator* includes the ability to export WebLogic Server metrics to Prometheus.  This allows metrics to be displays in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
 
 ## Starting up the domain
 
@@ -155,7 +155,7 @@ The *operator* provides the ability to scale up or down WebLogic *clusters*.  Th
 
 * Updating the *domain custom resource* directly (using `kubectl`).
 * Calling the *operator's* REST `scale` API, e.g. from `curl`.
-* Using a WLDF rule and script action to call the *operator's* REST `scale` API.
+* Using a WLDF policy rule and script action to call the *operator's* REST `scale` API.
 * Using a Prometheus alert action to call the *operator's* REST `scale` API.
 
 Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more information.
@@ -220,7 +220,7 @@ If you have any questions about a possible submission, feel free to open an issu
 
 ## Contributing to the Oracle Kubernetes Operator for WebLogic repository
 
-Pull requests can be made under The Oracle Contributor Agreement (OCA) which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
+Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
 
 For pull requests to be accepted, the bottom of the commit message must have the following line using the contributor’s name and e-mail address as it appears in the OCA Signatories list.
 
