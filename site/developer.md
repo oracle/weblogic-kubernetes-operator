@@ -6,18 +6,18 @@ This page provides information for developers who wish to understand or contribu
 
 The following software are required to obtain and build the operator:
 
-*	git (1.8 or later recommended)
+*	Git (1.8 or later recommended)
 *	Apache Maven (3.3 or later recommended)
 *	Java Developer Kit (1.8u131 or later recommended, not 1.9)
 *	Docker 17.03.1.ce
 
 The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8, for example closures, but does not use any Java 1.9 feature.
 
-Since the target runtime environment for operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support for, or accept pull requests to add support for other operating systems.
+Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support, for other operating systems.
 
 ## Obtaining the operator source code
 
-The operator source code is published on GitHub at https://github.com/oracle/weblogic-operator.  Developers may clone this repository to a local machine, or if desired create a fork in their personal namespace and clone the fork.  Developers who are planning to submit a pull request are advised to create a fork.
+The operator source code is published on GitHub at https://github.com/oracle/weblogic-operator.  Developers may clone this repository to a local machine or, if desired, create a fork in their personal namespace and clone the fork.  Developers who are planning to submit a pull request are advised to create a fork.
 
 To clone the repository from GitHub, issue this command:
 
@@ -29,13 +29,13 @@ git clone https://github.com/oracle/weblogic-operator
 
 The operator is built using [Apache Maven](http://maven.apache.org).  The build machine will also need to have Docker installed.  
 
-To build the operator issue the following command in the project directory:
+To build the operator, issue the following command in the project directory:
 
 ```
 mvn clean install
 ```
 
-This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the Operator and will also execute all of the unit tests.
+This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
 
 ## Building Javadoc
 
@@ -49,9 +49,9 @@ The Javadoc is also available in the GitHub repository at [https://oracle.github
 
 ## Running integration tests
 
-The project includes integration tests that can be run against a Kubernetes *cluster*.  If you want to use these tests, you will need to provide your own Kubernetes *cluster*.  You will need to obtain the kube.config file for an admin user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.x and 1.8.x currently.  There are some issues with 1.9, which are being worked on.
+The project includes integration tests that can be run against a Kubernetes *cluster*.  If you want to use these tests, you will need to provide your own Kubernetes *cluster*.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.x and 1.8.x currently.  There are some issues with 1.9, which are being worked on.
 
-To run the tests, uncomment the following `execution` in the `pom.xml` and update the `KUBECONFIG` to point to your kube config file.
+To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
 
 ```
 <!--
@@ -79,13 +79,13 @@ These test assume that the RBAC definitions exist on the Kubernetes *cluster*.  
 ./create-weblogic-operator.sh -g -i create-operator-inputs.yaml
 ```
 
-This will create a file called `rbac.yaml` which you will need to apply to your cluster:
+This will create a file called `rbac.yaml`, which you will need to apply to your cluster:
 
 ```
 kubectl apply -f rbac.yaml
 ```
 
-Once this is done, and the `execution` is uncommented, the tests will run against your cluster.
+After this is done, and the `execution` is uncommented, the tests will run against your cluster.
 
 ## Running the operator from an IDE
 
@@ -93,21 +93,21 @@ The operator can be run from an IDE, which is useful for debugging.  In order to
 
 Configure the IDE to run the class `oracle.kubernetes.operator.Main`.
 
-You may need to create a directory called `/operator` on your machine.  Please be aware that the *operator* code is targeted to Linux, and while it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes *cluster* and use remote debugging instead.
+You may need to create a directory called `/operator` on your machine.  Please be aware that the *operator* code is targeted to Linux, and although it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes *cluster* and use remote debugging instead.
 
 ## Running the operator in a Kubernetes cluster
 
-To run the *operator* in a Kubernetes *cluster* you need to build the Docker image and then deploy it to your *cluster*.
+To run the *operator* in a Kubernetes *cluster*, you need to build the Docker image and then deploy it to your *cluster*.
 
-After you have run the build (i.e. `mvn clean install`), create the Docker image as follows:
+After you have run the build (that is, `mvn clean install`), create the Docker image as follows:
 
 ```
 docker build -t weblogic-kubernetes-operator:markxnelson --no-cache=true .
 ```
 
-We recommend that you use a tag other than `latest` to make it easy to tell your image apart from the "real" one.  In the example above, we just put in the github ID of the developer.
+We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we just put in the GitHub ID of the developer.
 
-Next upload your image to your Kubernetes server as follows:
+Next, upload your image to your Kubernetes server as follows:
 
 ```
 # on your build machine
@@ -117,7 +117,7 @@ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 docker load < /some/path/operator.tar
 ```
 
-Verify you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
+Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
 
 To create the Kuberentes YAML file to deploy the *operator*, update the inputs file (`create-operator-inputs.yaml`) and make sure the `imagePullPolicy` is set to `Never` and the `image` matches the name you used in your `docker build` command.  Then run the *operator* installation script to deploy the *operator*:
 
@@ -135,8 +135,8 @@ Write me
 This project has adopted the following coding standards:
 
 * All indents are two spaces.
-* Javadoc must be provided for all public packages, classes and methods and must include all parameters and returns.
-* All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
+* Javadoc must be provided for all public packages, classes, and methods and must include all parameters and returns.
+* All nontrivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
 * The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
 * Before throwing an exception, there should be a call to `LOGGER.throwing(e)` to log the exception.
 * write me
