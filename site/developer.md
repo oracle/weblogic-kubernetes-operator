@@ -22,7 +22,7 @@ The operator source code is published on GitHub at https://github.com/oracle/web
 To clone the repository from GitHub, issue this command:
 
 ```
-git clone https://github.com/oracle/weblogic-operator
+git clone https://github.com/oracle/weblogic-kubernetes-operator
 ```
 
 ## Building the operator
@@ -135,11 +135,12 @@ Write me
 This project has adopted the following coding standards:
 
 * All indents are two spaces.
-* Javadoc must be provided for all public packages, classes and methods and must include all parameters and returns.
+* Javadoc must be provided for all public packages, classes and methods and must include all parameters and returns.  Javadoc is not required for methods that override or implement methods that are already documented.
 * All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
 * The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
+* All logged messages must be internationalized using the resource bundle src/main/resources/Operator.properties and using a key itemized in src/main/java/oracle/kubernetes/operator/logging/MessageKeys.java.
 * Before throwing an exception, there should be a call to `LOGGER.throwing(e)` to log the exception.
-* write me
+* After operator initialization, all operator work must be implemented using the asynchronous call model (described below).  In particular, worker threads must not use sleep() or IO or lock-based blocking methods.
 
 ## Source code structure
 
@@ -147,4 +148,26 @@ Write me
 
 ## Asynchronous call model
 
-Write me
+Our expectation is that certain customers will task the operator with managing thousands of WebLogic domains across dozens of Kubernetes namespaces.  Therefore, we have designed the operator with an efficient user-level threads pattern based on a simplified version of the code from the JAX-WS reference implementation.  We have then used that pattern to implement an asynchronous call model for Kubernetes API requests.  This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.
+
+### User-level Thread Pattern
+
+The user-level thread pattern is implemented by the classes in the oracle.kubernetes.operator.work package.
+
+* Engine: The executor service and factory for Fibers.
+* Fiber: The user-level thread.  Fibers represent the execution of a single processing flow through a series of Steps.  Fibers may be suspended and later resumed and do not consume a Thread while suspended.
+* Step: Individual CPU-bound activity in a processing flow.
+* Packet: Context of the processing flow.
+* NextAction: Used by a Step when it returns control to the Fiber to indicate what should happen next.  Common 'next actions' are to execute another Step or to suspend the Fiber.
+* Component: Provider of SPI's that may be useful to the processing flow.
+* Container: Represents the containing environment and is a Component.
+
+Each Step has a reference to the next Step in the processing flow; however Steps are not required to indicate that the next Step be invoked by the Fiber when the Step returns a NextAction to the Fiber.  This leads to common use cases where Fibers invoke a series of Steps that are linked by the 'is-next' relationship but that the Fiber will invoke sets of Steps in various detours before returning to the normal flow.
+
+### Call Builder Pattern
+
+The call model is implemented by classes in the oracle.kubernetes.operator.helpers package, including CallBuilder and ResponseStep.
+
+
+
+
