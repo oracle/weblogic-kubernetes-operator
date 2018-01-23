@@ -19,7 +19,7 @@ As part of Oracle’s ongoing commitment to open source in general, and to Kuber
 
 # Important terms
 
-In this documentation, several important terms are used and are intended to have a specific meaning.  These terms are typeset in *italics*.
+In this documentation, several important terms are used and are intended to have a specific meaning.
 
 ## IMPORTANT TERMS USED IN THIS DOCUMENT
 |Term	| Definition |
@@ -40,7 +40,7 @@ In this documentation, several important terms are used and are intended to have
 Before using the operator, it is highly recommended to read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.  It is also worth reading the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
 
 # Exposing applications outside the Kubernetes cluster
-The *operator* can configure *services* to expose WebLogic applications and features outside of the Kubernetes *cluster*.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account.  There is no significant difference between a WebLogic *domain* running in a Kubernetes *cluster* and a *domain* running in a traditional data center in this regard.  The same kinds of considerations should be taken into account, for example:
+The operator can configure services to expose WebLogic applications and features outside of the Kubernetes cluster.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account.  There is no significant difference between a WebLogic domain running in a Kubernetes cluster and a domain running in a traditional data center in this regard.  The same kinds of considerations should be taken into account, for example:
 
 * Only expose those protocols and ports that need to be exposed.
 *	Use secure protocols (HTTPS, T3S, etc.).
@@ -50,7 +50,7 @@ The *operator* can configure *services* to expose WebLogic applications and feat
 *	How will users authenticate?
 * Is the network channel encrypted?
 
-While it is natural to expose web applications outside the *cluster*, exposing administrative features like the administration console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a *pod* in the *cluster*.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes *cluster* and therefore more secure.
+While it is natural to expose web applications outside the cluster, exposing administrative features like the administration console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
 
 Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.
 
@@ -92,9 +92,9 @@ Documentation for APIs is provided here:
 
 ## Prefer to see it rather than read about it?
 
-If you would rather see the developers demonstrating the *operator* rather than reading the documentation, then here are your videos:
+If you would rather see the developers demonstrating the operator rather than reading the documentation, then here are your videos:
 
-* [Installing the operator](https://youtu.be/B5UmY2xAJnk) includes the installation and also shows using the *operator's* REST API.
+* [Installing the operator](https://youtu.be/B5UmY2xAJnk) includes the installation and also shows using the operator's REST API.
 * [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, ingresses, pods, load balancers, etc.
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
 * [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4), this example shows how to create a data source for an Oracle database that is also running in Kubernetes.
@@ -110,7 +110,7 @@ Like what you see?  Read on for all the nitty-gritty details...
 
 Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.
 
-The overall process of installing and configuring the *operator* and using it to manage WebLogic *domains* consists of the following steps.  The provided scripts will perform most of these steps, but some must be performed manually:
+The overall process of installing and configuring the operator and using it to manage WebLogic domains consists of the following steps.  The provided scripts will perform most of these steps, but some must be performed manually:
 
 *	Registering for access to the Oracle Container Registry
 * Setting up secrets to access the Oracle Container Registry
@@ -127,67 +127,67 @@ If you need an Oracle database in your Kubernetes cluster, e.g. because your web
 
 ## Using the operator's REST services
 
-The *operator* provides a REST API that can be used to obtain information about the configuration and to initiate scaling actions. Please refer to [Using the operator's REST services](site/rest.md) for details about how to use the REST APIs.
+The operator provides a REST API that can be used to obtain information about the configuration and to initiate scaling actions. Please refer to [Using the operator's REST services](site/rest.md) for details about how to use the REST APIs.
 
 ## Creating a WebLogic domain with the operator
 
-Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic *domain* with the *operator*.
+Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic domain with the operator.
 
 ## Manually creating a WebLogic domain
 
-If preferred, a *domain* can be created manually, i.e. without using the scripts provided with the *operator*.  As long as the *domain* follows the guidelines, it can still be managed by the *operator*.  Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md) for details.  A good example of when manual *domain* creation may be preferred is when a user already has a set of existing WLST scripts that are used to create *domains* and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications.
+If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md) for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications.
 
 ## Exporting WebLogic metrics to Prometheus
 
-The *operator* includes the ability to export WebLogic Server metrics to Prometheus.  This allows metrics to be displays in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
+The operator includes the ability to export WebLogic Server metrics to Prometheus.  This allows metrics to be displays in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
 
 ## Starting up the domain
 
-The *operator* will automatically start up *domains* that it is aware of, based on the configuration in the *domain custom resource*.  Please refer to [Startup up a WebLogic domain](site/starting-domain.md) for details.
+The operator will automatically start up domains that it is aware of, based on the configuration in the domain custom resource.  Please refer to [Startup up a WebLogic domain](site/starting-domain.md) for details.
 
 ## Using WLST
 
-When creating a *domain* there is an option to expose a T3 channel outside of the Kubernetes *cluster* to allow remote WLST access.  Please refer to [Using WLST](site/wlst.md) for more information about how to use WLST with a *domain* running in Kubernetes.
+When creating a domain there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  Please refer to [Using WLST](site/wlst.md) for more information about how to use WLST with a domain running in Kubernetes.
 
 ## Scaling a cluster
 
-The *operator* provides the ability to scale up or down WebLogic *clusters*.  There are several ways to initiate scaling, including:
+The operator provides the ability to scale up or down WebLogic clusters.  There are several ways to initiate scaling, including:
 
-* Updating the *domain custom resource* directly (using `kubectl`).
-* Calling the *operator's* REST `scale` API, e.g. from `curl`.
-* Using a WLDF policy rule and script action to call the *operator's* REST `scale` API.
-* Using a Prometheus alert action to call the *operator's* REST `scale` API.
+* Updating the domain custom resource directly (using `kubectl`).
+* Calling the operator's REST `scale` API, e.g. from `curl`.
+* Using a WLDF policy rule and script action to call the operator's REST `scale` API.
+* Using a Prometheus alert action to call the operator's REST `scale` API.
 
 Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more information.
 
 ## Shutting down a domain
 
-Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a *domain* running in Kubernetes.
+Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
 
 ## Load balancing with the Traefik ingress controller
 
-The initial "Technology Preview" release of the *operator* supports only the Traefik load balancer/ingress controller.  Support for other load balancers is planned in the future.
+The initial "Technology Preview" release of the operator supports only the Traefik load balancer/ingress controller.  Support for other load balancers is planned in the future.
 Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md) for information about current capabilities.
 
 ## Exporting operator logs to ELK
 
-The *operator* provides an option to export its log files to the ELK stack.
+The operator provides an option to export its log files to the ELK stack.
 Please refer to [ELK integration](site/elk.md) for information about this capability.
 
 ## Removing a domain
 
-To permanently remove a domain from a Kubernetes *cluster*, first shut down the domain using the instructions provided above in the section titled “Shutting down a domain”, then remove the *persistent volume claim* and the *persistent volume* using these commands:
+To permanently remove a domain from a Kubernetes cluster, first shut down the domain using the instructions provided above in the section titled “Shutting down a domain”, then remove the persistent volume claim and the persistent volume using these commands:
 
 ```
 kubectl delete pvc PVC-NAME
 kubectl delete pv PV-NAME
 ```
 
-Find the names of the *persistent volume claim* and the *persistent volume* in the *domain custom resource* YAML file, or if it is not available, check for the `domainUID` in the metadata on the *persistent volumes*.
+Find the names of the persistent volume claim and the persistent volume in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes.
 
-To permanently delete the actual *domain* configuration, delete the physical volume using the appropriate tools.  For example, if the *persistent volume* used the `HostPath provider`, delete the corresponding directory on the Kubernetes master.
+To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, delete the corresponding directory on the Kubernetes master.
 
-Be aware that there may be metric data from the *domain* in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
+Be aware that there may be metric data from the domain in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
 
 ## Removing the operator
 
@@ -199,20 +199,20 @@ kubectl delete service external-weblogic-operator-service –n NAMESPACE
 kubectl delete service internal-weblogic-operator-service –n NAMESPACE
 ```
 
-Replace `NAMESPACE` with the *namespace* that the *operator* is running in.
+Replace `NAMESPACE` with the namespace that the operator is running in.
 
-To remove more than one *operator*, repeat these steps for each *operator namespace*.
+To remove more than one operator, repeat these steps for each operator namespace.
 
 
 # Developer Guide
 
 Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, etc.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
-Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of what kind of features we would like to add to the *operator*.  Maybe you will see something you would like to contribute to!
+Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of what kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
 
 # Contributing to the operator
 
-Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the *operator*, or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended to create an issue and discuss the proposed changes with the existing developers first.
+Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator, or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended to create an issue and discuss the proposed changes with the existing developers first.
 
 If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.
 
