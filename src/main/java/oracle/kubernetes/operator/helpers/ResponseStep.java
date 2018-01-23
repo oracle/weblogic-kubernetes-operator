@@ -59,7 +59,7 @@ public abstract class ResponseStep<T> extends Step {
 
     if (nextAction == null) {
       // call timed-out
-      nextAction = doPotentialRetry(packet, null, 0, null);
+      nextAction = doPotentialRetry(null, packet, null, 0, null);
       if (nextAction == null) {
         nextAction = doEnd(packet);
       }
@@ -89,16 +89,17 @@ public abstract class ResponseStep<T> extends Step {
   
   /**
    * Returns next action when the Kubernetes API server call should be retried, null otherwise.
+   * @param conflictStep Conflict step
    * @param packet Packet
    * @param e API Exception received
    * @param statusCode HTTP status code received
    * @param responseHeaders HTTP response headers received
    * @return Next action for retry or null, if no retry is warranted
    */
-  private NextAction doPotentialRetry(Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+  private NextAction doPotentialRetry(Step conflictStep, Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
     RetryStrategy retryStrategy = packet.getSPI(RetryStrategy.class);
     if (retryStrategy != null) {
-      return retryStrategy.doPotentialRetry(packet, e, statusCode, responseHeaders);
+      return retryStrategy.doPotentialRetry(conflictStep, packet, e, statusCode, responseHeaders);
     }
     
     LOGGER.info(MessageKeys.ASYNC_NO_RETRY, e != null ? e.getMessage() : "", statusCode, responseHeaders != null ? responseHeaders.toString() : "");
@@ -117,13 +118,29 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public NextAction onFailure(Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-    NextAction nextAction = doPotentialRetry(packet, e, statusCode, responseHeaders);
+    return onFailure(null, packet, e, statusCode, responseHeaders);
+  }
+  
+  /**
+   * Callback for API server call failure.  The ApiException and HTTP status code and response headers are provided; however,
+   * these will be null or 0 when the client simply timed-out.
+   * 
+   * The default implementation tests if the request could be retried and, if not, ends fiber processing.
+   * @param conflictStep Conflict step
+   * @param packet Packet
+   * @param e API Exception
+   * @param statusCode HTTP status code
+   * @param responseHeaders HTTP response headers
+   * @return Next action for fiber processing, which may be a retry
+   */
+  public NextAction onFailure(Step conflictStep, Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+    NextAction nextAction = doPotentialRetry(conflictStep, packet, e, statusCode, responseHeaders);
     if (nextAction == null) {
       nextAction = doTerminate(e, packet);
     }
     return nextAction;
   }
-  
+
   /**
    * Callback for API server call success.
    * 
