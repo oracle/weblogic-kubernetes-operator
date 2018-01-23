@@ -63,7 +63,7 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
 
-Note: Minikube is not supported.
+Note: Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, calico networking appears to work in the limited testing we have done so far. 
 
 # Restrictions
 
