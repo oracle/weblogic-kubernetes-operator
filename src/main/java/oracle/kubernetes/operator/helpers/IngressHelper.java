@@ -78,7 +78,7 @@ public class IngressHelper {
                   if (statusCode == CallBuilder.NOT_FOUND) {
                     return onSuccess(packet, null, statusCode, responseHeaders);
                   }
-                  return super.onFailure(packet, e, statusCode, responseHeaders);
+                  return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
                 }
 
                 @Override
@@ -87,6 +87,12 @@ public class IngressHelper {
                   if (result == null) {
                     V1beta1Ingress v1beta1Ingress = prepareV1beta1Ingress(ingressName, clusterName, service, info);
                     return doNext(CallBuilder.create().createIngressAsync(meta.getNamespace(), v1beta1Ingress, new ResponseStep<V1beta1Ingress>(next) {
+                      @Override
+                      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                                  Map<String, List<String>> responseHeaders) {
+                        return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
+                      }
+                      
                       @Override
                       public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                                   Map<String, List<String>> responseHeaders) {
@@ -98,6 +104,12 @@ public class IngressHelper {
                       return doNext(packet);
                     }
                     return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(), result, new ResponseStep<V1beta1Ingress>(next) {
+                      @Override
+                      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                                  Map<String, List<String>> responseHeaders) {
+                        return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
+                      }
+                      
                       @Override
                       public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                                   Map<String, List<String>> responseHeaders) {
@@ -154,7 +166,7 @@ public class IngressHelper {
               if (statusCode == CallBuilder.NOT_FOUND) {
                 return doNext(packet);
               }
-              return super.onFailure(packet, e, statusCode, responseHeaders);
+              return super.onFailure(RemoveServerStep.this, packet, e, statusCode, responseHeaders);
             }
 
             @Override
@@ -177,6 +189,12 @@ public class IngressHelper {
               if (v1beta1HTTPIngressPaths.isEmpty()) {
                 return doNext(CallBuilder.create().deleteIngressAsync(result.getMetadata().getName(), meta.getNamespace(), new V1DeleteOptions(), new ResponseStep<V1Status>(next) {
                   @Override
+                  public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                              Map<String, List<String>> responseHeaders) {
+                    return super.onFailure(RemoveServerStep.this, packet, e, statusCode, responseHeaders);
+                  }
+                  
+                  @Override
                   public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
                     return doNext(packet);
@@ -184,6 +202,12 @@ public class IngressHelper {
                 }), packet);
               } else {
                 return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(), result, new ResponseStep<V1beta1Ingress>(next) {
+                  @Override
+                  public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                              Map<String, List<String>> responseHeaders) {
+                    return super.onFailure(RemoveServerStep.this, packet, e, statusCode, responseHeaders);
+                  }
+                  
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
