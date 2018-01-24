@@ -19,6 +19,8 @@ We have provided our hints and tips for each of these options in the sections be
 
 write me
 
+[Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer)
+
 ## Use your cloud providers management console to provision a managed Kubernetes environment
 
 write me
@@ -205,7 +207,7 @@ Configure CNI:
 
 ```
 sudo -u YOUR_USERID kubectl create clusterrolebinding permissive-binding --clusterrole=cluster-admin --user=admin --user=kubelet --group=system:serviceaccounts
-sudo -u $real_user kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+sudo -u YOUR_USERID kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 
 Wait for `kubectl get nodes` to show `Ready` for this host:
@@ -242,7 +244,70 @@ Congratulations!  Docker and Kubernetes are installed and configured!
 
 ## Install Docker for Mac with Kubernetes
 
-write me
+Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https://docs.docker.com/docker-for-mac/#kubernetes) that is a pretty quick and easy way to get a simple test environment set up on your Mac.  To set it up, follow these instructions:
+
+Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (Command-space bar, type in "Docker" (without the quotes) and run it).  Once it is running you will see the Docker icon appear in your status bar:
+
+![Docker icon in status bar](site/images/docker-icon-in-status-bar.png)
+
+Click on that icon and select "Preferences..." from the drop down menu.  Go to the "Advanced" tab and give Docker a bit more memory if you have enough to spare:
+
+![Docker memory settings](site/images/docker-memory.png)
+
+Go to the "Kubernetes" tab and click on the option to enable Kuberentes:
+
+![Enable Kubernetes setting](site/images/docker-enable-k8s.png)
+
+**Note** If you are behind an HTTP proxy you should also go to the "Proxies" tab and add your proxy details in there.
+
+Docker will download the Kuberentes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
+
+![Kubernetes running](site/iamges/docker-k8s-running.png)
+
+If you have used `kubectl` on your Mac before, you will have to make sure it is pointing to the right cluster and context.
+
+```
+$ kubectl config get-contexts
+CURRENT   NAME                          CLUSTER                      AUTHINFO             NAMESPACE
+*         docker-for-desktop            docker-for-desktop-cluster   docker-for-desktop   
+          kubernetes-admin@kubernetes   kubernetes                   kubernetes-admin     
+$ kubectl config use-context docker-for-desktop
+Switched to context "docker-for-desktop".
+$ kubectl config get-clusters
+NAME
+kubernetes
+docker-for-desktop-cluster
+$ kubectl config set-cluster docker-for-desktop-cluster
+Cluster "docker-for-desktop-cluster" set.
+```
+
+You should add `docker-for-desktop` to your `/etc/hosts` file entry for 127.0.0.1, as shown in this example, you will have to use an admin user to edit this file:
+
+```
+##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+127.0.0.1	localhost docker-for-desktop
+255.255.255.255	broadcasthost
+::1             localhost
+```
+
+Then validate you are talking to the Kubernetes in Docker with these commands:
+
+```
+$ kubectl cluster-info
+Kubernetes master is running at https://docker-for-desktop:6443
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+```
+
+### Important note about persistent volumes
+
+Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it easy, you should place your directory somewhere under `/Users`.
+
 
 ## Install Minikube
 
