@@ -162,11 +162,118 @@ The user-level thread pattern is implemented by the classes in the oracle.kubern
 * Component: Provider of SPI's that may be useful to the processing flow.
 * Container: Represents the containing environment and is a Component.
 
-Each Step has a reference to the next Step in the processing flow; however Steps are not required to indicate that the next Step be invoked by the Fiber when the Step returns a NextAction to the Fiber.  This leads to common use cases where Fibers invoke a series of Steps that are linked by the 'is-next' relationship but that the Fiber will invoke sets of Steps in various detours before returning to the normal flow.
+Each Step has a reference to the next Step in the processing flow; however Steps are not required to indicate that the next Step be invoked by the Fiber when the Step returns a NextAction to the Fiber.  This leads to common use cases where Fibers invoke a series of Steps that are linked by the 'is-next' relationship, but just as commonly, use cases where the Fiber will invoke sets of Steps along a detour before returning to the normal flow.
+
+In this sample, the caller creates an Engine, Fiber, linked set of Step instances, and Packet.  The Fiber is then started.  The Engine would typically be a singleton, since it's backed by a ScheduledExecutorService.  The Packet would also typically be pre-loaded with values that the Steps would use in their apply() methods.
+
+    Engine engine = new Engine("worker-pool");
+    
+    Fiber fiber = engine.createFiber();
+    
+    Step step = new StepOne(new StepTwo(new StepThree(null)));
+    Packet packet = new Packet();
+    
+    fiber.start(step, packet, new CompletionCallback() {
+      @Override
+      public void onCompletion(Packet packet) {
+        // Fiber has completed successfully
+      }
+
+      @Override
+      public void onThrowable(Packet packet, Throwable throwable) {
+        // Fiber processing was terminated with an exception
+      }
+    });
+
+Steps must not invoke sleep or blocking calls from within apply().  This prevents the worker threads from serving other Fibers.  Instead, use asynchronous calls and the Fiber suspend/resume pattern.  Step provides a method, doDelay(), which creates a NextAction to drive Fiber suspend/resume that is a better option than sleep precisely because the worker thread can serve other Fibers during the delay.  For asynchronous IO or similar patterns, suspend the Fiber.  In the callback as the Fiber suspends, initiate the asynchronous call.  Finally, when the call completes, resume the Fiber.  The suspend/resume functionality handles the case where resumed before the suspending callback completes.
+
+In this sample, the step uses asynchronous file IO and the suspend/resume Fiber pattern.
+
+    static class StepTwo extends Step {
+      public StepTwo(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        return doSuspend((fiber) -> {
+          // The Fiber is now suspended
+          // Start the asynchronous call
+          try {
+            Path path = Paths.get(URI.create(this.getClass().getResource("/somefile.dat").toString()));
+            AsynchronousFileChannel fileChannel = 
+                AsynchronousFileChannel.open(path, StandardOpenOption.READ);
+
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            fileChannel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+              @Override
+              public void completed(Integer result, ByteBuffer attachment) {
+                // Store data in Packet and resume Fiber
+                packet.put("DATA_SIZE_READ", result);
+                packet.put("DATA_FROM_SOMEFILE", attachment);
+                fiber.resume(packet);
+              }
+
+              @Override
+              public void failed(Throwable exc, ByteBuffer attachment) {
+                // log exc
+                completed(0, null);
+              }
+            });
+          } catch (IOException e) {
+            // log exception
+            // If not resumed here, Fiber will never be resumed 
+          }
+        });
+      }
+    }
 
 ### Call Builder Pattern
 
-The call model is implemented by classes in the oracle.kubernetes.operator.helpers package, including CallBuilder and ResponseStep.
+The asynchronous call model is implemented by classes in the oracle.kubernetes.operator.helpers package, including CallBuilder and ResponseStep.  The model is based on the Fiber suspend/resume pattern described above.  CallBuilder provides many methods having names ending with "Async", such as listPodAsync() or deleteServiceAsync().  These methods return a Step that can be returned as part of a NextAction.  When creating these Steps, the developer must provide a ResponseStep.  Only ResponseStep.onSuccess() must be implemented; however, it is often useful to override onFailure() as Kubernetes treats 404 (Not Found) as a failure.
+
+In this sample, the developer is using the pattern to list pods from the default namespace that are labeled as part of cluster-1.
+
+    static class StepOne extends Step {
+      public StepOne(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        String namespace = "default";
+        Step step = CallBuilder.create().with($ -> {
+          $.labelSelector = "weblogic.clusterName=cluster-1";
+          $.limit = 50;
+          $.timeoutSeconds = 30;
+        }).listPodAsync(namespace, new ResponseStep<V1PodList>(next) {
+          @Override
+          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (statusCode == CallBuilder.NOT_FOUND) {
+              return onSuccess(packet, null, statusCode, responseHeaders);
+            }
+            return super.onFailure(packet, e, statusCode, responseHeaders);
+          }
+
+          @Override
+          public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            // do something with the result Pod, if not null
+            return doNext(packet);
+          }
+        });
+      
+        return doNext(step, packet);
+      }
+    }
+
+Notice that the required parameters, such as namespace, are method arguments, but optional parameters are designated using a simplified builder pattern using with() and a lambda.
+
+The default behavior of onFailure() will retry with exponential backoff the request on status codes 429 (TooManyRequests), 500 (InternalServerError), 503 (ServiceUnavailable), 504 (ServerTimeout) or a simple timeout with no response from the server.
+
+If the server responds with status code 409 (Conflict), then this indicates an optimistic locking failure.  Common use cases are that the code read a Kubernetes object in one asynchronous step, modified the object, and attempted to replace the object in another asynchronous step; however, another activity replaced that same object in the interim.  In this case, retrying the request would give the same result.  Therefore, developers may provide an "on conflict" step when calling super.onFailure().  The conflict step will be invoked after an exponential backoff delay.  In this example, that conflict step should be the step that reads the existing Kubernetes object.
+
 
 
 
