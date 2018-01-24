@@ -248,21 +248,21 @@ Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https
 
 Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (Command-space bar, type in "Docker" (without the quotes) and run it).  Once it is running you will see the Docker icon appear in your status bar:
 
-![Docker icon in status bar](site/images/docker-icon-in-status-bar.png)
+![Docker icon in status bar](images/docker-icon-in-status-bar.png)
 
 Click on that icon and select "Preferences..." from the drop down menu.  Go to the "Advanced" tab and give Docker a bit more memory if you have enough to spare:
 
-![Docker memory settings](site/images/docker-memory.png)
+![Docker memory settings](images/docker-memory.png)
 
 Go to the "Kubernetes" tab and click on the option to enable Kuberentes:
 
-![Enable Kubernetes setting](site/images/docker-enable-k8s.png)
+![Enable Kubernetes setting](images/docker-enable-k8s.png)
 
 **Note** If you are behind an HTTP proxy you should also go to the "Proxies" tab and add your proxy details in there.
 
 Docker will download the Kuberentes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
 
-![Kubernetes running](site/iamges/docker-k8s-running.png)
+![Kubernetes running](images/docker-k8s-running.png)
 
 If you have used `kubectl` on your Mac before, you will have to make sure it is pointing to the right cluster and context.
 
