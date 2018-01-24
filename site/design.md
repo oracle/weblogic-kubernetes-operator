@@ -1,7 +1,7 @@
 
 # Design philosophy
 
-The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfil a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
+The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various lifecycle operations on a domain correctly.
 
 Human operators are normally responsible for starting and stopping environments, initiating backups, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.  The initial “Technology Preview” version of the operator does not have the capability to take on all of those responsibilities, but enumerating them here gives insight into the background context for making various design choices.
 
@@ -13,7 +13,7 @@ Like a human operator, the operator is designed to be event-based.  It waits for
 
 The operator is designed with security in mind from the outset.  Some examples of the specific security practices we follow are:
 
-*	During the deployment of the operator, Kubernetes roles are defined and assigned to the operator.  These roles are designed to give the operator the minimum amount of privileges that it requires to perform its task.  
+*	During the deployment of the operator, Kubernetes roles are defined and assigned to the operator.  These roles are designed to give the operator the minimum amount of privileges that it requires to perform its tasks.  
 *	The code base is regularly scanned with security auditing tools and any issues that are identified are promptly resolved.  
 *	All HTTP communications – between the operator and an external client, between the operator and WebLogic Administration Servers, and so on – are configured to require SSL and TLS 1.2.  
 *	Unused code is pruned from the code base regularly.  
