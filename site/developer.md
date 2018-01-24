@@ -49,7 +49,7 @@ The Javadoc is also available in the GitHub repository at [https://oracle.github
 
 ## Running integration tests
 
-The project includes integration tests that can be run against a Kubernetes *cluster*.  If you want to use these tests, you will need to provide your own Kubernetes *cluster*.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.x and 1.8.x currently.  There are some issues with 1.9, which are being worked on.
+The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.x and 1.8.x currently.  There are some issues with 1.9, which are being worked on.
 
 To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
 
@@ -73,7 +73,7 @@ To run the tests, uncomment the following `execution` element in the `pom.xml` f
 -->
 ```
 
-These test assume that the RBAC definitions exist on the Kubernetes *cluster*.  To create them, update the inputs file and run the *operator* installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
+These test assume that the RBAC definitions exist on the Kubernetes cluster.  To create them, update the inputs file and run the operator installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
 
 ```
 ./create-weblogic-operator.sh -g -i create-operator-inputs.yaml
@@ -93,11 +93,11 @@ The operator can be run from an IDE, which is useful for debugging.  In order to
 
 Configure the IDE to run the class `oracle.kubernetes.operator.Main`.
 
-You may need to create a directory called `/operator` on your machine.  Please be aware that the *operator* code is targeted to Linux, and although it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes *cluster* and use remote debugging instead.
+You may need to create a directory called `/operator` on your machine.  Please be aware that the operator code is targeted to Linux, and although it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes cluster and use remote debugging instead.
 
 ## Running the operator in a Kubernetes cluster
 
-To run the *operator* in a Kubernetes *cluster*, you need to build the Docker image and then deploy it to your *cluster*.
+To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.
 
 After you have run the build (that is, `mvn clean install`), create the Docker image as follows:
 
@@ -119,7 +119,7 @@ docker load < /some/path/operator.tar
 
 Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
 
-To create the Kuberentes YAML file to deploy the *operator*, update the inputs file (`create-operator-inputs.yaml`) and make sure the `imagePullPolicy` is set to `Never` and the `image` matches the name you used in your `docker build` command.  Then run the *operator* installation script to deploy the *operator*:
+To create the Kuberentes YAML file to deploy the operator, update the inputs file (`create-operator-inputs.yaml`) and make sure the `imagePullPolicy` is set to `Never` and the `image` matches the name you used in your `docker build` command.  Then run the operator installation script to deploy the operator:
 
 ```
 ./create-weblogic-operator.sh -i create-operator-inputs.yaml
