@@ -1182,13 +1182,14 @@ public class CallBuilder {
     /**
      * Called during {@link ResponseStep#onFailure(Packet, ApiException, int, Map)} to decide
      * if another retry attempt will occur.
+     * @param conflictStep Conflict step, or null
      * @param packet Packet
      * @param e ApiException thrown by Kubernetes client; will be null for simple timeout
      * @param statusCode HTTP response status code; will be 0 for simple timeout
      * @param responseHeaders HTTP response headers; will be null for simple timeout
      * @return Desired next action which should specify retryStep.  Return null when call will not be retried.
      */
-    public NextAction doPotentialRetry(Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders);
+    public NextAction doPotentialRetry(Step conflictStep, Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders);
     
     /**
      * Called when retry count, or other statistics, should be reset, such as when partial list 
@@ -1211,7 +1212,7 @@ public class CallBuilder {
     }
 
     @Override
-    public NextAction doPotentialRetry(Packet packet, ApiException e, int statusCode,
+    public NextAction doPotentialRetry(Step conflictStep, Packet packet, ApiException e, int statusCode,
         Map<String, List<String>> responseHeaders) {
       // Check statusCode, many statuses should not be retried
       // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
@@ -1231,6 +1232,17 @@ public class CallBuilder {
         
         NextAction na = new NextAction();
         na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        return na;
+      } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
+        // Conflict is an optimistic locking failure.  Therefore, we can't
+        // simply retry the request.  Instead, application code needs to rebuild
+        // the request based on latest contents.  If provided, a confict step will do that.
+        
+        // exponential back-off
+        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        
+        NextAction na = new NextAction();
+        na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;
       }
       
