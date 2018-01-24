@@ -108,7 +108,7 @@ Like what you see?  Read on for all the nitty-gritty details...
 
 ## Installation
 
-Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.
+Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.  If you need help setting up a Kubernetes environment please check our [cheat sheets](site/k8s_setup.md).
 
 The overall process of installing and configuring the *operator* and using it to manage WebLogic *domains* consists of the following steps.  The provided scripts will perform most of these steps, but some must be performed manually:
 

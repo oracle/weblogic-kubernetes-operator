@@ -145,6 +145,10 @@ This project has adopted the following coding standards:
 
 Write me
 
+### Watch package
+
+The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time. As such it is not ideally suited our use case, where a continuous stream of watches was desired, with watch events generated in real-time. The watch-wrapper in this repository extends the default Watch API to provide a continuous stream of watch events until the stream is specifically closed. It also provides `resourceVersion` tracking to exclude events that have already been seen.  The Watch-wrapper provides callbacks so events, as they occur, can trigger actions.
+
 ## Asynchronous call model
 
 Write me

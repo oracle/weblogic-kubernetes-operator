@@ -26,6 +26,12 @@ build:
         goals: clean install
         version: 3.5.2
         cache_repo: true
+    - script:
+        name: publish test image
+        code: |
+          echo "publish this container with the commit id as the tag, so it is accessible to the integration-test"
+
+# dockerfile info:
 
 # RUN mkdir /operator
 # ENV PATH=$PATH:/operator
@@ -39,15 +45,26 @@ build:
 
 
 # This pipeline runs the integration tests against a real k8s cluster.
-integration-test:
+integration-test:  # run in weblogic container so that wlst is available
   steps:
-    - kubectl:
-        server: $KUBERNETES_MASTER
-        token: $KUBERNETES_TOKEN
-        insecure-skip-tls-verify: true
-        command: get all
+    - script:
+      name: Run integration tests
+      code: |
+        # work out if we can set up a plain VM in the same compartment, that we can use as a "client" machine
+        # to run the tests from, meaning NodePorts on the cluster will not need to be exposed through the OCI
+        # firewall to the public internet, just within our OCI compartment.
+        # terraform may have a bastion host with ssh tunneling ?
 
-# This pipeline promotes the docker image
+        # set up kubeconfig is set up to point to the cluster in OCI
+        # create a job yaml that mounts the PV's and empties them
+        kubectl create job ....
+        /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
+        /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
+        if [ $! == 0 ]; then
+          fail()
+        fi
+
+# This pipeline promotes the docker image after tests have passed
 promote-image:
   steps:
     - script:
