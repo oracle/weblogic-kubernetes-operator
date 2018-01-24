@@ -4,26 +4,31 @@ Note that there is a short video demonstration of the installation process avail
 
 ## Register for access to the Oracle Container Registry
 
-The *operator* Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com](https://container-registry.oracle.com) and clicking on the Register link.
+The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com](https://container-registry.oracle.com) and clicking on the Register link.
 
 **ATTENTION EARLY ACCESS USERS** You will not need to register for Oracle Container Registry for early access.
 
 ## Setting up secrets to access the Oracle Container Registry
 
-In order to obtain the *operator* Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command:
+In order to obtain the operator Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command:
 
 ```
 kubectl create secret docker-registry SECRET_NAME
+  -n NAMESPACE
   --docker-server=container-registry.oracle.com
   --docker-username=YOUR_USERNAME
   --docker-password=YOUR_PASSWORD
   --docker-email=YOUR_EMAIL
 ```
+
+Note that you can create the `docker-registry` secrets in the `default` namespace by omitting the `-n NAMESPACE`, or if you prefer you can create it in the namespace you plan to run the operator in. 
+
 **ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.  
 Please create your secret as shown below:
 
 ```
 kubectl create secret docker-registry earlybird-secret
+  -n weblogic-operator
   --docker-server=quay.io
   --docker-username=earlybird
   --docker-password=welcome1
@@ -34,7 +39,7 @@ In this command, replace the uppercase items with the appropriate values. The `S
 
 ## Customizing the operator parameters file
 
-The *operator* is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.  
+The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.  
 
 The following parameters must be provided in the input file:
 
@@ -42,22 +47,22 @@ The following parameters must be provided in the input file:
 
 | Parameter	| Definition	| Default |
 | --- | --- | --- |
-| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the *operator* will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to custom-cert. | |
+| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to custom-cert. | |
 | externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to custom-cert. | |
-| externalRestOption	| Write me.  Allowed values: <br/>- `none` Write me <br/>- `self-signed-cert` The *operator* will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `custom-cert` Write me. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
+| externalRestOption	| Write me.  Allowed values: <br/>- `none` Write me <br/>- `self-signed-cert` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `custom-cert` Write me. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
 | externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
-| namespace	| The Kubernetes *namespace* that the *operator* will be deployed in.  It is recommended that a *namespace* be created for the *operator* rather than using the `default` namespace.	| weblogic-operator |
-| targetNamespaces	| A list of the Kubernetes *namespaces* that may contain WebLogic *domains* that the *operator* will manage.  The *operator* will not take any action against a *domain* that is in a *namespace* not listed here.	| default |
-| remoteDebugNodePort	| Tom is adding a debug on/off parameter <br/>If the debug parameter if set to on, then the *operator* will start a Java remote debug server on the provided port and will suspend execution until a remote debugger has attached.	| 30999 |
-| restHttpsNodePort	| The NodePort number that should be allocated for the *operator* REST server should listen for HTTPS requests on. 	| 31001 |
-| serviceAccount	| The name of the *service account* that the *operator* will use to make requests to the Kubernetes API server. |	weblogic-operator |
-| loadBalancer	| Determines which load balancer should be installed to provide load balancing for WebLogic *clusters*.  Allowed values are:<br/>-	`none` – do not configure a load balancer<br/>- `traefik` – configure the Traefik *ingress* provider<br/>- `nginx` – reserved for future use<br/>- `ohs` – reserved for future use |	traefik |
+| namespace	| The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.	| weblogic-operator |
+| targetNamespaces	| A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here.	| default |
+| remoteDebugNodePort	| Tom is adding a debug on/off parameter <br/>If the debug parameter if set to on, then the operator will start a Java remote debug server on the provided port and will suspend execution until a remote debugger has attached.	| 30999 |
+| restHttpsNodePort	| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. 	| 31001 |
+| serviceAccount	| The name of the service account that the operator will use to make requests to the Kubernetes API server. |	weblogic-operator |
+| loadBalancer	| Determines which load balancer should be installed to provide load balancing for WebLogic clusters.  Allowed values are:<br/>-	`none` – do not configure a load balancer<br/>- `traefik` – configure the Traefik Ingress provider<br/>- `nginx` – reserved for future use<br/>- `ohs` – reserved for future use |	traefik |
 | loadBalancerWebPort	| The NodePort for the load balancer to accept user traffic. |	30305 |
-| enableELKintegration	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, Logstash and Kibana will be installed, and Logstash will be configured to export the *operator’s* logs to ElasticSearch. |	false |
+| enableELKintegration	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, Logstash and Kibana will be installed, and Logstash will be configured to export the operator’s logs to ElasticSearch. |	false |
 
 ## Decide which REST configuration to use
 
-The *operator* provides three REST certificate options:
+The operator provides three REST certificate options:
 
 *	`none` will disable the REST server.
 *	`self-signed-cert` will generate self-signed certificates.
@@ -65,11 +70,11 @@ The *operator* provides three REST certificate options:
 
 ## Decide which options to enable
 
-The *operator* provides some optional features that can be enabled in the configuration file.
+The operator provides some optional features that can be enabled in the configuration file.
 
 ### Load Balancing
 
-The *operator* can install the Traefik *ingress* provider to provide load balancing for web applications running in WebLogic *clusters*.  If enabled, an instance of Traefik and an *ingress* will be created for each WebLogic *cluster*.  Additional configuration is performed when creating the *domain*.
+The operator can install the Traefik Ingress provider to provide load balancing for web applications running in WebLogic clusters.  If enabled, an instance of Traefik and an Ingress will be created for each WebLogic cluster.  Additional configuration is performed when creating the domain.
 
 Note that the Technology Preview release provides only basic load balancing:
 
@@ -81,7 +86,7 @@ Note that ingresses are not created for servers that are not part of a WebLogic 
 
 ### Log integration with ELK
 
-The *operator* can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` *namespace*, and a Logstash pod will be created in the *operator’s namespace*.  Logstash will be configured to publish the *operator’s* logs into Elasticsearch, and the log data will be available for visualization and analysis in Kibana.
+The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a Logstash pod will be created in the operator’s namespace.  Logstash will be configured to publish the operator’s logs into Elasticsearch, and the log data will be available for visualization and analysis in Kibana.
 
 To enable the ELK integration, set the `enableELKintegration` option to `true`.
 
@@ -91,7 +96,7 @@ Write me
 
 ## Deploying the operator to a Kubernetes cluster
 
-To deploy the *operator*, run the deployment script and give it the location of your inputs file:
+To deploy the operator, run the deployment script and give it the location of your inputs file:
 
 ```
 ./create-weblogic-operator.sh –i /path/to/create-operator-inputs.yaml
@@ -102,13 +107,13 @@ To deploy the *operator*, run the deployment script and give it the location of 
 The script will carry out the following actions:
 
 *	A set of Kubernetes YAML files will be created from the inputs provided.
-*	A *namespace* will be created for the *operator*.
-*	A *service account* will be created in that *namespace*.
-*	If ELK integration was enabled, a *persistent volume* for ELK will be created.
-*	A set of RBAC *roles* and *bindings* will be created.
-*	The *operator* will be deployed.
+*	A namespace will be created for the operator.
+*	A service account will be created in that namespace.
+*	If ELK integration was enabled, a persistent volume for ELK will be created.
+*	A set of RBAC roles and bindings will be created.
+*	The operator will be deployed.
 *	If requested, the load balancer will be deployed.
-*	If requested, ELK will be deployed and logstash will be configured for the *operator’s* logs.
+*	If requested, ELK will be deployed and logstash will be configured for the operator’s logs.
 
 The script will validate each action before it proceeds.
 
@@ -118,7 +123,7 @@ Write me
 
 ### Could not pull Docker image
 
-If the *operator* has not started, Kubernetes may not have been able to pull the Docker image from the Docker registry.  Check the Docker registry *secret* is correct, or log on to the Kubernetes master and manually pull the image using these commands:
+If the operator has not started, Kubernetes may not have been able to pull the Docker image from the Docker registry.  Check the Docker registry secret is correct, or log on to the Kubernetes master and manually pull the image using these commands:
 
 ```
 docker login container-registry.oracle.com
@@ -292,7 +297,7 @@ write something
 
 ## Verifying the operator deployment
 
-The script does validate each step was successful before continuing, however it may still be desirable to perform manual validation, particularly the first time the *operator* is deployed, in order to become more familiar with the various artifacts that are created.  This section provides details on how to verify the operator deployment.
+The script does validate each step was successful before continuing, however it may still be desirable to perform manual validation, particularly the first time the operator is deployed, in order to become more familiar with the various artifacts that are created.  This section provides details on how to verify the operator deployment.
 
 Issue the following command to check the operator is deployed:
 
@@ -300,9 +305,9 @@ Issue the following command to check the operator is deployed:
 kubectl -n NAMESPACE get all
 ```
 
-Replace `NAMESPACE` with the *namespace* the *operator* is deployed in.
+Replace `NAMESPACE` with the namespace the operator is deployed in.
 
-Copy the *pod* name from the output of the previous command, and use the following command to obtain the logs of the *operator*:
+Copy the pod name from the output of the previous command, and use the following command to obtain the logs of the operator:
 
 ```
 kubectl -n NAMESPACE logs POD_NAME
