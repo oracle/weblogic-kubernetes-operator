@@ -158,8 +158,8 @@ Our expectation is that certain customers will task the operator with managing t
 
 The user-level thread pattern is implemented by the classes in the `oracle.kubernetes.operator.work` package.
 
-* `Engine`: The executor service and factory for Fibers.
-* `Fiber`: The user-level thread.  Fibers represent the execution of a single processing flow through a series of Steps.  `Fibers` may be suspended and later resumed and do not consume a `Thread` while suspended.
+* `Engine`: The executor service and factory for `Fibers`.
+* `Fiber`: The user-level thread.  `Fibers` represent the execution of a single processing flow through a series of `Steps`.  `Fibers` may be suspended and later resumed and do not consume a `Thread` while suspended.
 * `Step`: Individual CPU-bound activity in a processing flow.
 * `Packet`: Context of the processing flow.
 * `NextAction`: Used by a `Step` when it returns control to the `Fiber` to indicate what should happen next.  Common 'next actions' are to execute another `Step` or to suspend the `Fiber`.
