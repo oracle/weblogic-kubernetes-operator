@@ -52,7 +52,7 @@ spec:
           - name: DB_PDB
             value: OraPdb
           - name: DB_PASSWD
-            value: Welcome1
+            value: *password*
           - name: DB_DOMAIN
             value: my.domain.com
           - name: DB_BUNDLE
