@@ -79,7 +79,7 @@ The following features are not certified or supported in the Technology Preview 
 *	Multitenancy
 *	Production redeployment
 
-Please consult My Oracle Support Note XXXXX for up to date information about the features of WebLogic Server that are supported in Kubernetes environments.
+Please consult My Oracle Support [Doc ID 2349228.1](https://support.oracle.com/rs?type=doc&id=2349228.1) for up to date information about the features of WebLogic Server that are supported in Kubernetes environments.
 
 # API documentation
 
