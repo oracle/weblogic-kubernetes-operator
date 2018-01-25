@@ -295,6 +295,12 @@ You should add `docker-for-desktop` to your `/etc/hosts` file entry for 127.0.0.
 ::1             localhost
 ```
 
+You may also have to tell `kubectl` to ignore the certificate using this command:
+
+```
+kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true 
+```
+
 Then validate you are talking to the Kubernetes in Docker with these commands:
 
 ```
