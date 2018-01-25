@@ -39,6 +39,15 @@ kubectl create secret docker-registry earlybird-secret
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
 
+## Pull the operator image
+
+You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
+
+```
+docker login container-registry.oracle.com
+docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
+```
+
 ## Customizing the operator parameters file
 
 The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.  

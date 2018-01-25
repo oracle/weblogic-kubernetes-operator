@@ -28,6 +28,29 @@ In this command, replace `NAMESPACE` with the desired namespace.
 
 **Note:** Kubernetes does not allow uppercase characters in the `NAMESPACE`.  Only lowercase characters, numbers, and the hyphen character are allowed.
 
+## Setting up secrets to access the Docker Store
+
+In order to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
+
+```
+kubectl create secret docker-registry SECRET_NAME
+  -n NAMESPACE
+  --docker-server=docker.com
+  --docker-username=YOUR_USERNAME
+  --docker-password=YOUR_PASSWORD
+  --docker-email=YOUR_EMAIL
+```
+
+In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  It is generally easier to manually pull the image in advance, as described in the next section.
+
+## Pull the WebLogic Server image
+
+You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
+
+```
+docker login
+docker pull store/oracle/weblogic:12.2.1.3
+```
 ## Setting up secrets for the Administration Server credentials
 
 The username and password credentials for access to the Administration Server must be stored in a Kubernetes secret in the same namespace that the domain will run in.  The script does not create the secret in order to avoid storing the credentials in a file.  Oracle recommends that this command be executed in a secure shell and appropriate measures be taken to protect the security of the credentials.
