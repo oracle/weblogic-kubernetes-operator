@@ -28,7 +28,7 @@ Running on a Kubernetes Cluster --
 
 ### WebLogic Server Application setup ###  
 
-1. Create a NodePort service so the domain1 admin console can be access from a browser
+1. Create a NodePort service so the domain1 Administration Console can be access from a browser
 
    kubectl expose pod domain1-admin-server --type=NodePort --name=domain1-7001 -n domain1
    kubectl -n domain1 get service domain1-7001
@@ -37,15 +37,15 @@ Running on a Kubernetes Cluster --
 
 3. Using the external service port, use your browser to go to http://<hostname>:<nodeport>/console
 
-4. Login to the admin server using weblogic/welcome1 as the login credentials.
+4. Login to the Administration Server using weblogic/*password* as the login credentials.
 
    - Deploy testwebapp.war and wls-exporter.war to all managed servers.
    - Start each deployed application
 
-5. For each started managed server it is necessary to set the Prometheus annotations
+5. For each started Managed Server, it is necessary to set the Prometheus annotations
    so that the servers are recognized by Prometheus and it will fetch the metrics.
 
-   - For each managed server pod set the following Prometheus annotations:
+   - For each Managed Server pod, set the following Prometheus annotations:
 
 	prometheus.io/port: "8001"
 	prometheus.io/path: /wls-exporter/metrics
@@ -54,8 +54,8 @@ Running on a Kubernetes Cluster --
     kubectl -n domain1 edit pod domain1.managed-serverN
 
     Note:
-    Since the operator does not support changed annotations this procedure is only
-    applicable to a running pod.
+    Because the operator does not support changed annotations, this procedure is
+    applicable only to a running pod.
 
 ### Setting up the webhook for AlertManager ###
 

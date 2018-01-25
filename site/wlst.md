@@ -26,7 +26,7 @@ Welcome to WebLogic Server Administration Scripting Shell
 
 Type help() for help on available commands
 
-wls:/offline> connect('weblogic','welcome1','t3:// kubernetes001:30012')
+wls:/offline> connect('weblogic','*password*','t3:// kubernetes001:30012')
 Connecting to t3:// kubernetes001:30012 with userid weblogic ...
 Successfully connected to Admin Server "admin-server" that belongs to domain "base_domain".
 
