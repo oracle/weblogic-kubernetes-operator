@@ -1,6 +1,6 @@
 # Oracle WebLogic Server Kubernetes Operator
 
-[![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/s/master "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530) Built with [Wercker](http://www.wercker.com)
+[![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/master "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530) Built with [Wercker](http://www.wercker.com)
 
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads – many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
 
@@ -63,7 +63,7 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
 
-Note: Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, calico networking appears to work in the limited testing we have done so far. 
+Note: Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, calico networking appears to work in the limited testing we have done so far.
 
 # Restrictions
 
