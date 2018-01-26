@@ -41,7 +41,9 @@ spec:
         - name: secrets
           secret:
             secretName: %SECRET_NAME%
-            
+      %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_STORE_REGISTRY_SECRET%
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -220,8 +222,8 @@ data:
     sleep 15
     echo "Finished waiting for the nodemanager to start"
 
-    echo "Update JVM arguments" 
-    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp} 
+    echo "Update JVM arguments"
+    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
 
     echo "Start the server"
     wlst.sh -skipWLSModuleScanning ${pyFile}
@@ -250,7 +252,7 @@ data:
       checkFileExists ${pyFile}
 
       # Create a liveness probe script. It checks a WL server state file maintained by the node manager.
-      # The script and 'EOF' on the following lines must not be indented! 
+      # The script and 'EOF' on the following lines must not be indented!
 
       scriptFile=${nmdir}/livenessProbe.sh
 
@@ -360,7 +362,7 @@ data:
     done
 
     echo "Successfully Completed"
-    
+
   create-domain.py: |-
     # This python script is used to create a WebLogic domain
 
