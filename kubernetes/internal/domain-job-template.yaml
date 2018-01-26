@@ -1,50 +1,5 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: domain-%DOMAIN_UID%-job
-  namespace: %NAMESPACE%
-spec:
-  template:
-    metadata:
-      labels:
-        app: domain-%DOMAIN_UID%-job
-        weblogic.domainUID: %DOMAIN_UID%
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: domain-job
-          image: store/oracle/weblogic:12.2.1.3
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 7001
-          volumeMounts:
-          - mountPath: /u01/weblogic
-            name: config-map-scripts
-          - mountPath: /shared
-            name: pv-storage
-          - mountPath: %SECRETS_MOUNT_PATH%
-            name: secrets
-          command: ["/bin/sh"]
-          args: ["/u01/weblogic/create-domain-job.sh"]
-          env:
-            - name: SHARED_PATH
-              value: "/shared"
-      volumes:
-        - name: config-map-scripts
-          configMap:
-            name: domain-%DOMAIN_UID%-scripts
-        - name: pv-storage
-          persistentVolumeClaim:
-            claimName: %PERSISTENT_VOLUME_CLAIM%
-        - name: secrets
-          secret:
-            secretName: %SECRET_NAME%
-      %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_STORE_REGISTRY_SECRET%
-
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -222,8 +177,8 @@ data:
     sleep 15
     echo "Finished waiting for the nodemanager to start"
 
-    echo "Update JVM arguments"
-    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
+    echo "Update JVM arguments" 
+    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp} 
 
     echo "Start the server"
     wlst.sh -skipWLSModuleScanning ${pyFile}
@@ -252,7 +207,7 @@ data:
       checkFileExists ${pyFile}
 
       # Create a liveness probe script. It checks a WL server state file maintained by the node manager.
-      # The script and 'EOF' on the following lines must not be indented!
+      # The script and 'EOF' on the following lines must not be indented! 
 
       scriptFile=${nmdir}/livenessProbe.sh
 
@@ -362,7 +317,7 @@ data:
     done
 
     echo "Successfully Completed"
-
+    
   create-domain.py: |-
     # This python script is used to create a WebLogic domain
 
@@ -525,3 +480,48 @@ data:
     # Exit WLST
     # =========
     exit()
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: domain-%DOMAIN_UID%-job
+  namespace: %NAMESPACE%
+spec:
+  template:
+    metadata:
+      labels:
+        app: domain-%DOMAIN_UID%-job
+        weblogic.domainUID: %DOMAIN_UID%
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: domain-job
+          image: store/oracle/weblogic:12.2.1.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7001
+          volumeMounts:
+          - mountPath: /u01/weblogic
+            name: config-map-scripts
+          - mountPath: /shared
+            name: pv-storage
+          - mountPath: %SECRETS_MOUNT_PATH%
+            name: secrets
+          command: ["/bin/sh"]
+          args: ["/u01/weblogic/create-domain-job.sh"]
+          env:
+            - name: SHARED_PATH
+              value: "/shared"
+      volumes:
+        - name: config-map-scripts
+          configMap:
+            name: domain-%DOMAIN_UID%-scripts
+        - name: pv-storage
+          persistentVolumeClaim:
+            claimName: %PERSISTENT_VOLUME_CLAIM%
+        - name: secrets
+          secret:
+            secretName: %SECRET_NAME%
+      %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_STORE_REGISTRY_SECRET%
