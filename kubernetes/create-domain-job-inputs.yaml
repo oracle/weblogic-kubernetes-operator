@@ -62,7 +62,8 @@ secretsMountPath: /var/run/secrets-domain1
 secretName: domain1-weblogic-credentials
 
 # Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
-imagePullSecretName: docker-store-secret
+# The presence of the secret will be validated when this parameter is enabled.
+#imagePullSecretName: docker-store-secret
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012

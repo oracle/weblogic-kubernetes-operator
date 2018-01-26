@@ -105,14 +105,25 @@ function validateLoadBalancer {
 }
 
 #
+# Function to validate a kubernetes secret exists
+# $1 - the name of the secret
+# $2 - namespace
+function validateSecretExists {
+  # Verify the secret exists
+  echo "Checking to see if the secret ${1} exists in namespace ${2}"
+  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${1} was not found in namespace ${2}"
+  fi
+}
+
+#
 # Function to valid the domain secret
 #
 function validateDomainSecret {
   # Verify the secret exists
-  SECRET=`kubectl get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${secretName} was not found in namespace ${namespace}"
-  fi
+  validateSecretExists ${secretName} ${namespace}
+  failIfValidationErrors
 
   # Verify the secret contains a username
   SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
@@ -124,6 +135,34 @@ function validateDomainSecret {
   SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${secretName} in namespace ${namespace} does contain a password"
+  fi
+}
+
+#
+# Function to validate the image pull secret name
+#
+function validateImagePullSecretName {
+  IMAGE_PULL_SECRET_EXISTS=false
+  if [ ! -z ${imagePullSecretName} ]; then
+    IMAGE_PULL_SECRET_EXISTS=true
+    imagePullSecretPrefix=""
+  else
+    # Set name blank when not specified, and comment out the yaml
+    imagePullSecretName=""
+    imagePullSecretPrefix="#"
+  fi
+}
+
+#
+# Function to validate the image pull secret exists
+#
+function validateImagePullSecret {
+
+  # The kubernetes secret for pulling images from the docker store is optional.
+  # If it was specified, make sure it exists.
+  if [ "${IMAGE_PULL_SECRET_EXISTS}" = true ]; then
+    validateSecretExists ${imagePullSecretName} ${namespace}
+    failIfValidationErrors
   fi
 }
 
@@ -234,10 +273,10 @@ function initialize {
   validateInputParamsSpecified adminPort adminServerName createDomainScript domainName domainUid clusterName managedServerCount managedServerStartCount managedServerNameBase
   validateInputParamsSpecified managedServerPort persistencePath persistenceSize persistenceVolumeClaimName persistenceVolumeName
   validateInputParamsSpecified productionModeEnabled secretsMountPath secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
-  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer imagePullSecretName
+  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer
   validateStorageClass
   validateLoadBalancer
-  validateDomainSecret
+  validateImagePullSecretName
   failIfValidationErrors
 }
 
@@ -295,6 +334,7 @@ function createYamlFiles {
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${jobOutput}
   sed -i -e "s:%SECRET_NAME%:${secretName}:g" ${jobOutput}
   sed -i -e "s:%DOCKER_STORE_REGISTRY_SECRET%:${imagePullSecretName}:g" ${jobOutput}
+  sed -i -e "s:%IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${jobOutput}
   sed -i -e "s:%SECRETS_MOUNT_PATH%:${secretsMountPath}:g" ${jobOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${jobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${jobOutput}
@@ -553,6 +593,12 @@ createYamlFiles
 
 # All done if the generate only option is true
 if [ "${generateOnly}" = false ]; then
+  # Check that the domain secret exists and contains the required elements
+  validateDomainSecret
+
+  # Check if the optional docker secret exists
+  validateImagePullSecret
+
   # Create the persistent volume
   createPV
 
