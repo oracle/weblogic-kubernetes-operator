@@ -1,5 +1,5 @@
 # Oracle WebLogic Server Kubernetes Operator
- 
+
 Built with [Wercker](http://www.wercker.com)  
 [![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/master "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
 
