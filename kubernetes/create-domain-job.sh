@@ -162,13 +162,13 @@ function parseCommonInputs {
   source ${exportValuesFile}
 
   if [[ ${persistenceVolumeName} != ${domainUid}-* ]] ; then
-    echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it 
+    echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
     persistenceVolumeName=${domainUid}-${persistenceVolumeName}
     echo persistenceVolumeName is now ${persistenceVolumeName}
   fi
 
   if [[ ${persistenceVolumeClaimName} != ${domainUid}-* ]] ; then
-    echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it 
+    echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
     persistenceVolumeClaimName=${domainUid}-${persistenceVolumeClaimName}
     echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
   fi
@@ -234,7 +234,7 @@ function initialize {
   validateInputParamsSpecified adminPort adminServerName createDomainScript domainName domainUid clusterName managedServerCount managedServerStartCount managedServerNameBase
   validateInputParamsSpecified managedServerPort persistencePath persistenceSize persistenceVolumeClaimName persistenceVolumeName
   validateInputParamsSpecified productionModeEnabled secretsMountPath secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
-  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer
+  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer imagePullSecretName
   validateStorageClass
   validateLoadBalancer
   validateDomainSecret
@@ -294,6 +294,7 @@ function createYamlFiles {
   cp ${jobInput} ${jobOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${jobOutput}
   sed -i -e "s:%SECRET_NAME%:${secretName}:g" ${jobOutput}
+  sed -i -e "s:%DOCKER_STORE_REGISTRY_SECRET%:${imagePullSecretName}:g" ${jobOutput}
   sed -i -e "s:%SECRETS_MOUNT_PATH%:${secretsMountPath}:g" ${jobOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${jobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${jobOutput}
@@ -573,7 +574,5 @@ if [ "${generateOnly}" = false ]; then
   outputJobSummary
 fi
 
-echo 
+echo
 echo Completed
-
-
