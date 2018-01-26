@@ -39,6 +39,37 @@ kubectl create secret docker-registry earlybird-secret
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
 
+## Build the Docker image for the operator
+
+To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.
+
+First run the build using this command:
+
+```
+mvn clean install
+```
+
+Then create the Docker image as follows:
+
+```
+docker build -t weblogic-kubernetes-operator:markxnelson --no-cache=true .
+```
+
+We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we just put in the GitHub ID of the developer.
+
+Next, upload your image to your Kubernetes server as follows:
+
+```
+# on your build machine
+docker save weblogic-kubernetes-operator:markxnelson > operator.tar
+scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
+# on the Kubernetes server
+docker load < /some/path/operator.tar
+```
+
+Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
+
+
 ## Pull the operator image
 
 You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
