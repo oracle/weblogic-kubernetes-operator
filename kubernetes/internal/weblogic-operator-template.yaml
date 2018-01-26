@@ -8,6 +8,29 @@
 #### note: comments with four hashes (like this one) provide information to internal
 #### developers and will be removed before publishing the code externally
 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-config-map
+  namespace: %NAMESPACE%
+data:
+  serviceaccount: %ACCOUNT_NAME%
+  targetNamespaces: "%TARGET_NAMESPACES%"
+  externalOperatorCert: %EXTERNAL_CERT_DATA%
+  internalOperatorCert: %INTERNAL_CERT_DATA%
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: operator-secrets
+  namespace: %NAMESPACE%
+type: Opaque
+data:
+  externalOperatorKey: %EXTERNAL_KEY_DATA%
+  internalOperatorKey: %INTERNAL_KEY_DATA%
+
+---
 apiVersion: apps/v1beta1 # for versions before 1.6.0 use extensions/v1beta1
 kind: Deployment
 metadata:
@@ -114,26 +137,3 @@ spec:
   ports:
     - port: 8082
       name: rest-https
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: operator-config-map
-  namespace: %NAMESPACE%
-data:
-  serviceaccount: %ACCOUNT_NAME%
-  targetNamespaces: "%TARGET_NAMESPACES%"
-  externalOperatorCert: %EXTERNAL_CERT_DATA%
-  internalOperatorCert: %INTERNAL_CERT_DATA%
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: operator-secrets
-  namespace: %NAMESPACE%
-type: Opaque
-data:
-  externalOperatorKey: %EXTERNAL_KEY_DATA%
-  internalOperatorKey: %INTERNAL_KEY_DATA%
