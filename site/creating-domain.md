@@ -35,7 +35,7 @@ In order to obtain the WebLogic Server Docker image from the Docker Store, which
 ```
 kubectl create secret docker-registry SECRET_NAME
   -n NAMESPACE
-  --docker-server=docker.com
+  --docker-server=index.docker.io/v1/
   --docker-username=YOUR_USERNAME
   --docker-password=YOUR_PASSWORD
   --docker-email=YOUR_EMAIL
@@ -109,6 +109,7 @@ The following parameters must be provided in the input file:
 | productionModeEnabled	| Boolean indicating if production mode is enabled for the domain. | true |
 | secretsMountPath |	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
 | secretName	| Name of the Kubernetes secret for the Administration Server's username and password. |	domain1-weblogic-credentials |
+| imagePullSecretName | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | docker-store-secret |
 | T3ChannelPort	| Port for the T3Channel of the NetworkAccessPoint.	| 7002 |
 | namespace	| The Kubernetes namespace to create the domain in.	| default |
 | loadBalancerAdminPort	| The node port for the load balancer to accept admin requests.	| 30315 |
