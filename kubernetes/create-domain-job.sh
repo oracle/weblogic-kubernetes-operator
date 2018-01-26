@@ -105,6 +105,29 @@ function validateLoadBalancer {
 }
 
 #
+# Function to valid the domain secret
+#
+function validateDomainSecret {
+  # Verify the secret exists
+  SECRET=`kubectl get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${secretName} was not found in namespace ${namespace}"
+  fi
+
+  # Verify the secret contains a username
+  SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${secretName} in namespace ${namespace} does contain a username"
+  fi
+
+  # Verify the secret contains a password
+  SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${secretName} in namespace ${namespace} does contain a password"
+  fi
+}
+
+#
 # Function to parse a yaml file and generate the bash exports
 # $1 - Input filename
 # $2 - Output filename
@@ -214,6 +237,7 @@ function initialize {
   validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer
   validateStorageClass
   validateLoadBalancer
+  validateDomainSecret
   failIfValidationErrors
 }
 
@@ -232,11 +256,7 @@ function deleteK8sObj {
   K8SOBJ=`kubectl get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
   if [ "${K8SOBJ}" = "1" ]; then
     echo Deleting $2 using $3
-    if [ -f $3 ]; then
-      kubectl delete -f $3
-    else
-      Unable to delete $2 because the file $3 was not found
-    fi
+    kubectl delete -f $3
   fi
 }
 
@@ -410,6 +430,18 @@ function createDomain {
     JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUid}" | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
     echo "$JOB_INFO"
+
+    # Terminate the retry loop when a fatal error has already occurred.  Search for "ERROR:" in the job log file
+    if [ "$JOB_STATUS" != "Completed" ]; then
+      JOB_ERRORS=`kubectl logs jobs/$JOB_NAME -n ${namespace} | grep "ERROR:" `
+      ERR_COUNT=`echo $JOB_ERRORS | grep "ERROR:" | wc | awk ' {print $1; }'`
+      if [ "$ERR_COUNT" != "0" ]; then
+        echo A failure was detected in the log file for job $JOB_NAME
+        echo $JOB_ERRORS
+        echo Check the log output for additional information
+        fail "Exiting due to failure"
+      fi
+    fi
   done
 
   # Confirm the job pod is status completed
