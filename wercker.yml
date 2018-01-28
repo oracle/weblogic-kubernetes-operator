@@ -18,6 +18,7 @@ build:
         name: Hello
         code: |
           echo "Building Oracle WebLogic Server Kubernetes Operator..."
+          echo "The commit id is ${GIT_COMMIT:0:8}"
     - script:
       name: Install pre-reqs
       code: |
@@ -39,7 +40,7 @@ build:
         password: $QUAY_PASSWORD
         email: $QUAY_EMAIL
         repository: quay.io/markxnelson/weblogic-kubernetes-operator
-        tag: ${GIT_COMMIT:0:8}
+        tag: "${GIT_COMMIT:0:8}"
         working-dir: "/operator"
         cmd: "operator.sh"
         env: "PATH=$PATH:/operator"
