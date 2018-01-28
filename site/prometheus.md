@@ -4,20 +4,20 @@
 
 Note that there is a video demonstration of the Prometheus integration available [here](https://youtu.be/D7KWVXzzqx8).
 
-The [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter) provides the ability to export WebLogic and JVM metrics to Prometheus, from where they can be visualized in Grafana dashboards, and alerts can be created to initation scaling of WebLogic clusters.
+The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) provides the ability to export WebLogic and JVM metrics to Prometheus, from where they can be visualized in Grafana dashboards, and alerts can be created to initation scaling of WebLogic clusters.
 
 To enable this integration, users must complete the following steps:
 
-* Deploy the WLS Exporter to the WebLogic domains.
+* Deploy the WebLogic Monitoring Exporter to the WebLogic domains.
 * x.
 * y.
 
 
-## Deploy WLS Exporter on WebLogic Servers
+## Deploy WebLogic Monitoring Exporter on WebLogic Servers
 
-There are more detailed instructions in the [WLS Exporter repository](https://github.com/oracle/wls-monitoring-exporter) about how deploy the WLS Exporter, and you are encouraged to follow those steps.  A quick overview is presented here which will be satisfactory for most demo/trial scenarios:
+There are more detailed instructions in the [WebLogic Monitoring Exporter repository](https://github.com/oracle/wls-monitoring-exporter) about how deploy the WebLogic Monitoring Exporter, and you are encouraged to follow those steps.  A quick overview is presented here which will be satisfactory for most demo/trial scenarios:
 
-1. Obtain a clone of the WLS Exporter project:
+1. Obtain a clone of the WebLogic Monitoring Exporter project:
 
 ```
 git clone https://github.com/oracle/wls-monitoring-exporter
@@ -77,18 +77,18 @@ kubectl -n domain1 get service domain1-7001
 9. For each started Managed Server, it is necessary to set the Prometheus annotations
    so that the servers are recognized by Prometheus and it will fetch the metrics.
 
-For each Managed Server pod, set the following Prometheus annotations:
+For each Managed Server pod, set the following Prometheus annotations.  Care should be taked to ensure these are added as `annotations` and not `labels`:
 
 ```
-	prometheus.io/port: "8001"
-	prometheus.io/path: /wls-exporter/metrics
-	prometheus.io/scrape: "true"
+prometheus.io/port: "8001"
+prometheus.io/path: /wls-exporter/metrics
+prometheus.io/scrape: "true"
 ```
 
 This can be done by editing the pods:
 
 ```
-    kubectl -n domain1 edit pod domain1.managed-serverN
+kubectl -n domain1 edit pod domain1.managed-serverN
 ```
 
 Note:  Because the operator does not yet support copying these manually added annotations to a new pod, this procedure is applicable only to a running pod.  If a new pod is started, for example during a scale operation, the annotations would need to be added to that pod manually. Oracle plans to automate the creation of these annotations, so this step will not be necessary.
