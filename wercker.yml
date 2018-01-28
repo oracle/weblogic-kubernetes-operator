@@ -14,7 +14,6 @@
 #                                if branch == master
 #
 
-
 box:
   id: store/oracle/serverjre
   username: $DOCKER_USERNAME
@@ -99,15 +98,8 @@ promote-image:
         echo "Passed integration-tests, so pushing the image as 'latest'"
     # push the image to quay.io and tag it as "latest"
     # in reality, the image will already be there, so it is just updating the tag
-    - internal/docker-push:
-        username: $QUAY_USERNAME
-        password: $QUAY_PASSWORD
-        email: $QUAY_EMAIL
-        repository: quay.io/markxnelson/weblogic-kubernetes-operator
-        tag: latest
-        working-dir: "/operator"
-        cmd: "operator.sh"
-        env: "PATH=$PATH:/operator"
+
+    # use the quay.io REST API to change the tab "latest" to point to the image we just pushed and tested 
 
 dev:
   steps:
