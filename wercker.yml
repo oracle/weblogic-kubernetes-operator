@@ -30,10 +30,10 @@ build:
         name: Copy built-artifacts into the image
         code: |
           mkdir /operator
-          cp src/main/scripts/* /operator/
+          cp -R src/main/scripts/* /operator/
           cp target/weblogic-kubernetes-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
     # push the image to quay.io using the GIT commit id (first 8 chars) as the tag
-    # this image needs to be available to the integration-test pipeline for testing 
+    # this image needs to be available to the integration-test pipeline for testing
     - internal/docker-push:
         username: $QUAY_USERNAME
         password: $QUAY_PASSWORD
