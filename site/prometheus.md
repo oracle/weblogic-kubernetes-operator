@@ -4,64 +4,102 @@
 
 Note that there is a video demonstration of the Prometheus integration available [here](https://youtu.be/D7KWVXzzqx8).
 
-### Prometheus/Grafana Weblogic Cluster setup ###
+The [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter) provides the ability to export WebLogic and JVM metrics to Prometheus, from where they can be visualized in Grafana dashboards, and alerts can be created to initation scaling of WebLogic clusters.
 
-Configuration settings described here will yield a working configuration. Changing the
-settings must be done carefully to provide an alternative setup.
+To enable this integration, users must complete the following steps:
 
-### Prequisites ###
+* Deploy the WLS Exporter to the WebLogic domains.
+* x.
+* y.
 
-Running on a Kubernetes Cluster --
 
-1. Deploy the Weblogic Kubernetes Operator (create-weblogic-operator.sh)
+## Deploy WLS Exporter on WebLogic Servers
 
-   - In create-operator-inputs.yaml
-        targetNamespaces: domain1
+There are more detailed instructions in the [WLS Exporter repository](https://github.com/oracle/wls-monitoring-exporter) about how deploy the WLS Exporter, and you are encouraged to follow those steps.  A quick overview is presented here which will be satisfactory for most demo/trial scenarios:
 
-2. Create and start a domain (create-domain-job.sh)
+1. Obtain a clone of the WLS Exporter project:
 
-   - In create-domain-job-inputs.yaml
-        domainUid: domain1
-        managedServerCount: 4
-        managedServerStartCount: 2
-        namespace: domain1
+```
+git clone https://github.com/oracle/wls-monitoring-exporter
+```
 
-### WebLogic Server Application setup ###  
+2. Build the Servlets:
 
-1. Create a NodePort service so the domain1 Administration Console can be access from a browser
+```
+mvn clean install
+```
 
-   kubectl expose pod domain1-admin-server --type=NodePort --name=domain1-7001 -n domain1
-   kubectl -n domain1 get service domain1-7001
+3. Create a configuration file.  Here is a simple example, call this `config.yaml` for example.
 
-2. Copy apps/testwebapp.war and apps/wls-exporter.war to <persistent-volume>/applications
+```
+query_sync:
+  url: http://coordinator:8999/
+  interval: 5
+metricsNameSnakeCase: true
+queries:
+- applicationRuntimes:
+    key: name
+    keyName: app
+    componentRuntimes:
+      type: WebAppComponentRuntime
+      prefix: webapp_config_
+      key: name
+      values: [deploymentState, contextRoot, sourceInfo, openSessionsHighCount]
+      servlets:
+        prefix: weblogic_servlet_
+        key: servletName
+        values: invocationTotalCount
+```
 
-3. Using the external service port, use your browser to go to http://<hostname>:<nodeport>/console
+4. Create the WLS Exporter WAR file:
 
-4. Login to the Administration Server using weblogic/*password* as the login credentials.
+```
+cd webapp
+mvn package -DconfigurationFile=/path/to/config.yaml
+```
 
-   - Deploy testwebapp.war and wls-exporter.war to all managed servers.
-   - Start each deployed application
+5. If you did not create a `NodePort` service so the domain1 Administration Console can be accessed from a browser, do that now.  This example assumes the `domainUID` is `domain1`, the Administration Server is `admin-server` and the namespace is `domain1`.  The second command is used to obtain the `NodePort` that was allocated.
 
-5. For each started Managed Server, it is necessary to set the Prometheus annotations
+```
+kubectl expose pod domain1-admin-server --type=NodePort --name=domain1-7001 -n domain1
+kubectl -n domain1 get service domain1-7001
+```
+
+6. Copy the WLS Exporter WAR file `webapp/target/wls-exporter.war` to the target domain's application directory, that is `<persistent-volume>/applications`.
+
+7. Using the external service port, use your browser to go to the WebLogic Administration Console `http://<hostname>:<nodeport>/console`:
+
+8. Deploy and start the web application:
+
+   - Deploy `wls-exporter.war` to all managed servers.
+   - Start each deployed application.
+
+9. For each started Managed Server, it is necessary to set the Prometheus annotations
    so that the servers are recognized by Prometheus and it will fetch the metrics.
 
-   - For each Managed Server pod, set the following Prometheus annotations:
+For each Managed Server pod, set the following Prometheus annotations:
 
+```
 	prometheus.io/port: "8001"
 	prometheus.io/path: /wls-exporter/metrics
 	prometheus.io/scrape: "true"
+```
 
+This can be done by editing the pods:
+
+```
     kubectl -n domain1 edit pod domain1.managed-serverN
+```
 
-    Note:
-    Because the operator does not support changed annotations, this procedure is
-    applicable only to a running pod.
+Note:  Because the operator does not yet support copying these manually added annotations to a new pod, this procedure is applicable only to a running pod.  If a new pod is started, for example during a scale operation, the annotations would need to be added to that pod manually. Oracle plans to automate the creation of these annotations, so this step will not be necessary.
 
-### Setting up the webhook for AlertManager ###
+## Setting up the webhook for AlertManager
 
-1. Create the webhook image - ./createWebhook.sh
+**TODO** check with Bill where this script comes from.
 
-### Deploying Prometheus, Grafana, AlertManager, and Webhook ###
+1. Create the webhook image - `./createWebhook.sh`
+
+## Deploying Prometheus, Grafana, AlertManager, and Webhook
 
 1. Startup the Prometheus and Grafana monitoring pods. These are started in the
    monitoring namespace. These applications can be stopped and removed by deleting

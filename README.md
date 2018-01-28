@@ -140,7 +140,7 @@ If preferred, a domain can be created manually, i.e. without using the scripts p
 
 ## Exporting WebLogic metrics to Prometheus
 
-The operator includes the ability to export WebLogic Server metrics to Prometheus.  This allows metrics to be displays in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
+When using the operator to manage WebLogic domains, it may also be desirable to export WebLogic Server metrics to Prometheus using the [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter) which allows metrics to be displayed in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
 
 ## Starting up the domain
 
