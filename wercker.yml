@@ -5,6 +5,16 @@
 #  Wercker build file for Oracle WebLogic Server Kubernetes Operator
 #
 
+#
+#  Wercker application is at : https://app.wercker.com/Oracle/weblogic-kubernetes-operator
+#
+#  Werkcer workflow looks like this:
+#
+#  build -> integration-tests -> promote-image
+#                                if branch == master
+#
+
+
 box:
   id: store/oracle/serverjre
   username: $DOCKER_USERNAME
@@ -61,19 +71,24 @@ integration-test:  # run in weblogic container so that wlst is available
     - script:
       name: Run integration tests
       code: |
-        # work out if we can set up a plain VM in the same compartment, that we can use as a "client" machine
-        # to run the tests from, meaning NodePorts on the cluster will not need to be exposed through the OCI
+        # Current plan is that we will use the bastion machine in our OCI tenancy, that has access to our
+        # clusters, one 1.7 and one 1.8, and it will run the tests.
+        # It should clone the repo, checkout the desired commit, grab the desired docker image (tagged with the
+        # commit id) and then run the src/integration-tests/bash/run.sh (etc.) and report back results.
+        # This approach means we do not need to expose any NodePorts on the cluster through the OCI
         # firewall to the public internet, just within our OCI compartment.
-        # terraform may have a bastion host with ssh tunneling ?
 
-        # set up kubeconfig is set up to point to the cluster in OCI
-        # create a job yaml that mounts the PV's and empties them
-        kubectl create job ....
-        /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
-        /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
-        if [ $! == 0 ]; then
-          fail()
-        fi
+        # On the bastion:
+        #   set up kubeconfig is set up to point to the cluster in OCI
+        #   create a job yaml that mounts the PV's and empties them
+        #   kubectl create job ....
+        #   /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
+        #   /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
+
+        echo "Not yet implemented."
+        echo "Eventually, I will run the integration test suite against the test image which is:"
+        echo "quay.io/markxnelson/weblogic-kuberentes-operator:$WERCKER_GIT_COMMIT"
+
 
 # This pipeline promotes the docker image after tests have passed
 promote-image:
@@ -81,7 +96,18 @@ promote-image:
     - script:
       name: echo
       code: |
-        echo "I don't do anything yet"
+        echo "Passed integration-tests, so pushing the image as 'latest'"
+    # push the image to quay.io and tag it as "latest"
+    # in reality, the image will already be there, so it is just updating the tag
+    - internal/docker-push:
+        username: $QUAY_USERNAME
+        password: $QUAY_PASSWORD
+        email: $QUAY_EMAIL
+        repository: quay.io/markxnelson/weblogic-kubernetes-operator
+        tag: latest
+        working-dir: "/operator"
+        cmd: "operator.sh"
+        env: "PATH=$PATH:/operator"
 
 dev:
   steps:
