@@ -48,7 +48,7 @@ k8s_dir=$k8s_dir
 
 ## grab my IP address to pass into  kubeadm init, and to add to no_proxy vars
 # assume ipv4 and eth0
-ip_addr=\`ip -f inet addr show eth0  | egrep inet | awk  '{print \$2}' | awk -F/ '{print \$1}'\`
+ip_addr=`ip -f inet addr show eth0  | egrep inet | awk  '{print $2}' | awk -F/ '{print $1}'\`
 
 export HTTPS_PROXY=http://proxy:80
 export https_proxy=http://proxy:80
@@ -298,7 +298,7 @@ You should add `docker-for-desktop` to your `/etc/hosts` file entry for 127.0.0.
 You may also have to tell `kubectl` to ignore the certificate using this command:
 
 ```
-kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true 
+kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true
 ```
 
 Then validate you are talking to the Kubernetes in Docker with these commands:
