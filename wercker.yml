@@ -27,21 +27,22 @@ build:
         version: 3.5.2
         cache_repo: true
     - script:
-        name: publish test image
+        name: Copy built-artifacts into the image
         code: |
-          echo "publish this container with the commit id as the tag, so it is accessible to the integration-test"
-
-# dockerfile info:
-
-# RUN mkdir /operator
-# ENV PATH=$PATH:/operator
-#
-# COPY src/main/scripts/* /operator/
-# ADD target/weblogic-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-operator.jar
-#
-# WORKDIR /operator/
-#
-# CMD ["operator.sh"]
+          mkdir /operator
+          cp src/main/scripts/* /operator/
+          cp target/weblogic-kubernetes-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
+    # push the image to quay.io using the GIT commit id (first 8 chars) as the tag
+    # this image needs to be available to the integration-test pipeline for testing 
+    - internal/docker-push:
+        username: $QUAY_USERNAME
+        password: $QUAY_PASSWORD
+        email: $QUAY_EMAIL
+        repository: markxnelson/weblogic-kubernetes-operator
+        tag: ${WERCKER_GIT_COMMIT:0:8}
+        working-dir: "/operator"
+        cmd: "operator.sh"
+        env: "PATH=$PATH:/operator"
 
 
 # This pipeline runs the integration tests against a real k8s cluster.
@@ -71,3 +72,7 @@ promote-image:
       name: echo
       code: |
         echo "I don't do anything yet"
+
+dev:
+  steps:
+    - internal/shell
