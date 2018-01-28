@@ -48,6 +48,14 @@ docker login container-registry.oracle.com
 docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
 ```
 
+**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.  
+Please pull the image as shown below:
+
+```
+docker login quay.io
+docker pull quay.io/markxnelson/weblogic-kubernetes-operator:latest
+```
+
 ## Customizing the operator parameters file
 
 The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.  
