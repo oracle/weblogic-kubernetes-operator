@@ -52,16 +52,16 @@ mvn clean install
 Then create the Docker image as follows:
 
 ```
-docker build -t weblogic-kubernetes-operator:markxnelson --no-cache=true .
+docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
 ```
 
-We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we just put in the GitHub ID of the developer.
+We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, the tag could be the GitHub ID of the developer.
 
 Next, upload your image to your Kubernetes server as follows:
 
 ```
 # on your build machine
-docker save weblogic-kubernetes-operator:markxnelson > operator.tar
+docker save weblogic-kubernetes-operator:developer > operator.tar
 scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on the Kubernetes server
 docker load < /some/path/operator.tar
