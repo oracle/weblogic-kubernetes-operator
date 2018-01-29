@@ -28,10 +28,10 @@ In this documentation, several important terms are used and are intended to have
 | Cluster	| Since this term is ambiguous, it will be prefixed to indicate which type of cluster is meant.  A WebLogic cluster is a group of Managed Servers that together host some application or component and which are able to share load and state between them.  A Kubernetes cluster is a group of machines (“nodes”) that all host Kubernetes resources like pods and services and which appear to the external user as a single entity.  If the term “cluster” is not prefixed, it should be assumed to mean a Kubernetes cluster. |
 | Domain	| A WebLogic domain is a group of related applications and resources along with the configuration information necessary to run them. |
 | Ingress	| A Kubernetes Ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
-| Job	 | write me |
 | Namespace	| A Kubernetes namespace is a named entity that can be used to group together related objects, e.g. pods and services. |
 | Operator	| A Kubernetes operator is a piece of software that performs management of complex applications. |
 |Pod	| A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, e.g. a web server or database. |
+| Job	 | A Kubernetes job is a type of controller that creates one or more pods that run to completion to complete a specific task. |
 | Secret	| A Kubernetes secret is a named object that can store secret information like usernames, passwords, X.509 certificates, or any other arbitrary data. |
 |Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
 
@@ -64,15 +64,15 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
 
-Note: Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, calico networking appears to work in the limited testing we have done so far.
+Note: Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, Calico networking appears to work in the limited testing we have done so far.
 
 # Restrictions
 
 The following features are not certified or supported in the Technology Preview release at the time of writing:
 
 *	Whole Server Migration
-*	Consensus leasing
-*	Node Manager (although it is used internally for the liveness probe and to start WLS Servers)
+*	Consensus Leasing
+*	Node Manager (although it is used internally for the liveness probe and to start WebLogic servers)
 *	Dynamic domains (the current certification only covers configured clusters, certification of dynamic clusters is planned at a future date)
 *	Multicast
 *	If using a `hostPath` persistent volume, then it must have read/write/many permissions for all container/pods in the WebLogic deployment
