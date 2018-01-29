@@ -398,6 +398,25 @@ function createYamlFiles {
 }
 
 #
+# Check the state of a persistent volume.
+# $1 - name of volume
+# $2 - expected state of volume
+function checkPvState {
+
+  echo "Checking if the persistent volume ${1:?} is ${2:?}"
+  local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+  attempts=0
+  while [ ! "$pv_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
+    attempts=$((attempts + 1))
+    sleep 1
+    pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+  done
+  if [ "$pv_state" != "$2" ]; then
+    fail "The persistent volume state should be $2 but is $pv_state"
+  fi
+}
+
+#
 # Function to create the persistent volume
 #
 function createPV {
@@ -414,12 +433,7 @@ function createPV {
   if [ "${skipPvCreate}" = false ]; then
     echo Creating the persistent volume ${persistenceVolumeName}
     kubectl create -f ${pvOutput}
-
-    echo Checking if the persistent volume ${persistenceVolumeName} is Available
-    PV_AVAILABLE=`kubectl get pv | grep ${persistenceVolumeName} | awk ' { print $5; } '`
-    if [ "${PV_AVAILABLE}" != "Available" ]; then
-      fail 'The persistent volume ${persistenceVolumeName} does not have a state of Available'
-    fi
+    checkPvState ${persistenceVolumeName} Available
   fi
 }
 
@@ -439,12 +453,7 @@ function createPVC {
   if [ "${skipPvcCreate}" = false ]; then
     echo Creating the persistent volume claim ${persistenceVolumeClaimName}
     kubectl create -f ${pvcOutput}
-
-    echo Checking the persistent volume ${persistenceVolumeClaimName} is Bound
-    PV_BOUND=`kubectl get pv | grep ${persistenceVolumeName} | awk ' { print $5; } '`
-    if [ "${PV_BOUND}" != "Bound" ]; then
-      fail "The persistent volume ${persistenceVolumeName} does not have a state of Bound"
-    fi
+    checkPvState ${persistenceVolumeName} Bound
   fi
 }
 
