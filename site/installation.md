@@ -24,7 +24,7 @@ kubectl create secret docker-registry SECRET_NAME
 
 Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first.
 
-**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.  
+**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.
 Please create your secret as shown below:
 
 ```
@@ -48,7 +48,7 @@ docker login container-registry.oracle.com
 docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
 ```
 
-**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.  
+**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.
 Please pull the image as shown below:
 
 ```
@@ -58,7 +58,7 @@ docker pull quay.io/markxnelson/weblogic-kubernetes-operator:latest
 
 ## Customizing the operator parameters file
 
-The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.  
+The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.
 
 The following parameters must be provided in the input file:
 
@@ -97,15 +97,15 @@ The operator can install the Traefik Ingress provider to provide load balancing 
 
 Note that the Technology Preview release provides only basic load balancing:
 
-*	Only HTTP(S) is supported, other protocols are not supported.
-*	A root path rule is created for each cluster.  Rules based on the DNS name, or on URL paths other than ‘/’ are not supported.
-*	No non-default configuration of the load balancer is performed in this release.  The default configuration gives round robin routing and WebLogic will provide cookie-based session affinity.
+*	Only HTTP(S) is supported. Other protocols are not supported.
+*	A root path rule is created for each cluster.  Rules based on the DNS name, or on URL paths other than ‘/’, are not supported.
+*	No non-default configuration of the load balancer is performed in this release.  The default configuration gives round robin routing and WebLogic Server will provide cookie-based session affinity.
 
-Note that ingresses are not created for servers that are not part of a WebLogic cluster, including the administration server.  Such servers are exposed externally using NodePort services.
+Note that Ingresses are not created for servers that are not part of a WebLogic cluster, including the Administration Server.  Such servers are exposed externally using NodePort services.
 
 ### Log integration with ELK
 
-The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a Logstash pod will be created in the operator’s namespace.  Logstash will be configured to publish the operator’s logs into Elasticsearch, and the log data will be available for visualization and analysis in Kibana.
+The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a logstash pod will be created in the operator’s namespace.  Logstash will be configured to publish the operator’s logs into Elasticsearch, and the log data will be available for visualization and analysis in Kibana.
 
 To enable the ELK integration, set the `enableELKintegration` option to `true`.
 
@@ -142,7 +142,7 @@ Write me
 
 ### Could not pull Docker image
 
-If the operator has not started, Kubernetes may not have been able to pull the Docker image from the Docker registry.  Check the Docker registry secret is correct, or log on to the Kubernetes master and manually pull the image using these commands:
+If the operator has not started, Kubernetes may not have been able to pull the Docker image from the Docker registry.  Check that the Docker registry secret is correct, or log on to the Kubernetes master and manually pull the image using these commands:
 
 ```
 docker login container-registry.oracle.com
@@ -241,7 +241,7 @@ The spec section provides details for the container that the operator will execu
       - name: ocr-secret
 ```
 
-This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  Debugging the operator is described in the “Developer Guide” section of this document.
+This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  Debugging the operator is described in the [developer guide](developer.md).
 
 ```
 ---
@@ -263,7 +263,7 @@ spec:
     #   name: debug
 ```
 
-This section defines a service that provides access to the operator’s REST server inside the Kubernetes cluster.  This is used when something inside the cluster wants to initiate a scaling request, a WLDF action or Prometheus alert for example.
+This section defines a service that provides access to the operator’s REST server inside the Kubernetes cluster.  This is used when something inside the cluster wants to initiate a scaling request, a WLDF action, or a Prometheus alert, for example.
 
 ```
 ---
@@ -316,9 +316,9 @@ write something
 
 ## Verifying the operator deployment
 
-The script does validate each step was successful before continuing, however it may still be desirable to perform manual validation, particularly the first time the operator is deployed, in order to become more familiar with the various artifacts that are created.  This section provides details on how to verify the operator deployment.
+The script validates that each step is successful before continuing. However, it may still be desirable to perform manual validation, particularly the first time the operator is deployed, in order to become more familiar with the various artifacts that are created.  This section provides details on how to verify the operator deployment.
 
-Issue the following command to check the operator is deployed:
+Issue the following command to check that the operator is deployed:
 
 ```
 kubectl -n NAMESPACE get all
@@ -336,7 +336,7 @@ To tail the logs continuously, add a `-f` flag after logs.
 
 The logs should show the operator startup messages, including messages about starting the REST server and checking for WebLogic domains.
 
-Check that the custom resource definition was created with this command:
+Check that the custom resource definition was created by entering this command:
 
 ```
 kubectl get crd
