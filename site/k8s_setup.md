@@ -1,7 +1,6 @@
 [terraform]: https://terraform.io
 [oci]: https://cloud.oracle.com/cloud-infrastructure
 [oci provider]: https://github.com/oracle/terraform-provider-oci/releases
-[API signing]: https://docs.us-phoenix-1.oraclecloud.com/Content/API/Concepts/apisigningkey.htm
 [Kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
 # Cheat sheet for setting up Kubernetes
@@ -115,10 +114,27 @@ $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generat
 $ terraform output worker_public_ips
 IP1,
 IP2
+$ terraform output worker_private_ips
+PRIVATE_IP1,
+PRIVATE_IP2
 $ ssh -i `pwd`/generated/instances_id_rsa opc@IP1
-worker-1$ sudo yum install -y nfs-utils
+worker-1$ sudo su - 
+worker-1# yum install -y nfs-utils
+worker-1# mkdir /scratch
+worker-1# echo "/scratch PRIVATE_IP2(rw)" >> /etc/exports 
+worker-1# systemctl restart nfs
+worker-1# exit
 worker-1$ exit
-
+# configure worker-2 to mount the share from worker-1
+$ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
+worker-2$ sudo su - 
+worker-2# yum install -y nfs-utils
+worker-2# mkdir /scratch
+worker-2# echo "PRIVATE_IP1:/scratch /scratch  nfs" >> /etc/fstab
+worker-2# mount /scratch
+worker-2# exit
+worker-2$ exit
+$
 ```
 
 ## Use your cloud providers management console to provision a managed Kubernetes environment
