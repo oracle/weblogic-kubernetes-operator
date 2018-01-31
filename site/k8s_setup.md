@@ -1,11 +1,11 @@
-[terraform]: https://terraform.io
-[oci]: https://cloud.oracle.com/cloud-infrastructure
-[oci provider]: https://github.com/oracle/terraform-provider-oci/releases
+[Terraform]: https://terraform.io
+[OCI]: https://cloud.oracle.com/cloud-infrastructure
+[OCI provider]: https://github.com/oracle/terraform-provider-oci/releases
 [Kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
 # Cheat sheet for setting up Kubernetes
 
-If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is a "real" installation of Kubernetes, e.g. on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes "manually" using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
+If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is an on-premise installation of Kubernetes, e.g. on Bare Metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
 
 "Production" options:
 
@@ -26,8 +26,8 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
 ### Prerequisites
 
-1. Download and install [Terraform][terraform] (v0.10.3 or later)
-2. Download and install the [OCI Terraform Provider][oci provider] (v2.0.0 or later)
+1. Download and install [Terraform][Terraform] (v0.10.3 or later)
+2. Download and install the [OCI Terraform Provider][OCI provider] (v2.0.0 or later)
 3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
 ```
 providers {
@@ -38,7 +38,7 @@ providers {
 
 ### Quick Start
 
-1. git clone the Terraformkubernetes-installer project  
+1. git clone the Terraform Kubernetes installer project  
 
 ```
 git clone https://github.com/oracle/terraform-kubernetes-installer.git
@@ -56,7 +56,7 @@ terraform init
 cp terraform.example.tfvars terraform.tfvars
 ```
 
-4.  Edit the terraform.tvfars to include values for your  tenancy, user, and compartment.  Optionally edit variables to change the Shape of the VMs for your Kubernetes Master and Workers, and your Etcd cluster.   For example:
+4.  Edit the terraform.tvfars to include values for your  tenancy, user, and compartment.  Optionally edit variables to change the Shape of the VMs for your Kubernetes master and workers, and your etcd cluster.   For example:
 
 ```
 #give a label to your cluster to help identify it if you have multiple
