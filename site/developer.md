@@ -17,7 +17,7 @@ Because the target runtime environment for the operator is Oracle Linux, no part
 
 ## Obtaining the operator source code
 
-The operator source code is published on GitHub at https://github.com/oracle/weblogic-operator.  Developers may clone this repository to a local machine or, if desired, create a fork in their personal namespace and clone the fork.  Developers who are planning to submit a pull request are advised to create a fork.
+The operator source code is published on GitHub at https://github.com/oracle/weblogic-kubernetes-operator.  Developers may clone this repository to a local machine or, if desired, create a fork in their personal namespace and clone the fork.  Developers who are planning to submit a pull request are advised to create a fork.
 
 To clone the repository from GitHub, issue this command:
 
@@ -45,7 +45,7 @@ To build the Javadoc for the operator, issue the following command:
 mvn javadoc:javadoc
 ```
 
-The Javadoc is also available in the GitHub repository at [https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
+The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
 
 ## Running integration tests
 
@@ -102,7 +102,7 @@ To run the operator in a Kubernetes cluster, you need to build the Docker image 
 After you have run the build (that is, `mvn clean install`), create the Docker image as follows:
 
 ```
-docker build -t weblogic-kubernetes-operator:markxnelson --no-cache=true .
+docker build -t weblogic-kubernetes-operator:some-tag --no-cache=true .
 ```
 
 We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we just put in the GitHub ID of the developer.
@@ -111,7 +111,7 @@ Next, upload your image to your Kubernetes server as follows:
 
 ```
 # on your build machine
-docker save weblogic-kubernetes-operator:markxnelson > operator.tar
+docker save weblogic-kubernetes-operator:some-tag > operator.tar
 scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on the Kubernetes server
 docker load < /some/path/operator.tar
@@ -144,7 +144,15 @@ This project has adopted the following coding standards:
 
 ## Source code structure
 
-Write me
+This project has the following directory structure:
+
+* docs: Generated javadoc and swagger
+* kubernetes: BASH scripts and yaml templates for operator installation and WebLogic domain creation job.
+* site: This documentation
+* src/main/java: Java source code for the operator
+* src/test/java: Java unit-tests for the operator
+* src-generated-swagger: Snapshot of Java source files generated from the domain custom resource's swagger
+* swagger: Swagger files for Kubernetes API server and domain custom resource 
 
 ### Watch package
 

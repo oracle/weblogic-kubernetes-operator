@@ -20,3 +20,7 @@ The operator is designed with security in mind from the outset.  Some examples o
 *	Dependencies are kept as up-to-date as possible and are regularly reviewed for security vulnerabilities.
 
 The operator is designed to avoid imposing any arbitrary restriction on how WebLogic Server may be configured or used in Kubernetes.  Where there are restrictions, these are based on the availability of some specific feature in Kubernetes; for example, multicast support.
+
+The operator learns of WebLogic domains through instances of a domain Kubernetes resource.  When the operator is installed, it creates a Kubernetes [Custom Resource Definition] (https://kubernetes.io/docs/concepts/api-extension/custom-resources/).  This custom resource definition defines the domain resource type.  Once this type is defined, you can manage domain resources using `kubectl` just like any other resource type.  For instance, `kubectl get domain` or `kubectl edit domain domain1`.  The schema for domain resources is [here] (../swagger/domain.json).
+
+The schema for the domain resource is designed to be as sparse as possible.  It includes the connection details for the administration server, but all of the other content are operational details about which servers should be started, environment variables, and details about what should be exposed outside the Kubernetes cluster.  This way, the WebLogic domain's configuration remains the normative configuration.
