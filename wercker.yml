@@ -89,7 +89,10 @@ integration-test:  # run in weblogic container so that wlst is available
         sed -i -e "s,%CLIENT_KEY_DATA%,$K8S_17_CLIENT_KEY_DATA,g" /pipeline/source/build/kube.config
         export KUBECONFIG="/pipeline/source/build/kube.config"
 
-        yum -y install kubectl 
+        # install kubectl
+        curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+        chmod +x ./kubectl
+        mv ./kubectl /usr/local/bin/kubectl
 
         kubectl get all
 
