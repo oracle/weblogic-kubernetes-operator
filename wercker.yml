@@ -46,7 +46,7 @@ build:
         name: Remove things we do not want in the Docker image in order to reduce size of image
         code: |
           # remove wercker directory
-          rm -rf /pipeline
+          # rm -rf /pipeline
           # remove unneeded RPMs and clean up the YUM cache
           yum -y remove tar gzip
           yum clean all
