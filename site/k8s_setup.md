@@ -1,6 +1,11 @@
+[Terraform]: https://terraform.io
+[OCI]: https://cloud.oracle.com/cloud-infrastructure
+[OCI provider]: https://github.com/oracle/terraform-provider-oci/releases
+[Kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+
 # Cheat sheet for setting up Kubernetes
 
-If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is a "real" installation of Kubernetes, e.g. on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes "manually" using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
+If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is an on-premise installation of Kubernetes, e.g. on Bare Metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
 
 "Production" options:
 
@@ -17,9 +22,120 @@ We have provided our hints and tips for each of these options in the sections be
 
 ## Set up Kubernetes on bare compute resources in a cloud
 
-write me
+Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer):
 
-[Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer)
+### Prerequisites
+
+1. Download and install [Terraform][Terraform] (v0.10.3 or later)
+2. Download and install the [OCI Terraform Provider][OCI provider] (v2.0.0 or later)
+3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
+```
+providers {
+  oci = "<path_to_provider_binary>/terraform-provider-oci"
+}
+```
+4.  Ensure you have [Kubectl][Kubectl] installed if you plan to interact with the cluster locally
+
+### Quick Start
+
+1. git clone the Terraform Kubernetes installer project  
+
+```
+git clone https://github.com/oracle/terraform-kubernetes-installer.git
+``` 
+2. Initialize your project
+
+``` 
+cd terraform-kubernetes-installer
+terraform init
+```
+
+3.  Copy the example terraform.tvfars:
+
+```
+cp terraform.example.tfvars terraform.tfvars
+```
+
+4.  Edit the terraform.tvfars to include values for your  tenancy, user, and compartment.  Optionally edit variables to change the Shape of the VMs for your Kubernetes master and workers, and your etcd cluster.   For example:
+
+```
+#give a label to your cluster to help identify it if you have multiple
+label_prefix="weblogic-operator-1-"
+
+#identification/authorization info
+tenancy_ocid = "ocid1.tenancy...."
+compartment_ocid = "ocid1.compartment...."
+fingerprint = "..."
+private_key_path = "/Users/username/.oci/oci_api_key.pem"
+user_ocid = "ocid1.user..."
+
+#shapes for your VMs
+etcdShape = "VM.Standard1.2"
+k8sMasterShape = "VM.Standard1.8"
+k8sWorkerShape = "VM.Standard1.8"
+k8sMasterAd1Count = "1"
+k8sWorkerAd1Count = "2"
+
+#this ingress is set to wide-open for testing **not secure**
+etcd_ssh_ingress = "0.0.0.0/0"
+master_ssh_ingress = "0.0.0.0/0"
+worker_ssh_ingress = "0.0.0.0/0"
+master_https_ingress = "0.0.0.0/0"
+worker_nodeport_ingress = "0.0.0.0/0"
+
+#create iscsi volumes to store your etcd and /var/lib/docker info 
+worker_iscsi_volume_create = true
+worker_iscsi_volume_size = 100
+etcd_iscsi_volume_create = true
+etcd_iscsi_volume_size = 50
+```
+
+5.  Test and Apply your changes
+
+```
+terraform plan
+terraform apply
+```
+
+6.  Test your cluster using built in script at `scripts/cluster-check.sh`
+
+```
+scripts/cluster-check.sh
+```
+7. Output the ssh private key
+```
+# output the ssh private key for use later
+$ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generated/instances_id_rsa && chmod 600 generated/instances_id_rsa
+```
+
+7. If you need shared storage between your Kubernetes Worker nodes, enable and configure NFS:
+
+```
+$ terraform output worker_public_ips
+IP1,
+IP2
+$ terraform output worker_private_ips
+PRIVATE_IP1,
+PRIVATE_IP2
+$ ssh -i `pwd`/generated/instances_id_rsa opc@IP1
+worker-1$ sudo su - 
+worker-1# yum install -y nfs-utils
+worker-1# mkdir /scratch
+worker-1# echo "/scratch PRIVATE_IP2(rw)" >> /etc/exports 
+worker-1# systemctl restart nfs
+worker-1# exit
+worker-1$ exit
+# configure worker-2 to mount the share from worker-1
+$ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
+worker-2$ sudo su - 
+worker-2# yum install -y nfs-utils
+worker-2# mkdir /scratch
+worker-2# echo "PRIVATE_IP1:/scratch /scratch  nfs" >> /etc/fstab
+worker-2# mount /scratch
+worker-2# exit
+worker-2$ exit
+$
+```
 
 ## Use your cloud providers management console to provision a managed Kubernetes environment
 
