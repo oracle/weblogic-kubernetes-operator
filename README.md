@@ -1,11 +1,11 @@
 # Oracle WebLogic Server Kubernetes Operator
 
-Built with [Wercker](http://www.wercker.com)  
+Built with [Wercker](http://www.wercker.com)
 [![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/master "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
-   
+
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads – many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
 
-Oracle has been working with the WebLogic community to find ways to make it as easy as possible for organizations using WebLogic to run important workloads to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  The Technology Preview release of the Operator provides a number of features to assist with the management of WebLogic domains in a Kubernetes environment, including:
+Oracle has been working with the WebLogic community to find ways to make it as easy as possible for organizations using WebLogic Server to run important workloads to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  The Technology Preview release of the Operator provides a number of features to assist with the management of WebLogic domains in a Kubernetes environment, including:
 
 *	A mechanism to create a WebLogic domain on a Kubernetes persistent volume,
 *	A mechanism to define a WebLogic domain as a Kubernetes resource (using a Kubernetes custom resource definition),
@@ -64,7 +64,7 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
 
-Note: Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, Calico networking appears to work in the limited testing we have done so far.
+**Note:** Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, Calico networking appears to work in the limited testing we have done so far.
 
 # Restrictions
 
@@ -79,7 +79,7 @@ The following features are not certified or supported in the Technology Preview 
 *	Multitenancy
 *	Production redeployment
 
-Please consult My Oracle Support [Doc ID 2349228.1](https://support.oracle.com/rs?type=doc&id=2349228.1) for up to date information about the features of WebLogic Server that are supported in Kubernetes environments.
+Please consult My Oracle Support [Doc ID 2349228.1](https://support.oracle.com/rs?type=doc&id=2349228.1) for up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments.
 
 # API documentation
 
@@ -96,9 +96,9 @@ Documentation for APIs is provided here:
 If you would rather see the developers demonstrating the operator rather than reading the documentation, then here are your videos:
 
 * [Installing the operator](https://youtu.be/B5UmY2xAJnk) includes the installation and also shows using the operator's REST API.
-* [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, ingresses, pods, load balancers, etc.
+* [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, Ingresses, pods, load balancers, etc.
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
-* [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4), this example shows how to create a data source for an Oracle database that is also running in Kubernetes.
+* [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4) shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
 * [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic Server metrics to Prometheus and creating a Prometheus alert to trigger scaling
 * [Shutting down a domain](#)
@@ -140,7 +140,7 @@ If preferred, a domain can be created manually, i.e. without using the scripts p
 
 ## Exporting WebLogic metrics to Prometheus
 
-When using the operator to manage WebLogic domains, it may also be desirable to export WebLogic Server metrics to Prometheus using the [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter) which allows metrics to be displayed in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
+When using the operator to manage WebLogic domains, it may also be desirable to export WebLogic Server metrics to Prometheus using the [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter), which allows metrics to be displayed in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
 
 ## Starting up the domain
 
@@ -148,7 +148,7 @@ The operator will automatically start up domains that it is aware of, based on t
 
 ## Using WLST
 
-When creating a domain there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  Please refer to [Using WLST](site/wlst.md) for more information about how to use WLST with a domain running in Kubernetes.
+When creating a domain, there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  Please refer to [Using WLST](site/wlst.md) for more information about how to use WLST with a domain running in Kubernetes.
 
 ## Scaling a cluster
 
@@ -167,7 +167,7 @@ Please refer to [Shutting down a domain](site/shutdown-domain.md) for informatio
 
 ## Load balancing with the Traefik ingress controller
 
-The initial "Technology Preview" release of the operator supports only the Traefik load balancer/ingress controller.  Support for other load balancers is planned in the future.
+The initial Technology Preview release of the operator supports only the Traefik load balancer/Ingress controller.  Support for other load balancers is planned in the future.
 Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md) for information about current capabilities.
 
 ## Exporting operator logs to ELK
@@ -186,7 +186,7 @@ kubectl delete pv PV-NAME
 
 Find the names of the persistent volume claim and the persistent volume in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes.
 
-To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, delete the corresponding directory on the Kubernetes master.
+To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, then delete the corresponding directory on the Kubernetes master.
 
 Be aware that there may be metric data from the domain in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
 
@@ -205,11 +205,11 @@ Replace `NAMESPACE` with the namespace that the operator is running in.
 To remove more than one operator, repeat these steps for each operator namespace.
 
 
-# Developer Guide
+# Developer guide
 
-Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, etc.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
+Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
-Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of what kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
+Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
 
 # Contributing to the operator
 
@@ -219,7 +219,7 @@ If you want to submit a pull request to fix a bug or enhance an existing feature
 
 If you have any questions about a possible submission, feel free to open an issue too.
 
-## Contributing to the Oracle Kubernetes Operator for WebLogic repository
+## Contributing to the Oracle WebLogic Server Kubernetes Operator repository
 
 Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
 
@@ -247,4 +247,4 @@ Only pull requests from committers that can be verified as having signed the OCA
 
 ## Introducing a new dependency
 
-Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic, will most likely be rejected.
+Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
