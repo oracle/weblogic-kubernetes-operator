@@ -84,9 +84,9 @@ integration-test:  # run in weblogic container so that wlst is available
         #   /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
         #   /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
 
-        sed -i -e "s:%ADDRESS%:$K8S_17_ADDRESS:g" /pipeline/source/build/kube.config
-        sed -i -e "s:%CLIENT_CERT_DATA%:$K8S_17_CLIENT_CERT_DATA:g" /pipeline/source/build/kube.config
-        sed -i -e "s:%CLIENT_KEY_DATA%:$K8S_17_CLIENT_KEY_DATA:g" /pipeline/source/build/kube.config
+        sed -i -e "s,%ADDRESS%,$K8S_17_ADDRESS,g" /pipeline/source/build/kube.config
+        sed -i -e "s,%CLIENT_CERT_DATA%,$K8S_17_CLIENT_CERT_DATA,g" /pipeline/source/build/kube.config
+        sed -i -e "s,%CLIENT_KEY_DATA%,$K8S_17_CLIENT_KEY_DATA,g" /pipeline/source/build/kube.config
         export KUBECONFIG="/pipeline/source/build/kube.config"
 
         yum -y install kubectl 
