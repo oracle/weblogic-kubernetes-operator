@@ -84,6 +84,30 @@ integration-test:  # run in weblogic container so that wlst is available
         #   /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
         #   /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
 
+        cat > /pipeline/kube.config <<EOF
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: $K8S_17_ADDRESS
+  name: bmcs-k8s-cluster
+contexts:
+- context:
+    cluster: bmcs-k8s-cluster
+    user: default-admin
+  name: bmcs-k8s-context
+current-context: bmcs-k8s-context
+kind: Config
+preferences: {}
+users:
+- name: default-admin
+  user:
+    client-certificate-data: $K8S_17_CLIENT_CERT_DATA
+    client-key-data: $K8S_17_CLIENT_KEY_DATA
+EOF
+        export KUBECONFIG="/pipeline/kube.config"
+        kubectl get all
+
         echo "Not yet implemented."
         echo "Eventually, I will run the integration test suite against the test image which is:"
         echo "quay.io/markxnelson/weblogic-kuberentes-operator:$WERCKER_GIT_COMMIT"
@@ -99,7 +123,7 @@ promote-image:
     # push the image to quay.io and tag it as "latest"
     # in reality, the image will already be there, so it is just updating the tag
 
-    # use the quay.io REST API to change the tab "latest" to point to the image we just pushed and tested 
+    # use the quay.io REST API to change the tab "latest" to point to the image we just pushed and tested
 
 dev:
   steps:
