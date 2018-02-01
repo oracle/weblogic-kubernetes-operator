@@ -16,71 +16,6 @@ function trace {
   echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] ${FUNCNAME[1]}: ""$@"
 }
 
-#IMPORTANT: this method must never call fail (since it is called from fail)
-# state_dump places k8s logs, descriptions, etc in directory $RESULT_DIR/state-dump-$1
-function state_dump {
-  local DUMP_DIR=$RESULT_DIR/state-dump-${1:?}
-  trace Starting state dump.   Dumping state to directory ${DUMP_DIR}
-
-  mkdir -m 777 -p ${DUMP_DIR}
-
-  # Test output is captured to ${TESTOUT} when run.sh is run stand-alone
-  if [ -f ${TESTOUT:-NoSuchFile.out} ]; then
-      trace Copying ${TESTOUT} to ${DUMP_DIR}/test_suite.out
-      cp ${TESTOUT} ${DUMP_DIR}/test_suite.out
-  fi
-  
-  # dumping kubectl state
-  #   get domains is in its own command since this can fail if domain CRD undefined
-
-  trace Dumping kubectl gets to stdout, ${DUMP_DIR}/kgetmany.out, and ${DUMP_DIR}/kgetdomains.out 
-
-  kubectl get all,crd,cm,pv,pvc,ns --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetmany.out 2>&1
-  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetdomains.out 2>&1
-
-  # prepend "+" to detailed debugging to make it easy to filter out
-
-  cat ${DUMP_DIR}/kgetmany.out | sed 's/^/+/' 
-  cat ${DUMP_DIR}/kgetdomains.out | sed 's/^/+/' 
-
-  # Get all pod logs and redirect/copy to files 
-
-  local namespaces=`kubectl get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`
-
-  local namespace
-  for namespace in $namespaces; do
-    trace Looking for pods in namespace $namespace
-    local pods=`kubectl get pods -n $namespace | egrep -v -e "(STATUS)" | awk '{print $1}'`
-    local pod
-    for pod in $pods; do
-      local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
-      local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      trace "See $logfile and $descfile"
-      kubectl log $pod -n $namespace > $logfile 2>&1
-      kubectl describe pod $pod -n $namespace > $descfile 2>&1
-    done
-  done
-
-  archive
-
-  trace Done with state dump
-}
-
-#IMPORTANT: this method must never call fail (since it is called from fail)
-function archive {
-  local ARCHIVE_DIR="$RESULT_ROOT/old_run_results"
-  if [ ! -d $ARCHIVE_DIR ]; then
-    /usr/local/packages/aime/ias/run_as_root "mkdir -m 777 -p $ARCHIVE_DIR"
-  fi
-
-  local ARCHIVE="$ARCHIVE_DIR/IntSuite.`date '+%Y%m%d%H%M%S'`.tar.gz"
-  trace "About to archive a copy of $RESULT_DIR to $ARCHIVE"
-  /usr/local/packages/aime/ias/run_as_root "tar -czf $ARCHIVE $RESULT_DIR"
-  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*tar.gz" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm
-
-  trace "Running integration tests on host ${host}. Full logs and debug infomation can be found in $RESULT_DIR or $ARCHIVE"
-}
-
 function fail {
   set +x
   #See also a similar echo in function trace
@@ -97,8 +32,6 @@ function fail {
       echo "at: $func(), $src, line $line"
   done
 
-  state_dump fail
-  
   echo "Exiting with status 1"
 
   exit 1
@@ -110,46 +43,11 @@ function ctrl_c() {
     fail "Trapped CTRL-C"
 }
 
-function clean {
-    echo y |  /usr/local/packages/aime/ias/run_as_root ${SCRIPTPATH}/clean_docker_k8s.sh
-}
-
-function setup {
-    export real_user=wls
-    echo y |  /usr/local/packages/aime/ias/run_as_root "sh ${SCRIPTPATH}/install_docker_k8s.sh ${K8S_VERSION}"
-    set +x
-    . ~/.dockerk8senv
-    set -x
-    id
-
-    trace "Pull and tag the images we need"
-
-    docker login -u teamsldi_us@oracle.com -p $docker_pass  wlsldi-v2.docker.oraclecorp.com
-    docker images
-
-    docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
-    docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
-
-    docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
-    docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
-
-    # create a docker image for the operator code being tested
-    docker build -t "wlsldi-v2.docker.oraclecorp.com/weblogic-operator:${IMAGE_TAG}" --no-cache=true .
-
-    docker images
-
-    # we call mkdir here because clean will delete the RESULT_DIR if it is in the same directory as the k8s install.
-    /usr/local/packages/aime/ias/run_as_root "mkdir -m 777 -p $RESULT_DIR"
-}
-
 # setup_local is for arbitrary dev hosted linux - it assumes docker & k8s are already installed
 function setup_local {
 
-  docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
-
-  docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
+  docker pull store/oracle/weblogic:12.2.1.3
+  docker pull store/oracle/serverjre:8
 
   # we call mkdir here because clean will delete the RESULT_DIR if it is in the same directory as the k8s install.
   /usr/local/packages/aime/ias/run_as_root "mkdir -m 777 -p $RESULT_DIR"
