@@ -53,13 +53,13 @@ for ((i=0;i<DCOUNT;i++)); do
   curns=${DOMAIN_NAMESPACES[i]}
 
   echo @@ Deleting domain ${curdomain} in namespace $curn
-  kubectl -n $curns delete domain $curdomain 
+  kubectl -n $curns delete domain $curdomain --ignore-not-found=true
 
   # Give operator some time to digest the domain deletion
   sleep 3
 
   echo @@ Deleting create domain ${curdomain} job in namespace $curns
-  kubectl -n $curns delete job domain-${curdomain}-job 
+  kubectl -n $curns delete job domain-${curdomain}-job --ignore-not-found=true
 
   echo @@ Deleting domain pv and pvc for domain ${curdomain} in namespace $curns
   kubectl delete pv ${curdomain}-pv --ignore-not-found=true
@@ -84,8 +84,8 @@ done
 for ((i=0;i<DCOUNT;i++)); do
   curdomain=${DOMAINS[i]}
   curns=${DOMAIN_NAMESPACES[i]}
-  kubectl -n $curns delete rolebinding weblogic-operator-rolebinding 
-  kubectl -n $curns delete rolebinding weblogic-operator-operator-rolebinding          
+  kubectl -n $curns delete rolebinding weblogic-operator-rolebinding --ignore-not-found=true
+  kubectl -n $curns delete rolebinding weblogic-operator-operator-rolebinding --ignore-not-found=true       
 done
 
 kubectl delete clusterrole \
@@ -100,7 +100,7 @@ for ((i=0;i<OCOUNT;i++)); do
                  ${opns}-operator-rolebinding-auth-delegator \
                  ${opns}-operator-rolebinding-discovery      \
                  ${opns}-operator-rolebinding-nonresource    \
-                 ${opns}-operator-rolebinding
+                 ${opns}-operator-rolebinding --ignore-not-found=true
 done
 
 
@@ -139,7 +139,7 @@ for ((i=0;i<DCOUNT;i++)); do
   curdomain=${DOMAINS[i]}
   curns=${DOMAIN_NAMESPACES[i]}
   echo @@ Deleting configmap domain-domain1-scripts in namespace $curns
-  kubectl -n $curns delete cm domain-${curdomain}-scripts 
+  kubectl -n $curns delete cm domain-${curdomain}-scripts --ignore-not-found=true
 done
 
 JOB_NAME="weblogic-pv-cleanup-job"
