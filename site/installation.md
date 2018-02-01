@@ -100,7 +100,7 @@ The operator can install the ELK stack and publish its logs into ELK.  If enable
 
 To enable the ELK integration, set the `enableELKintegration` option to `true`.
 
-[comment]: ( Metrics integration with Prometheus - Write me )
+[comment]: # ( Metrics integration with Prometheus - Write me )
 
 ## Deploying the operator to a Kubernetes cluster
 
