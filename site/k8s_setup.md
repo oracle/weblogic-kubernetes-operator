@@ -18,7 +18,7 @@ If you need some help setting up a Kubernetes environment to experiment with the
 * Install [Docker for Mac](https://docs.docker.com/docker-for-mac/#kubernetes) and enable its embedded Kubernetes cluster (or register for the [Docker for Windows](https://beta.docker.com/form) beta and wait until Kubernetes is available there).
 * Install [Minikube](https://github.com/kubernetes/minikube) on your Windows/Linux/Mac computer.
 
-We have provided our hints and tips for each of these options in the sections below.
+We have provided our hints and tips for several of these options in the sections below:
 
 ## Set up Kubernetes on bare compute resources in a cloud
 
@@ -42,10 +42,10 @@ providers {
 
 ```
 git clone https://github.com/oracle/terraform-kubernetes-installer.git
-``` 
+```
 2. Initialize your project
 
-``` 
+```
 cd terraform-kubernetes-installer
 terraform init
 ```
@@ -83,7 +83,7 @@ worker_ssh_ingress = "0.0.0.0/0"
 master_https_ingress = "0.0.0.0/0"
 worker_nodeport_ingress = "0.0.0.0/0"
 
-#create iscsi volumes to store your etcd and /var/lib/docker info 
+#create iscsi volumes to store your etcd and /var/lib/docker info
 worker_iscsi_volume_create = true
 worker_iscsi_volume_size = 100
 etcd_iscsi_volume_create = true
@@ -118,16 +118,16 @@ $ terraform output worker_private_ips
 PRIVATE_IP1,
 PRIVATE_IP2
 $ ssh -i `pwd`/generated/instances_id_rsa opc@IP1
-worker-1$ sudo su - 
+worker-1$ sudo su -
 worker-1# yum install -y nfs-utils
 worker-1# mkdir /scratch
-worker-1# echo "/scratch PRIVATE_IP2(rw)" >> /etc/exports 
+worker-1# echo "/scratch PRIVATE_IP2(rw)" >> /etc/exports
 worker-1# systemctl restart nfs
 worker-1# exit
 worker-1$ exit
 # configure worker-2 to mount the share from worker-1
 $ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
-worker-2$ sudo su - 
+worker-2$ sudo su -
 worker-2# yum install -y nfs-utils
 worker-2# mkdir /scratch
 worker-2# echo "PRIVATE_IP1:/scratch /scratch  nfs" >> /etc/fstab
@@ -137,11 +137,8 @@ worker-2$ exit
 $
 ```
 
-## Use your cloud providers management console to provision a managed Kubernetes environment
 
-write me
-
-## Install Kubernetes on your own compute resources (outside a cloud)
+## Install Kubernetes on your own compute resources (e.g. Oracle Linux servers outside a cloud)
 
 These instructions are for Oracle Linux 7u2+.  If you are using a different flavor of Linux you will need to adjust accordingly.
 
@@ -429,8 +426,3 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ### Important note about persistent volumes
 
 Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it easy, you should place your directory somewhere under `/Users`.
-
-
-## Install Minikube
-
-write me

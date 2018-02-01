@@ -102,7 +102,7 @@ spec:
       # Update the imagePullSecrets with the name of your Kubernetes secret containing
       # your credentials for the Oracle Container Registry.
       imagePullSecrets:
-      - name: earlybird-secret
+      - name: my-registry-secret
 
 ---
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%apiVersion: v1

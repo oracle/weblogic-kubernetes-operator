@@ -38,5 +38,3 @@ wls:/base_domain/serverConfig/> exit()
 
 Exiting WebLogic Scripting Tool.
 ```
-
-write me

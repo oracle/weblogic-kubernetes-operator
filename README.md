@@ -1,6 +1,7 @@
 # Oracle WebLogic Server Kubernetes Operator
 
 Built with [Wercker](http://www.wercker.com)
+
 [![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/master "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
 
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads – many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
@@ -100,9 +101,6 @@ If you would rather see the developers demonstrating the operator rather than re
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
 * [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4) shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
-* [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic Server metrics to Prometheus and creating a Prometheus alert to trigger scaling
-* [Shutting down a domain](#)
-* [Deleting a domain](#)
 * watch this space, more to come!
 
 Like what you see?  Read on for all the nitty-gritty details...
@@ -122,9 +120,9 @@ The overall process of installing and configuring the operator and using it to m
 *	Customizing the domain parameters file
 *	Creating a WebLogic domain
 
-These steps are explained in detail [here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
+All of the [installation steps are explained in detail here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
 
-If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page](site/database.md) for information about how to run the Oracle database in Kubernetes.
+[comment]: # (If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page] site/database.md for information about how to run the Oracle database in Kubernetes.)
 
 ## Using the operator's REST services
 
@@ -134,13 +132,7 @@ The operator provides a REST API that can be used to obtain information about th
 
 Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic domain with the operator.
 
-## Manually creating a WebLogic domain
-
-If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md) for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications.
-
-## Exporting WebLogic metrics to Prometheus
-
-When using the operator to manage WebLogic domains, it may also be desirable to export WebLogic Server metrics to Prometheus using the [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter), which allows metrics to be displayed in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
+[comment]: # ( Manually creating a WebLogic domain.  If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain] site/manually-creating-domain.md for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications. )
 
 ## Starting up the domain
 
@@ -170,10 +162,7 @@ Please refer to [Shutting down a domain](site/shutdown-domain.md) for informatio
 The initial Technology Preview release of the operator supports only the Traefik load balancer/Ingress controller.  Support for other load balancers is planned in the future.
 Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md) for information about current capabilities.
 
-## Exporting operator logs to ELK
-
-The operator provides an option to export its log files to the ELK stack.
-Please refer to [ELK integration](site/elk.md) for information about this capability.
+[comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
 
 ## Removing a domain
 
@@ -187,8 +176,6 @@ kubectl delete pv PV-NAME
 Find the names of the persistent volume claim and the persistent volume in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes.
 
 To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, then delete the corresponding directory on the Kubernetes master.
-
-Be aware that there may be metric data from the domain in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
 
 ## Removing the operator
 

@@ -1,6 +1,6 @@
 # Scaling a WebLogic cluster
 
-Explain how the scaling works – replicas, etc., the REST endpoint.
+The operator provides the ability to scale WebLogic clusters by simply editing the replicas setting, as you would do with most other Kubernetes resources that support scaling.
 
 ## Initiating a scaling operation using the REST API
 
@@ -50,13 +50,3 @@ When the operator receives a scaling request, it will:
   *	at the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`.
 
 In response to a change to either `replicas` property, in the domain custom resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
-
-## Initiating a scaling operation from WLDF
-
-Note that there is a video demonstration of scaling with WLDF available [here](https://youtu.be/Q8iZi2e9HvU).
-
-Write me
-
-## Initiating a scaling operation from Prometheus
-
-Write me

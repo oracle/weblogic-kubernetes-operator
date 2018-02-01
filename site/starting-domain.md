@@ -87,7 +87,6 @@ spec:
   # - T3Channel
 ```
 
-write me
 
 ## How the operator determines which servers to start
 
