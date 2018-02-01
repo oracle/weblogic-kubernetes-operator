@@ -94,7 +94,10 @@ integration-test:  # run in weblogic container so that wlst is available
         chmod +x ./kubectl
         mv ./kubectl /usr/local/bin/kubectl
 
-        kubectl get all
+        export RESULT_ROOT="/tmp/k8s_dir"
+        mkdir -m 777 -p $RESULT_ROOT
+        export PROJECT_ROOT="/pipeline/source"
+        /pipeline/source/src/integration-tests/bash/cleanup.sh
 
         echo "Not yet implemented."
         echo "Eventually, I will run the integration test suite against the test image which is:"

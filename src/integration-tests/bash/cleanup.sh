@@ -67,15 +67,16 @@ for ((i=0;i<DCOUNT;i++)); do
   echo @@ Deleting ${curdomain}-weblogic-credentials secret in namespace $curns
   kubectl -n $curns delete secret ${curdomain}-weblogic-credentials 
 
-  echo @@ Deleting ${curdomain} traefik in namespace $curns
-  kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-deployment.yaml
-  kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-rbac.yaml
+  #echo @@ Deleting ${curdomain} traefik in namespace $curns
+  #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-deployment.yaml
+  #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-rbac.yaml
 done
 
 for ((i=0;i<OCOUNT;i++)); do
   opns=${OPER_NAMESPACES[i]}
   echo @@ Deleting operator in namespace $opns
-  kubectl delete -f $RESULT_DIR/${opns}/weblogic-operator.yaml 
+  #kubectl delete -f $RESULT_DIR/${opns}/weblogic-operator.yaml 
+  kubectl delete deploy weblogic-operator -n ${opns}
   sleep 10
 done
 
@@ -105,10 +106,10 @@ done
 echo @@ Deleting crd
 kubectl delete crd domains.weblogic.oracle
 
-echo @@ Deleting security
-kubectl delete -f $PROJECT_ROOT/kubernetes/rbac.yaml
+#echo @@ Deleting security
+#kubectl delete -f $PROJECT_ROOT/kubernetes/rbac.yaml
 
-echo @@ Deleting kibani, logstash, and elasticsearch artifacts.
+#echo @@ Deleting kibani, logstash, and elasticsearch artifacts.
 kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/kibana.yaml 
 kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/logstash.yaml  
 kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/elasticsearch.yaml  
@@ -142,5 +143,40 @@ done
 
 waitForDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain"
 
-echo @@ Deleting $RESULT_DIR
-/usr/local/packages/aime/ias/run_as_root "rm -fr $RESULT_ROOT/acceptance_test_tmp"
+# clean-up volumes
+kubectl create -f $PROJECT_ROOT/build/cleanup-pv-job.yaml
+JOB_NAME="weblogic-pv-cleanup-job"
+echo "Waiting for the job to complete..."
+  JOB_STATUS="0"
+  max=10
+  count=0
+  while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
+    sleep 30
+    count=`expr $count + 1`
+    JOB_STATUS=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $3; } '`
+    JOB_INFO=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print "pod", $1, "status is", $3; } '`
+    echo "status on iteration $count of $max"
+    echo "$JOB_INFO"
+
+  done
+
+  # Confirm the job pod is status completed
+  JOB_POD=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $1; } '`
+  if [ "$JOB_STATUS" != "Completed" ]; then
+    echo The create domain job is not showing status completed after waiting 300 seconds
+    echo Check the log output for errors
+    kubectl logs jobs/$JOB_NAME
+    fail "Exiting due to failure"
+  fi
+
+  # Check for successful completion in log file
+  JOB_STS=`kubectl logs $JOB_POD | grep "Successfully Completed" | awk ' { print $1; } '`
+  if [ "${JOB_STS}" != "Successfully" ]; then
+    echo The log file for the create domain job does not contain a successful completion status
+    echo Check the log output for errors
+    kubectl logs $JOB_POD
+    fail "Exiting due to failure"
+  fi
+  
+  kubectl delete job $JOB_NAME
+

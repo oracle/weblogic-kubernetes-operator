@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weblogic-pv-cleanup-job
+  namespace: default
+spec:
+  template:
+    metadata:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: domain-job
+          image: store/oracle/serverjre:8
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /scratch
+            name: scratch
+          command: ["rm"]
+          args: ["-rf /scratch/integration-tests/*"]
+      volumes:
+        - name: scratch
+          hostPath:
+            path: /scratch
