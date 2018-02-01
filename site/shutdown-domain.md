@@ -22,7 +22,7 @@ If the load balancer option was selected, there may also be one or more load bal
 kubectl delete deployment domain1-cluster-1-traefik -n domain1
 ```
 
-If there is only one domain in the namespace, then just deleting the namespace might be faster option:
+If there is only one domain in the namespace, then just deleting the namespace might be a faster option:
 
 ```
 kubectl delete namespace NAMESPACE
