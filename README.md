@@ -100,7 +100,6 @@ If you would rather see the developers demonstrating the operator rather than re
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
 * [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4) shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
-* [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic Server metrics to Prometheus and creating a Prometheus alert to trigger scaling
 * watch this space, more to come!
 
 Like what you see?  Read on for all the nitty-gritty details...
@@ -133,10 +132,6 @@ The operator provides a REST API that can be used to obtain information about th
 Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic domain with the operator.
 
 [comment]: # ( Manually creating a WebLogic domain.  If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain] site/manually-creating-domain.md for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications. )
-
-## Exporting WebLogic metrics to Prometheus
-
-When using the operator to manage WebLogic domains, it may also be desirable to export WebLogic Server metrics to Prometheus using the [WLS Exporter](https://github.com/oracle/weblogic-monitoring-exporter), which allows metrics to be displayed in Grafana, and permits the creation of alerts and initiation of scaling actions from Prometheus alerts.  Please refer to [Prometheus integration](site/prometheus.md) for more information.
 
 ## Starting up the domain
 
@@ -180,8 +175,6 @@ kubectl delete pv PV-NAME
 Find the names of the persistent volume claim and the persistent volume in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes.
 
 To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, then delete the corresponding directory on the Kubernetes master.
-
-Be aware that there may be metric data from the domain in Prometheus if this option was used.  These data will need to be deleted separately, if desired.
 
 ## Removing the operator
 
