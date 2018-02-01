@@ -15,8 +15,8 @@ spec:
           volumeMounts:
           - mountPath: /scratch
             name: scratch
-          command: ["rm"]
-          args: ["-rf /scratch/integration-tests/*"]
+          command: ["/bin/bash"]
+          args: ["-c", "rm -rf /scratch/integration-tests/*"]
       imagePullSecrets:
         - name: docker-store
       volumes:
