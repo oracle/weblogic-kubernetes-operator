@@ -17,6 +17,8 @@ spec:
             name: scratch
           command: ["rm"]
           args: ["-rf /scratch/integration-tests/*"]
+      imagePullSecrets:
+        -name: "docker-store"
       volumes:
         - name: scratch
           hostPath:
