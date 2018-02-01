@@ -101,8 +101,6 @@ If you would rather see the developers demonstrating the operator rather than re
 * [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4) shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
 * [Prometheus integration](https://youtu.be/D7KWVXzzqx8) including exporting WebLogic Server metrics to Prometheus and creating a Prometheus alert to trigger scaling
-* [Shutting down a domain](#)
-* [Deleting a domain](#)
 * watch this space, more to come!
 
 Like what you see?  Read on for all the nitty-gritty details...
@@ -122,9 +120,9 @@ The overall process of installing and configuring the operator and using it to m
 *	Customizing the domain parameters file
 *	Creating a WebLogic domain
 
-These steps are explained in detail [here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
+All of the [installation steps are explained in detail here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
 
-If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page](site/database.md) for information about how to run the Oracle database in Kubernetes.
+[comment]: # (If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page] site/database.md for information about how to run the Oracle database in Kubernetes.)
 
 ## Using the operator's REST services
 
