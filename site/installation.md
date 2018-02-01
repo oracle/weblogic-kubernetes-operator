@@ -2,30 +2,14 @@
 
 Note that there is a short video demonstration of the installation process available [here](https://youtu.be/B5UmY2xAJnk).
 
-[comment]: # (
-## Register for access to the Oracle Container Registry
-
-The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com] https://container-registry.oracle.com  and clicking on the Register link.
-
-## Setting up secrets to access the Oracle Container Registry
-
-In order to obtain the operator Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command:
-
-```
-kubectl create namespace weblogic-operator
-kubectl create secret docker-registry SECRET_NAME
-  -n weblogic-operator
-  --docker-server=container-registry.oracle.com
-  --docker-username=YOUR_USERNAME
-  --docker-password=YOUR_PASSWORD
-  --docker-email=YOUR_EMAIL
-```
-
-Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first.
-
-In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
-
-)
+[comment]: # ( Register for access to the Oracle Container Registry )
+[comment]: # ( The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com] https://container-registry.oracle.com  and clicking on the Register link. )
+[comment]: # ( Setting up secrets to access the Oracle Container Registry )
+[comment]: # (In order to obtain the operator Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command: )
+[comment]: # ( kubectl create namespace weblogic-operator )
+[comment]: # ( kubectl create secret docker-registry SECRET_NAME -n weblogic-operator --docker-server=container-registry.oracle.com --docker-username=YOUR_USERNAME --docker-password=YOUR_PASSWORD --docker-email=YOUR_EMAIL )
+[comment]: # ( Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first. )
+[comment]: # ( In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed. )
 
 ## Build the Docker image for the operator
 
@@ -43,7 +27,7 @@ Then create the Docker image as follows:
 docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
 ```
 
-We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, the tag could be the GitHub ID of the developer.
+We recommend that you use a tag other than `latest` to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
 Next, upload your image to your Kubernetes server as follows:
 
@@ -57,15 +41,10 @@ docker load < /some/path/operator.tar
 
 Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
 
-
-## Pull the operator image
-
-You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
-
-```
-docker login container-registry.oracle.com
-docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
-```
+[comment]: # ( Pull the operator image )
+[comment]: # ( You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*: )
+[comment]: # ( docker login container-registry.oracle.com )
+[comment]: # ( docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest )
 
 ## Customizing the operator parameters file
 
