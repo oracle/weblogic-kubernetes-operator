@@ -115,7 +115,6 @@ The following parameters must be provided in the input file:
 | loadBalancerAdminPort	| The node port for the load balancer to accept admin requests.	| 30315 |
 | loadBalancerWebPort	| The node port for the load balancer to accept user traffic. 	| 30305 |
 | enableLoadBalancerAdminPort	| Determines whether the load balancer administration port should be exposed outside the Kubernetes cluster.	| false |
-| enablePrometheusIntegration	| Determines whether the Prometheus integration will be enabled.  If set to ‘true’, then the WebLogic Monitoring Exporter will be installed on all servers in the domain and configured to export metrics to Prometheus. |	false |
 
 ## Limitations of the create domain script
 
