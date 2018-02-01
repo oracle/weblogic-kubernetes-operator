@@ -14,9 +14,7 @@ namespace: weblogic-operator
 targetNamespaces: default
 
 # The docker image containing the operator code.
-# image: container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
-# EARLY ACCESS IMAGE
-image: quay.io/markxnelson/weblogic-kubernetes-operator:latest
+image: container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
 
 # The image pull policy for the operator docker image.
 imagePullPolicy: IfNotPresent

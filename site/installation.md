@@ -2,42 +2,14 @@
 
 Note that there is a short video demonstration of the installation process available [here](https://youtu.be/B5UmY2xAJnk).
 
-## Register for access to the Oracle Container Registry
-
-The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com](https://container-registry.oracle.com) and clicking on the Register link.
-
-**ATTENTION EARLY ACCESS USERS** You will not need to register for Oracle Container Registry for early access.
-
-## Setting up secrets to access the Oracle Container Registry
-
-In order to obtain the operator Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command:
-
-```
-kubectl create namespace weblogic-operator
-kubectl create secret docker-registry SECRET_NAME
-  -n weblogic-operator
-  --docker-server=container-registry.oracle.com
-  --docker-username=YOUR_USERNAME
-  --docker-password=YOUR_PASSWORD
-  --docker-email=YOUR_EMAIL
-```
-
-Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first.
-
-**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.
-Please create your secret as shown below:
-
-```
-kubectl create namespace weblogic-operator
-kubectl create secret docker-registry earlybird-secret
-  -n weblogic-operator
-  --docker-server=quay.io
-  --docker-username=earlybird
-  --docker-password=welcome1
-  --docker-email=mark.x.nelson@gmail.com
-```
-
-In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
+[comment]: # ( Register for access to the Oracle Container Registry )
+[comment]: # ( The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com] https://container-registry.oracle.com  and clicking on the Register link. )
+[comment]: # ( Setting up secrets to access the Oracle Container Registry )
+[comment]: # (In order to obtain the operator Docker image from the Oracle Container Registry, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Oracle Container Registry credentials, issue the following command: )
+[comment]: # ( kubectl create namespace weblogic-operator )
+[comment]: # ( kubectl create secret docker-registry SECRET_NAME -n weblogic-operator --docker-server=container-registry.oracle.com --docker-username=YOUR_USERNAME --docker-password=YOUR_PASSWORD --docker-email=YOUR_EMAIL )
+[comment]: # ( Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first. )
+[comment]: # ( In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed. )
 
 ## Build the Docker image for the operator
 
@@ -55,7 +27,7 @@ Then create the Docker image as follows:
 docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
 ```
 
-We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, the tag could be the GitHub ID of the developer.
+We recommend that you use a tag other than `latest` to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
 Next, upload your image to your Kubernetes server as follows:
 
@@ -69,23 +41,10 @@ docker load < /some/path/operator.tar
 
 Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
 
-
-## Pull the operator image
-
-You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
-
-```
-docker login container-registry.oracle.com
-docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
-```
-
-**ATTENTION EARLY ACCESS USERS** You will need to use the early access image in quay.io.
-Please pull the image as shown below:
-
-```
-docker login quay.io
-docker pull quay.io/markxnelson/weblogic-kubernetes-operator:latest
-```
+[comment]: # ( Pull the operator image )
+[comment]: # ( You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*: )
+[comment]: # ( docker login container-registry.oracle.com )
+[comment]: # ( docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest )
 
 ## Customizing the operator parameters file
 
@@ -103,6 +62,7 @@ The following parameters must be provided in the input file:
 | externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
 | namespace	| The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.	| weblogic-operator |
 | targetNamespaces	| A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here.	| default |
+| image | The docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
 | remoteDebugNodePort	| Tom is adding a debug on/off parameter <br/>If the debug parameter if set to on, then the operator will start a Java remote debug server on the provided port and will suspend execution until a remote debugger has attached.	| 30999 |
 | restHttpsNodePort	| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. 	| 31001 |
 | serviceAccount	| The name of the service account that the operator will use to make requests to the Kubernetes API server. |	weblogic-operator |
@@ -140,10 +100,6 @@ The operator can install the ELK stack and publish its logs into ELK.  If enable
 
 To enable the ELK integration, set the `enableELKintegration` option to `true`.
 
-### Metrics integration with Prometheus
-
-Write me
-
 ## Deploying the operator to a Kubernetes cluster
 
 To deploy the operator, run the deployment script and give it the location of your inputs file:
@@ -166,31 +122,6 @@ The script will carry out the following actions:
 *	If requested, ELK will be deployed and logstash will be configured for the operator’s logs.
 
 The script will validate each action before it proceeds.
-
-## Common problems
-
-Write me
-
-### Could not pull Docker image
-
-If the operator has not started, Kubernetes may not have been able to pull the Docker image from the Docker registry.  Check that the Docker registry secret is correct, or log on to the Kubernetes master and manually pull the image using these commands:
-
-```
-docker login container-registry.oracle.com
-docker pull container-registry.oracle.com/middleware/weblogic-operator:latest
-```
-
-### Secret not created or in the wrong namespace
-
-Write me
-
-### Persistent Volume not created or has wrong permissions
-
-Write me
-
-### Failed to mount shared volumes
-
-X elk..
 
 ## YAML files created during the deployment of the operator
 
@@ -216,7 +147,11 @@ spec:
     metadata:
       labels:
         app: weblogic-operator
+```
+
 The spec section provides details for the container that the operator will execute in.
+
+```
     spec:
       serviceAccountName: weblogic-operator
       containers:
@@ -272,7 +207,9 @@ The spec section provides details for the container that the operator will execu
       - name: ocr-secret
 ```
 
-This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  Debugging the operator is described in the [developer guide](developer.md).
+This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  
+
+[comment]: # (Debugging the operator is described in the [developer guide] developer.md )
 
 ```
 ---
@@ -343,7 +280,6 @@ data:
   internalOperatorKey: QmFnI (truncated) 0tCg==
 ```
 
-write something
 
 ## Verifying the operator deployment
 

@@ -7,7 +7,7 @@ The operator consists of the following two main parts:
 
 The operator is packaged in a Docker image `container-registry.oracle.com/middleware/weblogic-operator:latest`.  This image can be deployed to a Kubernetes cluster.  It is recommended that the operator be deployed in its own namespace.  Only one operator is permitted in a namespace; however, multiple operators may be deployed in a Kubernetes cluster provided they are each in their own namespace and the list of namespaces they manage do not overlap.
 
-Scripts are provided to deploy the operator to a Kubernetes cluster.  These scripts also provide options to install and configure a load balancer, ELK integration and Prometheus integration.
+Scripts are provided to deploy the operator to a Kubernetes cluster.  These scripts also provide options to install and configure a load balancer and ELK integration.
 
 The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  
 
@@ -20,7 +20,6 @@ The Kubernetes cluster has several namespaces.  Components may be deployed into 
 *	The operator is deployed into its own namespace.  If the ELK integration option is configured, then a logstash pod will also be deployed in the operator’s namespace.
 *	WebLogic domains will be deployed into various namespaces.  There can be more than one domain in a namespace if desired.  There is no limit on the number of domains or namespaces that an operator can manage.  Note that there can be more than one operator in a Kubernetes cluster, but each operator is configured with a list of the specific namespaces that it is responsible for.  The operator will not take any action on any domain that is not in one of the namespaces the operator is configured to manage.
 *	If the ELK integration option is configured, ElasticSearch and Kibana will be deployed in the `default` namespace.
-*	If the Prometheus integration option is configured, Prometheus and Grafana will be deployed in the `monitoring` namespace.
 *	If a load balancer is configured, it will be deployed in the `kube-system` namespace.
 
 ## Domain architecture
@@ -54,7 +53,6 @@ Within the container, the following aspects are configured by the operator:
 * The liveness probe is configured to check that the server is alive by querying the Node Manager process.  The liveness probe is configured to check liveness every 15 seconds, and to timeout after five seconds.  If a pod fails the liveness probe, Kubernetes will restart that container, and possibly the pod.
 *	The readiness probe is configured to use the WebLogic Server ReadyApp.  The readiness probe is used to determine if the server is ready to accept user requests.  The readiness is used to determine when a server should be included in a load balancer Ingress, when a restarted server is fully started in the case of a rolling restart, and for various other purposes.
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
-*	If the Prometheus integration was configured, then the WebLogic Monitoring Exporter application will be installed on the server.  This application makes WebLogic Server metrics available to Prometheus.
 
 ## Domain state stored outside Docker images
 The operator expects (and requires) that all state be stored outside of the Docker images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, i.e. the domain directory, the applications directory, file-based persistent stores, etc., are stored on a persistent volume.  A database could also be used to host persistent stores.  All of the containers that are participating in the WebLogic domain use the exact same image, and take on their personality; i.e., which server they execute, at startup time.  Each container mounts the same shared storage and has access to the state information that it needs to fulfill its role in the domain.
