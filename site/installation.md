@@ -2,9 +2,10 @@
 
 Note that there is a short video demonstration of the installation process available [here](https://youtu.be/B5UmY2xAJnk).
 
+[comment]: # (
 ## Register for access to the Oracle Container Registry
 
-The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com](https://container-registry.oracle.com) and clicking on the Register link.
+The operator Docker images are hosted in the Oracle Container Registry.  Before downloading the images, users must register for access to the registry by visiting [https://container-registry.oracle.com] https://container-registry.oracle.com  and clicking on the Register link.
 
 ## Setting up secrets to access the Oracle Container Registry
 
@@ -23,6 +24,8 @@ kubectl create secret docker-registry SECRET_NAME
 Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first.
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed.
+
+)
 
 ## Build the Docker image for the operator
 
