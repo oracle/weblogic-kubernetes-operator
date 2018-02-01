@@ -142,11 +142,13 @@ for ((i=0;i<DCOUNT;i++)); do
   kubectl -n $curns delete cm domain-${curdomain}-scripts 
 done
 
+JOB_NAME="weblogic-pv-cleanup-job"
+kubectl delete job $JOB_NAME
+
 waitForDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain"
 
 # clean-up volumes
 kubectl create -f $PROJECT_ROOT/build/cleanup-pv-job.yaml
-JOB_NAME="weblogic-pv-cleanup-job"
 echo "Waiting for the job to complete..."
   JOB_STATUS="0"
   max=10
