@@ -62,22 +62,22 @@ for ((i=0;i<DCOUNT;i++)); do
   kubectl -n $curns delete job domain-${curdomain}-job 
 
   echo @@ Deleting domain pv and pvc for domain ${curdomain} in namespace $curns
-  kubectl delete pv ${curdomain}-pv 
-  kubectl -n $curns delete pvc ${curdomain}-pv-claim 
+  kubectl delete pv ${curdomain}-pv --ignore-not-found=true
+  kubectl -n $curns delete pvc ${curdomain}-pv-claim --ignore-not-found=true
 
   echo @@ Deleting ${curdomain}-weblogic-credentials secret in namespace $curns
-  kubectl -n $curns delete secret ${curdomain}-weblogic-credentials 
+  kubectl -n $curns delete secret ${curdomain}-weblogic-credentials --ignore-not-found=true
 
   #echo @@ Deleting ${curdomain} traefik in namespace $curns
-  #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-deployment.yaml
-  #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-rbac.yaml
+  #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-deployment.yaml --ignore-not-found=true
+  #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-rbac.yaml --ignore-not-found=true
 done
 
 for ((i=0;i<OCOUNT;i++)); do
   opns=${OPER_NAMESPACES[i]}
   echo @@ Deleting operator in namespace $opns
   #kubectl delete -f $RESULT_DIR/${opns}/weblogic-operator.yaml 
-  kubectl delete deploy weblogic-operator -n ${opns}
+  kubectl delete deploy weblogic-operator -n ${opns} --ignore-not-found=true
   sleep 10
 done
 
@@ -91,7 +91,7 @@ done
 kubectl delete clusterrole \
                  weblogic-operator-cluster-role-nonresource  \
                  weblogic-operator-namespace-role \
-                 weblogic-operator-cluster-role                              
+                 weblogic-operator-cluster-role --ignore-not-found=true                         
 
 for ((i=0;i<OCOUNT;i++)); do
   opns=${OPER_NAMESPACES[i]}
@@ -105,35 +105,35 @@ done
 
 
 echo @@ Deleting crd
-kubectl delete crd domains.weblogic.oracle
+kubectl delete crd domains.weblogic.oracle --ignore-not-found=true
 
 #echo @@ Deleting security
-#kubectl delete -f $PROJECT_ROOT/kubernetes/rbac.yaml
+#kubectl delete -f $PROJECT_ROOT/kubernetes/rbac.yaml --ignore-not-found=true
 
 #echo @@ Deleting kibani, logstash, and elasticsearch artifacts.
-kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/kibana.yaml 
-kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/logstash.yaml  
-kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/elasticsearch.yaml  
+kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/kibana.yaml --ignore-not-found=true
+kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/logstash.yaml --ignore-not-found=true
+kubectl delete -f $PROJECT_ROOT/src/integration-tests/kubernetes/elasticsearch.yaml --ignore-not-found=true
 
 echo @@ Deleting elk pv and pvc
 # TBD The next line can be deleted once the fix
 #     to have uniquely scoped pv/pvc per operator is in place
-kubectl delete pv elk-pv  
+kubectl delete pv elk-pv --ignore-not-found=true
 for ((i=0;i<OCOUNT;i++)); do
   curns=${OPER_NAMESPACES[i]}
-  kubectl delete pv elk-pv-${curns}
-  kubectl -n ${curns} delete pvc elk-pvc 
+  kubectl delete pv elk-pv-${curns} --ignore-not-found=true
+  kubectl -n ${curns} delete pvc elk-pvc --ignore-not-found=true
 done
 
 for ((i=0;i<OCOUNT;i++)); do
   opns=${OPER_NAMESPACES[i]}
   echo @@ Deleting weblogic-operator namespace
-  kubectl delete namespace $opns
+  kubectl delete namespace $opns --ignore-not-found=true
   sleep 1  # wait in case above needs below
 done
 
 echo @@ Deleting test namespace
-kubectl delete namespace test
+kubectl delete namespace test --ignore-not-found=true
 
 for ((i=0;i<DCOUNT;i++)); do
   curdomain=${DOMAINS[i]}
@@ -179,5 +179,5 @@ echo "Waiting for the job to complete..."
     fail "Exiting due to failure"
   fi
   
-  kubectl delete job $JOB_NAME
+  kubectl delete job $JOB_NAME --ignore-not-found=true
 
