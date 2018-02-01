@@ -62,6 +62,7 @@ The following parameters must be provided in the input file:
 | externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
 | namespace	| The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.	| weblogic-operator |
 | targetNamespaces	| A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here.	| default |
+| image | The docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
 | remoteDebugNodePort	| Tom is adding a debug on/off parameter <br/>If the debug parameter if set to on, then the operator will start a Java remote debug server on the provided port and will suspend execution until a remote debugger has attached.	| 30999 |
 | restHttpsNodePort	| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. 	| 31001 |
 | serviceAccount	| The name of the service account that the operator will use to make requests to the Kubernetes API server. |	weblogic-operator |
