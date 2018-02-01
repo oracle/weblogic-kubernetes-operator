@@ -100,9 +100,7 @@ The operator can install the ELK stack and publish its logs into ELK.  If enable
 
 To enable the ELK integration, set the `enableELKintegration` option to `true`.
 
-### Metrics integration with Prometheus
-
-Write me
+[comment]: ( Metrics integration with Prometheus - Write me )
 
 ## Deploying the operator to a Kubernetes cluster
 
@@ -126,31 +124,6 @@ The script will carry out the following actions:
 *	If requested, ELK will be deployed and logstash will be configured for the operator’s logs.
 
 The script will validate each action before it proceeds.
-
-## Common problems
-
-Write me
-
-### Could not pull Docker image
-
-If the operator has not started, Kubernetes may not have been able to pull the Docker image from the Docker registry.  Check that the Docker registry secret is correct, or log on to the Kubernetes master and manually pull the image using these commands:
-
-```
-docker login container-registry.oracle.com
-docker pull container-registry.oracle.com/middleware/weblogic-operator:latest
-```
-
-### Secret not created or in the wrong namespace
-
-Write me
-
-### Persistent Volume not created or has wrong permissions
-
-Write me
-
-### Failed to mount shared volumes
-
-X elk..
 
 ## YAML files created during the deployment of the operator
 
@@ -176,7 +149,11 @@ spec:
     metadata:
       labels:
         app: weblogic-operator
+```
+
 The spec section provides details for the container that the operator will execute in.
+
+```
     spec:
       serviceAccountName: weblogic-operator
       containers:
@@ -232,7 +209,9 @@ The spec section provides details for the container that the operator will execu
       - name: ocr-secret
 ```
 
-This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  Debugging the operator is described in the [developer guide](developer.md).
+This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  
+
+[comment]: # (Debugging the operator is described in the [developer guide] developer.md )
 
 ```
 ---
@@ -303,7 +282,6 @@ data:
   internalOperatorKey: QmFnI (truncated) 0tCg==
 ```
 
-write something
 
 ## Verifying the operator deployment
 
