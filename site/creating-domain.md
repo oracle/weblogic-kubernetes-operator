@@ -221,9 +221,6 @@ spec:
 
 The lines omitted at the end contain the actual scripts that are executed in this container.  These should generally not be modified, except by developers.  
 
-write more about the file
-
-
 ## Verifying the domain creation
 
 The script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
@@ -373,5 +370,3 @@ Events:  <none>
 Kubernetes has a concept of “readiness” that is used to determine when external requests should be routed to a particular pod.  The domain creation job provided with the operator configures the readiness probe to use the WebLogic Server ReadyApp, which provides a mechanism to check when the server is actually ready to process work, as opposed to simply being in the RUNNING state.  Often applications have some work to do after the server is RUNNING but before they are ready to process new requests.
 
 ReadyApp provides an API that allows an application to register itself, so that its state will be taken into consideration when determining if the server is “ready”, and an API that allows the application to inform ReadyApp when it considers itself to be ready.
-
-Add details of how to use ReadyApp API
