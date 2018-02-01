@@ -147,7 +147,7 @@ public class HealthCheckHelper {
     namespaceAccessChecks.put(AuthorizationProxy.Resource.ingresses, ingressOperations);
     namespaceAccessChecks.put(AuthorizationProxy.Resource.networkpolicies, networkPoliciesOperations);
     clusterAccessChecks.put(AuthorizationProxy.Resource.customresourcedefinitions, crudOperations);
-    
+
     clusterAccessChecks.put(AuthorizationProxy.Resource.domains, domainOperations);
 
     // Readonly resources
@@ -248,7 +248,9 @@ public class HealthCheckHelper {
           // git version is of the form v1.7.5
           // Check the 3rd part of the version.
           String[] splitVersion = gitVersion.split("\\.");
-          if (Integer.parseInt(splitVersion[2]) < 5) {
+          // issue-36: gitVersion can be not just "v1.7.9" but also values like "v1.7.9+coreos.0" 
+          splitVersion = splitVersion[2].split("\\+");
+          if (Integer.parseInt(splitVersion[0]) < 5) {
             k8sMinVersion = false;
           }
         }
