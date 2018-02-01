@@ -132,9 +132,7 @@ The operator provides a REST API that can be used to obtain information about th
 
 Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic domain with the operator.
 
-## Manually creating a WebLogic domain
-
-If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain](site/manually-creating-domain.md) for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications.
+[comment]: # ( Manually creating a WebLogic domain.  If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain] site/manually-creating-domain.md for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications. )
 
 ## Exporting WebLogic metrics to Prometheus
 
@@ -168,10 +166,7 @@ Please refer to [Shutting down a domain](site/shutdown-domain.md) for informatio
 The initial Technology Preview release of the operator supports only the Traefik load balancer/Ingress controller.  Support for other load balancers is planned in the future.
 Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md) for information about current capabilities.
 
-## Exporting operator logs to ELK
-
-The operator provides an option to export its log files to the ELK stack.
-Please refer to [ELK integration](site/elk.md) for information about this capability.
+[comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
 
 ## Removing a domain
 

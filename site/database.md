@@ -1,8 +1,6 @@
 # Running the Oracle Database in Kubernetes
 
-**ATTENTION EARLY ACCES USERS** this page is a work in progress.  We will update this with either better details about how to put the datafiles onto a persistent volume, or a pointer to the official Oracle Database Kubernetes pages, or both.
-
-write me
+**PLEASE NOTE** this page is a work in progress.  We will update this with either better details about how to put the datafiles onto a persistent volume, or a pointer to the official Oracle Database Kubernetes pages, or both.
 
 ```
 

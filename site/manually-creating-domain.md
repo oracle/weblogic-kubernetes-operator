@@ -1,6 +1,6 @@
 # Manually creating a WebLogic domain
 
-**ATTENTION EARLY ACCESS USERS** This page is not ready for general consumption yet, we have some rough notes in here, we are working on writing better doc for how to set up this integration.
+**PLEASE NOTE** This page is a work in progress, we have some rough notes in here, we are working on writing better doc for how to set up this integration.
 
 If creating the domain manually, using a WLST script for example, the domain must be configured to meet these requirements:
 

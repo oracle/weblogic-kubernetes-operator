@@ -126,10 +126,6 @@ To create the Kuberentes YAML file to deploy the operator, update the inputs fil
 ```
 
 
-## Attaching a remote debugger to the operator
-
-Write me
-
 ## Coding standards
 
 This project has adopted the following coding standards:
@@ -152,7 +148,7 @@ This project has the following directory structure:
 * src/main/java: Java source code for the operator
 * src/test/java: Java unit-tests for the operator
 * src-generated-swagger: Snapshot of Java source files generated from the domain custom resource's swagger
-* swagger: Swagger files for Kubernetes API server and domain custom resource 
+* swagger: Swagger files for Kubernetes API server and domain custom resource
 
 ### Watch package
 
