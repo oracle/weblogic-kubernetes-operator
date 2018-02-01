@@ -102,10 +102,10 @@ integration-test:  # run in weblogic container so that wlst is available
         export PROJECT_ROOT="/pipeline/source"
         /pipeline/source/src/integration-tests/bash/cleanup.sh
 
-        echo "Not yet implemented."
-        echo "Eventually, I will run the integration test suite against the test image which is:"
+        echo "Integration test suite against the test image which is:"
         echo "quay.io/markxnelson/weblogic-kuberentes-operator:$WERCKER_GIT_COMMIT"
 
+        /pipeline/source/src/integration-tests/bash/run.sh
 
 # This pipeline promotes the docker image after tests have passed
 promote-image:

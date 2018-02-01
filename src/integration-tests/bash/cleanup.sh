@@ -143,7 +143,7 @@ for ((i=0;i<DCOUNT;i++)); do
 done
 
 JOB_NAME="weblogic-pv-cleanup-job"
-kubectl delete job $JOB_NAME
+kubectl delete job $JOB_NAME --ignore-not-found=true
 
 waitForDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain"
 
@@ -172,14 +172,5 @@ echo "Waiting for the job to complete..."
     fail "Exiting due to failure"
   fi
 
-  # Check for successful completion in log file
-  JOB_STS=`kubectl logs $JOB_POD | grep "Successfully Completed" | awk ' { print $1; } '`
-  if [ "${JOB_STS}" != "Successfully" ]; then
-    echo The log file for the create domain job does not contain a successful completion status
-    echo Check the log output for errors
-    kubectl logs $JOB_POD
-    fail "Exiting due to failure"
-  fi
-  
   kubectl delete job $JOB_NAME --ignore-not-found=true
 
