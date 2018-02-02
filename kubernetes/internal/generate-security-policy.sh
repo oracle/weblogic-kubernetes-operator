@@ -47,7 +47,7 @@ fi
 if [ "$1" = "-o" ] ; then
         shift
         SCRIPT="$1"
-elif [ "$1" = --output=* ] ; then
+elif [[ "$1" = "--output="* ]] ; then
         SCRIPT=`echo "$1" | cut -d \= -f 2`
 else
         SCRIPT=$SCRIPT_DEFAULT
