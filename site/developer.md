@@ -11,7 +11,7 @@ The following software are required to obtain and build the operator:
 *	Java Developer Kit (1.8u131 or later recommended, not 1.9)
 *	Docker 17.03.1.ce
 
-The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8, for example closures, but does not use any Java 1.9 feature.
+The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
 
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support, for other operating systems.
 
@@ -27,7 +27,7 @@ git clone https://github.com/oracle/weblogic-kubernetes-operator
 
 ## Building the operator
 
-The operator is built using [Apache Maven](http://maven.apache.org).  The build machine will also need to have Docker installed.  
+The operator is built using [Apache Maven](http://maven.apache.org).  The build machine will also need to have Docker installed.
 
 To build the operator, issue the following command in the project directory:
 
@@ -73,7 +73,7 @@ To run the tests, uncomment the following `execution` element in the `pom.xml` f
 -->
 ```
 
-These test assume that the RBAC definitions exist on the Kubernetes cluster.  To create them, update the inputs file and run the operator installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
+These tests assume that the RBAC definitions exist on the Kubernetes cluster.  To create them, update the inputs file and run the operator installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
 
 ```
 ./create-weblogic-operator.sh -g -i create-operator-inputs.yaml
@@ -152,7 +152,7 @@ This project has the following directory structure:
 
 ### Watch package
 
-The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time. As such it is not ideally suited our use case, where a continuous stream of watches was desired, with watch events generated in real-time. The watch-wrapper in this repository extends the default Watch API to provide a continuous stream of watch events until the stream is specifically closed. It also provides `resourceVersion` tracking to exclude events that have already been seen.  The Watch-wrapper provides callbacks so events, as they occur, can trigger actions.
+The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time. As such it is not ideally suited for our use case, where a continuous stream of watches was desired, with watch events generated in real time. The watch-wrapper in this repository extends the default Watch API to provide a continuous stream of watch events until the stream is specifically closed. It also provides `resourceVersion` tracking to exclude events that have already been seen.  The watch-wrapper provides callbacks so events, as they occur, can trigger actions.
 
 ## Asynchronous call model
 
@@ -170,7 +170,7 @@ The user-level thread pattern is implemented by the classes in the `oracle.kuber
 * `Component`: Provider of SPI's that may be useful to the processing flow.
 * `Container`: Represents the containing environment and is a `Component`.
 
-Each `Step` has a reference to the next `Step` in the processing flow; however `Steps` are not required to indicate that the next `Step` be invoked by the `Fiber` when the `Step` returns a `NextAction` to the `Fiber`.  This leads to common use cases where `Fibers` invoke a series of `Steps` that are linked by the 'is-next' relationship, but just as commonly, use cases where the `Fiber` will invoke sets of `Steps` along a detour before returning to the normal flow.
+Each `Step` has a reference to the next `Step` in the processing flow; however, `Steps` are not required to indicate that the next `Step` be invoked by the `Fiber` when the `Step` returns a `NextAction` to the `Fiber`.  This leads to common use cases where `Fibers` invoke a series of `Steps` that are linked by the 'is-next' relationship, but just as commonly, use cases where the `Fiber` will invoke sets of `Steps` along a detour before returning to the normal flow.
 
 In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` instances, and `Packet`.  The `Fiber` is then started.  The `Engine` would typically be a singleton, since it's backed by a `ScheduledExecutorService`.  The `Packet` would also typically be pre-loaded with values that the `Steps` would use in their `apply()` methods.
 
