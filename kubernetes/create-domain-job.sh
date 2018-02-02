@@ -273,7 +273,7 @@ function initialize {
   validateInputParamsSpecified adminPort adminServerName createDomainScript domainName domainUid clusterName managedServerCount managedServerStartCount managedServerNameBase
   validateInputParamsSpecified managedServerPort persistencePath persistenceSize persistenceVolumeClaimName persistenceVolumeName
   validateInputParamsSpecified productionModeEnabled secretsMountPath secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
-  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer
+  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer replaceExistingDomain
   validateStorageClass
   validateLoadBalancer
   validateImagePullSecretName
@@ -349,6 +349,7 @@ function createYamlFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
+  sed -i -e "s:%REPLACE_EXISTING_DOMAIN%:${replaceExistingDomain}:g" ${jobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
