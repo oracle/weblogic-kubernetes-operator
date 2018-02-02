@@ -21,11 +21,14 @@ First run the build using this command:
 mvn clean install
 ```
 
-Then create the Docker image as follows:
+Then login to Docker Store so that you will be able to pull the base image, and create the Docker image as follows:
 
 ```
+docker login
 docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
 ```
+
+Note: If you have not used the base image (`store/oracle/serverjre:8`) before you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before Docker Store will give you permission to pull that image. 
 
 We recommend that you use a tag other than `latest` to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
