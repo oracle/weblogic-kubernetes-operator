@@ -52,6 +52,10 @@ persistenceVolumeClaimName: pv001-claim
 # if it is not already
 persistenceVolumeName: pv001
 
+# Boolean indiciating whether to erase/overwrite an existing data found in the persistent volume
+# WARNING: if you set this to true, then ALL data found in the persistent volume will be deleted! 
+replaceExistingDomain: false
+
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
