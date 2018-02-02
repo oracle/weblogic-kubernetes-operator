@@ -43,9 +43,13 @@ kubectl create secret docker-registry SECRET_NAME
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  It is generally easier to manually pull the image in advance, as described in the next section.
 
+## Go to the Docker Store and accept the license agreement for the WebLogic Server image
+
+If you have never used the WebLogic Server image before, you will need to go to the [Docker Store web interface](https://store.docker.com/images/oracle-weblogic-server-12c) and accept the license agreement before Docker Store will allow you to pull this image.  This is a one-time requirement, you do not have to repeat it for each machine you want to use the image on. 
+
 ## Pull the WebLogic Server image
 
-You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
+You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes nodes*:
 
 ```
 docker login
