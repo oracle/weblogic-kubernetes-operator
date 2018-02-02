@@ -5,7 +5,7 @@
 
 # Cheat sheet for setting up Kubernetes
 
-If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is an on-premise installation of Kubernetes, e.g. on Bare Metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
+If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is an on-premises installation of Kubernetes; for example, on Bare Metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
 
 "Production" options:
 
@@ -26,24 +26,24 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
 ### Prerequisites
 
-1. Download and install [Terraform][Terraform] (v0.10.3 or later)
-2. Download and install the [OCI Terraform Provider][OCI provider] (v2.0.0 or later)
+1. Download and install [Terraform][Terraform] (v0.10.3 or later).
+2. Download and install the [OCI Terraform Provider][OCI provider] (v2.0.0 or later).
 3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
 ```
 providers {
   oci = "<path_to_provider_binary>/terraform-provider-oci"
 }
 ```
-4.  Ensure you have [Kubectl][Kubectl] installed if you plan to interact with the cluster locally
+4.  Ensure you have [Kubectl][Kubectl] installed if you plan to interact with the cluster locally.
 
 ### Quick Start
 
-1. git clone the Terraform Kubernetes installer project  
+1. Do a `git clone` of the Terraform Kubernetes installer project:
 
 ```
 git clone https://github.com/oracle/terraform-kubernetes-installer.git
 ```
-2. Initialize your project
+2. Initialize your project:
 
 ```
 cd terraform-kubernetes-installer
@@ -56,7 +56,7 @@ terraform init
 cp terraform.example.tfvars terraform.tfvars
 ```
 
-4.  Edit the terraform.tvfars to include values for your  tenancy, user, and compartment.  Optionally edit variables to change the Shape of the VMs for your Kubernetes master and workers, and your etcd cluster.   For example:
+4.  Edit the `terraform.tvfars` file to include values for your tenancy, user, and compartment.  Optionally edit variables to change the `Shape` of the VMs for your Kubernetes master and workers, and your etcd cluster.   For example:
 
 ```
 #give a label to your cluster to help identify it if you have multiple
@@ -90,25 +90,25 @@ etcd_iscsi_volume_create = true
 etcd_iscsi_volume_size = 50
 ```
 
-5.  Test and Apply your changes
+5.  Test and apply your changes:
 
 ```
 terraform plan
 terraform apply
 ```
 
-6.  Test your cluster using built in script at `scripts/cluster-check.sh`
+6.  Test your cluster using the built-in script `scripts/cluster-check.sh`:
 
 ```
 scripts/cluster-check.sh
 ```
-7. Output the ssh private key
+7. Output the SSH private key:
 ```
 # output the ssh private key for use later
 $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generated/instances_id_rsa && chmod 600 generated/instances_id_rsa
 ```
 
-7. If you need shared storage between your Kubernetes Worker nodes, enable and configure NFS:
+7. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
 ```
 $ terraform output worker_public_ips
@@ -140,18 +140,18 @@ $
 
 ## Install Kubernetes on your own compute resources (e.g. Oracle Linux servers outside a cloud)
 
-These instructions are for Oracle Linux 7u2+.  If you are using a different flavor of Linux you will need to adjust accordingly.
+These instructions are for Oracle Linux 7u2+.  If you are using a different flavor of Linux, you will need to adjust accordingly.
 
-**NOTE** These steps must be run with the `root` user, until specified otherwise!  Any tome you see `YOUR_USERID` in a command, you should replace it with your actual userid.
+**NOTE** These steps must be run with the `root` user, until specified otherwise!  Any time you see `YOUR_USERID` in a command, you should replace it with your actual userid.
 
-Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) as it will be used for the `/var/lib/docker` filesystem which contains all of your images and containers. The Kubernetes directory will be used for the `/var/lib/kubelet` filesystem and persistent volume storage.
+Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) because it will be used for the `/var/lib/docker` file syste, which contains all of your images and containers. The Kubernetes directory will be used for the `/var/lib/kubelet` file system and persistent volume storage.
 
 ```
 export docker_dir=/scratch/docker
 export k8s_dir=/scratch/k8s_dir
 ```
 
-Create a shell script that sets up the necessary environment variables, you should probably just append this to the user's `.bashrc` so it will get executed at login.  You will also need to configure your proxy settings in here, if you are behind an HTTP proxy:
+Create a shell script that sets up the necessary environment variables. You should probably just append this to the user's `.bashrc` so that it will get executed at login.  You will also need to configure your proxy settings in here if you are behind an HTTP proxy:
 
 ```
 export PATH=$PATH:/sbin:/usr/sbin
@@ -179,7 +179,7 @@ Source that script to set up your environment variables:
 . ~/.bashrc
 ```
 
-If you want command completion, you can add this to the script:
+If you want command completion, you can add the following to the script:
 
 ```
 [ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
@@ -219,7 +219,7 @@ diff /etc/sysconfig/docker /tmp/docker.out
 mv /tmp/docker.out /etc/sysconfig/docker
 ```
 
-Set up the Docker network, including HTTP proxy configuration if you need it:
+Set up the Docker network, including the HTTP proxy configuration if you need it:
 
 ```
 # generate a custom /setc/sysconfig/docker-network
@@ -238,7 +238,7 @@ Add your user to the `docker` group:
 usermod -aG docker YOUR_USERID
 ```
 
-Enable and start the Docker service we just installed and configured:
+Enable and start the Docker service that we just installed and configured:
 
 ```
 systemctl enable docker && systemctl start docker
@@ -359,7 +359,7 @@ Congratulations!  Docker and Kubernetes are installed and configured!
 
 Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https://docs.docker.com/docker-for-mac/#kubernetes) that is a pretty quick and easy way to get a simple test environment set up on your Mac.  To set it up, follow these instructions:
 
-Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (Command-space bar, type in "Docker" (without the quotes) and run it).  Once it is running you will see the Docker icon appear in your status bar:
+Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (press Command-Space bar, type in `Docker` and run it).  After it is running you will see the Docker icon appear in your status bar:
 
 ![Docker icon in status bar](images/docker-icon-in-status-bar.png)
 
@@ -367,23 +367,23 @@ Click on that icon and select "Preferences..." from the drop down menu.  Go to t
 
 ![Docker memory settings](images/docker-memory.png)
 
-Go to the "Kubernetes" tab and click on the option to enable Kuberentes:
+Go to the "Kubernetes" tab and click on the option to enable Kubernetes:
 
 ![Enable Kubernetes setting](images/docker-enable-k8s.png)
 
-**Note** If you are behind an HTTP proxy you should also go to the "Proxies" tab and add your proxy details in there.
+**Note** If you are behind an HTTP proxy, then you should also go to the "Proxies" tab and enter your proxy details.
 
 Docker will download the Kuberentes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
 
 ![Kubernetes running](images/docker-k8s-running.png)
 
-If you have used `kubectl` on your Mac before, you will have to make sure it is pointing to the right cluster and context.
+If you have previously used `kubectl` on your Mac, then you must make sure it is pointing to the correct cluster and context.
 
 ```
 $ kubectl config get-contexts
 CURRENT   NAME                          CLUSTER                      AUTHINFO             NAMESPACE
-*         docker-for-desktop            docker-for-desktop-cluster   docker-for-desktop   
-          kubernetes-admin@kubernetes   kubernetes                   kubernetes-admin     
+*         docker-for-desktop            docker-for-desktop-cluster   docker-for-desktop
+          kubernetes-admin@kubernetes   kubernetes                   kubernetes-admin
 $ kubectl config use-context docker-for-desktop
 Switched to context "docker-for-desktop".
 $ kubectl config get-clusters
@@ -394,7 +394,7 @@ $ kubectl config set-cluster docker-for-desktop-cluster
 Cluster "docker-for-desktop-cluster" set.
 ```
 
-You should add `docker-for-desktop` to your `/etc/hosts` file entry for 127.0.0.1, as shown in this example, you will have to use an admin user to edit this file:
+You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must use an admin user to edit this file:
 
 ```
 ##
@@ -408,13 +408,13 @@ You should add `docker-for-desktop` to your `/etc/hosts` file entry for 127.0.0.
 ::1             localhost
 ```
 
-You may also have to tell `kubectl` to ignore the certificate using this command:
+You may also have to tell `kubectl` to ignore the certificate by entering this command:
 
 ```
 kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true
 ```
 
-Then validate you are talking to the Kubernetes in Docker with these commands:
+Then validate you are talking to the Kubernetes in Docker by entering these commands:
 
 ```
 $ kubectl cluster-info
@@ -425,4 +425,4 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 
 ### Important note about persistent volumes
 
-Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it easy, you should place your directory somewhere under `/Users`.
+Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it simple, place your directory somewhere under `/Users`.
