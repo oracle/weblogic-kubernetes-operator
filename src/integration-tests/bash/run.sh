@@ -941,6 +941,21 @@ function mvn_integration_test_local {
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image".
 }
 
+function mvn_integration_test_wercker {
+
+    trace "Running mvn -P integration-tests install.  Output in `pwd`/mvn.out"
+
+    local mstart=`date +%s`
+    mvn -P integration-tests install > mvn.out 2>&1
+    local mend=`date +%s`
+    local msecs=$((mend-mstart))
+    trace "mvn complete, runtime $msecs seconds"
+
+    mvn_build_check mvn.out
+
+    mvn_integration_test
+}
+
 function check_pv {
 
     trace "Checking if the persistent volume ${1:?} is ${2:?}"
@@ -1725,6 +1740,11 @@ function test_suite {
     
       create_image_pull_secret
     
+    else if [ "$WERCKER" = "true" ]; then
+
+      trace 'Running mvn integration tests...'
+      mvn_integration_test_wercker
+    	
     else
     
       cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
