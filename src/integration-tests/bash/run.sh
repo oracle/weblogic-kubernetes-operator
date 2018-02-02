@@ -1740,7 +1740,7 @@ function test_suite {
     
       create_image_pull_secret
     
-    else if [ "$WERCKER" = "true" ]; then
+    elif [ "$WERCKER" = "true" ]; then
 
       trace 'Running mvn integration tests...'
       mvn_integration_test_wercker
