@@ -95,11 +95,12 @@ integration-test:  # run in weblogic container so that wlst is available
         mv ./kubectl /usr/local/bin/kubectl
 
         # install maven
-        wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+        curl -LO http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
+        mv epel-apache-maven.repo /etc/yum.repos.d/
         yum install -y apache-maven
         
         # install java
-        yum install java-1.8.0-openjdk-devel
+        yum install -y java-1.8.0-openjdk-devel
         
         kubectl delete secret docker-store --ignore-not-found=true
         kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
