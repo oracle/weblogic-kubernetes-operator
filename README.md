@@ -60,7 +60,7 @@ Oracle recommends careful consideration before deciding to expose any administra
 
 The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 
-*	Kubernetes 1.7.5+, 1.8.0+ or 1.9.0+ (check with `kubectl version`)
+*	Kubernetes 1.7.5+, 1.8.0+ (check with `kubectl version`).  Note that Kubernetes 1.9.x is not supported yet.
 *	Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
