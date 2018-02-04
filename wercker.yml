@@ -84,8 +84,8 @@ integration-test:  # run in weblogic container so that wlst is available
         #   /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
         #   /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
 
-        export K8S_HOST=$K8S_17_ADDRESS
-        export K8S_EXTERNAL_SANS="IP:$K8S_HOST"
+        sed -i "$ a ${K8S_17_ADDRESS} k8s17cluster" /etc/hosts
+        export K8S_HOST="k8s17cluster"
         sed -i -e "s,%ADDRESS%,$K8S_HOST,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_CERT_DATA%,$K8S_17_CLIENT_CERT_DATA,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_KEY_DATA%,$K8S_17_CLIENT_KEY_DATA,g" /pipeline/source/build/kube.config
