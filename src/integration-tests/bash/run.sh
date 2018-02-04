@@ -136,7 +136,7 @@ function deploy_operator {
     sed -i -e "s|\(image:\).*|\1${IMAGE_NAME}:${IMAGE_TAG}|g" $inputs
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
-    sed -i -e "s|\(externalSans:\).*|\1${external_sans}|g" $inputs
+    sed -i -e "s|\(externalSans:\).*|\1DNS:${host}|g" $inputs
     trace 'customize the inputs yaml file to set the java logging level to FINER'
     sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
     sed -i -e "s|\(externalRestHttpsPort:\).*|\1${EXTERNAL_REST_HTTPSPORT}|g" $inputs
@@ -1678,7 +1678,6 @@ function test_suite {
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
     export host=${K8S_HOST:-`hostname | awk -F. '{print $1}'`}
-    export external_sans=${K8S_EXTERNAL_SANS:-DNS:${host}}
 
     if [ "$JENKINS" = "true" ]; then
     
