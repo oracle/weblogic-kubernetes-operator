@@ -132,8 +132,8 @@ function deploy_operator {
     cp $PROJECT_ROOT/kubernetes/create-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
-    sed -i -e "s|\(imagePullPolicy:\).*|\1Never|g" $inputs
-    sed -i -e "s|\(image:\).*|\1wlsldi-v2.docker.oraclecorp.com/weblogic-operator:${IMAGE_TAG}|g" $inputs
+    sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY}|g" $inputs
+    sed -i -e "s|\(image:\).*|\1${IMAGE_NAME}:${IMAGE_TAG}|g" $inputs
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
     sed -i -e "s|\(externalSans:\).*|\1DNS:${host}|g" $inputs
@@ -161,8 +161,8 @@ function deploy_operator {
 
     trace "Checking image for pod $POD"
     local IMAGE=`kubectl describe pod $POD -n ${namespace} | grep "Image:" | awk ' { print $2; } '`
-    if [ "$IMAGE" != "wlsldi-v2.docker.oraclecorp.com/weblogic-operator:${IMAGE_TAG}" ]; then
-        fail "pod image should be ((wlsldi-v2.docker.oraclecorp.com/weblogic-operator:${IMAGE_TAG})) but image is ((${IMAGE}))"
+    if [ "$IMAGE" != "${IMAGE_NAME}:${IMAGE_TAG}" ]; then
+        fail "pod image should be ((${IMAGE_NAME}:${IMAGE_TAG})) but image is ((${IMAGE}))"
     fi
 
 }
@@ -937,7 +937,7 @@ function mvn_integration_test_local {
 
     mvn_build_check mvn.out
 
-    docker build -t "wlsldi-v2.docker.oraclecorp.com/weblogic-operator:${IMAGE_TAG}" --no-cache=true .
+    docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" --no-cache=true .
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image".
 }
 
@@ -1678,7 +1678,7 @@ function test_suite {
     export PROJECT_ROOT="$SCRIPTPATH/../../.."
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
-    export host=`hostname | awk -F. '{print $1}'`
+    export host=${K8S_HOST:-`hostname | awk -F. '{print $1}'`}
 
     if [ "$JENKINS" = "true" ]; then
     
@@ -1689,6 +1689,8 @@ function test_suite {
       export M2_HOME=${M2_HOME:?}
       export JVM_ARGS=${JVM_ARGS}
      
+      trace "Current git branch=$BRANCH_NAME"
+     
     else
     
       trace "Test Suite is running locally"
@@ -1697,10 +1699,10 @@ function test_suite {
       [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
     
       # No need to check M2_HOME or docker_pass -- not used by local runs
+
+      trace "Current git branch=$BRANCH_NAME"
     
     fi
-
-    trace "Current git branch=$BRANCH_NAME"
     
     # Convert the git branch name into a docker image tag.
     #
@@ -1721,7 +1723,9 @@ function test_suite {
     #     End with ".lock"
     #     Contain a "\" (backslash)
     
-    export IMAGE_TAG=`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`
+    export IMAGE_TAG=${IMAGE_TAG:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
+    export IMAGE_NAME=${IMAGE_NAME:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
+    export IMAGE_PULL_POLICY=${IMAGE_PULL_POLIYC:-Never}
     
     set -x
 

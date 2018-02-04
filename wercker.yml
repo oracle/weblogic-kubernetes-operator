@@ -84,7 +84,8 @@ integration-test:  # run in weblogic container so that wlst is available
         #   /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
         #   /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
 
-        sed -i -e "s,%ADDRESS%,$K8S_17_ADDRESS,g" /pipeline/source/build/kube.config
+        export K8S_HOST=$K8s_17_ADDRESS
+        sed -i -e "s,%ADDRESS%,$K8S_HOST,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_CERT_DATA%,$K8S_17_CLIENT_CERT_DATA,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_KEY_DATA%,$K8S_17_CLIENT_KEY_DATA,g" /pipeline/source/build/kube.config
         export KUBECONFIG="/pipeline/source/build/kube.config"
@@ -111,8 +112,12 @@ integration-test:  # run in weblogic container so that wlst is available
         export PROJECT_ROOT="/pipeline/source"
         /pipeline/source/src/integration-tests/bash/cleanup.sh
 
+        export IMAGE_NAME="quay.io/markxnelson/weblogic-kuberentes-operator"
+        export IMAGE_TAG="$WERCKER_GIT_COMMIT"
+        export IMAGE_PULL_POLICY="Always"
+
         echo "Integration test suite against the test image which is:"
-        echo "quay.io/markxnelson/weblogic-kuberentes-operator:$WERCKER_GIT_COMMIT"
+        echo "$IMAGE_NAME:$IMAGE_TAG"
 
         /pipeline/source/src/integration-tests/bash/run.sh
 
