@@ -1691,6 +1691,10 @@ function test_suite {
      
       trace "Current git branch=$BRANCH_NAME"
      
+    elif [ "$WERCKER" = "true" ]; then
+    	
+      trace "Test Suite is running on Wercker"
+    	
     else
     
       trace "Test Suite is running locally"
@@ -1855,7 +1859,7 @@ function test_suite {
 
 # entry point
 
-if [ "${FOREGROUND:-false}" = "true" ] || [ "$JENKINS" = "true" ]; then
+if [ "${FOREGROUND:-false}" = "true" ] || [ "$JENKINS" = "true" ] || [ "$WERCKER" = "true" ]; then
     test_suite
 else
     export TESTOUT=/tmp/test_suite.out
