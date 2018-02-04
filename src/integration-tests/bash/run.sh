@@ -952,8 +952,7 @@ function mvn_integration_test_wercker {
     trace "mvn complete, runtime $msecs seconds"
 
     mvn_build_check mvn.out
-
-    mvn_integration_test
+    
 }
 
 function check_pv {
