@@ -91,12 +91,14 @@ integration-test:  # run in weblogic container so that wlst is available
         # TEST
         cat /etc/hosts
         
+        # Update KUBECONFIG for K8S 1.7 cluster
         export K8S_HOST="k8s17cluster"
-        sed -i -e "s,%ADDRESS%,$K8S_HOST,g" /pipeline/source/build/kube.config
+        sed -i -e "s,%ADDRESS%,https://$K8S_HOST:443,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_CERT_DATA%,$K8S_17_CLIENT_CERT_DATA,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_KEY_DATA%,$K8S_17_CLIENT_KEY_DATA,g" /pipeline/source/build/kube.config
         export KUBECONFIG="/pipeline/source/build/kube.config"
         
+        # running on Wercker
         export WERCKER="true"
 
         # install kubectl
