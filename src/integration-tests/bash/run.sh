@@ -139,7 +139,7 @@ function deploy_operator {
     fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
-    sed -i -e "s|\(externalSans:\).*|\1DNS:${host}|g" $inputs
+    sed -i -e "s|\(externalSans:\).*|\1DNS:${nodeport_host}|g" $inputs
     trace 'customize the inputs yaml file to set the java logging level to FINER'
     sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
     sed -i -e "s|\(externalRestHttpsPort:\).*|\1${EXTERNAL_REST_HTTPSPORT}|g" $inputs
@@ -301,7 +301,7 @@ function run_create_domain_job {
     sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $host/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $nodeport_host/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^secretName:.*/secretName: $CREDENTIAL_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
@@ -538,7 +538,7 @@ function verify_webapp_load_balancing {
     trace 'verify that ingress is created'
     kubectl describe ingress -n $NAMESPACE
 
-    local TEST_APP_URL="http://${host}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
+    local TEST_APP_URL="http://${nodeport_host}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
 
     trace 'wait for test app to become available'
@@ -549,7 +549,7 @@ function verify_webapp_load_balancing {
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(curl --noproxy ${host} ${TEST_APP_URL} \
+      local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_APP_URL} \
         --write-out "%{http_code}" \
         -o ${CURL_RESPONSE_BODY} \
       )
@@ -582,7 +582,7 @@ function verify_webapp_load_balancing {
       do
         echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-        local HTTP_RESPONSE=$(curl --noproxy ${host} ${TEST_APP_URL} \
+        local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_APP_URL} \
           --write-out "%{http_code}" \
           -o ${CURL_RESPONSE_BODY} \
         )
@@ -655,13 +655,13 @@ function verify_admin_server_ext_service {
       fail "Configured asNodePort of ${configuredNodePort} is different from nodePort found in service ${ADMIN_SERVER_NODEPORT_SERVICE}: ${nodePort}"
     fi
 
-    local TEST_REST_URL="http://${host}:${nodePort}/management/weblogic/latest/serverRuntime"
+    local TEST_REST_URL="http://${nodeport_host}:${nodePort}/management/weblogic/latest/serverRuntime"
 
     local CURL_RESPONSE_BODY="$TMP_DIR/testconsole.response.body"
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy ${host} ${TEST_REST_URL} \
+    local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_REST_URL} \
       --user ${WLS_ADMIN_USERNAME}:${WLS_ADMIN_PASSWORD} \
       -H X-Requested-By:Integration-Test \
       --write-out "%{http_code}" \
@@ -675,11 +675,11 @@ function verify_admin_server_ext_service {
       fail "accessing admin server REST endpoint did not return 200 status code, got ${HTTP_RESPONSE}"
     fi
 
-    local TEST_CONSOLE_URL="http://${host}:${nodePort}/console/login/LoginForm.jsp"
+    local TEST_CONSOLE_URL="http://${nodeport_host}:${nodePort}/console/login/LoginForm.jsp"
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy ${host} ${TEST_CONSOLE_URL} \
+    local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_CONSOLE_URL} \
       --write-out "%{http_code}" \
       -o ${CURL_RESPONSE_BODY} \
     )
@@ -755,7 +755,7 @@ function call_operator_rest {
     fi
 
     local REST_PORT=`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")].spec.ports[?(@.name == "rest-https")].nodePort}'`
-    local REST_ADDR="https://${host}:${REST_PORT}"
+    local REST_ADDR="https://${nodeport_host}:${REST_PORT}"
     local SECRET=`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`
     local ENCODED_TOKEN=`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`
     local TOKEN=`echo ${ENCODED_TOKEN} | base64 --decode`
@@ -1011,7 +1011,7 @@ function verify_wlst_access {
   local username=`get_wladmin_user` 
   local password=`get_wladmin_pass`
   local tmp_dir="$TMP_DIR"
-  local t3url="t3://$host:$ADMIN_WLST_PORT"
+  local t3url="t3://$nodeport_host:$ADMIN_WLST_PORT"
 
   trace "Testing external WLST connectivity to pod $AS_NAME via $t3url ns=$namespace.".
 
@@ -1110,7 +1110,7 @@ function deploy_webapp_via_WLST {
     local appname="testwebapp"
     local tmp_dir="$TMP_DIR"
 
-    local t3url_lcl="t3://$host:$ADMIN_WLST_PORT"
+    local t3url_lcl="t3://$nodeport_host:$ADMIN_WLST_PORT"
     local t3url_pod="t3://$as_name:$ADMIN_WLST_PORT"
 
     local appwar_lcl="$tmp_dir/testwebapp.war"
@@ -1680,7 +1680,7 @@ function test_suite {
     export PROJECT_ROOT="$SCRIPTPATH/../../.."
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
-    export host=${K8S_HOST:-`hostname | awk -F. '{print $1}'`}
+    export nodeport_host=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
 
     if [ "$JENKINS" = "true" ]; then
     
