@@ -135,6 +135,8 @@ integration-test:  # run in weblogic container so that wlst is available
         echo "$IMAGE_NAME:$IMAGE_TAG"
 
         /pipeline/source/src/integration-tests/bash/run.sh
+        
+        yum clean all
 
 # This pipeline promotes the docker image after tests have passed
 promote-image:
