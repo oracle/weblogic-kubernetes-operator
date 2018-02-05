@@ -1728,7 +1728,7 @@ function test_suite {
     
     export IMAGE_TAG=${IMAGE_TAG:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
     export IMAGE_NAME=${IMAGE_NAME:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
-    export IMAGE_PULL_POLICY=${IMAGE_PULL_POLIYC:-Never}
+    export IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY:-Never}
     
     set -x
 
