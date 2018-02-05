@@ -52,7 +52,7 @@ The operator can configure services to expose WebLogic applications and features
 *	How will users authenticate?
 * Is the network channel encrypted?
 
-While it is natural to expose web applications outside the cluster, exposing administrative features like the administration console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
+While it is natural to expose web applications outside the cluster, exposing administrative features like the Administration Console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
 
 Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.
 
@@ -73,10 +73,10 @@ The following features are not certified or supported in the Technology Preview 
 
 *	Whole Server Migration
 *	Consensus Leasing
-*	Node Manager (although it is used internally for the liveness probe and to start WebLogic servers)
+*	Node Manager (although it is used internally for the liveness probe and to start WebLogic Server instances)
 *	Dynamic domains (the current certification only covers configured clusters, certification of dynamic clusters is planned at a future date)
 *	Multicast
-*	If using a `hostPath` persistent volume, then it must have read/write/many permissions for all container/pods in the WebLogic deployment
+*	If using a `hostPath` persistent volume, then it must have read/write/many permissions for all container/pods in the WebLogic Server deployment
 *	Multitenancy
 *	Production redeployment
 
@@ -97,11 +97,11 @@ Documentation for APIs is provided here:
 If you would rather see the developers demonstrating the operator rather than reading the documentation, then here are your videos:
 
 * [Installing the operator](https://youtu.be/B5UmY2xAJnk) includes the installation and also shows using the operator's REST API.
-* [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the administration console and looking at the various resources created in Kubernetes - services, Ingresses, pods, load balancers, etc.
+* [Creating a WebLogic domain with the operator](https://youtu.be/Ey7o8ldKv9Y) shows creation of two WebLogic domains including accessing the Administration Console and looking at the various resources created in Kubernetes - services, Ingresses, pods, load balancers, etc.
 * [Deploying a web application, scaling a WebLogic cluster with the operator and verifying load balancing](https://youtu.be/hx4OPhNFNDM)
 * [Using WLST against a domain running in Kubernetes](https://youtu.be/eY-KXEk8rI4) shows how to create a data source for an Oracle database that is also running in Kubernetes.
 * [Scaling a WebLogic cluster with WLDF](https://youtu.be/Q8iZi2e9HvU)
-* watch this space, more to come!
+* Watch this space, more to come!
 
 Like what you see?  Read on for all the nitty-gritty details...
 
@@ -157,10 +157,10 @@ Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more informati
 
 Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
 
-## Load balancing with the Traefik ingress controller
+## Load balancing with the Traefik Ingress controller
 
 The initial Technology Preview release of the operator supports only the Traefik load balancer/Ingress controller.  Support for other load balancers is planned in the future.
-Please refer to [Load balancing with the Traefik ingress controller](site/traefik.md) for information about current capabilities.
+Please refer to [Load balancing with Traefik](site/traefik.md) for information about current capabilities.
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
 
@@ -169,11 +169,11 @@ Please refer to [Load balancing with the Traefik ingress controller](site/traefi
 To permanently remove a domain from a Kubernetes cluster, first shut down the domain using the instructions provided above in the section titled “Shutting down a domain”, then remove the persistent volume claim and the persistent volume using these commands:
 
 ```
-kubectl delete pvc PVC-NAME
+kubectl delete pvc PVC-NAME -n NAMESPACE
 kubectl delete pv PV-NAME
 ```
 
-Find the names of the persistent volume claim and the persistent volume in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes.
+Find the names of the persistent volume claim (represented above as `PVC-NAME`) and the persistent volume (represented as `PV-NAME`) in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes. Replace `NAMESPACE` with the namespace that the operator is running in.
 
 To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, then delete the corresponding directory on the Kubernetes master.
 
