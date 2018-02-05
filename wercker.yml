@@ -129,6 +129,7 @@ integration-test:  # run in weblogic container so that wlst is available
         export IMAGE_NAME="quay.io/markxnelson/weblogic-kubernetes-operator"
         export IMAGE_TAG="$WERCKER_GIT_COMMIT"
         export IMAGE_PULL_POLICY="IfNotPresent"
+        export IMAGE_PULL_SECRET="quay-io"
 
         echo "Integration test suite against the test image which is:"
         echo "$IMAGE_NAME:$IMAGE_TAG"
