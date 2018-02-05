@@ -124,7 +124,7 @@ integration-test:  # run in weblogic container so that wlst is available
         kubectl delete secret quay-io --ignore-not-found=true
         kubectl create secret docker-registry quay-io --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
         
-        export IMAGE_NAME="quay.io/markxnelson/weblogic-kuberentes-operator"
+        export IMAGE_NAME="quay.io/markxnelson/weblogic-kubernetes-operator"
         export IMAGE_TAG="$WERCKER_GIT_COMMIT"
         export IMAGE_PULL_POLICY="IfNotPresent"
 
