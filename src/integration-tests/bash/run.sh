@@ -134,6 +134,9 @@ function deploy_operator {
     trace 'customize the inputs yaml file to use our pre-built docker image'
     sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY}|g" $inputs
     sed -i -e "s|\(image:\).*|\1${IMAGE_NAME}:${IMAGE_TAG}|g" $inputs
+    if [ -n "${IMAGE_PULL_SECRET}" ]; then
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET}|g" $inputs    	
+    fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
     sed -i -e "s|\(externalSans:\).*|\1DNS:${host}|g" $inputs
