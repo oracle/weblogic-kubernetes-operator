@@ -282,7 +282,7 @@ function run_create_domain_job {
     
     cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    sed -i -e "s:%ARGS%:[\"-c\", \"mkdir -m 777 -p $RESULT_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
+    sed -i -e "s:%ARGS%:[\"-c\", \"mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
     kubectl create -f $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     echo "Waiting for the job to complete..."
@@ -328,7 +328,7 @@ function run_create_domain_job {
     # Customize more configuraiton 
     sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s;^persistencePath:.*;persistencePath: $RESULT_DIR/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s;^persistencePath:.*;persistencePath: $HOST_DIR/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^domainUid:.*/domainUid: $DOMAIN_UID/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" ${tmp_dir}/create-domain-job-inputs.yaml
@@ -351,9 +351,6 @@ function run_create_domain_job {
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
       sed -i -e "s/^managedServerCount:.*/managedServerCount: 3/"  ${tmp_dir}/create-domain-job-inputs.yaml
     fi
-
-    trace 'create the host directory that we will use as a persistent volume AND set its permissions to 777'
-    mkdir -m 777 -p $RESULT_DIR/$PV_DIR
 
     trace 'Run the script to create the domain'
 
@@ -1719,6 +1716,7 @@ function test_suite {
     export PROJECT_ROOT="$SCRIPTPATH/../../.."
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
+    export HOST_DIR="$HOST_PATH/k8s_dir/acceptance_test_tmp"
     export nodeport_host=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
 
     if [ "$JENKINS" = "true" ]; then
