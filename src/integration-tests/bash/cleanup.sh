@@ -153,7 +153,7 @@ waitForDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterroleb
 # clean-up volumes
 cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-cleanup-job.yaml
 sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-cleanup-job.yaml
-sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR ; mkdir -m 777 -p $HOST_DIR\"]:g" $RESULT_ROOT/domain-cleanup-job.yaml
+sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR && mkdir -m 777 -p $HOST_DIR\"]:g" $RESULT_ROOT/domain-cleanup-job.yaml
 
 kubectl create -f $RESULT_ROOT/domain-cleanup-job.yaml
 echo "Waiting for the job to complete..."

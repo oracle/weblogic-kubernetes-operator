@@ -282,7 +282,7 @@ function run_create_domain_job {
     
     cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR/$PV_DIR ; mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
+    sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR/$PV_DIR && mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
     kubectl create -f $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     echo "Waiting for the job to complete..."
