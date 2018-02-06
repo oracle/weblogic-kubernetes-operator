@@ -282,7 +282,7 @@ function run_create_domain_job {
     
     cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR/$PV_DIR && mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
+    sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR/$PV_DIR ; mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
     kubectl create -f $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     echo "Waiting for the job to complete..."
@@ -1716,7 +1716,7 @@ function test_suite {
     export PROJECT_ROOT="$SCRIPTPATH/../../.."
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
-    export HOST_DIR="$HOST_PATH/k8s_dir/acceptance_test_tmp"
+    export HOST_DIR="/scratch/k8s_dir/acceptance_test_tmp"
     export nodeport_host=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
 
     if [ "$JENKINS" = "true" ]; then
