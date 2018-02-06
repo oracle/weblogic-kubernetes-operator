@@ -284,7 +284,7 @@ function run_create_domain_job {
     sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     sed -i -e "s:%ARGS%:[\"-c\", \"mkdir -m 777 -p $RESULT_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
-    kubectl create -f $RESULT_DIR/domain-directory-$DOMAIN_UID-job.yaml
+    kubectl create -f $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     echo "Waiting for the job to complete..."
     JOB_STATUS="0"
     max=10
