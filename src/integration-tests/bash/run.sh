@@ -132,10 +132,10 @@ function deploy_operator {
     cp $PROJECT_ROOT/kubernetes/create-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
-    sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY}|g" $inputs
-    sed -i -e "s|\(image:\).*|\1${IMAGE_NAME}:${IMAGE_TAG}|g" $inputs
-    if [ -n "${IMAGE_PULL_SECRET}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET}|g" $inputs    	
+    sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
+    sed -i -e "s|\(image:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
+    if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs    	
     fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
@@ -164,8 +164,8 @@ function deploy_operator {
 
     trace "Checking image for pod $POD"
     local IMAGE=`kubectl describe pod $POD -n ${namespace} | grep "Image:" | awk ' { print $2; } '`
-    if [ "$IMAGE" != "${IMAGE_NAME}:${IMAGE_TAG}" ]; then
-        fail "pod image should be ((${IMAGE_NAME}:${IMAGE_TAG})) but image is ((${IMAGE}))"
+    if [ "$IMAGE" != "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" ]; then
+        fail "pod image should be ((${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR})) but image is ((${IMAGE}))"
     fi
 
 }
@@ -306,6 +306,9 @@ function run_create_domain_job {
     sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^secretName:.*/secretName: $CREDENTIAL_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^secretsMountPath:.*/secretsMountPath: \/var\/run\/secrets-$DOMAIN_UID/" ${tmp_dir}/create-domain-job-inputs.yaml
+    if [ -n "${IMAGE_PULL_SECRET_WEBLOGIC}" ]; then
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" ${tmp_dir}/create-domain-job-inputs.yaml    	
+    fi
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" ${tmp_dir}/create-domain-job-inputs.yaml
@@ -940,7 +943,7 @@ function mvn_integration_test_local {
 
     mvn_build_check mvn.out
 
-    docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" --no-cache=true .
+    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image".
 }
 
@@ -1729,9 +1732,9 @@ function test_suite {
     #     End with ".lock"
     #     Contain a "\" (backslash)
     
-    export IMAGE_TAG=${IMAGE_TAG:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
-    export IMAGE_NAME=${IMAGE_NAME:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
-    export IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY:-Never}
+    export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
+    export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
+    export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     
     set -x
 
