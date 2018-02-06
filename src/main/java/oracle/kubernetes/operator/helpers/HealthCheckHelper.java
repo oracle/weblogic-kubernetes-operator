@@ -241,7 +241,14 @@ public class HealthCheckHelper {
       if (major < 1) {
         k8sMinVersion = false;
       } else if (major == 1) {
-        Integer minor = Integer.parseInt(info.getMinor());
+        // issue-36, revisited
+        // minor can be "8+"
+        String m = info.getMinor();
+        int idx = m.indexOf('+');
+        if (idx > 0) {
+          m = m.substring(0, idx);
+        }
+        Integer minor = Integer.parseInt(m);
         if (minor < 7) {
           k8sMinVersion = false;
         } else if (minor == 7) {
