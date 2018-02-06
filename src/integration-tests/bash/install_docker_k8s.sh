@@ -66,11 +66,15 @@ k8s_dir=$k8s_dir
 ## grab my IP address to pass into  kubeadm init, and to add to no_proxy vars
 # assume ipv4 and eth0
 ip_addr=\`ip -f inet addr show eth0  | egrep inet | awk  '{print \$2}' | awk -F/ '{print \$1}'\`
+hostname=\$(uname -n | awk -F. '{print \$1}')
+ext_ip_addr=\$(host \$hostname | awk '{print \$NF}')
+fqdn=\$hostname.\`domainname\`
+
 
 export HTTPS_PROXY=http://www-proxy-hqdc.us.oracle.com:80
 export https_proxy=http://www-proxy-hqdc.us.oracle.com:80
-export NO_PROXY=localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,.oracle.com,/var/run/docker.sock,\$pod_network_cidr,\$ip_addr
-export no_proxy=localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,.oracle.com,/var/run/docker.sock,\$pod_network_cidr,\$ip_addr
+export NO_PROXY=localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,.oracle.com,/var/run/docker.sock,\$pod_network_cidr,\$ip_addr,\$ext_ip_addr
+export no_proxy=localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,.oracle.com,/var/run/docker.sock,\$pod_network_cidr,\$ip_addr,\$ext_ip_addr
 export HTTP_PROXY=http://www-proxy-hqdc.us.oracle.com:80
 export http_proxy=http://www-proxy-hqdc.us.oracle.com:80
 
@@ -172,9 +176,9 @@ systemctl enable kubelet && systemctl start kubelet
 ######  this is the custom part.  This assumes we are going to install and use Flannel for CNI
 
 # run kubeadm init as root
-echo Running kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr  --pod-network-cidr=$pod_network_cidr
+echo Running kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr --apiserver-cert-extra-sans="$ext_ip_addr,$hostname,$ip_addr,$fqdn"  --pod-network-cidr=$pod_network_cidr
 echo " see /tmp/kubeadm-init.out for output"
-kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr  --pod-network-cidr=$pod_network_cidr > /tmp/kubeadm-init.out 2>&1
+kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr  --apiserver-cert-extra-sans="$ext_ip_addr,$hostname,$ip_addr,$fqdn" --pod-network-cidr=$pod_network_cidr > /tmp/kubeadm-init.out 2>&1
 if [ $? -ne 0 ] ; then
   echo "ERROR: kubeadm init returned non 0"
   chmod a+r  /tmp/kubeadm-init.out
