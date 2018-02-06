@@ -282,7 +282,7 @@ function run_create_domain_job {
     
     cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    sed -i -e "s:%ARGS%:[\"-c\", \"mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
+    sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR/$PV_DIR ; mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
     kubectl create -f $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
     echo "Waiting for the job to complete..."
@@ -325,7 +325,7 @@ function run_create_domain_job {
     # Customize the create domain job inputs
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" ${tmp_dir}/create-domain-job-inputs.yaml
 
-    # Customize more configuraiton 
+    # Customize more configuration
     sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s;^persistencePath:.*;persistencePath: $HOST_DIR/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
