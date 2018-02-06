@@ -10,7 +10,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: weblogic-job
-          image: store/oracle/serverjre:8
+          image: store/oracle/weblogic:12.2.1.3
           imagePullPolicy: IfNotPresent
           volumeMounts:
           - mountPath: /scratch
