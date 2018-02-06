@@ -154,7 +154,7 @@ cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-cleanup-job.yaml
 sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-cleanup-job.yaml
 sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $RESULT_DIR ; mkdir -m 777 -p $RESULT_DIR\"]:g" $RESULT_ROOT/domain-cleanup-job.yaml
 
-kubectl create -f $RESULT_DIR/domain-cleanup-job.yaml
+kubectl create -f $RESULT_ROOT/domain-cleanup-job.yaml
 echo "Waiting for the job to complete..."
 JOB_STATUS="0"
 max=10
