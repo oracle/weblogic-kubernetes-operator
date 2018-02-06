@@ -275,7 +275,41 @@ function run_create_domain_job {
     if [ "$ADMINSECRET" != "1" ]; then
         fail 'could not create the secret with weblogic admin credentials'
     fi
+    
+    trace 'Run initialization job to create the PV directory'
+    JOB_NAME="weblogic-job"
+    kubectl delete job $JOB_NAME --ignore-not-found=true
+    
+    cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
+    sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
+    sed -i -e "s:%ARGS%:[\"-c\", \"mkdir -m 777 -p $RESULT_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
+    kubectl create -f $RESULT_DIR/domain-directory-$DOMAIN_UID-job.yaml
+    echo "Waiting for the job to complete..."
+    JOB_STATUS="0"
+    max=10
+    count=0
+    while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
+      sleep 30
+      count=`expr $count + 1`
+      JOB_STATUS=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $3; } '`
+      JOB_INFO=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print "pod", $1, "status is", $3; } '`
+      echo "status on iteration $count of $max"
+      echo "$JOB_INFO"
+
+    done
+
+    # Confirm the job pod is status completed
+    JOB_POD=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $1; } '`
+    if [ "$JOB_STATUS" != "Completed" ]; then
+      echo The cleanup job is not showing status completed after waiting 300 seconds
+      echo Check the log output for errors
+      kubectl logs jobs/$JOB_NAME
+      fail "Exiting due to failure"
+    fi
+
+    kubectl delete job $JOB_NAME --ignore-not-found=true
+    
     trace 'Prepare the job customization script'
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
@@ -1678,6 +1712,8 @@ function test_suite {
     # SECONDS is a special bash reserved variable that auto-increments every second
     SECONDS=0
     
+    export HOST_PATH=${HOST_PATH:-/scratch}
+
     local SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
     export CUSTOM_YAML="$SCRIPTPATH/../kubernetes"
     export PROJECT_ROOT="$SCRIPTPATH/../../.."

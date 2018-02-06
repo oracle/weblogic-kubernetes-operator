@@ -113,7 +113,8 @@ integration-test:  # run in weblogic container so that wlst is available
         # install opensll
         yum install -y openssl
         
-        export RESULT_ROOT="/tmp/k8s_dir"
+        export HOST_PATH="/scratch"
+        export RESULT_ROOT="/pipeline/output/k8s_dir"
         mkdir -m 777 -p $RESULT_ROOT
         export PROJECT_ROOT="/pipeline/source"
         /pipeline/source/src/integration-tests/bash/cleanup.sh

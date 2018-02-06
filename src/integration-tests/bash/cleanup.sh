@@ -16,6 +16,8 @@ OCOUNT=${#OPER_NAMESPACES[@]}
 
 echo @@ Cleaning up $OCOUNT operators
 
+export HOST_PATH=${HOST_PATH:-/scratch}
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
@@ -142,35 +144,39 @@ for ((i=0;i<DCOUNT;i++)); do
   kubectl -n $curns delete cm domain-${curdomain}-scripts --ignore-not-found=true
 done
 
-JOB_NAME="weblogic-pv-cleanup-job"
+JOB_NAME="weblogic-job"
 kubectl delete job $JOB_NAME --ignore-not-found=true
 
 waitForDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain"
 
 # clean-up volumes
-kubectl create -f $PROJECT_ROOT/build/cleanup-pv-job.yaml
+cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-cleanup-job.yaml
+sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-cleanup-job.yaml
+sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $RESULT_DIR ; mkdir -m 777 -p $RESULT_DIR\"]:g" $RESULT_ROOT/domain-cleanup-job.yaml
+
+kubectl create -f $RESULT_DIR/domain-cleanup-job.yaml
 echo "Waiting for the job to complete..."
-  JOB_STATUS="0"
-  max=10
-  count=0
-  while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
-    sleep 30
-    count=`expr $count + 1`
-    JOB_STATUS=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $3; } '`
-    JOB_INFO=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print "pod", $1, "status is", $3; } '`
-    echo "status on iteration $count of $max"
-    echo "$JOB_INFO"
+JOB_STATUS="0"
+max=10
+count=0
+while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
+  sleep 30
+  count=`expr $count + 1`
+  JOB_STATUS=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $3; } '`
+  JOB_INFO=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print "pod", $1, "status is", $3; } '`
+  echo "status on iteration $count of $max"
+  echo "$JOB_INFO"
 
-  done
+done
 
-  # Confirm the job pod is status completed
-  JOB_POD=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $1; } '`
-  if [ "$JOB_STATUS" != "Completed" ]; then
-    echo The create domain job is not showing status completed after waiting 300 seconds
-    echo Check the log output for errors
-    kubectl logs jobs/$JOB_NAME
-    fail "Exiting due to failure"
-  fi
+# Confirm the job pod is status completed
+JOB_POD=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $1; } '`
+if [ "$JOB_STATUS" != "Completed" ]; then
+  echo The cleanup job is not showing status completed after waiting 300 seconds
+  echo Check the log output for errors
+  kubectl logs jobs/$JOB_NAME
+  fail "Exiting due to failure"
+fi
 
-  kubectl delete job $JOB_NAME --ignore-not-found=true
+kubectl delete job $JOB_NAME --ignore-not-found=true
 
