@@ -248,7 +248,7 @@ public class HealthCheckHelper {
 	while( ! minor_string.chars().allMatch( Character::isDigit )) {
           minor_string = minor_string.substring(0, minor_string.length() -1);
 	}
-        Integer minor = Integer.parseInt(info.getMinor());
+        Integer minor = Integer.parseInt(minor_string);
         if (minor < 7) {
           k8sMinVersion = false;
         } else if (minor >= 7) {
