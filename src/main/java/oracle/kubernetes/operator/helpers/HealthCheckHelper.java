@@ -241,14 +241,21 @@ public class HealthCheckHelper {
       if (major < 1) {
         k8sMinVersion = false;
       } else if (major == 1) {
+	// The Minor version can be also 8+
+	String minor_string = info.getMinor();
+	// It will check if it is a number.
+	// If not it will remove the last part of the string in order to have just a number
+	while( ! minor_string.chars().allMatch( Character::isDigit )) {
+          minor_string = minor_string.substring(0, minor_string.length() -1);
+	}
         Integer minor = Integer.parseInt(info.getMinor());
         if (minor < 7) {
           k8sMinVersion = false;
-        } else if (minor == 7) {
+        } else if (minor >= 7) {
           // git version is of the form v1.7.5
           // Check the 3rd part of the version.
           String[] splitVersion = gitVersion.split("\\.");
-          // issue-36: gitVersion can be not just "v1.7.9" but also values like "v1.7.9+coreos.0" 
+          // issue-36: gitVersion can be not just "v1.7.9" but also values like "v1.7.9+coreos.0"
           splitVersion = splitVersion[2].split("\\+");
           if (Integer.parseInt(splitVersion[0]) < 5) {
             k8sMinVersion = false;
