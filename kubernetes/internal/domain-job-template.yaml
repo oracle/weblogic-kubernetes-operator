@@ -60,10 +60,16 @@ data:
       fail "The domain secret %SECRETS_MOUNT_PATH%/password was not found"
     fi
 
-    # Do not proceed if the domain already exists
+    # Check if the domain already exists
     domainFolder=${SHARED_PATH}/domain/%DOMAIN_NAME%
     if [ -d ${domainFolder} ]; then
-      fail "The create domain job will not overwrite an existing domain. The domain folder ${domainFolder} already exists"
+      # check if user asked to replace existing data
+      if [ "%REPLACE_EXISTING_DOMAIN%" = "true" ]; then
+        echo "As requested, deleting all data in the peristent volume to make way for new domain!"
+        rm -rf ${SHARED_PATH}/*
+      else
+        fail "The create domain job will not overwrite an existing domain unless you set the parameter 'replaceExistingDomain' to 'true'. The domain folder ${domainFolder} already exists"
+      fi
     fi
 
     # Create the base folders
@@ -177,8 +183,8 @@ data:
     sleep 15
     echo "Finished waiting for the nodemanager to start"
 
-    echo "Update JVM arguments" 
-    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp} 
+    echo "Update JVM arguments"
+    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
 
     echo "Start the server"
     wlst.sh -skipWLSModuleScanning ${pyFile}
@@ -207,7 +213,7 @@ data:
       checkFileExists ${pyFile}
 
       # Create a liveness probe script. It checks a WL server state file maintained by the node manager.
-      # The script and 'EOF' on the following lines must not be indented! 
+      # The script and 'EOF' on the following lines must not be indented!
 
       scriptFile=${nmdir}/livenessProbe.sh
 
@@ -317,7 +323,7 @@ data:
     done
 
     echo "Successfully Completed"
-    
+
   create-domain.py: |-
     # This python script is used to create a WebLogic domain
 

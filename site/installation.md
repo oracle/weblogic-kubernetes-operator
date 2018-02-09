@@ -13,19 +13,26 @@ Note that there is a short video demonstration of the installation process avail
 
 ## Build the Docker image for the operator
 
-To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.
+To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.  The operator is built using Apache Maven, which must be installed first.  Maven may be downloaded from the [Apache Maven site](http://maven.apache.org).  The GitHub repository should be cloned locally:
 
-First run the build using this command:
+```
+git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+```
+
+Then run the build using this command:
 
 ```
 mvn clean install
 ```
 
-Then create the Docker image as follows:
+Then login to Docker Store so that you will be able to pull the base image, and create the Docker image as follows.  These commands should be executed in the project root directory.:
 
 ```
+docker login
 docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
 ```
+
+Note: If you have not used the base image (`store/oracle/serverjre:8`) before you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before Docker Store will give you permission to pull that image.
 
 We recommend that you use a tag other than `latest` to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
@@ -56,19 +63,19 @@ The following parameters must be provided in the input file:
 
 | Parameter	| Definition	| Default |
 | --- | --- | --- |
-| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to custom-cert. | |
-| externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to custom-cert. | |
+| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `custom-cert`. | |
+| externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to `custom-cert`. | |
 | externalRestOption	| Write me.  Allowed values: <br/>- `none` Write me <br/>- `self-signed-cert` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `custom-cert` Write me. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
 | externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
 | namespace	| The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.	| weblogic-operator |
 | targetNamespaces	| A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here.	| default |
-| image | The docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
+| image | The Docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
 | remoteDebugNodePort	| Tom is adding a debug on/off parameter <br/>If the debug parameter if set to on, then the operator will start a Java remote debug server on the provided port and will suspend execution until a remote debugger has attached.	| 30999 |
 | restHttpsNodePort	| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. 	| 31001 |
 | serviceAccount	| The name of the service account that the operator will use to make requests to the Kubernetes API server. |	weblogic-operator |
 | loadBalancer	| Determines which load balancer should be installed to provide load balancing for WebLogic clusters.  Allowed values are:<br/>-	`none` – do not configure a load balancer<br/>- `traefik` – configure the Traefik Ingress provider<br/>- `nginx` – reserved for future use<br/>- `ohs` – reserved for future use |	traefik |
 | loadBalancerWebPort	| The NodePort for the load balancer to accept user traffic. |	30305 |
-| enableELKintegration	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, Logstash and Kibana will be installed, and Logstash will be configured to export the operator’s logs to ElasticSearch. |	false |
+| enableELKintegration	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, logstash and Kibana will be installed, and logstash will be configured to export the operator’s logs to ElasticSearch. |	false |
 
 ## Decide which REST configuration to use
 
@@ -96,7 +103,7 @@ Note that Ingresses are not created for servers that are not part of a WebLogic 
 
 ### Log integration with ELK
 
-The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a logstash pod will be created in the operator’s namespace.  Logstash will be configured to publish the operator’s logs into Elasticsearch, and the log data will be available for visualization and analysis in Kibana.
+The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a logstash pod will be created in the operator’s namespace.  Logstash will be configured to publish the operator’s logs into ElasticSearch, and the log data will be available for visualization and analysis in Kibana.
 
 To enable the ELK integration, set the `enableELKintegration` option to `true`.
 
@@ -207,7 +214,7 @@ The spec section provides details for the container that the operator will execu
       - name: ocr-secret
 ```
 
-This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.  
+This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.
 
 [comment]: # (Debugging the operator is described in the [developer guide] developer.md )
 

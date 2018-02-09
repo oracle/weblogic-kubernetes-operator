@@ -43,9 +43,13 @@ kubectl create secret docker-registry SECRET_NAME
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  It is generally easier to manually pull the image in advance, as described in the next section.
 
+## Go to the Docker Store and accept the license agreement for the WebLogic Server image
+
+If you have never used the WebLogic Server image before, you will need to go to the [Docker Store web interface](https://store.docker.com/images/oracle-weblogic-server-12c) and accept the license agreement before Docker Store will allow you to pull this image.  This is a one-time requirement, you do not have to repeat it for each machine you want to use the image on. 
+
 ## Pull the WebLogic Server image
 
-You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*:
+You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes nodes*:
 
 ```
 docker login
@@ -106,6 +110,7 @@ The following parameters must be provided in the input file:
 | persistenceStorageClass	| Name of the storage class to set for the persistent volume and persistent volume claim.	| weblogic |
 | persistenceVolumeClaimName	| Name of the Kubernetes persistent volume claim for this domain.	| pv001-claim |
 | persistenceVolumeName	| Name of the Kubernetes persistent volume for this domain.	| pv001 |
+| replaceExistingDomain | If set to 'true' the script will remove any data it finds in the persistent volume before creating the new domain.  Use with caution. | false |
 | productionModeEnabled	| Boolean indicating if production mode is enabled for the domain. | true |
 | secretsMountPath |	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
 | secretName	| Name of the Kubernetes secret for the Administration Server's username and password. |	domain1-weblogic-credentials |
