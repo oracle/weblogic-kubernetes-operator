@@ -226,6 +226,11 @@ function orderlyDelete {
     kubectl -n $opns delete deploy weblogic-operator  --ignore-not-found
   done
   
+  kubectl -n $curns delete clusterrolebinding weblogic-operator-operator-rolebinding --ignore-not-found=true
+  kubectl -n $curns delete clusterrolebinding weblogic-operator-operator-rolebinding-auth-delegator --ignore-not-found=true
+  kubectl -n $curns delete clusterrolebinding weblogic-operator-operator-rolebinding-discovery --ignore-not-found=true
+  kubectl -n $curns delete clusterrolebinding weblogic-operator-operator-rolebinding-nonresource --ignore-not-found=true
+  
   sleep 10
   
   echo @@ Deleting various operator artifacts.
