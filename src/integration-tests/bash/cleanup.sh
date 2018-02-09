@@ -137,6 +137,7 @@ done
 
 echo @@ Deleting test namespace
 kubectl delete namespace test --ignore-not-found=true
+kubectl delete namespace test2 --ignore-not-found=true
 
 for ((i=0;i<DCOUNT;i++)); do
   curdomain=${DOMAINS[i]}
