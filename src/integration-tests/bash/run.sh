@@ -2486,7 +2486,7 @@ function test_suite {
 
 # entry point
 
-if [ "${FOREGROUND:-false}" = "true" ] || [ "$JENKINS" = "true" ]; then
+if [ "${FOREGROUND:-false}" = "true" ] || [ "$JENKINS" = "true" ] || [ "$WERCKER" = "true" ]; then
     test_suite
 else
     export TESTOUT=/tmp/test_suite.out
