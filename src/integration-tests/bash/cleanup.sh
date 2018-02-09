@@ -26,7 +26,7 @@ export HOST_DIR="/scratch/k8s_dir/acceptance_test_tmp"
 mkdir -m 777 -p $RESULT_DIR
 
 function waitForDelete {
-  maxwaitsecs=60
+  maxwaitsecs=120
   echo "@@ Waiting up to $maxwaitsecs seconds for ${1:?} that contain string ${2:?} to delete."
 
   artcount=1
