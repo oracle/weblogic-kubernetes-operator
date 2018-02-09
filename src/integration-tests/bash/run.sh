@@ -1860,31 +1860,34 @@ function test_suite {
     # shutdown domain2 before create domain3
     shutdown_domain domain2
     
+    # need to shorten tests as wercker's max runtime is 25 minutes
+    if [ ! "${WERCKER}" = "true" ]; then
     # create another domain in the test namespace and verify it
-    test_domain_creation domain3 weblogic-operator
+      test_domain_creation domain3 weblogic-operator
     
-    # shutdown domain3
-    shutdown_domain domain3
+      # shutdown domain3
+      shutdown_domain domain3
     
-    # Create another operator in weblogic-operator-2 namespace, managing namesapce test2
-    # the only remaining running domain should not be affacted
-    deploy_operator weblogic-operator-2 
-    verify_domain domain1 weblogic-operator
+      # Create another operator in weblogic-operator-2 namespace, managing namesapce test2
+      # the only remaining running domain should not be affacted
+      deploy_operator weblogic-operator-2 
+      verify_domain domain1 weblogic-operator
     
-    # create another domain in the test2 namespace and verify it
-    test_domain_creation domain4 weblogic-operator-2
+      # create another domain in the test2 namespace and verify it
+      test_domain_creation domain4 weblogic-operator-2
 
-    # Make sure scale up a domain managed by one operator does not impact other domains
-    test_cluster_scale domain4 weblogic-operator-2
-    verify_domain domain1 weblogic-operator
+      # Make sure scale up a domain managed by one operator does not impact other domains
+      test_cluster_scale domain4 weblogic-operator-2
+      verify_domain domain1 weblogic-operator
   
-    # scale domain1 up and down, make sure that domain4 is not impacted
-    test_domain_lifecycle domain1 weblogic-operator
-    verify_domain domain4 weblogic-operator-2
+      # scale domain1 up and down, make sure that domain4 is not impacted
+      test_domain_lifecycle domain1 weblogic-operator
+      verify_domain domain4 weblogic-operator-2
 
-    # test managed server 1 pod auto-restart
-    test_wls_liveness_probe domain1
-    
+      # test managed server 1 pod auto-restart
+      test_wls_liveness_probe domain1
+    fi
+
     # TODO temporarily commenting out test:
     #    this test failed in Jenkins run #895 during setup its setup with
     #    "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
