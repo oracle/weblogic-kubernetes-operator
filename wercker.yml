@@ -124,18 +124,21 @@ integration-test:  # run in weblogic container so that wlst is available
         kubectl delete secret docker-store --ignore-not-found=true
         kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
 
-        kubectl delete ns test --ignore-not-found=true
-        kubectl create ns test
-        kubectl create secret docker-registry docker-store -n test --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
+        kubectl delete ns test1 --ignore-not-found=true
+        kubectl create ns test1
+        kubectl create secret docker-registry docker-store -n test1 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
         
         kubectl delete ns test2 --ignore-not-found=true
         kubectl create ns test2
         kubectl create secret docker-registry docker-store -n test2 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
 
-        kubectl delete ns weblogic-operator --ignore-not-found=true
-        kubectl create ns weblogic-operator
-        #kubectl delete secret quay-io --ignore-not-found=true
-        kubectl create secret docker-registry quay-io -n weblogic-operator --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
+        kubectl delete ns weblogic-operator-1 --ignore-not-found=true
+        kubectl create ns weblogic-operator-1
+        kubectl create secret docker-registry quay-io -n weblogic-operator-1 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
+        
+        kubectl delete ns weblogic-operator-2 --ignore-not-found=true
+        kubectl create ns weblogic-operator-2
+        kubectl create secret docker-registry quay-io -n weblogic-operator-2 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
         
         export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
         export IMAGE_TAG_OPERATOR="$WERCKER_GIT_COMMIT"
