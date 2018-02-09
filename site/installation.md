@@ -21,7 +21,7 @@ First run the build using this command:
 mvn clean install
 ```
 
-Then login to Docker Store so that you will be able to pull the base image, and create the Docker image as follows:
+Then login to Docker Store so that you will be able to pull the base image, and create the Docker image as follows.  These commands should be executed in the project root directory.:
 
 ```
 docker login
