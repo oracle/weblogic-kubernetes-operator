@@ -278,20 +278,6 @@
                         <version>3.0.0</version>
                         <executions>
                             <execution>
-                                <id>add-main-source</id>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>add-source</goal>
-                                </goals>
-                                <configuration>
-                                    <sources>
-                                        <source>${src-generated-swagger}</source>
-                                        <source>${project.build.sourceDirectory}</source>
-                                        <source>${basedir}/src/build/java</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>add-test-source</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>

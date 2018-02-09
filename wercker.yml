@@ -84,22 +84,73 @@ integration-test:  # run in weblogic container so that wlst is available
         #   /pipeline/source/weblogic-kubernetes-operator/src/integration-tests/bash/clean.sh
         #   /pipeline/weblogic-kubernetes-operator/src/integration-tests/bash/run.sh
 
-        sed -i -e "s,%ADDRESS%,$K8S_17_ADDRESS,g" /pipeline/source/build/kube.config
+        cp /etc/hosts /pipeline/hosts
+        sed -i "$ a ${K8S_17_WORKER_ADDRESS} k8s17worker" /pipeline/hosts
+        cp /pipeline/hosts /etc/hosts
+        
+        # Update KUBECONFIG for K8S 1.7 cluster
+        export K8S_NODEPORT_HOST="k8s17worker"
+        sed -i -e "s,%ADDRESS%,https://$K8S_17_ADDRESS:443,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_CERT_DATA%,$K8S_17_CLIENT_CERT_DATA,g" /pipeline/source/build/kube.config
         sed -i -e "s,%CLIENT_KEY_DATA%,$K8S_17_CLIENT_KEY_DATA,g" /pipeline/source/build/kube.config
         export KUBECONFIG="/pipeline/source/build/kube.config"
+        
+        # running on Wercker
+        export WERCKER="true"
 
         # install kubectl
         curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
         chmod +x ./kubectl
         mv ./kubectl /usr/local/bin/kubectl
 
-        kubectl get all
+        # install maven, includes java as dependency
+        curl -LO http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
+        mv epel-apache-maven.repo /etc/yum.repos.d/
+        yum install -y apache-maven
+        export M2_HOME="/usr/share/apache-maven"
+        export PATH=$M2_HOME/bin:$PATH
+        
+        # install opensll
+        yum install -y openssl
+        
+        export HOST_PATH="/scratch"
+        export RESULT_ROOT="/pipeline/output/k8s_dir"
+        mkdir -m 777 -p $RESULT_ROOT
+        export PROJECT_ROOT="/pipeline/source"
+        /pipeline/source/src/integration-tests/bash/cleanup.sh
 
-        echo "Not yet implemented."
-        echo "Eventually, I will run the integration test suite against the test image which is:"
-        echo "quay.io/markxnelson/weblogic-kuberentes-operator:$WERCKER_GIT_COMMIT"
+        # create pull secrets
+        kubectl delete secret docker-store --ignore-not-found=true
+        kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
 
+        kubectl delete ns test --ignore-not-found=true
+        kubectl create ns test
+        kubectl create secret docker-registry docker-store -n test --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
+        
+        kubectl delete ns test2 --ignore-not-found=true
+        kubectl create ns test2
+        kubectl create secret docker-registry docker-store -n test2 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
+
+        kubectl delete ns weblogic-operator --ignore-not-found=true
+        kubectl create ns weblogic-operator
+        #kubectl delete secret quay-io --ignore-not-found=true
+        kubectl create secret docker-registry quay-io -n weblogic-operator --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
+        
+        export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
+        export IMAGE_TAG_OPERATOR="$WERCKER_GIT_COMMIT"
+        export IMAGE_PULL_POLICY_OPERATOR="IfNotPresent"
+        export IMAGE_PULL_SECRET_OPERATOR="quay-io"
+
+        export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
+
+        echo "Integration test suite against the test image which is:"
+        echo "$IMAGE_NAME:$IMAGE_TAG"
+
+        # integration tests
+        /pipeline/source/src/integration-tests/bash/run.sh
+        
+        # clean up
+        yum clean all
 
 # This pipeline promotes the docker image after tests have passed
 promote-image:
