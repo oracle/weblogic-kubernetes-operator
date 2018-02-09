@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -44,10 +44,10 @@ else
     shift
 fi
 
-if [ "$1" = "-o" ] ; then
+if [ "$1" == "-o" ] ; then
         shift
         SCRIPT="$1"
-elif [[ "$1" = "--output="* ]] ; then
+elif [[ "$1" = --output=* ]] ; then
         SCRIPT=`echo "$1" | cut -d \= -f 2`
 else
         SCRIPT=$SCRIPT_DEFAULT

@@ -14,29 +14,15 @@
 #      and have the appropriate file permissions set.
 #
 
-#
-# Function to exit and print an error message
-# $1 - text of message
-function fail {
-  echo [ERROR] $1
-  exit 1
-}
 
-#
-# Function to default the value of persistenceStorageClass.
-# When the parameter is not specified in the input file, it will default to use the value domainUid
-#
-function validateStorageClass {
-  if [ -z $persistenceStorageClass ]; then
-    persistenceStorageClass=$domainUid
-    echo Defaulting the input parameter persistenceStorageClass to be $domainUid
-  fi
-}
+# Initialize
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+internalDir="${scriptDir}/internal"
+source ${internalDir}/utility.sh
 
 #
 # Parse the command line options
 #
-scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 valuesInputFile="${scriptDir}/create-domain-job-inputs.yaml"
 generateOnly=false
 while getopts "ghi:" opt; do
@@ -58,37 +44,68 @@ while getopts "ghi:" opt; do
 done
 
 #
-# Function to note that a validate error has occurred
+# Function to ensure the domain uid is lowercase
 #
-function validationError {
-  echo "[ERROR] $1"
-  validateErrors=true
+function validateDomainUid {
+  validateLowerCase ${domainUid} "domainUid"
 }
 
 #
-# Function to cause the script to fail if there were any validation errors
+# Create an instance of clusterName to be used in cases where lowercase is required.
 #
-function failIfValidationErrors {
-  if [ "$validateErrors" = true ]; then
-    fail 'The errors listed above must be resolved before the script can continue'
+function validateClusterName {
+  clusterNameLC=$(toLower $clusterName)
+}
+
+#
+# Function to default the value of persistenceStorageClass.
+# When the parameter is not specified in the input file, it will default to use the value domainUid
+#
+function validateStorageClass {
+  if [ -z $persistenceStorageClass ]; then
+    persistenceStorageClass=$domainUid
+    echo Defaulting the input parameter persistenceStorageClass to be $domainUid
+  else
+    validateLowerCase ${persistenceStorageClass} "persistenceStorageClass"
   fi
 }
 
 #
-# Function to validate that a list of required input parameters were specified
+# Function to validate the persistent volume claim name
 #
-function validateInputParamsSpecified {
-  for p in $*; do
-    local name=$p
-    local val=${!name}
-    if [ -z $val ]; then
-      validationError "The ${name} parameter in ${valuesInputFile} is missing, null or empty"
-    fi
-  done
+function validatePersistentVolumeClaimName {
+  validateLowerCase ${persistenceVolumeClaimName} "persistenceVolumeClaimName"
+
+  if [[ ${persistenceVolumeClaimName} != ${domainUid}-* ]] ; then
+    echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
+    persistenceVolumeClaimName=${domainUid}-${persistenceVolumeClaimName}
+    echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
+  fi
+}
+
+#
+# Function to validate the persistent volume name
+#
+function validatePersistenVolumeName {
+  validateLowerCase ${persistenceVolumeName} "persistenceVolumeName"
+
+  if [[ ${persistenceVolumeName} != ${domainUid}-* ]] ; then
+    echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
+    persistenceVolumeName=${domainUid}-${persistenceVolumeName}
+    echo persistenceVolumeName is now ${persistenceVolumeName}
+  fi
+}
+
+#
+# Function to validate the secret name
+#
+function validateSecretName {
+  validateLowerCase ${secretName} "secretName"
 }
 
 #
 # Function to validate the load balancer value
+#
 function validateLoadBalancer {
   LOAD_BALANCER_TRAEFIK="traefik"
   LOAD_BALANCER_NONE="none"
@@ -105,20 +122,7 @@ function validateLoadBalancer {
 }
 
 #
-# Function to validate a kubernetes secret exists
-# $1 - the name of the secret
-# $2 - namespace
-function validateSecretExists {
-  # Verify the secret exists
-  echo "Checking to see if the secret ${1} exists in namespace ${2}"
-  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${1} was not found in namespace ${2}"
-  fi
-}
-
-#
-# Function to valid the domain secret
+# Function to validate the domain secret
 #
 function validateDomainSecret {
   # Verify the secret exists
@@ -136,6 +140,7 @@ function validateDomainSecret {
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${secretName} in namespace ${namespace} does contain a password"
   fi
+  failIfValidationErrors
 }
 
 #
@@ -144,6 +149,7 @@ function validateDomainSecret {
 function validateImagePullSecretName {
   IMAGE_PULL_SECRET_EXISTS=false
   if [ ! -z ${imagePullSecretName} ]; then
+    validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
     IMAGE_PULL_SECRET_EXISTS=true
     imagePullSecretPrefix=""
   else
@@ -167,53 +173,6 @@ function validateImagePullSecret {
 }
 
 #
-# Function to parse a yaml file and generate the bash exports
-# $1 - Input filename
-# $2 - Output filename
-function parseYaml {
-  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
-  sed -ne "s|^\($s\):|\1|" \
-     -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
-     -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
-  awk -F$fs '{
-    if (length($3) > 0) {
-       printf("export %s=\"%s\"\n", $2, $3);
-    }
-  }' > $2
-}
-
-#
-# Function to parse the common parameter inputs file
-#
-function parseCommonInputs {
-  exportValuesFile="/tmp/export-values.sh"
-  parseYaml ${valuesInputFile} ${exportValuesFile}
-
-  if [ ! -f ${exportValuesFile} ]; then
-    echo Unable to locate the parsed output of ${valuesInputFile}.
-    fail 'The file ${exportValuesFile} could not be found.'
-  fi
-
-  # Define the environment variables that will be used to fill in template values
-  echo Input parameters being used to create the WebLogic domain
-  cat ${exportValuesFile}
-  echo
-  source ${exportValuesFile}
-
-  if [[ ${persistenceVolumeName} != ${domainUid}-* ]] ; then
-    echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
-    persistenceVolumeName=${domainUid}-${persistenceVolumeName}
-    echo persistenceVolumeName is now ${persistenceVolumeName}
-  fi
-
-  if [[ ${persistenceVolumeClaimName} != ${domainUid}-* ]] ; then
-    echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
-    persistenceVolumeClaimName=${domainUid}-${persistenceVolumeClaimName}
-    echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
-  fi
-}
-
-#
 # Function to setup the environment to run the create domain job
 #
 function initialize {
@@ -230,37 +189,37 @@ function initialize {
     validateErrors=true
   fi
 
-  pvInput="${scriptDir}/internal/persistent-volume-template.yaml"
+  pvInput="${internalDir}/persistent-volume-template.yaml"
   pvOutput="${scriptDir}/persistent-volume.yaml"
   if [ ! -f ${pvInput} ]; then
     validationError "The template file ${pvInput} for generating a persistent volume was not found"
   fi
 
-  pvcInput="${scriptDir}/internal/persistent-volume-claim-template.yaml"
+  pvcInput="${internalDir}/persistent-volume-claim-template.yaml"
   pvcOutput="${scriptDir}/persistent-volume-claim.yaml"
   if [ ! -f ${pvcInput} ]; then
     validationError "The template file ${pvcInput} for generating a persistent volume claim was not found"
   fi
 
-  jobInput="${scriptDir}/internal/domain-job-template.yaml"
+  jobInput="${internalDir}/domain-job-template.yaml"
   jobOutput="${scriptDir}/domain-job.yaml"
   if [ ! -f ${jobInput} ]; then
     validationError "The template file ${jobInput} for creating a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/internal/domain-custom-resource-template.yaml"
+  dcrInput="${internalDir}/domain-custom-resource-template.yaml"
   dcrOutput="${scriptDir}/domain-custom-resource.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
 
-  traefikRBACInput="${scriptDir}/internal/traefik-rbac-template.yaml"
+  traefikRBACInput="${internalDir}/traefik-rbac-template.yaml"
   traefikRBACOutput="${scriptDir}/traefik-rbac.yaml"
   if [ ! -f ${traefikRBACInput} ]; then
     validationError "The file ${traefikRBACInput} for generating the traefik RBAC was not found"
   fi
 
-  traefikDeployInput="${scriptDir}/internal/traefik-deployment-template.yaml"
+  traefikDeployInput="${internalDir}/traefik-deployment-template.yaml"
   traefikDeployOutput="${scriptDir}/traefik-deployment.yaml"
   if [ ! -f ${traefikDeployInput} ]; then
     validationError "The template file ${traefikDeployInput} for generating the traefik deployment was not found"
@@ -272,32 +231,19 @@ function initialize {
   parseCommonInputs
   validateInputParamsSpecified adminPort adminServerName createDomainScript domainName domainUid clusterName managedServerCount managedServerStartCount managedServerNameBase
   validateInputParamsSpecified managedServerPort persistencePath persistenceSize persistenceVolumeClaimName persistenceVolumeName
-  validateInputParamsSpecified productionModeEnabled secretsMountPath secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
-  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer replaceExistingDomain
+  validateInputParamsSpecified productionModeEnabled secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
+  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer javaOptions
+  validateDomainUid
+  validateClusterName
   validateStorageClass
-  validateLoadBalancer
+  validatePersistenVolumeName
+  validatePersistentVolumeClaimName
+  validateSecretName
   validateImagePullSecretName
+  validateLoadBalancer
   failIfValidationErrors
 }
 
-#
-# Function to delete a kubernetes object
-# $1 object type
-# $2 object name
-# $3 yaml file
-function deleteK8sObj {
-  # If the yaml file does not exist yet, unable to do the delete
-  if [ ! -f $3 ]; then
-    fail "Unable to delete object type $1 with name $2 because file $3 does not exist"
-  fi
-
-  echo Checking if object type $1 with name $2 exists
-  K8SOBJ=`kubectl get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
-  if [ "${K8SOBJ}" = "1" ]; then
-    echo Deleting $2 using $3
-    kubectl delete -f $3
-  fi
-}
 
 #
 # Function to generate the yaml files for creating a domain
@@ -335,7 +281,6 @@ function createYamlFiles {
   sed -i -e "s:%SECRET_NAME%:${secretName}:g" ${jobOutput}
   sed -i -e "s:%DOCKER_STORE_REGISTRY_SECRET%:${imagePullSecretName}:g" ${jobOutput}
   sed -i -e "s:%IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${jobOutput}
-  sed -i -e "s:%SECRETS_MOUNT_PATH%:${secretsMountPath}:g" ${jobOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${jobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${jobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${jobOutput}
@@ -349,7 +294,6 @@ function createYamlFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
-  sed -i -e "s:%REPLACE_EXISTING_DOMAIN%:${replaceExistingDomain}:g" ${jobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
@@ -379,12 +323,14 @@ function createYamlFiles {
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
+  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
 
   # Traefik deployment file
   cp ${traefikDeployInput} ${traefikDeployOutput}
   echo Generating ${traefikDeployOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikDeployOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikDeployOutput}
+  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikDeployOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikDeployOutput}
   sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikDeployOutput}
   sed -i -e "s:%LOAD_BALANCER_ADMIN_PORT%:$loadBalancerAdminPort:g" ${traefikDeployOutput}
@@ -394,27 +340,8 @@ function createYamlFiles {
   echo Generating ${traefikRBACOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikRBACOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikRBACOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikRBACOutput}
+  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikRBACOutput}
 
-}
-
-#
-# Check the state of a persistent volume.
-# $1 - name of volume
-# $2 - expected state of volume
-function checkPvState {
-
-  echo "Checking if the persistent volume ${1:?} is ${2:?}"
-  local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
-  attempts=0
-  while [ ! "$pv_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
-    attempts=$((attempts + 1))
-    sleep 1
-    pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
-  done
-  if [ "$pv_state" != "$2" ]; then
-    fail "The persistent volume state should be $2 but is $pv_state"
-  fi
 }
 
 #
@@ -423,15 +350,8 @@ function checkPvState {
 function createPV {
 
   # Check if the persistent volume is already available
-  skipPvCreate=false
-  echo Checking if the persistent volume ${persistenceVolumeName} already exists
-  PV_AVAILABLE=`kubectl get pv | grep ${persistenceVolumeName} | wc | awk ' { print $1; } '`
-  if [ "${PV_AVAILABLE}" = "1" ]; then
-    echo The persistent volume ${persistenceVolumeName} already exists and will not be re-created
-    skipPvCreate=true
-  fi
-
-  if [ "${skipPvCreate}" = false ]; then
+  checkPvExists ${persistenceVolumeName}
+  if [ "${PV_EXISTS}" = "false" ]; then
     echo Creating the persistent volume ${persistenceVolumeName}
     kubectl create -f ${pvOutput}
     checkPvState ${persistenceVolumeName} Available
@@ -443,15 +363,8 @@ function createPV {
 #
 function createPVC {
   # Check if the persistent volume claim is already available
-  skipPvcCreate=false
-  echo Checking if the persistent volume claim ${persistenceVolumeClaimName} already exists
-  PVC_AVAILABLE=`kubectl get pvc -n ${namespace} | grep ${persistenceVolumeClaimName} | wc | awk ' { print $1; } '`
-  if [ "${PVC_AVAILABLE}" = "1" ]; then
-    echo The persistent volume claim ${persistenceVolumeClaimName} already exists and will not be re-created
-    skipPvcCreate=true
-  fi
-
-  if [ "${skipPvcCreate}" = false ]; then
+  checkPvcExists ${persistenceVolumeClaimName} ${namespace}
+  if [ "${PVC_EXISTS}" = "false" ]; then
     echo Creating the persistent volume claim ${persistenceVolumeClaimName}
     kubectl create -f ${pvcOutput}
     checkPvState ${persistenceVolumeName} Bound
@@ -520,7 +433,7 @@ function createDomain {
 #
 function setupTraefikLoadBalancer {
 
-  traefikName="${domainUid}-${clusterName}-traefik"
+  traefikName="${domainUid}-${clusterNameLC}-traefik"
 
   echo Setting up traefik rbac
   kubectl apply -f ${traefikRBACOutput}
@@ -574,12 +487,50 @@ function createDomainCustomResource {
 }
 
 #
+# Function to obtain the IP address of the kubernetes cluster.  This information
+# is used to form the URL's for accessing services that were deployed.
+#
+function getKubernetesClusterIP {
+
+  # Get name of the current context
+  local CUR_CTX=`kubectl config current-context | awk ' { print $1; } '`
+
+  # Get the name of the current cluster
+  local CUR_CLUSTER_CMD="kubectl config view -o jsonpath='{.contexts[?(@.name == \"${CUR_CTX}\")].context.cluster}' | awk ' { print $1; } '"
+  local CUR_CLUSTER=`eval ${CUR_CLUSTER_CMD}`
+
+  # Get the server address for the current cluster
+  local SVR_ADDR_CMD="kubectl config view -o jsonpath='{.clusters[?(@.name == \"${CUR_CLUSTER}\")].cluster.server}' | awk ' { print $1; } '"
+  local SVR_ADDR=`eval ${SVR_ADDR_CMD}`
+
+  # Server address is expected to be of the form http://address:port.  Delimit
+  # string on the colon to obtain the address.  Leave the "//" on the resulting string.
+  local array=(${SVR_ADDR//:/ })
+  K8S_IP="${array[1]}"
+}
+
+#
 # Function to output to the console a summary of the work completed
 #
 function outputJobSummary {
+
+  # Get the IP address of the kubernetes cluster (into K8S_IP)
+  getKubernetesClusterIP
+
   echo ""
   echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
+  if [ "${exposeAdminNodePort}" = true ]; then
+    echo "Administration console access is available at http:${K8S_IP}:${adminNodePort}/console"
+  fi
+  if [ "${exposeAdminT3Channel}" = true ]; then
+    echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
+  fi
+  if [ "${loadBalancer}" = "traefik" ]; then
+    echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
+    echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerAdminPort}"
+    echo ""
+  fi
   echo "The following files were generated:"
   echo "  ${pvOutput}"
   echo "  ${pvcOutput}"
@@ -630,5 +581,7 @@ if [ "${generateOnly}" = false ]; then
   outputJobSummary
 fi
 
-echo
+echo 
 echo Completed
+
+
