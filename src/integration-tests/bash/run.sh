@@ -762,7 +762,9 @@ function verify_domain {
     verify_domain_created $DOM_KEY $OP_KEY
     verify_managed_servers_ready $DOM_KEY
 
-    verify_webapp_load_balancing $DOM_KEY 2
+    if [ ! "${WERCKER}" = "true" ]; then
+      verify_webapp_load_balancing $DOM_KEY 2
+    fi
     verify_admin_server_ext_service $DOM_KEY
 }
 
@@ -1654,14 +1656,18 @@ function test_cluster_scale {
     kubectl apply -f $domainCR
 
     verify_service_and_pod_created $DOM_KEY $OP_KEY 3
-    verify_webapp_load_balancing $DOM_KEY 3
+    if [ ! "${WERCKER}" = "true" ]; then
+      verify_webapp_load_balancing $DOM_KEY 3
+    fi
 
     trace "test cluster scale-down from 3 to 2"
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 2/"  $domainCR
     kubectl apply -f $domainCR
 
     verify_service_and_pod_deleted $DOM_KEY 3
-    verify_webapp_load_balancing $DOM_KEY 2 
+    if [ ! "${WERCKER}" = "true" ]; then
+      verify_webapp_load_balancing $DOM_KEY 2
+    fi
 }
 
 function test_create_domain_on_exist_dir {
