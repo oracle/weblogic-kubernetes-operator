@@ -1,25 +1,33 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: weblogic-job
+  name: weblogic-command-job
   namespace: default
 spec:
+  backoffLimit: 0
   template:
     metadata:
     spec:
       restartPolicy: Never
+      activeDeadlineSeconds: 60
       containers:
-        - name: weblogic-job
+        - name: domain-job
           image: store/oracle/weblogic:12.2.1.3
           imagePullPolicy: IfNotPresent
           volumeMounts:
           - mountPath: /scratch
             name: scratch
+          - mountPath: /scripts
+            name: weblogic-command-job-configmap-volume
           command: ["/bin/bash"]
-          args: %ARGS%
+          args: ["-c", "COMMAND"]
       imagePullSecrets:
         - name: docker-store
       volumes:
         - name: scratch
           hostPath:
-            path: %HOST_PATH%
+            path: PV_ROOT
+        - name: weblogic-command-job-configmap-volume
+          configMap:
+            name: weblogic-command-job-configmap
+            defaultMode: 0777

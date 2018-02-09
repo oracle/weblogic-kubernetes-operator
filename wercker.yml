@@ -114,6 +114,7 @@ integration-test:  # run in weblogic container so that wlst is available
         yum install -y openssl
         
         export HOST_PATH="/scratch"
+        export PV_ROOT=$HOST_PATH
         export RESULT_ROOT="/pipeline/output/k8s_dir"
         mkdir -m 777 -p $RESULT_ROOT
         export PROJECT_ROOT="/pipeline/source"
