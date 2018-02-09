@@ -3,25 +3,24 @@
 
 # The name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
+# The name must be lowercase
 serviceAccount: weblogic-operator
 
 # The Kubernetes namespace that the operator will be deployed in.
 # It is recommended that a namespace be created for the operator rather
 # than using the default namespace.
+# The name must be lowercase
 namespace: weblogic-operator
 
 # A comma-separated list of target namespaces the operator manages
+# The names must be lowercase
 targetNamespaces: default
 
 # The docker image containing the operator code.
-image: container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
+image: wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest
 
 # The image pull policy for the operator docker image.
 imagePullPolicy: IfNotPresent
-
-# Name of the Kubernetes secret to access the registry containing the operator Docker image
-# The presence of the secret will be validated when this parameter is enabled.
-#imagePullSecretName: docker-registry-secret
 
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:
@@ -93,7 +92,3 @@ javaLoggingLevel: INFO
 
 # Controls whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
-
-# Path of ELK persistent volume. You MUST supply this parameter if elkIntegrationEnabled
-# is set to true. This path must exist and have chmod -R 777 permissions.
-elkPersistentVolume: /scratch/k8s_dir/elkPersistentVolume

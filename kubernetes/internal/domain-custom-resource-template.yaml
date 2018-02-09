@@ -52,7 +52,7 @@ spec:
     # an (optional) list of environment variable to be set on the server
     env:
     - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
+      value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
   # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
@@ -64,7 +64,7 @@ spec:
     replicas: %MANAGED_SERVER_START_COUNT%
     env:
     - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
+      value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
   # The number of managed servers to start from clusters not listed by clusterStartup
