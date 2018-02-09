@@ -45,8 +45,9 @@ When the operator receives a scaling request, it will:
 *	Validate that the specified domain, identified by `domainUID`, exists.
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
-*	Initiate scaling by setting the `replicas` property within the corresponding domain custom resource either in:
-  *	a `clusterStartup` entry, if defined within its cluster list.
-  *	at the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`.
+*	Initiate scaling by setting the `replicas` property within the corresponding domain custom resource, which can be done in either:
+
+  *	A `clusterStartup` entry, if defined within its cluster list
+  *	At the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`
 
 In response to a change to either `replicas` property, in the domain custom resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
