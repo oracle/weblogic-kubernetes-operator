@@ -74,6 +74,14 @@ for ((i=0;i<DCOUNT;i++)); do
   #echo @@ Deleting ${curdomain} traefik in namespace $curns
   #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-deployment.yaml --ignore-not-found=true
   #kubectl delete -f $RESULT_DIR/${curns}-${curdomain}/traefik-rbac.yaml --ignore-not-found=true
+  kubectl -n $curns delete deploy ${curdomain}-cluster-1-traefik --ignore-not-found=true
+  kubectl -n $curns delete service ${curdomain}-cluster-1-traefik --ignore-not-found=true
+  kubectl -n $curns delete service ${curdomain}-cluster-1-traefik-dashboard --ignore-not-found=true
+  kubectl -n $curns delete cm ${curdomain}-cluster-1-traefik --ignore-not-found=true
+  kubectl -n $curns delete serviceaccount ${curdomain}-cluster-1-traefik --ignore-not-found=true
+  kubectl -n $curns delete clusterrole ${curdomain}-cluster-1-traefik --ignore-not-found=true
+  kubectl -n $curns delete clusterrolebinding ${curdomain}-cluster-1-traefik --ignore-not-found=true
+  
 done
 
 for ((i=0;i<OCOUNT;i++)); do
