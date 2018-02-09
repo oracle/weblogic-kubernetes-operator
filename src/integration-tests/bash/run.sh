@@ -740,9 +740,11 @@ function test_domain_creation {
     verify_domain_created $DOM_KEY $OP_KEY
     verify_managed_servers_ready $DOM_KEY
 
-    #deploy_webapp_via_REST $DOM_KEY
-    deploy_webapp_via_WLST $DOM_KEY
-    verify_webapp_load_balancing $DOM_KEY 2
+    if [ ! "${WERCKER}" = "true" ]; then
+      #deploy_webapp_via_REST $DOM_KEY
+      deploy_webapp_via_WLST $DOM_KEY
+      verify_webapp_load_balancing $DOM_KEY 2
+    fi
 
     verify_admin_server_ext_service $DOM_KEY
 
@@ -1316,8 +1318,10 @@ function verify_service_and_pod_created {
       fail "ERROR: pod $POD_NAME is not ready, exiting!"
     fi
 
-    if [ "${IS_ADMIN_SERVER}" = "true" ]; then
-      verify_wlst_access $DOM_KEY
+    if [ ! "${WERCKER}" = "true" ]; then
+      if [ "${IS_ADMIN_SERVER}" = "true" ]; then
+        verify_wlst_access $DOM_KEY
+      fi
     fi
 }
 
