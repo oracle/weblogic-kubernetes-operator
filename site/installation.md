@@ -13,7 +13,7 @@ Note that there is a short video demonstration of the installation process avail
 
 ## Build the Docker image for the operator
 
-To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.  The GitHub repository should be cloned locally:
+To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.  The operator is built using Apache Maven, which must be installed first.  Maven may be downloaded from the [Apache Maven site](http://maven.apache.org).  The GitHub repository should be cloned locally:
 
 ```
 git clone https://github.com/oracle/weblogic-kubernetes-operator.git
