@@ -146,7 +146,7 @@ public class PodHelper {
 
       V1VolumeMount volumeMountSecret = new V1VolumeMount();
       volumeMountSecret.setName("secrets");
-      volumeMountSecret.setMountPath("/var/run/secrets-" + weblogicDomainUID);
+      volumeMountSecret.setMountPath("/weblogic-operator/secrets");
       container.addVolumeMountsItem(volumeMountSecret);
 
       container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/startServer.sh");
@@ -179,10 +179,11 @@ public class PodHelper {
       // Add internal-weblogic-operator-service certificate to Admin Server pod
       ConfigMapHelper configMapHelper = new ConfigMapHelper("/operator/config");
       String internalOperatorCert = configMapHelper.get(INTERNAL_OPERATOR_CERT_FILE);
-      V1EnvVar internalOperatorCertEnv = new V1EnvVar();
-      internalOperatorCertEnv.setName(INTERNAL_OPERATOR_CERT_ENV);
-      internalOperatorCertEnv.setValue(internalOperatorCert);
-      container.addEnvItem(internalOperatorCertEnv);
+      addEnvVar(container, INTERNAL_OPERATOR_CERT_ENV, internalOperatorCert);
+
+      // Override the weblogic domain and admin server related environment variables that
+      // come for free with the WLS docker container with the correct values.
+      overrideContainerWeblogicEnvVars(spec, container);
 
       if (!info.getClaims().getItems().isEmpty()) {
         V1Volume volume = new V1Volume();
@@ -253,7 +254,7 @@ public class PodHelper {
       return doNext(packet);
     }
   }
-  
+
   private static class CyclePodStep extends Step  {
     private final String podName;
     private final String namespace;
@@ -489,7 +490,7 @@ public class PodHelper {
 
       V1VolumeMount volumeMountSecret = new V1VolumeMount();
       volumeMountSecret.setName("secrets");
-      volumeMountSecret.setMountPath("/var/run/secrets-" + weblogicDomainUID);
+      volumeMountSecret.setMountPath("/weblogic-operator/secrets");
       container.addVolumeMountsItem(volumeMountSecret);
 
       container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/startServer.sh");
@@ -534,7 +535,11 @@ public class PodHelper {
           container.addEnvItem(ev);
         }
       }
-      
+
+      // Override the weblogic domain and admin server related environment variables that
+      // come for free with the WLS docker container with the correct values.
+      overrideContainerWeblogicEnvVars(spec, container);
+
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
       ServerKubernetesObjects sko = info.getServers().computeIfAbsent(weblogicServerName, k -> new ServerKubernetesObjects());
@@ -596,5 +601,32 @@ public class PodHelper {
 
       return doNext(packet);
     }
+  }
+
+  // Override the weblogic domain and admin server related environment variables that
+  // come for free with the WLS docker container with the correct values.
+  private static void overrideContainerWeblogicEnvVars(DomainSpec spec, V1Container container) {
+    // Override the domain name, domain directory, admin server name and admin server port.
+    addEnvVar(container, "DOMAIN_NAME", spec.getDomainName());
+    addEnvVar(container, "DOMAIN_HOME", "/shared/domain/" + spec.getDomainName());
+    addEnvVar(container, "ADMIN_NAME", spec.getAsName());
+    addEnvVar(container, "ADMIN_PORT", spec.getAsPort().toString());
+    // Hide the admin account's user name and password.
+    // Note: need to use null v.s. "" since if you upload a "" to kubectl then download it,
+    // it comes back as a null and V1EnvVar.equals returns false even though it's supposed to
+    // be the same value.
+    // Regardless, the pod ends up with an empty string as the value (v.s. thinking that
+    // the environment variable hasn't been set), so it honors the value (instead of using
+    // the default, e.g. 'weblogic' for the user name).
+    addEnvVar(container, "ADMIN_USERNAME", null);
+    addEnvVar(container, "ADMIN_PASSWORD", null);
+  }
+
+  // Add an environment variable to a container
+  private static void addEnvVar(V1Container container, String name, String value) {
+    V1EnvVar envVar = new V1EnvVar();
+    envVar.setName(name);
+    envVar.setValue(value);
+    container.addEnvItem(envVar);
   }
 }
