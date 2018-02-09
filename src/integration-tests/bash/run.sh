@@ -184,7 +184,7 @@ function declare_reset {
 #   - also echos same if 'echo' passed as the second parameter
 #
 function declare_test_trace {
-  local GIT_ABBREVIATED_COMMIT_HASH="`git log --pretty=format:%h -n 1`"
+  local GIT_ABBREVIATED_COMMIT_HASH="${WERCKER_GIT_COMMIT:-`git log --pretty=format:%h -n 1`}"
   local str="##TEST_INFO:${GIT_ABBREVIATED_COMMIT_HASH}:${TEST_ID}:${TEST_VERSION}:${1}##"
   trace "$str"
   if [ "$2" = echo ]; then
@@ -2234,7 +2234,7 @@ function test_suite_init {
     export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
     export NODEPORT_HOST=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
     export JVM_ARGS="${JVM_ARGS:-'-Dweblogic.StdoutDebugEnabled=false'}"
-    export BRANCH_NAME="${BRANCH_NAME}"
+    export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
 
     if [ -z "$BRANCH_NAME" ]; then
       export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
