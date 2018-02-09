@@ -97,9 +97,6 @@ function genericDelete {
 
       kubectl get $1 --show-labels=true --all-namespaces=true > $resfile1 2>&1
 
-      # (We ignore 'secrets.*traefik.token' resources as these somehow intermittently get recreated
-      #  after each delete, and subsequent runs seem to run fine even if they haven't been deleted.)
-      # TODO: Find a way to remove the secret's zombie powers.
       egrep -e "($2)" $resfile1 | grep -v 'secrets.*traefik.token' > $resfile2
       artcount="`cat $resfile2 | wc -l`"
 
@@ -211,6 +208,14 @@ function orderlyDelete {
   
     echo @@ Deleting configmap domain-${curdomain}-scripts in namespace $curns
     kubectl -n $curns delete cm domain-${curdomain}-scripts  --ignore-not-found
+    
+    kubectl -n $curns delete deploy ${curdomain}-cluster-1-traefik --ignore-not-found=true
+    kubectl -n $curns delete service ${curdomain}-cluster-1-traefik --ignore-not-found=true
+    kubectl -n $curns delete service ${curdomain}-cluster-1-traefik-dashboard --ignore-not-found=true
+    kubectl -n $curns delete cm ${curdomain}-cluster-1-traefik --ignore-not-found=true
+    kubectl -n $curns delete serviceaccount ${curdomain}-cluster-1-traefik --ignore-not-found=true
+    kubectl -n $curns delete clusterrole ${curdomain}-cluster-1-traefik --ignore-not-found=true
+    kubectl -n $curns delete clusterrolebinding ${curdomain}-cluster-1-traefik --ignore-not-found=true
   done
   
   for ((i=0;i<OCOUNT;i++)); do
@@ -299,7 +304,7 @@ orderlyDelete
 #   phase 1:  wait to see if artificts dissappear naturally due to the above orderlyDelete
 #   phase 2:  kubectl delete left over artifacts
 
-genericDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain"
+genericDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,serviceaccount,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik"
 SUCCESS="$?"
 
 # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
