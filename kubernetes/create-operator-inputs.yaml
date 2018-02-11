@@ -17,11 +17,15 @@ namespace: weblogic-operator
 targetNamespaces: default
 
 # The docker image containing the operator code.
-image: wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest
+image: container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
 
 # The image pull policy for the operator docker image.
 imagePullPolicy: IfNotPresent
 
+# Name of the Kubernetes secret to access the registry containing the operator Docker image
+# The presence of the secret will be validated when this parameter is enabled.
+#imagePullSecretName:
+ 
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:
 #

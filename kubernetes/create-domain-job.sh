@@ -147,11 +147,12 @@ function validateDomainSecret {
 # Function to validate the image pull secret name
 #
 function validateImagePullSecretName {
-  IMAGE_PULL_SECRET_EXISTS=false
   if [ ! -z ${imagePullSecretName} ]; then
     validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
-    IMAGE_PULL_SECRET_EXISTS=true
     imagePullSecretPrefix=""
+    if [ "${generateOnly}" = false ]; then
+      validateImagePullSecret
+    fi
   else
     # Set name blank when not specified, and comment out the yaml
     imagePullSecretName=""
@@ -166,10 +167,8 @@ function validateImagePullSecret {
 
   # The kubernetes secret for pulling images from the docker store is optional.
   # If it was specified, make sure it exists.
-  if [ "${IMAGE_PULL_SECRET_EXISTS}" = true ]; then
-    validateSecretExists ${imagePullSecretName} ${namespace}
-    failIfValidationErrors
-  fi
+  validateSecretExists ${imagePullSecretName} ${namespace}
+  failIfValidationErrors
 }
 
 #
@@ -556,9 +555,6 @@ createYamlFiles
 if [ "${generateOnly}" = false ]; then
   # Check that the domain secret exists and contains the required elements
   validateDomainSecret
-
-  # Check if the optional docker secret exists
-  validateImagePullSecret
 
   # Create the persistent volume
   createPV
