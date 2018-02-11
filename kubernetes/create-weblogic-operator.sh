@@ -2,18 +2,15 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-#
-# Function to exit and print an error message
-# $1 - text of message
-function fail {
-  echo [ERROR] $1
-  exit 1
-}
+
+# Initialize
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+internalDir="${scriptDir}/internal"
+source ${internalDir}/utility.sh
 
 #
 # Parse the command line options
 #
-scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 valuesInputFile="${scriptDir}/create-operator-inputs.yaml"
 generateOnly=false
 while getopts "ghi:" opt; do
@@ -34,41 +31,7 @@ while getopts "ghi:" opt; do
   esac
 done
 
-#
-# Function to parse a yaml file and generate the bash exports
-# $1 - Input filename
-# $2 - Output filename
-function parseYaml {
-  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
-  sed -ne "s|^\($s\):|\1|" \
-     -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
-     -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
-  awk -F$fs '{
-    if (length($3) > 0) {
-       printf("export %s=\"%s\"\n", $2, $3);
-    }
-  }' > $2
-}
 
-#
-# Function to parse the common parameter inputs file
-# $1 - Output filename
-#
-function parseCommonInputs {
-  exportValuesFile="/tmp/export-values.sh"
-  parseYaml ${valuesInputFile} ${exportValuesFile}
-
-  if [ ! -f ${exportValuesFile} ]; then
-    echo Unable to locate the parsed output of ${valuesInputFile}.
-    fail 'The file ${exportValuesFile} could not be found.'
-  fi
-
-  # Define the environment variables that will be used to fill in template values
-  echo Input parameters being used to create the WebLogic operator
-  cat ${exportValuesFile}
-  echo
-  source ${exportValuesFile}
-}
 
 #
 # Function to setup the environment to run the create domain job
@@ -86,50 +49,32 @@ function initialize {
     validationError "Unable to locate the file ${valuesInputFile}. \nThis file contains the input parameters required to create the operator."
   fi
 
-  oprInput="${scriptDir}/internal/weblogic-operator-template.yaml"
+  oprInput="${internalDir}/weblogic-operator-template.yaml"
   oprOutput="${scriptDir}/weblogic-operator.yaml"
   if [ ! -f ${oprInput} ]; then
     validationError "The template file ${oprInput} for generating the weblogic operator was not found"
   fi
 
-  genOprCertScript="${scriptDir}/internal/generate-weblogic-operator-cert.sh"
+  genOprCertScript="${internalDir}/generate-weblogic-operator-cert.sh"
   if [ ! -f ${genOprCertScript} ]; then
     validationError "The file ${genOprCertScript} for generating the weblogic operator certificates was not found"
   fi
 
-  genSecPolicyScript="${scriptDir}/internal/generate-security-policy.sh"
+  genSecPolicyScript="${internalDir}/generate-security-policy.sh"
   if [ ! -f ${genSecPolicyScript} ]; then
     validationError "The file ${genSecPolicyScript} for generating the security policy was not found"
   fi
 
   # Validation checks for elk integration
  
- elasticsearchYaml="${scriptDir}/internal/elasticsearch.yaml"
+ elasticsearchYaml="${internalDir}/elasticsearch.yaml"
   if [ ! -f ${elasticsearchYaml} ]; then
     validationError "The file ${elasticsearchYaml} necessary for elk deployment was not found"
   fi
 
-  kibanaYaml="${scriptDir}/internal/kibana.yaml"
+  kibanaYaml="${internalDir}/kibana.yaml"
   if [ ! -f ${kibanaYaml} ]; then
     validationError "The file ${kibanaYaml} necessary for elk deployment was not found"
-  fi
-
-  elkpvTemplateYaml="${scriptDir}/internal/elk-pv-template.yaml"
-  elkpvYaml="${scriptDir}/elk-pv-deployment.yaml"
-  if [ ! -f ${elkpvTemplateYaml} ]; then
-    validationError "The template file ${elkpvTemplateYaml} for generating elk deployment was not found"
-  fi
-
-  elkpvcTemplateYaml="${scriptDir}/internal/elk-pvc-template.yaml"
-  elkpvcYaml="${scriptDir}/elk-pvc-deployment.yaml"     
-  if [ ! -f ${elkpvcTemplateYaml} ]; then
-    validationError "The template file ${elkpvcTemplateYaml} for generating elk deployment was not found"
-  fi
-	
-  logstashTemplateYaml="${scriptDir}/internal/logstash-template.yaml"
-  logstashYaml="${scriptDir}/logstash-deployment.yaml"     
-  if [ ! -f ${logstashTemplateYaml} ]; then
-    validationError "The template file ${logstashTemplateYaml} for generating elk deployment was not found"
   fi
 
   failIfValidationErrors
@@ -139,39 +84,31 @@ function initialize {
 
   validateInputParamsSpecified serviceAccount namespace targetNamespaces image imagePullPolicy elkIntegrationEnabled
 
+  validateServiceAccount
+
+  validateNamespace
+
+  validateTargetNamespaces
+
   validateRemoteDebugNodePort
 
   validateJavaLoggingLevel
 
   validateExternalRest
-
+  
   validateImagePullSecretName
 
   failIfValidationErrors
 }
 
 #
-# Function to validate that the remote debug node port has been properly configured
-#
-function validateRemoteDebugNodePort {
-
-  # Validate that remoteDebugNodePortEnabled  was specified
-  validateInputParamsSpecified remoteDebugNodePortEnabled 
-
-  if [ "${remoteDebugNodePortEnabled}" = true ]; then
-    # Validate that the required sub options were specified
-    validateInputParamsSpecified externalDebugHttpPort internalDebugHttpPort
-  fi
-}
-
-#
 # Function to validate the image pull secret name
 #
 function validateImagePullSecretName {
-  IMAGE_PULL_SECRET_EXISTS=false
   if [ ! -z ${imagePullSecretName} ]; then
-    IMAGE_PULL_SECRET_EXISTS=true
+  	validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
     imagePullSecretPrefix=""
+    validateImagePullSecret
   else
     # Set name blank when not specified, and comment out the yaml
     imagePullSecretName=""
@@ -186,10 +123,8 @@ function validateImagePullSecret {
 
   # The kubernetes secret for pulling images from the docker store is optional.
   # If it was specified, make sure it exists.
-  if [ "${IMAGE_PULL_SECRET_EXISTS}" = true ]; then
-    validateSecretExists ${imagePullSecretName} ${namespace}
-    failIfValidationErrors
-  fi
+  validateSecretExists ${imagePullSecretName} ${namespace}
+  failIfValidationErrors
 }
 
 #
@@ -202,6 +137,34 @@ function validateSecretExists {
   local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The registry secret ${1} was not found in namespace ${2}"
+  fi
+}
+
+#
+# Function to validate the service account is lowercase
+#
+function validateServiceAccount {
+  validateLowerCase ${serviceAccount} "serviceAccount"
+}
+
+#
+# Function to validate the target namespaces
+#
+function validateTargetNamespaces {
+  validateLowerCase ${targetNamespaces} "targetNamespaces"
+}
+
+#
+# Function to validate that the remote debug node port has been properly configured
+#
+function validateRemoteDebugNodePort {
+
+  # Validate that remoteDebugNodePortEnabled  was specified
+  validateInputParamsSpecified remoteDebugNodePortEnabled 
+
+  if [ "${remoteDebugNodePortEnabled}" = true ]; then
+    # Validate that the required sub options were specified
+    validateInputParamsSpecified externalDebugHttpPort internalDebugHttpPort
   fi
 }
 
@@ -267,64 +230,11 @@ function validateExternalRest {
 }
 
 #
-# Function to validate that a list of required input parameters were specified
-#
-function validateInputParamsSpecified {
-  for p in $*; do
-    local name=$p
-    local val=${!name}
-    if [ -z $val ]; then
-      validationError "The ${name} parameter in ${valuesInputFile} is missing, null or empty"
-    fi
-  done
-}
-
-#
-# Function to note that a validate error has occurred
-#
-function validationError {
-  echo "[ERROR] $1"
-  validateErrors=true
-}
-
-#
-# Function to cause the script to fail if there were any validation errors
-#
-function failIfValidationErrors {
-  if [ "$validateErrors" = true ]; then
-    fail 'The errors listed above must be resolved before the script can continue'
-  fi
-}
-
-#
-# Function to delete a kubernetes object
-# $1 object type
-# $2 object name
-# $3 yaml file
-function deleteK8sObj {
-  # If the yaml file does not exist yet, unable to do the delete
-  if [ ! -f $3 ]; then
-    fail "Unable to delete object type $1 with name $2 because file $3 does not exist"
-  fi
-
-  echo Checking if object type $1 with name $2 exists
-  K8SOBJ=`kubectl get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
-  if [ "${K8SOBJ}" = "1" ]; then
-    echo Deleting $2 using $3
-    if [ -f $3 ]; then
-      kubectl delete -f $3
-    else
-      Unable to delete $2 because the file $3 was not found
-    fi
-  fi
-}
-
-#
 # Function to create certificates
 #
 function createCertificates {
 
-  generatedCertDir="${scriptDir}/internal/weblogic-operator-cert"
+  generatedCertDir="${internalDir}/weblogic-operator-cert"
   generatedCertFile="${generatedCertDir}/weblogic-operator.cert.pem"
   generatedKeyFile="${generatedCertDir}/weblogic-operator.key.pem"
 
@@ -400,8 +310,8 @@ function createYamlFiles {
   sed -i -e "s|%ACCOUNT_NAME%|$serviceAccount|g" ${oprOutput}
   sed -i -e "s|%IMAGE%|$image|g" ${oprOutput}
   sed -i -e "s|%IMAGE_PULL_POLICY%|$imagePullPolicy|g" ${oprOutput}
-  sed -i -e "s:%DOCKER_STORE_REGISTRY_SECRET%:${imagePullSecretName}:g" ${oprOutput}
-  sed -i -e "s:%IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${oprOutput}
+  sed -i -e "s|%DOCKER_REGISTRY_SECRET%|${imagePullSecretName}|g" ${oprOutput}
+  sed -i -e "s|%IMAGE_PULL_SECRET_PREFIX%|${imagePullSecretPrefix}|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_OPERATOR_SERVICE_PREFIX%|$externalOperatorServicePrefix|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_REST_HTTPS_PORT%|$externalRestHttpsPort|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_DEBUG_HTTP_PORT%|$externalDebugHttpPort|g" ${oprOutput}
@@ -424,21 +334,6 @@ function createYamlFiles {
 
   echo Running the rbac customization script
   ${genSecPolicyScript} ${serviceAccount} ${namespace} "${targetNamespaces}" -o ${rbacFile}
-
-  # Create the ELK related files if the option is enabled
-  ELK_PV="elk-pv-${namespace}"
-  ELK_PVC="elk-pvc"
-  if [ "${elkIntegrationEnabled}" = true ]; then
-    cp ${elkpvTemplateYaml} ${elkpvYaml}
-    sed -i -e "s|%NAMESPACE%|$namespace|g" ${elkpvYaml}
-    sed -i -e "s|%PERSISTENTVOLUME%|$elkPersistentVolume|g" ${elkpvYaml}
-
-    cp ${elkpvcTemplateYaml} ${elkpvcYaml}
-    sed -i -e "s|%NAMESPACE%|$namespace|g" ${elkpvcYaml}
-
-    cp ${logstashTemplateYaml} ${logstashYaml}
-    sed -i -e "s|%NAMESPACE%|$namespace|g" ${logstashYaml}
-  fi
 
 }
 
@@ -545,58 +440,6 @@ function setup_rbac {
 
 }
 
-function check_pv {
-
-    echo "Checking if the persistent volume ${1:?} is ${2:?}"
-    pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
-    attempts=0
-    while [ ! "$pv_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
-        attempts=$((attempts + 1))
-        sleep 1
-        pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
-    done
-    if [ "$pv_state" != "$2" ]; then
-        fail "The persistent volume state should be $2 but is $pv_state"
-    fi
-}
-
-#
-# Create ELK persistent valume and claim
-#
-function create_elk_persistent_volume {
-
-  # Check if the persistent volume claim is already available
-  skipPvCreate=false
-  echo Checking if the persistent volume ${ELK_PV} already exists
-  PV_AVAILABLE=`kubectl get pv | grep ${ELK_PV} | wc | awk ' { print $1; } '`
-  if [ "${PV_AVAILABLE}" = "1" ]; then
-    echo The persistent volume ${ELK_PV} already exists and will not be re-created
-    skipPvCreate=true
-  fi
-
-  if [ "${skipPvCreate}" = false ]; then
-    echo Creating the persistent volume ${ELK_PV}
-    kubectl apply -f ${elkpvYaml}
-    check_pv ${ELK_PV} Available
-  fi
-
-  # Check if the persistent volume claim is already available
-  skipPvcCreate=false
-  echo Checking if the persistent volume claim ${ELK_PVC} already exists
-  PVC_AVAILABLE=`kubectl get pvc -n ${namespace} | grep ${ELK_PVC} | wc | awk ' { print $1; } '`
-  if [ "${PVC_AVAILABLE}" = "1" ]; then
-    echo The persistent volume claim ${ELK_PVC} already exists and will not be re-created
-    skipPvcCreate=true
-  fi
-
-  if [ "${skipPvcCreate}" = false ]; then
-    echo Creating the persistent volume claim ${ELK_PVC}
-    kubectl apply -f ${elkpvcYaml}
-  fi
-
-   check_pv ${ELK_PV} Bound
-}
-
 
 #
 # Deploy elk
@@ -604,7 +447,6 @@ function create_elk_persistent_volume {
 function deploy_elk {
 
   echo 'Deploy ELK...'
-  kubectl apply -f ${logstashYaml}
   kubectl apply -f ${elasticsearchYaml}
   kubectl apply -f ${kibanaYaml}
 }
@@ -679,11 +521,6 @@ function outputJobSummary {
   echo "The following files were generated:"
   echo "  ${oprOutput}"
   echo "  ${rbacFile}"
-  if [ "${elkIntegrationEnabled}" = true ]; then
-     echo "  ${elkpvYaml}"
-     echo "  ${elkpvcYaml}"
-     echo "  ${logstashYaml}"
-  fi
 }
 
 #
@@ -711,11 +548,6 @@ if [ "${generateOnly}" = false ]; then
   # Create the service account
   createServiceAccount
   
-  if [ "${elkIntegrationEnabled}" = true ]; then
-     # Deploy elk persistent volume and claim
-     create_elk_persistent_volume
-  fi     
-
   # Setup rbac
   setup_rbac
 

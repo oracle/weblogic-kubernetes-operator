@@ -2,6 +2,138 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+# ---------------------------------------------------------
+# Oracle WebLogic Kubernetes Operator Acceptance Test Suite
+# ---------------------------------------------------------
+#
+# -----------------
+# Summary and Usage
+# -----------------
+#
+# This script runs a series of acceptance tests and archives the results
+# into tar.gz files upon completion.
+#
+# To cleanup after a run, see "cleanup.sh".
+#
+# The test has three levels of logging output, output that begins with:
+#
+#     "##TEST_INFO" is very concise (one line per test (either PASS or FAIL).
+#     "[timestamp]" is concise.
+#     "+" is verbose.
+#     Anything else is semi-verbose.
+#
+# This script accepts optional env var overrides:
+#
+#   RESULT_ROOT    The root directory of the test temporary files.
+#                  See "Directory Configuration and Structure" below for
+#                  defaults and a detailed description of test directies.
+#
+#   PV_ROOT        The root directory on the kubernetes cluster
+#                  used for persistent volumes.
+#                  See "Directory Configuration and Structure" below for
+#                  defaults and a detailed description of test directies.
+#
+#   WERCKER        Set to true if invoking from Wercker, set
+#                  to false or "" if running stand-alone or from Jenkins.
+#                  Default is "".
+#
+#   JENKINS        Set to true if invoking from Jenkins, set
+#                  to false or "" if running stand-alone or from Wercker.
+#                  Default is "".
+#
+#   NODEPORT_HOST  DNS name of a Kubernetes worker node.  
+#                  Default is the local host's hostname.
+#
+#   JVM_ARGS       JVM_ARGS to pass to WebLogic Servers.
+#                  Default is "-Dweblogic.StdoutDebugEnabled=false".
+#
+#   BRANCH_NAME    Git branch name.
+#                  Default is determined by calling 'git branch'.
+#
+# The following additional overrides are currently only used when
+# WERCKER=true:
+#
+#   IMAGE_TAG_OPERATOR   Docker image tag for operator.
+#                        Default generated based off the BRANCH_NAME.
+#
+#   IMAGE_NAME_OPERATOR  Docker image name for operator.
+#                        Default is wlsldi-v2.docker.oraclecorp.com/weblogic-operator
+#
+#   IMAGE_PULL_POLICY_OPERATOR   Default 'Never'.
+#   IMAGE_PULL_SECRET_OPERATOR   Default ''.
+#   IMAGE_PULL_SECRET_WEBLOGIC   Default ''.
+#
+# -------------------------------------
+# Directory configuration and structure
+# -------------------------------------
+#
+#  Main external env vars:
+#
+#      RESULT_ROOT   Root path for local test files.
+#      PV_ROOT       Root NFS path behind PV/C directories.  This must have permissions
+#                    suitable for WL pods to add files (default UID 1000 group ???)
+#
+#  Defaults for RESULT_ROOT & PV_ROOT:
+#
+#      Test Mode    RESULT_ROOT                         PV_ROOT   Where Initialized
+#      -----------  ----------------------------------  -------   ------------------
+#      stand-alone  /scratch/$USER/wl_k8s_test_results  <--same   run.sh/cleanup.sh defaults
+#      Jenkins      /scratch/k8s_dir                    <--same   deploy.sh - which calls run.sh
+#      Wercker      /tmp/inttest                        /scratch  wercker.yml - which calls run.sh/cleanup.sh
+#
+#  'Physical' subdirectories created by test:
+#
+#      Local tmp files:      RESULT_ROOT/acceptance_test_tmp/...
+#
+#      PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid}/...
+#
+#      Archives of above:    PV_ROOT/acceptance_test_pv_archive/...
+#                            RESULT_ROOT/acceptance_test_tmp_archive/...
+#
+#  'Logical' to 'Physical' K8S PV/PVC mappings:
+#
+#                   'Logical'     'Actual'
+#      job.sh job:  /scratch <--> PV_ROOT on K8S machines
+#      domain pod:  /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines
+#
+# ----------------------------------------------
+# Instructions for adding a new acceptance test: 
+# ----------------------------------------------
+#
+#   *  Must define as a function with a name prefix of "test_".
+#   *  Must be called from the test_suite function.
+#   *  Must not call another test.
+#
+#   *  Mark the entry and exit of each test as follows:
+#
+#         - First call in test must be 
+#               'declare_new_test <version> <optional description - no spaces>*'
+#
+#         - The test function name and its declare_new_test args must together form
+#           a unique string that stays the same between runs
+#           (typically 'declare_new_test 1 "$@"' is sufficient).
+#
+#         - Last call in test must be either 'declare_test_pass' or 'fail' (more on 'fail' below).
+#
+#   *  Fail tests using the 'fail' function.  Calling fail fails the current test and
+#      exits the entire acceptance test.  fail can be called from nested functions.
+#
+#   *  Use the 'trace' function for less verbose tracing.
+#
+#   *  For verbose tracing, do not use trace (use echo or some-such) and
+#      prepend each line with a "+".  (The '+' helps down-stream callers filter
+#      out verbose tracing.)
+#
+#   *  Helper functions that check state should be named starting with "verify_"
+#      or "confirm_" and should call 'fail' on a failure.
+#
+#   *  If a test needs a new operator or domain, add it via a 'op_define' 
+#      or 'dom_define' call at the beginning of the test_suite fn, reference
+#      it using its 'key', and retrieve its values using 'op_get' or 'dom_get'.
+#
+
+# Test utilities
+
 function processJson {
     python -c "
 import sys, json
@@ -10,16 +142,212 @@ $1
 "
 }
 
+# Test tracing and failure handling
+#
+#   declare_new_test             - call this at beginning of each test fn
+#   declare_new_test_from_trap   - call this at ctrl-c interrupt trap
+#   declare_test_pass            - call at the end of test that passes
+#   trace                        - trace
+#   fail                         - fail a test and exit
+#
+#    NOTES: The declare_new_test calls must generate a unique TEST_ID
+#           that stays the same between runs.  If the same
+#           test is run twice, it must use different params
+#           in order to generate a different description.
+#
+#           Calling declare_new_test before a previous declare passes or fails
+#           generates a fail.
+#             
+#   Related:
+#     declare_test_fail            - report test failed, called by 'fail'
+#     state_dump                   - dump current state to files 
+#                                    called by 'fail' and at end of the run
+#     archive.sh                   - tar.gz all results, called by state_dump
+#     ctrl_c                       - traps users ctrl-c interrupt and calls fail
+#
+
+#
+# declare_reset
+#   - implicitly called from a declare_test_pass or declare_test_fail
+#   - must also call at start of the run
+#   - resets TEST_ID and TEST_VERSION to a well known NULL value
+#
+function declare_reset {
+  export TEST_VERSION="NULL"
+  export TEST_ID="NULL"
+}
+
+#
+# declare_test_trace PASS|FAIL|START [echo]
+#   - internal helper
+#   - generates trace with contents ##TEST_INFO:${GIT_ABBREVIATED_COMMIT_HASH}:${TEST_ID}:${TEST_VERSION}:${1}##
+#   - also echos same if 'echo' passed as the second parameter
+#
+function declare_test_trace {
+  local GIT_ABBREVIATED_COMMIT_HASH="${WERCKER_GIT_COMMIT:-`git log --pretty=format:%h -n 1`}"
+  local str="##TEST_INFO:${GIT_ABBREVIATED_COMMIT_HASH}:${TEST_ID}:${TEST_VERSION}:${1}##"
+  trace "$str"
+  if [ "$2" = echo ]; then
+    echo "$str"
+  fi
+}
+
+#
+# declare_new_test <version> [<testargs...>]
+#   - must call at beginning of each test
+#   - sets TEST_VERSION according to $1
+#   - sets TEST_ID based on caller's fn name and <testargs...>
+#   - pairs with a subsequent call to 'declare_test_pass' or 'fail'
+#   - fails if previous test did not call declare_test_pass or fail
+#
+function declare_new_test {
+  if [ "$#" -eq 0 ] ; then
+    fail "Missing argument(s). Expected <version> [<testargs...>]"
+  fi
+
+  if [ ! "$TEST_VERSION" = "NULL" ]; then
+    fail "New test declared before previous test failed.  Previous TEST_ID=$TEST_ID"
+  fi
+
+  export TEST_VERSION="${1}"
+  export TEST_ID="${FUNCNAME[1]}"
+  shift
+  while [ ! "$1" = "" ]; do
+    export TEST_ID="${TEST_ID}.${1}"
+    shift
+  done
+
+  declare_test_trace START
+}
+
+# 
+# declare_new_test_from_trap <version> <testname>
+#   - call only from a trap that's about to call fail
+#   - the trap obliterates exports like TEST_VERSION and TEST_ID, so we need to set them to something logical.
+#
+function declare_new_test_from_trap {
+  export TEST_VERSION="${1?}"
+  export TEST_ID="${2?}"
+}
+
+# declare_test_fail
+#   - do not call this directly from a test
+#   - implicitly called from fail
+#   - pairs with an earlier call to declare_new_test
+#
+function declare_test_fail {
+  # the primary reason for this method is to echo the test failure in a special
+  # format:  ##TEST_INFO:commitID:testID:testVersion:FAIL##
+  declare_test_trace FAIL echo
+  declare_reset
+}
+
+#
+# declare_test_pass
+#   - must call at the end of each test
+#   - pairs with an earlier call to declare_new_test
+#
+function declare_test_pass {
+  # the primary reason for this method is to echo the test pass in a special
+  # format:  ##TEST_INFO:commitID:testID:testVersion:PASS##
+  if [ "$TEST_VERSION" = "NULL" -o "$TEST_VERSION" = "" ]; then
+    fail "No current test."
+  fi
+
+  declare_test_trace PASS echo
+  declare_reset
+}
+
+# 
+# trace <message>
+#
 function trace {
   #Date reported in same format as oper-log for easier correlation.  01-22-2018T21:49:01
   #See also a similar echo in function fail
-  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] ${FUNCNAME[1]}: ""$@"
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: ""$@"
 }
 
+# 
+# state_dump <dir-suffix>
+#   - places k8s logs, descriptions, etc in directory $RESULT_DIR/state-dump-$1
+#   - called at the end of a run, and from fail
+#   - calls archive.sh on RESULT_DIR locally, and on PV_ROOT via a job
+#   - IMPORTANT: this method must never call fail (since it is called from fail)
+#   - IMPORTANT: this method should not rely on exports 
+#
+function state_dump {
+  if [ -z "$RESULT_DIR" ]; then
+     # exports can apparently be lost when the trap catches a ^C
+     trace Exports have been lost.  Trying to recreate.
+
+     local RESULT_DIR="`cat /tmp/test_suite.result_root`/acceptance_test_tmp"
+     local PV_ROOT="`cat /tmp/test_suite.pv_root`"
+     local PROJECT_ROOT="`cat /tmp/test_suite.project_root`"
+     local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
+
+     if [ ! -d "$RESULT_DIR" ]; then
+        trace State dump exiting early.  RESULT_DIR \"$RESULT_DIR\" does not exist or is not a directory.
+        return
+     fi
+  fi
+  local DUMP_DIR=$RESULT_DIR/state-dump-${1:?}
+  trace Starting state dump.   Dumping state to directory ${DUMP_DIR}
+
+  mkdir -p ${DUMP_DIR}
+
+  # Test output is captured to ${TESTOUT} when run.sh is run stand-alone
+  if [ -f ${TESTOUT:-NoSuchFile.out} ]; then
+      trace Copying ${TESTOUT} to ${DUMP_DIR}/test_suite.out
+      cp ${TESTOUT} ${DUMP_DIR}/test_suite.out
+  fi
+  
+  # dumping kubectl state
+  #   get domains is in its own command since this can fail if domain CRD undefined
+
+  trace Dumping kubectl gets to ${DUMP_DIR}/kgetmany.out and ${DUMP_DIR}/kgetdomains.out 
+  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetmany.out 2>&1
+  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetdomains.out 2>&1
+
+  # Get all pod logs and redirect/copy to files 
+
+  local namespaces="`kubectl get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
+
+  local namespace
+  for namespace in $namespaces; do
+    trace Looking for pods in namespace $namespace
+    local pods="`kubectl get pods -n $namespace --ignore-not-found | egrep -v -e "(STATUS)" | awk '{print $1}'`"
+    local pod
+    for pod in $pods; do
+      local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
+      local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
+      trace "See $logfile and $descfile"
+      kubectl log $pod -n $namespace > $logfile 2>&1
+      kubectl describe pod $pod -n $namespace > $descfile 2>&1
+    done
+  done
+
+
+  $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
+
+  # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
+  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive"
+
+  trace Done with state dump
+}
+
+
+# 
+# fail <message>
+#    - report the message, fail the run, and exit the script
+#    - calls state_dump (which calls archive)
+#
 function fail {
   set +x
   #See also a similar echo in function trace
-  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] ${FUNCNAME[1]}: [ERROR] ""$@"
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: [ERROR] ""$@"
+
+  #echo current test failure in a special format
+  declare_test_fail
 
   echo "Stack trace:"
   local deptn=${#FUNCNAME[@]}
@@ -32,7 +360,9 @@ function fail {
       echo "at: $func(), $src, line $line"
   done
 
-  echo "Exiting with status 1"
+  state_dump fail
+  
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: [ERROR] Exiting with status 1"
 
   exit 1
 }
@@ -40,30 +370,64 @@ function fail {
 trap ctrl_c INT
 
 function ctrl_c() {
+    declare_new_test_from_trap 1 run_aborted_with_ctrl_c
     fail "Trapped CTRL-C"
+}
+
+function clean_jenkins {
+    trace Cleaning.
+    echo y |  /usr/local/packages/aime/ias/run_as_root ${SCRIPTPATH}/clean_docker_k8s.sh
+}
+
+function setup_jenkins {
+    trace Setting up.
+    export real_user=wls
+    echo y |  /usr/local/packages/aime/ias/run_as_root "sh ${SCRIPTPATH}/install_docker_k8s.sh ${K8S_VERSION}"
+    set +x
+    . ~/.dockerk8senv
+    set -x
+    id
+
+    trace "Pull and tag the images we need"
+
+    docker login -u teamsldi_us@oracle.com -p $docker_pass  wlsldi-v2.docker.oraclecorp.com
+    docker images
+
+    docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
+    docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
+
+    docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
+    docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
+
+    # create a docker image for the operator code being tested
+    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
+
+    docker images
 }
 
 # setup_local is for arbitrary dev hosted linux - it assumes docker & k8s are already installed
 function setup_local {
+  trace "Pull and tag the images we need"
 
-  docker pull store/oracle/weblogic:12.2.1.3
-  docker pull store/oracle/serverjre:8
+  docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
 
-  # we call mkdir here because clean will delete the RESULT_DIR if it is in the same directory as the k8s install.
-  /usr/local/packages/aime/ias/run_as_root "mkdir -m 777 -p $RESULT_DIR"
+  docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
+
 }
 
-function create_image_pull_secret {
+function create_image_pull_secret_jenkins {
 
     trace "Creating Secret"
     kubectl create secret docker-registry wlsldi-secret  \
     --docker-server=wlsldi-v2.docker.oraclecorp.com \
     --docker-username=teamsldi_us@oracle.com \
     --docker-password=$docker_pass \
-    --docker-email=teamsldi_us@oracle.com
+    --docker-email=teamsldi_us@oracle.com 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
-    local SECRET=`kubectl get secret wlsldi-secret | grep wlsldi | wc | awk ' { print $1; }'`
+    local SECRET="`kubectl get secret wlsldi-secret | grep wlsldi | wc | awk ' { print $1; }'`"
     if [ "$SECRET" != "1" ]; then
         fail 'secret wlsldi-secret was not created successfully'
     fi
@@ -98,7 +462,10 @@ function op_define {
     # derived TMP_DIR for operator = $RESULT_DIR/$NAMESPACE :
     eval export OP_${opkey}_TMP_DIR="$RESULT_DIR/$2"
 
-    trace Defined operator $1 with values `op_echo_all $1`
+    #verbose tracing starts with a +
+    op_echo_all $1 | sed 's/^/+/'
+
+    trace Defined operator ${1}.
 }
 
 function op_get {
@@ -135,21 +502,30 @@ function deploy_operator {
     sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
     sed -i -e "s|\(image:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
     if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs    	
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
     fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
-    sed -i -e "s|\(externalSans:\).*|\1DNS:${nodeport_host}|g" $inputs
+    sed -i -e "s|\(externalSans:\).*|\1DNS:${NODEPORT_HOST}|g" $inputs
     trace 'customize the inputs yaml file to set the java logging level to FINER'
     sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
     sed -i -e "s|\(externalRestHttpsPort:\).*|\1${EXTERNAL_REST_HTTPSPORT}|g" $inputs
     trace 'customize the inputs yaml file to add test namespace' 
     sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
     sed -i -e "s/^targetNamespaces:.*/targetNamespaces: ${TARGET_NAMESPACES}/" $inputs
-    sed -i -e "s/^serviceAccount:.*/serviceAccount: ${NAMESPACE}/" $inputs
+    sed -i -e "s/^serviceAccount:.*/serviceAccount: weblogic-operator/" $inputs
 
-    trace 'run the script to deploy the weblogic operator'
-    sh $TMP_DIR/create-weblogic-operator.sh -i $inputs
+    local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
+    trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
+    sh $TMP_DIR/create-weblogic-operator.sh -i $inputs > ${outfile} 2>&1
+    if [ "$?" = "0" ]; then
+       # Prepend "+" to detailed debugging to make it easy to filter out
+       cat ${outfile} | sed 's/^/+/g'
+       trace Script complete.
+    else
+       cat ${outfile}
+       fail Script failed.
+    fi
 
     # Prepend "+" to detailed debugging to make it easy to filter out
     echo 'weblogic-operator.yaml contents:' 2>&1 | sed 's/^/+/' 2>&1
@@ -157,6 +533,7 @@ function deploy_operator {
     echo 2>&1 | sed 's/^/+/' 2>&1
 
     trace "Checking the operator pods"
+    #TODO It looks like this code isn't checking if REPLICA_SET, POD_TEMPLATE, and POD have expected values, is that intentional?
     local namespace=$NAMESPACE
     local REPLICA_SET=`kubectl describe deploy weblogic-operator -n ${namespace} | grep NewReplicaSet: | awk ' { print $2; }'`
     local POD_TEMPLATE=`kubectl describe rs ${REPLICA_SET} -n ${namespace} | grep ^Name: | awk ' { print $2; } '`
@@ -171,18 +548,35 @@ function deploy_operator {
 }
 
 function test_first_operator {
+    declare_new_test 1 "$@"
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: opkey"
     fi
     local OP_KEY=${1}
     deploy_operator $OP_KEY
     verify_no_domain_via_oper_rest $OP_KEY
+    declare_test_pass
 }
 
-# dom_define   DOM_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+
+# Create another operator in a new namespace named after the operator, managing a new namespace
+# the specified existing domain should not be affacted
+function test_second_operator {
+    declare_new_test 1 "$@"
+    if [ "$#" != 2 ] ; then
+      fail "requires 2 parameters: new_opkey dom_key_for_existing_domain"
+    fi
+    local OP_KEY="${1}"
+    local DOM_KEY="${2}"
+    deploy_operator $OP_KEY
+    verify_domain $DOM_KEY
+    declare_test_pass
+}
+
+# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
 #   Sets up a table of domain values:  all of the above, plus TMP_DIR which is derived.
 #
-# dom_get      DOM_KEY
+# dom_get      DOM_KEY <value>
 #   Gets a domain value.
 #
 # dom_echo_all DOM_KEY
@@ -195,25 +589,29 @@ function test_first_operator {
 #   echo Defined operator $opkey with `dom_echo_all $DOM_KEY`
 #
 function dom_define {
-    if [ "$#" != 11 ] ; then
-      fail "requires 11 parameters: DOM_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
+    if [ "$#" != 12 ] ; then
+      fail "requires 12 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
     fi
     local DOM_KEY="`echo \"${1}\" | sed 's/-/_/g'`"
-    eval export DOM_${DOM_KEY}_NAMESPACE="$2"
-    eval export DOM_${DOM_KEY}_DOMAIN_UID="$3"
-    eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$4"
-    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$5"
-    eval export DOM_${DOM_KEY}_ADMIN_PORT="$6"
-    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$7"
-    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="$8"
-    eval export DOM_${DOM_KEY}_MS_PORT="$9"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${10}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${11}"
+    eval export DOM_${DOM_KEY}_OP_KEY="$2"
+    eval export DOM_${DOM_KEY}_NAMESPACE="$3"
+    eval export DOM_${DOM_KEY}_DOMAIN_UID="$4"
+    eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$5"
+    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$6"
+    eval export DOM_${DOM_KEY}_ADMIN_PORT="$7"
+    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$8"
+    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="$9"
+    eval export DOM_${DOM_KEY}_MS_PORT="${10}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${11}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${12}"
 
     # derive TMP_DIR $RESULT_DIR/$NAMESPACE-$DOMAIN_UID :
-    eval export DOM_${DOM_KEY}_TMP_DIR="$RESULT_DIR/$2-$3"
+    eval export DOM_${DOM_KEY}_TMP_DIR="$RESULT_DIR/$3-$4"
 
-    trace Defined domain $1 with values `dom_echo_all $1`
+    #verbose tracing starts with a +
+    dom_echo_all $1 | sed 's/^/+/'
+
+    trace Defined domain ${1}.
 }
 
 function dom_get {
@@ -243,11 +641,7 @@ function run_create_domain_job {
     local LOAD_BALANCER_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_ADMIN_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    if [ -z $JVM_ARGS ] || [ "$JVM_ARGS" == "" ] ; then
-        local WLS_JAVA_OPTIONS="-Dweblogic.StdoutDebugEnabled=false"
-    else
-        local WLS_JAVA_OPTIONS="$JVM_ARGS"
-    fi
+    local WLS_JAVA_OPTIONS="$JVM_ARGS"
 
     trace "WLS_JAVA_OPTIONS = \"$WLS_JAVA_OPTIONS\""
 
@@ -275,41 +669,7 @@ function run_create_domain_job {
     if [ "$ADMINSECRET" != "1" ]; then
         fail 'could not create the secret with weblogic admin credentials'
     fi
-    
-    trace 'Run initialization job to create the PV directory'
-    JOB_NAME="weblogic-job"
-    kubectl delete job $JOB_NAME --ignore-not-found=true
-    
-    cp $PROJECT_ROOT/build/weblogic-job.yaml $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    sed -i -e "s:%HOST_PATH%:$HOST_PATH:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    sed -i -e "s:%ARGS%:[\"-c\", \"rm -rf $HOST_DIR/$PV_DIR ; mkdir -m 777 -p $HOST_DIR/$PV_DIR\"]:g" $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
 
-    kubectl create -f $RESULT_ROOT/domain-directory-$DOMAIN_UID-job.yaml
-    echo "Waiting for the job to complete..."
-    JOB_STATUS="0"
-    max=10
-    count=0
-    while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
-      sleep 30
-      count=`expr $count + 1`
-      JOB_STATUS=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $3; } '`
-      JOB_INFO=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print "pod", $1, "status is", $3; } '`
-      echo "status on iteration $count of $max"
-      echo "$JOB_INFO"
-
-    done
-
-    # Confirm the job pod is status completed
-    JOB_POD=`kubectl get pods --show-all | grep "$JOB_NAME" | awk ' { print $1; } '`
-    if [ "$JOB_STATUS" != "Completed" ]; then
-      echo The cleanup job is not showing status completed after waiting 300 seconds
-      echo Check the log output for errors
-      kubectl logs jobs/$JOB_NAME
-      fail "Exiting due to failure"
-    fi
-
-    kubectl delete job $JOB_NAME --ignore-not-found=true
-    
     trace 'Prepare the job customization script'
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
@@ -320,28 +680,27 @@ function run_create_domain_job {
     cp $PROJECT_ROOT/kubernetes/create-domain-job-inputs.yaml ${tmp_dir}/create-domain-job-inputs.yaml
 
     # copy testwebapp.war for testing
-    cp $PROJECT_ROOT/qa/testwebapp.war ${tmp_dir}/testwebapp.war
+    cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
 
     # Customize the create domain job inputs
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" ${tmp_dir}/create-domain-job-inputs.yaml
 
-    # Customize more configuration
+    # Customize more configuraiton 
     sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s;^persistencePath:.*;persistencePath: $HOST_DIR/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s;^persistencePath:.*;persistencePath: $PV_ROOT/acceptance_test_pv/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^domainUid:.*/domainUid: $DOMAIN_UID/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $nodeport_host/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^secretName:.*/secretName: $CREDENTIAL_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^secretsMountPath:.*/secretsMountPath: \/var\/run\/secrets-$DOMAIN_UID/" ${tmp_dir}/create-domain-job-inputs.yaml
     if [ -n "${IMAGE_PULL_SECRET_WEBLOGIC}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" ${tmp_dir}/create-domain-job-inputs.yaml    	
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" ${tmp_dir}/create-domain-job-inputs.yaml
     fi
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
@@ -352,23 +711,38 @@ function run_create_domain_job {
       sed -i -e "s/^managedServerCount:.*/managedServerCount: 3/"  ${tmp_dir}/create-domain-job-inputs.yaml
     fi
 
-    trace 'Run the script to create the domain'
+    local outfile="${tmp_dir}/mkdir_physical_nfs.out"
+    trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$PV_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
 
-    sh ${tmp_dir}/create-domain-job.sh -i ${tmp_dir}/create-domain-job-inputs.yaml
+    # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
+    # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
+    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$PV_DIR" > ${outfile} 2>&1
+    if [ "$?" = "0" ]; then
+       cat ${outfile} | sed 's/^/+/g'
+       trace Job complete.  Directory created on k8s cluster.
+    else
+       cat ${outfile}
+       fail Job failed.  Could not create k8s cluster NFS directory.   
+    fi
+
+    local outfile="${tmp_dir}/create-domain-job.sh.out"
+    trace "Run the script to create the domain, see \"$outfile\" for tracing."
+
+    sh ${tmp_dir}/create-domain-job.sh -i ${tmp_dir}/create-domain-job-inputs.yaml > ${outfile} 2>&1
+
+    if [ "$?" = "0" ]; then
+       cat ${outfile} | sed 's/^/+/g'
+       trace Script complete.
+    else
+       cat ${outfile}
+       fail Script failed.
+    fi
 
     trace 'run_create_domain_job done'
 }
 
 # note that this function has slightly different parameters than deploy_webapp_via_WLST
 function deploy_webapp_via_REST {
-
-    #TODO Instead of sleeping, create a py script that verifies admin server
-    #     & managed server JMX communication has been established, and retry
-    #     until the script succeeds.
-    #     Rose suggests: domainRuntime(); cd("ServerRuntimes"); cd("<managedServer>"); cd("<othermgdServer"); etc
-
-    trace "Sleeping 120 seconds to give time for admin server and cluster to establish communication."
-    sleep 120
 
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainkey"
@@ -384,6 +758,9 @@ function deploy_webapp_via_REST {
     local WLS_ADMIN_PASSWORD="`get_wladmin_pass`"
 
     local AS_NAME="$DOMAIN_UID-admin-server"
+
+    # Make sure the admin server has established JMX connection with all managed servers
+    verify_ms_connectivity $1
 
     trace "deploy the web app to domain $DOMAIN_UID in $NAMESPACE namespace"
 
@@ -488,6 +865,7 @@ function verify_managed_servers_ready {
 }
 
 function test_wls_liveness_probe {
+    declare_new_test 1 "$@"
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainkey"
     fi
@@ -539,6 +917,7 @@ EOF
       fi
       sleep 5
     done
+    declare_test_pass
 }
 
 function verify_webapp_load_balancing {
@@ -572,7 +951,7 @@ function verify_webapp_load_balancing {
     trace 'verify that ingress is created'
     kubectl describe ingress -n $NAMESPACE
 
-    local TEST_APP_URL="http://${nodeport_host}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
+    local TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
 
     trace 'wait for test app to become available'
@@ -583,7 +962,7 @@ function verify_webapp_load_balancing {
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_APP_URL} \
+      local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
         --write-out "%{http_code}" \
         -o ${CURL_RESPONSE_BODY} \
       )
@@ -616,7 +995,7 @@ function verify_webapp_load_balancing {
       do
         echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-        local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_APP_URL} \
+        local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
           --write-out "%{http_code}" \
           -o ${CURL_RESPONSE_BODY} \
         )
@@ -689,13 +1068,13 @@ function verify_admin_server_ext_service {
       fail "Configured asNodePort of ${configuredNodePort} is different from nodePort found in service ${ADMIN_SERVER_NODEPORT_SERVICE}: ${nodePort}"
     fi
 
-    local TEST_REST_URL="http://${nodeport_host}:${nodePort}/management/weblogic/latest/serverRuntime"
+    local TEST_REST_URL="http://${NODEPORT_HOST}:${nodePort}/management/weblogic/latest/serverRuntime"
 
     local CURL_RESPONSE_BODY="$TMP_DIR/testconsole.response.body"
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_REST_URL} \
+    local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_REST_URL} \
       --user ${WLS_ADMIN_USERNAME}:${WLS_ADMIN_PASSWORD} \
       -H X-Requested-By:Integration-Test \
       --write-out "%{http_code}" \
@@ -709,11 +1088,11 @@ function verify_admin_server_ext_service {
       fail "accessing admin server REST endpoint did not return 200 status code, got ${HTTP_RESPONSE}"
     fi
 
-    local TEST_CONSOLE_URL="http://${nodeport_host}:${nodePort}/console/login/LoginForm.jsp"
+    local TEST_CONSOLE_URL="http://${NODEPORT_HOST}:${nodePort}/console/login/LoginForm.jsp"
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy ${nodeport_host} ${TEST_CONSOLE_URL} \
+    local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_CONSOLE_URL} \
       --write-out "%{http_code}" \
       -o ${CURL_RESPONSE_BODY} \
     )
@@ -729,42 +1108,38 @@ function verify_admin_server_ext_service {
 }
 
 function test_domain_creation {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    declare_new_test 1 "$@"
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
     fi 
 
     local DOM_KEY="$1"
-    local OP_KEY="$2"
 
     run_create_domain_job $DOM_KEY
-    verify_domain_created $DOM_KEY $OP_KEY
+    verify_domain_created $DOM_KEY 
     verify_managed_servers_ready $DOM_KEY
 
-    if [ ! "${WERCKER}" = "true" ]; then
-      #deploy_webapp_via_REST $DOM_KEY
-      deploy_webapp_via_WLST $DOM_KEY
-      verify_webapp_load_balancing $DOM_KEY 2
-    fi
+    #deploy_webapp_via_REST $DOM_KEY
+    deploy_webapp_via_WLST $DOM_KEY
+    verify_webapp_load_balancing $DOM_KEY 2
 
     verify_admin_server_ext_service $DOM_KEY
 
     extra_weblogic_checks
+    declare_test_pass
 }
 
 function verify_domain {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
     fi 
 
     local DOM_KEY="$1"
-    local OP_KEY="$2"
-    
-    verify_domain_created $DOM_KEY $OP_KEY
+
+    verify_domain_created $DOM_KEY 
     verify_managed_servers_ready $DOM_KEY
 
-    if [ ! "${WERCKER}" = "true" ]; then
-      verify_webapp_load_balancing $DOM_KEY 2
-    fi
+    verify_webapp_load_balancing $DOM_KEY 2
     verify_admin_server_ext_service $DOM_KEY
 }
 
@@ -787,20 +1162,19 @@ function call_operator_rest {
     trace "URL_TAIL=$URL_TAIL"
 
     trace "Checking REST service is running"
-    local REST_SERVICE=`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")]}'`
+    local REST_SERVICE="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")]}'`"
     if [ -z "$REST_SERVICE" ]; then
         fail 'operator rest service was not created'
     fi
 
-    local REST_PORT=`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")].spec.ports[?(@.name == "rest-https")].nodePort}'`
-    local REST_ADDR="https://${nodeport_host}:${REST_PORT}"
-    local SECRET=`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`
-    local ENCODED_TOKEN=`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`
-    local TOKEN=`echo ${ENCODED_TOKEN} | base64 --decode`
-    local OPERATOR_CERT_DATA=`grep externalOperatorCert ${OPERATOR_TMP_DIR}/weblogic-operator.yaml | awk '{ print $2 }'`
+    local REST_PORT="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")].spec.ports[?(@.name == "rest-https")].nodePort}'`"
+    local REST_ADDR="https://${NODEPORT_HOST}:${REST_PORT}"
+    local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
+    local ENCODED_TOKEN="`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`"
+    local TOKEN="`echo ${ENCODED_TOKEN} | base64 --decode`"
+    local OPERATOR_CERT_DATA="`grep externalOperatorCert ${OPERATOR_TMP_DIR}/weblogic-operator.yaml | awk '{ print $2 }'`"
     local OPERATOR_CERT_FILE="${OPERATOR_TMP_DIR}/operator.cert.pem"
     echo ${OPERATOR_CERT_DATA} | base64 --decode > ${OPERATOR_CERT_FILE}
-    cat ${OPERATOR_CERT_FILE}
 
     trace "Calling some operator REST APIs via ${REST_ADDR}/${URL_TAIL}"
 
@@ -819,7 +1193,7 @@ function call_operator_rest {
     echo "NO_DATA" > $OPER_CURL_STDERR
     echo "NO_DATA" > $OPER_CURL_RESPONSE_BODY
 
-    local STATUS_CODE=`curl \
+    local STATUS_CODE="`curl \
         -v \
         --cacert ${OPERATOR_CERT_FILE} \
         -H "Authorization: Bearer ${TOKEN}" \
@@ -827,10 +1201,7 @@ function call_operator_rest {
         -X GET ${REST_ADDR}/${URL_TAIL} \
         -o ${OPER_CURL_RESPONSE_BODY} \
         --stderr ${OPER_CURL_STDERR} \
-        -w "%{http_code}"`
-
-    cat $OPER_CURL_STDERR
-    cat $OPER_CURL_RESPONSE_BODY
+        -w "%{http_code}"`"
 
     # restore the https proxying now that we're done using curl
     export HTTPS_PROXY="${OLD_HTTPS_PROXY}"
@@ -841,20 +1212,38 @@ function call_operator_rest {
 
     # verify that curl returned a status code of 200
     # e.g. < HTTP/1.1 200 OK
-    if [ "${STATUS_CODE}" != "200" ]; then
+    if [ "${STATUS_CODE}" = "200" ]; then
+        # '+' marks verbose tracing
+        cat $OPER_CURL_STDERR | sed 's/^/+/'
+        cat $OPER_CURL_RESPONSE_BODY | sed 's/^/+/'
+        cat ${OPERATOR_CERT_FILE} | sed 's/^/+/'
+        trace "Done"
+    else
+        cat $OPER_CURL_STDERR
+        cat $OPER_CURL_RESPONSE_BODY 
+        cat ${OPERATOR_CERT_FILE} 
         fail "curl did not return a 200 status code, it returned ${STATUS_CODE}"
     fi
 }
 
-function mvn_build_check {
+function confirm_mvn_build {
     local fail_out=`grep FAIL ${1:?}`
+
+    if [ "$fail_out" != "" ]; then
+      cat $1 | sed 's/^/+/'
+      fail "ERROR: found FAIL in output $1" 
+    fi
+
     local success_out=`grep SUCCESS $1`
 
-    [ "$fail_out" != "" ] && fail "ERROR: found FAIL in output $1" 
-    [ "$success_out" = "" ] && fail "ERROR: didn't find SUCCESS in output $1" 
+    if [ "$success_out" = "" ]; then
+      cat $1 | sed 's/^/+/'
+      fail "ERROR: didn't find SUCCESS in output $1" 
+    fi
 }
 
-function mvn_integration_test {
+function test_mvn_integration_jenkins {
+    declare_new_test 1 "$@"
 
     trace "generating job to run mvn -P integration-tests clean install "
 
@@ -953,7 +1342,7 @@ EOF
       fail "ERROR: kubectl get job reports status=${status:=0} after running, exiting!"
     fi
 
-    mvn_build_check $job_workspace/mvn.out
+    confirm_mvn_build $job_workspace/mvn.out
 
     cat $job_workspace/mvn.out
 
@@ -962,38 +1351,44 @@ EOF
     # save the mvn.out somewhere before rm?
     rm -rf $job_workspace
     rm $job_yml
+    declare_test_pass
 }
 
-function mvn_integration_test_local {
+function test_mvn_integration_local {
+    declare_new_test 1 "$@"
 
-    trace "Running mvn -P integration-tests clean install.  Output in `pwd`/mvn.out"
+    trace "Running mvn -P integration-tests clean install.  Output in $RESULT_DIR/mvn.out"
 
-    which mvn || fail "Error: Could not find mvn in path."
+    which mvn 2>&1 > /dev/null 2>&1
+    [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    mvn -P integration-tests clean install > mvn.out 2>&1
+    mvn -P integration-tests clean install > $RESULT_DIR/mvn.out 2>&1
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
-    mvn_build_check mvn.out
+    confirm_mvn_build $RESULT_DIR/mvn.out
 
-    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
-    [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image".
+    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . > $RESULT_DIR/docker_build_tag.out 2>&1
+    [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image, see $RESULT_DIR/docker_build_tag.out".
+
+    declare_test_pass
 }
 
-function mvn_integration_test_wercker {
+function test_mvn_integration_wercker {
+    declare_new_test 1 "$@"
 
-    trace "Running mvn -P integration-tests install.  Output in `pwd`/mvn.out"
+    trace "Running mvn -P integration-tests install.  Output in $RESULT_DIR/mvn.out"
 
     local mstart=`date +%s`
-    mvn -P integration-tests install | tee mvn.out 2>&1
+    mvn -P integration-tests install > $RESULT_DIR/mvn.out 2>&1
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
-    mvn_build_check mvn.out
-    
+    confirm_mvn_build $RESULT_DIR/mvn.out
+    declare_test_pass
 }
 
 function check_pv {
@@ -1041,124 +1436,66 @@ function verify_wlst_access {
   local DOM_KEY="$1"
 
   local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
-  local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
   local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-  local AS_NAME="$DOMAIN_UID-admin-server"
+  trace "Testing WLST connectivity to pod $AS_NAME"
 
-  local username=`get_wladmin_user` 
-  local password=`get_wladmin_pass`
-  local tmp_dir="$TMP_DIR"
-  local t3url="t3://$nodeport_host:$ADMIN_WLST_PORT"
-
-  trace "Testing external WLST connectivity to pod $AS_NAME via $t3url ns=$namespace.".
-
-  trace "Verifying java is available."
-  # Prepend "+" to detailed debugging to make it easy to filter out
-  if ! java -version 2>&1
-  then
-    fail "Could not run java.  Make sure java is in PATH."
-  fi
-
-  local pyfile=$tmp_dir/tmp.py
-  trace "Verifying weblogic.WLST is available using \"java weblogic.WLST ${pyfile}\""
-  cat << EOF > ${pyfile}
-EOF
-
-  if ! java weblogic.WLST ${pyfile} > ${pyfile}.out
-  then
-    cat ${pyfile}.out
-    fail "Could not run WLST.  Make sure a WL env is in PATH and CLASSPATH"
-  fi
-
-  local pyfile=$tmp_dir/connect.py
-  trace "Verifying connectivity using \"java weblogic.WLST ${pyfile} ${username} somepassword ${t3url}\""
-  cat << EOF > ${pyfile}
+  local pyfile_con=$TMP_DIR/connect.py
+  cat << EOF > ${pyfile_con}
   connect(sys.argv[1],sys.argv[2],sys.argv[3])
 EOF
 
-  # it's theoretically possible for a booting pod to have its default port running but
-  # not its t3-channel port, so we retry this call on a failure
+  if [ "$WERCKER" = "true" ]; then
+    # hybrid causes script to run on admin pod with a 'NODEPORT_HOST' URL instead of 'pod-name' URL.
+    # like local, it uses the t3 channel...
+    run_wlst_script $1 hybrid ${pyfile_con} 
+  else
+    run_wlst_script $1 local ${pyfile_con} 
+  fi
 
-  local mstart=`date +%s`
-  local maxwaitsecs=180
-  while : ; do
-    echo
-    java weblogic.WLST ${pyfile} ${username} ${password} ${t3url} > ${pyfile}.out 2>&1
-    local result="$?"
-
-    # '+' marks verbose tracing
-    cat ${pyfile}.out | sed 's/^/+/'
-
-    if [ "$result" = "0" ];
-    then 
-      break
-    fi
-
-    local mnow=`date +%s`
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      cat ${pyfile}.out
-      fail "Could not contact admin server at ${t3url} within ${maxwaitsecs} seconds.  Giving up"
-    fi
-
-    trace "Call failed.  Wait time $((mnow - mstart)) seconds (max=${maxwaitsecs}).  Will retry."
-    sleep 10
-  done
-
-  trace "Passed."
+  trace Passed
 }
 
+
+# run_wlst_script
+#   - runs an arbitrary wlst script either locally or remotely on the admin server
+#   - always passes "username password url" as first parameters to the wlst script
+#   - plus passes any additional arguments after the third argument
+#   - modes:
+#   -   local  --> run locally - requires java & weblogic to be installed
+#   -   remote --> run remotely on admin server, construct URL using admin pod name
+#   -   hybrid --> run remotely on admin server, construct URL using 'NODEPORT_HOST'
 #
-# deploy_webapp_via_WLST
-#
-# This function
-#   waits until the admin server has established JMX communication with managed servers
-#   copies a webapp to the admin pod /shared/applications directory
-#   copies a deploy WLST script to the admin pod
-#   executes the WLST script from within the pod
-#
-# It is possible to modify this function to run deploy.py outside of the k8s cluster
-# and upload the file.
-#
-# Note that this function has slightly different parameters than deploy_webapp_via_REST.
-#
-function deploy_webapp_via_WLST {
-    #TODO Instead of sleeping, create a py script that verifies admin server
-    #     & managed server JMX communication has been established, and retry
-    #     until the script succeeds.
-    #     Rose suggests: domainRuntime(); cd("ServerRuntimes"); cd("<managedServer>"); cd("<othermgdServer"); etc
+function run_wlst_script {
+  if [ "$#" -lt 3 ] ; then
+    fail "requires at least 3 parameters: domainKey local|remote|hybrid local_pyfile optionalarg1 optionalarg2 ..."
+  fi 
 
-    trace "Sleeping 120 seconds to give time for admin server and cluster to establish communication."
-    sleep 120
+  local DOM_KEY="$1"
+  local NAMESPACE="`dom_get $1 NAMESPACE`"
+  local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+  local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
+  local TMP_DIR="`dom_get $1 TMP_DIR`"
+  local AS_NAME="$DOMAIN_UID-admin-server"
+  local location="$2"
+  local username=`get_wladmin_user` 
+  local password=`get_wladmin_pass`
+  local pyfile_lcl="$3"
+  local pyfile_pod="/shared/`basename $pyfile_lcl`"
+  local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  local t3url_pod="t3://$AS_NAME:$ADMIN_WLST_PORT"
+  local wlcmdscript_lcl="$TMP_DIR/wlcmd.sh"
+  local wlcmdscript_pod="/shared/wlcmd.sh"
 
-    if [ "$#" != 1 ] ; then
-      fail "requires 1 parameter: domainkey"
-    fi
+  shift
+  shift
+  shift
 
-    local NAMESPACE="`dom_get $1 NAMESPACE`"
-    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
-    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
-    local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
-    local TMP_DIR="`dom_get $1 TMP_DIR`"
+  if [ "$location" = "remote" -o "$location" = "hybrid" ]; then
 
-    local WLS_ADMIN_USERNAME="`get_wladmin_user`"
-    local WLS_ADMIN_PASSWORD="`get_wladmin_pass`"
-
-    local as_name="$DOMAIN_UID-admin-server"
-    local appname="testwebapp"
-    local tmp_dir="$TMP_DIR"
-
-    local t3url_lcl="t3://$nodeport_host:$ADMIN_WLST_PORT"
-    local t3url_pod="t3://$as_name:$ADMIN_WLST_PORT"
-
-    local appwar_lcl="$tmp_dir/testwebapp.war"
-    local appwar_pod="/shared/applications/testwebapp.war"
-
-    local pyfile_lcl="$tmp_dir/deploy.py"
-    local pyfile_pod="/shared/deploy.py"
-
-    local wlcmdscript_lcl="$tmp_dir/wlcmd.sh"
-    local wlcmdscript_pod="/shared/wlcmd.sh"
+    # We're running WLST remotely, so we need to copy the py script 
+    # and a helper sh script to the admin server, plus  build up a
+    # kubectl exec command.
 
     cat << EOF > $wlcmdscript_lcl
 #!/usr/bin/bash
@@ -1176,13 +1513,145 @@ eval \$ARG || exit 1
 exit 0
 EOF
 
-    local mycommand="kubectl cp $wlcmdscript_lcl ${NAMESPACE}/${as_name}:$wlcmdscript_pod"
-    trace "Copying wlcmd to pod $as_name in namespace $NAMESPACE using \"$mycommand\""
+    local mycommand="kubectl cp $wlcmdscript_lcl ${NAMESPACE}/${AS_NAME}:$wlcmdscript_pod"
+    trace "Copying wlcmd to pod $AS_NAME in namespace $NAMESPACE using \"$mycommand\""
     eval "$mycommand" 2>&1 || fail "kubectl cp command failed."
 
-    local mycommand="kubectl -n ${NAMESPACE} exec -it ${as_name} chmod 777 $wlcmdscript_pod"
+    local mycommand="kubectl -n ${NAMESPACE} exec -it ${AS_NAME} chmod 777 $wlcmdscript_pod"
     trace "Changing file permissions on pod wlcmd script using \"$mycommand\""
     eval "$mycommand" 2>&1 || fail "kubectl exec chmod command failed."
+
+    local mycommand="kubectl cp ${pyfile_lcl} ${NAMESPACE}/${AS_NAME}:${pyfile_pod}"
+    trace "Copying wlst to $DOMAIN_UID in namespace $NAMESPACE using \"$mycommand\""
+    eval "$mycommand" 2>&1 || fail "kubectl cp command failed."
+
+    local mycommand="kubectl -n ${NAMESPACE} exec -it ${AS_NAME} $wlcmdscript_pod java weblogic.WLST ${pyfile_pod} ${username} ${password}"
+
+    if [ "$location" = "hybrid" ]; then
+      # let's see if we can access the t3 channel external port from within a pod using 'NODEPORT_HOST' instead of pod name
+      mycommand="${mycommand} ${t3url_lcl}"
+    else
+      # otherwise let's use an URL constructed from the pod name (still using t3 port)
+      mycommand="${mycommand} ${t3url_pod}"
+    fi
+
+  else
+   
+    # We're running WLST locally.  No need to do anything fancy.
+
+    local mycommand="java weblogic.WLST ${pyfile_lcl} ${username} ${password} ${t3url_lcl}"
+  fi
+ 
+  trace "Running \"$mycommand $@\""
+
+  # it's theoretically possible for a booting pod to have its default port running but
+  # not its t3-channel port, so we retry on a failure
+
+  local mstart=`date +%s`
+  local maxwaitsecs=180
+  local failedonce="false"
+  while : ; do
+    eval "$mycommand ""$@" > ${pyfile}.out 2>&1
+    local result="$?"
+
+    # '+' marks verbose tracing
+    cat ${pyfile}.out | sed 's/^/+/'
+
+    if [ "$result" = "0" ];
+    then 
+      break
+    fi
+
+    if [ "$failedonce" = "false" ]; then
+      cp ${pyfile}.out ${pyfile}.out.firstfail
+      failedonce="true"
+    fi
+
+    local mnow=`date +%s`
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      cat ${pyfile}.out.firstfail
+      fail "Could not successfully run WLST script ${pyfile_lcl} on pod ${AS_NAME} via ${t3url} within ${maxwaitsecs} seconds.  Giving up."
+    fi
+
+    trace "WLST script ${pyfile_lcl} failed.  Wait time $((mnow - mstart)) seconds (max=${maxwaitsecs}).  Will retry."
+    sleep 10
+  done
+
+  trace "Passed."
+}
+
+function verify_ms_connectivity {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainkey"
+    fi
+
+    local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+
+    trace "Checking JMX connectivity between admin and managed servers using WLST"
+
+    local pyfile_ms=$TMP_DIR/check_ms.py
+    cat << EOF > ${pyfile_ms}
+connect(sys.argv[1],sys.argv[2],sys.argv[3])
+domainRuntime()
+cd("ServerRuntimes")
+if (len(sys.argv)) > 3 :
+  slist=range(4,len(sys.argv))
+  for i in slist:
+    cd(sys.argv[i])
+    cd("../")
+EOF
+  
+    local replicas=`get_cluster_replicas $1`
+    local i
+    local ms_name_list=""
+    for i in $(seq 1 $replicas);
+    do
+      local msname="${MS_BASE_NAME}$i"
+      ms_name_list="$msname $ms_name_list"
+    done
+
+    run_wlst_script $1 remote ${pyfile_ms} ${ms_name_list}
+
+    trace "Done."
+}
+
+#
+# deploy_webapp_via_WLST
+#
+# This function
+#   waits until the admin server has established JMX communication with managed servers
+#   copies a webapp to the admin pod /shared/applications directory
+#   copies a deploy WLST script to the admin pod
+#   executes the WLST script from within the pod
+#
+# It is possible to modify this function to run deploy.py outside of the k8s cluster
+# and upload the file.
+#
+# Note that this function has slightly different parameters than deploy_webapp_via_REST.
+#
+function deploy_webapp_via_WLST {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainkey"
+    fi
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+
+    local as_name="$DOMAIN_UID-admin-server"
+    local appname="testwebapp"
+    local appwar_lcl="$TMP_DIR/testwebapp.war"
+    local appwar_pod="/shared/applications/testwebapp.war"
+    local pyfile_lcl="$TMP_DIR/deploy.py"
+
+    # Make sure the admin server has established JMX connection with all managed servers
+    verify_ms_connectivity $1
+
+    # To instead run the WLST locally, must set remote='true' below,
+    # plus modify run_wlst_script 'remote' parameter to 'local'.
+    # And to furthermore have local WLST upload a local war, modify upload to 'true',
 
     cat << EOF > ${pyfile_lcl}
 connect(sys.argv[1],sys.argv[2],sys.argv[3])
@@ -1190,40 +1659,37 @@ deploy(sys.argv[4],sys.argv[5],sys.argv[6],upload='false',remote='false')
 # deploy(sys.argv[4],sys.argv[5],sys.argv[6],upload='false',remote='true')
 EOF
 
-    local mycommand="kubectl cp ${pyfile_lcl} ${NAMESPACE}/${as_name}:${pyfile_pod}"
-    trace "Copying wlst to $DOMAIN_UID in namespace $NAMESPACE using \"$mycommand\""
-    eval "$mycommand" 2>&1 || fail "kubectl cp command failed."
-
     local mycommand="kubectl cp ${appwar_lcl} ${NAMESPACE}/${as_name}:${appwar_pod}"
     trace "Copying webapp to $DOMAIN_UID in namespace $NAMESPACE using \"$mycommand\""
     eval "$mycommand" 2>&1 || fail "kubectl cp command failed."
 
-    #For a remote activated deploy, use commented version below, plus modify above deploy.py script so remote='true'
-    #local mycommand=                                                         "java weblogic.WLST ${pyfile_lcl} ${WLS_ADMIN_USERNAME} ${WLS_ADMIN_PASSWORD} ${t3url_lcl} ${appname} ${appwar_pod} ${WL_CLUSTER_NAME} "
-    local mycommand="kubectl -n ${NAMESPACE} exec -it ${as_name} $wlcmdscript_pod java weblogic.WLST ${pyfile_pod} ${WLS_ADMIN_USERNAME} ${WLS_ADMIN_PASSWORD} ${t3url_pod} ${appname} ${appwar_pod} ${WL_CLUSTER_NAME} "
-    trace "Deploying webapp to $DOMAIN_UID in namespace $NAMESPACE using \"$mycommand\""
-    eval "$mycommand" 2>&1 || fail "Deploy command failed."
+    local mycommand_args="${appname} ${appwar_pod} ${WL_CLUSTER_NAME}"
+
+    trace "Deploying webapp to ${DOMAIN_UID} in namespace ${NAMESPACE}"
+    run_wlst_script ${1} remote ${pyfile_lcl} ${mycommand_args}
 
     trace "Done."
 }
 
+
+
 function verify_service_and_pod_created {
-    if [ "$#" != 3 ] ; then
-      fail "requires 3 parameters: domainkey operatorKey serverNum, set serverNum to 0 to indicate the admin server"
+    if [ "$#" != 2 ] ; then
+      fail "requires 2 parameters: domainkey serverNum, set serverNum to 0 to indicate the admin server"
     fi
 
     local DOM_KEY="${1}"
-    local OP_KEY="${2}"
 
+    local OP_KEY="`dom_get $1 OP_KEY`"
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
 
-    local OPERATOR_NS="`op_get $2 NAMESPACE`"
-    local OPERATOR_TMP_DIR="`op_get $2 TMP_DIR`"
+    local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
+    local OPERATOR_TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    local SERVER_NUM="$3"
+    local SERVER_NUM="$2"
 
     if [ "$SERVER_NUM" = "0" ]; then 
       local IS_ADMIN_SERVER="true"
@@ -1234,9 +1700,6 @@ function verify_service_and_pod_created {
     fi
 
     local SERVICE_NAME="${POD_NAME}"
-
-    local PV="pv"
-    local PV_DIR="persistentVolume-${DOMAIN_UID}"
 
     local max_count_srv=50
     local max_count_pod=50
@@ -1320,21 +1783,18 @@ function verify_service_and_pod_created {
       fail "ERROR: pod $POD_NAME is not ready, exiting!"
     fi
 
-    if [ ! "${WERCKER}" = "true" ]; then
-      if [ "${IS_ADMIN_SERVER}" = "true" ]; then
-        verify_wlst_access $DOM_KEY
-      fi
+    if [ "${IS_ADMIN_SERVER}" = "true" ]; then
+      verify_wlst_access $DOM_KEY
     fi
 }
 
 
 function verify_domain_created {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
     fi 
 
     local DOM_KEY="$1"
-    local OP_KEY="$2"
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
@@ -1355,7 +1815,7 @@ function verify_domain_created {
     fi
 
     trace "verify the service and pod of admin server"
-    verify_service_and_pod_created $DOM_KEY $OP_KEY 0
+    verify_service_and_pod_created $DOM_KEY 0
 
     local replicas=`get_cluster_replicas $DOM_KEY`
 
@@ -1365,7 +1825,7 @@ function verify_domain_created {
     do
       local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME}$i"
       trace "verify service and pod of server $MS_NAME"
-      verify_service_and_pod_created $DOM_KEY $OP_KEY $i
+      verify_service_and_pod_created $DOM_KEY $i
     done
 
     # Check if we got exepcted number of managed servers running
@@ -1490,31 +1950,53 @@ function shutdown_domain {
 }
 
 function startup_domain {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameters: domainKey"
     fi 
 
     local DOM_KEY="$1"
-    local OP_KEY="$2"
 
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     kubectl create -f ${TMP_DIR}/domain-custom-resource.yaml
 
-    verify_domain_created $DOM_KEY $OP_KEY
+    verify_domain_created $DOM_KEY 
 }
 
-function test_domain_lifecycle {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+function test_shutdown_domain {
+    declare_new_test 1 "$@"
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
     fi 
 
     local DOM_KEY="$1"
-    local OP_KEY="$2"
 
     shutdown_domain $DOM_KEY
-    startup_domain $DOM_KEY $OP_KEY
-    verify_domain_exists_via_oper_rest $DOM_KEY $OP_KEY
+
+    declare_test_pass
+}
+
+function test_domain_lifecycle {
+    declare_new_test 1 "$@"
+
+    if [ "$#" != 1 -a "$#" != 2 ] ; then
+      fail "requires 1 or 2 parameters: domainKey [verifyDomainKey]"
+    fi 
+
+    local DOM_KEY="$1"
+    local VERIFY_DOM_KEY="$2"
+
+    shutdown_domain $DOM_KEY
+    startup_domain $DOM_KEY 
+    verify_domain_exists_via_oper_rest $DOM_KEY 
+
+    # verify that scaling $DOM_KEY had no effect on another domain
+    if [ ! "$VERIFY_DOM_KEY" = "" ]; then
+      verify_domain $VERIFY_DOM_KEY 
+    fi
+
+    declare_test_pass
 }
 
 function shutdown_operator {
@@ -1602,12 +2084,13 @@ function verify_no_domain_via_oper_rest {
     fi 
 }
 
+
 function verify_domain_exists_via_oper_rest {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameters: domainKey"
     fi
     local DOM_KEY=${1}
-    local OP_KEY=${2}
+    local OP_KEY="`dom_get $DOM_KEY OP_KEY`"
     local DOMAIN_UID="`dom_get $DOM_KEY DOMAIN_UID`"
     local OPERATOR_TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
@@ -1622,28 +2105,35 @@ function verify_domain_exists_via_oper_rest {
 }
 
 function test_operator_lifecycle {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    declare_new_test 1 "$@"
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameters: domainKey"
     fi
 
     local DOM_KEY=${1}
-    local OP_KEY=${2}
+    local OP_KEY="`dom_get $DOM_KEY OP_KEY`"
 
     trace 'begin'
     shutdown_operator $OP_KEY
     startup_operator $OP_KEY
-    verify_domain_exists_via_oper_rest $DOM_KEY $OP_KEY
-    verify_domain_created $DOM_KEY $OP_KEY
+    verify_domain_exists_via_oper_rest $DOM_KEY 
+    verify_domain_created $DOM_KEY 
     trace 'end'
+
+    declare_test_pass
 }
 
+# scale domain $1 up and down, and optionally verify the scaling had no effect on domain $2
 function test_cluster_scale {
-    if [ "$#" != 2 ] ; then
-      fail "requires 2 parameters: domainKey operatorKey"
+    declare_new_test 1 "$@"
+
+    if [ "$#" != 1 -a "$#" != 2 ] ; then
+      fail "requires 1 or 2 parameters: domainKey [verifyDomainKey]"
     fi 
 
     local DOM_KEY="$1"
-    local OP_KEY="$2"
+    local VERIFY_DOM_KEY="$2"
 
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
@@ -1655,22 +2145,27 @@ function test_cluster_scale {
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 3/"  $domainCR
     kubectl apply -f $domainCR
 
-    verify_service_and_pod_created $DOM_KEY $OP_KEY 3
-    if [ ! "${WERCKER}" = "true" ]; then
-      verify_webapp_load_balancing $DOM_KEY 3
-    fi
+    verify_service_and_pod_created $DOM_KEY 3
+    verify_webapp_load_balancing $DOM_KEY 3
 
     trace "test cluster scale-down from 3 to 2"
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 2/"  $domainCR
     kubectl apply -f $domainCR
 
     verify_service_and_pod_deleted $DOM_KEY 3
-    if [ ! "${WERCKER}" = "true" ]; then
-      verify_webapp_load_balancing $DOM_KEY 2
+    verify_webapp_load_balancing $DOM_KEY 2 
+
+    # verify that scaling $DOM_KEY had no effect on another domain
+    if [ ! "$VERIFY_DOM_KEY" = "" ]; then
+      verify_domain $VERIFY_DOM_KEY 
     fi
+
+    declare_test_pass
 }
 
 function test_create_domain_on_exist_dir {
+    declare_new_test 1 "$@"
+
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainKey"
     fi 
@@ -1699,207 +2194,287 @@ function test_create_domain_on_exist_dir {
       trace "[SUCCESS] create domain job failed, this is the expected behavior"
     else
       trace "[FAIL] unexpected result, create domain job exit code: "${exit_code}
-      fail "test_create_domain_on_exist_dir failed!"
+      fail "failed!"
     fi
+
+    declare_test_pass
 }
 
-function verify_elk_integration {
-    trace 'verify elk integration (nyi)'
+function test_elk_integration {
+    # TODO Placeholder
+    declare_new_test 1 "$@"
+    trace 'verify elk integration TBD (nyi)'
+    declare_test_pass
 }
 
+# define globals, re-install docker & k8s if needed, pull images if needed, etc.
+function test_suite_init {
+    declare_new_test 1 "$@"
+
+    # The following exports can be customized by the caller of this script.
+
+    local varname
+    for varname in RESULT_ROOT \
+                   PV_ROOT \
+                   NODEPORT_HOST \
+                   JVM_ARGS \
+                   BRANCH_NAME \
+                   IMAGE_TAG_OPERATOR \
+                   IMAGE_NAME_OPERATOR \
+                   IMAGE_PULL_POLICY_OPERATOR \
+                   IMAGE_PULL_SECRET_OPERATOR \
+                   IMAGE_PULL_SECRET_WEBLOGIC \
+                   WERCKER \
+                   JENKINS;
+    do
+      trace "Customizable env var before: $varname=${!varname}"
+    done
+
+    export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
+    export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
+    export NODEPORT_HOST=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
+    export JVM_ARGS="${JVM_ARGS:-'-Dweblogic.StdoutDebugEnabled=false'}"
+    export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
+
+    if [ -z "$BRANCH_NAME" ]; then
+      export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
+      [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
+    fi
+
+    # The following customizable exports are currently only customized by WERCKER
+    export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
+    export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
+    export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
+    export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
+    export IMAGE_PULL_SECRET_WEBLOGIC=${IMAGE_PULL_SECRET_WEBLOGIC}
+
+    # Show custom env vars after defaults were substituted as needed.
+
+    local varname
+    for varname in RESULT_ROOT \
+                   PV_ROOT \
+                   NODEPORT_HOST \
+                   JVM_ARGS \
+                   BRANCH_NAME \
+                   IMAGE_TAG_OPERATOR \
+                   IMAGE_NAME_OPERATOR \
+                   IMAGE_PULL_POLICY_OPERATOR \
+                   IMAGE_PULL_SECRET_OPERATOR \
+                   IMAGE_PULL_SECRET_WEBLOGIC \
+                   WERCKER \
+                   JENKINS;
+    do
+      trace "Customizable env var after: $varname=${!varname}"
+    done
+
+    # Derived exports
+
+    export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+    export CUSTOM_YAML="$SCRIPTPATH/../kubernetes"
+    export PROJECT_ROOT="$SCRIPTPATH/../../.."
+    export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
+
+    local varname
+    for varname in SCRIPTPATH CUSTOM_YAML PROJECT_ROOT; do
+      trace "Derived env var: $varname=${!varname}"
+    done
+
+    # Save some exports to files in case the env var is lost when calling 'dump'.  This can happen with a ^C trap
+
+    echo "${RESULT_ROOT}" > /tmp/test_suite.result_root
+    echo "${PV_ROOT}" > /tmp/test_suite.pv_root
+    echo "${PROJECT_ROOT}" > /tmp/test_suite.project_root
+
+    cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
+   
+
+    if [ "$WERCKER" = "true" ]; then 
+      trace "Test Suite is running locally on Wercker and k8s is running on remote nodes."
+
+      # No need to check M2_HOME or docker_pass -- not used by local runs
+
+      # Assume store/oracle/weblogic:12.2.1.3 and store/oracle/serverjre:8 are already
+      # available in the k8s cluster's docker cluster.
+
+      mkdir -p $RESULT_ROOT/acceptance_test_tmp || fail "Could not mkdir -p RESULT_ROOT/acceptance_test_tmp (RESULT_ROOT=$RESULT_ROOT)"
+
+    elif [ "$JENKINS" = "true" ]; then
+    
+      trace "Test Suite is running on Jenkins and k8s is running locally on the same node."
+
+      # External customizable env vars unique to Jenkins:
+
+      export docker_pass=${docker_pass:?}
+      export M2_HOME=${M2_HOME:?}
+      export K8S_VERSION=${K8S_VERSION}
+
+      clean_jenkins
+
+      setup_jenkins
+
+      create_image_pull_secret_jenkins
+
+      /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
+      /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
+
+      # 777 is needed because this script, k8s pods, and/or jobs may need access.
+
+      /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_tmp"
+
+      /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp_archive"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_tmp_archive"
+
+      /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv"
+
+      /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
+
+    else
+    
+      trace "Test Suite is running locally and k8s is running locally on the same node."
+
+      setup_local
+
+      mkdir -p $PV_ROOT || fail "Could not mkdir -p PV_ROOT (PV_ROOT=$PV_ROOT)"
+
+      # The job.sh and wl pods run as UID 1000, so PV_ROOT needs to allow this UID.
+      [ `stat -c "%a" $PV_ROOT` -eq 777 ] || chmod 777 $PV_ROOT || fail "Could not chmod 777 PV_ROOT (PV_ROOT=$PV_ROOT)"
+
+      mkdir -p $RESULT_ROOT/acceptance_test_tmp || fail "Could not mkdir -p RESULT_ROOT/acceptance_test_tmp (RESULT_ROOT=$RESULT_ROOT)"
+
+    fi
+
+    local duration=$SECONDS
+    trace "Setting up env spent $(($duration / 60)) minutes and $(($duration % 60)) seconds."
+
+    declare_test_pass
+}
+
+#
+# TODO:  Make output less verbose -- suppress REST output, etc.  Move output to file and/or
+#        only report output on a failure and/or prefix output with a "+".
+#
 
 function test_suite {
+    # SECONDS is a special bash reserved variable that auto-increments every second, used by trace
+    SECONDS=0
+
+    # we must call declare_reset once before using other declare_ verbs or calling trace
+    declare_reset
 
     trace "******************************************************************************************"
     trace "***                                                                                    ***"
     trace "***    This is the Oracle WebLogic Server Kubernetes Operator Acceptance Test Suite    ***"
     trace "***                                                                                    ***"
     trace "******************************************************************************************"
-    
-    # SECONDS is a special bash reserved variable that auto-increments every second
-    SECONDS=0
-    
-    export HOST_PATH=${HOST_PATH:-/scratch}
 
-    local SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-    export CUSTOM_YAML="$SCRIPTPATH/../kubernetes"
-    export PROJECT_ROOT="$SCRIPTPATH/../../.."
-    export RESULT_ROOT=${RESULT_ROOT:-/scratch/k8s_dir}
-    export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
-    export HOST_DIR="/scratch/k8s_dir/acceptance_test_tmp"
-    export nodeport_host=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
-
-    if [ "$JENKINS" = "true" ]; then
-    
-      trace "Test Suite is running on Jenkins"
-
-      export BRANCH_NAME=${BRANCH_NAME:?}
-      export docker_pass=${docker_pass:?}
-      export M2_HOME=${M2_HOME:?}
-      export JVM_ARGS=${JVM_ARGS}
-     
-      trace "Current git branch=$BRANCH_NAME"
-     
-    elif [ "$WERCKER" = "true" ]; then
-    	
-      trace "Test Suite is running on Wercker"
-    	
-    else
-    
-      trace "Test Suite is running locally"
-    
-      export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
-      [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
-    
-      # No need to check M2_HOME or docker_pass -- not used by local runs
-
-      trace "Current git branch=$BRANCH_NAME"
-    
-    fi
-    
-    # Convert the git branch name into a docker image tag.
-    #
-    # TODO - are there any other valid branch name characters other than '/'
-    # that are not valid in a docker image version?
-    #
-    # Docker tag restrictions:
-    #   A tag name must be valid ASCII and may contain lowercase and uppercase letters,
-    #   digits, underscores, periods and dashes. A tag name may not start with a period
-    #   or a dash and may contain a maximum of 128 characters.
-    #
-    # Git branch name restrictions:
-    #   A Git branch name can not:
-    #     Have a path component that begins with "."
-    #     Have a double dot "…"
-    #     Have an ASCII control character, "~", "^", ":" or SP, anywhere
-    #     End with a "/"
-    #     End with ".lock"
-    #     Contain a "\" (backslash)
-    
-    export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
-    export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
-    export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
-    
     set -x
 
-    if [ "$JENKINS" = "true" ]; then
-    
-      trace 'Cleaning...'
-      clean
-    
-      trace 'Setup...'
-      setup
-      local duration=$SECONDS
-      trace "Setting up env spent $(($duration / 60)) minutes and $(($duration % 60)) seconds."
-    
-      trace 'Running mvn integration tests...'
-      mvn_integration_test
-    
-      create_image_pull_secret
-    
-    elif [ "$WERCKER" = "true" ]; then
+    # define globals, re-install docker & k8s if needed, pull images if needed, etc.
 
-      trace 'Running mvn integration tests...'
-      mvn_integration_test_wercker
-    	
+    test_suite_init
+
+    # specify settings for each operator and domain 
+    
+    declare_new_test 1 define_operators_and_domains
+
+    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT
+    op_define  oper1   weblogic-operator-1  "default,test1"    31001
+    op_define  oper2   weblogic-operator-2  test2              32001
+
+    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+    dom_define domain1  oper1   default   domain1    cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
+    dom_define domain2  oper1   default   domain2    cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
+    dom_define domain3  oper1   test1     domain3    cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
+    dom_define domain4  oper2   test2     domain4    cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
+
+    # create namespaces for domains (the operator job creates a namespace if needed)
+    # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
+    kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
+
+    # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
+    declare_test_pass
+    
+    trace 'Running mvn integration tests...'
+    if [ "$WERCKER" = "true" ]; then
+      test_mvn_integration_wercker
+    elif [ "$JENKINS" = "true" ]; then
+      test_mvn_integration_jenkins
     else
-    
-      cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
-    
-      trace 'Setup...'
-      setup_local
-    
-      # If host pv directories exist, check that they are 777 and empty.
-
-      local pvdir    
-      for pvdir in $RESULT_DIR/persistentVolume-domain1 \
-                   $RESULT_DIR/persistentVolume-domain2 \
-                   $RESULT_DIR/persistentVolume-domain3 \
-                   $RESULT_DIR/persistentVolume-domain4 \
-                   $RESULT_DIR/elkPersistentVolume; do
-        if [ -d $pvdir ]; then
-          [ "777" = "`stat --format '%a' $pvdir`" ] || fail "Error: $pvdir found but permission != 777"
-          [ "0" = "`ls $pvdir | wc -l`" ] && fail "Error:  $pvdir must not exist or be empty"
-        fi
-      done
-    
-      trace 'Running mvn integration tests...'
-      mvn_integration_test_local
-    
-      kubectl create namespace weblogic-operator
+      test_mvn_integration_local
     fi
 
-    #          OP_KEY               NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT
-    op_define  weblogic-operator    weblogic-operator    "default,test"     31001
-    op_define  weblogic-operator-2  weblogic-operator-2  test2              32001
+    # create and start first operator, manages namespaces default & test1
+    test_first_operator oper1
 
-
-    #          DOM_KEY  NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
-    dom_define domain1  default   domain1    cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  default   domain2    cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  test      domain3    cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
-    dom_define domain4  test2     domain4    cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
-
-    kubectl create namespace test
-    kubectl create namespace test2
-    
-    trace 'Running integration tests...'
-    test_first_operator weblogic-operator
-    verify_elk_integration
+    # test elk intgration
+    test_elk_integration
 
     # create first domain in default namespace and verify it
-    test_domain_creation    domain1 weblogic-operator
+    test_domain_creation domain1 
+
+    # if QUICKTEST is true skip the rest of the tests
+    if [ ! "${QUICKTEST:-false}" = "true" ]; then
+   
+      # test shutting down and restarting a domain 
+      test_domain_lifecycle domain1 
+
+      # test shutting down and restarting the operator for the given domain
+      test_operator_lifecycle domain1
+
+      # TODO move test_cluster_scale to QUICKTEST once we speedup mgd server boots
+      # test scaling domain1 cluster from 2 to 3 servers and back down to 2
+      test_cluster_scale domain1 
     
-    test_domain_lifecycle   domain1 weblogic-operator
-    test_operator_lifecycle domain1 weblogic-operator
-    test_cluster_scale      domain1 weblogic-operator 
+      # create another domain in the default namespace and verify it
+      test_domain_creation domain2 
     
-    # create another domain in the default namespace and verify it
-    test_domain_creation domain2 weblogic-operator
+      # shutdown domain2 before create domain3
+      test_shutdown_domain domain2
     
-    # shutdown domain2 before create domain3
-    shutdown_domain domain2
-    
-    # need to shorten tests as wercker's max runtime is 25 minutes
-    if [ ! "${WERCKER}" = "true" ]; then
-    # create another domain in the test namespace and verify it
-      test_domain_creation domain3 weblogic-operator
+      # create another domain in the test namespace and verify it
+      test_domain_creation domain3 
     
       # shutdown domain3
-      shutdown_domain domain3
+      test_shutdown_domain domain3
     
-      # Create another operator in weblogic-operator-2 namespace, managing namesapce test2
-      # the only remaining running domain should not be affacted
-      deploy_operator weblogic-operator-2 
-      verify_domain domain1 weblogic-operator
+      # Create another operator in weblogic-operator-2 namespace, managing namespace test2
+      # Verify the only remaining running domain, domain1, is unaffected
+      test_second_operator oper2 domain1 
     
       # create another domain in the test2 namespace and verify it
-      test_domain_creation domain4 weblogic-operator-2
+      test_domain_creation domain4 
 
-      # Make sure scale up a domain managed by one operator does not impact other domains
-      test_cluster_scale domain4 weblogic-operator-2
-      verify_domain domain1 weblogic-operator
+      # test scaling domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
+      test_cluster_scale domain4 domain1 
   
-      # scale domain1 up and down, make sure that domain4 is not impacted
-      test_domain_lifecycle domain1 weblogic-operator
-      verify_domain domain4 weblogic-operator-2
+      # cycle domain1 down and back up, plus verify no impact on domain4
+      test_domain_lifecycle domain1 domain4 
 
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1
-    fi
-
-    # TODO temporarily commenting out test:
-    #    this test failed in Jenkins run #895 during setup its setup with
-    #    "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
-    # shutdown_domain domain1
-    # test_create_domain_on_exist_dir domain1
     
-    state_dump logs
+      # shutdown domain1
+      test_shutdown_domain domain1
+
+      # test that create domain fails when its pv is already populated by a shutdown domain
+      test_create_domain_on_exist_dir domain1
+
+    fi 
 
     local duration=$SECONDS
     trace "Running integration tests spent $(($duration / 60)) minutes and $(($duration % 60)) seconds."
+
+    # declare success of entire test_suite
+    declare_new_test 1 complete
+    declare_test_pass
     
-    
+    # dump current state and archive into a tar file, also called from 'fail'
+    state_dump logs
+
     set +x
     trace "******************************************************************************************"
     trace "***                                                                                    ***"
@@ -1920,6 +2495,4 @@ else
     test_suite 2>&1 | tee /tmp/test_suite.out | grep -v "^+"
     trace See $TESTOUT for full trace.
 fi
-
-
 

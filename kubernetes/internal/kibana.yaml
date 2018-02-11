@@ -20,7 +20,6 @@ spec:
       containers:
       - name: kibana
         image: kibana:5
-        args: ["--link elasticsearch:elasticsearch.default.svc.cluster.local"]
         ports:
         - containerPort: 5601        
 ---
