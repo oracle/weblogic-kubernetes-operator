@@ -680,7 +680,7 @@ function run_create_domain_job {
     cp $PROJECT_ROOT/kubernetes/create-domain-job-inputs.yaml ${tmp_dir}/create-domain-job-inputs.yaml
 
     # copy testwebapp.war for testing
-    cp $PROJECT_ROOT/qa/testwebapp.war ${tmp_dir}/testwebapp.war
+    cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
 
     # Customize the create domain job inputs
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" ${tmp_dir}/create-domain-job-inputs.yaml
