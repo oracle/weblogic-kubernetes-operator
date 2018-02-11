@@ -49,7 +49,7 @@ Next, upload your image to your Kubernetes server as follows:
 # on your build machine
 docker save weblogic-kubernetes-operator:developer > operator.tar
 scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
-# on the Kubernetes server
+# on each Kubernetes worker:
 docker load < /some/path/operator.tar
 ```
 
