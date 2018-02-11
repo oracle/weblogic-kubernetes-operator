@@ -53,23 +53,17 @@ data:
     fi
 
     # Validate the domain secrets exist before proceeding.
-    if [ ! -f %SECRETS_MOUNT_PATH%/username ]; then
-      fail "The domain secret %SECRETS_MOUNT_PATH%/username was not found"
+    if [ ! -f /weblogic-operator/secrets/username ]; then
+      fail "The domain secret /weblogic-operator/secrets/username was not found"
     fi
-    if [ ! -f %SECRETS_MOUNT_PATH%/password ]; then
-      fail "The domain secret %SECRETS_MOUNT_PATH%/password was not found"
+    if [ ! -f /weblogic-operator/secrets/password ]; then
+      fail "The domain secret /weblogic-operator/secrets/password was not found"
     fi
 
-    # Check if the domain already exists
+    # Do not proceed if the domain already exists
     domainFolder=${SHARED_PATH}/domain/%DOMAIN_NAME%
     if [ -d ${domainFolder} ]; then
-      # check if user asked to replace existing data
-      if [ "%REPLACE_EXISTING_DOMAIN%" = "true" ]; then
-        echo "As requested, deleting all data in the peristent volume to make way for new domain!"
-        rm -rf ${SHARED_PATH}/*
-      else
-        fail "The create domain job will not overwrite an existing domain unless you set the parameter 'replaceExistingDomain' to 'true'. The domain folder ${domainFolder} already exists"
-      fi
+      fail "The create domain job will not overwrite an existing domain. The domain folder ${domainFolder} already exists"
     fi
 
     # Create the base folders
@@ -86,12 +80,12 @@ data:
     # +++ Start of common code for reading domain secrets
 
     # Read username secret
-    file = open('%SECRETS_MOUNT_PATH%/username', 'r')
+    file = open('/weblogic-operator/secrets/username', 'r')
     admin_username = file.read()
     file.close()
 
     # Read password secret
-    file = open('%SECRETS_MOUNT_PATH%/password', 'r')
+    file = open('/weblogic-operator/secrets/password', 'r')
     admin_password = file.read()
     file.close()
 
@@ -184,7 +178,7 @@ data:
     echo "Finished waiting for the nodemanager to start"
 
     echo "Update JVM arguments"
-    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
+    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp} 
 
     echo "Start the server"
     wlst.sh -skipWLSModuleScanning ${pyFile}
@@ -371,9 +365,10 @@ data:
     cd('/Servers/%ADMIN_SERVER_NAME%/Log/%ADMIN_SERVER_NAME%')
     set('FileName', '/shared/logs/%ADMIN_SERVER_NAME%.log')
 
-    # Define the user password for weblogic
-    # =====================================
-    cd('/Security/%DOMAIN_NAME%/User/%s' % admin_username)
+    # Set the admin user's username and password
+    # ==========================================
+    cd('/Security/%DOMAIN_NAME%/User/weblogic')
+    cmo.setName(admin_username)
     cmo.setPassword(admin_password)
 
     # Write the domain and close the domain template
@@ -512,7 +507,7 @@ spec:
             name: config-map-scripts
           - mountPath: /shared
             name: pv-storage
-          - mountPath: %SECRETS_MOUNT_PATH%
+          - mountPath: /weblogic-operator/secrets
             name: secrets
           command: ["/bin/sh"]
           args: ["/u01/weblogic/create-domain-job.sh"]
@@ -530,4 +525,4 @@ spec:
           secret:
             secretName: %SECRET_NAME%
       %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_STORE_REGISTRY_SECRET%
+      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_REGISTRY_SECRET%

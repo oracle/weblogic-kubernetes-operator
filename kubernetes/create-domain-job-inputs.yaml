@@ -14,7 +14,7 @@ createDomainScript: /u01/weblogic/create-domain-script.sh
 domainName: base_domain
 
 # Unique id identifying a domain.
-# This id must be unique across all domains in a Kubernetes cluster
+# This id must be lowercase and unique across all domains in a Kubernetes cluster
 domainUid: domain1
 
 # Cluster name
@@ -40,34 +40,29 @@ persistenceSize: 10Gi
 
 # Name of the storage class to set for the persistent volume and persistent volume claim
 # The default value that will be used is the value of the domainUid input parameter
+# The name of the storage class must be in lowercase
 #persistenceStorageClass:
 
-# Name of the Kubernetes persistent volume claim for this domain
+# Name of the Kubernetes persistent volume claim for this domain.  Name must be lowercase.
 # The persistent volume claim name will be prepended with '${domainUid}-' by create-domain-job.sh
 # if it is not already
 persistenceVolumeClaimName: pv001-claim
 
-# Name of the Kubernetes persistent volume for this domain
+# Name of the Kubernetes persistent volume for this domain.  Name must be lowercase.
 # The persistent volume name will be prepended with '${domainUid}-' by create-domain-job.sh
 # if it is not already
 persistenceVolumeName: pv001
 
-# Boolean indiciating whether to erase/overwrite an existing data found in the persistent volume
-# WARNING: if you set this to true, then ALL data found in the persistent volume will be deleted! 
-replaceExistingDomain: false
-
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
-# Path for mounting secrets
-secretsMountPath: /var/run/secrets-domain1
-
 # Name of the Kubernetes secret for the Admin Server's username and password
+# The name must be lowercase
 secretName: domain1-weblogic-credentials
 
 # Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
 # The presence of the secret will be validated when this parameter is enabled.
-#imagePullSecretName: docker-store-secret
+#imagePullSecretName:
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
@@ -98,3 +93,6 @@ loadBalancerWebPort: 30305
 
 # Load balancer admin port
 loadBalancerAdminPort: 30315
+
+#Java Option for Weblogic Server
+javaOptions: -Dweblogic.StdoutDebugEnabled=false

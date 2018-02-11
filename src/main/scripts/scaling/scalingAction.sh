@@ -134,11 +134,8 @@ outer_loop_must_break = False
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusterStartup"]
   for index, cStartups in enumerate(j):
-    for k in j[index]["clusters"]:
-      if k == "$wls_cluster_name":
-        outer_loop_must_break = True
-        break
-    if outer_loop_must_break:
+    if j[index]["clusterName"] == "$wls_cluster_name":
+      outer_loop_must_break = True
       print True
       break
 if outer_loop_must_break == False:
@@ -157,8 +154,7 @@ import sys, json
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusterStartup"]
   for index, cStartups in enumerate(j):
-    for k in j[index]["clusters"]:
-      if k == "$wls_cluster_name":
+    if j[index]["clusterName"] == "$wls_cluster_name":
         print(j[index]["replicas"])
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds.py`

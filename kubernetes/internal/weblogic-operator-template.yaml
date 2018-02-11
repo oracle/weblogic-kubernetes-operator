@@ -81,6 +81,7 @@ spec:
         # uncomment this mount if using the ELK integration:
         %ELK_INTEGRATION_PREFIX%- mountPath: /logs
         %ELK_INTEGRATION_PREFIX%  name: log-dir
+        %ELK_INTEGRATION_PREFIX%  readOnly: false
         livenessProbe:
           exec:
             command:
@@ -88,6 +89,18 @@ spec:
               - '/operator/livenessProbe.sh'
           initialDelaySeconds: 120
           periodSeconds: 5
+      # Uncomment this container if using ELK integration:
+      %ELK_INTEGRATION_PREFIX%- name: logstash
+      %ELK_INTEGRATION_PREFIX%  image: logstash:5
+      %ELK_INTEGRATION_PREFIX%  args: ["-f", "/logs/logstash.conf"]
+      %ELK_INTEGRATION_PREFIX%  volumeMounts:
+      %ELK_INTEGRATION_PREFIX%  - mountPath: /logs
+      %ELK_INTEGRATION_PREFIX%    name: log-dir
+      %ELK_INTEGRATION_PREFIX%  env:
+      %ELK_INTEGRATION_PREFIX%  - name: ELASTICSEARCH_HOST
+      %ELK_INTEGRATION_PREFIX%    value: "elasticsearch.default.svc.cluster.local"
+      %ELK_INTEGRATION_PREFIX%  - name: ELASTICSEARCH_PORT
+      %ELK_INTEGRATION_PREFIX%    value: "9200"
       volumes:
       - name: operator-config-volume
         configMap:
@@ -97,10 +110,10 @@ spec:
           secretName: operator-secrets
       # Uncomment this volume if using ELK integration:
       %ELK_INTEGRATION_PREFIX%- name: log-dir
-      %ELK_INTEGRATION_PREFIX%  persistentVolumeClaim:
-      %ELK_INTEGRATION_PREFIX%    claimName: elk-pvc
+      %ELK_INTEGRATION_PREFIX%  emptyDir:
+      %ELK_INTEGRATION_PREFIX%    medium: Memory
       %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_STORE_REGISTRY_SECRET%
+      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_REGISTRY_SECRET%
 
 ---
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%apiVersion: v1
@@ -135,3 +148,4 @@ spec:
   ports:
     - port: 8082
       name: rest-https
+

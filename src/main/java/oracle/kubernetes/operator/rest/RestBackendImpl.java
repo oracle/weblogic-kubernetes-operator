@@ -15,6 +15,7 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -273,7 +274,8 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private static String getAdminServerServiceName(Domain domain) {
-    return domain.getSpec().getDomainUID() + "-" + domain.getSpec().getAsName();
+    String adminServerServiceName = domain.getSpec().getDomainUID() + "-" + domain.getSpec().getAsName();
+    return CallBuilder.toDNS1123LegalName(adminServerServiceName);
   }
 
   /**
@@ -307,7 +309,7 @@ public class RestBackendImpl implements RestBackend {
     LOGGER.entering(domainUID, cluster, managedServerCount);
 
     if (managedServerCount < 0) {
-      throw createWebApplicationException(Status.FORBIDDEN, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
+      throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
     ClientHolder client = null;
@@ -354,7 +356,7 @@ public class RestBackendImpl implements RestBackend {
       } else {
         // WebLogic Cluster is not defined in ClusterStartup AND Startup Control is not spec'd as AUTO
         // so scaling will not occur since Domain.spec.Replicas property will be ignored.
-        throw createWebApplicationException(Status.FORBIDDEN, MessageKeys.SCALING_AUTO_CONTROL_AUTO, cluster);
+        throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.SCALING_AUTO_CONTROL_AUTO, cluster);
       }
     }
 
@@ -365,7 +367,7 @@ public class RestBackendImpl implements RestBackend {
         client.callBuilder().replaceDomain(domainUID, namespace, domain);
       } catch (ApiException e) {
         LOGGER.finer("Unexpected exception when updating Domain " + domainUID + " in namespace " + namespace, e);
-        throw createWebApplicationException(Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        throw new WebApplicationException(e.getMessage());
       }
     }
   }
@@ -377,7 +379,7 @@ public class RestBackendImpl implements RestBackend {
     String adminSecretName = getAdminServiceSecretName(domain);
     int clusterSize = getWLSConfiguredClusterSize(client, adminServerServiceName, cluster, namespace, adminSecretName);
     if (managedServerCount > clusterSize) {
-      throw createWebApplicationException(Status.NOT_IMPLEMENTED, MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED, managedServerCount, clusterSize, cluster, cluster);
+      throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED, managedServerCount, clusterSize, cluster, cluster);
     }
   }
 
