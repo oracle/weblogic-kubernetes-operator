@@ -525,4 +525,4 @@ spec:
           secret:
             secretName: %SECRET_NAME%
       %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_STORE_REGISTRY_SECRET%
+      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_REGISTRY_SECRET%

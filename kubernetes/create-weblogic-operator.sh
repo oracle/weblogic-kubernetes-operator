@@ -310,7 +310,7 @@ function createYamlFiles {
   sed -i -e "s|%ACCOUNT_NAME%|$serviceAccount|g" ${oprOutput}
   sed -i -e "s|%IMAGE%|$image|g" ${oprOutput}
   sed -i -e "s|%IMAGE_PULL_POLICY%|$imagePullPolicy|g" ${oprOutput}
-  sed -i -e "s|%DOCKER_STORE_REGISTRY_SECRET%|${imagePullSecretName}|g" ${oprOutput}
+  sed -i -e "s|%DOCKER_REGISTRY_SECRET%|${imagePullSecretName}|g" ${oprOutput}
   sed -i -e "s|%IMAGE_PULL_SECRET_PREFIX%|${imagePullSecretPrefix}|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_OPERATOR_SERVICE_PREFIX%|$externalOperatorServicePrefix|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_REST_HTTPS_PORT%|$externalRestHttpsPort|g" ${oprOutput}
