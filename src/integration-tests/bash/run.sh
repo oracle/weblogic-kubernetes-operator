@@ -1448,7 +1448,7 @@ EOF
   if [ "$WERCKER" = "true" ]; then
     # hybrid causes script to run on admin pod with a 'NODEPORT_HOST' URL instead of 'pod-name' URL.
     # like local, it uses the t3 channel...
-    run_wlst_script $1 hybrid ${pyfile_con} 
+    run_wlst_script $1 remote ${pyfile_con} 
   else
     run_wlst_script $1 local ${pyfile_con} 
   fi
