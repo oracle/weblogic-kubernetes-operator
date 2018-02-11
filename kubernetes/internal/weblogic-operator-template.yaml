@@ -112,11 +112,8 @@ spec:
       %ELK_INTEGRATION_PREFIX%- name: log-dir
       %ELK_INTEGRATION_PREFIX%  emptyDir:
       %ELK_INTEGRATION_PREFIX%    medium: Memory
-      # Update the imagePullSecrets with the name of your Kubernetes secret containing
-      # your credentials for the Docker Store/Oracle Container Registry.
-      #### artifactory credentials during internal development phase
-      imagePullSecrets:
-      - name: wlsldi-secret
+      %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_REGISTRY_SECRET%
 
 ---
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%apiVersion: v1

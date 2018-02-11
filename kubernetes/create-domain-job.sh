@@ -278,7 +278,7 @@ function createYamlFiles {
   cp ${jobInput} ${jobOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${jobOutput}
   sed -i -e "s:%SECRET_NAME%:${secretName}:g" ${jobOutput}
-  sed -i -e "s:%DOCKER_STORE_REGISTRY_SECRET%:${imagePullSecretName}:g" ${jobOutput}
+  sed -i -e "s:%DOCKER_REGISTRY_SECRET%:${imagePullSecretName}:g" ${jobOutput}
   sed -i -e "s:%IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${jobOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${jobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${jobOutput}
