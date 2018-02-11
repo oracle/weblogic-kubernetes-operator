@@ -95,8 +95,49 @@ function initialize {
   validateJavaLoggingLevel
 
   validateExternalRest
+  
+  validateImagePullSecretName
 
   failIfValidationErrors
+}
+
+#
+# Function to validate the image pull secret name
+#
+function validateImagePullSecretName {
+  if [ ! -z ${imagePullSecretName} ]; then
+  	validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
+    imagePullSecretPrefix=""
+    validateImagePullSecret
+  else
+    # Set name blank when not specified, and comment out the yaml
+    imagePullSecretName=""
+    imagePullSecretPrefix="#"
+  fi
+}
+
+#
+# Function to validate the image pull secret exists
+#
+function validateImagePullSecret {
+
+  # The kubernetes secret for pulling images from the docker store is optional.
+  # If it was specified, make sure it exists.
+  validateSecretExists ${imagePullSecretName} ${namespace}
+  failIfValidationErrors
+}
+
+#
+# Function to validate a kubernetes secret exists
+# $1 - the name of the secret
+# $2 - namespace
+function validateSecretExists {
+  # Verify the secret exists
+  echo "Checking to see if the secret ${1} exists in namespace ${2}"
+  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The registry secret ${1} was not found in namespace ${2}"
+  fi
 }
 
 #
@@ -269,6 +310,8 @@ function createYamlFiles {
   sed -i -e "s|%ACCOUNT_NAME%|$serviceAccount|g" ${oprOutput}
   sed -i -e "s|%IMAGE%|$image|g" ${oprOutput}
   sed -i -e "s|%IMAGE_PULL_POLICY%|$imagePullPolicy|g" ${oprOutput}
+  sed -i -e "s|%DOCKER_STORE_REGISTRY_SECRET%|${imagePullSecretName}|g" ${oprOutput}
+  sed -i -e "s|%IMAGE_PULL_SECRET_PREFIX%|${imagePullSecretPrefix}|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_OPERATOR_SERVICE_PREFIX%|$externalOperatorServicePrefix|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_REST_HTTPS_PORT%|$externalRestHttpsPort|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_DEBUG_HTTP_PORT%|$externalDebugHttpPort|g" ${oprOutput}
