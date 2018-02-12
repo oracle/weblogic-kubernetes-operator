@@ -3,7 +3,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+  
     <groupId>oracle.kubernetes</groupId>
     <artifactId>weblogic-kubernetes-operator</artifactId>
     <version>0.1.0-alpha-SNAPSHOT</version>
@@ -550,7 +550,6 @@
         <jacoco.outputDir>${project.build.directory}/jacoco</jacoco.outputDir>
         <jacoco.itOutputDir>${project.build.directory}/jacoco-it</jacoco.itOutputDir>
         <jacoco.destFile>${project.build.directory}/jacoco.exec</jacoco.destFile>
-        <sonar.host.url>http://slc08ujn.us.oracle.com:9000</sonar.host.url>
         <sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <jacoco.skip>false</jacoco.skip>
