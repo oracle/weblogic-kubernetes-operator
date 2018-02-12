@@ -171,6 +171,10 @@ promote-image:
 # This pipeline runs quqlity checks 
 quality:
   steps:
+    - script:
+      name: Install pre-reqs
+      code: |
+        yum -y install tar gzip
     - java/maven: 
       profiles: build-sonar 
       maven_opts: -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASSWORD} -Dsonar.host.url=${SONAR_HOST} 
