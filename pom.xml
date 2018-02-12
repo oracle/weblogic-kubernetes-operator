@@ -550,7 +550,6 @@
         <jacoco.outputDir>${project.build.directory}/jacoco</jacoco.outputDir>
         <jacoco.itOutputDir>${project.build.directory}/jacoco-it</jacoco.itOutputDir>
         <jacoco.destFile>${project.build.directory}/jacoco.exec</jacoco.destFile>
-        <sonar.host.url>http://slc08ujn.us.oracle.com:9000</sonar.host.url>
         <sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <jacoco.skip>false</jacoco.skip>
