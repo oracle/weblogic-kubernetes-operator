@@ -168,6 +168,15 @@ promote-image:
 
     # use the quay.io REST API to change the tab "latest" to point to the image we just pushed and tested
 
+# This pipeline runs quqlity checks 
+quality:
+  steps:
+    - java/maven: 
+      profiles: build-sonar 
+      maven_opts: -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASSWORD} -Dsonar.host.url=${SONAR_HOST} 
+      goals: clean install sonar:sonar
+      cache_repo: true
+
 dev:
   steps:
     - internal/shell
