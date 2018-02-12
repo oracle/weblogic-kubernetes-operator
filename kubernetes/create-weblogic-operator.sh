@@ -551,13 +551,14 @@ if [ "${generateOnly}" = false ]; then
   # Setup rbac
   setup_rbac
 
-  # Deploy the WebLogic operator
-  deployOperator
-
   if [ "${elkIntegrationEnabled}" = true ]; then
      # Deploy elk
+     # must run before logstash container creation
      deploy_elk
   fi
+
+  # Deploy the WebLogic operator
+  deployOperator
 
   # Output a job summary
   outputJobSummary
