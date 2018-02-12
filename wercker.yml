@@ -176,6 +176,7 @@ quality:
       maven_opts: -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASSWORD} -Dsonar.host.url=${SONAR_HOST} 
       goals: clean install sonar:sonar
       cache_repo: true
+      version: 3.5.2
 
 dev:
   steps:
