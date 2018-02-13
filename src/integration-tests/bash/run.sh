@@ -1550,11 +1550,11 @@ EOF
   local maxwaitsecs=180
   local failedonce="false"
   while : ; do
-    eval "$mycommand ""$@" > ${pyfile}.out 2>&1
+    eval "$mycommand ""$@" > ${pyfile_lcl}.out 2>&1
     local result="$?"
 
     # '+' marks verbose tracing
-    cat ${pyfile}.out | sed 's/^/+/'
+    cat ${pyfile_lcl}.out | sed 's/^/+/'
 
     if [ "$result" = "0" ];
     then 
@@ -1562,13 +1562,13 @@ EOF
     fi
 
     if [ "$failedonce" = "false" ]; then
-      cp ${pyfile}.out ${pyfile}.out.firstfail
+      cp ${pyfile_lcl}.out ${pyfile_lcl}.out.firstfail
       failedonce="true"
     fi
 
     local mnow=`date +%s`
     if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      cat ${pyfile}.out.firstfail
+      cat ${pyfile_lcl}.out.firstfail
       fail "Could not successfully run WLST script ${pyfile_lcl} on pod ${AS_NAME} via ${t3url} within ${maxwaitsecs} seconds.  Giving up."
     fi
 
