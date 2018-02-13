@@ -149,7 +149,9 @@ public class PodHelper {
       volumeMountSecret.setMountPath("/weblogic-operator/secrets");
       container.addVolumeMountsItem(volumeMountSecret);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem(weblogicDomainUID);
+      container.addCommandItem(spec.getAsName());
 
       V1Probe readinessProbe = new V1Probe();
       V1HTTPGetAction httpGet = new V1HTTPGetAction();
@@ -163,7 +165,8 @@ public class PodHelper {
 
       V1Probe livenessProbe = new V1Probe();
       V1ExecAction livenessExecAction = new V1ExecAction();
-      livenessExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/livenessProbe.sh");
+      livenessExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/livenessProbe.sh");
+      livenessExecAction.addCommandItem(spec.getAsName());
       livenessProbe.exec(livenessExecAction);
       livenessProbe.setInitialDelaySeconds(10);
       livenessProbe.setPeriodSeconds(1);
@@ -493,7 +496,11 @@ public class PodHelper {
       volumeMountSecret.setMountPath("/weblogic-operator/secrets");
       container.addVolumeMountsItem(volumeMountSecret);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem(weblogicDomainUID);
+      container.addCommandItem(weblogicServerName);
+      container.addCommandItem(spec.getAsName());
+      container.addCommandItem(String.valueOf(spec.getAsPort()));
 
       V1Probe readinessProbe = new V1Probe();
       V1HTTPGetAction httpGet = new V1HTTPGetAction();
@@ -507,7 +514,8 @@ public class PodHelper {
 
       V1Probe livenessProbe = new V1Probe();
       V1ExecAction execAction = new V1ExecAction();
-      execAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/livenessProbe.sh");
+      execAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/livenessProbe.sh");
+      execAction.addCommandItem(weblogicServerName);
       livenessProbe.exec(execAction);
       livenessProbe.setInitialDelaySeconds(10);
       livenessProbe.setPeriodSeconds(1);

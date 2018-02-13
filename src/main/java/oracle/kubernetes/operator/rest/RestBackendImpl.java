@@ -401,14 +401,14 @@ public class RestBackendImpl implements RestBackend {
 
   private int getWLSConfiguredClusterSize(ClientHolder client, String adminServerServiceName, String cluster, String namespace, String adminSecretName) {
     WlsConfigRetriever wlsConfigRetriever = WlsConfigRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
-    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig(principal);
+    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig(cluster);
     return wlsClusterConfig.getClusterSize();
   }
 
   private Map<String, WlsClusterConfig> getWLSConfiguredClusters(ClientHolder client, String namespace, String adminServerServiceName,  String adminSecretName) {
     WlsConfigRetriever wlsConfigRetriever = WlsConfigRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
-    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig(principal);
+    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     return wlsDomainConfig.getClusterConfigs();
   }
 
