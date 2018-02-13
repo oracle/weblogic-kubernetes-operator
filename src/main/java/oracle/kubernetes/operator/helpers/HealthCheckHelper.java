@@ -167,7 +167,6 @@ public class HealthCheckHelper {
    */
   public void performNonSecurityChecks() throws ApiException {
 
-    verifyK8sVersion();
     HashMap<String, Domain> domainUIDMap = verifyDomainUidUniqueness();
     verifyPersistentVolume(domainUIDMap);
     verifyDomainImage(domainUIDMap);
@@ -221,23 +220,36 @@ public class HealthCheckHelper {
     }
   }
 
+  public static class KubernetesVersion {
+    public final int major;
+    public final int minor;
+    
+    public KubernetesVersion(int major, int minor) {
+      this.major = major;
+      this.minor = minor;
+    }
+  }
 
   /**
    * Verify the k8s version.
    *
+   * @return Major and minor version information
    * @throws ApiException exception for k8s API
    */
-  private void verifyK8sVersion() throws ApiException {
+  public KubernetesVersion performK8sVersionCheck() throws ApiException {
 
     // k8s version must be 1.7.5 or greater
     LOGGER.info(MessageKeys.VERIFY_K8S_MIN_VERSION);
     boolean k8sMinVersion = true;
     VersionInfo info = null;
+    
+    int major = 0;
+    int minor = 0;
     try {
       info = client.getVersionApiClient().getCode();
 
       String gitVersion = info.getGitVersion();
-      Integer major = Integer.parseInt(info.getMajor());
+      major = Integer.parseInt(info.getMajor());
       if (major < 1) {
         k8sMinVersion = false;
       } else if (major == 1) {
@@ -248,10 +260,10 @@ public class HealthCheckHelper {
 	      while( ! minor_string.chars().allMatch( Character::isDigit )) {
           minor_string = minor_string.substring(0, minor_string.length() -1);
 	      }
-        Integer minor = Integer.parseInt(minor_string);
+        minor = Integer.parseInt(minor_string);
         if (minor < 7) {
           k8sMinVersion = false;
-        } else if (minor >= 7) {
+        } else if (minor == 7) {
           // git version is of the form v1.7.5
           // Check the 3rd part of the version.
           String[] splitVersion = gitVersion.split("\\.");
@@ -272,6 +284,8 @@ public class HealthCheckHelper {
     } catch (ApiException ae) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, ae);
     }
+    
+    return new KubernetesVersion(major, minor);
   }
 
   /**
