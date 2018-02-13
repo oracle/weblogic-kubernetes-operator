@@ -77,13 +77,10 @@ public class ServiceHelper {
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
       
-      // Use Headless
-      /*
       Map<String, String> selector = new HashMap<>();
       selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
       serviceSpec.setSelector(selector);
-      */
       
       List<V1ServicePort> ports = new ArrayList<>();
       V1ServicePort servicePort = new V1ServicePort();

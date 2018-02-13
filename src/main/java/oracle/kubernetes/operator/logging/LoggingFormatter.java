@@ -110,7 +110,7 @@ public class LoggingFormatter extends Formatter {
     map.put(SOURCE_METHOD, sourceMethodName);
     map.put(TIME_IN_MILLIS, rawTime);
     // if message or throwable have new lines in them, we need to replace with JSON newline control character \n
-    map.put(MESSAGE, message.replaceAll("\n", "\\\n"));
+    map.put(MESSAGE, message != null ? message.replaceAll("\n", "\\\n") : "");
     map.put(EXCEPTION, throwable.replaceAll("\n", "\\\n"));
     map.put(RESPONSE_CODE, code);
     map.put(RESPONSE_HEADERS, headers);
