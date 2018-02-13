@@ -34,7 +34,6 @@ public class HttpClient {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private Client httpClient;
-  private String principal;
   private String encodedCredentials;
 
   private static final String HTTP_PROTOCOL = "http://";
@@ -42,14 +41,13 @@ public class HttpClient {
   // for debugging
   private static final String SERVICE_URL = System.getProperty("oracle.kubernetes.operator.http.HttpClient.SERVICE_URL");
 
-  private HttpClient(Client httpClient, String principal, String encodedCredentials) {
+  private HttpClient(Client httpClient, String encodedCredentials) {
     this.httpClient = httpClient;
-    this.principal = principal;
     this.encodedCredentials = encodedCredentials;
   }
 
   public String executeGetOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace) {
-    String serviceURL = SERVICE_URL == null ? getServiceURL(client, principal, serviceName, namespace) : SERVICE_URL;
+    String serviceURL = SERVICE_URL == null ? getServiceURL(client, serviceName, namespace) : SERVICE_URL;
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json").header("Authorization", "Basic " + encodedCredentials);
@@ -65,16 +63,16 @@ public class HttpClient {
   }
 
   public String executePostUrlOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace, String payload) {
-    String serviceURL = SERVICE_URL == null ? getServiceURL(client, principal, serviceName, namespace) : SERVICE_URL;
-    return executePostUrlOnServiceClusterIP(requestUrl, serviceURL, serviceName, namespace, payload);
+    String serviceURL = SERVICE_URL == null ? getServiceURL(client, serviceName, namespace) : SERVICE_URL;
+    return executePostUrlOnServiceClusterIP(requestUrl, serviceURL, payload);
   }
   
-  public String executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String serviceName, String namespace, String payload) {
+  public String executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload) {
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json")
         .header("Authorization", "Basic " + encodedCredentials)
-        .header("X-Requested-By", "MyClient");
+        .header("X-Requested-By", "Weblogic Operator");
     Response response = invocationBuilder.post(Entity.json(payload));
     LOGGER.finer("Response is  " + response.getStatusInfo());
     if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
@@ -95,8 +93,8 @@ public class HttpClient {
    * @param next Next processing step
    * @return step to create client
    */
-  public static Step createAuthenticatedClientForAdminServer(String principal, String namespace, String adminSecretName, Step next) {
-    return new AuthenticatedClientForAdminServerStep(namespace, adminSecretName, new WithSecretDataStep(principal, next));
+  public static Step createAuthenticatedClientForAdminServer(String namespace, String adminSecretName, Step next) {
+    return new AuthenticatedClientForAdminServerStep(namespace, adminSecretName, new WithSecretDataStep(next));
   }
   
   private static class AuthenticatedClientForAdminServerStep extends Step {
@@ -117,11 +115,9 @@ public class HttpClient {
   }
   
   private static class WithSecretDataStep extends Step {
-    private final String principal;
 
-    public WithSecretDataStep(String principal, Step next) {
+    public WithSecretDataStep(Step next) {
       super(next);
-      this.principal = principal;
     }
 
     @Override
@@ -134,7 +130,7 @@ public class HttpClient {
         username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
         password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
       }
-      packet.put(KEY, createAuthenticatedClient(principal, username, password));
+      packet.put(KEY, createAuthenticatedClient(username, password));
       
       Arrays.fill(username, (byte) 0); 
       Arrays.fill(password, (byte) 0); 
@@ -145,12 +141,11 @@ public class HttpClient {
   /**
    * Create authenticated client specifically targeted at an admin server
    * @param client Client holder
-   * @param principal Principal
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClientForAdminServer(ClientHolder client, String principal, String namespace, String adminSecretName) {
+  public static HttpClient createAuthenticatedClientForAdminServer(ClientHolder client, String namespace, String adminSecretName) {
     SecretHelper secretHelper = new SecretHelper(client, namespace);
     Map<String, byte[]> secretData =
         secretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, adminSecretName);
@@ -161,18 +156,16 @@ public class HttpClient {
       username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
       password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
     }
-    return createAuthenticatedClient(principal, username, password);
+    return createAuthenticatedClient(username, password);
   }
 
   /**
    * Create authenticated HTTP client
-   * @param principal Principal
    * @param username Username
    * @param password Password
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClient(String principal,
-                                                     final byte[] username,
+  public static HttpClient createAuthenticatedClient(final byte[] username,
                                                      final byte[] password) {
     // build client with authentication information.
     Client client = ClientBuilder.newClient();
@@ -184,19 +177,18 @@ public class HttpClient {
       System.arraycopy(password, 0, usernameAndPassword, username.length + 1, password.length);
       encodedCredentials = java.util.Base64.getEncoder().encodeToString(usernameAndPassword);
     }
-    return new HttpClient(client, principal, encodedCredentials);
+    return new HttpClient(client, encodedCredentials);
   }
 
   /**
    * Returns the URL to access the service; using the service clusterIP and port.
    *
    * @param client The ClientHolder that will be used to obtain the Kubernetes API client.
-   * @param principal The principal that will be used to call the Kubernetes API.
    * @param name The name of the Service that you want the URL for.
    * @param namespace The Namespace in which the Service you want the URL for is defined.
    * @return The URL of the Service, or null if it is not found or principal does not have sufficient permissions.
    */
-  public static String getServiceURL(ClientHolder client, String principal, String name, String namespace) {
+  public static String getServiceURL(ClientHolder client, String name, String namespace) {
     try {
       return getServiceURL(client.callBuilder().readService(name, namespace));
     } catch (ApiException e) {

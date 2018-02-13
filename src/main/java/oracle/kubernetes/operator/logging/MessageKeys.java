@@ -125,5 +125,9 @@ public class MessageKeys {
   public static final String ROLLING_SERVERS = "WLSKO-0109";
   public static final String REMOVING_INGRESS = "WLSKO-0110";
   public static final String LIST_INGRESS_FOR_DOMAIN = "WLSKO-0111";
-
+  public static final String WLS_UPDATE_CLUSTER_SIZE_FAILED = "WLSKO-0112";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_TIMED_OUT = "WLSKO-0113";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER = "WLSKO-0114";
+  public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0115";
+  public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0116";
 }

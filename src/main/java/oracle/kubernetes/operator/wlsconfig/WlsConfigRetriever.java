@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -35,7 +34,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
  */
 public class WlsConfigRetriever {
   public static final String KEY = "wlsDomainConfig";
-  
+
   private ClientHelper clientHelper;
   private String namespace;
   private HttpClient httpClient;
@@ -47,15 +46,18 @@ public class WlsConfigRetriever {
   // timeout for reading server configured for the cluster from admin server - default is 180s
   private static final int READ_CONFIG_TIMEOUT_MILLIS = Integer.getInteger("read.config.timeout.ms", 180000);
 
+  // timeout for updating server configuration - default is 60s
+  private static final int UPDATE_CONFIG_TIMEOUT_MILLIS = Integer.getInteger("update.config.timeout.ms", 60000);
+
   // wait time before retrying to read server configured for the cluster from admin server - default is 1s
   private static final int READ_CONFIG_RETRY_MILLIS = Integer.getInteger("read.config.retry.ms", 1000);
 
   /**
    * Constructor.
    *
-   * @param clientHelper The ClientHelper to be used to obtain the Kubernetes API Client.
-   * @param namespace The Namespace in which the target Domain is located.
-   * @param asServiceName The name of the Kubernetes Service which provides access to the Admin Server.
+   * @param clientHelper    The ClientHelper to be used to obtain the Kubernetes API Client.
+   * @param namespace       The Namespace in which the target Domain is located.
+   * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    * @return The WlsConfigRetriever object for the specified inputs.
    */
@@ -66,9 +68,9 @@ public class WlsConfigRetriever {
   /**
    * Constructor.
    *
-   * @param clientHelper The ClientHelper to be used to obtain the Kubernetes API Client.
-   * @param namespace The Namespace in which the target Domain is located.
-   * @param asServiceName The name of the Kubernetes Service which provides access to the Admin Server.
+   * @param clientHelper    The ClientHelper to be used to obtain the Kubernetes API Client.
+   * @param namespace       The Namespace in which the target Domain is located.
+   * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    */
   public WlsConfigRetriever(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
@@ -77,22 +79,23 @@ public class WlsConfigRetriever {
     this.asServiceName = asServiceName;
     this.adminSecretName = adminSecretName;
   }
-  
+
   /**
    * Creates asynchronous {@link Step} to read configuration from an admin server
+   *
    * @param next Next processing step
    * @return asynchronous step
    */
   public static Step readConfigStep(Step next) {
     return new ReadConfigStep(next);
   }
-  
+
   private static final String START_TIME = "WlsConfigRetriever-startTime";
   private static final String RETRY_COUNT = "WlsConfigRetriever-retryCount";
   private static final Random R = new Random();
   private static final int HIGH = 1000;
   private static final int LOW = 100;
-  
+
   private static final class ReadConfigStep extends Step {
     public ReadConfigStep(Step next) {
       super(next);
@@ -102,32 +105,31 @@ public class WlsConfigRetriever {
     public NextAction apply(Packet packet) {
       try {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        String principal = (String) packet.get(ProcessingConstants.PRINCIPAL);
-        
+
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
-        
+
         Domain dom = info.getDomain();
         V1ObjectMeta meta = dom.getMetadata();
         DomainSpec spec = dom.getSpec();
         String namespace = meta.getNamespace();
-  
+
         String domainUID = spec.getDomainUID();
-  
+
         String name = CallBuilder.toDNS1123LegalName(domainUID + "-" + spec.getAsName());
-  
+
         String adminSecretName = spec.getAdminSecret() == null ? null : spec.getAdminSecret().getName();
         String adminServerServiceName = name;
-        
+
         Step getClient = HttpClient.createAuthenticatedClientForAdminServer(
-            principal, namespace, adminSecretName, new WithHttpClientStep(namespace, adminServerServiceName, next));
+                namespace, adminSecretName, new WithHttpClientStep(namespace, adminServerServiceName, next));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
       } catch (Throwable t) {
         LOGGER.info(MessageKeys.EXCEPTION, t);
-        
+
         // Not clear why we should have a maximum time to read the domain configuration.  We already know that the 
         // admin server Pod is READY and failing to read the config just means failure, so might as well keep trying.
-        
+
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
@@ -139,7 +141,7 @@ public class WlsConfigRetriever {
       }
     }
   }
-  
+
   private static final class WithHttpClientStep extends Step {
     private final String namespace;
     private final String adminServerServiceName;
@@ -156,27 +158,27 @@ public class WlsConfigRetriever {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
         Domain dom = info.getDomain();
-  
+
         String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService());
-        
+
         WlsDomainConfig wlsDomainConfig = null;
-        String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, adminServerServiceName, namespace, WlsDomainConfig.getRetrieveServersSearchPayload());
+        String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload());
         if (jsonResult != null) {
-          wlsDomainConfig = WlsDomainConfig.create().load(jsonResult);
+          wlsDomainConfig = WlsDomainConfig.create(jsonResult);
         }
-  
+
         // validate domain spec against WLS configuration. Currently this only logs warning messages.
         wlsDomainConfig.updateDomainSpecAsNeeded(dom.getSpec());
-  
+
         info.setScan(wlsDomainConfig);
         info.setLastScanTime(new DateTime());
-  
+
         LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
 
         return doNext(packet);
       } catch (Throwable t) {
         LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
-        
+
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
@@ -194,20 +196,18 @@ public class WlsConfigRetriever {
    * would repeatedly try to connect to the admin server to retrieve the configuration until the configured timeout
    * occurs.
    *
-   * @param principal The principal that should be used to retrieve the configuration.
-   *
    * @return A WlsClusterConfig object containing selected server configurations of all WLS servers configured in the
    * domain that belongs to a cluster. This method returns an empty configuration object even if it fails to retrieve
    * WLS configuration from the admin server.
    */
-  public WlsDomainConfig readConfig(String principal) {
+  public WlsDomainConfig readConfig() {
 
     LOGGER.entering();
 
-    long timeout = READ_CONFIG_TIMEOUT_MILLIS;
+    final long timeout = READ_CONFIG_TIMEOUT_MILLIS;
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     long startTime = System.currentTimeMillis();
-    Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(principal, timeout));
+    Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(timeout));
     executorService.shutdown();
     WlsDomainConfig wlsConfig = null;
     try {
@@ -219,7 +219,7 @@ public class WlsConfigRetriever {
       LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_TIMED_OUT, timeout);
     }
     if (wlsConfig == null) {
-      wlsConfig = WlsDomainConfig.create();
+      wlsConfig = new WlsDomainConfig(null);
     }
 
     LOGGER.exiting(wlsConfig);
@@ -230,51 +230,168 @@ public class WlsConfigRetriever {
    * Method called by the Callable that is submitted from the readConfig method for reading the WLS server
    * configurations
    *
-   * @param principal The Service Account or User to use when accessing WebLogic.
-   * @param timeout Maximum amount of time in millis to try to read configuration from the admin server before giving up
+   * @param timeoutMillis Maximum amount of time in milliseconds to try to read configuration from the admin server
+   *                     before giving up
+   *
    * @return A WlsClusterConfig object containing selected server configurations of all WLS servers configured in the
    * cluster. Method returns empty configuration object if timeout occurs before the configuration could be read from
    * the admin server.
    * @throws Exception if an exception occurs in the attempt just prior to the timeout
    */
-  private WlsDomainConfig getWlsDomainConfig(String principal, long timeout) throws Exception {
+  private WlsDomainConfig getWlsDomainConfig(final long timeoutMillis) throws Exception {
     LOGGER.entering();
 
-    long stopTime = System.currentTimeMillis() + timeout;
-    Exception exception = null;
     WlsDomainConfig result = null;
+    String jsonResult = executePostUrlWithRetry(
+            WlsDomainConfig.getRetrieveServersSearchUrl(),
+            WlsDomainConfig.getRetrieveServersSearchPayload(),
+            timeoutMillis);
+    if (jsonResult != null) {
+      result = WlsDomainConfig.create(jsonResult);
+    }
+    LOGGER.exiting(result);
+    return result;
+  }
+
+  /**
+   * Invokes a HTTP POST request using the provided URL and payload, and retry the request until it
+   * succeeded or the specified timeout period has reached.
+   *
+   * @param url The URL of the HTTP post request to be invoked
+   * @param payload The payload of the HTTP Post request to be invoked
+   * @param timeoutMillis Timeout in milliseconds
+   * @return The Json string returned from the HTTP POST request
+   * @throws Exception Any exception thrown while trying to invoke the HTTP POST request
+   */
+  private String executePostUrlWithRetry(final String url, final String payload, final long timeoutMillis)
+          throws Exception {
+    LOGGER.entering();
+
+    long stopTime = System.currentTimeMillis() + timeoutMillis;
+    Exception exception = null;
+    String jsonResult = null;
     long timeRemaining = stopTime - System.currentTimeMillis();
     // keep trying and ignore exceptions until timeout.
-    while (timeRemaining > 0 && result == null) {
+    while (timeRemaining > 0 && jsonResult == null) {
       LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_TRYING, timeRemaining);
       exception = null;
-      ClientHolder client = null;
       try {
-        client = clientHelper.take();
-        
-        connectAdminServer(client, principal);
-          String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), client, asServiceName, namespace, WlsDomainConfig.getRetrieveServersSearchPayload());
-        if (jsonResult != null) {
-          result = WlsDomainConfig.create().load(jsonResult);
-        }
+        jsonResult = executePostUrl(url, payload);
       } catch (Exception e) {
         exception = e;
         LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_RETRY, e, READ_CONFIG_RETRY_MILLIS);
-      } finally {
-        if (client != null)
-          clientHelper.recycle(client);
       }
-      try {
-        // sleep before retrying
-        Thread.sleep(READ_CONFIG_RETRY_MILLIS);
-      } catch (InterruptedException ex) {
-        // ignore
+      if (jsonResult == null) {
+        try {
+          // sleep before retrying
+          Thread.sleep(READ_CONFIG_RETRY_MILLIS);
+        } catch (InterruptedException ex) {
+          // ignore
+        }
       }
       timeRemaining = stopTime - System.currentTimeMillis();
     }
-    if (result == null && exception != null) {
+    if (jsonResult == null && exception != null) {
       LOGGER.throwing(exception);
       throw exception;
+    }
+    LOGGER.exiting(jsonResult);
+    return jsonResult;
+  }
+
+  /**
+   * Invokes a HTTP POST request using the provided URL and payload
+   *
+   * @param url The URL of the HTTP post request to be invoked
+   * @param payload The payload of the HTTP Post request to be invoked
+   *
+   * @return The Json string returned from the HTTP POST request
+   * @throws Exception Any exception thrown while invoking the HTTP POST request
+   */
+  private String executePostUrl(final String url, final String payload)
+          throws Exception {
+    LOGGER.entering();
+
+    String jsonResult = null;
+    ClientHolder client = null;
+    try {
+      client = clientHelper.take();
+
+      connectAdminServer(client);
+      jsonResult = httpClient.executePostUrlOnServiceClusterIP(url, client, asServiceName, namespace, payload);
+    } finally {
+      if (client != null)
+        clientHelper.recycle(client);
+    }
+    LOGGER.exiting(jsonResult);
+    return jsonResult;
+  }
+  /**
+   * Update the dynamic cluster size of the WLS cluster configuration.
+   *
+   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated
+   * @param clusterSize The desire dynamic cluster size
+   * @return true if the request to update the cluster size is successful, false if it was not successful within the
+   *         time period, or the cluster is not a dynamic cluster
+   */
+  public boolean updateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig, int clusterSize) {
+
+    LOGGER.entering();
+
+    final long timeout = UPDATE_CONFIG_TIMEOUT_MILLIS;
+
+    String clusterName = wlsClusterConfig == null? "null": wlsClusterConfig.getClusterName();
+
+    if (wlsClusterConfig == null || !wlsClusterConfig.hasDynamicServers()) {
+      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER, clusterName);
+      return false;
+    }
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    long startTime = System.currentTimeMillis();
+    Future<Boolean> future = executorService.submit(() -> doUpdateDynamicClusterSize(wlsClusterConfig, clusterSize));
+    executorService.shutdown();
+    boolean result = false;
+    try {
+      result = future.get(timeout, TimeUnit.MILLISECONDS);
+      if (result) {
+        LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, clusterSize, (System.currentTimeMillis() - startTime));
+      } else {
+        LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  null);
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  e);
+    } catch (TimeoutException e) {
+      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_TIMED_OUT, clusterName, timeout);
+    }
+    LOGGER.exiting(result);
+    return result;
+  }
+
+  /**
+   * Method called by the Callable that is submitted from the updateDynamicClusterSize method for updating the
+   * WLS dynamic cluster size configuration.
+   *
+   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
+   *                         caller should make sure that the cluster is a dynamic cluster.
+   * @param clusterSize The desire dynamic cluster size
+   * @return true if the request to update the cluster size is successful, false if it was not successful
+   */
+
+  private boolean doUpdateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig,
+                                             final int clusterSize) throws Exception {
+    LOGGER.entering();
+
+    final String EXPECTED_RESULT = "{}";
+
+    String jsonResult = executePostUrl(
+            wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+            wlsClusterConfig.getUpdateDynamicClusterSizePayload(clusterSize));
+    boolean result = false;
+    if (EXPECTED_RESULT.equals(jsonResult)) {
+      result = true;
+    } else {
+      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, wlsClusterConfig.getClusterName(),  jsonResult);
     }
     LOGGER.exiting(result);
     return result;
@@ -284,11 +401,10 @@ public class WlsConfigRetriever {
    * Connect to the WebLogic Administration Server.
    *
    * @param clientHolder The ClientHolder from which to get the Kubernetes API client.
-   * @param principal The principal that should be used to connect to the Admin Server.
    */
-  public void connectAdminServer(ClientHolder clientHolder, String principal) {
+  public void connectAdminServer(ClientHolder clientHolder) {
     if (httpClient == null) {
-      httpClient = HttpClient.createAuthenticatedClientForAdminServer(clientHolder, principal, namespace, adminSecretName);
+      httpClient = HttpClient.createAuthenticatedClientForAdminServer(clientHolder, namespace, adminSecretName);
     }
   }
 
