@@ -42,6 +42,7 @@ import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.IngressHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -86,6 +87,7 @@ public class Main {
   private static Thread livenessThread = null;
   private static Map<String, DomainWatcher> domainWatchers = new HashMap<>();
   private static Map<String, PodWatcher> podWatchers = new HashMap<>();
+  private static KubernetesVersion version = null;
   
   private static final Engine engine = new Engine("operator");
 
@@ -147,6 +149,7 @@ public class Main {
   
         try {
           HealthCheckHelper healthCheck = new HealthCheckHelper(client, namespace, targetNamespaces);
+          version = healthCheck.performK8sVersionCheck();
           healthCheck.performNonSecurityChecks();
           healthCheck.performSecurityChecks(serviceAccountName);
         } catch (ApiException e) {
@@ -442,7 +445,7 @@ public class Main {
     Fiber f = engine.createFiber();
     Packet p = new Packet();
     
-    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
     p.put(ProcessingConstants.PRINCIPAL, principal);
     
     if (explicitRestartAdmin) {

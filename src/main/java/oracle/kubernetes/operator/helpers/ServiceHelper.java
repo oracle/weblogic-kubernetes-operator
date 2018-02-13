@@ -9,6 +9,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -44,6 +45,7 @@ public class ServiceHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      KubernetesVersion version = packet.getSPI(KubernetesVersion.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       Integer port = (Integer) packet.get(ProcessingConstants.PORT);
       Integer nodePort = (Integer) packet.get(ProcessingConstants.NODE_PORT);
@@ -76,11 +78,15 @@ public class ServiceHelper {
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
-      
+  
       Map<String, String> selector = new HashMap<>();
       selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
       serviceSpec.setSelector(selector);
+  
+      if (version != null && (version.major > 1 || (version.major == 1 && version.minor >= 8))) {
+        serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
+      }
       
       List<V1ServicePort> ports = new ArrayList<>();
       V1ServicePort servicePort = new V1ServicePort();
