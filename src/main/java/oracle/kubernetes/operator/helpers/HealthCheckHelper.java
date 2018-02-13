@@ -220,6 +220,10 @@ public class HealthCheckHelper {
     }
   }
 
+  /**
+   * Major and minor version of Kubernetes API Server
+   * 
+   */
   public static class KubernetesVersion {
     public final int major;
     public final int minor;
