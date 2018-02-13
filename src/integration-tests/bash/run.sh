@@ -376,13 +376,12 @@ function ctrl_c() {
 
 function clean_jenkins {
     trace Cleaning.
-    echo y |  /usr/local/packages/aime/ias/run_as_root ${SCRIPTPATH}/clean_docker_k8s.sh
+    /usr/local/packages/aime/ias/run_as_root ${SCRIPTPATH}/clean_docker_k8s.sh -y
 }
 
 function setup_jenkins {
     trace Setting up.
-    export real_user=wls
-    echo y |  /usr/local/packages/aime/ias/run_as_root "sh ${SCRIPTPATH}/install_docker_k8s.sh ${K8S_VERSION}"
+    /usr/local/packages/aime/ias/run_as_root "sh ${SCRIPTPATH}/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
     set +x
     . ~/.dockerk8senv
     set -x
