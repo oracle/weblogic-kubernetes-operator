@@ -1006,6 +1006,9 @@ public class Main {
       }
       
       packet.put(ProcessingConstants.SERVER_NAME, scan.getName());
+      if (ssi.clusterConfig != null) {
+        packet.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
+      }
       packet.put(ProcessingConstants.PORT, scan.getListenPort());
       packet.put(ProcessingConstants.NODE_PORT, nodePort);
       return doNext(packet);

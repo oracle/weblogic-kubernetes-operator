@@ -56,7 +56,7 @@ public class IngressHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      WlsClusterConfig clusterConfig = (WlsClusterConfig) packet.get(ProcessingConstants.CLUSTER_SCAN);
+      String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
@@ -65,8 +65,7 @@ public class IngressHelper {
         V1Service service = sko.getService();
         if (service != null) {
           // If we have a cluster, create a cluster level ingress
-          if (clusterConfig != null) {
-            String clusterName = clusterConfig.getClusterName();
+          if (clusterName != null) {
             String ingressName = CallBuilder.toDNS1123LegalName(
                 info.getDomain().getSpec().getDomainUID() + "-" + clusterName);
             V1ObjectMeta meta = service.getMetadata();
@@ -96,6 +95,7 @@ public class IngressHelper {
                       @Override
                       public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                                   Map<String, List<String>> responseHeaders) {
+                        sko.getIngresses().put(clusterName, result);
                         return doNext(packet);
                       }
                     }), packet);
@@ -113,6 +113,7 @@ public class IngressHelper {
                       @Override
                       public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                                   Map<String, List<String>> responseHeaders) {
+                        sko.getIngresses().put(clusterName, result);
                         return doNext(packet);
                       }
                     }), packet);
@@ -153,6 +154,8 @@ public class IngressHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      ServerKubernetesObjects sko = info.getServers().get(serverName);
+      String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       V1ObjectMeta meta = service.getMetadata();
 
       String ingressName;
@@ -197,6 +200,7 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
+                    sko.getIngresses().remove(clusterName);
                     return doNext(packet);
                   }
                 }), packet);
@@ -211,6 +215,7 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
+                    sko.getIngresses().put(clusterName, result);
                     return doNext(packet);
                   }
                 }), packet);
