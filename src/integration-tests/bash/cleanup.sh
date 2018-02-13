@@ -303,7 +303,7 @@ mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 # try an ordered/controlled delete first
 
 #Comment out orderlyDelete so we can fully test generic delete (do not merge this change!)
-#TEB orderlyDelete
+orderlyDelete
 
 # try a generic delete in case the orderly delete missed something, this runs in two phases:
 #   phase 1:  wait to see if artifacts dissappear naturally due to the above orderlyDelete
