@@ -49,10 +49,9 @@ public class ServiceHelper {
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       Integer port = (Integer) packet.get(ProcessingConstants.PORT);
       Integer nodePort = (Integer) packet.get(ProcessingConstants.NODE_PORT);
-      
+
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
-      
       DomainSpec spec = dom.getSpec();
       String namespace = meta.getNamespace();
 
@@ -74,19 +73,19 @@ public class ServiceHelper {
 
       AnnotationHelper.annotateWithDomain(metadata, dom);
       metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-      
+
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
-  
+
       Map<String, String> selector = new HashMap<>();
       selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
       serviceSpec.setSelector(selector);
-  
+
       if (version != null && (version.major > 1 || (version.major == 1 && version.minor >= 8))) {
         serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
       }
-      
+
       List<V1ServicePort> ports = new ArrayList<>();
       V1ServicePort servicePort = new V1ServicePort();
       servicePort.setPort(port);
