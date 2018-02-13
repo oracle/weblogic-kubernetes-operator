@@ -376,7 +376,7 @@ function ctrl_c() {
 
 function clean_jenkins {
     trace Cleaning.
-    /usr/local/packages/aime/ias/run_as_root ${SCRIPTPATH}/clean_docker_k8s.sh -y
+    /usr/local/packages/aime/ias/run_as_root "${SCRIPTPATH}/clean_docker_k8s.sh -y"
 }
 
 function setup_jenkins {
