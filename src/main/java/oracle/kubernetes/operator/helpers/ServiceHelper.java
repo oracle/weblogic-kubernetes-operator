@@ -53,8 +53,6 @@ public class ServiceHelper {
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
       
-      meta.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-      
       DomainSpec spec = dom.getSpec();
       String namespace = meta.getNamespace();
 
@@ -75,7 +73,8 @@ public class ServiceHelper {
       service.setMetadata(metadata);
 
       AnnotationHelper.annotateWithDomain(metadata, dom);
-
+      metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
+      
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
   
