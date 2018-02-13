@@ -57,17 +57,17 @@ JOB_NAME="weblogic-command-job"
 
 # function genericDelete
 #
-#   This function is a 'generic kubernetes delete' that takes two arguments:
+#   This function is a 'generic kubernetes delete' that takes three arguments:
 #
-#     arg1:  Comma separated list of types of kubernetes types to search/delete.
+#     arg1:  Comma separated list of types of kubernetes namespaced types to search/delete.
+#            example: "all,cm,pvc,ns,roles,rolebindings,secrets" 
 #
-#            example: "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets" 
+#     arg2:  Comma separated list of types of kubernetes non-namespaced types to search/delete.
+#            example: "crd,pv,clusterroles,clusterrolebindings" 
 #
-#     arg2:  '|' (pipe) separated list of keywords.  
-#
+#     arg3:  '|' (pipe) separated list of keywords.  
 #            Artifacts with a label or name that contains one
 #            or more of the keywords are delete candidates.
-#
 #            example:  "logstash|kibana|elastisearch|weblogic|elk|domain"
 #
 #   It runs in two stages:
@@ -81,66 +81,65 @@ function genericDelete {
     # in the second iteration, we try to delete any leftovers.
 
     if [ "$iteration" = "first" ]; then
-      maxwaitsecs=15
+      local maxwaitsecs=15
     else
-      maxwaitsecs=60
+      local maxwaitsecs=60
     fi
 
-    echo "@@ Waiting up to $maxwaitsecs seconds for ${1:?} artifacts that contain string ${2:?} to delete."
-    artcount=1
-    mstart=`date +%s`
+    echo "@@ Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
+
+    local artcount_no
+    local artcount_yes
+    local artcount_total
+    local resfile_no
+    local resfile_yes
+
+    local mstart=`date +%s`
+
     while : ; do
-      resfile1="$TMP_DIR/kinv_all.out.tmp"
-      resfile2="$TMP_DIR/kinv_filtered.out.tmp"
-      resfile3no="$TMP_DIR/kinv_filtered_nonamespace.out.tmp"
-      resfile3yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
+      resfile_no="$TMP_DIR/kinv_filtered_nonamespace.out.tmp"
+      resfile_yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
 
-      kubectl get $1 --show-labels=true --all-namespaces=true > $resfile1 2>&1
+      # leftover namespaced artifacts
+      kubectl get $1 --show-labels=true --all-namespaces=true 2>&1 | egrep -e "($3)" | awk '{ print $1 " " $2 }' | sort > $resfile_yes 2>&1
+      artcount_yes="`cat $resfile_yes | wc -l`"
 
-      egrep -e "($2)" $resfile1 | grep -v 'secrets.*traefik.token' > $resfile2
-      artcount="`cat $resfile2 | wc -l`"
+      # leftover non-namespaced artifacts
+      kubectl get $2 --show-labels=true --all-namespaces=true 2>&1 | egrep -e "($3)" | awk '{ print $1 }' | sort > $resfile_no 2>&1
+      artcount_no="`cat $resfile_no | wc -l`"
+
+      artcount_total=$((artcount_yes + artcount_no))
 
       mnow=`date +%s`
 
-      if [ $((artcount)) -eq 0 ]; then
+      if [ $((artcount_total)) -eq 0 ]; then
         echo "@@ No artifacts found."
         return 0
       fi
 
-      # names of remaining resources that have no namespace in form type/name
-      cat $resfile2 | grep -v "^ *$" | egrep -e "^ " | awk '{ print $1 }' > $resfile3no
-      unexpected_nonamespace="`cat $resfile3no | sort`"
-      unexpected_nonamespace_count="`cat $resfile3no | wc -l`"
-
-      # names of remaining resources that have a namespace in form namespace type/name
-      cat $resfile2 | grep -v "^ *$" | egrep -e "^([a-z]|[A-Z])" | awk '{ print $1 " " $2 }' > $resfile3yes
-      unexpected_yesnamespace="`cat $resfile3yes | sort`"
-      unexpected_yesnamespace_count="`cat $resfile3yes | wc -l`"
-
       if [ "$iteration" = "first" ]; then
-        # in the first thirty seconds we just wait to see if artifacts go away on there own
+        # in the first iteration we just wait to see if artifacts go away on there own
 
-        echo "@@ Waiting for $artcount artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
+        echo "@@ Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
 
-        echo "$unexpected_nonamespace"
-        echo "$unexpected_yesnamespace"
+        cat $resfile_yes | awk '{ print "n=" $1 " " $2 }' 
+        cat $resfile_no | awk '{ print $1 }'
 
       else
         # in the second thirty seconds we try to delete remaining artifacts
 
-        echo "@@ Trying to delete $artcount leftover artifacts, including ${unexpected_yesnamespace_count} namespaced artifacts and ${unexpected_nonamespace_count} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
+        echo "@@ Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
 
-        if [ ${unexpected_yesnamespace_count} -gt 0 ]; then 
-          echo "$unexpected_yesnamespace" | while read line; do
-            curns="`echo \"$line\" | awk '{ print $1 }'`" 
-            curitem="`echo \"$line\" | awk '{ print $2 }'`" 
-            echo "kubectl -n $curns delete $curitem --ignore_not-found"
-            kubectl -n $curns delete $curitem --ignore-not-found
+        if [ ${artcount_yes} -gt 0 ]; then 
+          cat "$resfile_yes" | while read line; do
+            local args="`echo \"$line\" | awk '{ print "-n " $1 " delete " $2 " --ignore-not-found" }'`"
+            echo "kubectl $args"
+            kubectl $args
           done
         fi
 
-        if [ ${unexpected_nonamespace_count} -gt 0 ]; then 
-          echo "$unexpected_nonamespace" | while read line; do
+        if [ ${artcount_no} -gt 0 ]; then 
+          cat "$resfile_no" | while read line; do
             echo "kubectl delete $line --ignore-not-found"
             kubectl delete $line --ignore-not-found
           done
@@ -150,9 +149,9 @@ function genericDelete {
 
       if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
         if [ "$iteration" = "first" ]; then
-          echo "@@ Warning:  $maxwaitsecs seconds reached.   Will try deleting unexpected resources via kubectl delete."
+          echo "@@ Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
         else
-          echo "@@ Error:  $maxwaitsecs seconds reached and possibly $artcount artifacts remaining.  Giving up."
+          echo "@@ Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
         fi
         break
       fi
@@ -303,13 +302,18 @@ mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
 # try an ordered/controlled delete first
 
-orderlyDelete
+#Comment out orderlyDelete so we can fully test generic delete (do not merge this change!)
+#TEB orderlyDelete
 
 # try a generic delete in case the orderly delete missed something, this runs in two phases:
-#   phase 1:  wait to see if artificts dissappear naturally due to the above orderlyDelete
+#   phase 1:  wait to see if artifacts dissappear naturally due to the above orderlyDelete
 #   phase 2:  kubectl delete left over artifacts
+# arguments
+#   arg1 - namespaced kubernetes artifacts
+#   arg2 - non-namespaced artifacts
+#   arg3 - keywords in deletable artificats
 
-genericDelete "all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,serviceaccount,secrets" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik"
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik"
 SUCCESS="$?"
 
 # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
