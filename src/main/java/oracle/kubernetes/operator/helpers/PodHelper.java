@@ -52,9 +52,9 @@ public class PodHelper {
   private PodHelper() {}
   
   /**
-   * Factory for {@link Step} that creates admin server pod and service
+   * Factory for {@link Step} that creates admin server pod
    * @param next Next processing step
-   * @return Step for creating admin server pod and service
+   * @return Step for creating admin server pod
    */
   public static Step createAdminPodStep(Step next) {
     return new AdminPodStep(next);
@@ -278,6 +278,8 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
+      // Set to null so that watcher doesn't recreate pod with old spec
+      sko.setPod(null);
       Step delete = CallBuilder.create().deletePodAsync(podName, namespace, deleteOptions, new ResponseStep<V1Status>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -311,9 +313,9 @@ public class PodHelper {
   }
   
   /**
-   * Factory for {@link Step} that creates managed server pod and service
+   * Factory for {@link Step} that creates managed server pod
    * @param next Next processing step
-   * @return Step for creating managed server pod and service
+   * @return Step for creating managed server pod
    */
   public static Step createManagedPodStep(Step next) {
     return new ManagedPodStep(next);
@@ -628,5 +630,47 @@ public class PodHelper {
     envVar.setName(name);
     envVar.setValue(value);
     container.addEnvItem(envVar);
+  }
+  
+  /**
+   * Factory for {@link Step} that deletes server pod
+   * @param next Next processing step
+   * @return Step for deleting server pod
+   */
+  public static Step deletePodStep(ServerKubernetesObjects sko,Step next) {
+    return new DeletePodStep(sko, next);
+  }
+
+  private static class DeletePodStep extends Step {
+    private final ServerKubernetesObjects sko;
+
+    public DeletePodStep(ServerKubernetesObjects sko, Step next) {
+      super(next);
+      this.sko = sko;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1ObjectMeta meta = sko.getPod().getMetadata();
+      V1DeleteOptions deleteOptions = new V1DeleteOptions();
+      // Set pod to null so that watcher doesn't try to recreate pod
+      sko.setPod(null);
+      return doNext(CallBuilder.create().deletePodAsync(meta.getName(), meta.getNamespace(), deleteOptions, new ResponseStep<V1Status>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return onSuccess(packet, null, statusCode, responseHeaders);
+          }
+          return super.onFailure(packet, e, statusCode, responseHeaders);
+        }
+
+        @Override
+        public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          return doNext(next, packet);
+        }
+      }), packet);
+    }
   }
 }

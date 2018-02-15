@@ -95,7 +95,7 @@ public class IngressHelper {
                       @Override
                       public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                                   Map<String, List<String>> responseHeaders) {
-                        sko.getIngresses().put(clusterName, result);
+                        info.getIngresses().put(clusterName, result);
                         return doNext(packet);
                       }
                     }), packet);
@@ -113,7 +113,7 @@ public class IngressHelper {
                       @Override
                       public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                                   Map<String, List<String>> responseHeaders) {
-                        sko.getIngresses().put(clusterName, result);
+                        info.getIngresses().put(clusterName, result);
                         return doNext(packet);
                       }
                     }), packet);
@@ -154,7 +154,6 @@ public class IngressHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      ServerKubernetesObjects sko = info.getServers().get(serverName);
       String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       V1ObjectMeta meta = service.getMetadata();
 
@@ -190,6 +189,7 @@ public class IngressHelper {
               }
               v1beta1HTTPIngressPaths = v1beta1HTTPIngressRuleValue.getPaths();
               if (v1beta1HTTPIngressPaths.isEmpty()) {
+                info.getIngresses().remove(clusterName);
                 return doNext(CallBuilder.create().deleteIngressAsync(result.getMetadata().getName(), meta.getNamespace(), new V1DeleteOptions(), new ResponseStep<V1Status>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -200,7 +200,6 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
-                    sko.getIngresses().remove(clusterName);
                     return doNext(packet);
                   }
                 }), packet);
@@ -215,7 +214,7 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
-                    sko.getIngresses().put(clusterName, result);
+                    info.getIngresses().put(clusterName, result);
                     return doNext(packet);
                   }
                 }), packet);

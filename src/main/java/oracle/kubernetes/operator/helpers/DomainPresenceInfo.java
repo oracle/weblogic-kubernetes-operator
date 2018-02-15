@@ -13,6 +13,7 @@ import org.joda.time.DateTime;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
@@ -28,6 +29,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final Map<String, ServerKubernetesObjects> servers = new HashMap<>();
+  private final Map<String, V1beta1Ingress> ingresses = new HashMap<>();
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   
   private V1PersistentVolumeClaimList claims = null;
@@ -116,6 +118,14 @@ public class DomainPresenceInfo {
     return servers;
   }
 
+  /**
+   * Map from cluster name to Ingress
+   * @return Cluster object map
+   */
+  public Map<String, V1beta1Ingress> getIngresses() {
+    return ingresses;
+  }
+  
   /**
    * Server objects (Pods and Services) for admin server
    * @return Server objects for admin server
