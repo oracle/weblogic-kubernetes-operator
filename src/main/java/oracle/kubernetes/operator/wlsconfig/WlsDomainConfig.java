@@ -15,9 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -232,16 +229,20 @@ public class WlsDomainConfig {
     return null;
   }
 
+  public boolean validate(DomainSpec domainSpec) {
+    return validate(domainSpec, null);
+  }
+
   /**
-   * Update the provided k8s domain spec to be consistent with the configuration of the WLS domain.
-   * The method also logs warning if inconsistent WLS configurations are found that cannot be fixed by updating
-   * the provided Domain spec.
-   * It is the responsibility of the caller to persist the changes to DomainSpec to kubernetes.
+   * Checks the provided k8s domain spec to see if it is consistent with the configuration of the WLS domain.
+   * The method also logs warning if inconsistent WLS configurations are found.
    *
    * @param domainSpec The DomainSpec to be validated against the WLS configuration
+   * @param suggestedConfigUpdates a List of ConfigUpdate objects containing suggested WebLogic config updates that
+   *                               are necessary to make the WebLogic domain consistent with the DomainSpec. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
-  public boolean updateDomainSpecAsNeeded(DomainSpec domainSpec) {
+  public boolean validate(DomainSpec domainSpec, List<ConfigUpdate> suggestedConfigUpdates) {
 
     LOGGER.entering();
 
@@ -254,18 +255,19 @@ public class WlsDomainConfig {
         String clusterName = clusterStartup.getClusterName();
         if (clusterName != null) {
           WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
-          updated |= wlsClusterConfig.validateClusterStartup(clusterStartup);
+          updated |= wlsClusterConfig.validateClusterStartup(clusterStartup, suggestedConfigUpdates);
         }
       }
     }
 
-    // validate replicas in DomainSpec if spcified
+    // validate replicas in DomainSpec if specified
     if (domainSpec.getReplicas() != null) {
       Collection<WlsClusterConfig> clusterConfigs = getClusterConfigs().values();
       // WLS domain contains only one cluster
       if (clusterConfigs != null && clusterConfigs.size() == 1) {
         for (WlsClusterConfig wlsClusterConfig : clusterConfigs) {
-          wlsClusterConfig.validateReplicas(domainSpec.getReplicas(), "domainSpec");
+          wlsClusterConfig.validateReplicas(domainSpec.getReplicas(), "domainSpec",
+            suggestedConfigUpdates);
         }
       } else {
         // log info message if replicas is specified but number of WLS clusters in domain is not 1
