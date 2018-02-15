@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
-# Functions that are shared between the create-domain-job.sh and create-weblogic-operator.sh scripts
+# Functions that are shared between the create-weblogic-domain.sh and create-weblogic-operator.sh scripts
 #
 
 #
@@ -90,6 +90,7 @@ function parseCommonInputs {
   cat ${exportValuesFile}
   echo
   source ${exportValuesFile}
+  rm ${exportValuesFile}
 }
 
 #

@@ -5,7 +5,7 @@
 # Description
 #  This script automates the creation of a WebLogic domain within a Kubernetes cluster.
 #
-#  The domain creation inputs can be customized by editing create-domain-job-inputs.yaml
+#  The domain creation inputs can be customized by editing create-weblogic-domain-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The kubernetes namespace must already be created
@@ -23,7 +23,7 @@ source ${internalDir}/utility.sh
 #
 # Parse the command line options
 #
-valuesInputFile="${scriptDir}/create-domain-job-inputs.yaml"
+valuesInputFile="${scriptDir}/create-weblogic-domain-inputs.yaml"
 generateOnly=false
 while getopts "ghi:" opt; do
   case $opt in
@@ -31,10 +31,10 @@ while getopts "ghi:" opt; do
     ;;
     i) valuesInputFile="${OPTARG}"
     ;;
-    h) echo ./create-domain-job.sh [-g] [-i file] [-h]
+    h) echo ./create-weblogic-domain.sh [-g] [-i file] [-h]
        echo
        echo -g Only generate the files to create the domain, do not execute them
-       echo -i Parameter input file, defaults to create-domain-job-inputs.yaml
+       echo -i Parameter input file, defaults to create-weblogic-domain-inputs.yaml
        echo -h Help
        exit
     ;;
@@ -184,24 +184,24 @@ function initialize {
   fi
 
   if [ ! -f ${valuesInputFile} ]; then
-    validationError "Unable to locate the domain input parameters file ${valuesInputFile}"
+    validationError "Unable to locate the input parameters file ${valuesInputFile}"
     validateErrors=true
   fi
 
-  pvInput="${internalDir}/persistent-volume-template.yaml"
-  pvOutput="${scriptDir}/persistent-volume.yaml"
-  if [ ! -f ${pvInput} ]; then
-    validationError "The template file ${pvInput} for generating a persistent volume was not found"
+  domainPVInput="${internalDir}/weblogic-domain-persistent-volume-template.yaml"
+  domainPVOutput="${scriptDir}/weblogic-domain-persistent-volume.yaml"
+  if [ ! -f ${domainPVInput} ]; then
+    validationError "The template file ${domainPVInput} for generating a persistent volume was not found"
   fi
 
-  pvcInput="${internalDir}/persistent-volume-claim-template.yaml"
-  pvcOutput="${scriptDir}/persistent-volume-claim.yaml"
-  if [ ! -f ${pvcInput} ]; then
-    validationError "The template file ${pvcInput} for generating a persistent volume claim was not found"
+  domainPVCInput="${internalDir}/weblogic-domain-persistent-volume-claim-template.yaml"
+  domainPVCOutput="${scriptDir}/weblogic-domain-persistent-volume-claim.yaml"
+  if [ ! -f ${domainPVCInput} ]; then
+    validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
 
-  jobInput="${internalDir}/domain-job-template.yaml"
-  jobOutput="${scriptDir}/domain-job.yaml"
+  jobInput="${internalDir}/create-weblogic-domain-job-template.yaml"
+  jobOutput="${scriptDir}/create-weblogic-domain-domain-job.yaml"
   if [ ! -f ${jobInput} ]; then
     validationError "The template file ${jobInput} for creating a WebLogic domain was not found"
   fi
@@ -212,16 +212,16 @@ function initialize {
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
 
-  traefikRBACInput="${internalDir}/traefik-rbac-template.yaml"
-  traefikRBACOutput="${scriptDir}/traefik-rbac.yaml"
-  if [ ! -f ${traefikRBACInput} ]; then
-    validationError "The file ${traefikRBACInput} for generating the traefik RBAC was not found"
+  traefikSecurityInput="${internalDir}/traefik-security-template.yaml"
+  traefikSecurityOutput="${scriptDir}/traefik-security.yaml"
+  if [ ! -f ${traefikSecurityInput} ]; then
+    validationError "The file ${traefikSecurityInput} for generating the traefik RBAC was not found"
   fi
 
-  traefikDeployInput="${internalDir}/traefik-deployment-template.yaml"
-  traefikDeployOutput="${scriptDir}/traefik-deployment.yaml"
-  if [ ! -f ${traefikDeployInput} ]; then
-    validationError "The template file ${traefikDeployInput} for generating the traefik deployment was not found"
+  traefikInput="${internalDir}/traefik-template.yaml"
+  traefikOutput="${scriptDir}/traefik.yaml"
+  if [ ! -f ${traefikInput} ]; then
+    validationError "The template file ${traefikInput} for generating the traefik deployment was not found"
   fi
 
   failIfValidationErrors
@@ -252,25 +252,25 @@ function createYamlFiles {
   disabledPrefix="# "  # comment out the feature
 
   # Generate the yaml to create the persistent volume
-  echo Generating ${pvOutput}
+  echo Generating ${domainPVOutput}
 
-  cp ${pvInput} ${pvOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${pvOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${pvOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME%:${persistenceVolumeName}:g" ${pvOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_PATH%:${persistencePath}:g" ${pvOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${pvOutput}
-  sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${pvOutput}
+  cp ${domainPVInput} ${domainPVOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${domainPVOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
+  sed -i -e "s:%PERSISTENT_VOLUME%:${persistenceVolumeName}:g" ${domainPVOutput}
+  sed -i -e "s:%PERSISTENT_VOLUME_PATH%:${persistencePath}:g" ${domainPVOutput}
+  sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${domainPVOutput}
+  sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVOutput}
 
   # Generate the yaml to create the persistent volume claim
-  echo Generating ${pvcOutput}
+  echo Generating ${domainPVCOutput}
 
-  cp ${pvcInput} ${pvcOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${pvcOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${pvcOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${pvcOutput}
-  sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${pvcOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${pvcOutput}
+  cp ${domainPVCInput} ${domainPVCOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${domainPVCOutput}
+  sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${domainPVCOutput}
+  sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVCOutput}
+  sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
   echo Generating ${jobOutput}
@@ -324,48 +324,48 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
 
-  # Traefik deployment file
-  cp ${traefikDeployInput} ${traefikDeployOutput}
-  echo Generating ${traefikDeployOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikDeployOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikDeployOutput}
-  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikDeployOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikDeployOutput}
-  sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikDeployOutput}
-  sed -i -e "s:%LOAD_BALANCER_ADMIN_PORT%:$loadBalancerAdminPort:g" ${traefikDeployOutput}
+  # Traefik file
+  cp ${traefikInput} ${traefikOutput}
+  echo Generating ${traefikOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikOutput}
+  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
+  sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
+  sed -i -e "s:%LOAD_BALANCER_ADMIN_PORT%:$loadBalancerAdminPort:g" ${traefikOutput}
 
-  # Traefik RBAC file
-  cp ${traefikRBACInput} ${traefikRBACOutput}
-  echo Generating ${traefikRBACOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikRBACOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikRBACOutput}
-  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikRBACOutput}
+  # Traefik security file
+  cp ${traefikSecurityInput} ${traefikSecurityOutput}
+  echo Generating ${traefikSecurityOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikSecurityOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikSecurityOutput}
+  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
 
 }
 
 #
-# Function to create the persistent volume
+# Function to create the domain's persistent volume
 #
-function createPV {
+function createDomainPV {
 
   # Check if the persistent volume is already available
   checkPvExists ${persistenceVolumeName}
   if [ "${PV_EXISTS}" = "false" ]; then
     echo Creating the persistent volume ${persistenceVolumeName}
-    kubectl create -f ${pvOutput}
+    kubectl create -f ${domainPVOutput}
     checkPvState ${persistenceVolumeName} Available
   fi
 }
 
 #
-# Function to create the persistent volume claim
+# Function to create the domain's persistent volume claim
 #
-function createPVC {
+function createDomainPVC {
   # Check if the persistent volume claim is already available
   checkPvcExists ${persistenceVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
     echo Creating the persistent volume claim ${persistenceVolumeClaimName}
-    kubectl create -f ${pvcOutput}
+    kubectl create -f ${domainPVCOutput}
     checkPvState ${persistenceVolumeName} Bound
   fi
 }
@@ -434,8 +434,8 @@ function setupTraefikLoadBalancer {
 
   traefikName="${domainUid}-${clusterNameLC}-traefik"
 
-  echo Setting up traefik rbac
-  kubectl apply -f ${traefikRBACOutput}
+  echo Setting up traefik security
+  kubectl apply -f ${traefikSecurityOutput}
 
   echo Checking the cluster role ${traefikName} was created
   CLUSTERROLE=`kubectl get clusterroles | grep ${traefikName} | wc | awk ' { print $1; } '`
@@ -450,7 +450,7 @@ function setupTraefikLoadBalancer {
   fi
 
   echo Deploying traefik
-  kubectl apply -f ${traefikDeployOutput}
+  kubectl apply -f ${traefikOutput}
 
   echo Checking traefik deployment
   DEPLOY=`kubectl get deployment -n ${namespace} | grep ${traefikName} | wc | awk ' { print $1; } '`
@@ -531,13 +531,13 @@ function outputJobSummary {
     echo ""
   fi
   echo "The following files were generated:"
-  echo "  ${pvOutput}"
-  echo "  ${pvcOutput}"
+  echo "  ${domainPVOutput}"
+  echo "  ${domainPVCOutput}"
   echo "  ${jobOutput}"
   echo "  ${dcrOutput}"
   if [ "${loadBalancer}" = "traefik" ]; then
-    echo "  ${traefikRBACOutput}"
-    echo "  ${traefikDeployOutput}"
+    echo "  ${traefikSecurityOutput}"
+    echo "  ${traefikOutput}"
   fi
 }
 
@@ -556,11 +556,11 @@ if [ "${generateOnly}" = false ]; then
   # Check that the domain secret exists and contains the required elements
   validateDomainSecret
 
-  # Create the persistent volume
-  createPV
+  # Create the domain's persistent volume
+  createDomainPV
 
-  # Create the persistent volume claim
-  createPVC
+  # Create the domain's persistent volume claim
+  createDomainPVC
 
   # Create the WebLogic domain
   createDomain

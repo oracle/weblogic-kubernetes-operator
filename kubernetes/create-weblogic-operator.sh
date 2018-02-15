@@ -11,7 +11,7 @@ source ${internalDir}/utility.sh
 #
 # Parse the command line options
 #
-valuesInputFile="${scriptDir}/create-operator-inputs.yaml"
+valuesInputFile="${scriptDir}/create-weblogic-operator-inputs.yaml"
 generateOnly=false
 while getopts "ghi:" opt; do
   case $opt in
@@ -22,7 +22,7 @@ while getopts "ghi:" opt; do
     h) echo ./create-weblogic-operator.sh [-g] [-i file] [-h]
        echo
        echo -g Only generate the files to create the operator, do not execute them
-       echo -i Parameter input file, defaults to kubernetes/create-operator-inputs.yaml
+       echo -i Parameter input file, defaults to kubernetes/create-weblogic-operator-inputs.yaml
        echo -h Help
        exit
     ;;
@@ -325,15 +325,15 @@ function createYamlFiles {
   sed -i -e "s|%INTERNAL_CERT_DATA%|$internal_cert_data|g" ${oprOutput}
   sed -i -e "s|%INTERNAL_KEY_DATA%|$internal_key_data|g" ${oprOutput}
 
-  # Create the rbac.yaml file
-  rbacFile="${scriptDir}/rbac.yaml"
+  # Create the weblogic-operator-security.yaml file
+  oprSecurityFile="${scriptDir}/weblogic-operator-security.yaml"
   roleName="weblogic-operator-namespace-role"
   roleBinding="weblogic-operator-rolebinding"
   clusterRole="weblogic-operator-cluster-role"
   clusterRoleBinding="${namespace}-operator-rolebinding"
 
-  echo Running the rbac customization script
-  ${genSecPolicyScript} ${serviceAccount} ${namespace} "${targetNamespaces}" -o ${rbacFile}
+  echo Running the weblogic operator security customization script
+  ${genSecPolicyScript} ${serviceAccount} ${namespace} "${targetNamespaces}" -o ${oprSecurityFile}
 
 }
 
@@ -402,12 +402,12 @@ function createServiceAccount {
 }
 
 #
-# Function to setup the rbac
+# Function to setup the operator's security
 #
-function setup_rbac {
+function setupSecurity {
 
-  echo Applying the generated file ${rbacFile}
-  kubectl apply -f ${rbacFile}
+  echo Applying the generated file ${oprSecurityFile}
+  kubectl apply -f ${oprSecurityFile}
 
   echo Checking the cluster role ${roleName} was created
   ROLE=`kubectl get clusterroles -n ${namespace} | grep ${roleName} | wc | awk ' { print $1; } '`
@@ -444,7 +444,7 @@ function setup_rbac {
 #
 # Deploy elk
 #
-function deploy_elk {
+function deployELK {
 
   echo 'Deploy ELK...'
   kubectl apply -f ${elasticsearchYaml}
@@ -520,7 +520,7 @@ function outputJobSummary {
   echo ""
   echo "The following files were generated:"
   echo "  ${oprOutput}"
-  echo "  ${rbacFile}"
+  echo "  ${oprSecurityFile}"
 }
 
 #
@@ -548,13 +548,13 @@ if [ "${generateOnly}" = false ]; then
   # Create the service account
   createServiceAccount
   
-  # Setup rbac
-  setup_rbac
+  # Setup security
+  setupSecurity
 
   if [ "${elkIntegrationEnabled}" = true ]; then
      # Deploy elk
      # must run before logstash container creation
-     deploy_elk
+     deployELK
   fi
 
   # Deploy the WebLogic operator
