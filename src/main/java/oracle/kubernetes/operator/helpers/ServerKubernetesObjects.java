@@ -8,7 +8,6 @@ import java.util.Map;
 
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 
 /**
  * Kubernetes pods and services associated with a single WebLogic server
@@ -18,7 +17,6 @@ public class ServerKubernetesObjects {
   private V1Pod pod = null;
   private V1Service service = null;
   private Map<String, V1Service> channels = null;
-  private Map<String, V1beta1Ingress> ingresses = null;
   
   /**
    * The Pod
@@ -61,16 +59,5 @@ public class ServerKubernetesObjects {
       channels = new HashMap<String, V1Service>();
     }
     return channels;
-  }
-  
-  /**
-   * Ingress map
-   * @return Map from cluster name to Ingress
-   */
-  public Map<String, V1beta1Ingress> getIngresses() {
-    if (ingresses == null) {
-      ingresses = new HashMap<String, V1beta1Ingress>();
-    }
-    return ingresses;
   }
 }

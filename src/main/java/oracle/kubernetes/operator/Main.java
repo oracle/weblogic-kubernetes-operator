@@ -83,10 +83,13 @@ public class Main {
   private static final ConcurrentMap<String, Fiber> domainUpdaters = new ConcurrentHashMap<String, Fiber>();
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
+  private static String principal;
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
   private static Map<String, DomainWatcher> domainWatchers = new HashMap<>();
   private static Map<String, PodWatcher> podWatchers = new HashMap<>();
+  private static Map<String, ServiceWatcher> serviceWatchers = new HashMap<>();
+  private static Map<String, IngressWatcher> ingressWatchers = new HashMap<>();
   private static KubernetesVersion version = null;
   
   private static final Engine engine = new Engine("operator");
@@ -118,7 +121,7 @@ public class Main {
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
-    String principal = "system:serviceaccount:" + namespace + ":" + serviceAccountName;
+    principal = "system:serviceaccount:" + namespace + ":" + serviceAccountName;
 
     LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, namespace);
     StringBuilder tns = new StringBuilder();
@@ -163,8 +166,9 @@ public class Main {
       // this would happen when the Domain was running BEFORE the Operator starts up
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
-        PodWatcher pw = createPodWatcher(ns);
-        podWatchers.put(ns, pw);
+        podWatchers.put(ns, createPodWatcher(ns));
+        serviceWatchers.put(ns, createServiceWatcher(ns));
+        ingressWatchers.put(ns, createIngressWatcher(ns));
         
         Step domainList = CallBuilder.create().listDomainAsync(ns, new ResponseStep<DomainList>(null) {
           @Override
@@ -181,12 +185,12 @@ public class Main {
               Map<String, List<String>> responseHeaders) {
             if (result != null) {
               for (Domain dom : result.getItems()) {
-                doCheckAndCreateDomainPresence(principal, dom);
+                doCheckAndCreateDomainPresence(dom);
               }
             }
             
             // main logic now happens in the watch handlers
-            domainWatchers.put(ns, createDomainWatcher(principal, ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+            domainWatchers.put(ns, createDomainWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
             return doNext(packet);
           }
         });
@@ -360,7 +364,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(principal, dom, true, null, null);
+        doCheckAndCreateDomainPresence(dom, true, null, null);
       }
     }
   }
@@ -377,7 +381,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(principal, dom, false, servers, null);
+        doCheckAndCreateDomainPresence(dom, false, servers, null);
       }
     }
   }
@@ -394,17 +398,17 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(principal, dom, false, null, clusters);
+        doCheckAndCreateDomainPresence(dom, false, null, clusters);
       }
     }
   }
 
-  private static void doCheckAndCreateDomainPresence(String principal, Domain dom) {
-    doCheckAndCreateDomainPresence(principal, dom, false, null, null);
+  private static void doCheckAndCreateDomainPresence(Domain dom) {
+    doCheckAndCreateDomainPresence(dom, false, null, null);
   }
   
   private static void doCheckAndCreateDomainPresence(
-      String principal, Domain dom, boolean explicitRestartAdmin, 
+      Domain dom, boolean explicitRestartAdmin, 
       List<String> explicitRestartServers, List<String> explicitRestartClusters) {
     LOGGER.entering();
     
@@ -933,29 +937,14 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      V1ObjectMeta meta = sko.getPod().getMetadata();
-      V1DeleteOptions deleteOptions = new V1DeleteOptions();
       List<V1Service> services = new ArrayList<V1Service>();
       services.add(sko.getService());
       services.addAll(sko.getChannels().values());
 
       return doNext(IngressHelper.createRemoveServerStep(serverName, sko.getService(),
-          new DeleteServiceListStep(services, CallBuilder.create().deletePodAsync(meta.getName(), meta.getNamespace(), deleteOptions, new ResponseStep<V1Status>(next) {
-            @Override
-            public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                Map<String, List<String>> responseHeaders) {
-              if (statusCode == CallBuilder.NOT_FOUND) {
-                return onSuccess(packet, null, statusCode, responseHeaders);
-              }
-              return super.onFailure(packet, e, statusCode, responseHeaders);
-            }
-
-            @Override
-            public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
-                Map<String, List<String>> responseHeaders) {
-              return doNext(new ManagedServerDownFinalizeStep(serverName, next), packet);
-            }
-          }))), packet);
+          new DeleteServiceListStep(services, 
+              PodHelper.deletePodStep(sko, 
+                  new ManagedServerDownFinalizeStep(serverName, next)))), packet);
     }
   }
   
@@ -1262,22 +1251,109 @@ public class Main {
     return stopping.get();
   }
   
-  private static DomainWatcher createDomainWatcher(String principal, String namespace, String initialResourceVersion) {
-    return DomainWatcher.create(namespace, initialResourceVersion, (item) -> { dispatchDomainWatch(item, principal); }, stopping);
+  private static DomainWatcher createDomainWatcher(String namespace, String initialResourceVersion) {
+    return DomainWatcher.create(namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
   }
   
   private static PodWatcher createPodWatcher(String namespace)  {
-    return PodWatcher.create(namespace, "", stopping);
+    return PodWatcher.create(namespace, "", Main::dispatchPodWatch, stopping);
   }
 
+  private static void dispatchPodWatch(Watch.Response<V1Pod> item) {
+    switch (item.type) {
+      case "DELETED":
+        V1Pod p = item.object;
+        V1ObjectMeta metadata = p.getMetadata();
+        String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
+        String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
+        if (domainUID != null) {
+          DomainPresenceInfo info = domains.get(domainUID);
+          if (info != null && serverName != null) {
+            ServerKubernetesObjects sko = info.getServers().get(serverName);
+            if (sko != null) {
+              if (sko.getPod() != null) {
+                // Pod was deleted, but sko still contains a non-null entry
+                LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
+                doCheckAndCreateDomainPresence(info.getDomain());
+              }
+            }
+          }
+        }
+        break;
+
+      case "ERROR":
+      default:
+    }
+  }
+  
+
+  private static ServiceWatcher createServiceWatcher(String namespace)  {
+    return ServiceWatcher.create(namespace, "", Main::dispatchServiceWatch, stopping);
+  }
+
+  private static void dispatchServiceWatch(Watch.Response<V1Service> item) {
+    switch (item.type) {
+      case "DELETED":
+        V1Service s = item.object;
+        V1ObjectMeta metadata = s.getMetadata();
+        String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
+        String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
+        String channelName = metadata.getLabels().get(LabelConstants.CHANNELNAME_LABEL);
+        if (domainUID != null) {
+          DomainPresenceInfo info = domains.get(domainUID);
+          if (info != null && serverName != null) {
+            ServerKubernetesObjects sko = info.getServers().get(serverName);
+            if (sko != null) {
+              if ((channelName != null ? sko.getChannels().get(channelName) : sko.getService()) != null) {
+                // Service was deleted, but sko still contains a non-null entry
+                LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
+                doCheckAndCreateDomainPresence(info.getDomain());
+              }
+            }
+          }
+        }
+        break;
+
+      case "ERROR":
+      default:
+    }
+  }
+  
+  private static IngressWatcher createIngressWatcher(String namespace)  {
+    return IngressWatcher.create(namespace, "", Main::dispatchIngressWatch, stopping);
+  }
+
+  private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
+    switch (item.type) {
+    case "DELETED":
+      V1beta1Ingress i = item.object;
+      V1ObjectMeta metadata = i.getMetadata();
+      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
+      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
+      if (domainUID != null) {
+        DomainPresenceInfo info = domains.get(domainUID);
+        if (info != null && clusterName != null) {
+          if (clusterName != null && info.getIngresses().get(clusterName) != null) {
+            // Ingress was deleted, but sko still contains a non-null entry
+            LOGGER.info(MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
+            doCheckAndCreateDomainPresence(info.getDomain());
+          }
+        }
+      }
+      break;
+
+    case "ERROR":
+    default:
+  }
+  }
+  
   /**
    * Dispatch the Domain event to the appropriate handler.
    *
    * @param item  An item received from a Watch response.
    * @param principal The name of the principal that will be used in this watch.
    */
-  public static void dispatchDomainWatch(Watch.Response<Domain> item, String principal) {
-
+  private static void dispatchDomainWatch(Watch.Response<Domain> item) {
     try {
       Domain d;
       String domainUID;
@@ -1287,7 +1363,7 @@ public class Main {
           d = item.object;
           domainUID = d.getSpec().getDomainUID();
           LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
-          doCheckAndCreateDomainPresence(principal, d);
+          doCheckAndCreateDomainPresence(d);
           break;
 
         case "DELETED":
