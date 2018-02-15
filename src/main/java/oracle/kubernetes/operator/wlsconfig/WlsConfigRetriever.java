@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -17,6 +16,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +32,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 
 /**
  * A helper class to retrieve configuration information from WebLogic.
+ * It also contains method to perform configuration updates to a WebLogic domain.
  */
 public class WlsConfigRetriever {
   public static final String KEY = "wlsDomainConfig";
@@ -113,15 +115,10 @@ public class WlsConfigRetriever {
         DomainSpec spec = dom.getSpec();
         String namespace = meta.getNamespace();
 
-        String domainUID = spec.getDomainUID();
-
-        String name = CallBuilder.toDNS1123LegalName(domainUID + "-" + spec.getAsName());
-
         String adminSecretName = spec.getAdminSecret() == null ? null : spec.getAdminSecret().getName();
-        String adminServerServiceName = name;
 
         Step getClient = HttpClient.createAuthenticatedClientForAdminServer(
-                namespace, adminSecretName, new WithHttpClientStep(namespace, adminServerServiceName, next));
+                namespace, adminSecretName, new WithHttpClientStep(next));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
       } catch (Throwable t) {
@@ -142,16 +139,76 @@ public class WlsConfigRetriever {
     }
   }
 
-  private static final class WithHttpClientStep extends Step {
-    private final String namespace;
-    private final String adminServerServiceName;
+  /**
+   * Step for updating the cluster size of a WebLogic dynamic cluster
+   */
+  static final class UpdateDynamicClusterStep extends Step {
 
-    public WithHttpClientStep(String namespace, String adminServerServiceName, Step next) {
+    final WlsClusterConfig wlsClusterConfig;
+    final int desiredClusterSize;
+
+    /**
+     * Constructor
+     *
+     * @param wlsClusterConfig The WlsClusterConfig object for the WebLogic dynamic cluster to be updated
+     * @param desiredClusterSize The desired dynamic cluster size
+     * @param next The next Step to be performed
+     */
+    public UpdateDynamicClusterStep(WlsClusterConfig wlsClusterConfig, int desiredClusterSize, Step next) {
       super(next);
-      this.namespace = namespace;
-      this.adminServerServiceName = adminServerServiceName;
+      this.wlsClusterConfig = wlsClusterConfig;
+      this.desiredClusterSize = desiredClusterSize;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public NextAction apply(Packet packet) {
+
+      String clusterName = wlsClusterConfig == null? "null": wlsClusterConfig.getClusterName();
+
+      if (wlsClusterConfig == null || !wlsClusterConfig.hasDynamicServers()) {
+        LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER, clusterName);
+      } else {
+        try {
+          HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
+          DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+          long startTime = System.currentTimeMillis();
+
+          String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService());
+
+          String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
+            wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+            serviceURL, wlsClusterConfig.getUpdateDynamicClusterSizePayload(desiredClusterSize));
+
+          if (wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult)) {
+            LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, desiredClusterSize, (System.currentTimeMillis() - startTime));
+          } else {
+            LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  null);
+          }
+        } catch (Throwable t) {
+          LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName, t);
+        }
+      }
+      return doNext(packet);
+    }
+  }
+
+  private static final class WithHttpClientStep extends Step {
+
+    /**
+     * Constructor
+     * @param next The next Step
+     */
+    public WithHttpClientStep(Step next) {
+      super(next);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public NextAction apply(Packet packet) {
       try {
@@ -167,13 +224,27 @@ public class WlsConfigRetriever {
           wlsDomainConfig = WlsDomainConfig.create(jsonResult);
         }
 
-        // validate domain spec against WLS configuration. Currently this only logs warning messages.
-        wlsDomainConfig.updateDomainSpecAsNeeded(dom.getSpec());
+        // validate domain spec against WLS configuration.
+        // This logs warning messages as well as returning a list of suggested
+        // WebLogic configuration updates, but it does not update the DomainSpec.
+        List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+        wlsDomainConfig.validate(dom.getSpec(), suggestedConfigUpdates);
 
         info.setScan(wlsDomainConfig);
         info.setLastScanTime(new DateTime());
 
         LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
+
+        // If there are suggested WebLogic configuration update, perform them as the
+        // next Step, then read the updated WebLogic configuration again after the
+        // update(s) are performed.
+        if (!suggestedConfigUpdates.isEmpty()) {
+          Step nextStep = new WithHttpClientStep(next); // read WebLogic config again after config updates
+          for(ConfigUpdate suggestedConfigUpdate: suggestedConfigUpdates) {
+            nextStep = suggestedConfigUpdate.createStep(nextStep);
+          }
+          return doNext(nextStep, packet);
+        }
 
         return doNext(packet);
       } catch (Throwable t) {
@@ -382,17 +453,12 @@ public class WlsConfigRetriever {
                                              final int clusterSize) throws Exception {
     LOGGER.entering();
 
-    final String EXPECTED_RESULT = "{}";
 
     String jsonResult = executePostUrl(
             wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
             wlsClusterConfig.getUpdateDynamicClusterSizePayload(clusterSize));
-    boolean result = false;
-    if (EXPECTED_RESULT.equals(jsonResult)) {
-      result = true;
-    } else {
-      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, wlsClusterConfig.getClusterName(),  jsonResult);
-    }
+
+    boolean result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
     LOGGER.exiting(result);
     return result;
   }

@@ -4,8 +4,13 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.operator.helpers.ClientHelper;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -143,7 +148,7 @@ public class WlsClusterConfigTest {
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs);
+      wlsClusterConfig.validateClusterStartup(cs, null);
       assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in weblogic cluster with name cluster1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
@@ -158,8 +163,25 @@ public class WlsClusterConfigTest {
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs);
+      wlsClusterConfig.validateClusterStartup(cs, null);
       assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
+    } finally {
+      TestUtil.removeLogHandler(wlsClusterConfig, handler);
+    }
+  }
+
+  @Test
+  public void verifyValidateClusterStartupSuggestsUpdateIfReplicasTooHigh() throws Exception {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
+    wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
+    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    TestUtil.LogHandlerImpl handler = null;
+    try {
+      handler = TestUtil.setupLogHandler(wlsClusterConfig);
+      ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+      wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
+      assertEquals(1, suggestedConfigUpdates.size());
+      assertTrue(suggestedConfigUpdates.get(0) instanceof WlsClusterConfig.DynamicClusterSizeConfigUpdate);
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -173,7 +195,7 @@ public class WlsClusterConfigTest {
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs);
+      wlsClusterConfig.validateClusterStartup(cs, null);
       assertFalse("No message should be logged, but found: " + handler.getAllFormattedMessage(), handler.hasWarningMessageLogged());
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
@@ -208,6 +230,51 @@ public class WlsClusterConfigTest {
     assertEquals(wlsClusterConfig.getUpdateDynamicClusterSizePayload(8), "{ dynamicClusterSize: 8,  maxDynamicClusterSize: 8 }");
   }
 
+  @Test
+  public void verifyDynamicClusterSizeConfigUpdateCallsUpdateDynamicClusterSize() {
+    final WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
+    final int clusterSize = 8;
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate dynamicClusterSizeConfigUpdate =
+      new WlsClusterConfig.DynamicClusterSizeConfigUpdate(wlsClusterConfig, clusterSize);
+    MockWlsConfigRetriever mockWlsConfigRetriever = new MockWlsConfigRetriever(null, "namespace",
+      "asServiceName", "adminSecretName");
+    assertTrue(dynamicClusterSizeConfigUpdate.doUpdate(mockWlsConfigRetriever));
+    assertSame(wlsClusterConfig, mockWlsConfigRetriever.wlsClusterConfigParamValue);
+    assertEquals(clusterSize, mockWlsConfigRetriever.clusterSizeParamvalue);
+  }
+
+  @Test
+  public void verifyStepCreatedFromDynamicClusterSizeConfigUpdate() throws NoSuchFieldException, IllegalAccessException {
+    final WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
+    final int clusterSize = 8;
+    final Step nextStep = new MockStep(null);
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate dynamicClusterSizeConfigUpdate =
+      new WlsClusterConfig.DynamicClusterSizeConfigUpdate(wlsClusterConfig, clusterSize);
+
+    WlsConfigRetriever.UpdateDynamicClusterStep updateStep =
+      (WlsConfigRetriever.UpdateDynamicClusterStep) dynamicClusterSizeConfigUpdate.createStep(nextStep);
+    assertSame(wlsClusterConfig, updateStep.wlsClusterConfig);
+    assertEquals(clusterSize, updateStep.desiredClusterSize);
+    assertSame(nextStep, getNext(updateStep));
+  }
+
+  @Test
+  public void checkDynamicClusterSizeJsonResultReturnsFalseOnNull() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("someCluster");
+    assertFalse(wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(null));
+  }
+
+  @Test
+  public void checkDynamicClusterSizeJsonResultReturnsFalseOnUnexpectedString() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("someCluster");
+    assertFalse(wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult("{ xyz }"));
+  }
+
+  @Test
+  public void checkDynamicClusterSizeJsonResultReturnsTrueWithExpectedString() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("someCluster");
+    assertTrue(wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult("{}"));
+  }
   private WlsServerConfig createWlsServerConfig(String serverName, Integer listenPort, String listenAddress) {
     Map<String, Object> serverConfigMap = new HashMap<>();
     serverConfigMap.put("name", serverName);
@@ -231,5 +298,41 @@ public class WlsClusterConfigTest {
     return new WlsDynamicServersConfig(clusterSize, maxClusterSize, serverNamePrefix,
             false, serverTemplate, serverConfigs);
 
+  }
+
+  static class MockWlsConfigRetriever extends WlsConfigRetriever {
+
+    WlsClusterConfig wlsClusterConfigParamValue;
+    int clusterSizeParamvalue;
+
+    public MockWlsConfigRetriever(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
+      super(clientHelper, namespace, asServiceName, adminSecretName);
+    }
+
+    @Override
+    public boolean updateDynamicClusterSize(WlsClusterConfig wlsClusterConfig, int clusterSize) {
+      wlsClusterConfigParamValue = wlsClusterConfig;
+      clusterSizeParamvalue = clusterSize;
+      return true;
+    }
+  }
+
+  static class MockStep extends Step {
+    public MockStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return null;
+    }
+  }
+
+  Field nextField;
+  Step getNext(Step step) throws IllegalAccessException, NoSuchFieldException {
+    if (nextField == null) {
+      nextField = Step.class.getDeclaredField("next");
+    }
+    return (Step) nextField.get(step);
   }
 }

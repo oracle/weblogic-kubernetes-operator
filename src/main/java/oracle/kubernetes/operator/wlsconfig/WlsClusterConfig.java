@@ -7,6 +7,7 @@ import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.Step;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -154,9 +155,12 @@ public class WlsClusterConfig {
    * It is the responsibility of the caller to persist the changes to ClusterStartup to kubernetes.
    *
    * @param clusterStartup The ClusterStartup to be validated against the WLS configuration
+   * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
+   *                              method. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
-  public boolean validateClusterStartup(ClusterStartup clusterStartup) {
+  public boolean validateClusterStartup(ClusterStartup clusterStartup,
+                                        List<ConfigUpdate> suggestedConfigUpdates) {
     LOGGER.entering();
 
     boolean modified = false;
@@ -167,7 +171,7 @@ public class WlsClusterConfig {
     }
 
     // Warns if replicas is larger than the number of servers configured in the cluster
-    validateReplicas(clusterStartup.getReplicas(), "clusterStartup");
+    validateReplicas(clusterStartup.getReplicas(), "clusterStartup", suggestedConfigUpdates);
 
     LOGGER.exiting(modified);
 
@@ -176,17 +180,31 @@ public class WlsClusterConfig {
 
 
   /**
-   * Validate the configured replicas value in the kubernetes weblogic domain spec against the
+   * Validate the configured replicas value in the kubernetes WebLogic domain spec against the
    * configured size of this cluster. Log warning if any inconsistencies are found.
    *
    * @param replicas The configured replicas value for this cluster in the kubernetes weblogic domain spec
    *                 for this cluster
    * @param source The name of the section in the domain spec where the replicas is specified,
    *               for logging purposes
+   * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
+   *                               method. Optional.
    */
-  public void validateReplicas(Integer replicas, String source) {
-    if (replicas != null && replicas > getClusterSize() && !hasDynamicServers()) {
+  public void validateReplicas(Integer replicas, String source,
+                               List<ConfigUpdate> suggestedConfigUpdates) {
+    if (replicas == null) {
+      return;
+    }
+    // log warning if replicas is too large and cluster only contains statically configured servers
+    if (!hasDynamicServers() && replicas > getClusterSize()) {
       LOGGER.warning(MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS, source, clusterName, replicas, getClusterSize());
+    }
+    // recommend updating WLS dynamic cluster size if replicas value is larger than current
+    // dynamic cluster size
+    if (hasDynamicServers() && replicas > getDynamicClusterSize()) {
+      if (suggestedConfigUpdates != null) {
+        suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, replicas));
+      }
     }
   }
 
@@ -252,4 +270,57 @@ public class WlsClusterConfig {
             '}';
   }
 
+  /**
+   * Checks the JSON result from the dynamic cluster size update REST request
+   *
+   * @param jsonResult The JSON String result from the dynamic server cluster
+   *                   size update REST request
+   * @return true if the result means the update was successful, false otherwise
+   */
+  static boolean checkUpdateDynamicClusterSizeJsonResult(String jsonResult) {
+    final String EXPECTED_RESULT = "{}";
+
+    boolean result = false;
+    if (EXPECTED_RESULT.equals(jsonResult)) {
+      result = true;
+    }
+    return result;
+  }
+
+
+  /**
+   * ConfigUpdate implementation for updating a dynamic cluster size
+   */
+  static class DynamicClusterSizeConfigUpdate implements ConfigUpdate {
+    final int desiredClusterSize;
+    final WlsClusterConfig wlsClusterConfig;
+
+    public DynamicClusterSizeConfigUpdate(WlsClusterConfig wlsClusterConfig,
+                                          int desiredClusterSize) {
+      this.desiredClusterSize = desiredClusterSize;
+      this.wlsClusterConfig = wlsClusterConfig;
+    }
+
+    /**
+     * Update the cluster size of a WebLogic dynamic cluster
+     *
+     * @param wlsConfigRetriever The WlsConfigRetriever object to be used for performing the update
+     * @return true if the update was successful, false otherwise
+     */
+    @Override
+    public boolean doUpdate(WlsConfigRetriever wlsConfigRetriever) {
+      return wlsConfigRetriever.updateDynamicClusterSize(wlsClusterConfig, desiredClusterSize);
+    }
+
+    /**
+     * Create a Step to update the cluster size of a WebLogic dynamic cluster
+     * @param next Next Step to be performed after the WebLogic configuration update
+     * @return Step to update the cluster size of a WebLogic dynamic cluster
+     */
+
+    @Override
+    public Step createStep(Step next) {
+      return new WlsConfigRetriever.UpdateDynamicClusterStep(wlsClusterConfig, desiredClusterSize, next);
+    }
+  }
 }
