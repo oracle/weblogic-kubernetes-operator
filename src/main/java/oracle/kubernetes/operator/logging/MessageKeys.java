@@ -125,5 +125,8 @@ public class MessageKeys {
   public static final String ROLLING_SERVERS = "WLSKO-0109";
   public static final String REMOVING_INGRESS = "WLSKO-0110";
   public static final String LIST_INGRESS_FOR_DOMAIN = "WLSKO-0111";
+  public static final String POD_DELETED = "WLSKO-0112";
+  public static final String SERVICE_DELETED = "WLSKO-0113";
+  public static final String INGRESS_DELETED = "WLSKO-0114";
 
 }

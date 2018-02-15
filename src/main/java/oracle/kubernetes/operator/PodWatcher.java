@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
+import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -35,6 +36,7 @@ public class PodWatcher implements Runnable {
   
   private final String ns;
   private final String initialResourceVersion;
+  private final WatchingEventDestination<V1Pod> destination;
   private final AtomicBoolean isStopping;
   
   // Map of domainUID to PodStateListener
@@ -53,8 +55,8 @@ public class PodWatcher implements Runnable {
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
-  public static PodWatcher create(String ns, String initialResourceVersion, AtomicBoolean isStopping) {
-    PodWatcher prw = new PodWatcher(ns, initialResourceVersion, isStopping);
+  public static PodWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<V1Pod> destination, AtomicBoolean isStopping) {
+    PodWatcher prw = new PodWatcher(ns, initialResourceVersion, destination, isStopping);
     Thread thread = new Thread(prw);
     thread.setName("Thread-PodWatcher-" + ns);
     thread.setDaemon(true);
@@ -62,9 +64,10 @@ public class PodWatcher implements Runnable {
     return prw;
   }
 
-  private PodWatcher(String ns, String initialResourceVersion, AtomicBoolean isStopping) {
+  private PodWatcher(String ns, String initialResourceVersion, WatchingEventDestination<V1Pod> destination, AtomicBoolean isStopping) {
     this.ns = ns;
     this.initialResourceVersion = initialResourceVersion;
+    this.destination = destination;
     this.isStopping = isStopping;
   }
 
@@ -103,8 +106,8 @@ public class PodWatcher implements Runnable {
         return Watch.createWatch(client.getApiClient(),
             client.callBuilder().with($ -> {
               $.resourceVersion = resourceVersion;
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any pod with a domainUID label
-              $.timeoutSeconds = 2;
+              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any Pod with a domainUID label
+              $.timeoutSeconds = 30;
               $.watch = true;
             }).listPodCall(ns),
             new TypeToken<Watch.Response<V1Pod>>() {
@@ -126,6 +129,8 @@ public class PodWatcher implements Runnable {
   private void processEventCallback(Watch.Response<V1Pod> item) {
     LOGGER.entering();
     
+    destination.eventCallback(item);
+
     V1Pod pod;
     Boolean previous;
     String domainUID;

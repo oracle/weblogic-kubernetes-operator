@@ -598,6 +598,18 @@ public class CallBuilder {
     }
   }
 
+  /**
+   * Unexecuted call to list services for use with watches
+   * @param namespace Namespace
+   * @return Call
+   * @throws ApiException API Exception
+   */
+  public com.squareup.okhttp.Call listServiceCall(String namespace) throws ApiException {
+    String _continue = "";
+    return client.getCoreApiClient().listNamespacedServiceCall(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
+  }
+
   private com.squareup.okhttp.Call listServiceAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1ServiceList> callback) throws ApiException {
     return usage.client().getCoreApiClient().listNamespacedServiceAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
@@ -957,6 +969,18 @@ public class CallBuilder {
     } finally {
       cu.recycle();
     }
+  }
+
+  /**
+   * Unexecuted call to list Ingress for use with watches
+   * @param namespace Namespace
+   * @return Call
+   * @throws ApiException API Exception
+   */
+  public com.squareup.okhttp.Call listIngressCall(String namespace) throws ApiException {
+    String _continue = "";
+    return client.getExtensionsV1beta1ApiClient().listNamespacedIngressCall(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
   }
 
   private com.squareup.okhttp.Call listIngressAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1beta1IngressList> callback) throws ApiException {

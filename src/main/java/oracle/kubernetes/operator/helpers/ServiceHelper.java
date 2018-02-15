@@ -68,6 +68,7 @@ public class ServiceHelper {
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
+      labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
       metadata.setLabels(labels);
       service.setMetadata(metadata);
 
@@ -213,6 +214,11 @@ public class ServiceHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      if (channelName != null) {
+        sko.getChannels().remove(channelName);
+      } else {
+        sko.setService(null);
+      }
       Step delete = CallBuilder.create().deleteServiceAsync(serviceName, namespace, new ResponseStep<V1Status>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -286,6 +292,8 @@ public class ServiceHelper {
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
+      labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
+      labels.put(LabelConstants.CHANNELNAME_LABEL, networkAccessPoint.getName());
       metadata.setLabels(labels);
       service.setMetadata(metadata);
 
