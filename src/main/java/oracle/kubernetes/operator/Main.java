@@ -524,7 +524,7 @@ public class Main {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      
+       
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
       DomainSpec spec = dom.getSpec();
@@ -717,6 +717,10 @@ public class Main {
                 for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
+                    // done with the current cluster
+                    if (startedCount >= cs.getReplicas() && !startAll) 
+                      continue cluster;
+
                     List<V1EnvVar> env = cs.getEnv();
                     ServerStartup ssi = null;
                     ssl = spec.getServerStartup();
@@ -736,8 +740,7 @@ public class Main {
                       env = startInAdminMode(env);
                     }
                     ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, env, ssi));
-                    if (++startedCount >= cs.getReplicas() && !startAll)
-                      continue cluster;
+                    startedCount++;
                   }
                 }
               }
