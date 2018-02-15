@@ -489,13 +489,13 @@ function deploy_operator {
     local TMP_DIR="`op_get $opkey TMP_DIR`"
 
     trace 'customize the yaml'
-    local inputs="$TMP_DIR/create-operator-inputs.yaml"
+    local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
     mkdir -p $TMP_DIR
     cp $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh $TMP_DIR/create-weblogic-operator.sh
     # copy the template file and dependent scripts too
     mkdir $TMP_DIR/internal
     cp $PROJECT_ROOT/kubernetes/internal/* $TMP_DIR/internal/
-    cp $PROJECT_ROOT/kubernetes/create-operator-inputs.yaml $inputs
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
     sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
@@ -672,42 +672,44 @@ function run_create_domain_job {
     trace 'Prepare the job customization script'
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
-    cp $PROJECT_ROOT/kubernetes/create-domain-job.sh ${tmp_dir}/create-domain-job.sh
+
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh ${tmp_dir}/create-weblogic-domain.sh
     cp $PROJECT_ROOT/kubernetes/internal/* ${internal_dir}/
 
     # Common inputs file for creating a domain
-    cp $PROJECT_ROOT/kubernetes/create-domain-job-inputs.yaml ${tmp_dir}/create-domain-job-inputs.yaml
+    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
 
     # copy testwebapp.war for testing
     cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
 
     # Customize the create domain job inputs
-    sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
 
     # Customize more configuraiton 
-    sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s;^persistencePath:.*;persistencePath: $PV_ROOT/acceptance_test_pv/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^domainUid:.*/domainUid: $DOMAIN_UID/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^secretName:.*/secretName: $CREDENTIAL_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" $inputs
+    sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" $inputs
+    sed -i -e "s;^persistencePath:.*;persistencePath: $PV_ROOT/acceptance_test_pv/$PV_DIR;" $inputs
+    sed -i -e "s/^domainUid:.*/domainUid: $DOMAIN_UID/" $inputs
+    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
+    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
+    sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
+    sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
+    sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" $inputs
+    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputs
+    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputs
+    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputs
+    sed -i -e "s/^secretName:.*/secretName: $CREDENTIAL_NAME/" $inputs
     if [ -n "${IMAGE_PULL_SECRET_WEBLOGIC}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" ${tmp_dir}/create-domain-job-inputs.yaml
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" $inputs
     fi
-    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
+    sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" $inputs
+    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
 
     # we will test cluster scale up and down in domain1 and domain4 
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
-      sed -i -e "s/^managedServerCount:.*/managedServerCount: 3/"  ${tmp_dir}/create-domain-job-inputs.yaml
+      sed -i -e "s/^managedServerCount:.*/managedServerCount: 3/" $inputs
     fi
 
     local outfile="${tmp_dir}/mkdir_physical_nfs.out"
@@ -724,10 +726,10 @@ function run_create_domain_job {
        fail Job failed.  Could not create k8s cluster NFS directory.   
     fi
 
-    local outfile="${tmp_dir}/create-domain-job.sh.out"
+    local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
     trace "Run the script to create the domain, see \"$outfile\" for tracing."
 
-    sh ${tmp_dir}/create-domain-job.sh -i ${tmp_dir}/create-domain-job-inputs.yaml > ${outfile} 2>&1
+    sh ${tmp_dir}/create-weblogic-domain.sh -i $inputs > ${outfile} 2>&1
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -2179,15 +2181,17 @@ function test_create_domain_on_exist_dir {
 
     trace "check domain directory exists"
     local tmp_dir="$TMP_DIR"
-    local persistence_path=`egrep 'persistencePath' ${tmp_dir}/create-domain-job-inputs.yaml | awk '{print $2}'`
-    local domain_name=`egrep 'domainName' ${tmp_dir}/create-domain-job-inputs.yaml | awk '{print $2}'`
+    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
+    local persistence_path=`egrep 'persistencePath' $inputs | awk '{print $2}'`
+    local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
+
     local domain_dir=${persistence_path}"/domain/"${domain_name}
     if [ ! -d ${domain_dir} ] ; then
       fail "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
     fi
 
     trace "run the script to create the domain"
-    sh ${tmp_dir}/create-domain-job.sh -i ${tmp_dir}/create-domain-job-inputs.yaml
+    sh ${tmp_dir}/create-weblogic-domain.sh -i $inputs
     local exit_code=$?
     if [ ${exit_code} -eq 1 ] ; then
       trace "[SUCCESS] create domain job failed, this is the expected behavior"

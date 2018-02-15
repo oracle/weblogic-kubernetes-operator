@@ -202,8 +202,8 @@ function orderlyDelete {
     kubectl -n $curns delete secret ${curdomain}-weblogic-credentials --ignore-not-found
   
     echo @@ Deleting ${curdomain} traefik in namespace $curns
-    kubectlDeleteF "$RESULT_DIR/${curns}-${curdomain}/traefik-deployment.yaml" 
-    kubectlDeleteF "$RESULT_DIR/${curns}-${curdomain}/traefik-rbac.yaml"
+    kubectlDeleteF "$RESULT_DIR/${curns}-${curdomain}/traefik.yaml" 
+    kubectlDeleteF "$RESULT_DIR/${curns}-${curdomain}/traefik-security.yaml"
   
     echo @@ Deleting configmap domain-${curdomain}-scripts in namespace $curns
     kubectl -n $curns delete cm domain-${curdomain}-scripts  --ignore-not-found
@@ -258,7 +258,7 @@ function orderlyDelete {
                    ${opns}-operator-rolebinding --ignore-not-found
   done
   
-  kubectlDeleteF $PROJECT_ROOT/kubernetes/rbac.yaml 
+  kubectlDeleteF $PROJECT_ROOT/kubernetes/weblogic-operator-security.yaml 
   
   echo @@ Deleting kibani, logstash, and elasticsearch artifacts.
   
