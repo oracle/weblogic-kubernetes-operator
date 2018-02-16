@@ -137,8 +137,9 @@ integration-test185:
       yum install -y openssh-clients
       echo $OCI_K8S_185_SSHKEY > /tmp/ssh_key
       chmod 600 /tmp/ssh_key
-      scp -o StrictHostKeyChecking=no -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@$OCI_K8S_185_WORKER0_IP:/scratch/build.tar
-      ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "tar -xvf /scratch/operator.tar”
+      cat /tmp/ssh_key
+      scp -v -o StrictHostKeyChecking=no -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@$OCI_K8S_185_WORKER0_IP:/scratch/build.tar
+      ssh -v -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "tar -xvf /scratch/operator.tar”
       ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "sudo docker build -t weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH --no-cache=true /scratch/”
       ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "sudo docker save weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH > /scratch/operator.tar”
       ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER1_IP "sudo docker load < /scratch/operator.tar”
