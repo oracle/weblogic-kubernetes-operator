@@ -47,7 +47,7 @@ build:
       # remove unneeded RPMs and clean up the YUM cache
       yum -y remove tar gzip
       yum clean all
-  - internal/store-container
+
 
 # This pipeline runs the integration tests against 1.7.9 k8s cluster on OCI.
 integration-test179:
@@ -128,6 +128,7 @@ integration-test179:
       # clean up
       yum clean all
 
+
 # This pipeline runs the integration tests against 1.8.5 k8s cluster on OCI.
 integration-test185:
   steps:
@@ -207,6 +208,7 @@ integration-test185:
       # clean up
       yum clean all
 
+
 # This pipeline runs quality checks 
 quality:
   steps:
@@ -220,6 +222,7 @@ quality:
     goals: clean install sonar:sonar
     cache_repo: true
     version: 3.5.2
+
 
 dev:
   steps:
