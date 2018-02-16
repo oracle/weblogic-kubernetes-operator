@@ -32,7 +32,7 @@ build:
   - script:
     name: Install pre-reqs
     code: |
-      yum -y install tar gzip
+      yum -y install tar gzip docker-ce
   - java/maven:
     goals: clean install
     version: 3.5.2
@@ -52,7 +52,7 @@ build:
     name: Clean up
     code: |
       # remove unneeded RPMs and clean up the YUM cache
-      yum -y remove tar gzip
+      yum -y remove tar gzip docker-ce
       yum clean all
 
 # This pipeline runs the integration tests against 1.7.9 k8s cluster on OCI.
