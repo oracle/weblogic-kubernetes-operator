@@ -35,8 +35,11 @@ build:
       yum -y install yum-utils device-mapper-persistent-data lvm2
       yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
       yum-config-manager --enable extras
-      yum -y install tar gzip docker-ce
+      yum makecache fast
+      yum -y install container-selinux
+      yum -y install docker-ce
       systemctl start docker
+      yum -y install tar gzip
   - java/maven:
     goals: clean install
     version: 3.5.2
