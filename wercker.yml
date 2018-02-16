@@ -55,6 +55,7 @@ integration-test179:
     name: Run integration tests
     code: |
       # Copy Docker file to OCI host and load into local Docker registry
+      yum install -y openssh-clients
       echo $OCI_K8S_179_SSHKEY > /tmp/ssh_key
       scp -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@OCI_K8S_179_WORKER0_IP:/scratch/build.tar
       ssh -i /tmp/ssh_key opc@OCI_K8S_179_WORKER0_IP "tar -xvf /scratch/operator.tar”
@@ -132,6 +133,7 @@ integration-test185:
     name: Run integration tests
     code: |
       # Copy Docker file to OCI host and load into local Docker registry
+      yum install -y openssh-clients
       echo $OCI_K8S_185_SSHKEY > /tmp/ssh_key
       scp -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@OCI_K8S_185_WORKER0_IP:/scratch/build.tar
       ssh -i /tmp/ssh_key opc@OCI_K8S_185_WORKER0_IP "tar -xvf /scratch/operator.tar”
