@@ -57,11 +57,11 @@ integration-test179:
       # Copy Docker file to OCI host and load into local Docker registry
       yum install -y openssh-clients
       echo $OCI_K8S_179_SSHKEY > /tmp/ssh_key
-      scp -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@OCI_K8S_179_WORKER0_IP:/scratch/build.tar
-      ssh -i /tmp/ssh_key opc@OCI_K8S_179_WORKER0_IP "tar -xvf /scratch/operator.tar”
-      ssh -i /tmp/ssh_key opc@OCI_K8S_179_WORKER0_IP "sudo docker build -t weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH --no-cache=true /scratch/”
-      ssh -i /tmp/ssh_key opc@OCI_K8S_179_WORKER0_IP "sudo docker save weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH > /scratch/operator.tar”
-      ssh -i /tmp/ssh_key opc@OCI_K8S_179_WORKER1_IP "sudo docker load < /scratch/operator.tar”
+      scp -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@$OCI_K8S_179_WORKER0_IP:/scratch/build.tar
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_179_WORKER0_IP "tar -xvf /scratch/operator.tar”
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_179_WORKER0_IP "sudo docker build -t weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH --no-cache=true /scratch/”
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_179_WORKER0_IP "sudo docker save weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH > /scratch/operator.tar”
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_179_WORKER1_IP "sudo docker load < /scratch/operator.tar”
       
       cp /etc/hosts $WERCKER_PIPELINE_DIR/hosts
       sed -i "$ a ${OCI_K8S_179_WORKER0_IP} ${OCI_K8S_179_WORKER0_HOSTNAME}" $WERCKER_PIPELINE_DIR/hosts
@@ -135,11 +135,11 @@ integration-test185:
       # Copy Docker file to OCI host and load into local Docker registry
       yum install -y openssh-clients
       echo $OCI_K8S_185_SSHKEY > /tmp/ssh_key
-      scp -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@OCI_K8S_185_WORKER0_IP:/scratch/build.tar
-      ssh -i /tmp/ssh_key opc@OCI_K8S_185_WORKER0_IP "tar -xvf /scratch/operator.tar”
-      ssh -i /tmp/ssh_key opc@OCI_K8S_185_WORKER0_IP "sudo docker build -t weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH --no-cache=true /scratch/”
-      ssh -i /tmp/ssh_key opc@OCI_K8S_185_WORKER0_IP "sudo docker save weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH > /scratch/operator.tar”
-      ssh -i /tmp/ssh_key opc@OCI_K8S_185_WORKER1_IP "sudo docker load < /scratch/operator.tar”
+      scp -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@$OCI_K8S_185_WORKER0_IP:/scratch/build.tar
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "tar -xvf /scratch/operator.tar”
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "sudo docker build -t weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH --no-cache=true /scratch/”
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER0_IP "sudo docker save weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH > /scratch/operator.tar”
+      ssh -i /tmp/ssh_key opc@$OCI_K8S_185_WORKER1_IP "sudo docker load < /scratch/operator.tar”
       
       cp /etc/hosts $WERCKER_PIPELINE_DIR/hosts
       sed -i "$ a ${OCI_K8S_185_WORKER0_IP} ${OCI_K8S_185_WORKER0_HOSTNAME}" $WERCKER_PIPELINE_DIR/hosts
