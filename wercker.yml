@@ -105,16 +105,21 @@ integration-test:
       # install opensll
       yum install -y openssl
 
+      echo @@ "Calling 'kubectl version'"
+      kubectl version
+
       export HOST_PATH="/scratch"
       export PV_ROOT=$HOST_PATH
-      export RESULT_ROOT="/pipeline/output/k8s_dir"
+      export RESULT_ROOT="$WERCKER_OUTPUT_DIR/k8s_dir"
       mkdir -m 777 -p $RESULT_ROOT
-      export PROJECT_ROOT="/pipeline/source"
-      /pipeline/source/src/integration-tests/bash/cleanup.sh
+      export PROJECT_ROOT="${WERCKER_SOURCE_DIR}"
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh
 
       # create pull secrets
+      echo @@ "Creating pull secrets"
       kubectl delete secret docker-store --ignore-not-found=true
       kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
+      
       kubectl delete ns test1 --ignore-not-found=true
       kubectl create ns test1
       kubectl create secret docker-registry docker-store -n test1 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
@@ -122,6 +127,7 @@ integration-test:
       kubectl delete ns test2 --ignore-not-found=true
       kubectl create ns test2
       kubectl create secret docker-registry docker-store -n test2 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
+      
       kubectl delete ns weblogic-operator-1 --ignore-not-found=true
       kubectl create ns weblogic-operator-1
       kubectl create secret docker-registry quay-io -n weblogic-operator-1 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
