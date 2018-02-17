@@ -364,7 +364,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, true, null, null);
+        doCheckAndCreateDomainPresence(dom, false, true, null, null);
       }
     }
   }
@@ -381,7 +381,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, servers, null);
+        doCheckAndCreateDomainPresence(dom, false, false, servers, null);
       }
     }
   }
@@ -398,18 +398,25 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, null, clusters);
+        doCheckAndCreateDomainPresence(dom, false, false, null, clusters);
       }
     }
   }
 
   private static void doCheckAndCreateDomainPresence(Domain dom) {
-    doCheckAndCreateDomainPresence(dom, false, null, null);
+    doCheckAndCreateDomainPresence(dom, false, false, null, null);
+  }
+  
+  private static void doCheckAndCreateDomainPresence(Domain dom, boolean explicitRecheck) {
+    doCheckAndCreateDomainPresence(dom, explicitRecheck, false, null, null);
   }
   
   private static void doCheckAndCreateDomainPresence(
-      Domain dom, boolean explicitRestartAdmin, 
-      List<String> explicitRestartServers, List<String> explicitRestartClusters) {
+      Domain dom,
+      boolean explicitRecheck,
+      boolean explicitRestartAdmin, 
+      List<String> explicitRestartServers, 
+      List<String> explicitRestartClusters) {
     LOGGER.entering();
     
     boolean hasExplicitRestarts = explicitRestartAdmin || explicitRestartServers != null || explicitRestartClusters != null;
@@ -426,7 +433,7 @@ public class Main {
       // Has the spec actually changed?  We will get watch events for status updates
       Domain current = info.getDomain();
       if (current != null) {
-        if (!hasExplicitRestarts && spec.equals(current.getSpec())) {
+        if (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec())) {
           // nothing in the spec has changed
           LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
           return;
@@ -1274,7 +1281,7 @@ public class Main {
               if (sko.getPod() != null) {
                 // Pod was deleted, but sko still contains a non-null entry
                 LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                doCheckAndCreateDomainPresence(info.getDomain());
+                doCheckAndCreateDomainPresence(info.getDomain(), true);
               }
             }
           }
@@ -1307,7 +1314,7 @@ public class Main {
               if ((channelName != null ? sko.getChannels().get(channelName) : sko.getService()) != null) {
                 // Service was deleted, but sko still contains a non-null entry
                 LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
-                doCheckAndCreateDomainPresence(info.getDomain());
+                doCheckAndCreateDomainPresence(info.getDomain(), true);
               }
             }
           }
@@ -1336,7 +1343,7 @@ public class Main {
           if (clusterName != null && info.getIngresses().get(clusterName) != null) {
             // Ingress was deleted, but sko still contains a non-null entry
             LOGGER.info(MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-            doCheckAndCreateDomainPresence(info.getDomain());
+            doCheckAndCreateDomainPresence(info.getDomain(), true);
           }
         }
       }
