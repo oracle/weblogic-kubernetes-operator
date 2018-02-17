@@ -4,7 +4,6 @@ metadata:
   name: weblogic-command-job
   namespace: default
 spec:
-  backoffLimit: 0
   template:
     metadata:
     spec:
