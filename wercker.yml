@@ -45,7 +45,7 @@ build:
       cp target/weblogic-kubernetes-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_/]/-}"
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR = "latest"
+        export IMAGE_TAG_OPERATOR="latest"
       fi
   - script:
     name: Remove things we do not want in the Docker image in order to reduce size of image
@@ -148,7 +148,7 @@ integration-test:
       export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_/]/-}"
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR = "latest"
+        export IMAGE_TAG_OPERATOR="latest"
       fi
       export IMAGE_PULL_POLICY_OPERATOR="IfNotPresent"
       export IMAGE_PULL_SECRET_OPERATOR="quay-io"
