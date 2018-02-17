@@ -55,7 +55,7 @@ build:
     password: $QUAY_PASSWORD
     email: $QUAY_EMAIL
     repository: quay.io/markxnelson/weblogic-kubernetes-operator
-    tag: $WERCKER_GIT_BRANCH
+    tag: ${WERCKER_GIT_BRANCH//[_/]/-}
     working-dir: "/operator"
     cmd: "operator.sh"
     env: "PATH=$PATH:/operator"
@@ -142,7 +142,7 @@ integration-test:
       kubectl create secret docker-registry quay-io -n weblogic-operator-2 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
 
       export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
-      export IMAGE_TAG_OPERATOR="$WERCKER_GIT_BRANCH"
+      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_/]/-}"
       export IMAGE_PULL_POLICY_OPERATOR="IfNotPresent"
       export IMAGE_PULL_SECRET_OPERATOR="quay-io"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
