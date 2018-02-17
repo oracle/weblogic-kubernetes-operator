@@ -108,6 +108,11 @@ integration-test:
       echo @@ "Calling 'kubectl version'"
       kubectl version
 
+      # create pull secrets
+      echo @@ "Creating pull secrets"
+      kubectl delete secret docker-store --ignore-not-found=true
+      kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
+
       export HOST_PATH="/scratch"
       export PV_ROOT=$HOST_PATH
       export RESULT_ROOT="$WERCKER_OUTPUT_DIR/k8s_dir"
