@@ -43,6 +43,10 @@ build:
       mkdir /operator
       cp -R src/main/scripts/* /operator/
       cp target/weblogic-kubernetes-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
+      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_/]/-}"
+      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR = "latest"
+      fi
   - script:
     name: Remove things we do not want in the Docker image in order to reduce size of image
     code: |
@@ -55,7 +59,7 @@ build:
     password: $QUAY_PASSWORD
     email: $QUAY_EMAIL
     repository: quay.io/markxnelson/weblogic-kubernetes-operator
-    tag: ${WERCKER_GIT_BRANCH//[_/]/-}
+    tag: $IMAGE_TAG_OPERATOR
     working-dir: "/operator"
     cmd: "operator.sh"
     env: "PATH=$PATH:/operator"
@@ -143,12 +147,15 @@ integration-test:
 
       export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_/]/-}"
+      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR = "latest"
+      fi
       export IMAGE_PULL_POLICY_OPERATOR="IfNotPresent"
       export IMAGE_PULL_SECRET_OPERATOR="quay-io"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
 
       echo "Integration test suite against the test image which is:"
-      echo "$IMAGE_NAME:$IMAGE_TAG"
+      echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
 
       # integration tests
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
