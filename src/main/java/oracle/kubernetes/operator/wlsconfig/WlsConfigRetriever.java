@@ -92,7 +92,8 @@ public class WlsConfigRetriever {
   private static final Random R = new Random();
   private static final int HIGH = 1000;
   private static final int LOW = 100;
-  
+  private static final int MAX = 30000;
+
   private static final class ReadConfigStep extends Step {
     public ReadConfigStep(Step next) {
       super(next);
@@ -133,7 +134,7 @@ public class WlsConfigRetriever {
         if (retryCount == null) {
           retryCount = 0;
         }
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW), MAX);
         packet.put(RETRY_COUNT, retryCount);
         return doRetry(packet, waitTime, TimeUnit.MILLISECONDS);
       }
@@ -182,7 +183,7 @@ public class WlsConfigRetriever {
         if (retryCount == null) {
           retryCount = 0;
         }
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW), MAX);
         packet.put(RETRY_COUNT, retryCount);
         return doRetry(packet, waitTime, TimeUnit.MILLISECONDS);
       }
