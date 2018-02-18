@@ -17,6 +17,7 @@ public interface ProcessingConstants {
   public static final String ENVVARS = "envVars";
   
   public static final String SERVER_NAME = "serverName";
+  public static final String CLUSTER_NAME = "clusterName";
   public static final String PORT = "port";
   public static final String NODE_PORT = "nodePort";
   public static final String NETWORK_ACCESS_POINT = "nap";

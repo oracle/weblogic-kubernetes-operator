@@ -303,10 +303,10 @@ public class DomainStatusUpdater implements PodStateListener {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND || statusCode == CallBuilder.CONFLICT) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
             return doNext(packet); // Just ignore update
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
+          return super.onFailure(next, packet, e, statusCode, responseHeaders);
         }
         
         @Override
@@ -426,10 +426,10 @@ public class DomainStatusUpdater implements PodStateListener {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND || statusCode == CallBuilder.CONFLICT) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
             return doNext(packet); // Just ignore update
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
+          return super.onFailure(next, packet, e, statusCode, responseHeaders);
         }
         
         @Override
@@ -547,10 +547,10 @@ public class DomainStatusUpdater implements PodStateListener {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND || statusCode == CallBuilder.CONFLICT) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
             return doNext(packet); // Just ignore update
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
+          return super.onFailure(next, packet, e, statusCode, responseHeaders);
         }
         
         @Override
