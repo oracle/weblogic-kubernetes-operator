@@ -4,9 +4,9 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.joda.time.DateTime;
@@ -28,8 +28,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
  */
 public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
-  private final Map<String, ServerKubernetesObjects> servers = new HashMap<>();
-  private final Map<String, V1beta1Ingress> ingresses = new HashMap<>();
+  private final Map<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
+  private final Map<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   
   private V1PersistentVolumeClaimList claims = null;

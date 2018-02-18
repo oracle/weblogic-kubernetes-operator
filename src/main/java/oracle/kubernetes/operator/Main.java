@@ -602,7 +602,7 @@ public class Main {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      V1Pod adminPod = info.getAdmin().getPod();
+      V1Pod adminPod = info.getAdmin().getPod().get();
       
       PodWatcher pw = podWatchers.get(adminPod.getMetadata().getNamespace());
       packet.getComponents().put(PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
@@ -945,10 +945,10 @@ public class Main {
     @Override
     public NextAction apply(Packet packet) {
       List<V1Service> services = new ArrayList<V1Service>();
-      services.add(sko.getService());
+      services.add(sko.getService().get());
       services.addAll(sko.getChannels().values());
 
-      return doNext(IngressHelper.createRemoveServerStep(serverName, sko.getService(),
+      return doNext(IngressHelper.createRemoveServerStep(serverName, sko.getService().get(),
           new DeleteServiceListStep(services, 
               PodHelper.deletePodStep(sko, 
                   new ManagedServerDownFinalizeStep(serverName, next)))), packet);
@@ -1268,6 +1268,8 @@ public class Main {
 
   private static void dispatchPodWatch(Watch.Response<V1Pod> item) {
     switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
       case "DELETED":
         V1Pod p = item.object;
         V1ObjectMeta metadata = p.getMetadata();
@@ -1278,10 +1280,15 @@ public class Main {
           if (info != null && serverName != null) {
             ServerKubernetesObjects sko = info.getServers().get(serverName);
             if (sko != null) {
-              if (sko.getPod() != null) {
-                // Pod was deleted, but sko still contains a non-null entry
-                LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                doCheckAndCreateDomainPresence(info.getDomain(), true);
+              if ("DELETED".equals(item.type)) {
+                V1Pod oldPod = sko.getPod().getAndSet(null);
+                if (oldPod != null) {
+                  // Pod was deleted, but sko still contained a non-null entry
+                  LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
+                  doCheckAndCreateDomainPresence(info.getDomain(), true);
+                }
+              } else { // ADDED, MODIFIED
+                sko.getPod().set(p);
               }
             }
           }
@@ -1300,6 +1307,8 @@ public class Main {
 
   private static void dispatchServiceWatch(Watch.Response<V1Service> item) {
     switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
       case "DELETED":
         V1Service s = item.object;
         V1ObjectMeta metadata = s.getMetadata();
@@ -1311,10 +1320,24 @@ public class Main {
           if (info != null && serverName != null) {
             ServerKubernetesObjects sko = info.getServers().get(serverName);
             if (sko != null) {
-              if ((channelName != null ? sko.getChannels().get(channelName) : sko.getService()) != null) {
-                // Service was deleted, but sko still contains a non-null entry
-                LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
-                doCheckAndCreateDomainPresence(info.getDomain(), true);
+              if ("DELETED".equals(item.type)) {
+                if (channelName != null) {
+                  V1Service oldService = sko.getChannels().put(channelName, null);
+                  if (oldService != null) {
+                    // Service was deleted, but sko still contained a non-null entry
+                    LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
+                    doCheckAndCreateDomainPresence(info.getDomain(), true);
+                  }
+                } else {
+                  V1Service oldService = sko.getService().getAndSet(null);
+                  if (oldService != null) {
+                    // Service was deleted, but sko still contained a non-null entry
+                    LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
+                    doCheckAndCreateDomainPresence(info.getDomain(), true);
+                  }
+                }
+              } else { // ADDED, MODIFIED
+                sko.getService().set(s);
               }
             }
           }
@@ -1332,6 +1355,8 @@ public class Main {
 
   private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
     switch (item.type) {
+    case "ADDED":
+    case "MODIFIED":
     case "DELETED":
       V1beta1Ingress i = item.object;
       V1ObjectMeta metadata = i.getMetadata();
@@ -1340,10 +1365,15 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && clusterName != null) {
-          if (clusterName != null && info.getIngresses().get(clusterName) != null) {
-            // Ingress was deleted, but sko still contains a non-null entry
-            LOGGER.info(MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-            doCheckAndCreateDomainPresence(info.getDomain(), true);
+          if ("DELETED".equals(item.type)) {
+            V1beta1Ingress oldIngress = info.getIngresses().remove(clusterName);
+            if (oldIngress != null) {
+              // Ingress was deleted, but sko still contained a non-null entry
+              LOGGER.info(MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
+              doCheckAndCreateDomainPresence(info.getDomain(), true);
+            }
+          } else { // ADDED, MODIFIED
+            info.getIngresses().put(clusterName, i);
           }
         }
       }

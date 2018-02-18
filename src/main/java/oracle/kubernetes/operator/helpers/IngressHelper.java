@@ -62,7 +62,7 @@ public class IngressHelper {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       ServerKubernetesObjects sko = info.getServers().get(serverName);
       if (sko != null) {
-        V1Service service = sko.getService();
+        V1Service service = sko.getService().get();
         if (service != null) {
           // If we have a cluster, create a cluster level ingress
           if (clusterName != null) {
