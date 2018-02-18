@@ -1225,6 +1225,7 @@ public class CallBuilder {
   private static final Random R = new Random();
   private static final int HIGH = 1000;
   private static final int LOW = 100;
+  private static final int MAX = 30000;
   
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
@@ -1247,24 +1248,26 @@ public class CallBuilder {
           statusCode == 504 /* StatusServerTimeout */) {
         
         // exponential back-off
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW), MAX);
         
         if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
           // increase server timeout
           timeoutSeconds *= 2;
         }
         
+        LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
         NextAction na = new NextAction();
         na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;
       } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
         // Conflict is an optimistic locking failure.  Therefore, we can't
         // simply retry the request.  Instead, application code needs to rebuild
-        // the request based on latest contents.  If provided, a confict step will do that.
+        // the request based on latest contents.  If provided, a conflict step will do that.
         
         // exponential back-off
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW), MAX);
         
+        LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
         NextAction na = new NextAction();
         na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;

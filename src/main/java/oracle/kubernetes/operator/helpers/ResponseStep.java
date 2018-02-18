@@ -102,7 +102,7 @@ public abstract class ResponseStep<T> extends Step {
       return retryStrategy.doPotentialRetry(conflictStep, packet, e, statusCode, responseHeaders);
     }
     
-    LOGGER.info(MessageKeys.ASYNC_NO_RETRY, e != null ? e.getMessage() : "", statusCode, responseHeaders != null ? responseHeaders.toString() : "");
+    LOGGER.warning(MessageKeys.ASYNC_NO_RETRY, e != null ? e.getMessage() : "", statusCode, responseHeaders != null ? responseHeaders.toString() : "");
     return null;
   }
   
