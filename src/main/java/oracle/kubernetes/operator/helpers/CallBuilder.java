@@ -1223,9 +1223,10 @@ public class CallBuilder {
   }
   
   private static final Random R = new Random();
-  private static final int HIGH = 1000;
-  private static final int LOW = 100;
-  private static final int MAX = 30000;
+  private static final int HIGH = 200;
+  private static final int LOW = 10;
+  private static final int SCALE = 100;
+  private static final int MAX = 10000;
   
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
@@ -1248,7 +1249,7 @@ public class CallBuilder {
           statusCode == 504 /* StatusServerTimeout */) {
         
         // exponential back-off
-        long waitTime = Math.min((2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW), MAX);
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         
         if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
           // increase server timeout
@@ -1265,7 +1266,7 @@ public class CallBuilder {
         // the request based on latest contents.  If provided, a conflict step will do that.
         
         // exponential back-off
-        long waitTime = Math.min((2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW), MAX);
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         
         LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
         NextAction na = new NextAction();
