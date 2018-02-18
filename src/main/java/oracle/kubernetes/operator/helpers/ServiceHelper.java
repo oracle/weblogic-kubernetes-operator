@@ -101,55 +101,49 @@ public class ServiceHelper {
       // Create or replace, if necessary
       ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
 
-      V1Service skoService = sko.getService().get();
-      if (skoService == null || !validateCurrentService(service, skoService)) {
-        // There is no Service or Service spec has changed
-        // First, verify there is no existing Service
-        Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
-          @Override
-          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (statusCode == CallBuilder.NOT_FOUND) {
-              return onSuccess(packet, null, statusCode, responseHeaders);
-            }
-            return super.onFailure(packet, e, statusCode, responseHeaders);
+      // First, verify existing Service
+      Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return onSuccess(packet, null, statusCode, responseHeaders);
           }
+          return super.onFailure(packet, e, statusCode, responseHeaders);
+        }
 
-          @Override
-          public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (result == null) {
-              Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
-                @Override
-                public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
-                    Map<String, List<String>> responseHeaders) {
-                  
-                  LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                  sko.getService().set(result);
-                  return doNext(packet);
-                }
-              });
-              return doNext(create, packet);
-            } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
-              // existing Service has correct spec
-              LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
-              sko.getService().set(result);
-              return doNext(packet);
-            } else {
-              // we need to update the Service
-              Step replace = new CycleServiceStep(
-                  name, namespace, service, 
-                  serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_REPLACED : MessageKeys.MANAGED_SERVICE_REPLACED,
-                  weblogicDomainUID, serverName, sko, next);
-              return doNext(replace, packet);
-            }
+        @Override
+        public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (result == null) {
+            Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+              @Override
+              public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                
+                LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
+                sko.getService().set(result);
+                return doNext(packet);
+              }
+            });
+            return doNext(create, packet);
+          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+            // existing Service has correct spec
+            LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
+            sko.getService().set(result);
+            return doNext(packet);
+          } else {
+            // we need to update the Service
+            Step replace = new CycleServiceStep(
+                name, namespace, service, 
+                serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_REPLACED : MessageKeys.MANAGED_SERVICE_REPLACED,
+                weblogicDomainUID, serverName, sko, next);
+            return doNext(replace, packet);
           }
-        });
-        
-        return doNext(read, packet);
-      }
-
-      return doNext(packet);
+        }
+      });
+      
+      return doNext(read, packet);
     }
   }
   
@@ -318,54 +312,49 @@ public class ServiceHelper {
       // Create or replace, if necessary
       ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
 
-      if (sko.getChannels().get(networkAccessPoint.getName()) == null || !validateCurrentService(service, sko.getChannels().get(networkAccessPoint.getName()))) {
-        // There is no Service or Service spec has changed
-        // First, verify there is no existing Service
-        Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
-          @Override
-          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (statusCode == CallBuilder.NOT_FOUND) {
-              return onSuccess(packet, null, statusCode, responseHeaders);
-            }
-            return super.onFailure(packet, e, statusCode, responseHeaders);
+      // First, verify existing Service
+      Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return onSuccess(packet, null, statusCode, responseHeaders);
           }
+          return super.onFailure(packet, e, statusCode, responseHeaders);
+        }
 
-          @Override
-          public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (result == null) {
-              Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
-                @Override
-                public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
-                    Map<String, List<String>> responseHeaders) {
-                  
-                  LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                  sko.getChannels().put(networkAccessPoint.getName(), result);
-                  return doNext(packet);
-                }
-              });
-              return doNext(create, packet);
-            } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
-              // existing Service has correct spec
-              LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
-              sko.getChannels().put(networkAccessPoint.getName(), result);
-              return doNext(packet);
-            } else {
-              // we need to update the Service
-              Step replace = new CycleServiceStep(
-                  name, namespace, service, 
-                  serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_REPLACED : MessageKeys.MANAGED_SERVICE_REPLACED,
-                  weblogicDomainUID, serverName, sko, networkAccessPoint.getName(), next);
-              return doNext(replace, packet);
-            }
+        @Override
+        public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (result == null) {
+            Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+              @Override
+              public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                
+                LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
+                sko.getChannels().put(networkAccessPoint.getName(), result);
+                return doNext(packet);
+              }
+            });
+            return doNext(create, packet);
+          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+            // existing Service has correct spec
+            LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
+            sko.getChannels().put(networkAccessPoint.getName(), result);
+            return doNext(packet);
+          } else {
+            // we need to update the Service
+            Step replace = new CycleServiceStep(
+                name, namespace, service, 
+                serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_REPLACED : MessageKeys.MANAGED_SERVICE_REPLACED,
+                weblogicDomainUID, serverName, sko, networkAccessPoint.getName(), next);
+            return doNext(replace, packet);
           }
-        });
-        
-        return doNext(read, packet);
-      }
-
-      return doNext(packet);
+        }
+      });
+      
+      return doNext(read, packet);
     }
   }
 }
