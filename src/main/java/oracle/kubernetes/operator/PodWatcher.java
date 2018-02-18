@@ -129,8 +129,6 @@ public class PodWatcher implements Runnable {
   private void processEventCallback(Watch.Response<V1Pod> item) {
     LOGGER.entering();
     
-    destination.eventCallback(item);
-
     V1Pod pod;
     Boolean previous;
     String domainUID;
@@ -209,6 +207,8 @@ public class PodWatcher implements Runnable {
     default:
     }
     
+    destination.eventCallback(item);
+
     LOGGER.exiting();
   }
   

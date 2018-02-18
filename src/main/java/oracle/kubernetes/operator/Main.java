@@ -950,7 +950,7 @@ public class Main {
 
       return doNext(IngressHelper.createRemoveServerStep(serverName, sko.getService().get(),
           new DeleteServiceListStep(services, 
-              PodHelper.deletePodStep(sko, 
+              PodHelper.deletePodStep(sko, serverName,
                   new ManagedServerDownFinalizeStep(serverName, next)))), packet);
     }
   }
