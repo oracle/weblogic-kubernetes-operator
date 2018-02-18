@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.models.V1Pod;
@@ -17,7 +17,7 @@ import io.kubernetes.client.models.V1Service;
 public class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
-  private Map<String, V1Service> channels = null;
+  private ConcurrentMap<String, V1Service> channels = null;
   
   /**
    * The Pod
@@ -39,9 +39,9 @@ public class ServerKubernetesObjects {
    * Channel map
    * @return Map from channel name to Service
    */
-  public Map<String, V1Service> getChannels() {
+  public ConcurrentMap<String, V1Service> getChannels() {
     if (channels == null) {
-      channels = new HashMap<String, V1Service>();
+      channels = new ConcurrentHashMap<String, V1Service>();
     }
     return channels;
   }
