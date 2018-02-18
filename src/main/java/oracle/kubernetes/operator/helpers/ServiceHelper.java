@@ -101,7 +101,8 @@ public class ServiceHelper {
       // Create or replace, if necessary
       ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
 
-      if (sko.getService() == null || !validateCurrentService(service, sko.getService())) {
+      V1Service skoService = sko.getService().get();
+      if (skoService == null || !validateCurrentService(service, skoService)) {
         // There is no Service or Service spec has changed
         // First, verify there is no existing Service
         Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
@@ -124,7 +125,7 @@ public class ServiceHelper {
                     Map<String, List<String>> responseHeaders) {
                   
                   LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                  sko.setService(result);
+                  sko.getService().set(result);
                   return doNext(packet);
                 }
               });
@@ -132,7 +133,7 @@ public class ServiceHelper {
             } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
               // existing Service has correct spec
               LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
-              sko.setService(result);
+              sko.getService().set(result);
               return doNext(packet);
             } else {
               // we need to update the Service
@@ -217,7 +218,7 @@ public class ServiceHelper {
       if (channelName != null) {
         sko.getChannels().remove(channelName);
       } else {
-        sko.setService(null);
+        sko.getService().set(null);
       }
       Step delete = CallBuilder.create().deleteServiceAsync(serviceName, namespace, new ResponseStep<V1Status>(next) {
         @Override
@@ -241,7 +242,7 @@ public class ServiceHelper {
               if (channelName != null) {
                 sko.getChannels().put(channelName, result);
               } else {
-                sko.setService(result);
+                sko.getService().set(result);
               }
               return doNext(packet);
             }

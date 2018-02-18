@@ -157,7 +157,7 @@ public class WlsConfigRetriever {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
         Domain dom = info.getDomain();
   
-        String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService());
+        String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
         
         WlsDomainConfig wlsDomainConfig = null;
         String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, adminServerServiceName, namespace, WlsDomainConfig.getRetrieveServersSearchPayload());
