@@ -456,7 +456,7 @@ public class Main {
     Fiber f = engine.createFiber();
     Packet p = new Packet();
     
-    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
     p.put(ProcessingConstants.PRINCIPAL, principal);
     
     if (explicitRestartAdmin) {
