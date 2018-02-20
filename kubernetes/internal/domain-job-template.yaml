@@ -101,60 +101,21 @@ data:
 
     export DOMAIN_HOME=${SHARED_PATH}/domain/%DOMAIN_NAME%
 
-    # Function to create node manager home for a server
-    # $1 - Domain UID
-    # $2 - Server Name
-    # $3 - Admin Server Hostname (only passed for managed servers)
-    function createNodeMgrHome() {
-
-      # Create startup.properties file
-      datadir=${DOMAIN_HOME}/servers/$2/data/nodemanager
-      startProp=${datadir}/startup.properties
-      createFolder ${datadir}
-      echo "# Server startup properties" > ${startProp}
-      echo "AutoRestart=true" >> ${startProp}
-      if [ -n "$3" ]; then
-        echo "AdminURL=http\://$3\:%ADMIN_PORT%" >> ${startProp}
-      fi
-      echo "RestartMax=2" >> ${startProp}
-      echo "RotateLogOnStartup=false" >> ${startProp}
-      echo "RotationType=bySize" >> ${startProp}
-      echo "RotationTimeStart=00\:00" >> ${startProp}
-      echo "RotatedFileCount=100" >> ${startProp}
-      echo "RestartDelaySeconds=0" >> ${startProp}
-      echo "FileSizeKB=5000" >> ${startProp}
-      echo "FileTimeSpanFactor=3600000" >> ${startProp}
-      echo "RestartInterval=3600" >> ${startProp}
-      echo "NumberOfFilesLimited=true" >> ${startProp}
-      echo "FileTimeSpan=24" >> ${startProp}
-      echo "NMHostName=$1-$2" >> ${startProp}
+    function createCommonNodeMgrHome() {
 
       # Create nodemanager home for the server
-      nmdir=${DOMAIN_HOME}/servers/$2/nodemgr_home
+      nmdir=${DOMAIN_HOME}/nodemgr_home
       createFolder ${nmdir}
       prop=${nmdir}/nodemanager.properties
       cp ${DOMAIN_HOME}/nodemanager/nodemanager.properties ${nmdir}
-      cp ${DOMAIN_HOME}/nodemanager/nodemanager.domains ${nmdir}
-      cp ${DOMAIN_HOME}/bin/startNodeManager.sh ${nmdir}
-
-      # Edit the start nodemanager script to use the home for the server
-      sed -i -e "s:/nodemanager:/servers/$2/nodemgr_home:g" ${nmdir}/startNodeManager.sh
-
-      # Edit the nodemanager properties file to use the home for the server
-      sed -i -e "s:DomainsFile=.*:DomainsFile=${nmdir}/nodemanager.domains:g" ${prop}
-      sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nmdir}:g" ${prop}
-      sed -i -e "s:ListenAddress=.*:ListenAddress=$1-$2:g" ${prop}
-      sed -i -e "s:LogFile=.*:LogFile=/shared/logs/nodemanager-$2.log:g" ${prop}
-
     }
 
     # Function to create script for starting a server
-    # $1 - Domain UID
-    # $2 - Server Name
-    function createStartScript() {
+    # \$1 - Domain UID
+    # \$2 - Server Name
+    function createCommonStartScripts() {
 
-      nmdir=${DOMAIN_HOME}/servers/$2/nodemgr_home
-      stateFile=${DOMAIN_HOME}/servers/$2/data/nodemanager/$2.state
+      nmdir=${DOMAIN_HOME}/nodemgr_home
       scriptFile=${nmdir}/startServer.sh
       pyFile=${nmdir}/start-server.py
 
@@ -164,24 +125,118 @@ data:
       cat << EOF > ${scriptFile}
     #!/bin/bash
 
+    domain_uid=\$1
+    server_name=\$2
+    as_name=\$3
+    as_port=\$4
+    as_hostname="\$1-\$3"
+
+    echo "debug arguments are \$1 \$2 \$3 \$4"
+
+    nmProp="/u01/nodemanager/nodemanager.properties"
+
+    # TODO: parameterize shared home and domain name
+    export DOMAIN_HOME=/shared/domain/%DOMAIN_NAME%
+
+    #
+    # Create a folder
+    # \$1 - path of folder to create
+    function createFolder {
+      mkdir -m 777 -p \$1
+      if [ ! -d \$1 ]; then
+        fail "Unable to create folder \$1"
+      fi
+    }
+
+    # Function to create server specific scripts and properties (e.g startup.properties, etc)
+    # \$1 - Domain UID
+    # \$2 - Server Name
+    # \$3 - Admin Server Hostname (only passed for managed servers)
+    # \$4 - Admin Server port (only passed for managed servers)
+    function createServerScriptsProperties() {
+
+      # Create startup.properties file
+      datadir=\${DOMAIN_HOME}/servers/\$2/data/nodemanager
+      nmdir=\${DOMAIN_HOME}/nodemgr_home
+      stateFile=\${datadir}/\$2.state
+      startProp=\${datadir}/startup.properties
+      if [ -f "\$startProp" ]; then
+        echo "startup.properties already exists"
+        return 0
+      fi
+
+      createFolder \${datadir}
+      echo "# Server startup properties" > \${startProp}
+      echo "AutoRestart=true" >> \${startProp}
+      if [ -n "\$3" ]; then
+        echo "AdminURL=http\://\$3\:\$4" >> \${startProp}
+      fi
+      echo "RestartMax=2" >> \${startProp}
+      echo "RotateLogOnStartup=false" >> \${startProp}
+      echo "RotationType=bySize" >> \${startProp}
+      echo "RotationTimeStart=00\:00" >> \${startProp}
+      echo "RotatedFileCount=100" >> \${startProp}
+      echo "RestartDelaySeconds=0" >> \${startProp}
+      echo "FileSizeKB=5000" >> \${startProp}
+      echo "FileTimeSpanFactor=3600000" >> \${startProp}
+      echo "RestartInterval=3600" >> \${startProp}
+      echo "NumberOfFilesLimited=true" >> \${startProp}
+      echo "FileTimeSpan=24" >> \${startProp}
+      echo "NMHostName=\$1-\$2" >> \${startProp}
+
+      # Create nodemanager home for the server
+      srvr_nmdir=${DOMAIN_HOME}/servers/\$2/nodemgr_home
+      createFolder \${srvr_nmdir}
+      cp ${DOMAIN_HOME}/nodemanager/nodemanager.domains \${srvr_nmdir}
+      cp ${DOMAIN_HOME}/bin/startNodeManager.sh \${srvr_nmdir}
+
+      # Edit the start nodemanager script to use the home for the server
+      sed -i -e "s:/nodemanager:/servers/\$2/nodemgr_home:g" \${srvr_nmdir}/startNodeManager.sh
+    }
+
     # Check for stale state file and remove if found"
-    if [ -f ${stateFile} ]; then
-      echo "Removing stale file ${stateFile}"
-      rm ${stateFile}
+    if [ -f \${stateFile} ]; then
+      echo "Removing stale file \${stateFile}"
+      rm \${stateFile}
+    fi
+
+    # alai- create nodemanager home directory that is local to the k8s node
+    mkdir -p /u01/nodemanager
+    cp \${DOMAIN_HOME}/nodemanager/* /u01/nodemanager/
+    cp \${DOMAIN_HOME}/nodemgr_home/nodemanager.properties /u01/nodemanager
+
+    # Edit the nodemanager properties file to use the home for the server
+    sed -i -e "s:DomainsFile=.*:DomainsFile=/u01/nodemanager/nodemanager.domains:g" /u01/nodemanager/nodemanager.properties
+    sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=/u01/nodemanager:g" /u01/nodemanager/nodemanager.properties
+    sed -i -e "s:ListenAddress=.*:ListenAddress=\$1-\$2:g" /u01/nodemanager/nodemanager.properties
+    sed -i -e "s:LogFile=.*:LogFile=/shared/logs/nodemanager-\$2.log:g" /u01/nodemanager/nodemanager.properties
+
+    export JAVA_PROPERTIES="-DLogFile=/shared/logs/nodemanager-\$server_name.log -DNodeManagerHome=/u01/nodemanager"
+    export NODEMGR_HOME="/u01/nodemanager"
+
+
+    # alai- create startup.properties
+    echo "Create startup.properties"
+    if [ -n "\$3" ]; then
+      echo "this is managed server"
+      createServerScriptsProperties \$domain_uid \$server_name \$as_hostname \$as_port
+    else
+      echo "this is admin server"
+      createServerScriptsProperties \$domain_uid \$server_name
     fi
 
     echo "Start the nodemanager"
-    . ${nmdir}/startNodeManager.sh &
+    . \${DOMAIN_HOME}/servers/\$2/nodemgr_home/startNodeManager.sh &
 
     echo "Allow the nodemanager some time to start before attempting to connect"
     sleep 15
     echo "Finished waiting for the nodemanager to start"
 
     echo "Update JVM arguments"
-    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp} 
+    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> \${startProp}
 
     echo "Start the server"
-    wlst.sh -skipWLSModuleScanning ${pyFile}
+    wlst.sh -skipWLSModuleScanning ${pyFile} \$domain_uid \$server_name
 
     echo "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
     while true; do sleep 60; done
@@ -192,12 +247,47 @@ data:
 
       # Create a python script to execute the wlst commands.
       # The script and 'EOF' on the following lines must not be indented!
-      cat /u01/weblogic/read-domain-secret.py > ${pyFile}
+      echo "import sys;" > ${pyFile}
+      cat /u01/weblogic/read-domain-secret.py >> ${pyFile}
       cat << EOF >> ${pyFile}
 
+    domain_uid = sys.argv[1]
+    server_name = sys.argv[2]
+
+    domain_path= "${DOMAIN_HOME}"
+
+    print 'admin username is %s' % admin_username
+    print 'domain path is %s' % domain_path
+    print 'server name is %s' % server_name
+
+    # Encrypt the admin username and password
+    adminUsernameEncrypted=encrypt(admin_username, domain_path)
+    adminPasswordEncrypted=encrypt(admin_password, domain_path)
+
+    print 'Create boot.properties files for this server'
+
+    # Define the folder path
+    secdir='%s/servers/%s/security' % (domain_path, server_name)
+
+    # Create the security folder (if it does not already exist)
+    try:
+      os.makedirs(secdir)
+    except OSError:
+      if not os.path.isdir(secdir):
+        raise
+
+    print 'writing boot.properties to %s/servers/%s/security/boot.properties' % (domain_path, server_name)
+
+    bpFile=open('%s/servers/%s/security/boot.properties' % (domain_path, server_name), 'w+')
+    bpFile.write("username=%s\n" % adminUsernameEncrypted)
+    bpFile.write("password=%s\n" % adminPasswordEncrypted)
+    bpFile.close()
+
+    service_name = domain_uid + "-" + server_name
+
     # Connect to nodemanager and start server
-    nmConnect(admin_username, admin_password, '$1-$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
-    nmStart('$2')
+    nmConnect(admin_username, admin_password, service_name,  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
+    nmStart(server_name)
 
     # Exit WLST
     nmDisconnect()
@@ -218,7 +308,7 @@ data:
     # the pod should be restarted. The script checks a WebLogic Server state file which
     # is updated by the node manager.
 
-    STATEFILE=${stateFile}
+    STATEFILE=/shared/domain/\$1/servers/\$2/data/nodemanager/\$2.state
 
     if [ \`jps -l | grep -c " weblogic.NodeManager"\` -eq 0 ]; then
       echo "Error: WebLogic NodeManager process not found."
@@ -240,11 +330,11 @@ data:
     }
 
     # Function to create script for stopping a server
-    # $1 - Domain UID
-    # $2 - Server Name
-    function createStopScript() {
+    # \$1 - Domain UID
+    # \$2 - Server Name
+    function createCommonStopScripts() {
 
-      nmdir=${DOMAIN_HOME}/servers/$2/nodemgr_home
+      nmdir=${DOMAIN_HOME}/nodemgr_home
       scriptFile=${nmdir}/stopServer.sh
       pyFile=${nmdir}/stop-server.py
 
@@ -259,7 +349,7 @@ data:
     # Return status of 2 means failed to stop a server through the NodeManager.
     # Look to see if there is a server process that can be killed.
     if [ \$? -eq 2 ]; then
-      pid=\$(jps -v | grep '[D]weblogic.Name=$2' | awk '{print \$1}')
+      pid=\$(jps -v | grep '[D]weblogic.Name=\$2' | awk '{print \$1}')
       if [ ! -z \$pid ]; then
         echo "Killing the server process \$pid"
         kill -15 \$pid
@@ -278,14 +368,14 @@ data:
 
     # Connect to nodemanager and stop server
     try:
-      nmConnect(admin_username, admin_password, '$1-$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
+      nmConnect(admin_username, admin_password, '\$1-\$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
     except:
       print('Failed to connect to the NodeManager')
       exit(exitcode=2)
 
     # Kill the server
     try:
-      nmKill('$2')
+      nmKill('\$2')
     except:
       print('Connected to the NodeManager, but failed to stop the server')
       exit(exitcode=2)
@@ -301,20 +391,9 @@ data:
     # Create the domain
     wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py
 
-    # Setup admin server
-    createNodeMgrHome %DOMAIN_UID% %ADMIN_SERVER_NAME%
-    createStartScript %DOMAIN_UID% %ADMIN_SERVER_NAME%
-    createStopScript  %DOMAIN_UID% %ADMIN_SERVER_NAME%
-
-    # Create the managed servers
-    index=0
-    while [ $index -lt %NUMBER_OF_MS% ]
-    do
-      ((index++))
-      createNodeMgrHome %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index} %DOMAIN_UID%-%ADMIN_SERVER_NAME%
-      createStartScript %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index}
-      createStopScript  %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index}
-    done
+    createCommonNodeMgrHome
+    createCommonStartScripts
+    createCommonStopScripts
 
     echo "Successfully Completed"
 
@@ -328,6 +407,8 @@ data:
     domain_path        = os.environ.get("DOMAIN_HOME")
     cluster_name       = "%CLUSTER_NAME%"
     number_of_ms       = %NUMBER_OF_MS%
+    cluster_type       = "%CLUSTER_TYPE%"
+    max_ms_count       = %MAX_MS_COUNT%
 
     print('domain_path        : [%s]' % domain_path);
     print('domain_name        : [%DOMAIN_NAME%]');
@@ -335,6 +416,8 @@ data:
     print('admin_port         : [%ADMIN_PORT%]');
     print('cluster_name       : [%s]' % cluster_name);
     print('server_port        : [%s]' % server_port);
+    print('cluster_type       : [%s]' % cluster_type);
+    print('max_ms_count       : [%s]' % max_ms_count);
 
     # Open default domain template
     # ============================
@@ -388,7 +471,7 @@ data:
     set('DomainsDirRemoteSharingEnabled', 'true')
 
     # Set the Node Manager user name and password (domain name will change after writeDomain)
-    cd('/SecurityConfiguration/base_domain')
+    cd('/SecurityConfiguration/%DOMAIN_NAME%')
     set('NodeManagerUsername', admin_username)
     set('NodeManagerPasswordEncrypted', admin_password)
 
@@ -407,29 +490,55 @@ data:
 
     # Create a cluster
     cd('/')
-    create(cluster_name, 'Cluster')
+    cl=create(cluster_name, 'Cluster')
 
-    # Create managed servers
-    for index in range(0, number_of_ms):
-      cd('/')
+    if cluster_type == "static":
 
-      msIndex = index+1
-      name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
-      machineName = '%DOMAIN_UID%-machine%s' % msIndex
+      # Create managed servers
+      for index in range(0, number_of_ms):
+        cd('/')
 
-      create(name, 'Server')
-      cd('/Servers/%s/' % name )
-      print('managed server name is %s' % name);
-      set('ListenAddress', '%DOMAIN_UID%-%s' % name)
-      set('ListenPort', server_port)
-      set('NumOfRetriesBeforeMSIMode', 0)
-      set('RetryIntervalBeforeMSIMode', 1)
-      set('Cluster', cluster_name)
-      set('Machine', machineName)
+        msIndex = index+1
+        name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
+        machineName = '%DOMAIN_UID%-machine%s' % msIndex
 
-      create(name,'Log')
-      cd('/Servers/%s/Log/%s' % (name, name))
-      set('FileName', '/shared/logs/%s.log' % name)
+        create(name, 'Server')
+        cd('/Servers/%s/' % name )
+        print('managed server name is %s' % name);
+        set('ListenAddress', '%DOMAIN_UID%-%s' % name)
+        set('ListenPort', server_port)
+        set('NumOfRetriesBeforeMSIMode', 0)
+        set('RetryIntervalBeforeMSIMode', 1)
+        set('Cluster', cluster_name)
+        set('Machine', machineName)
+
+        create(name,'Log')
+        cd('/Servers/%s/Log/%s' % (name, name))
+        set('FileName', '/shared/logs/%s.log' % name)
+    else:
+      print('Configuring Dynamic Cluster %s' % cluster_name)
+
+      print('Creating Server Template: serverTemplate-1');
+      st1=create('serverTemplate-1', 'ServerTemplate')
+      print('Done creating Server Template: serverTemplate-1');
+      cd('/ServerTemplates/serverTemplate-1')
+      cmo.setListenPort(server_port)
+      cmo.setListenAddress('%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%${id}')
+      cmo.setCluster(cl)
+      print('Done setting attributes for Server Template: serverTemplate-1');
+
+      cd('/Clusters/%s' % cluster_name)
+      create(cluster_name, 'DynamicServers')
+      cd('DynamicServers/%s' % cluster_name)
+      set('ServerTemplate', st1)
+      set('ServerNamePrefix', "%MANAGED_SERVER_NAME_BASE%")
+      set('DynamicClusterSize', number_of_ms)
+      set('MaxDynamicClusterSize', max_ms_count)
+      set('CalculatedMachineNames', true)
+      set('CalculatedListenPorts', false)
+      set('Id', 1)
+
+      print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
 
     # Write Domain
     # ============

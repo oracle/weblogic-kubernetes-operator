@@ -17,6 +17,9 @@ domainName: base_domain
 # This id must be lowercase and unique across all domains in a Kubernetes cluster
 domainUid: domain1
 
+# Type of WebLogic Cluster (static or dynamic)
+clusterType: dynamic
+
 # Cluster name
 clusterName: cluster-1
 
@@ -24,7 +27,10 @@ clusterName: cluster-1
 managedServerCount: 2
 
 # Number of managed servers to initially start for the domain
-managedServerStartCount: 2
+managedServerStartCount: 1
+
+# Maximum number of managed server instances allowed to be created
+maxManagedServerCount: 8
 
 # Base string used to generate managed server names
 managedServerNameBase: managed-server

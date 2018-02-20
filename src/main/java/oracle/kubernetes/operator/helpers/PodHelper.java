@@ -134,7 +134,7 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStopHandler = new V1Handler();
       V1ExecAction lifecycleExecAction = new V1ExecAction();
-      lifecycleExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/stopServer.sh");
+      lifecycleExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/stopServer.sh");
       preStopHandler.setExec(lifecycleExecAction);
       lifecycle.setPreStop(preStopHandler);
       container.setLifecycle(lifecycle);
@@ -166,6 +166,7 @@ public class PodHelper {
       V1Probe livenessProbe = new V1Probe();
       V1ExecAction livenessExecAction = new V1ExecAction();
       livenessExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/livenessProbe.sh");
+      livenessExecAction.addCommandItem(weblogicDomainName);
       livenessExecAction.addCommandItem(spec.getAsName());
       livenessProbe.exec(livenessExecAction);
       livenessProbe.setInitialDelaySeconds(10);
@@ -504,6 +505,7 @@ public class PodHelper {
       V1Probe livenessProbe = new V1Probe();
       V1ExecAction execAction = new V1ExecAction();
       execAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/livenessProbe.sh");
+      execAction.addCommandItem(weblogicDomainName);
       execAction.addCommandItem(weblogicServerName);
       livenessProbe.exec(execAction);
       livenessProbe.setInitialDelaySeconds(10);
