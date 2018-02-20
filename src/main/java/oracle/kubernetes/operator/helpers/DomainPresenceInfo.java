@@ -4,15 +4,16 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.joda.time.DateTime;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
@@ -27,7 +28,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
  */
 public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
-  private final Map<String, ServerKubernetesObjects> servers = new HashMap<>();
+  private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   
   private V1PersistentVolumeClaimList claims = null;
@@ -112,10 +114,18 @@ public class DomainPresenceInfo {
    * Map from server name to server objects (Pods and Services)
    * @return Server object map
    */
-  public Map<String, ServerKubernetesObjects> getServers() {
+  public ConcurrentMap<String, ServerKubernetesObjects> getServers() {
     return servers;
   }
 
+  /**
+   * Map from cluster name to Ingress
+   * @return Cluster object map
+   */
+  public ConcurrentMap<String, V1beta1Ingress> getIngresses() {
+    return ingresses;
+  }
+  
   /**
    * Server objects (Pods and Services) for admin server
    * @return Server objects for admin server

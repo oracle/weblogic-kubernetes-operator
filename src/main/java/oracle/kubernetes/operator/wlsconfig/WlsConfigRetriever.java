@@ -95,8 +95,10 @@ public class WlsConfigRetriever {
   private static final String START_TIME = "WlsConfigRetriever-startTime";
   private static final String RETRY_COUNT = "WlsConfigRetriever-retryCount";
   private static final Random R = new Random();
-  private static final int HIGH = 1000;
-  private static final int LOW = 100;
+  private static final int HIGH = 50;
+  private static final int LOW = 10;
+  private static final int SCALE = 100;
+  private static final int MAX = 10000;
 
   private static final class ReadConfigStep extends Step {
     public ReadConfigStep(Step next) {
@@ -132,7 +134,7 @@ public class WlsConfigRetriever {
         if (retryCount == null) {
           retryCount = 0;
         }
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         packet.put(RETRY_COUNT, retryCount);
         return doRetry(packet, waitTime, TimeUnit.MILLISECONDS);
       }
@@ -177,7 +179,7 @@ public class WlsConfigRetriever {
 
           long startTime = System.currentTimeMillis();
 
-          String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService());
+          String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
 
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
             wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
@@ -215,9 +217,9 @@ public class WlsConfigRetriever {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
         Domain dom = info.getDomain();
-
-        String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService());
-
+  
+        String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
+        
         WlsDomainConfig wlsDomainConfig = null;
         String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload());
         if (jsonResult != null) {
@@ -255,7 +257,7 @@ public class WlsConfigRetriever {
         if (retryCount == null) {
           retryCount = 0;
         }
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         packet.put(RETRY_COUNT, retryCount);
         return doRetry(packet, waitTime, TimeUnit.MILLISECONDS);
       }
