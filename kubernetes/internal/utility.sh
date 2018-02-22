@@ -188,3 +188,71 @@ function checkPvState {
     fail "The persistent volume state should be $2 but is $pv_state"
   fi
 }
+
+#
+# Function to validate that either the output dir does not exist,
+# or that if it does, it does not contain any generated yaml files
+# and does not contain an inputs file that differs from the one
+# the script is using
+# $1   - the output directory to validate
+# $2   - the name of the input file the create script is using
+# $3   - the name of the input file that is put into the output directory
+# $4-n - the names of the generated yaml files
+function validateOutputDir {
+  local dir=$1
+  shift
+  if [ -e ${dir} ]; then
+    # the output directory already exists
+    if [ -d ${dir} ]; then
+      # the output directory is a directory
+      local in1=$1
+      shift
+      local in2=${1}
+      shift
+      internalValidateInputsFileDoesNotExistOrIsTheSame ${dir} ${in1} ${in2}
+      internalValidateGeneratedYamlFilesDoNotExist ${dir} $@
+    else
+      validationError "${dir} exists but is not a directory."
+    fi
+  fi
+}
+
+#
+# Internal function to validate that the inputs file does not exist in the
+# outputs directory or is the same as the inputs file the script is using
+# $1 - the output directory to validate
+# $2 - the name of the input file the create script is using
+# $3 - the name of the input file that is put into the output directory
+function internalValidateInputsFileDoesNotExistOrIsTheSame {
+  local dir=$1
+  local in1=$2
+  local in2=$3
+  local f="${dir}/${in2}"
+  if [ -e ${f} ]; then
+    if [ -f ${f} ]; then
+      local differences=`diff -q ${f} ${in1}`
+      if ! [ -z "${differences}" ]; then
+        validationError "${f} is different than ${in1}"
+      fi
+    else
+      validationError "${f} exists and is not a file."
+    fi
+  fi
+}
+
+#
+# Internal unction to validate that the generated yaml files do not exist
+# in the outputs directory
+# $1 - the output directory to validate
+# $2-n - the names of the generated yaml files
+function internalValidateGeneratedYamlFilesDoNotExist {
+  local dir=$1
+  shift
+  for var in "$@"; do
+    local f="${dir}/${var}"
+    if [ -e ${f} ]; then
+      validationError "${f} exists."
+    fi
+  done
+}
+

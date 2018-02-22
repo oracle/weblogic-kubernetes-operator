@@ -23,18 +23,20 @@ source ${internalDir}/utility.sh
 #
 # Parse the command line options
 #
-valuesInputFile="${scriptDir}/create-weblogic-domain-inputs.yaml"
 generateOnly=false
-while getopts "ghi:" opt; do
+while getopts "ghi:o:" opt; do
   case $opt in
     g) generateOnly=true
     ;;
     i) valuesInputFile="${OPTARG}"
     ;;
-    h) echo ./create-weblogic-domain.sh [-g] [-i file] [-h]
+    o) outputDir="${OPTARG}"
+    ;;
+    h) echo ${scriptDir}/create-weblogic-domain.sh [-g] [-i file] [-o dir] [-h]
        echo
        echo -g Only generate the files to create the domain, do not execute them
-       echo -i Parameter input file, defaults to create-weblogic-domain-inputs.yaml
+       echo -i Parameter input file, a modified copy of ${scriptDir}/create-weblogic-domain-inputs.yaml
+       echo -o Ouput directory for the generated yaml files, defaults to the current directory of the shell executing this script.
        echo -h Help
        exit
     ;;
@@ -42,6 +44,23 @@ while getopts "ghi:" opt; do
     ;;
   esac
 done
+
+#
+# Function to initialize and validate the output directory
+# for the generated yaml files for this domain.
+#
+function initAndValidateOutputDir {
+  domainOutputDir="${outputDir}/weblogic-domains/${domainUid}"
+  validateOutputDir \
+    ${domainOutputDir} \
+    ${valuesInputFile} \
+    create-weblogic-domain-inputs.yaml \
+    weblogic-domain-persistent-volume.yaml \
+    weblogic-domain-persistent-volume-claim.yaml \
+    create-weblogic-domain-domain-job.yaml \
+    domain-custom-resource.yaml \
+    traefik.yaml
+}
 
 #
 # Function to ensure the domain uid is lowercase
@@ -183,43 +202,48 @@ function initialize {
     validationError "kubectl is not installed"
   fi
 
-  if [ ! -f ${valuesInputFile} ]; then
-    validationError "Unable to locate the input parameters file ${valuesInputFile}"
-    validateErrors=true
+  if [ -z "${valuesInputFile}" ]; then
+    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of ${scriptDir}/create-weblogic-domain-inputs.yaml)."
+  else
+    if [ ! -f ${valuesInputFile} ]; then
+      validationError "Unable to locate the input parameters file ${valuesInputFile}"
+    fi
+  fi
+
+  if [ -z "${outputDir}" ]; then
+    validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
+  else
+    if ! [ -d ${outputDir} ]; then
+      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
+    fi
   fi
 
   domainPVInput="${internalDir}/weblogic-domain-persistent-volume-template.yaml"
-  domainPVOutput="${scriptDir}/weblogic-domain-persistent-volume.yaml"
   if [ ! -f ${domainPVInput} ]; then
     validationError "The template file ${domainPVInput} for generating a persistent volume was not found"
   fi
 
   domainPVCInput="${internalDir}/weblogic-domain-persistent-volume-claim-template.yaml"
-  domainPVCOutput="${scriptDir}/weblogic-domain-persistent-volume-claim.yaml"
   if [ ! -f ${domainPVCInput} ]; then
     validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
 
   jobInput="${internalDir}/create-weblogic-domain-job-template.yaml"
-  jobOutput="${scriptDir}/create-weblogic-domain-domain-job.yaml"
   if [ ! -f ${jobInput} ]; then
     validationError "The template file ${jobInput} for creating a WebLogic domain was not found"
   fi
 
   dcrInput="${internalDir}/domain-custom-resource-template.yaml"
-  dcrOutput="${scriptDir}/domain-custom-resource.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
 
   traefikSecurityInput="${internalDir}/traefik-security-template.yaml"
-  traefikSecurityOutput="${scriptDir}/traefik-security.yaml"
   if [ ! -f ${traefikSecurityInput} ]; then
     validationError "The file ${traefikSecurityInput} for generating the traefik RBAC was not found"
   fi
 
   traefikInput="${internalDir}/traefik-template.yaml"
-  traefikOutput="${scriptDir}/traefik.yaml"
   if [ ! -f ${traefikInput} ]; then
     validationError "The template file ${traefikInput} for generating the traefik deployment was not found"
   fi
@@ -240,6 +264,7 @@ function initialize {
   validateSecretName
   validateImagePullSecretName
   validateLoadBalancer
+  initAndValidateOutputDir
   failIfValidationErrors
 }
 
@@ -248,6 +273,20 @@ function initialize {
 # Function to generate the yaml files for creating a domain
 #
 function createYamlFiles {
+
+  # Create a directory for this domain's output files
+  mkdir -p ${domainOutputDir}
+
+  # Save a copy of the inputs yaml file there
+  cp ${valuesInputFile} "${domainOutputDir}/create-weblogic-domain-inputs.yaml"
+
+  domainPVOutput="${domainOutputDir}/weblogic-domain-persistent-volume.yaml"
+  domainPVCOutput="${domainOutputDir}/weblogic-domain-persistent-volume-claim.yaml"
+  jobOutput="${domainOutputDir}/create-weblogic-domain-domain-job.yaml"
+  dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
+  traefikSecurityOutput="${domainOutputDir}/traefik-security.yaml"
+  traefikOutput="${domainOutputDir}/traefik.yaml"
+
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
@@ -531,6 +570,7 @@ function outputJobSummary {
     echo ""
   fi
   echo "The following files were generated:"
+  echo "  ${domainOutputDir}/create-weblogic-domain-inputs.yaml"
   echo "  ${domainPVOutput}"
   echo "  ${domainPVCOutput}"
   echo "  ${jobOutput}"
