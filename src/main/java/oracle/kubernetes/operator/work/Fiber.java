@@ -175,7 +175,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     this.completionCallback = completionCallback;
     this.applyThrowable = null;
 
-    owner.addRunnable(this);
+    if (status.get() == NOT_COMPLETE) {
+      owner.addRunnable(this);
+    }
   }
 
   /**
@@ -440,14 +442,20 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    */
   @Override
   public void run() {
-    Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+    // Clear the interrupted status, if present
+    Thread.interrupted();
+    
+    final Fiber oldFiber = CURRENT_FIBER.get();
+    CURRENT_FIBER.set(this);
+    Container oldContainer = ContainerResolver.getDefault().enterContainer(owner.getContainer());
     try {
       // doRun returns true to indicate an early exit from fiber processing
       if (!doRun(next)) {
           completionCheck();
       }
     } finally {
-      ContainerResolver.getDefault().exitContainer(old);
+      ContainerResolver.getDefault().exitContainer(oldContainer);
+      CURRENT_FIBER.set(oldFiber);
     }
   }
 
@@ -543,67 +551,59 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private boolean _doRun(Holder<Boolean> isRequireUnlock) {
     assert (lock.isHeldByCurrentThread());
 
-    final Fiber old = CURRENT_FIBER.get();
-    CURRENT_FIBER.set(this);
-
-    try {
-      while (isReady()) {
-        if (status.get() != NOT_COMPLETE) {
-          next = null;
-          break;
-        }
-
-        if (next == null) {
-          // nothing else to execute. we are done.
-          return false;
-        }
-
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("{0} {1}.apply({2})", new Object[] { getName(), next,
-              packet != null ? "Packet@" + Integer.toHexString(packet.hashCode()) : "null" });
-        }
-
-        NextAction na;
-        try {
-          na = next.apply(packet);
-        } catch (Throwable t) {
-          applyThrowable = t;
-          return false;
-        }
-
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("{0} returned with {1}", new Object[] { getName(), na });
-        }
-        
-        // If resume is called before suspend, then make sure
-        // resume(Packet) is not lost
-        if (na.kind != NextAction.Kind.SUSPEND) {
-          packet = na.packet;
-        }
-
-        switch (na.kind) {
-        case INVOKE:
-          next = na.next;
-          break;
-        case SUSPEND:
-          next = na.next;
-          if (suspend(isRequireUnlock, na.onExit))
-            return true; // explicitly exiting control loop
-          break;
-        case THROW:
-          applyThrowable = na.throwable;
-          return false;
-        default:
-          throw new AssertionError();
-        }
+    while (isReady()) {
+      if (status.get() != NOT_COMPLETE) {
+        next = null;
+        break;
       }
 
-      // there's nothing we can execute right away.
-      // we'll be back when this fiber is resumed.
+      if (next == null) {
+        // nothing else to execute. we are done.
+        return false;
+      }
 
-    } finally {
-      CURRENT_FIBER.set(old);
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("{0} {1}.apply({2})", new Object[] { getName(), next,
+            packet != null ? "Packet@" + Integer.toHexString(packet.hashCode()) : "null" });
+      }
+
+      NextAction na;
+      try {
+        na = next.apply(packet);
+      } catch (Throwable t) {
+        applyThrowable = t;
+        return false;
+      }
+
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("{0} returned with {1}", new Object[] { getName(), na });
+      }
+      
+      // If resume is called before suspend, then make sure
+      // resume(Packet) is not lost
+      if (na.kind != NextAction.Kind.SUSPEND) {
+        packet = na.packet;
+      }
+
+      switch (na.kind) {
+      case INVOKE:
+        next = na.next;
+        break;
+      case SUSPEND:
+        next = na.next;
+        if (suspend(isRequireUnlock, na.onExit))
+          return true; // explicitly exiting control loop
+        break;
+      case THROW:
+        applyThrowable = na.throwable;
+        return false;
+      default:
+        throw new AssertionError();
+      }
     }
+
+    // there's nothing we can execute right away.
+    // we'll be back when this fiber is resumed.
 
     return false;
   }

@@ -558,7 +558,7 @@ public class PodHelper {
                 return doNext(packet);
               }
             });
-            return doNext(DomainStatusUpdater.createProgressingStep(create, false), packet);
+            return doNext(DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, create), packet);
           } else if (!isExplicitRestartThisServer && (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentPod(pod, result))) {
             // existing Pod has correct spec
             LOGGER.info(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
@@ -575,7 +575,7 @@ public class PodHelper {
               Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
               if (rolling != null) {
                 rolling.put(weblogicServerName, new StepAndPacket(
-                    DomainStatusUpdater.createProgressingStep(replace, false), packet.clone()));
+                    DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, replace), packet.clone()));
               }
             }
             return doEnd(packet);
