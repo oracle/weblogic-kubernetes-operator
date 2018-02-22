@@ -23,15 +23,44 @@ Normally, customers do not use these yaml files.  However, customers can look at
 
 Previously, these files were placed in the kubernetes directory (e.g. kubernetes/weblogic-operator.yaml).  Now, they are placed in per-operator and per-domain directories (since a Kubernetes cluster can have more than one operator and an operator can manage more than one domain).
 
-The customer can control the name of the directory by specifying the -o option to the create script, for example:
-  create-weblogic-operator.sh -o /scratch/operator1
-The pathname can either be a full path name, or a relative pathname.  If it's a relative pathname, then it's relative to the kubernetes directory.
-So, if you specify 'create-weblogic-operator.sh -o operator1', the directory will be 'kubernetes/operator'.
+The customer must create a directory that will parent the per-operator and per-domain directories, and use the -o option to pass the name of that directory to the create script, for example:
+  mkdir /scratch/my-user-projects
+  create-weblogic-operator.sh -o /scratch/my-user-projects
+The pathname can either be a full path name, or a relative path name.  If it's a relative pathname, then it's relative to the directory of the shell invoking the create script.
 
-If the customer does not specify the -o option, then default directory names are chosen based on the values in the inputs yaml file.
-create-weblogic-operator.sh will default the directory name to the operator's Kubernetes namespace name (i.e. the 'namespace' parameter in the inputs yaml file, which defaults to 'weblogic-operator'). So, if you just call 'create-weblogic-operator.sh', the generated files will be put in the 'kubernetes/weblogic-operator' directory.
+The per-operator directory name is:
+  <user project dir from -o>/weblogic-operators/<operator namespace from the input yaml file's namespace property>
 
-Similarly, create-weblogic-domain.sh will default the directory name to the domain's UID (i.e. the 'domainUID' parameter in the inputs file, which must be explicitly configured by the customer).  So, if you set 'domainUID' to 'domain1.development-stage.yourcompany.com' in kubernetes/create-weblogic-domain-inputs.yaml, then call 'create-weblogic-domain.sh', the generated files will be put in the 'kubernetes/domain1.development-stage.yourcompany.com' directory.
+Similarly, the per-domain directory name is:
+  <user project dir from -o>/weblogic-domains/<domain uid from the input yaml file's domainUid property>
+
+#### What If I Mess Up Creating a Domain or Operator And Want To Do It Again?
+
+* TBD - destroy the operator / domain - I don't think we provide scripts for this yet, but will soon
+* either remove the directory that was generated for that operator / domain, or remove the generated yaml files and the copy of the input file from it
+* make whatever changes you need in your inputs file
+* re-run the create script
+
+If you run the create script without cleaning up the previously generated directory, the create script will tell you about the offending files and then exit without creating anything.
+
+#### Location of the Input YAML Files
+
+The create scripts support a -i option for specifying the location of the inputs file.  Similar to the -o option, the path can either be a full path name or a relative path name.  Relative path names are relative to the directory of the shell invoking the create script.
+
+If -i is not specified, kubernetes/create-weblogic-operator.sh uses kubernetes/create-weblogic-operator-inputs.yaml.
+
+Previously, kubernetes/create-domain-job.sh used kubernetes/create-domain-job-inputs.yaml as the input file if -i was not specified.  This behavior has been changed.  The customer must select a world wide unique id for the domain and set the domainUid property in the inputs file to that value.  This means that the customer must always modify the inputs file.
+
+Also, we do not want the customer to have to change files in the weblogic operator's install directory.  Because of this, the -i option MUST be specified when calling kubernetes/create-weblogic-operator.sh.  The basic flow is:
+
+* pick a user projects directory, e.g. /scratch/my-user-projects
+* mkdir /scratch/my-user-projects
+* pick a unique id for the domain, e.g. foo.com
+* cp kubernetes/create-weblogic-domain-inputs.yaml my-inputs.yaml
+* set the domainUid in my-inputs.yaml to foo.com
+* kubernetes/create-weblogic-operator.sh -i my-inputs.yaml -o /scratch/my-user-projects
+
+Note: my-inputs.yaml will be copied to /scratch/my-user-projects/weblogic-domains/foo.com/create-weblogic-domain-inputs.yaml
 
 #### File Names of the Generated YAML File
 

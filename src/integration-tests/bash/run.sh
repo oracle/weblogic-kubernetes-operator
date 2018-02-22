@@ -458,8 +458,8 @@ function op_define {
     eval export OP_${opkey}_TARGET_NAMESPACES="$3"
     eval export OP_${opkey}_EXTERNAL_REST_HTTPSPORT="$4"
 
-    # derived TMP_DIR for operator = $RESULT_DIR/$NAMESPACE :
-    eval export OP_${opkey}_TMP_DIR="$RESULT_DIR/$2"
+    # generated TMP_DIR for operator = $USER_PROJECTS_DIR/weblogic-operators/$NAMESPACE :
+    eval export OP_${opkey}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-operators/$2"
 
     #verbose tracing starts with a +
     op_echo_all $1 | sed 's/^/+/'
@@ -491,10 +491,6 @@ function deploy_operator {
     trace 'customize the yaml'
     local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
     mkdir -p $TMP_DIR
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh $TMP_DIR/create-weblogic-operator.sh
-    # copy the template file and dependent scripts too
-    mkdir $TMP_DIR/internal
-    cp $PROJECT_ROOT/kubernetes/internal/* $TMP_DIR/internal/
     cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
@@ -516,7 +512,7 @@ function deploy_operator {
 
     local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
     trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-    sh $TMP_DIR/create-weblogic-operator.sh -i $inputs > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
        cat ${outfile} | sed 's/^/+/g'
@@ -604,8 +600,8 @@ function dom_define {
     eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${11}"
     eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${12}"
 
-    # derive TMP_DIR $RESULT_DIR/$NAMESPACE-$DOMAIN_UID :
-    eval export DOM_${DOM_KEY}_TMP_DIR="$RESULT_DIR/$3-$4"
+    # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
+    eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
 
     #verbose tracing starts with a +
     dom_echo_all $1 | sed 's/^/+/'
@@ -673,9 +669,6 @@ function run_create_domain_job {
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
 
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh ${tmp_dir}/create-weblogic-domain.sh
-    cp $PROJECT_ROOT/kubernetes/internal/* ${internal_dir}/
-
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
     cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
@@ -729,7 +722,7 @@ function run_create_domain_job {
     local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
     trace "Run the script to create the domain, see \"$outfile\" for tracing."
 
-    sh ${tmp_dir}/create-weblogic-domain.sh -i $inputs > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -2191,7 +2184,7 @@ function test_create_domain_on_exist_dir {
     fi
 
     trace "run the script to create the domain"
-    sh ${tmp_dir}/create-weblogic-domain.sh -i $inputs
+    sh ${tmp_dir}/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR
     local exit_code=$?
     if [ ${exit_code} -eq 1 ] ; then
       trace "[SUCCESS] create domain job failed, this is the expected behavior"
@@ -2276,6 +2269,7 @@ function test_suite_init {
     export CUSTOM_YAML="$SCRIPTPATH/../kubernetes"
     export PROJECT_ROOT="$SCRIPTPATH/../../.."
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
+    export USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 
     local varname
     for varname in SCRIPTPATH CUSTOM_YAML PROJECT_ROOT; do

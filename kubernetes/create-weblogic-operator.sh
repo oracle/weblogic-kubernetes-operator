@@ -13,16 +13,19 @@ source ${internalDir}/utility.sh
 #
 valuesInputFile="${scriptDir}/create-weblogic-operator-inputs.yaml"
 generateOnly=false
-while getopts "ghi:" opt; do
+while getopts "ghi:o:" opt; do
   case $opt in
     g) generateOnly=true
     ;;
     i) valuesInputFile="${OPTARG}"
     ;;
-    h) echo ./create-weblogic-operator.sh [-g] [-i file] [-h]
+    o) outputDir="${OPTARG}"
+    ;;
+    h) echo ./create-weblogic-operator.sh [-g] [-i file] [-o dir] [-h]
        echo
        echo -g Only generate the files to create the operator, do not execute them
        echo -i Parameter input file, defaults to kubernetes/create-weblogic-operator-inputs.yaml
+       echo -o Ouput directory for the generated yaml files, defaults to the current directory of the shell executing this script.
        echo -h Help
        exit
     ;;
@@ -45,12 +48,16 @@ function initialize {
     validationError "kubectl is not installed"
   fi
 
-  if [ ! -f ${valuesInputFile} ]; then
-    validationError "Unable to locate the file ${valuesInputFile}. \nThis file contains the input parameters required to create the operator."
+  if [ -z ${outputDir} ]; then
+    validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
+  else
+    if ! [ -d ${outputDir} ]; then
+      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
+    fi
   fi
 
   oprInput="${internalDir}/weblogic-operator-template.yaml"
-  oprOutput="${scriptDir}/weblogic-operator.yaml"
+  oprOutput="${oprOutputDir}/weblogic-operator.yaml"
   if [ ! -f ${oprInput} ]; then
     validationError "The template file ${oprInput} for generating the weblogic operator was not found"
   fi
@@ -67,7 +74,7 @@ function initialize {
 
   # Validation checks for elk integration
  
- elasticsearchYaml="${internalDir}/elasticsearch.yaml"
+  elasticsearchYaml="${internalDir}/elasticsearch.yaml"
   if [ ! -f ${elasticsearchYaml} ]; then
     validationError "The file ${elasticsearchYaml} necessary for elk deployment was not found"
   fi
@@ -98,7 +105,24 @@ function initialize {
   
   validateImagePullSecretName
 
+  initAndValidateOutputDir
+
   failIfValidationErrors
+}
+
+#
+# Function to initialize and validate the output directory
+# for the generated yaml files for this operator.
+#
+function initAndValidateOutputDir {
+  oprOutputDir="${outputDir}/weblogic-operators/${namespace}"
+  domainOutputDir="${outputDir}/weblogic-domains/${domainUid}"
+  validateOutputDir \
+    ${oprOutputDir} \
+    ${valuesInputFile} \
+    create-weblogic-operator-inputs.yaml \
+    weblogic-operator.yaml \
+    weblogic-operator-security.yaml
 }
 
 #
@@ -106,7 +130,7 @@ function initialize {
 #
 function validateImagePullSecretName {
   if [ ! -z ${imagePullSecretName} ]; then
-  	validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
+    validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
     imagePullSecretPrefix=""
     validateImagePullSecret
   else
@@ -272,7 +296,15 @@ function createCertificates {
 # Function to generate the yaml files for creating a domain
 #
 function createYamlFiles {
+
+  # Create a directory for this operator's output files
+  mkdir -p ${oprOutputDir}
+
+  # Save a copy of the inputs yaml file there
+  cp ${valuesInputFile} "${oprOutputDir}/create-weblogic-operator-inputs.yaml"
+
   # Generate the yaml to create the WebLogic operator
+  oprOutput="${oprOutputDir}/weblogic-operator.yaml"
   echo Generating ${oprOutput}
 
   enabledPrefix=""     # uncomment the feature
@@ -326,7 +358,7 @@ function createYamlFiles {
   sed -i -e "s|%INTERNAL_KEY_DATA%|$internal_key_data|g" ${oprOutput}
 
   # Create the weblogic-operator-security.yaml file
-  oprSecurityFile="${scriptDir}/weblogic-operator-security.yaml"
+  oprSecurityFile="${oprOutputDir}/weblogic-operator-security.yaml"
   roleName="weblogic-operator-namespace-role"
   roleBinding="weblogic-operator-rolebinding"
   clusterRole="weblogic-operator-cluster-role"
@@ -519,6 +551,7 @@ function outputJobSummary {
   echo "The Oracle WebLogic Server Kubernetes Operator is deployed, the following namespaces are being managed: ${targetNamespaces}"
   echo ""
   echo "The following files were generated:"
+  echo "  ${oprOutputDir}/create-weblogic-operator-inputs.yaml"
   echo "  ${oprOutput}"
   echo "  ${oprSecurityFile}"
 }

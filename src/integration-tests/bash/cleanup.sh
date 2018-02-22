@@ -52,6 +52,7 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 PROJECT_ROOT="$SCRIPTPATH/../../.."
 RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
+USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 
@@ -202,8 +203,8 @@ function orderlyDelete {
     kubectl -n $curns delete secret ${curdomain}-weblogic-credentials --ignore-not-found
   
     echo @@ Deleting ${curdomain} traefik in namespace $curns
-    kubectlDeleteF "$RESULT_DIR/${curns}-${curdomain}/traefik.yaml" 
-    kubectlDeleteF "$RESULT_DIR/${curns}-${curdomain}/traefik-security.yaml"
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/traefik.yaml" 
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/traefik-security.yaml"
   
     echo @@ Deleting configmap domain-${curdomain}-scripts in namespace $curns
     kubectl -n $curns delete cm domain-${curdomain}-scripts  --ignore-not-found
@@ -220,7 +221,7 @@ function orderlyDelete {
   for ((i=0;i<OCOUNT;i++)); do
     opns=${OPER_NAMESPACES[i]}
     echo @@ Deleting operator in namespace $opns
-    kubectlDeleteF "$RESULT_DIR/${opns}/weblogic-operator.yaml"
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-operators/${opns}/weblogic-operator.yaml"
     # Try delete the operator directly in case above yaml file DNE:
     kubectl -n $opns delete deploy weblogic-operator  --ignore-not-found
   done
@@ -256,9 +257,8 @@ function orderlyDelete {
                    ${opns}-operator-rolebinding-discovery      \
                    ${opns}-operator-rolebinding-nonresource    \
                    ${opns}-operator-rolebinding --ignore-not-found
+    kubectlDeleteF ${USER_PROJECTS_DIR}/weblogic-operators/${opns}/weblogic-operator-security.yaml
   done
-  
-  kubectlDeleteF $PROJECT_ROOT/kubernetes/weblogic-operator-security.yaml 
   
   echo @@ Deleting kibani, logstash, and elasticsearch artifacts.
   
