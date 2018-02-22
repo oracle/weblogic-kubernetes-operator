@@ -64,7 +64,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.Fiber.ExitCallback;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -79,8 +79,10 @@ public class Main {
 
   private static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
   
+  private static final Engine engine = new Engine("operator");
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ConcurrentMap<String, Fiber> domainUpdaters = new ConcurrentHashMap<String, Fiber>();
+  private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
   private static String principal;
@@ -92,8 +94,6 @@ public class Main {
   private static Map<String, IngressWatcher> ingressWatchers = new HashMap<>();
   private static KubernetesVersion version = null;
   
-  private static final Engine engine = new Engine("operator");
-
   /**
    * Entry point
    *
@@ -325,35 +325,6 @@ public class Main {
     }
   }
 
-  private static class WaitForOldFiberStep extends Step {
-    private final Fiber old;
-
-    public WaitForOldFiberStep(Fiber old, Step next) {
-      super(next);
-      this.old = old;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      if (old == null) {
-        return doNext(packet);
-      }
-
-      return doSuspend(next, (fiber) -> {
-        boolean isWillCall = old.cancelAndExitCallback(true, new ExitCallback() {
-          @Override
-          public void onExit() {
-            fiber.resume(packet);
-          }
-        });
-
-        if (!isWillCall) {
-          fiber.resume(packet);
-        }
-      });
-    }
-  }
-  
   /**
    * Restarts the admin server, if already running
    * @param principal Service principal
@@ -444,18 +415,19 @@ public class Main {
     
     LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
 
-    PodWatcher pw = podWatchers.get(dom.getMetadata().getNamespace());
-    if (pw != null) {
-      pw.getListeners().putIfAbsent(domainUID, new DomainStatusUpdater(engine, info));
-    }
-
-    Step strategy = bringAdminServerUp(
+    Step managedServerStrategy = bringManagedServersUp(null);
+    Step adminServerStrategy = bringAdminServerUp(
         connectToAdminAndInspectDomain(
-            bringManagedServersUp(null)));
+            managedServerStrategy));
     
-    Fiber f = engine.createFiber();
+    Step strategy = DomainStatusUpdater.createProgressingStep(
+        DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON, 
+        true, 
+        new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
+    
     Packet p = new Packet();
     
+    PodWatcher pw = podWatchers.get(dom.getMetadata().getNamespace());
     p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
     p.put(ProcessingConstants.PRINCIPAL, principal);
     
@@ -476,13 +448,9 @@ public class Main {
     }
 
     if (!stopping.get()) {
-      Fiber old = domainUpdaters.put(domainUID, f);
-      
-      f.start(new WaitForOldFiberStep(old, strategy), p, new CompletionCallback() {
+      domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
         @Override
         public void onCompletion(Packet packet) {
-          domainUpdaters.remove(domainUID, f);
-          
           if (explicitRestartAdmin) {
             LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
           }
@@ -497,10 +465,8 @@ public class Main {
         @Override
         public void onThrowable(Packet packet, Throwable throwable) {
           LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-          onCompletion(packet);
           
-          Fiber fs = engine.createFiber();
-          fs.start(DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
+          domainUpdaters.replaceAndStartFiber(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
             @Override
             public void onCompletion(Packet packet) {
               // no-op
@@ -519,15 +485,43 @@ public class Main {
 
     LOGGER.exiting();
   }
+  
+  private static class DomainPrescenceStep extends Step {
+    private final Step managedServerStep;
+
+    public DomainPrescenceStep(Step adminStep, Step managedServerStep) {
+      super(adminStep);
+      this.managedServerStep = managedServerStep;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      LOGGER.entering();
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+      Domain dom = info.getDomain();
+      DomainSpec spec = dom.getSpec();
+
+      String sc = spec.getStartupControl();
+      if (sc == null || !StartupControlConstants.NONE_STARTUPCONTROL.equals(sc.toUpperCase())) {
+        LOGGER.exiting();
+        return doNext(packet);
+      }
+      
+      // none flow
+      // TODO: stop admin pod
+      LOGGER.exiting();
+      return doNext(managedServerStep, packet);
+    }
+  }
 
   // pre-conditions: DomainPresenceInfo SPI
   //                 "principal"
   private static Step bringAdminServerUp(Step next) {
-    return DomainStatusUpdater.createProgressingStep(
-        new ListPersistentVolumeClaimStep(
+    return new ListPersistentVolumeClaimStep(
             PodHelper.createAdminPodStep(
                 new BeforeAdminServiceStep(
-                    ServiceHelper.createForServerStep(next)))), true);
+                    ServiceHelper.createForServerStep(next))));
   }
   
   private static class ListPersistentVolumeClaimStep extends Step {
@@ -807,6 +801,7 @@ public class Main {
           LOGGER.exiting();
           return doNext(scaleDownIfNecessary(info, servers, new ManagedServerUpIteratorStep(ssic, next)), packet);
         case StartupControlConstants.ADMIN_STARTUPCONTROL:
+        case StartupControlConstants.NONE_STARTUPCONTROL:
         default:
           
           info.setServerStartupInfo(null);
@@ -848,11 +843,20 @@ public class Main {
   }
   
   private static Step scaleDownIfNecessary(DomainPresenceInfo info, Collection<String> servers, Step next) {
-    String adminName = info.getDomain().getSpec().getAsName();
+    Domain dom = info.getDomain();
+    DomainSpec spec = dom.getSpec();
+
+    boolean shouldStopAdmin = false;
+    String sc = spec.getStartupControl();
+    if (sc != null && StartupControlConstants.NONE_STARTUPCONTROL.equals(sc.toUpperCase())) {
+      shouldStopAdmin = true;
+    }
+
+    String adminName = spec.getAsName();
     Map<String, ServerKubernetesObjects> currentServers = info.getServers();
     Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
     for(Map.Entry<String, ServerKubernetesObjects> entry : currentServers.entrySet()) {
-      if (!entry.getKey().equals(adminName) && !servers.contains(entry.getKey())) {
+      if ((shouldStopAdmin || !entry.getKey().equals(adminName)) && !servers.contains(entry.getKey())) {
         serversToStop.add(entry);
       }
     }
@@ -1020,17 +1024,9 @@ public class Main {
 
     String domainUID = spec.getDomainUID();
     
-    Fiber old = domainUpdaters.remove(domainUID);
-    
-    PodWatcher prw = podWatchers.get(dom.getMetadata().getNamespace());
-    if (prw != null) {
-      prw.getListeners().remove(domainUID);
-    }
-
     domains.remove(domainUID);
 
-    Fiber f = engine.createFiber();
-    f.start(new WaitForOldFiberStep(old, new DeleteDomainStep(namespace, domainUID)), new Packet(), new CompletionCallback() {
+    domainUpdaters.startFiber(domainUID, new DeleteDomainStep(namespace, domainUID), new Packet(), new CompletionCallback() {
       @Override
       public void onCompletion(Packet packet) {
         // no-op
@@ -1277,9 +1273,15 @@ public class Main {
         if (info != null && serverName != null) {
           ServerKubernetesObjects sko = info.getServers().get(serverName);
           if (sko != null) {
+            Fiber f;
+            Packet packet;
             switch (item.type) {
               case "ADDED":
                 sko.getPod().set(p);
+                f = engine.createFiber();
+                packet = new Packet();
+                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "MODIFIED":
                 V1Pod skoPod = sko.getPod().get();
@@ -1288,9 +1290,17 @@ public class Main {
                   // and modifications are to the terminating pod
                   sko.getPod().compareAndSet(skoPod, p);
                 }
+                f = engine.createFiber();
+                packet = new Packet();
+                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "DELETED":
                 V1Pod oldPod = sko.getPod().getAndSet(null);
+                f = engine.createFiber();
+                packet = new Packet();
+                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+                f.start(DomainStatusUpdater.createStatusStep(p, true, null), packet, null);
                 if (oldPod != null) {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
