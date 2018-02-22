@@ -11,16 +11,21 @@
 # -----------------
 #
 # This script runs a series of acceptance tests and archives the results
-# into tar.gz files upon completion.
+# into tar.gz files upon completion.  It currently runs in three modes,
+# "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode
+# is controlled by the WERCKER and JENKINS environment variables described
+# below.  A standalone run filters out verbose lines from the console output
+# while redirecting full output to the file /tmp/test_suite.out
 #
 # To cleanup after a run, see "cleanup.sh".
 #
-# The test has three levels of logging output, output that begins with:
+# The test has three levels of logging output. Output that begins with:
 #
 #     "##TEST_INFO" is very concise (one line per test (either PASS or FAIL).
 #     "[timestamp]" is concise.
 #     "+" is verbose.
 #     Anything else is semi-verbose.
+#
 #
 # This script accepts optional env var overrides:
 #
@@ -32,6 +37,9 @@
 #                  used for persistent volumes.
 #                  See "Directory Configuration and Structure" below for
 #                  defaults and a detailed description of test directies.
+#
+#   QUICKTEST      When set to "true", limits testing to a subset of
+#                  of the tests.
 #
 #   WERCKER        Set to true if invoking from Wercker, set
 #                  to false or "" if running stand-alone or from Jenkins.
@@ -371,6 +379,8 @@ trap ctrl_c INT
 
 function ctrl_c() {
     declare_new_test_from_trap 1 run_aborted_with_ctrl_c
+    # disable the trap:
+    trap - INT
     fail "Trapped CTRL-C"
 }
 
@@ -1449,6 +1459,8 @@ EOF
     # like local, it uses the t3 channel...
     run_wlst_script $1 hybrid ${pyfile_con} 
   else
+    # TODO The following has a dependency on java and WebLogic being in the path/classpath.
+    #      We should run on 'hybrid' mode instead if java and WebLogic aren't already setup.
     run_wlst_script $1 local ${pyfile_con} 
   fi
 
@@ -1469,6 +1481,11 @@ function run_wlst_script {
   if [ "$#" -lt 3 ] ; then
     fail "requires at least 3 parameters: domainKey local|remote|hybrid local_pyfile optionalarg1 optionalarg2 ..."
   fi 
+
+  # TODO It seems possible to obtain user/pass from the secret via WLST verbs.  This
+  #      would be better than passing it to the WLST command-line in plain-text.  See
+  #      read-domain-secret.py in domain-job-template for an example of how this is done
+  #      for WLST that runs from within a pod...
 
   local DOM_KEY="$1"
   local NAMESPACE="`dom_get $1 NAMESPACE`"
@@ -2352,8 +2369,9 @@ function test_suite_init {
 }
 
 #
-# TODO:  Make output less verbose -- suppress REST output, etc.  Move output to file and/or
-#        only report output on a failure and/or prefix output with a "+".
+# TODO:  Make output less verbose -- suppress REST, archive, and job output, etc.  In general, move
+#        move verbose output to file and/or  only report output on a failure and/or prefix output
+#        with a "+".   Also, suppress output in the pod readiness loops to only once every 30 seconds.
 #
 
 function test_suite {
