@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -20,6 +21,7 @@ import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainStatus;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -55,7 +57,6 @@ public class DomainStatusUpdater {
   
   private static final String TRUE = "True";
   private static final String FALSE = "False";
-  private static final String UNKNOWN = "Unknown";
   
   private DomainStatusUpdater() {
   }
@@ -84,11 +85,12 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       LOGGER.entering();
       
+      boolean madeChange = false;
+      
       DateTime now = DateTime.now();
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
       DomainSpec spec = dom.getSpec();
       DomainStatus status = dom.getStatus();
       if (status == null) {
@@ -96,6 +98,7 @@ public class DomainStatusUpdater {
         status = new DomainStatus();
         status.setStartTime(now);
         dom.setStatus(status);
+        madeChange = true;
       }
       
       V1ObjectMeta metadata = pod.getMetadata();
@@ -122,18 +125,22 @@ public class DomainStatusUpdater {
       boolean clusterAvailable = false;
       boolean failedPod = false;
       if (isDelete) {
-        availableServers.remove(serverName);
-        unavailableServers.remove(serverName);
+        madeChange = availableServers.remove(serverName) || madeChange;
+        madeChange = unavailableServers.remove(serverName) || madeChange;
       } else if (PodWatcher.isReady(pod)) {
         if (!availableServers.contains(serverName)) {
           availableServers.add(serverName);
+          madeChange = true;
         }
-        unavailableServers.remove(serverName);
-      } else if (PodWatcher.isFailed(pod)) {
-        failedPod = true;
-        availableServers.remove(serverName);
+        madeChange = unavailableServers.remove(serverName) || madeChange;
+      } else {
+        if (PodWatcher.isFailed(pod)) {
+          failedPod = true;
+        }
+        madeChange = availableServers.remove(serverName) || madeChange;
         if (!unavailableServers.contains(serverName)) {
           unavailableServers.add(serverName);
+          madeChange = true;
         }
       }
       if (clusterName != null) {
@@ -190,12 +197,14 @@ public class DomainStatusUpdater {
       if (clusterAvailable) {
         if (!availableClusters.contains(clusterName)) {
           availableClusters.add(clusterName);
+          madeChange = true;
         }
-        unavailableClusters.remove(clusterName);
+        madeChange = unavailableClusters.remove(clusterName) || madeChange;
       } else {
-        availableClusters.remove(clusterName);
+        madeChange = availableClusters.remove(clusterName) || madeChange;
         if (!unavailableClusters.contains(clusterName)) {
           unavailableClusters.add(clusterName);
+          madeChange = true;
         }
       }
       
@@ -236,6 +245,7 @@ public class DomainStatusUpdater {
               }
               if (!failedFound) {
                 it.remove();
+                madeChange = true;
               }
             }
             break;
@@ -258,12 +268,14 @@ public class DomainStatusUpdater {
               dc.setStatus(TRUE);
               dc.setReason("PodFailed");
               dc.setLastTransitionTime(now);
+              madeChange = true;
             }
             break;
           case PROGRESSING_TYPE:
           case AVAILABLE_TYPE:
           default:
             it.remove();
+            madeChange = true;
           }
         }
         if (!foundFailed) {
@@ -273,93 +285,57 @@ public class DomainStatusUpdater {
           dc.setReason("PodFailed");
           dc.setLastTransitionTime(now);
           conditions.add(dc);
+          madeChange = true;
         }
-      } 
-      
-      /* SAVE
-      else if (ssic != null && !availableServers.isEmpty() && unavailableServers.isEmpty() && unavailableClusters.isEmpty()) {
-        // Next see if we have available servers, but no unavailable servers or clusters -- if so, we are Available=True
-        ListIterator<DomainCondition> it = conditions.listIterator();
-        boolean foundAvailable = false;
-        while (it.hasNext()) {
-          DomainCondition dc = it.next();
-          switch (dc.getType()) {
-          case AVAILABLE_TYPE:
-            foundAvailable = true;
-            if (!TRUE.equals(dc.getStatus())) {
-              dc.setStatus(TRUE);
-              dc.setReason("ServersReady");
-              dc.setLastTransitionTime(now);
+      } else if (!availableServers.isEmpty() && unavailableServers.isEmpty() && unavailableClusters.isEmpty()) {
+        Collection<ServerStartupInfo> ssic = info.getServerStartupInfo();
+        if (ssic != null) {
+          boolean allServersAvailable = true;
+          for (ServerStartupInfo ssi : ssic) {
+            if (!availableServers.contains(ssi.serverConfig.getName())) {
+              allServersAvailable = false;
+              break;
             }
-            break;
-          case PROGRESSING_TYPE:
-          case FAILED_TYPE:
-          default:
-            it.remove();
           }
-        }
-        if (!foundAvailable) {
-          DomainCondition dc = new DomainCondition();
-          dc.setType(AVAILABLE_TYPE);
-          dc.setStatus(TRUE);
-          dc.setReason("ServersReady");
-          dc.setLastTransitionTime(now);
-          conditions.add(dc);
-        }
-      } else {
-        // Else, we are Progressing
-        ListIterator<DomainCondition> it = conditions.listIterator();
-        boolean foundProgressing = false;
-        while (it.hasNext()) {
-          DomainCondition dc = it.next();
-          switch (dc.getType()) {
-          case PROGRESSING_TYPE:
-            foundProgressing = true;
-            if (!TRUE.equals(dc.getStatus())) {
-              dc.setStatus(TRUE);
-              dc.setReason(availableServers.isEmpty() ? "AdminServerStarting" : "ManagedServersStarting");
-              dc.setLastTransitionTime(now);
+          if (allServersAvailable) {
+            ListIterator<DomainCondition> it = conditions.listIterator();
+            boolean foundAvailable = false;
+            while (it.hasNext()) {
+              DomainCondition dc = it.next();
+              switch (dc.getType()) {
+              case AVAILABLE_TYPE:
+                foundAvailable = true;
+                if (!TRUE.equals(dc.getStatus())) {
+                  dc.setStatus(TRUE);
+                  dc.setReason(SERVERS_READY_AVAILABLE_REASON);
+                  dc.setLastTransitionTime(now);
+                  madeChange = true;
+                }
+                break;
+              case PROGRESSING_TYPE:
+              case FAILED_TYPE:
+              default:
+                it.remove();
+                madeChange = true;
+              }
             }
-            break;
-          case AVAILABLE_TYPE:
-          case FAILED_TYPE:
-          default:
-            it.remove();
+            if (!foundAvailable) {
+              DomainCondition dc = new DomainCondition();
+              dc.setType(AVAILABLE_TYPE);
+              dc.setStatus(TRUE);
+              dc.setReason(SERVERS_READY_AVAILABLE_REASON);
+              dc.setLastTransitionTime(now);
+              conditions.add(dc);
+              madeChange = true;
+            }
           }
-        }
-        if (!foundProgressing) {
-          DomainCondition dc = new DomainCondition();
-          dc.setType(PROGRESSING_TYPE);
-          dc.setStatus(TRUE);
-          dc.setReason(availableServers.isEmpty() ? "AdminServerStarting" : "ManagedServersStarting");
-          dc.setLastTransitionTime(now);
-          conditions.add(dc);
         }
       }
-      
-      END SAVE */
   
       LOGGER.info(MessageKeys.DOMAIN_STATUS, spec.getDomainUID(), availableServers, availableClusters, unavailableServers, unavailableClusters, conditions);
-      Step s = CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(null) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return doNext(packet); // Just ignore update
-          }
-          return super.onFailure(StatusUpdateStep.this, packet, e, statusCode, responseHeaders);
-        }
-        
-        @Override
-        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          info.setDomain(result);
-          return doNext(packet);
-        }
-      });
-      
       LOGGER.exiting();
-      return doNext(s, packet);
+      
+      return madeChange == true ? doDomainUpdate(dom, info, packet, StatusUpdateStep.this, next) : doNext(packet);
     }
   }
 
@@ -418,16 +394,18 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       LOGGER.entering();
       
+      boolean madeChange = false;
+      
       DateTime now = DateTime.now();
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       
       Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
       DomainStatus status = dom.getStatus();
       if (status == null) {
         status = new DomainStatus();
         status.setStartTime(now);
         dom.setStatus(status);
+        madeChange = true;
       }
       
       List<DomainCondition> conditions = status.getConditions();
@@ -446,8 +424,12 @@ public class DomainStatusUpdater {
           if (!TRUE.equals(dc.getStatus())) {
             dc.setStatus(TRUE);
             dc.setLastTransitionTime(now);
+            madeChange = true;
           }
-          dc.setReason(reason);
+          if (!reason.equals(dc.getReason())) {
+            dc.setReason(reason);
+            madeChange = true;
+          }
           break;
         case AVAILABLE_TYPE:
           if (isPreserveAvailable) {
@@ -456,6 +438,7 @@ public class DomainStatusUpdater {
         case FAILED_TYPE:
         default:
           it.remove();
+          madeChange = true;
         }
       }
       if (!foundProgressing) {
@@ -465,28 +448,13 @@ public class DomainStatusUpdater {
         dc.setLastTransitionTime(now);
         dc.setReason(reason);
         conditions.add(dc);
+        madeChange = true;
       }
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
       LOGGER.exiting();
       
-      return doNext(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return doNext(packet); // Just ignore update
-          }
-          return super.onFailure(next, packet, e, statusCode, responseHeaders);
-        }
-        
-        @Override
-        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          info.setDomain(result);
-          return doNext(packet);
-        }
-      }), packet);
+      return madeChange == true ? doDomainUpdate(dom, info, packet, ProgressingStep.this, next) : doNext(packet);
     }
   }
 
@@ -509,16 +477,18 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       LOGGER.entering();
       
+      boolean madeChange = false;
+      
       DateTime now = DateTime.now();
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       
       Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
       DomainStatus status = dom.getStatus();
       if (status == null) {
         status = new DomainStatus();
         status.setStartTime(now);
         dom.setStatus(status);
+        madeChange = true;
       }
       
       List<DomainCondition> conditions = status.getConditions();
@@ -534,6 +504,7 @@ public class DomainStatusUpdater {
         case PROGRESSING_TYPE:
           if (TRUE.equals(dc.getStatus())) {
             it.remove();
+            madeChange = true;
           }
           break;
         case AVAILABLE_TYPE:
@@ -541,29 +512,14 @@ public class DomainStatusUpdater {
           break;
         default:
           it.remove();
+          madeChange = true;
         }
       }
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
       LOGGER.exiting();
       
-      return doNext(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return doNext(packet); // Just ignore update
-          }
-          return super.onFailure(next, packet, e, statusCode, responseHeaders);
-        }
-        
-        @Override
-        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          info.setDomain(result);
-          return doNext(packet);
-        }
-      }), packet);
+      return madeChange == true ? doDomainUpdate(dom, info, packet, EndProgressingStep.this, next) : doNext(packet);
     }
   }
 
@@ -617,16 +573,18 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       LOGGER.entering();
       
+      boolean madeChange = false;
+      
       DateTime now = DateTime.now();
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       
       Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
       DomainStatus status = dom.getStatus();
       if (status == null) {
         status = new DomainStatus();
         status.setStartTime(now);
         dom.setStatus(status);
+        madeChange = true;
       }
       
       List<DomainCondition> conditions = status.getConditions();
@@ -645,14 +603,19 @@ public class DomainStatusUpdater {
           if (!TRUE.equals(dc.getStatus())) {
             dc.setStatus(TRUE);
             dc.setLastTransitionTime(now);
+            madeChange = true;
           }
-          dc.setReason(reason);
+          if (!reason.equals(dc.getReason())) {
+            dc.setReason(reason);
+            madeChange = true;
+          }
           break;
         case PROGRESSING_TYPE:
           break;
         case FAILED_TYPE:
         default:
           it.remove();
+          madeChange = true;
         }
       }
       if (!foundAvailable) {
@@ -662,29 +625,36 @@ public class DomainStatusUpdater {
         dc.setLastTransitionTime(now);
         dc.setReason(reason);
         conditions.add(dc);
+        madeChange = true;
       }
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
       LOGGER.exiting();
-      
-      return doNext(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return doNext(packet); // Just ignore update
-          }
-          return super.onFailure(next, packet, e, statusCode, responseHeaders);
-        }
-        
-        @Override
-        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          info.setDomain(result);
-          return doNext(packet);
-        }
-      }), packet);
+      return madeChange == true ? doDomainUpdate(dom, info, packet, AvailableStep.this, next) : doNext(packet);
     }
+  }
+  
+  private static NextAction doDomainUpdate(Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
+    V1ObjectMeta meta = dom.getMetadata();
+    NextAction na = new NextAction();
+    na.invoke(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
+      @Override
+      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+          Map<String, List<String>> responseHeaders) {
+        if (statusCode == CallBuilder.NOT_FOUND) {
+          return doNext(packet); // Just ignore update
+        }
+        return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+      }
+      
+      @Override
+      public NextAction onSuccess(Packet packet, Domain result, int statusCode,
+          Map<String, List<String>> responseHeaders) {
+        info.setDomain(result);
+        return doNext(packet);
+      }
+    }), packet);
+    return na;
   }
   
   /**
@@ -737,16 +707,18 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       LOGGER.entering();
       
+      boolean madeChange = false;
+      
       DateTime now = DateTime.now();
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       
       Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
       DomainStatus status = dom.getStatus();
       if (status == null) {
         status = new DomainStatus();
         status.setStartTime(now);
         dom.setStatus(status);
+        madeChange = true;
       }
       
       List<DomainCondition> conditions = status.getConditions();
@@ -767,18 +739,21 @@ public class DomainStatusUpdater {
             dc.setReason("Exception");
             dc.setMessage(throwable.getMessage());
             dc.setLastTransitionTime(now);
+            madeChange = true;
           }
           break;
         case PROGRESSING_TYPE:
           if (!FALSE.equals(dc.getStatus())) {
             dc.setStatus(FALSE);
             dc.setLastTransitionTime(now);
+            madeChange = true;
           }
           break;
         case AVAILABLE_TYPE:
           break;
         default:
           it.remove();
+          madeChange = true;
         }
       }
       if (!foundFailed) {
@@ -789,28 +764,13 @@ public class DomainStatusUpdater {
         dc.setMessage(throwable.getMessage());
         dc.setLastTransitionTime(now);
         conditions.add(dc);
+        madeChange = true;
       }
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
       LOGGER.exiting();
       
-      return doNext(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return doNext(packet); // Just ignore update
-          }
-          return super.onFailure(next, packet, e, statusCode, responseHeaders);
-        }
-        
-        @Override
-        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          info.setDomain(result);
-          return doNext(packet);
-        }
-      }), packet);
+      return madeChange == true ? doDomainUpdate(dom, info, packet, FailedStep.this, next) : doNext(packet);
     }
   }
 }
