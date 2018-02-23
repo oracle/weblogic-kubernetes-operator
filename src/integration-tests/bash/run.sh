@@ -2579,11 +2579,14 @@ function test_suite {
 
 # entry point
 
+local exit_status=0
 if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
   if [ "${VERBOSE:-false}" = "true" ]; then
     test_suite 2>&1 
+    exit_status="$?"
   else
     test_suite 2>&1 | grep -v "^+"
+    exit_status="${PIPESTATUS[0]}"
   fi
 else
   export TESTOUT=/tmp/test_suite.out
@@ -2591,9 +2594,13 @@ else
 
   if [ "${VERBOSE:-false}" = "true" ]; then
     test_suite 2>&1 | tee /tmp/test_suite.out 
+    exit_status="${PIPESTATUS[0]}"
   else
     test_suite 2>&1 | tee /tmp/test_suite.out | grep -v "^+"
+    exit_status="${PIPESTATUS[0]}"
   fi
   trace See $TESTOUT for full trace.
 fi
+
+exit $exit_status
 
