@@ -174,6 +174,7 @@ public class WlsConfigRetriever {
         LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER, clusterName);
       } else {
         try {
+          LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, desiredClusterSize);
           HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
           DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 

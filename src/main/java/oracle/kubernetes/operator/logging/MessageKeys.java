@@ -129,9 +129,10 @@ public class MessageKeys {
   public static final String POD_DELETED = "WLSKO-0113";
   public static final String SERVICE_DELETED = "WLSKO-0114";
   public static final String INGRESS_DELETED = "WLSKO-0115";
-  public static final String WLS_UPDATE_CLUSTER_SIZE_FAILED = "WLSKO-0116";
-  public static final String WLS_UPDATE_CLUSTER_SIZE_TIMED_OUT = "WLSKO-0117";
-  public static final String WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER = "WLSKO-0118";
-  public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0119";
-  public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0120";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_STARTING = "WLSKO-0116";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_FAILED = "WLSKO-0117";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_TIMED_OUT = "WLSKO-0118";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER = "WLSKO-0119";
+  public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0120";
+  public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0121";
 }
