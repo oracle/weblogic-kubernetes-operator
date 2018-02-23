@@ -231,6 +231,10 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       } finally {
         lock.unlock();
       }
+    } else if (status.get() == CANCELLED) {
+      if (--suspendedCount == 0) {
+        completionCheck();
+      }
     }
   }
   
