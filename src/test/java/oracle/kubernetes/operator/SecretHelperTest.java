@@ -15,12 +15,13 @@ import oracle.kubernetes.operator.helpers.SecretHelper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
+@Ignore
 public class SecretHelperTest {
 
   private final static String SECRET_NAME = "wls-admin-server-credentials";
