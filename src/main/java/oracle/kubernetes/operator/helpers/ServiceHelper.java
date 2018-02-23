@@ -122,7 +122,9 @@ public class ServiceHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                sko.getService().set(result);
+                if (result != null) {
+                  sko.getService().set(result);
+                }
                 return doNext(packet);
               }
             });
@@ -233,10 +235,12 @@ public class ServiceHelper {
                 Map<String, List<String>> responseHeaders) {
               
               LOGGER.info(messageKey, weblogicDomainUID, serverName);
-              if (channelName != null) {
-                sko.getChannels().put(channelName, result);
-              } else {
-                sko.getService().set(result);
+              if (result != null) {
+                if (channelName != null) {
+                  sko.getChannels().put(channelName, result);
+                } else {
+                  sko.getService().set(result);
+                }
               }
               return doNext(packet);
             }
@@ -333,7 +337,9 @@ public class ServiceHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                sko.getChannels().put(networkAccessPoint.getName(), result);
+                if (result != null) {
+                  sko.getChannels().put(networkAccessPoint.getName(), result);
+                }
                 return doNext(packet);
               }
             });

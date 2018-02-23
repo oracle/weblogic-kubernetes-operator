@@ -134,7 +134,9 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
-                    info.getIngresses().put(clusterName, result);
+                    if (result != null) {
+                      info.getIngresses().put(clusterName, result);
+                    }
                     return doNext(packet);
                   }
                 }), packet);
@@ -152,7 +154,9 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
-                    info.getIngresses().put(clusterName, result);
+                    if (result != null) {
+                      info.getIngresses().put(clusterName, result);
+                    }
                     return doNext(packet);
                   }
                 }), packet);
@@ -250,7 +254,9 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
-                    info.getIngresses().put(clusterName, result);
+                    if (result != null) {
+                      info.getIngresses().put(clusterName, result);
+                    }
                     return doNext(packet);
                   }
                 }), packet);
