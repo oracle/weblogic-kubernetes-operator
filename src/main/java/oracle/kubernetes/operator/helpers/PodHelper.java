@@ -105,6 +105,7 @@ public class PodHelper {
       adminPod.setMetadata(metadata);
       
       AnnotationHelper.annotateWithDomain(metadata, dom);
+      AnnotationHelper.annotateForPrometheus(metadata, spec.getAsPort());
 
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
@@ -438,6 +439,7 @@ public class PodHelper {
       pod.setMetadata(metadata);
 
       AnnotationHelper.annotateWithDomain(metadata, dom);
+      AnnotationHelper.annotateForPrometheus(metadata, scan.getListenPort());
 
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
