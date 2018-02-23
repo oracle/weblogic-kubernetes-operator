@@ -226,7 +226,9 @@ public class PodHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(MessageKeys.ADMIN_POD_CREATED, weblogicDomainUID, spec.getAsName());
-                sko.getPod().set(result);
+                if (result != null) {
+                  sko.getPod().set(result);
+                }
                 return doNext(packet);
               }
             });
@@ -294,7 +296,9 @@ public class PodHelper {
                 Map<String, List<String>> responseHeaders) {
               
               LOGGER.info(messageKey, weblogicDomainUID, serverName);
-              sko.getPod().set(result);
+              if (result != null) {
+                sko.getPod().set(result);
+              }
               
               PodWatcher pw = packet.getSPI(PodWatcher.class);
               return doNext(pw.waitForReady(result, next), packet);
@@ -554,7 +558,9 @@ public class PodHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(MessageKeys.MANAGED_POD_CREATED, weblogicDomainUID, weblogicServerName);
-                sko.getPod().set(result);
+                if (result != null) {
+                  sko.getPod().set(result);
+                }
                 return doNext(packet);
               }
             });

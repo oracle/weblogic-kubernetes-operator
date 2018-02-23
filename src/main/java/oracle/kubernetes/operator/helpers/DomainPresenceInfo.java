@@ -27,11 +27,13 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
  * 
  */
 public class DomainPresenceInfo {
+  private final String namespace;
   private final AtomicReference<Domain> domain;
+  private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
+
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
-  private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
-  
+
   private V1PersistentVolumeClaimList claims = null;
 
   private WlsDomainConfig domainConfig;
@@ -43,6 +45,17 @@ public class DomainPresenceInfo {
    */
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
+    this.namespace = domain.getMetadata().getNamespace();
+    this.serverStartupInfo = new AtomicReference<>(null);
+  }
+
+  /**
+   * Create presence for a domain
+   * @param domain Domain
+   */
+  public DomainPresenceInfo(String namespace) {
+    this.domain = new AtomicReference<>(null);
+    this.namespace = namespace;
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
@@ -95,7 +108,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Gets the  domain.  Except the instance to change frequently based on status updates
+   * Gets the domain.  Except the instance to change frequently based on status updates
    * @return Domain
    */
   public Domain getDomain() {
@@ -110,6 +123,14 @@ public class DomainPresenceInfo {
     this.domain.set(domain);
   }
 
+  /**
+   * Gets the namespace
+   * @return Namespace
+   */
+  public String getNamespace() {
+    return namespace;
+  }
+  
   /**
    * Map from server name to server objects (Pods and Services)
    * @return Server object map
