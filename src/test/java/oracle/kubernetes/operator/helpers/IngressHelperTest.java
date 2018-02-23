@@ -220,7 +220,7 @@ public class IngressHelperTest {
     p.put(ProcessingConstants.CLUSTER_SCAN, info.getScan().getClusterConfig(clusterName));
     
     f = engine.createFiber();
-    Step r = IngressHelper.createRemoveServerStep(server1Name, info.getServers().get(server1Name).getService().get(), null);
+    Step r = IngressHelper.createRemoveServerStep(server1Name, null);
     f.start(r, p, new CompletionCallback() {
       @Override
       public void onCompletion(Packet packet) {

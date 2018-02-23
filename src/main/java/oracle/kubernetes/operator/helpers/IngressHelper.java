@@ -173,35 +173,35 @@ public class IngressHelper {
    * Creates asynchronous step to update an ingress registration to remove a server or delete the ingress
    * entirely if this was the last server in the cluster
    * @param serverName Server name
-   * @param service Service
    * @param next Next processing step
    * @return Step to update or delete the ingress 
    */
-  public static Step createRemoveServerStep(String serverName, V1Service service, Step next) {
-    return new RemoveServerStep(serverName, service, next);
+  public static Step createRemoveServerStep(String serverName, Step next) {
+    return new RemoveServerStep(serverName, next);
   }
   
   private static class RemoveServerStep extends Step {
     private final String serverName;
-    private final V1Service service;
 
-    private RemoveServerStep(String serverName, V1Service service, Step next) {
+    private RemoveServerStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
-      this.service = service;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      V1ObjectMeta meta = service.getMetadata();
+      String namespace = info.getDomain().getMetadata().getNamespace();
 
+      String domainUID = info.getDomain().getSpec().getDomainUID();
       String ingressName= CallBuilder.toDNS1123LegalName(
-          info.getDomain().getSpec().getDomainUID() + "-" + clusterName);
+          domainUID + "-" + clusterName);
+      String serviceName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
+
       if (ingressName != null) {
         return doNext(CallBuilder.create().readIngressAsync(
-          ingressName, meta.getNamespace(), new ResponseStep<V1beta1Ingress>(next) {
+          ingressName, namespace, new ResponseStep<V1beta1Ingress>(next) {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                                         Map<String, List<String>> responseHeaders) {
@@ -223,14 +223,14 @@ public class IngressHelper {
               while (itr.hasNext()) {
                 V1beta1HTTPIngressPath v1beta1HTTPIngressPath = itr.next();
                 V1beta1IngressBackend v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
-                if (meta.getName().equals(v1beta1IngressBackend.getServiceName())) {
+                if (serviceName.equals(v1beta1IngressBackend.getServiceName())) {
                   itr.remove();
                 }
               }
               v1beta1HTTPIngressPaths = v1beta1HTTPIngressRuleValue.getPaths();
               if (v1beta1HTTPIngressPaths.isEmpty()) {
                 info.getIngresses().remove(clusterName);
-                return doNext(CallBuilder.create().deleteIngressAsync(result.getMetadata().getName(), meta.getNamespace(), new V1DeleteOptions(), new ResponseStep<V1Status>(next) {
+                return doNext(CallBuilder.create().deleteIngressAsync(result.getMetadata().getName(), namespace, new V1DeleteOptions(), new ResponseStep<V1Status>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
@@ -244,7 +244,7 @@ public class IngressHelper {
                   }
                 }), packet);
               } else {
-                return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(), result, new ResponseStep<V1beta1Ingress>(next) {
+                return doNext(CallBuilder.create().replaceIngressAsync(ingressName, namespace, result, new ResponseStep<V1beta1Ingress>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
