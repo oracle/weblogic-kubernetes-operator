@@ -985,7 +985,7 @@ public class Main {
     }
     
     if (!serversToStop.isEmpty()) {
-      return new ManagedServerDownIteratorStep(serversToStop, next);
+      return new ServerDownIteratorStep(serversToStop, next);
     }
     
     return next;
@@ -1040,30 +1040,35 @@ public class Main {
     }
   }
   
-  private static class ManagedServerDownIteratorStep extends Step {
+  private static class ServerDownIteratorStep extends Step {
     private final Iterator<Map.Entry<String, ServerKubernetesObjects>> it;
 
-    public ManagedServerDownIteratorStep(Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
+    public ServerDownIteratorStep(Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
       super(next);
       this.it = serversToStop.iterator();
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      if (it.hasNext()) {
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+
+      while (it.hasNext()) {
         Map.Entry<String, ServerKubernetesObjects> entry = it.next();
-        return doNext(new ManagedServerDownStep(entry.getKey(), entry.getValue(), this), packet);
+        startDetails.add(new StepAndPacket(new ServerDownStep(entry.getKey(), entry.getValue(), null), packet));
       }
       
-      return doNext(packet);
+      if (startDetails.isEmpty()) {
+        return doNext(packet);
+      }
+      return doForkJoin(next, packet, startDetails);
     }
   }
   
-  private static class ManagedServerDownStep extends Step {
+  private static class ServerDownStep extends Step {
     private final String serverName;
     private final ServerKubernetesObjects sko;
 
-    public ManagedServerDownStep(String serverName, ServerKubernetesObjects sko, Step next) {
+    public ServerDownStep(String serverName, ServerKubernetesObjects sko, Step next) {
       super(next);
       this.serverName = serverName;
       this.sko = sko;
@@ -1071,21 +1076,16 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      List<V1Service> services = new ArrayList<V1Service>();
-      services.add(sko.getService().get());
-      services.addAll(sko.getChannels().values());
-
-      return doNext(IngressHelper.createRemoveServerStep(serverName, sko.getService().get(),
-          new DeleteServiceListStep(services, 
-              PodHelper.deletePodStep(sko, serverName,
-                  new ManagedServerDownFinalizeStep(serverName, next)))), packet);
+      return doNext(IngressHelper.createRemoveServerStep(serverName,
+          ServiceHelper.deleteServicesStep(sko, 
+              PodHelper.deletePodStep(sko, new ServerDownFinalizeStep(serverName, next)))), packet);
     }
   }
   
-  private static class ManagedServerDownFinalizeStep extends Step {
+  private static class ServerDownFinalizeStep extends Step {
     private final String serverName;
 
-    public ManagedServerDownFinalizeStep(String serverName, Step next) {
+    public ServerDownFinalizeStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
     }

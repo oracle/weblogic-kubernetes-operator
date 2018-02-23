@@ -122,7 +122,6 @@ public class DomainStatusUpdater {
         unavailableClusters = new ArrayList<>();
       }
       
-      boolean clusterAvailable = false;
       boolean failedPod = false;
       if (isDelete) {
         madeChange = availableServers.remove(serverName) || madeChange;
@@ -144,6 +143,7 @@ public class DomainStatusUpdater {
         }
       }
       if (clusterName != null) {
+        boolean clusterAvailable = false;
         WlsDomainConfig scan = info.getScan();
         if (scan != null) {
           WlsClusterConfig clusterConfig = scan.getClusterConfig(clusterName);
@@ -193,18 +193,18 @@ public class DomainStatusUpdater {
             }
           }
         }
-      }
-      if (clusterAvailable) {
-        if (!availableClusters.contains(clusterName)) {
-          availableClusters.add(clusterName);
-          madeChange = true;
-        }
-        madeChange = unavailableClusters.remove(clusterName) || madeChange;
-      } else {
-        madeChange = availableClusters.remove(clusterName) || madeChange;
-        if (!unavailableClusters.contains(clusterName)) {
-          unavailableClusters.add(clusterName);
-          madeChange = true;
+        if (clusterAvailable) {
+          if (!availableClusters.contains(clusterName)) {
+            availableClusters.add(clusterName);
+            madeChange = true;
+          }
+          madeChange = unavailableClusters.remove(clusterName) || madeChange;
+        } else {
+          madeChange = availableClusters.remove(clusterName) || madeChange;
+          if (!unavailableClusters.contains(clusterName)) {
+            unavailableClusters.add(clusterName);
+            madeChange = true;
+          }
         }
       }
       
@@ -287,7 +287,7 @@ public class DomainStatusUpdater {
           conditions.add(dc);
           madeChange = true;
         }
-      } else if (!availableServers.isEmpty() && unavailableServers.isEmpty() && unavailableClusters.isEmpty()) {
+      } else if (!availableServers.isEmpty() && unavailableServers.isEmpty()) {
         Collection<ServerStartupInfo> ssic = info.getServerStartupInfo();
         if (ssic != null) {
           boolean allServersAvailable = true;

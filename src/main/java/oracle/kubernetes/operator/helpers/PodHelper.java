@@ -623,22 +623,19 @@ public class PodHelper {
   /**
    * Factory for {@link Step} that deletes server pod
    * @param sko Server Kubernetes Objects
-   * @param serverName Server name
    * @param next Next processing step
    * @return Step for deleting server pod
    */
-  public static Step deletePodStep(ServerKubernetesObjects sko, String serverName, Step next) {
-    return new DeletePodStep(sko, serverName, next);
+  public static Step deletePodStep(ServerKubernetesObjects sko, Step next) {
+    return new DeletePodStep(sko, next);
   }
 
   private static class DeletePodStep extends Step {
     private final ServerKubernetesObjects sko;
-    private final String serverName;
 
-    public DeletePodStep(ServerKubernetesObjects sko, String serverName, Step next) {
+    public DeletePodStep(ServerKubernetesObjects sko, Step next) {
       super(next);
       this.sko = sko;
-      this.serverName = serverName;
     }
 
     @Override
@@ -651,23 +648,26 @@ public class PodHelper {
       
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       // Set pod to null so that watcher doesn't try to recreate pod
-      sko.getPod().set(null);
-      return doNext(CallBuilder.create().deletePodAsync(serverName, namespace, deleteOptions, new ResponseStep<V1Status>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return onSuccess(packet, null, statusCode, responseHeaders);
+      V1Pod oldPod = sko.getPod().getAndSet(null);
+      if (oldPod != null) {
+        return doNext(CallBuilder.create().deletePodAsync(oldPod.getMetadata().getName(), namespace, deleteOptions, new ResponseStep<V1Status>(next) {
+          @Override
+          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (statusCode == CallBuilder.NOT_FOUND) {
+              return onSuccess(packet, null, statusCode, responseHeaders);
+            }
+            return super.onFailure(packet, e, statusCode, responseHeaders);
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
-        }
-
-        @Override
-        public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          return doNext(next, packet);
-        }
-      }), packet);
+  
+          @Override
+          public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            return doNext(next, packet);
+          }
+        }), packet);
+      }
+      return doNext(packet);
     }
   }
 }
