@@ -1398,7 +1398,7 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().get(serverName);
+          ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
           if (sko != null) {
             Fiber f;
             Packet packet;
@@ -1459,7 +1459,7 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().get(serverName);
+          ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
           if (sko != null) {
             switch (item.type) {
               case "ADDED":
