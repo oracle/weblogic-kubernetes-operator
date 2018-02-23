@@ -2433,19 +2433,18 @@ function test_suite {
     # create first domain in default namespace and verify it
     test_domain_creation domain1 
 
+    # test shutting down and restarting a domain 
+    test_domain_lifecycle domain1 
+
+    # test shutting down and restarting the operator for the given domain
+    test_operator_lifecycle domain1
+
+    # test scaling domain1 cluster from 2 to 3 servers and back down to 2
+    test_cluster_scale domain1 
+    
     # if QUICKTEST is true skip the rest of the tests
     if [ ! "${QUICKTEST:-false}" = "true" ]; then
    
-      # test shutting down and restarting a domain 
-      test_domain_lifecycle domain1 
-
-      # test shutting down and restarting the operator for the given domain
-      test_operator_lifecycle domain1
-
-      # TODO move test_cluster_scale to QUICKTEST once we speedup mgd server boots
-      # test scaling domain1 cluster from 2 to 3 servers and back down to 2
-      test_cluster_scale domain1 
-    
       # create another domain in the default namespace and verify it
       test_domain_creation domain2 
     
