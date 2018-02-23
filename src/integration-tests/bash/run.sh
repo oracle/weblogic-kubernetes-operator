@@ -2579,16 +2579,21 @@ function test_suite {
 
 # entry point
 
-export TESTOUT=/tmp/test_suite.out
-trace See $TESTOUT for full trace.
-
-# Ultra-detailed debugging begins with a "+"
-
-if [ "${VERBOSE:-false}" = "true" ]; then
-    test_suite 2>&1 | tee /tmp/test_suite.out 
+if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
+  if [ "${VERBOSE:-false}" = "true" ]; then
+    test_suite 2>&1 
+  else
+    test_suite 2>&1 | grep -v "^+"
+  fi
 else
-    test_suite 2>&1 | tee /tmp/test_suite.out | grep -v "^+"
-fi
+  export TESTOUT=/tmp/test_suite.out
+  trace See $TESTOUT for full trace.
 
-trace See $TESTOUT for full trace.
+  if [ "${VERBOSE:-false}" = "true" ]; then
+    test_suite 2>&1 | tee /tmp/test_suite.out 
+  else
+    test_suite 2>&1 | tee /tmp/test_suite.out | grep -v "^+"
+  fi
+  trace See $TESTOUT for full trace.
+fi
 
