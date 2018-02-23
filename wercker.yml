@@ -146,7 +146,7 @@ integration-test:
       kubectl create secret docker-registry quay-io -n weblogic-operator-2 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
 
       export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
-      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_/]/-}"
+      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="latest"
       fi
