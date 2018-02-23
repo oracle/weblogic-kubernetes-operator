@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * To test Ingress Helper
  */
+@Ignore
 public class IngressHelperTest {
   private final String namespace = "weblogic-operator";
   private final String domainUID = "domianIngressHelperTest";
