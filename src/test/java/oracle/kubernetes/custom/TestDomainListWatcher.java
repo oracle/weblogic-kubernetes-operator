@@ -14,8 +14,8 @@ import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
-
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,13 +48,13 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
   @Before
   public void beforeTest() {
     // Create the Domain definition if it doesn't exist.
-    createWeblogicCRD();
+    if (isKubernetesAvailable()) createWeblogicCRD();
   }
 
   @After
   public void afterTest() {
     // If the domain definition was done here then get rid of it.
-    deleteWeblogicCRD();
+    if (isKubernetesAvailable()) deleteWeblogicCRD();
   }
 
   /**
@@ -63,7 +63,7 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
    */
   @Test
   public void testDomainListWatcher() {
-
+    Assume.assumeTrue(isKubernetesAvailable());
     AtomicBoolean isStopping = new AtomicBoolean(false);
     DomainWatcher dlw = DomainWatcher.create("default", "", this, isStopping);
     
@@ -103,6 +103,10 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
       }
     }
     fail("Not all watch events were received for created objects");
+  }
+
+  private boolean isKubernetesAvailable() { // assume it is available when running on Linux
+    return System.getProperty("os.name").toLowerCase().contains("nix");
   }
 
   // This override intercepts all watch events whioch would have
