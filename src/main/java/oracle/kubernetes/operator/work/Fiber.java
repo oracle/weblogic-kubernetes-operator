@@ -453,6 +453,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       if (!doRun(next)) {
           completionCheck();
       }
+      
+      // Trigger exitCallback
+      synchronized (this) {
+        if (exitCallback != null && exitCallback != PLACEHOLDER) {
+          exitCallback.onExit();
+        }
+        exitCallback = PLACEHOLDER;
+      }
     } finally {
       ContainerResolver.getDefault().exitContainer(oldContainer);
       CURRENT_FIBER.set(oldFiber);
@@ -477,13 +485,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
           } else {
             completionCallback.onCompletion(packet);
           }
-        }
-        // Trigger exitCallback
-        synchronized (this) {
-          if (exitCallback != null && exitCallback != PLACEHOLDER) {
-            exitCallback.onExit();
-          }
-          exitCallback = PLACEHOLDER;
         }
       }
     } finally {
