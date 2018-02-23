@@ -197,8 +197,8 @@ public class IngressHelper {
       String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       V1ObjectMeta meta = service.getMetadata();
 
-      String ingressName;
-      ingressName = getIngressName(info, serverName);
+      String ingressName= CallBuilder.toDNS1123LegalName(
+          info.getDomain().getSpec().getDomainUID() + "-" + clusterName);
       if (ingressName != null) {
         return doNext(CallBuilder.create().readIngressAsync(
           ingressName, meta.getNamespace(), new ResponseStep<V1beta1Ingress>(next) {
@@ -344,35 +344,4 @@ public class IngressHelper {
     return false;
   }
 
-  /**
-   * Get the ingress name to remove.
-   * @param info DomainPresenceInfo object
-   * @param serverName server name to remove
-   * @return name of ingress
-   */
-  private static String getIngressName(DomainPresenceInfo info, String serverName) {
-    Map<String, WlsClusterConfig> clusters = info.getScan().getClusterConfigs();
-    String ingressName = null;
-
-    // Get the cluster ingress if we have one
-    if (clusters != null) {
-      for (Map.Entry<String, WlsClusterConfig> clusterConfig : clusters.entrySet()) {
-        List<WlsServerConfig> servers = clusterConfig.getValue().getServerConfigs();
-        if (servers != null) {
-          for (WlsServerConfig server : servers) {
-            if (serverName.equals(server.getName())) {
-              ingressName = CallBuilder.toDNS1123LegalName(
-                  info.getDomain().getSpec().getDomainUID() + "-" + clusterConfig.getKey());
-              break;
-            }
-          }
-        }
-        if (ingressName != null) {
-          break;
-        }
-      }
-    }
-
-    return ingressName;
-  }
 }
