@@ -45,7 +45,10 @@ public class DomainStatusUpdater {
   public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPrescence";
   public static final String ADMIN_SERVER_STARTING_PROGRESS_REASON = "AdminServerStarting";
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
-  
+
+  public static final String SERVERS_READY_AVAILABLE_REASON = "ServersReady";
+  public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
+
   private static final String AVAILABLE_TYPE = "Available";
   private static final String PROGRESSING_TYPE = "Progressing";
   private static final String FAILED_TYPE = "Failed";
@@ -96,7 +99,6 @@ public class DomainStatusUpdater {
       }
       
       V1ObjectMeta metadata = pod.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
   
@@ -489,6 +491,203 @@ public class DomainStatusUpdater {
   }
 
   /**
+   * Asynchronous step to set Domain condition end Progressing and set Available, if needed
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createEndProgressingStep(Step next) {
+    return new EndProgressingStep(next);
+  }
+  
+  private static class EndProgressingStep extends Step {
+
+    public EndProgressingStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      LOGGER.entering();
+      
+      DateTime now = DateTime.now();
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      
+      Domain dom = info.getDomain();
+      V1ObjectMeta meta = dom.getMetadata();
+      DomainStatus status = dom.getStatus();
+      if (status == null) {
+        status = new DomainStatus();
+        status.setStartTime(now);
+        dom.setStatus(status);
+      }
+      
+      List<DomainCondition> conditions = status.getConditions();
+      if (conditions == null) {
+        conditions = new ArrayList<>();
+        status.setConditions(conditions);
+      }
+
+      ListIterator<DomainCondition> it = conditions.listIterator();
+      while (it.hasNext()) {
+        DomainCondition dc = it.next();
+        switch (dc.getType()) {
+        case PROGRESSING_TYPE:
+          if (TRUE.equals(dc.getStatus())) {
+            it.remove();
+          }
+          break;
+        case AVAILABLE_TYPE:
+        case FAILED_TYPE:
+          break;
+        default:
+          it.remove();
+        }
+      }
+
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
+      LOGGER.exiting();
+      
+      return doNext(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return doNext(packet); // Just ignore update
+          }
+          return super.onFailure(next, packet, e, statusCode, responseHeaders);
+        }
+        
+        @Override
+        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          info.setDomain(result);
+          return doNext(packet);
+        }
+      }), packet);
+    }
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Available
+   * @param reason Available reason
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createAvailableStep(String reason, Step next) {
+    return new AvailableHookStep(reason, next);
+  }
+  
+  private static class AvailableHookStep extends Step {
+    private final String reason;
+    
+    private AvailableHookStep(String reason, Step next) {
+      super(next);
+      this.reason = reason;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Fiber f = Fiber.current().createChildFiber();
+      Packet p = new Packet();
+      p.getComponents().putAll(packet.getComponents());
+      f.start(new AvailableStep(reason), p, new CompletionCallback() {
+        @Override
+        public void onCompletion(Packet packet) {
+        }
+
+        @Override
+        public void onThrowable(Packet packet, Throwable throwable) {
+          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+        }
+      });
+      
+      return doNext(packet);
+    }
+  }
+  
+  private static class AvailableStep extends Step {
+    private final String reason;
+
+    private AvailableStep(String reason) {
+      super(null);
+      this.reason = reason;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      LOGGER.entering();
+      
+      DateTime now = DateTime.now();
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      
+      Domain dom = info.getDomain();
+      V1ObjectMeta meta = dom.getMetadata();
+      DomainStatus status = dom.getStatus();
+      if (status == null) {
+        status = new DomainStatus();
+        status.setStartTime(now);
+        dom.setStatus(status);
+      }
+      
+      List<DomainCondition> conditions = status.getConditions();
+      if (conditions == null) {
+        conditions = new ArrayList<>();
+        status.setConditions(conditions);
+      }
+
+      ListIterator<DomainCondition> it = conditions.listIterator();
+      boolean foundAvailable = false;
+      while (it.hasNext()) {
+        DomainCondition dc = it.next();
+        switch (dc.getType()) {
+        case AVAILABLE_TYPE:
+          foundAvailable = true;
+          if (!TRUE.equals(dc.getStatus())) {
+            dc.setStatus(TRUE);
+            dc.setLastTransitionTime(now);
+          }
+          dc.setReason(reason);
+          break;
+        case PROGRESSING_TYPE:
+          break;
+        case FAILED_TYPE:
+        default:
+          it.remove();
+        }
+      }
+      if (!foundAvailable) {
+        DomainCondition dc = new DomainCondition();
+        dc.setType(AVAILABLE_TYPE);
+        dc.setStatus(TRUE);
+        dc.setLastTransitionTime(now);
+        dc.setReason(reason);
+        conditions.add(dc);
+      }
+
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
+      LOGGER.exiting();
+      
+      return doNext(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return doNext(packet); // Just ignore update
+          }
+          return super.onFailure(next, packet, e, statusCode, responseHeaders);
+        }
+        
+        @Override
+        public NextAction onSuccess(Packet packet, Domain result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          info.setDomain(result);
+          return doNext(packet);
+        }
+      }), packet);
+    }
+  }
+  
+  /**
    * Asynchronous step to set Domain condition to Failed
    * @param throwable Throwable that caused failure
    * @param next Next step
@@ -570,8 +769,14 @@ public class DomainStatusUpdater {
             dc.setLastTransitionTime(now);
           }
           break;
-        case AVAILABLE_TYPE:
         case PROGRESSING_TYPE:
+          if (!FALSE.equals(dc.getStatus())) {
+            dc.setStatus(FALSE);
+            dc.setLastTransitionTime(now);
+          }
+          break;
+        case AVAILABLE_TYPE:
+          break;
         default:
           it.remove();
         }

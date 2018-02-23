@@ -415,7 +415,8 @@ public class Main {
     
     LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
 
-    Step managedServerStrategy = bringManagedServersUp(null);
+    Step managedServerStrategy = bringManagedServersUp(
+        DomainStatusUpdater.createEndProgressingStep(null));
     Step adminServerStrategy = bringAdminServerUp(
         connectToAdminAndInspectDomain(
             managedServerStrategy));
@@ -508,9 +509,8 @@ public class Main {
         return doNext(packet);
       }
       
-      // none flow
-      // TODO: stop admin pod
       LOGGER.exiting();
+      // admin server will be stopped as part of scale down flow
       return doNext(managedServerStep, packet);
     }
   }
@@ -850,6 +850,7 @@ public class Main {
     String sc = spec.getStartupControl();
     if (sc != null && StartupControlConstants.NONE_STARTUPCONTROL.equals(sc.toUpperCase())) {
       shouldStopAdmin = true;
+      next = DomainStatusUpdater.createAvailableStep(DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, next);
     }
 
     String adminName = spec.getAsName();
