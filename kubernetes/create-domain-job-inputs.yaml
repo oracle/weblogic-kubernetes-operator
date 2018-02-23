@@ -29,9 +29,6 @@ managedServerCount: 2
 # Number of managed servers to initially start for the domain
 managedServerStartCount: 1
 
-# Maximum number of managed server instances allowed to be created
-maxManagedServerCount: 8
-
 # Base string used to generate managed server names
 managedServerNameBase: managed-server
 

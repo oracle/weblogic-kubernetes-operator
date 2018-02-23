@@ -377,7 +377,13 @@ public class RestBackendImpl implements RestBackend {
     // and verify we have enough configured managed servers to auto-scale
     String adminServerServiceName = getAdminServerServiceName(domain);
     String adminSecretName = getAdminServiceSecretName(domain);
-    int clusterSize = getWLSConfiguredClusterSize(client, adminServerServiceName, cluster, namespace, adminSecretName);
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(client, namespace, cluster, adminServerServiceName, adminSecretName);
+
+    // Verify the current configured cluster size
+    int clusterSize = wlsClusterConfig.getClusterSize();
+    if (wlsClusterConfig.hasDynamicServers()) {
+      clusterSize += wlsClusterConfig.getDynamicClusterSize();
+    }
     if (managedServerCount > clusterSize) {
       throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED, managedServerCount, clusterSize, cluster, cluster);
     }
@@ -399,11 +405,15 @@ public class RestBackendImpl implements RestBackend {
     return null;
   }
 
-  private int getWLSConfiguredClusterSize(ClientHolder client, String adminServerServiceName, String cluster, String namespace, String adminSecretName) {
+  private int getWLSConfiguredClusterSize(ClientHolder client, String namespace, String cluster, String adminServerServiceName, String adminSecretName) {
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(client, namespace, cluster, adminServerServiceName, adminSecretName);
+    return wlsClusterConfig.getClusterSize();
+  }
+
+  private WlsClusterConfig getWlsClusterConfig(ClientHolder client, String namespace, String cluster, String adminServerServiceName, String adminSecretName) {
     WlsConfigRetriever wlsConfigRetriever = WlsConfigRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
     WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
-    WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig(cluster);
-    return wlsClusterConfig.getClusterSize();
+    return wlsDomainConfig.getClusterConfig(cluster);
   }
 
   private Map<String, WlsClusterConfig> getWLSConfiguredClusters(ClientHolder client, String namespace, String adminServerServiceName,  String adminSecretName) {

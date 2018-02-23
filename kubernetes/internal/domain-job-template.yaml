@@ -155,6 +155,15 @@ data:
     # \$4 - Admin Server port (only passed for managed servers)
     function createServerScriptsProperties() {
 
+      # Create nodemanager home for the server
+      srvr_nmdir=/u01/nodemanager
+      createFolder \${srvr_nmdir}
+      cp ${DOMAIN_HOME}/nodemanager/nodemanager.domains \${srvr_nmdir}
+      cp ${DOMAIN_HOME}/bin/startNodeManager.sh \${srvr_nmdir}
+
+      # Edit the start nodemanager script to use the home for the server
+      sed -i -e "s:/shared/domain/base_domain/nodemanager:/u01/nodemanager:g" ${srvr_nmdir}/startNodeManager.sh
+
       # Create startup.properties file
       datadir=\${DOMAIN_HOME}/servers/\$2/data/nodemanager
       nmdir=\${DOMAIN_HOME}/nodemgr_home
@@ -183,15 +192,6 @@ data:
       echo "NumberOfFilesLimited=true" >> \${startProp}
       echo "FileTimeSpan=24" >> \${startProp}
       echo "NMHostName=\$1-\$2" >> \${startProp}
-
-      # Create nodemanager home for the server
-      srvr_nmdir=${DOMAIN_HOME}/servers/\$2/nodemgr_home
-      createFolder \${srvr_nmdir}
-      cp ${DOMAIN_HOME}/nodemanager/nodemanager.domains \${srvr_nmdir}
-      cp ${DOMAIN_HOME}/bin/startNodeManager.sh \${srvr_nmdir}
-
-      # Edit the start nodemanager script to use the home for the server
-      sed -i -e "s:/nodemanager:/servers/\$2/nodemgr_home:g" \${srvr_nmdir}/startNodeManager.sh
     }
 
     # Check for stale state file and remove if found"
@@ -200,7 +200,7 @@ data:
       rm \${stateFile}
     fi
 
-    # alai- create nodemanager home directory that is local to the k8s node
+    # Create nodemanager home directory that is local to the k8s node
     mkdir -p /u01/nodemanager
     cp \${DOMAIN_HOME}/nodemanager/* /u01/nodemanager/
     cp \${DOMAIN_HOME}/nodemgr_home/nodemanager.properties /u01/nodemanager
@@ -215,7 +215,7 @@ data:
     export NODEMGR_HOME="/u01/nodemanager"
 
 
-    # alai- create startup.properties
+    # Create startup.properties
     echo "Create startup.properties"
     if [ -n "\$3" ]; then
       echo "this is managed server"
@@ -226,7 +226,7 @@ data:
     fi
 
     echo "Start the nodemanager"
-    . \${DOMAIN_HOME}/servers/\$2/nodemgr_home/startNodeManager.sh &
+    . \${NODEMGR_HOME}/startNodeManager.sh &
 
     echo "Allow the nodemanager some time to start before attempting to connect"
     sleep 15
@@ -408,7 +408,6 @@ data:
     cluster_name       = "%CLUSTER_NAME%"
     number_of_ms       = %NUMBER_OF_MS%
     cluster_type       = "%CLUSTER_TYPE%"
-    max_ms_count       = %MAX_MS_COUNT%
 
     print('domain_path        : [%s]' % domain_path);
     print('domain_name        : [%DOMAIN_NAME%]');
@@ -417,7 +416,6 @@ data:
     print('cluster_name       : [%s]' % cluster_name);
     print('server_port        : [%s]' % server_port);
     print('cluster_type       : [%s]' % cluster_type);
-    print('max_ms_count       : [%s]' % max_ms_count);
 
     # Open default domain template
     # ============================
@@ -518,14 +516,16 @@ data:
     else:
       print('Configuring Dynamic Cluster %s' % cluster_name)
 
-      print('Creating Server Template: serverTemplate-1');
-      st1=create('serverTemplate-1', 'ServerTemplate')
-      print('Done creating Server Template: serverTemplate-1');
-      cd('/ServerTemplates/serverTemplate-1')
+      templateName = cluster_name + "-template"
+      print('Creating Server Template: %s' % templateName)
+      st1=create(templateName, 'ServerTemplate')
+      print('Done creating Server Template: %s' % templateName)
+      cd('/ServerTemplates/%s' % templateName)
       cmo.setListenPort(server_port)
       cmo.setListenAddress('%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%${id}')
       cmo.setCluster(cl)
-      print('Done setting attributes for Server Template: serverTemplate-1');
+      print('Done setting attributes for Server Template: %s' % templateName);
+
 
       cd('/Clusters/%s' % cluster_name)
       create(cluster_name, 'DynamicServers')
@@ -533,7 +533,7 @@ data:
       set('ServerTemplate', st1)
       set('ServerNamePrefix', "%MANAGED_SERVER_NAME_BASE%")
       set('DynamicClusterSize', number_of_ms)
-      set('MaxDynamicClusterSize', max_ms_count)
+      set('MaxDynamicClusterSize', 800)
       set('CalculatedMachineNames', true)
       set('CalculatedListenPorts', false)
       set('Id', 1)
@@ -553,38 +553,6 @@ data:
     updateDomain()
     closeDomain()
     print 'Domain Updated'
-
-    # Encrypt the admin username and password
-    adminUsernameEncrypted=encrypt(admin_username, domain_path)
-    adminPasswordEncrypted=encrypt(admin_password, domain_path)
-
-    print 'Create boot.properties files for admin and managed servers'
-
-    asbpFile=open('%s/servers/%ADMIN_SERVER_NAME%/security/boot.properties' % domain_path, 'w+')
-    asbpFile.write("username=%s\n" % adminUsernameEncrypted)
-    asbpFile.write("password=%s\n" % adminPasswordEncrypted)
-    asbpFile.close()
-
-    import os
-
-    # Create boot.properties file for each managed server
-    for index in range(0, number_of_ms):
-
-      # Define the folder path
-      secdir='%s/servers/%MANAGED_SERVER_NAME_BASE%%s/security' % (domain_path, index+1)
-
-      # Create the security folder (if it does not already exist)
-      try:
-        os.makedirs(secdir)
-      except OSError:
-        if not os.path.isdir(secdir):
-          raise
-
-      bpFile=open('%s/boot.properties' % secdir, 'w+')
-      bpFile.write("username=%s\n" % adminUsernameEncrypted)
-      bpFile.write("password=%s\n" % adminPasswordEncrypted)
-      bpFile.close()
-
     print 'Done'
 
     # Exit WLST
