@@ -17,7 +17,7 @@ domainName: base_domain
 # This id must be lowercase and unique across all domains in a Kubernetes cluster
 domainUid: domain1
 
-# Type of WebLogic Cluster (static or dynamic)
+# Type of WebLogic Cluster (configured or dynamic)
 clusterType: dynamic
 
 # Cluster name
