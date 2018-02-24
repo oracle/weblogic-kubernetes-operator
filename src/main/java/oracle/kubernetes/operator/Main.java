@@ -992,11 +992,11 @@ public class Main {
   }
   
   private static class ManagedServerUpIteratorStep extends Step {
-    private final Iterator<ServerStartupInfo> it;
+    private final Collection<ServerStartupInfo> c;
 
     public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> c, Step next) {
       super(next);
-      this.it = c.iterator();
+      this.c = c;
     }
 
     @Override
@@ -1005,14 +1005,35 @@ public class Main {
       Map<String, StepAndPacket> rolling = new ConcurrentHashMap<>();
       packet.put(ProcessingConstants.SERVERS_TO_ROLL, rolling);
       
-      while (it.hasNext()) {
-        ServerStartupInfo ssi = it.next();
+      for (ServerStartupInfo ssi : c) {
         Packet p = packet.clone();
         p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
         p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
         p.put(ProcessingConstants.ENVVARS, ssi.envVars);
         
         startDetails.add(new StepAndPacket(bringManagedServerUp(ssi, null), p));
+      }
+      
+      if (LOGGER.isFineEnabled()) {
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+        Domain dom = info.getDomain();
+        DomainSpec spec = dom.getSpec();
+        
+        Collection<String> runningList = new ArrayList<>();
+        for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+          ServerKubernetesObjects sko = entry.getValue();
+          if (sko != null && sko.getPod() != null) {
+            runningList.add(entry.getKey());
+          }
+         }
+        LOGGER.fine("Running servers for domain with UID: " + spec.getDomainUID() + ", running list: " + runningList);
+        
+        Collection<String> serverList = new ArrayList<>();
+        for (ServerStartupInfo ssi : c) {
+          serverList.add(ssi.serverConfig.getName());
+        }        
+        LOGGER.fine("Starting or validating servers for domain with UID: " + spec.getDomainUID() + ", server list: " + serverList);
       }
       
       if (startDetails.isEmpty()) {
@@ -1032,6 +1053,19 @@ public class Main {
       @SuppressWarnings("unchecked")
       Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
 
+      if (LOGGER.isFineEnabled()) {
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+        Domain dom = info.getDomain();
+        DomainSpec spec = dom.getSpec();
+        
+        Collection<String> rollingList = Collections.emptyList();
+        if (rolling != null) {
+          rollingList = rolling.keySet();
+        }
+        LOGGER.fine("Rolling servers for domain with UID: " + spec.getDomainUID() + ", rolling list: " + rollingList);
+      }
+
       if (rolling == null || rolling.isEmpty()) {
         return doNext(packet);
       }
@@ -1041,20 +1075,32 @@ public class Main {
   }
   
   private static class ServerDownIteratorStep extends Step {
-    private final Iterator<Map.Entry<String, ServerKubernetesObjects>> it;
+    private final Collection<Map.Entry<String, ServerKubernetesObjects>> c;
 
     public ServerDownIteratorStep(Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
       super(next);
-      this.it = serversToStop.iterator();
+      this.c = serversToStop;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       Collection<StepAndPacket> startDetails = new ArrayList<>();
 
-      while (it.hasNext()) {
-        Map.Entry<String, ServerKubernetesObjects> entry = it.next();
+      for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
         startDetails.add(new StepAndPacket(new ServerDownStep(entry.getKey(), entry.getValue(), null), packet));
+      }
+      
+      if (LOGGER.isFineEnabled()) {
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+        Domain dom = info.getDomain();
+        DomainSpec spec = dom.getSpec();
+        
+        Collection<String> stopList = new ArrayList<>();
+        for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
+          stopList.add(entry.getKey());
+        }
+        LOGGER.fine("Stopping servers for domain with UID: " + spec.getDomainUID() + ", stop list: " + stopList);
       }
       
       if (startDetails.isEmpty()) {
