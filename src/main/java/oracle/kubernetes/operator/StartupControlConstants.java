@@ -4,8 +4,9 @@
 package oracle.kubernetes.operator;
 
 /**
- * Startup Control constants representing the legal property values: "ALL", "ADMIN", "SPECIFIED", or "AUTO"
- * These proerty values determine which WebLogic Servers the Operator will start up when it discovers the Domain.
+ * Startup Control constants representing the legal property values: "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
+ * These property values determine which WebLogic Servers the Operator will start up when it discovers the Domain.
+ * - "NONE" will start up no servers, including not starting the administration server.
  * - "ALL" will start up all defined servers.
  * - "ADMIN" will start up only the AdminServer (no managed servers will be started).
  * - "SPECIFIED" will start the AdminServer and then will look at the "serverStartup" and
@@ -14,6 +15,7 @@ package oracle.kubernetes.operator;
  *   other clusters up to the replicas count.
  */
 public interface StartupControlConstants {
+  public static final String NONE_STARTUPCONTROL = "NONE";
   public static final String AUTO_STARTUPCONTROL = "AUTO";
   public static final String ADMIN_STARTUPCONTROL = "ADMIN";
   public static final String ALL_STARTUPCONTROL = "ALL";
