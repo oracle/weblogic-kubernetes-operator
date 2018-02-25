@@ -100,7 +100,9 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Service
       Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
@@ -315,7 +317,9 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Service
       Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
