@@ -1256,9 +1256,13 @@ public class CallBuilder {
           timeoutSeconds *= 2;
         }
         
-        LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
         NextAction na = new NextAction();
-        na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        if (statusCode == 0 && retryCount <= 2) {
+          na.invoke(retryStep, packet);
+        } else {
+          LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
+          na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        }
         return na;
       } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
         // Conflict is an optimistic locking failure.  Therefore, we can't
@@ -1318,6 +1322,8 @@ public class CallBuilder {
       }
       RetryStrategy _retry = retry;
 
+      LOGGER.fine(MessageKeys.ASYNC_REQUEST, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
+
       AtomicBoolean didResume = new AtomicBoolean(false);
       AtomicBoolean didRecycle = new AtomicBoolean(false);
       ClientUsage usage = useClient();
@@ -1357,7 +1363,8 @@ public class CallBuilder {
           // timeout handling
           fiber.owner.getExecutor().schedule(() -> {
             if (didRecycle.compareAndSet(false, true)) {
-              usage.recycle();
+              // don't recycle on timeout because state is unknown
+              // usage.recycle();
             }
             if (didResume.compareAndSet(false, true)) {
               try {
@@ -1372,7 +1379,8 @@ public class CallBuilder {
         } catch (Throwable t) {
           LOGGER.warning(MessageKeys.ASYNC_FAILURE, t, 0, null, requestParams, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
           if (didRecycle.compareAndSet(false, true)) {
-            usage.recycle();
+            // don't recycle on throwable because state is unknown
+            // usage.recycle();
           }
           if (didResume.compareAndSet(false, true)) {
             packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));

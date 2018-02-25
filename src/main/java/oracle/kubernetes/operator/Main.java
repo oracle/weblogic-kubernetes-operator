@@ -270,7 +270,7 @@ public class Main {
                       if (info == null) {
                         info = created;
                       }
-                      ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+                      ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
                       if (channelName != null) {
                         sko.getChannels().put(channelName, service);
                       } else {
@@ -305,7 +305,7 @@ public class Main {
                   if (info == null) {
                     info = created;
                   }
-                  ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+                  ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
                   sko.getPod().set(pod);
                 }
               }
@@ -784,7 +784,18 @@ public class Main {
 
       Domain dom = info.getDomain();
       DomainSpec spec = dom.getSpec();
-
+      
+      if (LOGGER.isFineEnabled()) {
+        Collection<String> runningList = new ArrayList<>();
+        for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+          ServerKubernetesObjects sko = entry.getValue();
+          if (sko != null && sko.getPod() != null) {
+            runningList.add(entry.getKey());
+          }
+         }
+        LOGGER.fine("Running servers for domain with UID: " + spec.getDomainUID() + ", running list: " + runningList);
+      }
+      
       String sc = spec.getStartupControl();
       if (sc == null) {
         sc = StartupControlConstants.AUTO_STARTUPCONTROL;
@@ -1020,15 +1031,6 @@ public class Main {
         Domain dom = info.getDomain();
         DomainSpec spec = dom.getSpec();
         
-        Collection<String> runningList = new ArrayList<>();
-        for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-          ServerKubernetesObjects sko = entry.getValue();
-          if (sko != null && sko.getPod() != null) {
-            runningList.add(entry.getKey());
-          }
-         }
-        LOGGER.fine("Running servers for domain with UID: " + spec.getDomainUID() + ", running list: " + runningList);
-        
         Collection<String> serverList = new ArrayList<>();
         for (ServerStartupInfo ssi : c) {
           serverList.add(ssi.serverConfig.getName());
@@ -1087,7 +1089,7 @@ public class Main {
       Collection<StepAndPacket> startDetails = new ArrayList<>();
 
       for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
-        startDetails.add(new StepAndPacket(new ServerDownStep(entry.getKey(), entry.getValue(), null), packet));
+        startDetails.add(new StepAndPacket(new ServerDownStep(entry.getKey(), entry.getValue(), null), packet.clone()));
       }
       
       if (LOGGER.isFineEnabled()) {
@@ -1444,7 +1446,7 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+          ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
           if (sko != null) {
             Fiber f;
             Packet packet;
@@ -1505,7 +1507,7 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+          ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
           if (sko != null) {
             switch (item.type) {
               case "ADDED":
