@@ -3,10 +3,12 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.ClientHelper;
@@ -94,6 +96,24 @@ public class IngressWatcher implements Runnable {
         return isStopping.get();
       }
     };
+  }
+  
+  static String getIngressDomainUID(V1beta1Ingress ingress) {
+    V1ObjectMeta meta = ingress.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.DOMAINUID_LABEL);
+    }
+    return null;
+  }
+  
+  static String getIngressClusterName(V1beta1Ingress ingress) {
+    V1ObjectMeta meta = ingress.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.CLUSTERNAME_LABEL);
+    }
+    return null;
   }
   
   public void processEventCallback(Watch.Response<V1beta1Ingress> item) {
