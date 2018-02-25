@@ -424,6 +424,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         onExit.accept(this);
       } catch (Throwable t) {
         throw new OnExitRunnableException(t);
+      } finally {
+        synchronized (this) {
+          if (currentThread == null) {
+            triggerExitCallback();
+          }
+        }
       }
 
       return true;
@@ -467,36 +473,25 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    */
   @Override
   public void run() {
-    // Clear the interrupted status, if present
-    Thread.interrupted();
-    
-    final Fiber oldFiber = CURRENT_FIBER.get();
-    CURRENT_FIBER.set(this);
-    Container oldContainer = ContainerResolver.getDefault().enterContainer(owner.getContainer());
-    try {
-      // doRun returns true to indicate an early exit from fiber processing
-      if (!doRun(next)) {
-          completionCheck();
-      }
+    if (status.get() == NOT_COMPLETE) {
+      // Clear the interrupted status, if present
+      Thread.interrupted();
       
-      // Trigger exitCallback
-      synchronized (this) {
-        if (exitCallback != null && exitCallback != PLACEHOLDER) {
-          
-          if (LOGGER.isFineEnabled()) {
-            LOGGER.fine("{0} invoking exit callback", new Object[] { getName() });
-          }
-
-          exitCallback.onExit();
+      final Fiber oldFiber = CURRENT_FIBER.get();
+      CURRENT_FIBER.set(this);
+      Container oldContainer = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+      try {
+        // doRun returns true to indicate an early exit from fiber processing
+        if (!doRun(next)) {
+            completionCheck();
         }
-        exitCallback = PLACEHOLDER;
+      } finally {
+        ContainerResolver.getDefault().exitContainer(oldContainer);
+        CURRENT_FIBER.set(oldFiber);
       }
-    } finally {
-      ContainerResolver.getDefault().exitContainer(oldContainer);
-      CURRENT_FIBER.set(oldFiber);
     }
   }
-
+  
   private void completionCheck() {
     lock.lock();
     try {
@@ -573,9 +568,24 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       if (isRequireUnlock.value) {
         synchronized (this) {
           currentThread = null;
+          triggerExitCallback();
         }
         lock.unlock();
       }
+    }
+  }
+
+  private void triggerExitCallback() {
+    synchronized (this) {
+      if (exitCallback != null && exitCallback != PLACEHOLDER) {
+        
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine("{0} triggering exit callback", new Object[] { getName() });
+        }
+
+        exitCallback.onExit();
+      }
+      exitCallback = PLACEHOLDER;
     }
   }
 
@@ -710,25 +720,36 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       LOGGER.fine("{0} cancelled", new Object[] { getName() });
     }
 
+    AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating children
     synchronized (this) {
       if (currentThread != null) {
         if (mayInterrupt) {
           currentThread.interrupt();
         }
+        count.incrementAndGet();
       }
+      
+      ExitCallback myCallback = () -> {
+        if (count.decrementAndGet() == 0) {
+          exitCallback.onExit();
+        }
+      };
       
       if (children != null) {
         for (Fiber child : children) {
-          child.cancel(mayInterrupt);
+          if (child.cancelAndExitCallback(mayInterrupt, myCallback)) {
+            count.incrementAndGet();
+          }
         }
       }
 
-      if (this.exitCallback != null) {
-        throw new IllegalStateException();
-      }
-      boolean isWillCall = this.exitCallback != PLACEHOLDER;
+      boolean isWillCall = count.get() > 1; // more calls outstanding then our initial buffer count
       if (isWillCall) {
-        this.exitCallback = exitCallback;
+        if (this.exitCallback != null || this.exitCallback == PLACEHOLDER) {
+          throw new IllegalStateException();
+        }
+        this.exitCallback = myCallback;
+        myCallback.onExit(); // remove the buffer count
       }
       
       return isWillCall;

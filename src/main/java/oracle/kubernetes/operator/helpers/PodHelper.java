@@ -203,7 +203,9 @@ public class PodHelper {
       
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().putIfAbsent(spec.getAsName(), new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(spec.getAsName(), created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Pod
       Step read = CallBuilder.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
@@ -535,7 +537,9 @@ public class PodHelper {
 
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().putIfAbsent(weblogicServerName, new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(weblogicServerName, created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify there existing Pod
       Step read = CallBuilder.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {

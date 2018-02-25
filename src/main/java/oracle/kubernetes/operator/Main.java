@@ -270,7 +270,9 @@ public class Main {
                       if (info == null) {
                         info = created;
                       }
-                      ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+                      ServerKubernetesObjects csko = new ServerKubernetesObjects();
+                      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, csko);
+                      ServerKubernetesObjects sko = current != null ? current : csko;
                       if (channelName != null) {
                         sko.getChannels().put(channelName, service);
                       } else {
@@ -305,7 +307,9 @@ public class Main {
                   if (info == null) {
                     info = created;
                   }
-                  ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+                  ServerKubernetesObjects csko = new ServerKubernetesObjects();
+                  ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, csko);
+                  ServerKubernetesObjects sko = current != null ? current : csko;
                   sko.getPod().set(pod);
                 }
               }
@@ -1446,7 +1450,9 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+          ServerKubernetesObjects created = new ServerKubernetesObjects();
+          ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+          ServerKubernetesObjects sko = current != null ? current : created;
           if (sko != null) {
             Fiber f;
             Packet packet;
@@ -1507,7 +1513,9 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+          ServerKubernetesObjects created = new ServerKubernetesObjects();
+          ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+          ServerKubernetesObjects sko = current != null ? current : created;
           if (sko != null) {
             switch (item.type) {
               case "ADDED":
