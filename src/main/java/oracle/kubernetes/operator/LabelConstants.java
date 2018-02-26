@@ -8,6 +8,7 @@ public interface LabelConstants {
   public static final String DOMAINUID_LABEL = "weblogic.domainUID";
   public static final String DOMAINNAME_LABEL = "weblogic.domainName";
   public static final String SERVERNAME_LABEL = "weblogic.serverName";
+  public static final String CHANNELNAME_LABEL = "weblogic.channelName";
   public static final String CLUSTERNAME_LABEL = "weblogic.clusterName";
 
 }

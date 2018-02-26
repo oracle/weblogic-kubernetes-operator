@@ -21,11 +21,13 @@ import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 
+@Ignore
 public class ServiceHelperTest {
 
   // These test will use the "tests" namespace.

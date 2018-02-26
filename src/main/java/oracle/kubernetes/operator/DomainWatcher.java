@@ -76,7 +76,7 @@ public class DomainWatcher implements Runnable {
         return Watch.createWatch(client.getApiClient(),
             client.callBuilder().with($ -> {
               $.resourceVersion = resourceVersion;
-              $.timeoutSeconds = 2;
+              $.timeoutSeconds = 30;
               $.watch = true;
             }).listDomainCall(ns),
             new TypeToken<Watch.Response<Domain>>() {

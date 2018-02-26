@@ -4,15 +4,16 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.joda.time.DateTime;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
@@ -26,10 +27,13 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
  * 
  */
 public class DomainPresenceInfo {
+  private final String namespace;
   private final AtomicReference<Domain> domain;
-  private final Map<String, ServerKubernetesObjects> servers = new HashMap<>();
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
-  
+
+  private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
+
   private V1PersistentVolumeClaimList claims = null;
 
   private WlsDomainConfig domainConfig;
@@ -41,6 +45,17 @@ public class DomainPresenceInfo {
    */
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
+    this.namespace = domain.getMetadata().getNamespace();
+    this.serverStartupInfo = new AtomicReference<>(null);
+  }
+
+  /**
+   * Create presence for a domain
+   * @param domain Domain
+   */
+  public DomainPresenceInfo(String namespace) {
+    this.domain = new AtomicReference<>(null);
+    this.namespace = namespace;
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
@@ -93,7 +108,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Gets the  domain.  Except the instance to change frequently based on status updates
+   * Gets the domain.  Except the instance to change frequently based on status updates
    * @return Domain
    */
   public Domain getDomain() {
@@ -109,13 +124,29 @@ public class DomainPresenceInfo {
   }
 
   /**
+   * Gets the namespace
+   * @return Namespace
+   */
+  public String getNamespace() {
+    return namespace;
+  }
+  
+  /**
    * Map from server name to server objects (Pods and Services)
    * @return Server object map
    */
-  public Map<String, ServerKubernetesObjects> getServers() {
+  public ConcurrentMap<String, ServerKubernetesObjects> getServers() {
     return servers;
   }
 
+  /**
+   * Map from cluster name to Ingress
+   * @return Cluster object map
+   */
+  public ConcurrentMap<String, V1beta1Ingress> getIngresses() {
+    return ingresses;
+  }
+  
   /**
    * Server objects (Pods and Services) for admin server
    * @return Server objects for admin server

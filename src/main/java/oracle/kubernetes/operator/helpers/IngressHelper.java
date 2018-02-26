@@ -23,6 +23,8 @@ import io.kubernetes.client.models.V1beta1IngressSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -45,85 +47,124 @@ public class IngressHelper {
    * @return Step to create ingress or update cluster with an entry for this server
    */
   public static Step createAddServerStep(Step next) {
-    return new AddServerStep(next);
+    return new BeforeAddServerStep(next);
   }
   
-  private static class AddServerStep extends Step {
-
-    private AddServerStep(Step next) {
+  private static class BeforeAddServerStep extends Step {
+    public BeforeAddServerStep(Step next) {
       super(next);
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      WlsClusterConfig clusterConfig = (WlsClusterConfig) packet.get(ProcessingConstants.CLUSTER_SCAN);
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
 
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      ServerKubernetesObjects sko = info.getServers().get(serverName);
-      if (sko != null) {
-        V1Service service = sko.getService();
-        if (service != null) {
-          // If we have a cluster, create a cluster level ingress
-          if (clusterConfig != null) {
-            String clusterName = clusterConfig.getClusterName();
-            String ingressName = CallBuilder.toDNS1123LegalName(
-                info.getDomain().getSpec().getDomainUID() + "-" + clusterName);
-            V1ObjectMeta meta = service.getMetadata();
-            return doNext(CallBuilder.create().readIngressAsync(
-              ingressName, meta.getNamespace(), new ResponseStep<V1beta1Ingress>(next) {
-                @Override
-                public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                                            Map<String, List<String>> responseHeaders) {
-                  if (statusCode == CallBuilder.NOT_FOUND) {
-                    return onSuccess(packet, null, statusCode, responseHeaders);
-                  }
-                  return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
-                }
+      Domain dom = info.getDomain();
+      V1ObjectMeta meta = dom.getMetadata();
+      DomainSpec spec = dom.getSpec();
+      String namespace = meta.getNamespace();
 
-                @Override
-                public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
-                                            Map<String, List<String>> responseHeaders) {
-                  if (result == null) {
-                    V1beta1Ingress v1beta1Ingress = prepareV1beta1Ingress(ingressName, clusterName, service, info);
-                    return doNext(CallBuilder.create().createIngressAsync(meta.getNamespace(), v1beta1Ingress, new ResponseStep<V1beta1Ingress>(next) {
-                      @Override
-                      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                                                  Map<String, List<String>> responseHeaders) {
-                        return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
-                      }
-                      
-                      @Override
-                      public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
-                                                  Map<String, List<String>> responseHeaders) {
-                        return doNext(packet);
-                      }
-                    }), packet);
-                  } else {
-                    if (addV1beta1HTTPIngressPath(result, service)) {
-                      return doNext(packet);
-                    }
-                    return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(), result, new ResponseStep<V1beta1Ingress>(next) {
-                      @Override
-                      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                                                  Map<String, List<String>> responseHeaders) {
-                        return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
-                      }
-                      
-                      @Override
-                      public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
-                                                  Map<String, List<String>> responseHeaders) {
-                        return doNext(packet);
-                      }
-                    }), packet);
-                  }
-                }
-              }), packet);
+      String weblogicDomainUID = spec.getDomainUID();
+
+      String name = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + serverName);
+
+      Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return onSuccess(packet, null, statusCode, responseHeaders);
           }
+          return super.onFailure(packet, e, statusCode, responseHeaders);
         }
 
-      }
+        @Override
+        public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          return doNext(new AddServerStep(next, result), packet);
+        }
+      });
 
+      return doNext(read, packet);
+    }
+  }
+  
+  private static class AddServerStep extends Step {
+    private final V1Service service;
+
+    private AddServerStep(Step next, V1Service service) {
+      super(next);
+      this.service = service;
+    }
+    
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
+
+      // If we have a cluster, create a cluster level ingress
+      if (clusterName != null) {
+        String ingressName = CallBuilder.toDNS1123LegalName(
+            info.getDomain().getSpec().getDomainUID() + "-" + clusterName);
+        V1ObjectMeta meta = service.getMetadata();
+        return doNext(CallBuilder.create().readIngressAsync(
+          ingressName, meta.getNamespace(), new ResponseStep<V1beta1Ingress>(next) {
+            @Override
+            public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                        Map<String, List<String>> responseHeaders) {
+              if (statusCode == CallBuilder.NOT_FOUND) {
+                return onSuccess(packet, null, statusCode, responseHeaders);
+              }
+              return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
+            }
+
+            @Override
+            public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
+                                        Map<String, List<String>> responseHeaders) {
+              if (result == null) {
+                V1beta1Ingress v1beta1Ingress = prepareV1beta1Ingress(ingressName, clusterName, service, info);
+                return doNext(CallBuilder.create().createIngressAsync(meta.getNamespace(), v1beta1Ingress, new ResponseStep<V1beta1Ingress>(next) {
+                  @Override
+                  public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                              Map<String, List<String>> responseHeaders) {
+                    return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
+                  }
+                  
+                  @Override
+                  public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
+                                              Map<String, List<String>> responseHeaders) {
+                    if (result != null) {
+                      info.getIngresses().put(clusterName, result);
+                    }
+                    return doNext(packet);
+                  }
+                }), packet);
+              } else {
+                if (addV1beta1HTTPIngressPath(result, service)) {
+                  return doNext(packet);
+                }
+                return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(), result, new ResponseStep<V1beta1Ingress>(next) {
+                  @Override
+                  public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                              Map<String, List<String>> responseHeaders) {
+                    return super.onFailure(AddServerStep.this, packet, e, statusCode, responseHeaders);
+                  }
+                  
+                  @Override
+                  public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
+                                              Map<String, List<String>> responseHeaders) {
+                    if (result != null) {
+                      info.getIngresses().put(clusterName, result);
+                    }
+                    return doNext(packet);
+                  }
+                }), packet);
+              }
+            }
+          }), packet);
+      }
+      
       return doNext(packet);
     }
   }
@@ -132,34 +173,35 @@ public class IngressHelper {
    * Creates asynchronous step to update an ingress registration to remove a server or delete the ingress
    * entirely if this was the last server in the cluster
    * @param serverName Server name
-   * @param service Service
    * @param next Next processing step
    * @return Step to update or delete the ingress 
    */
-  public static Step createRemoveServerStep(String serverName, V1Service service, Step next) {
-    return new RemoveServerStep(serverName, service, next);
+  public static Step createRemoveServerStep(String serverName, Step next) {
+    return new RemoveServerStep(serverName, next);
   }
   
   private static class RemoveServerStep extends Step {
     private final String serverName;
-    private final V1Service service;
 
-    private RemoveServerStep(String serverName, V1Service service, Step next) {
+    private RemoveServerStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
-      this.service = service;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      V1ObjectMeta meta = service.getMetadata();
+      String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
+      String namespace = info.getDomain().getMetadata().getNamespace();
 
-      String ingressName;
-      ingressName = getIngressName(info, serverName);
+      String domainUID = info.getDomain().getSpec().getDomainUID();
+      String ingressName= CallBuilder.toDNS1123LegalName(
+          domainUID + "-" + clusterName);
+      String serviceName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
+
       if (ingressName != null) {
         return doNext(CallBuilder.create().readIngressAsync(
-          ingressName, meta.getNamespace(), new ResponseStep<V1beta1Ingress>(next) {
+          ingressName, namespace, new ResponseStep<V1beta1Ingress>(next) {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                                         Map<String, List<String>> responseHeaders) {
@@ -181,13 +223,14 @@ public class IngressHelper {
               while (itr.hasNext()) {
                 V1beta1HTTPIngressPath v1beta1HTTPIngressPath = itr.next();
                 V1beta1IngressBackend v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
-                if (meta.getName().equals(v1beta1IngressBackend.getServiceName())) {
+                if (serviceName.equals(v1beta1IngressBackend.getServiceName())) {
                   itr.remove();
                 }
               }
               v1beta1HTTPIngressPaths = v1beta1HTTPIngressRuleValue.getPaths();
               if (v1beta1HTTPIngressPaths.isEmpty()) {
-                return doNext(CallBuilder.create().deleteIngressAsync(result.getMetadata().getName(), meta.getNamespace(), new V1DeleteOptions(), new ResponseStep<V1Status>(next) {
+                info.getIngresses().remove(clusterName);
+                return doNext(CallBuilder.create().deleteIngressAsync(result.getMetadata().getName(), namespace, new V1DeleteOptions(), new ResponseStep<V1Status>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
@@ -201,7 +244,7 @@ public class IngressHelper {
                   }
                 }), packet);
               } else {
-                return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(), result, new ResponseStep<V1beta1Ingress>(next) {
+                return doNext(CallBuilder.create().replaceIngressAsync(ingressName, namespace, result, new ResponseStep<V1beta1Ingress>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
@@ -211,6 +254,9 @@ public class IngressHelper {
                   @Override
                   public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                                               Map<String, List<String>> responseHeaders) {
+                    if (result != null) {
+                      info.getIngresses().put(clusterName, result);
+                    }
                     return doNext(packet);
                   }
                 }), packet);
@@ -298,35 +344,4 @@ public class IngressHelper {
     return false;
   }
 
-  /**
-   * Get the ingress name to remove.
-   * @param info DomainPresenceInfo object
-   * @param serverName server name to remove
-   * @return name of ingress
-   */
-  private static String getIngressName(DomainPresenceInfo info, String serverName) {
-    Map<String, WlsClusterConfig> clusters = info.getScan().getClusterConfigs();
-    String ingressName = null;
-
-    // Get the cluster ingress if we have one
-    if (clusters != null) {
-      for (Map.Entry<String, WlsClusterConfig> clusterConfig : clusters.entrySet()) {
-        List<WlsServerConfig> servers = clusterConfig.getValue().getServerConfigs();
-        if (servers != null) {
-          for (WlsServerConfig server : servers) {
-            if (serverName.equals(server.getName())) {
-              ingressName = CallBuilder.toDNS1123LegalName(
-                  info.getDomain().getSpec().getDomainUID() + "-" + clusterConfig.getKey());
-              break;
-            }
-          }
-        }
-        if (ingressName != null) {
-          break;
-        }
-      }
-    }
-
-    return ingressName;
-  }
 }
