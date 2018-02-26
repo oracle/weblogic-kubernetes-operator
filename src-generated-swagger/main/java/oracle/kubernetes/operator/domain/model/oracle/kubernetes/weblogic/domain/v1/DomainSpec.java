@@ -230,33 +230,6 @@ public class DomainSpec {
     this.asNodePort = asNodePort;
   }
 
-  public DomainSpec asEnv(List<io.kubernetes.client.models.V1EnvVar> asEnv) {
-    this.asEnv = asEnv;
-    return this;
-  }
-
-  public DomainSpec addAsEnvItem(io.kubernetes.client.models.V1EnvVar asEnvItem) {
-    if (this.asEnv == null) {
-      this.asEnv = new ArrayList<io.kubernetes.client.models.V1EnvVar>();
-    }
-    this.asEnv.add(asEnvItem);
-    return this;
-  }
-
-  /**
-   * Environment variables for use in starting the administration server.
-   * 
-   * @return asEnv
-   **/
-  @ApiModelProperty(value = "Environment variables for use in starting the administration server.")
-  public List<io.kubernetes.client.models.V1EnvVar> getAsEnv() {
-    return asEnv;
-  }
-
-  public void setAsEnv(List<io.kubernetes.client.models.V1EnvVar> asEnv) {
-    this.asEnv = asEnv;
-  }
-
   public DomainSpec exportT3Channels(List<String> exportT3Channels) {
     this.exportT3Channels = exportT3Channels;
     return this;
