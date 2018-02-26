@@ -28,6 +28,18 @@ public class AnnotationHelper {
     }
   }
 
+
+  /**
+   * Marks metadata with annotations that let Prometheus know how to retrieve metrics from
+   * the wls-exporter web-app.  The specified httpPort should be the listen port of the wl server
+   * running in the pod.
+   */
+  public static void annotateForPrometheus(V1ObjectMeta meta, int httpPort) {
+     meta.putAnnotationsItem("prometheus.io/port", "" + httpPort); // should be the ListenPort of the server in the pod
+     meta.putAnnotationsItem("prometheus.io/path", "/wls-exporter/metrics");
+     meta.putAnnotationsItem("prometheus.io/scrape", "true");
+  }
+
   /**
    * Check the metadata object for the presence of an annotation matching the domain and resource version.l
    * @param meta The metadata object

@@ -3,10 +3,13 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.ClientHelper;
@@ -96,6 +99,33 @@ public class ServiceWatcher implements Runnable {
     };
   }
   
+  static String getServiceDomainUID(V1Service service) {
+    V1ObjectMeta meta = service.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.DOMAINUID_LABEL);
+    }
+    return null;
+  }
+  
+  static String getServiceServerName(V1Service service) {
+    V1ObjectMeta meta = service.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.SERVERNAME_LABEL);
+    }
+    return null;
+  }
+
+  static String getServiceChannelName(V1Service service) {
+    V1ObjectMeta meta = service.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.CHANNELNAME_LABEL);
+    }
+    return null;
+  }
+
   public void processEventCallback(Watch.Response<V1Service> item) {
     destination.eventCallback(item);
   }

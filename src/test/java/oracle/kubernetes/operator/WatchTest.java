@@ -10,6 +10,7 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
+import org.junit.Assume;
 import org.junit.Test;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -21,6 +22,7 @@ public class WatchTest {
 
   @Test
   public void testNamespaceWatch() {
+    Assume.assumeTrue(System.getProperty("os.name").toLowerCase().contains("nix"));
 
     ClientHolder client = ClientHelper.getInstance().take();
     try {
@@ -57,6 +59,7 @@ public class WatchTest {
 
   @Test
   public void testCustomResourceWatch() {
+    Assume.assumeTrue(System.getProperty("os.name").toLowerCase().contains("nix"));
 
     ClientHolder client = ClientHelper.getInstance().take();
     try {
