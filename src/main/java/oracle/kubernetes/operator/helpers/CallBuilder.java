@@ -598,6 +598,18 @@ public class CallBuilder {
     }
   }
 
+  /**
+   * Unexecuted call to list services for use with watches
+   * @param namespace Namespace
+   * @return Call
+   * @throws ApiException API Exception
+   */
+  public com.squareup.okhttp.Call listServiceCall(String namespace) throws ApiException {
+    String _continue = "";
+    return client.getCoreApiClient().listNamespacedServiceCall(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
+  }
+
   private com.squareup.okhttp.Call listServiceAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1ServiceList> callback) throws ApiException {
     return usage.client().getCoreApiClient().listNamespacedServiceAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
@@ -959,6 +971,18 @@ public class CallBuilder {
     }
   }
 
+  /**
+   * Unexecuted call to list Ingress for use with watches
+   * @param namespace Namespace
+   * @return Call
+   * @throws ApiException API Exception
+   */
+  public com.squareup.okhttp.Call listIngressCall(String namespace) throws ApiException {
+    String _continue = "";
+    return client.getExtensionsV1beta1ApiClient().listNamespacedIngressCall(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
+  }
+
   private com.squareup.okhttp.Call listIngressAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1beta1IngressList> callback) throws ApiException {
     return usage.client().getExtensionsV1beta1ApiClient().listNamespacedIngressAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
@@ -1199,8 +1223,10 @@ public class CallBuilder {
   }
   
   private static final Random R = new Random();
-  private static final int HIGH = 1000;
-  private static final int LOW = 100;
+  private static final int HIGH = 200;
+  private static final int LOW = 10;
+  private static final int SCALE = 100;
+  private static final int MAX = 10000;
   
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
@@ -1223,7 +1249,7 @@ public class CallBuilder {
           statusCode == 504 /* StatusServerTimeout */) {
         
         // exponential back-off
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         
         if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
           // increase server timeout
@@ -1231,16 +1257,22 @@ public class CallBuilder {
         }
         
         NextAction na = new NextAction();
-        na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        if (statusCode == 0 && retryCount <= 2) {
+          na.invoke(retryStep, packet);
+        } else {
+          LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
+          na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        }
         return na;
       } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
         // Conflict is an optimistic locking failure.  Therefore, we can't
         // simply retry the request.  Instead, application code needs to rebuild
-        // the request based on latest contents.  If provided, a confict step will do that.
+        // the request based on latest contents.  If provided, a conflict step will do that.
         
         // exponential back-off
-        long waitTime = (2 << ++retryCount) * 1000 + (R.nextInt(HIGH - LOW) + LOW);
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         
+        LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
         NextAction na = new NextAction();
         na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;
@@ -1290,6 +1322,8 @@ public class CallBuilder {
       }
       RetryStrategy _retry = retry;
 
+      LOGGER.fine(MessageKeys.ASYNC_REQUEST, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
+
       AtomicBoolean didResume = new AtomicBoolean(false);
       AtomicBoolean didRecycle = new AtomicBoolean(false);
       ClientUsage usage = useClient();
@@ -1329,7 +1363,8 @@ public class CallBuilder {
           // timeout handling
           fiber.owner.getExecutor().schedule(() -> {
             if (didRecycle.compareAndSet(false, true)) {
-              usage.recycle();
+              // don't recycle on timeout because state is unknown
+              // usage.recycle();
             }
             if (didResume.compareAndSet(false, true)) {
               try {
@@ -1344,7 +1379,8 @@ public class CallBuilder {
         } catch (Throwable t) {
           LOGGER.warning(MessageKeys.ASYNC_FAILURE, t, 0, null, requestParams, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
           if (didRecycle.compareAndSet(false, true)) {
-            usage.recycle();
+            // don't recycle on throwable because state is unknown
+            // usage.recycle();
           }
           if (didResume.compareAndSet(false, true)) {
             packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));

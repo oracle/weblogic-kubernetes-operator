@@ -12,6 +12,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,6 +38,9 @@ public class HealthCheckHelperTest {
 
   @Before
   public void setUp() throws Exception {
+    LOGGER.getUnderlyingLogger().addHandler(hdlr);
+
+    if (!isKubernetesAvailable()) return;
 
     ClientHolder client = ClientHelper.getInstance().take();
     try {
@@ -45,7 +49,6 @@ public class HealthCheckHelperTest {
       defaultHealthCheckHelper = new HealthCheckHelper(client, "default", Collections.singleton("default"));
       unitHealthCheckHelper = new HealthCheckHelper(client, UNIT_NAMESPACE, Collections.singleton(UNIT_NAMESPACE));
 
-      LOGGER.getUnderlyingLogger().addHandler(hdlr);
     } finally {
       ClientHelper.getInstance().recycle(client);
     }
@@ -60,6 +63,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
+  @Ignore
   public void testDefaultNamespace() throws Exception {
 
     defaultHealthCheckHelper.performSecurityChecks("default");
@@ -93,6 +97,7 @@ public class HealthCheckHelperTest {
 
   @Test
   public void testAccountNoPrivs() throws Exception {
+    Assume.assumeTrue(isKubernetesAvailable());
     unitHealthCheckHelper.performSecurityChecks("unit-test-svc-account-no-privs");
     hdlr.flush();
     String logOutput = bos.toString();
@@ -100,6 +105,10 @@ public class HealthCheckHelperTest {
     Assert.assertTrue("Log output did not contain Access Denied error",
         logOutput.contains("Access denied for service account"));
     bos.reset();
+  }
+
+  private boolean isKubernetesAvailable() { // assume it is available whenever running on linux
+    return System.getProperty("os.name").toLowerCase().contains("nix");
   }
 
   // Create a named namespace
