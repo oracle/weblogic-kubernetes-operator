@@ -21,6 +21,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
@@ -64,7 +65,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.Fiber.ExitCallback;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -79,10 +80,15 @@ public class Main {
 
   private static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
   
+  private static final Engine engine = new Engine("operator");
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ConcurrentMap<String, Fiber> domainUpdaters = new ConcurrentHashMap<String, Fiber>();
+  private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
+  
+  private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
+  
   private static String principal;
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
@@ -92,8 +98,6 @@ public class Main {
   private static Map<String, IngressWatcher> ingressWatchers = new HashMap<>();
   private static KubernetesVersion version = null;
   
-  private static final Engine engine = new Engine("operator");
-
   /**
    * Entry point
    *
@@ -162,14 +166,10 @@ public class Main {
         helper.recycle(client);
       }
 
-      // check for any existing CR's and add the watches on them
+      // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
-        podWatchers.put(ns, createPodWatcher(ns));
-        serviceWatchers.put(ns, createServiceWatcher(ns));
-        ingressWatchers.put(ns, createIngressWatcher(ns));
-        
         Step domainList = CallBuilder.create().listDomainAsync(ns, new ResponseStep<DomainList>(null) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -183,9 +183,22 @@ public class Main {
           @Override
           public NextAction onSuccess(Packet packet, DomainList result, int statusCode,
               Map<String, List<String>> responseHeaders) {
+            initialized.put(ns, Boolean.TRUE);
             if (result != null) {
               for (Domain dom : result.getItems()) {
                 doCheckAndCreateDomainPresence(dom);
+              }
+            }
+            
+            // delete stranded resources
+            for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
+              String domainUID = entry.getKey();
+              DomainPresenceInfo info = entry.getValue();
+              if (info != null) {
+                if (info.getDomain() == null) {
+                  // no domain resource
+                  deleteDomainPresence(info.getNamespace(), domainUID);
+                }
               }
             }
             
@@ -195,7 +208,118 @@ public class Main {
           }
         });
         
-        engine.createFiber().start(domainList, new Packet(), new CompletionCallback() {
+        Step initialize = CallBuilder.create().with($ -> {
+          $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any with a domainUID label
+        }).listPodAsync(ns, new ResponseStep<V1PodList>(
+            CallBuilder.create().with($ -> {
+              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any with a domainUID label
+            }).listServiceAsync(ns, new ResponseStep<V1ServiceList>(
+                CallBuilder.create().with($ -> {
+                  $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any with a domainUID label
+                }).listIngressAsync(ns, new ResponseStep<V1beta1IngressList>(domainList) {
+                  @Override
+                  public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                      Map<String, List<String>> responseHeaders) {
+                    if (statusCode == CallBuilder.NOT_FOUND) {
+                      return onSuccess(packet, null, statusCode, responseHeaders);
+                    }
+                    return super.onFailure(packet, e, statusCode, responseHeaders);
+                  }
+
+                  @Override
+                  public NextAction onSuccess(Packet packet, V1beta1IngressList result, int statusCode,
+                      Map<String, List<String>> responseHeaders) {
+                    if (result != null) {
+                      for (V1beta1Ingress ingress : result.getItems()) {
+                        String domainUID = IngressWatcher.getIngressDomainUID(ingress);
+                        String clusterName = IngressWatcher.getIngressClusterName(ingress);
+                        if (domainUID != null && clusterName != null) {
+                          DomainPresenceInfo created = new DomainPresenceInfo(ns);
+                          DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
+                          if (info == null) {
+                            info = created;
+                          }
+                          info.getIngresses().put(clusterName, ingress);
+                        }
+                      }
+                    }
+                    ingressWatchers.put(ns, createIngressWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+                    return doNext(packet);
+                  }
+                })) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                if (statusCode == CallBuilder.NOT_FOUND) {
+                  return onSuccess(packet, null, statusCode, responseHeaders);
+                }
+                return super.onFailure(packet, e, statusCode, responseHeaders);
+              }
+
+              @Override
+              public NextAction onSuccess(Packet packet, V1ServiceList result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                if (result != null) {
+                  for (V1Service service : result.getItems()) {
+                    String domainUID = ServiceWatcher.getServiceDomainUID(service);
+                    String serverName = ServiceWatcher.getServiceServerName(service);
+                    String channelName = ServiceWatcher.getServiceChannelName(service);
+                    if (domainUID != null && serverName != null) {
+                      DomainPresenceInfo created = new DomainPresenceInfo(ns);
+                      DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
+                      if (info == null) {
+                        info = created;
+                      }
+                      ServerKubernetesObjects csko = new ServerKubernetesObjects();
+                      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, csko);
+                      ServerKubernetesObjects sko = current != null ? current : csko;
+                      if (channelName != null) {
+                        sko.getChannels().put(channelName, service);
+                      } else {
+                        sko.getService().set(service);
+                      }
+                    }
+                  }
+                }
+                serviceWatchers.put(ns, createServiceWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+                return doNext(packet);
+              }
+            })) {
+          @Override
+          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (statusCode == CallBuilder.NOT_FOUND) {
+              return onSuccess(packet, null, statusCode, responseHeaders);
+            }
+            return super.onFailure(packet, e, statusCode, responseHeaders);
+          }
+
+          @Override
+          public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (result != null) {
+              for (V1Pod pod : result.getItems()) {
+                String domainUID = PodWatcher.getPodDomainUID(pod);
+                String serverName = PodWatcher.getPodServerName(pod);
+                if (domainUID != null && serverName != null) {
+                  DomainPresenceInfo created = new DomainPresenceInfo(ns);
+                  DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
+                  if (info == null) {
+                    info = created;
+                  }
+                  ServerKubernetesObjects csko = new ServerKubernetesObjects();
+                  ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, csko);
+                  ServerKubernetesObjects sko = current != null ? current : csko;
+                  sko.getPod().set(pod);
+                }
+              }
+            }
+            podWatchers.put(ns, createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+            return doNext(packet);
+          }
+        });
+        
+        engine.createFiber().start(initialize, new Packet(), new CompletionCallback() {
           @Override
           public void onCompletion(Packet packet) {
             // no-op
@@ -325,35 +449,6 @@ public class Main {
     }
   }
 
-  private static class WaitForOldFiberStep extends Step {
-    private final Fiber old;
-
-    public WaitForOldFiberStep(Fiber old, Step next) {
-      super(next);
-      this.old = old;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      if (old == null) {
-        return doNext(packet);
-      }
-
-      return doSuspend(next, (fiber) -> {
-        boolean isWillCall = old.cancelAndExitCallback(true, new ExitCallback() {
-          @Override
-          public void onExit() {
-            fiber.resume(packet);
-          }
-        });
-
-        if (!isWillCall) {
-          fiber.resume(packet);
-        }
-      });
-    }
-  }
-  
   /**
    * Restarts the admin server, if already running
    * @param principal Service principal
@@ -444,90 +539,115 @@ public class Main {
     
     LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
 
-    PodWatcher pw = podWatchers.get(dom.getMetadata().getNamespace());
-    if (pw != null) {
-      pw.getListeners().putIfAbsent(domainUID, new DomainStatusUpdater(engine, info));
-    }
-
-    Step strategy = bringAdminServerUp(
+    Step managedServerStrategy = bringManagedServersUp(
+        DomainStatusUpdater.createEndProgressingStep(null));
+    Step adminServerStrategy = bringAdminServerUp(
         connectToAdminAndInspectDomain(
-            bringManagedServersUp(null)));
+            managedServerStrategy));
     
-    Fiber f = engine.createFiber();
+    Step strategy = DomainStatusUpdater.createProgressingStep(
+        DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON, 
+        true, 
+        new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
+    
     Packet p = new Packet();
     
-    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
-    p.put(ProcessingConstants.PRINCIPAL, principal);
-    
-    if (explicitRestartAdmin) {
-      p.put(ProcessingConstants.EXPLICIT_RESTART_ADMIN, Boolean.TRUE);
-    }
-    p.put(ProcessingConstants.EXPLICIT_RESTART_SERVERS, explicitRestartServers);
-    p.put(ProcessingConstants.EXPLICIT_RESTART_CLUSTERS, explicitRestartClusters);
-    
-    if (explicitRestartAdmin) {
-      LOGGER.info(MessageKeys.RESTART_ADMIN_STARTING, domainUID);
-    }
-    if (explicitRestartServers != null) {
-      LOGGER.info(MessageKeys.RESTART_SERVERS_STARTING, domainUID, explicitRestartServers);
-    }
-    if (explicitRestartClusters != null) {
-      LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
-    }
-
-    if (!stopping.get()) {
-      Fiber old = domainUpdaters.put(domainUID, f);
+    String ns = dom.getMetadata().getNamespace();
+    if (initialized.getOrDefault(ns, Boolean.FALSE)) {
+      PodWatcher pw = podWatchers.get(ns);
+      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
+      p.put(ProcessingConstants.PRINCIPAL, principal);
       
-      f.start(new WaitForOldFiberStep(old, strategy), p, new CompletionCallback() {
-        @Override
-        public void onCompletion(Packet packet) {
-          domainUpdaters.remove(domainUID, f);
-          
-          if (explicitRestartAdmin) {
-            LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
-          }
-          if (explicitRestartServers != null) {
-            LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
-          }
-          if (explicitRestartClusters != null) {
-            LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
-          }
-        }
-
-        @Override
-        public void onThrowable(Packet packet, Throwable throwable) {
-          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-          onCompletion(packet);
-          
-          Fiber fs = engine.createFiber();
-          fs.start(DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {
-              // no-op
+      if (explicitRestartAdmin) {
+        p.put(ProcessingConstants.EXPLICIT_RESTART_ADMIN, Boolean.TRUE);
+      }
+      p.put(ProcessingConstants.EXPLICIT_RESTART_SERVERS, explicitRestartServers);
+      p.put(ProcessingConstants.EXPLICIT_RESTART_CLUSTERS, explicitRestartClusters);
+      
+      if (explicitRestartAdmin) {
+        LOGGER.info(MessageKeys.RESTART_ADMIN_STARTING, domainUID);
+      }
+      if (explicitRestartServers != null) {
+        LOGGER.info(MessageKeys.RESTART_SERVERS_STARTING, domainUID, explicitRestartServers);
+      }
+      if (explicitRestartClusters != null) {
+        LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
+      }
+  
+      if (!stopping.get()) {
+        domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
+          @Override
+          public void onCompletion(Packet packet) {
+            if (explicitRestartAdmin) {
+              LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
             }
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            if (explicitRestartServers != null) {
+              LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
             }
-          });
-          
-          // TODO: consider retrying domain update after a delay
-        }
-      });
+            if (explicitRestartClusters != null) {
+              LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
+            }
+          }
+  
+          @Override
+          public void onThrowable(Packet packet, Throwable throwable) {
+            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            
+            domainUpdaters.replaceAndStartFiber(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
+              @Override
+              public void onCompletion(Packet packet) {
+                // no-op
+              }
+  
+              @Override
+              public void onThrowable(Packet packet, Throwable throwable) {
+                LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+              }
+            });
+            
+            // TODO: consider retrying domain update after a delay
+          }
+        });
+      }
+    }
+    LOGGER.exiting();
+  }
+  
+  private static class DomainPrescenceStep extends Step {
+    private final Step managedServerStep;
+
+    public DomainPrescenceStep(Step adminStep, Step managedServerStep) {
+      super(adminStep);
+      this.managedServerStep = managedServerStep;
     }
 
-    LOGGER.exiting();
+    @Override
+    public NextAction apply(Packet packet) {
+      LOGGER.entering();
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+      Domain dom = info.getDomain();
+      DomainSpec spec = dom.getSpec();
+
+      String sc = spec.getStartupControl();
+      if (sc == null || !StartupControlConstants.NONE_STARTUPCONTROL.equals(sc.toUpperCase())) {
+        LOGGER.exiting();
+        return doNext(packet);
+      }
+      
+      LOGGER.exiting();
+      // admin server will be stopped as part of scale down flow
+      return doNext(managedServerStep, packet);
+    }
   }
 
   // pre-conditions: DomainPresenceInfo SPI
   //                 "principal"
   private static Step bringAdminServerUp(Step next) {
-    return DomainStatusUpdater.createProgressingStep(
-        new ListPersistentVolumeClaimStep(
+    return new ListPersistentVolumeClaimStep(
             PodHelper.createAdminPodStep(
                 new BeforeAdminServiceStep(
-                    ServiceHelper.createForServerStep(next)))), true);
+                    ServiceHelper.createForServerStep(next))));
   }
   
   private static class ListPersistentVolumeClaimStep extends Step {
@@ -668,7 +788,18 @@ public class Main {
 
       Domain dom = info.getDomain();
       DomainSpec spec = dom.getSpec();
-
+      
+      if (LOGGER.isFineEnabled()) {
+        Collection<String> runningList = new ArrayList<>();
+        for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+          ServerKubernetesObjects sko = entry.getValue();
+          if (sko != null && sko.getPod() != null) {
+            runningList.add(entry.getKey());
+          }
+         }
+        LOGGER.fine("Running servers for domain with UID: " + spec.getDomainUID() + ", running list: " + runningList);
+      }
+      
       String sc = spec.getStartupControl();
       if (sc == null) {
         sc = StartupControlConstants.AUTO_STARTUPCONTROL;
@@ -807,6 +938,7 @@ public class Main {
           LOGGER.exiting();
           return doNext(scaleDownIfNecessary(info, servers, new ManagedServerUpIteratorStep(ssic, next)), packet);
         case StartupControlConstants.ADMIN_STARTUPCONTROL:
+        case StartupControlConstants.NONE_STARTUPCONTROL:
         default:
           
           info.setServerStartupInfo(null);
@@ -848,28 +980,38 @@ public class Main {
   }
   
   private static Step scaleDownIfNecessary(DomainPresenceInfo info, Collection<String> servers, Step next) {
-    String adminName = info.getDomain().getSpec().getAsName();
+    Domain dom = info.getDomain();
+    DomainSpec spec = dom.getSpec();
+
+    boolean shouldStopAdmin = false;
+    String sc = spec.getStartupControl();
+    if (sc != null && StartupControlConstants.NONE_STARTUPCONTROL.equals(sc.toUpperCase())) {
+      shouldStopAdmin = true;
+      next = DomainStatusUpdater.createAvailableStep(DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, next);
+    }
+
+    String adminName = spec.getAsName();
     Map<String, ServerKubernetesObjects> currentServers = info.getServers();
     Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
     for(Map.Entry<String, ServerKubernetesObjects> entry : currentServers.entrySet()) {
-      if (!entry.getKey().equals(adminName) && !servers.contains(entry.getKey())) {
+      if ((shouldStopAdmin || !entry.getKey().equals(adminName)) && !servers.contains(entry.getKey())) {
         serversToStop.add(entry);
       }
     }
     
     if (!serversToStop.isEmpty()) {
-      return new ManagedServerDownIteratorStep(serversToStop, next);
+      return new ServerDownIteratorStep(serversToStop, next);
     }
     
     return next;
   }
   
   private static class ManagedServerUpIteratorStep extends Step {
-    private final Iterator<ServerStartupInfo> it;
+    private final Collection<ServerStartupInfo> c;
 
     public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> c, Step next) {
       super(next);
-      this.it = c.iterator();
+      this.c = c;
     }
 
     @Override
@@ -878,14 +1020,26 @@ public class Main {
       Map<String, StepAndPacket> rolling = new ConcurrentHashMap<>();
       packet.put(ProcessingConstants.SERVERS_TO_ROLL, rolling);
       
-      while (it.hasNext()) {
-        ServerStartupInfo ssi = it.next();
+      for (ServerStartupInfo ssi : c) {
         Packet p = packet.clone();
         p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
         p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
         p.put(ProcessingConstants.ENVVARS, ssi.envVars);
         
         startDetails.add(new StepAndPacket(bringManagedServerUp(ssi, null), p));
+      }
+      
+      if (LOGGER.isFineEnabled()) {
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+        Domain dom = info.getDomain();
+        DomainSpec spec = dom.getSpec();
+        
+        Collection<String> serverList = new ArrayList<>();
+        for (ServerStartupInfo ssi : c) {
+          serverList.add(ssi.serverConfig.getName());
+        }        
+        LOGGER.fine("Starting or validating servers for domain with UID: " + spec.getDomainUID() + ", server list: " + serverList);
       }
       
       if (startDetails.isEmpty()) {
@@ -905,6 +1059,19 @@ public class Main {
       @SuppressWarnings("unchecked")
       Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
 
+      if (LOGGER.isFineEnabled()) {
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+        Domain dom = info.getDomain();
+        DomainSpec spec = dom.getSpec();
+        
+        Collection<String> rollingList = Collections.emptyList();
+        if (rolling != null) {
+          rollingList = rolling.keySet();
+        }
+        LOGGER.fine("Rolling servers for domain with UID: " + spec.getDomainUID() + ", rolling list: " + rollingList);
+      }
+
       if (rolling == null || rolling.isEmpty()) {
         return doNext(packet);
       }
@@ -913,30 +1080,47 @@ public class Main {
     }
   }
   
-  private static class ManagedServerDownIteratorStep extends Step {
-    private final Iterator<Map.Entry<String, ServerKubernetesObjects>> it;
+  private static class ServerDownIteratorStep extends Step {
+    private final Collection<Map.Entry<String, ServerKubernetesObjects>> c;
 
-    public ManagedServerDownIteratorStep(Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
+    public ServerDownIteratorStep(Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
       super(next);
-      this.it = serversToStop.iterator();
+      this.c = serversToStop;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      if (it.hasNext()) {
-        Map.Entry<String, ServerKubernetesObjects> entry = it.next();
-        return doNext(new ManagedServerDownStep(entry.getKey(), entry.getValue(), this), packet);
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+
+      for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
+        startDetails.add(new StepAndPacket(new ServerDownStep(entry.getKey(), entry.getValue(), null), packet.clone()));
       }
       
-      return doNext(packet);
+      if (LOGGER.isFineEnabled()) {
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+        Domain dom = info.getDomain();
+        DomainSpec spec = dom.getSpec();
+        
+        Collection<String> stopList = new ArrayList<>();
+        for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
+          stopList.add(entry.getKey());
+        }
+        LOGGER.fine("Stopping servers for domain with UID: " + spec.getDomainUID() + ", stop list: " + stopList);
+      }
+      
+      if (startDetails.isEmpty()) {
+        return doNext(packet);
+      }
+      return doForkJoin(next, packet, startDetails);
     }
   }
   
-  private static class ManagedServerDownStep extends Step {
+  private static class ServerDownStep extends Step {
     private final String serverName;
     private final ServerKubernetesObjects sko;
 
-    public ManagedServerDownStep(String serverName, ServerKubernetesObjects sko, Step next) {
+    public ServerDownStep(String serverName, ServerKubernetesObjects sko, Step next) {
       super(next);
       this.serverName = serverName;
       this.sko = sko;
@@ -944,21 +1128,16 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      List<V1Service> services = new ArrayList<V1Service>();
-      services.add(sko.getService().get());
-      services.addAll(sko.getChannels().values());
-
-      return doNext(IngressHelper.createRemoveServerStep(serverName, sko.getService().get(),
-          new DeleteServiceListStep(services, 
-              PodHelper.deletePodStep(sko, serverName,
-                  new ManagedServerDownFinalizeStep(serverName, next)))), packet);
+      return doNext(IngressHelper.createRemoveServerStep(serverName,
+          ServiceHelper.deleteServicesStep(sko, 
+              PodHelper.deletePodStep(sko, new ServerDownFinalizeStep(serverName, next)))), packet);
     }
   }
   
-  private static class ManagedServerDownFinalizeStep extends Step {
+  private static class ServerDownFinalizeStep extends Step {
     private final String serverName;
 
-    public ManagedServerDownFinalizeStep(String serverName, Step next) {
+    public ServerDownFinalizeStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
     }
@@ -1011,26 +1190,22 @@ public class Main {
     }
   }
   
-  private static void deleteDomainPresence(Domain dom) throws ApiException {
-    LOGGER.entering();
-
+  private static void deleteDomainPresence(Domain dom) {
     V1ObjectMeta meta = dom.getMetadata();
     DomainSpec spec = dom.getSpec();
     String namespace = meta.getNamespace();
 
     String domainUID = spec.getDomainUID();
     
-    Fiber old = domainUpdaters.remove(domainUID);
-    
-    PodWatcher prw = podWatchers.get(dom.getMetadata().getNamespace());
-    if (prw != null) {
-      prw.getListeners().remove(domainUID);
-    }
+    deleteDomainPresence(namespace, domainUID);
+  }
+  
+  private static void deleteDomainPresence(String namespace, String domainUID) {
+    LOGGER.entering();
 
     domains.remove(domainUID);
 
-    Fiber f = engine.createFiber();
-    f.start(new WaitForOldFiberStep(old, new DeleteDomainStep(namespace, domainUID)), new Packet(), new CompletionCallback() {
+    domainUpdaters.startFiber(domainUID, new DeleteDomainStep(namespace, domainUID), new Packet(), new CompletionCallback() {
       @Override
       public void onCompletion(Packet packet) {
         // no-op
@@ -1262,8 +1437,8 @@ public class Main {
     return DomainWatcher.create(namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
   }
   
-  private static PodWatcher createPodWatcher(String namespace)  {
-    return PodWatcher.create(namespace, "", Main::dispatchPodWatch, stopping);
+  private static PodWatcher createPodWatcher(String namespace, String initialResourceVersion)  {
+    return PodWatcher.create(namespace, initialResourceVersion, Main::dispatchPodWatch, stopping);
   }
 
   private static void dispatchPodWatch(Watch.Response<V1Pod> item) {
@@ -1275,11 +1450,19 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().get(serverName);
+          ServerKubernetesObjects created = new ServerKubernetesObjects();
+          ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+          ServerKubernetesObjects sko = current != null ? current : created;
           if (sko != null) {
+            Fiber f;
+            Packet packet;
             switch (item.type) {
               case "ADDED":
                 sko.getPod().set(p);
+                f = engine.createFiber();
+                packet = new Packet();
+                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "MODIFIED":
                 V1Pod skoPod = sko.getPod().get();
@@ -1288,9 +1471,17 @@ public class Main {
                   // and modifications are to the terminating pod
                   sko.getPod().compareAndSet(skoPod, p);
                 }
+                f = engine.createFiber();
+                packet = new Packet();
+                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "DELETED":
                 V1Pod oldPod = sko.getPod().getAndSet(null);
+                f = engine.createFiber();
+                packet = new Packet();
+                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+                f.start(DomainStatusUpdater.createStatusStep(p, true, null), packet, null);
                 if (oldPod != null) {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
@@ -1308,8 +1499,8 @@ public class Main {
   }
   
 
-  private static ServiceWatcher createServiceWatcher(String namespace)  {
-    return ServiceWatcher.create(namespace, "", Main::dispatchServiceWatch, stopping);
+  private static ServiceWatcher createServiceWatcher(String namespace, String initialResourceVersion)  {
+    return ServiceWatcher.create(namespace, initialResourceVersion, Main::dispatchServiceWatch, stopping);
   }
 
   private static void dispatchServiceWatch(Watch.Response<V1Service> item) {
@@ -1322,7 +1513,9 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects sko = info.getServers().get(serverName);
+          ServerKubernetesObjects created = new ServerKubernetesObjects();
+          ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+          ServerKubernetesObjects sko = current != null ? current : created;
           if (sko != null) {
             switch (item.type) {
               case "ADDED":
@@ -1372,8 +1565,8 @@ public class Main {
     }
   }
   
-  private static IngressWatcher createIngressWatcher(String namespace)  {
-    return IngressWatcher.create(namespace, "", Main::dispatchIngressWatch, stopping);
+  private static IngressWatcher createIngressWatcher(String namespace, String initialResourceVersion)  {
+    return IngressWatcher.create(namespace, initialResourceVersion, Main::dispatchIngressWatch, stopping);
   }
 
   private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
@@ -1419,30 +1612,26 @@ public class Main {
    * @param principal The name of the principal that will be used in this watch.
    */
   private static void dispatchDomainWatch(Watch.Response<Domain> item) {
-    try {
-      Domain d;
-      String domainUID;
-      switch (item.type) {
-        case "ADDED":
-        case "MODIFIED":
-          d = item.object;
-          domainUID = d.getSpec().getDomainUID();
-          LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
-          doCheckAndCreateDomainPresence(d);
-          break;
+    Domain d;
+    String domainUID;
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        d = item.object;
+        domainUID = d.getSpec().getDomainUID();
+        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
+        doCheckAndCreateDomainPresence(d);
+        break;
 
-        case "DELETED":
-          d = item.object;
-          domainUID = d.getSpec().getDomainUID();
-          LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
-          deleteDomainPresence(d);
-          break;
+      case "DELETED":
+        d = item.object;
+        domainUID = d.getSpec().getDomainUID();
+        LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
+        deleteDomainPresence(d);
+        break;
 
-        case "ERROR":
-        default:
-      }
-    } catch (ApiException apiException) {
-      LOGGER.info(MessageKeys.EXCEPTION, apiException);
+      case "ERROR":
+      default:
     }
   }
 

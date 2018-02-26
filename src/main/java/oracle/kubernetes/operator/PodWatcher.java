@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.gson.reflect.TypeToken;
@@ -15,8 +16,10 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodCondition;
 import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -39,14 +42,8 @@ public class PodWatcher implements Runnable {
   private final WatchingEventDestination<V1Pod> destination;
   private final AtomicBoolean isStopping;
   
-  // Map of domainUID to PodStateListener
-  private final Map<String, PodStateListener> listeners = new ConcurrentHashMap<>();
-  // Map of domainUID to Map of server name to Ready state
-  private final Map<String, Map<String, Boolean>> serversKnownReadyState = new ConcurrentHashMap<>();
-  // Map of domainUID to Map of pod name to pod status for failed pods
-  private final Map<String, Map<String, V1PodStatus>> failedPods = new ConcurrentHashMap<>();
   // Map of Pod name to OnReady
-  private final Map<String, OnReady> readyCallbackRegistrations = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, OnReady> readyCallbackRegistrations = new ConcurrentHashMap<>();
   
   /**
    * Factory for PodWatcher
@@ -129,50 +126,12 @@ public class PodWatcher implements Runnable {
   private void processEventCallback(Watch.Response<V1Pod> item) {
     LOGGER.entering();
     
-    V1Pod pod;
-    Boolean previous;
-    String domainUID;
-    String name;
     switch(item.type) {
     case "ADDED":
     case "MODIFIED":
-      pod = item.object;
+      V1Pod pod = item.object;
       Boolean isReady = isReady(pod);
       String podName = pod.getMetadata().getName();
-      domainUID = getPodDomainUID(pod);
-      name = getPodServerName(pod);
-      if (domainUID != null && name != null) {
-        Map<String, Boolean> created = new ConcurrentHashMap<>();
-        Map<String, Boolean> map = serversKnownReadyState.putIfAbsent(domainUID, created);
-        if (map == null) {
-          map = created;
-        }
-        previous = map.put(name, isReady);
-        Map<String, V1PodStatus> map2;
-        boolean previouslyFailed = false;
-        boolean failed = isFailed(pod);
-        if (failed) {
-          Map<String, V1PodStatus> created2 = new ConcurrentHashMap<>();
-          map2 = failedPods.putIfAbsent(domainUID, created2);
-          if (map2 == null) {
-            map2 = created2;
-          }
-          previouslyFailed = map2.put(podName, pod.getStatus()) != null;
-        } else {
-          map2 = failedPods.get(domainUID);
-          if (map2 != null) {
-            previouslyFailed = map2.remove(podName) != null;
-          }
-        }
-        
-        if (!isReady.equals(previous) || failed != previouslyFailed) {
-          // change in Pod Ready of Failed state
-          PodStateListener listener = listeners.get(domainUID);
-          if (listener != null) {
-            listener.onStateChange(map, map2);
-          }
-        }
-      }
       if (isReady) {
         OnReady ready = readyCallbackRegistrations.remove(podName);
         if (ready != null) {
@@ -181,28 +140,6 @@ public class PodWatcher implements Runnable {
       }
       break;
     case "DELETED":
-      pod = item.object;
-      domainUID = getPodDomainUID(pod);
-      name = getPodServerName(pod);
-      if (domainUID != null && name != null) {
-        Map<String, Boolean> map = serversKnownReadyState.get(domainUID);
-        previous = map != null ? map.remove(name) : null;
-        Map<String, V1PodStatus> map2;
-        boolean previouslyFailed = false;
-        map2 = failedPods.get(domainUID);
-        if (map2 != null) {
-          previouslyFailed = map2.remove(pod.getMetadata().getName()) != null;
-        }
-        
-        if (Boolean.TRUE.equals(previous) || previouslyFailed) {
-          // change in Pod Ready of Failed state
-          PodStateListener listener = listeners.get(domainUID);
-          if (listener != null) {
-            listener.onStateChange(map, map2);
-          }
-        }
-      }
-      break;
     case "ERROR":
     default:
     }
@@ -212,7 +149,7 @@ public class PodWatcher implements Runnable {
     LOGGER.exiting();
   }
   
-  private boolean isReady(V1Pod pod) {
+  static boolean isReady(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       if ("Running".equals(status.getPhase())) {
@@ -233,7 +170,7 @@ public class PodWatcher implements Runnable {
     return false;
   }
   
-  private boolean isFailed(V1Pod pod) {
+  static boolean isFailed(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       if ("Failed".equals(status.getPhase())) {
@@ -244,7 +181,7 @@ public class PodWatcher implements Runnable {
     return false;
   }
   
-  private String getPodDomainUID(V1Pod pod) {
+  static String getPodDomainUID(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
     if (labels != null) {
@@ -253,17 +190,13 @@ public class PodWatcher implements Runnable {
     return null;
   }
   
-  private String getPodServerName(V1Pod pod) {
+  static String getPodServerName(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
     if (labels != null) {
       return labels.get(LabelConstants.SERVERNAME_LABEL);
     }
     return null;
-  }
-  
-  Map<String, PodStateListener> getListeners() {
-    return listeners;
   }
   
   /**
@@ -290,12 +223,43 @@ public class PodWatcher implements Runnable {
         return doNext(packet);
       }
       
-      LOGGER.info(MessageKeys.WAITING_FOR_POD_READY, pod.getMetadata().getName());
+      V1ObjectMeta metadata = pod.getMetadata();
       
+      LOGGER.info(MessageKeys.WAITING_FOR_POD_READY, metadata.getName());
+      
+      AtomicBoolean didResume = new AtomicBoolean(false);
       return doSuspend((fiber) -> {
-        registerForOnReady(pod, () -> {
-          fiber.resume(packet);
-        });
+        OnReady ready = () -> {
+          if (didResume.compareAndSet(false, true)) {
+            fiber.resume(packet);
+          }
+        };
+        readyCallbackRegistrations.put(metadata.getName(), ready);
+
+        // Timing window -- pod may have come ready before registration for callback
+        fiber.createChildFiber().start(CallBuilder.create().readPodAsync(
+            metadata.getName(), metadata.getNamespace(), new ResponseStep<V1Pod>(null) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                if (statusCode == CallBuilder.NOT_FOUND) {
+                  return onSuccess(packet, null, statusCode, responseHeaders);
+                }
+                return super.onFailure(packet, e, statusCode, responseHeaders);
+              }
+
+              @Override
+              public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                if (result != null && isReady(result)) {
+                  if (didResume.compareAndSet(false, true)) {
+                    readyCallbackRegistrations.remove(metadata.getName(), ready);
+                    fiber.resume(packet);
+                  }
+                }
+                return doNext(packet);
+              }
+        }), packet.clone(), null);
       });
     }
   }
@@ -304,29 +268,4 @@ public class PodWatcher implements Runnable {
   private interface OnReady {
     void onReady();
   }
-  
-  private void registerForOnReady(V1Pod pod, OnReady readyListener) {
-    String podName = pod.getMetadata().getName();
-    readyCallbackRegistrations.put(podName, readyListener);
-    
-    // Timing window -- Pod may have become ready in between read and this registration
-    String domainUID = getPodDomainUID(pod);
-    String name = getPodServerName(pod);
-    if (domainUID != null && name != null) {
-      Map<String, Boolean> map = serversKnownReadyState.get(domainUID);
-      if (Boolean.TRUE.equals(map.get(name))) {
-        // Pod is already Ready
-        OnReady r = readyCallbackRegistrations.remove(podName);
-        if (r != null) {
-          r.onReady();
-        }
-      }
-    }
-  }
 }
-
-@FunctionalInterface
-interface PodStateListener {
-  public void onStateChange(Map<String, Boolean> knownReadyState, Map<String, V1PodStatus> failedPods);
-}
-
