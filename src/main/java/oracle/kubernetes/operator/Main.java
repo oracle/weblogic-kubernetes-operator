@@ -283,9 +283,6 @@ public class Main {
     if (imagePullPolicy == null || imagePullPolicy.length() == 0) {
       spec.setImagePullPolicy(imagePullPolicy = (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX)) ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY);
     }
-    if (spec.getAsEnv() == null) {
-      spec.setAsEnv(new ArrayList<V1EnvVar>());
-    }
     if (spec.getExportT3Channels() == null) {
       spec.setExportT3Channels(new ArrayList<String>());
     }

@@ -171,11 +171,7 @@ public class PodHelper {
       livenessProbe.setFailureThreshold(1);
       container.livenessProbe(livenessProbe);
 
-      if (spec.getAsEnv() != null && spec.getAsEnv().size() != 0) {
-        for (V1EnvVar ev : spec.getAsEnv()) {
-          container.addEnvItem(ev);
-        }
-      } else if (spec.getServerStartup() != null && spec.getServerStartup().size() != 0) {
+      if (spec.getServerStartup() != null) {
         for (ServerStartup ss : spec.getServerStartup()) {
           if (ss.getServerName().equals(spec.getAsName())) {
             for (V1EnvVar ev : ss.getEnv()) {
