@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -99,7 +100,9 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Service
       Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
@@ -122,7 +125,9 @@ public class ServiceHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                sko.getService().set(result);
+                if (result != null) {
+                  sko.getService().set(result);
+                }
                 return doNext(packet);
               }
             });
@@ -233,10 +238,12 @@ public class ServiceHelper {
                 Map<String, List<String>> responseHeaders) {
               
               LOGGER.info(messageKey, weblogicDomainUID, serverName);
-              if (channelName != null) {
-                sko.getChannels().put(channelName, result);
-              } else {
-                sko.getService().set(result);
+              if (result != null) {
+                if (channelName != null) {
+                  sko.getChannels().put(channelName, result);
+                } else {
+                  sko.getService().set(result);
+                }
               }
               return doNext(packet);
             }
@@ -310,7 +317,9 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Service
       Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
@@ -333,7 +342,9 @@ public class ServiceHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_CREATED : MessageKeys.MANAGED_SERVICE_CREATED, weblogicDomainUID, serverName);
-                sko.getChannels().put(networkAccessPoint.getName(), result);
+                if (result != null) {
+                  sko.getChannels().put(networkAccessPoint.getName(), result);
+                }
                 return doNext(packet);
               }
             });
@@ -355,6 +366,105 @@ public class ServiceHelper {
       });
       
       return doNext(read, packet);
+    }
+  }
+  
+  /**
+   * Factory for {@link Step} that deletes server pod
+   * @param sko Server Kubernetes Objects
+   * @param serverName Server name
+   * @param next Next processing step
+   * @return Step for deleting server pod
+   */
+  public static Step deleteServicesStep(ServerKubernetesObjects sko, Step next) {
+    return new DeleteServicesStep(sko, new DeleteChannelsIteratorStep(sko, next));
+  }
+
+  private static class DeleteServicesStep extends Step {
+    private final ServerKubernetesObjects sko;
+
+    public DeleteServicesStep(ServerKubernetesObjects sko, Step next) {
+      super(next);
+      this.sko = sko;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      
+      Domain dom = info.getDomain();
+      V1ObjectMeta meta = dom.getMetadata();
+      String namespace = meta.getNamespace();
+      
+      // Set service to null so that watcher doesn't try to recreate service
+      V1Service oldService = sko.getService().getAndSet(null);
+      if (oldService != null) {
+        return doNext(CallBuilder.create().deleteServiceAsync(oldService.getMetadata().getName(), namespace, new ResponseStep<V1Status>(next) {
+          @Override
+          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (statusCode == CallBuilder.NOT_FOUND) {
+              return onSuccess(packet, null, statusCode, responseHeaders);
+            }
+            return super.onFailure(packet, e, statusCode, responseHeaders);
+          }
+  
+          @Override
+          public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            return doNext(next, packet);
+          }
+        }), packet);
+      }
+      return doNext(packet);
+    }
+  }
+  
+  private static class DeleteChannelsIteratorStep extends Step {
+    private final ServerKubernetesObjects sko;
+    private final Iterator<Map.Entry<String, V1Service>> it;
+
+    public DeleteChannelsIteratorStep(ServerKubernetesObjects sko, Step next) {
+      super(next);
+      this.sko = sko;
+      this.it = sko.getChannels().entrySet().iterator();
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (it.hasNext()) {
+        Map.Entry<String, V1Service> entry = it.next();
+        
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        
+        Domain dom = info.getDomain();
+        V1ObjectMeta meta = dom.getMetadata();
+        String namespace = meta.getNamespace();
+
+        // Set service to null so that watcher doesn't try to recreate service
+        V1Service oldService = sko.getChannels().remove(entry.getKey());
+        if (oldService != null) {
+          return doNext(CallBuilder.create().deleteServiceAsync(oldService.getMetadata().getName(), namespace, new ResponseStep<V1Status>(this) {
+            @Override
+            public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                Map<String, List<String>> responseHeaders) {
+              if (statusCode == CallBuilder.NOT_FOUND) {
+                return onSuccess(packet, null, statusCode, responseHeaders);
+              }
+              return super.onFailure(packet, e, statusCode, responseHeaders);
+            }
+    
+            @Override
+            public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
+                Map<String, List<String>> responseHeaders) {
+              return doNext(this, packet);
+            }
+          }), packet);
+        }
+        return doNext(this, packet);
+      }
+      
+      return doNext(packet);
     }
   }
 }

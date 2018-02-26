@@ -132,10 +132,10 @@ public final class NextAction {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(super.toString()).append(" [");
+    buf.append('[');
     buf.append("kind=").append(kind).append(',');
     buf.append("next=").append(next).append(',');
-    buf.append("packet=").append(packet != null ? packet.toString() : null).append(',');
+    buf.append("packet=").append(packet != null ? packet.toString() : null).append(']');
     return buf.toString();
   }
 }
