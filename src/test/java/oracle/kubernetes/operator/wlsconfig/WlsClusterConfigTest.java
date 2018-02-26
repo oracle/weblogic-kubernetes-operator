@@ -149,7 +149,7 @@ public class WlsClusterConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs, null);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in weblogic cluster with name cluster1"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in WebLogic cluster with name cluster1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -164,14 +164,14 @@ public class WlsClusterConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs, null);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
   }
 
   @Test
-  public void verifyValidateClusterStartupSuggestsUpdateIfReplicasTooHigh() throws Exception {
+  public void verifyValidateClusterStartupDoNotSuggestsUpdateToConfiguredClusterIfReplicasTooHigh() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
     ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
@@ -180,8 +180,7 @@ public class WlsClusterConfigTest {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
       wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
-      assertEquals(1, suggestedConfigUpdates.size());
-      assertTrue(suggestedConfigUpdates.get(0) instanceof WlsClusterConfig.DynamicClusterSizeConfigUpdate);
+      assertEquals(0, suggestedConfigUpdates.size());
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -197,6 +196,23 @@ public class WlsClusterConfigTest {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs, null);
       assertFalse("No message should be logged, but found: " + handler.getAllFormattedMessage(), handler.hasWarningMessageLogged());
+    } finally {
+      TestUtil.removeLogHandler(wlsClusterConfig, handler);
+    }
+  }
+
+  @Test
+  public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfReplicasTooHigh() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    TestUtil.LogHandlerImpl handler = null;
+    try {
+      handler = TestUtil.setupLogHandler(wlsClusterConfig);
+      ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+      wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
+      assertEquals(1, suggestedConfigUpdates.size());
+      assertTrue(suggestedConfigUpdates.get(0) instanceof WlsClusterConfig.DynamicClusterSizeConfigUpdate);
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -332,6 +348,7 @@ public class WlsClusterConfigTest {
   Step getNext(Step step) throws IllegalAccessException, NoSuchFieldException {
     if (nextField == null) {
       nextField = Step.class.getDeclaredField("next");
+      nextField.setAccessible(true);
     }
     return (Step) nextField.get(step);
   }
