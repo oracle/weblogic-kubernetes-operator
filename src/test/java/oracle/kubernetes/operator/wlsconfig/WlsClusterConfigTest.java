@@ -61,7 +61,7 @@ public class WlsClusterConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in weblogic cluster with name cluster1"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in WebLogic cluster with name cluster1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -76,7 +76,7 @@ public class WlsClusterConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
