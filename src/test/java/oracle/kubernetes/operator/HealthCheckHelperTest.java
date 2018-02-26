@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
@@ -18,10 +19,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.logging.Handler;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
+import java.util.List;
+import java.util.logging.*;
 
 public class HealthCheckHelperTest {
 
@@ -35,12 +36,14 @@ public class HealthCheckHelperTest {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static ByteArrayOutputStream bos = new ByteArrayOutputStream();
   private static Handler hdlr = new StreamHandler(bos, new SimpleFormatter());
+  private List<Handler> savedHandlers = new ArrayList<>();
 
   @Before
   public void setUp() throws Exception {
+    savedHandlers = TestUtils.removeConsoleHandlers(LOGGER.getUnderlyingLogger());
     LOGGER.getUnderlyingLogger().addHandler(hdlr);
 
-    if (!isKubernetesAvailable()) return;
+    if (!TestUtils.isKubernetesAvailable()) return;
 
     ClientHolder client = ClientHelper.getInstance().take();
     try {
@@ -56,7 +59,7 @@ public class HealthCheckHelperTest {
 
   @After
   public void tearDown() throws Exception {
-
+    TestUtils.restoreConsoleHandlers(LOGGER.getUnderlyingLogger(), savedHandlers);
     LOGGER.getUnderlyingLogger().removeHandler(hdlr);
 
     // Delete anything we created
@@ -97,7 +100,7 @@ public class HealthCheckHelperTest {
 
   @Test
   public void testAccountNoPrivs() throws Exception {
-    Assume.assumeTrue(isKubernetesAvailable());
+    Assume.assumeTrue(TestUtils.isKubernetesAvailable());
     unitHealthCheckHelper.performSecurityChecks("unit-test-svc-account-no-privs");
     hdlr.flush();
     String logOutput = bos.toString();
@@ -105,10 +108,6 @@ public class HealthCheckHelperTest {
     Assert.assertTrue("Log output did not contain Access Denied error",
         logOutput.contains("Access denied for service account"));
     bos.reset();
-  }
-
-  private boolean isKubernetesAvailable() { // assume it is available whenever running on linux
-    return System.getProperty("os.name").toLowerCase().contains("nix");
   }
 
   // Create a named namespace
