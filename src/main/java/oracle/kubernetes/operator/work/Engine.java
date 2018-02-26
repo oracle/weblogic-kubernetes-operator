@@ -116,6 +116,10 @@ public class Engine {
     return new Fiber(this);
   }
 
+  Fiber createChildFiber(Fiber parent) {
+    return new Fiber(this, parent);
+  }
+
   private class DaemonThreadFactory implements ThreadFactory {
     final AtomicInteger threadNumber = new AtomicInteger(1);
     final String namePrefix;
