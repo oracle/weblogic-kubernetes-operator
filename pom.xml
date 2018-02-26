@@ -82,35 +82,6 @@
                         <exclude>**/*Test.java</exclude>
                     </includes>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </execution>
-                    <!--
-                    <execution>
-                      <id>kubernetes-config</id>
-                      <phase>test</phase>
-                      <goals>
-                          <goal>test</goal>
-                      </goals>
-                      <configuration>
-                          <argLine>${surefireArgLine} -Xms512m -Xmx1500m</argLine>
-                          <environmentVariables>
-                              <KUBECONFIG>
-                                  ${project.basedir}/your.kube.config
-                              </KUBECONFIG>
-                          </environmentVariables>
-                      </configuration>
-                  </execution>
-                  -->
-                </executions>
             </plugin>
 
             <plugin>
@@ -525,6 +496,13 @@
             <artifactId>junit</artifactId>
             <version>${junit-version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <properties>
