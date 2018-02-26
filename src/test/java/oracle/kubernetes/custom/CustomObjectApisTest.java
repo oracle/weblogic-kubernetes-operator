@@ -20,9 +20,9 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
-
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -32,11 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
-import java.util.logging.Logger;
 
 /**
  * Test CustomResourceDefinitions and custom objects
  */
+@Ignore("Ignore - sometimes runs indefinitely")
 public class CustomObjectApisTest {
 
   // Parameters for custom resources
