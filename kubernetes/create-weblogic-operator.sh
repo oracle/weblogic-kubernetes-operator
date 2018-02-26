@@ -2,11 +2,20 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-
 # Initialize
-scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+script="${BASH_SOURCE[0]}"
+scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 internalDir="${scriptDir}/internal"
 source ${internalDir}/utility.sh
+
+function usage {
+  echo usage: ${script}/create-weblogic-operator.sh -o dir [-i file] [-g] [-h]
+  echo "  -o Ouput directory for the generated yaml files, must be specified."
+  echo "  -i Parameter input file, defaults to kubernetes/create-weblogic-operator-inputs.yaml"
+  echo "  -g Only generate the files to create the operator, do not execute them"
+  echo "  -h Help"
+  exit $1
+}
 
 #
 # Parse the command line options
@@ -21,20 +30,17 @@ while getopts "ghi:o:" opt; do
     ;;
     o) outputDir="${OPTARG}"
     ;;
-    h) echo ./create-weblogic-operator.sh [-g] [-i file] [-o dir] [-h]
-       echo
-       echo -g Only generate the files to create the operator, do not execute them
-       echo -i Parameter input file, defaults to kubernetes/create-weblogic-operator-inputs.yaml
-       echo -o Ouput directory for the generated yaml files, defaults to the current directory of the shell executing this script.
-       echo -h Help
-       exit
+    h) usage 0
     ;;
-    \?) fail "Invalid or missing command line option"
+    *) usage 1
     ;;
   esac
 done
 
-
+if [ -z ${outputDir} ]; then
+  echo "${script}: -o must be specified."
+  usage 1
+fi
 
 #
 # Function to setup the environment to run the create domain job
@@ -48,12 +54,8 @@ function initialize {
     validationError "kubectl is not installed"
   fi
 
-  if [ -z ${outputDir} ]; then
-    validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
-  else
-    if ! [ -d ${outputDir} ]; then
-      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
-    fi
+  if ! [ -d ${outputDir} ]; then
+    validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
   fi
 
   oprInput="${internalDir}/weblogic-operator-template.yaml"
