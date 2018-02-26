@@ -267,20 +267,21 @@ public class DomainSpec {
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are ADMIN, ALL,
-   * SPECIFIED or AUTO. Defaults to AUTO. ADMIN indicates that only the
-   * administration server is started. ALL indicates that all servers in the
-   * domain will be started. SPECIFIED indicates that the administration server is
-   * started and then additionally only those servers listed under serverStartup
-   * or managed servers belonging to clusters listed under clusterStartup up to
-   * the cluster's replicas field will be started. AUTO indicates that servers
-   * will be started exactly as with SPECIFIED, but then managed servers belonging
-   * to clusters not listed under clusterStartup will be started up to the
-   * replicas field.
+   * Controls which managed servers will be started. Legal values are NONE, 
+   * ADMIN, ALL, SPECIFIED or AUTO. Defaults to AUTO. NONE indicates that no
+   * servers, including the administration server, will be started.  ADMIN 
+   * indicates that only the administration server is started. ALL indicates 
+   * that all servers in the domain will be started. SPECIFIED indicates that 
+   * the administration server is started and then additionally only those 
+   * servers listed under serverStartup or managed servers belonging to 
+   * clusters listed under clusterStartup up to the cluster's replicas field 
+   * will be started. AUTO indicates that servers will be started exactly as 
+   * with SPECIFIED, but then managed servers belonging to clusters not listed 
+   * under clusterStartup will be started up to the replicas field.
    * 
    * @return startupControl
    **/
-  @ApiModelProperty(value = "Controls which managed servers will be started. Legal values are ADMIN, ALL, SPECIFIED or AUTO.  Defaults to AUTO.  ADMIN indicates that only the administration server is started.  ALL indicates that all servers in the domain will be started.  SPECIFIED indicates that the administration server is started and then additionally only those servers listed under serverStartup or managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas field will be started.  AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.")
+  @ApiModelProperty(value = "Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or AUTO.  Defaults to AUTO.  NONE indicates that no servers, including the administration server, will be started.  ADMIN indicates that only the administration server is started.  ALL indicates that all servers in the domain will be started.  SPECIFIED indicates that the administration server is started and then additionally only those servers listed under serverStartup or managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas field will be started.  AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.")
   public String getStartupControl() {
     return startupControl;
   }

@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -56,6 +55,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private Packet packet;
 
   public final Engine owner;
+  private final Fiber parent;
 
   /**
    * Is this thread suspended? 0=not suspended, 1=suspended.
@@ -148,7 +148,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final ExitCallback PLACEHOLDER = () -> {};
 
   Fiber(Engine engine) {
+    this(engine, null);
+  }
+  
+  Fiber(Engine engine, Fiber parent) {
     this.owner = engine;
+    this.parent = parent;
     id = iotaGen.incrementAndGet();
 
     // if this is run from another fiber, then we naturally inherit its context
@@ -175,7 +180,13 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     this.completionCallback = completionCallback;
     this.applyThrowable = null;
 
-    owner.addRunnable(this);
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("{0} started", new Object[] { getName() });
+    }
+
+    if (status.get() == NOT_COMPLETE) {
+      owner.addRunnable(this);
+    }
   }
 
   /**
@@ -211,20 +222,25 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    */
   public void resume(Packet resumePacket, CompletionCallback callback) {
     if (status.get() == NOT_COMPLETE) {
+      
+      if (LOGGER.isFineEnabled()) {
+        LOGGER.fine("{0} resumed", new Object[] { getName() });
+      }
+
       lock.lock();
       try {
         if (callback != null) {
           setCompletionCallback(callback);
         }
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("{0} resuming. Will have suspendedCount={1}", new Object[] { getName(), suspendedCount - 1 });
+        if (LOGGER.isFinerEnabled()) {
+          LOGGER.finer("{0} resuming. Will have suspendedCount={1}", new Object[] { getName(), suspendedCount - 1 });
         }
         packet = resumePacket;
         if (--suspendedCount == 0) {
           owner.addRunnable(this);
         } else {
-          if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("{0} taking no action on resume because suspendedCount != 0: {1}",
+          if (LOGGER.isFinerEnabled()) {
+            LOGGER.finer("{0} taking no action on resume because suspendedCount != 0: {1}",
                 new Object[] { getName(), suspendedCount });
           }
         }
@@ -243,6 +259,11 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     if (t == null) {
       throw new IllegalArgumentException();
     }
+    
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("{0} terminated", new Object[] { getName() });
+    }
+
     lock.lock();
     try {
       if (suspendedCount <= 0) {
@@ -261,7 +282,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @return Child fiber
    */
   public Fiber createChildFiber() {
-    Fiber child = owner.createFiber();
+    Fiber child = owner.createChildFiber(this);
     
     synchronized (this) {
       if (children == null) {
@@ -285,6 +306,10 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   public boolean cancel(boolean mayInterrupt) {
     if (!status.compareAndSet(NOT_COMPLETE, CANCELLED)) {
       return false;
+    }
+    
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("{0} cancelled", new Object[] { getName() });
     }
     
     // synchronized(this) is used as Thread running Fiber will be holding lock
@@ -373,13 +398,15 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<Fiber> onExit) {
     suspendedCount++;
 
-    if (LOGGER.isLoggable(Level.FINE)) {
-      LOGGER.fine("{0} suspending. Will have suspendedCount={1}", new Object[] { getName(), suspendedCount });
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} suspending. Will have suspendedCount={1}", new Object[] { getName(), suspendedCount });
       if (suspendedCount > 1) {
-        LOGGER.fine(
+        LOGGER.finer(
             "WARNING - {0} suspended more than resumed. Will require more than one resume to actually resume this fiber.",
             getName());
       }
+    } else if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("{0} suspending", new Object[] { getName() });
     }
 
     if (onExit != null) {
@@ -397,6 +424,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         onExit.accept(this);
       } catch (Throwable t) {
         throw new OnExitRunnableException(t);
+      } finally {
+        synchronized (this) {
+          if (currentThread == null) {
+            triggerExitCallback();
+          }
+        }
       }
 
       return true;
@@ -440,17 +473,25 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    */
   @Override
   public void run() {
-    Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
-    try {
-      // doRun returns true to indicate an early exit from fiber processing
-      if (!doRun(next)) {
-          completionCheck();
+    if (status.get() == NOT_COMPLETE) {
+      // Clear the interrupted status, if present
+      Thread.interrupted();
+      
+      final Fiber oldFiber = CURRENT_FIBER.get();
+      CURRENT_FIBER.set(this);
+      Container oldContainer = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+      try {
+        // doRun returns true to indicate an early exit from fiber processing
+        if (!doRun(next)) {
+            completionCheck();
+        }
+      } finally {
+        ContainerResolver.getDefault().exitContainer(oldContainer);
+        CURRENT_FIBER.set(oldFiber);
       }
-    } finally {
-      ContainerResolver.getDefault().exitContainer(old);
     }
   }
-
+  
   private void completionCheck() {
     lock.lock();
     try {
@@ -458,7 +499,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       // throwable
       int s = status.get();
       if (s == CANCELLED || (s == NOT_COMPLETE && (applyThrowable != null || (next == null && suspendedCount == 0)))) {
-        if (LOGGER.isLoggable(Level.FINE)) {
+        if (LOGGER.isFineEnabled()) {
           LOGGER.fine("{0} completed", getName());
         }
         boolean isDone = status.compareAndSet(NOT_COMPLETE, DONE);
@@ -469,13 +510,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
           } else {
             completionCallback.onCompletion(packet);
           }
-        }
-        // Trigger exitCallback
-        synchronized (this) {
-          if (exitCallback != null && exitCallback != PLACEHOLDER) {
-            exitCallback.onExit();
-          }
-          exitCallback = PLACEHOLDER;
         }
       }
     } finally {
@@ -498,8 +532,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         // currentThread is protected by the monitor for this fiber so
         // that it is accessible to cancel() even when the lock is held
         currentThread = Thread.currentThread();
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("Thread entering _doRun(): {0}", currentThread);
+        if (LOGGER.isFinerEnabled()) {
+          LOGGER.finer("Thread entering _doRun(): {0}", currentThread);
         }
 
         old = currentThread.getContextClassLoader();
@@ -526,84 +560,91 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         // tracks this state
         Thread thread = Thread.currentThread();
         thread.setContextClassLoader(old);
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("Thread leaving _doRun(): {0}", thread);
+        if (LOGGER.isFinerEnabled()) {
+          LOGGER.finer("Thread leaving _doRun(): {0}", thread);
         }
       }
     } finally {
       if (isRequireUnlock.value) {
         synchronized (this) {
           currentThread = null;
+          triggerExitCallback();
         }
         lock.unlock();
       }
     }
   }
 
+  private void triggerExitCallback() {
+    synchronized (this) {
+      if (exitCallback != null && exitCallback != PLACEHOLDER) {
+        
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine("{0} triggering exit callback", new Object[] { getName() });
+        }
+
+        exitCallback.onExit();
+      }
+      exitCallback = PLACEHOLDER;
+    }
+  }
+
   private boolean _doRun(Holder<Boolean> isRequireUnlock) {
     assert (lock.isHeldByCurrentThread());
 
-    final Fiber old = CURRENT_FIBER.get();
-    CURRENT_FIBER.set(this);
-
-    try {
-      while (isReady()) {
-        if (status.get() != NOT_COMPLETE) {
-          next = null;
-          break;
-        }
-
-        if (next == null) {
-          // nothing else to execute. we are done.
-          return false;
-        }
-
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("{0} {1}.apply({2})", new Object[] { getName(), next,
-              packet != null ? "Packet@" + Integer.toHexString(packet.hashCode()) : "null" });
-        }
-
-        NextAction na;
-        try {
-          na = next.apply(packet);
-        } catch (Throwable t) {
-          applyThrowable = t;
-          return false;
-        }
-
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.fine("{0} returned with {1}", new Object[] { getName(), na });
-        }
-        
-        // If resume is called before suspend, then make sure
-        // resume(Packet) is not lost
-        if (na.kind != NextAction.Kind.SUSPEND) {
-          packet = na.packet;
-        }
-
-        switch (na.kind) {
-        case INVOKE:
-          next = na.next;
-          break;
-        case SUSPEND:
-          next = na.next;
-          if (suspend(isRequireUnlock, na.onExit))
-            return true; // explicitly exiting control loop
-          break;
-        case THROW:
-          applyThrowable = na.throwable;
-          return false;
-        default:
-          throw new AssertionError();
-        }
+    while (isReady()) {
+      if (status.get() != NOT_COMPLETE) {
+        next = null;
+        break;
       }
 
-      // there's nothing we can execute right away.
-      // we'll be back when this fiber is resumed.
+      if (next == null) {
+        // nothing else to execute. we are done.
+        return false;
+      }
 
-    } finally {
-      CURRENT_FIBER.set(old);
+      if (LOGGER.isFinerEnabled()) {
+        LOGGER.finer("{0} {1}.apply({2})", new Object[] { getName(), next,
+            packet != null ? "Packet@" + Integer.toHexString(packet.hashCode()) : "null" });
+      }
+
+      NextAction na;
+      try {
+        na = next.apply(packet);
+      } catch (Throwable t) {
+        applyThrowable = t;
+        return false;
+      }
+
+      if (LOGGER.isFineEnabled()) {
+        LOGGER.fine("{0} {1} returned with {2}", new Object[] { getName(), next, na });
+      }
+      
+      // If resume is called before suspend, then make sure
+      // resume(Packet) is not lost
+      if (na.kind != NextAction.Kind.SUSPEND) {
+        packet = na.packet;
+      }
+
+      switch (na.kind) {
+      case INVOKE:
+        next = na.next;
+        break;
+      case SUSPEND:
+        next = na.next;
+        if (suspend(isRequireUnlock, na.onExit))
+          return true; // explicitly exiting control loop
+        break;
+      case THROW:
+        applyThrowable = na.throwable;
+        return false;
+      default:
+        throw new AssertionError();
+      }
     }
+
+    // there's nothing we can execute right away.
+    // we'll be back when this fiber is resumed.
 
     return false;
   }
@@ -614,7 +655,17 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   }
 
   private String getName() {
-    return "engine-" + owner.id + "fiber-" + id;
+    StringBuilder sb = new StringBuilder();
+    if (parent != null) {
+      sb.append(parent.getName());
+      sb.append("-child-");
+    } else {
+      sb.append("engine-");
+      sb.append(owner.id);
+      sb.append("-fiber-");
+    }
+    sb.append(id);
+    return sb.toString();
   }
 
   @Override
@@ -665,25 +716,40 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     // Mark fiber as cancelled, if not already done
     status.compareAndSet(NOT_COMPLETE, CANCELLED);
     
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("{0} cancelled", new Object[] { getName() });
+    }
+
+    AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating children
     synchronized (this) {
       if (currentThread != null) {
         if (mayInterrupt) {
           currentThread.interrupt();
         }
+        count.incrementAndGet();
       }
+      
+      ExitCallback myCallback = () -> {
+        if (count.decrementAndGet() == 0) {
+          exitCallback.onExit();
+        }
+      };
       
       if (children != null) {
         for (Fiber child : children) {
-          child.cancel(mayInterrupt);
+          if (child.cancelAndExitCallback(mayInterrupt, myCallback)) {
+            count.incrementAndGet();
+          }
         }
       }
 
-      if (this.exitCallback != null) {
-        throw new IllegalStateException();
-      }
-      boolean isWillCall = this.exitCallback != PLACEHOLDER;
+      boolean isWillCall = count.get() > 1; // more calls outstanding then our initial buffer count
       if (isWillCall) {
-        this.exitCallback = exitCallback;
+        if (this.exitCallback != null || this.exitCallback == PLACEHOLDER) {
+          throw new IllegalStateException();
+        }
+        this.exitCallback = myCallback;
+        myCallback.onExit(); // remove the buffer count
       }
       
       return isWillCall;

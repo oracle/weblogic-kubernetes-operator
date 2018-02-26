@@ -15,6 +15,7 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Formatter;
@@ -98,7 +99,7 @@ public class LoggingFormatter extends Formatter {
       }
     }
     String level = record.getLevel().getLocalizedName();
-    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> map = new LinkedHashMap<>();
     long rawTime = record.getMillis();
     final String dateString = dateFormat.format(new Date(rawTime));
     long thread = Thread.currentThread().getId();

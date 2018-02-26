@@ -1,6 +1,7 @@
 /* Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved. */
 package oracle.kubernetes.custom;
 
+import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
@@ -14,23 +15,22 @@ import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static oracle.kubernetes.TestUtils.isKubernetesAvailable;
 import static org.junit.Assert.fail;
 
 /**
  * This test class verifies that watch events are received for custom resource
  * operations.
  */
-public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
+@Ignore
+public class DomainWatcherTest implements WatchingEventDestination<Domain> {
 
   private static final String NAMESPACE = "default";
   private static final String NAME = "domains.weblogic.oracle";
@@ -46,15 +46,15 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
   private boolean crdCreatedHere = false;
 
   @Before
-  public void beforeTest() {
+  public void beforeTest() throws ApiException {
     // Create the Domain definition if it doesn't exist.
-    createWeblogicCRD();
+    if (isKubernetesAvailable()) createWeblogicCRD();
   }
 
   @After
   public void afterTest() {
     // If the domain definition was done here then get rid of it.
-    deleteWeblogicCRD();
+    if (isKubernetesAvailable()) deleteWeblogicCRD();
   }
 
   /**
@@ -62,8 +62,8 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
    * they are all reported.
    */
   @Test
-  public void testDomainListWatcher() {
-
+  public void testDomainListWatcher() throws ApiException {
+    Assume.assumeTrue(isKubernetesAvailable());
     AtomicBoolean isStopping = new AtomicBoolean(false);
     DomainWatcher dlw = DomainWatcher.create("default", "", this, isStopping);
     
@@ -88,7 +88,6 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
     for (int count = 30; count > 0; count--) {
       synchronized (feedback) {
         if (feedback.isEmpty()) {
-          System.out.println("Processed all events successfully, shutting down");
           isStopping.set(true);
           return;
         }
@@ -132,7 +131,7 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
   /**
    * Create the weblogic-operator custom resource
    */
-  private void createWeblogicCRD() {
+  private void createWeblogicCRD() throws ApiException {
 
     ClientHolder clientHolder = ClientHelper.getInstance().take();
 
@@ -198,7 +197,7 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
     System.out.println("Deleted CRD:" + NAME);
   }
 
-  private void createCustomResource(ClientHolder clientHolder, String name, boolean tag) {
+  private void createCustomResource(ClientHolder clientHolder, String name, boolean tag) throws ApiException {
 
     Domain domain = new Domain();
     domain.setApiVersion(GROUP + "/" + VERSION);
@@ -214,8 +213,7 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
     domain.setSpec(spec);
 
     String token = "ADDED." + name;
-    try {
-      if ( tag ) {  
+      if ( tag ) {
         System.out.println("Creating " + token);
         synchronized (feedback) {
            feedback.add(token);
@@ -229,10 +227,6 @@ public class TestDomainListWatcher implements WatchingEventDestination<Domain> {
           , PLURAL
           , domain
           , "false");
-    } catch (Exception ex) {
-      fail("Failed to create custom resource: " + name
-          + ", Error: " + ex);
-    }
   }
 
   private void deleteCustomResource(ClientHolder client, String name, boolean tag) {

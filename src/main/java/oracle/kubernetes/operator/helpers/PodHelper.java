@@ -106,6 +106,7 @@ public class PodHelper {
       adminPod.setMetadata(metadata);
       
       AnnotationHelper.annotateWithDomain(metadata, dom);
+      AnnotationHelper.annotateForPrometheus(metadata, spec.getAsPort());
 
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
@@ -208,7 +209,9 @@ public class PodHelper {
       
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().computeIfAbsent(spec.getAsName(), k -> new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(spec.getAsName(), created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Pod
       Step read = CallBuilder.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
@@ -231,7 +234,9 @@ public class PodHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(MessageKeys.ADMIN_POD_CREATED, weblogicDomainUID, spec.getAsName());
-                sko.getPod().set(result);
+                if (result != null) {
+                  sko.getPod().set(result);
+                }
                 return doNext(packet);
               }
             });
@@ -299,7 +304,9 @@ public class PodHelper {
                 Map<String, List<String>> responseHeaders) {
               
               LOGGER.info(messageKey, weblogicDomainUID, serverName);
-              sko.getPod().set(result);
+              if (result != null) {
+                sko.getPod().set(result);
+              }
               
               PodWatcher pw = packet.getSPI(PodWatcher.class);
               return doNext(pw.waitForReady(result, next), packet);
@@ -443,6 +450,7 @@ public class PodHelper {
       pod.setMetadata(metadata);
 
       AnnotationHelper.annotateWithDomain(metadata, dom);
+      AnnotationHelper.annotateForPrometheus(metadata, scan.getListenPort());
 
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
@@ -536,7 +544,9 @@ public class PodHelper {
 
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = info.getServers().computeIfAbsent(weblogicServerName, k -> new ServerKubernetesObjects());
+      ServerKubernetesObjects created = new ServerKubernetesObjects();
+      ServerKubernetesObjects current = info.getServers().putIfAbsent(weblogicServerName, created);
+      ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify there existing Pod
       Step read = CallBuilder.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
@@ -559,11 +569,13 @@ public class PodHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(MessageKeys.MANAGED_POD_CREATED, weblogicDomainUID, weblogicServerName);
-                sko.getPod().set(result);
+                if (result != null) {
+                  sko.getPod().set(result);
+                }
                 return doNext(packet);
               }
             });
-            return doNext(DomainStatusUpdater.createProgressingStep(create, false), packet);
+            return doNext(DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, create), packet);
           } else if (!isExplicitRestartThisServer && (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentPod(pod, result))) {
             // existing Pod has correct spec
             LOGGER.info(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
@@ -580,7 +592,7 @@ public class PodHelper {
               Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
               if (rolling != null) {
                 rolling.put(weblogicServerName, new StepAndPacket(
-                    DomainStatusUpdater.createProgressingStep(replace, false), packet.clone()));
+                    DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, replace), packet.clone()));
               }
             }
             return doEnd(packet);
@@ -622,22 +634,19 @@ public class PodHelper {
   /**
    * Factory for {@link Step} that deletes server pod
    * @param sko Server Kubernetes Objects
-   * @param serverName Server name
    * @param next Next processing step
    * @return Step for deleting server pod
    */
-  public static Step deletePodStep(ServerKubernetesObjects sko, String serverName, Step next) {
-    return new DeletePodStep(sko, serverName, next);
+  public static Step deletePodStep(ServerKubernetesObjects sko, Step next) {
+    return new DeletePodStep(sko, next);
   }
 
   private static class DeletePodStep extends Step {
     private final ServerKubernetesObjects sko;
-    private final String serverName;
 
-    public DeletePodStep(ServerKubernetesObjects sko, String serverName, Step next) {
+    public DeletePodStep(ServerKubernetesObjects sko, Step next) {
       super(next);
       this.sko = sko;
-      this.serverName = serverName;
     }
 
     @Override
@@ -650,23 +659,26 @@ public class PodHelper {
       
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       // Set pod to null so that watcher doesn't try to recreate pod
-      sko.getPod().set(null);
-      return doNext(CallBuilder.create().deletePodAsync(serverName, namespace, deleteOptions, new ResponseStep<V1Status>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return onSuccess(packet, null, statusCode, responseHeaders);
+      V1Pod oldPod = sko.getPod().getAndSet(null);
+      if (oldPod != null) {
+        return doNext(CallBuilder.create().deletePodAsync(oldPod.getMetadata().getName(), namespace, deleteOptions, new ResponseStep<V1Status>(next) {
+          @Override
+          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (statusCode == CallBuilder.NOT_FOUND) {
+              return onSuccess(packet, null, statusCode, responseHeaders);
+            }
+            return super.onFailure(packet, e, statusCode, responseHeaders);
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
-        }
-
-        @Override
-        public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          return doNext(next, packet);
-        }
-      }), packet);
+  
+          @Override
+          public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            return doNext(next, packet);
+          }
+        }), packet);
+      }
+      return doNext(packet);
     }
   }
 }
