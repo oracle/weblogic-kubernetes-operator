@@ -152,7 +152,6 @@ public class WlsServerConfig {
           List<String> clustersList = new ArrayList<String>();
 
           List<Map<String, Object>> targetsList = (List<Map<String, Object>>)thisApp.get("targets");
-          LOGGER.info("targets = " + targetsList);
 
           if (targetsList != null) {
             for (Map<String, Object> thisTargets : targetsList) {
