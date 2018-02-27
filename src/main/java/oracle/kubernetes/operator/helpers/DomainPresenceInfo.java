@@ -13,6 +13,7 @@ import org.joda.time.DateTime;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -32,6 +33,7 @@ public class DomainPresenceInfo {
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
 
   private V1PersistentVolumeClaimList claims = null;
@@ -137,6 +139,14 @@ public class DomainPresenceInfo {
    */
   public ConcurrentMap<String, ServerKubernetesObjects> getServers() {
     return servers;
+  }
+
+  /**
+   * Map from cluster name to Service objects
+   * @return Cluster object map
+   */
+  public ConcurrentMap<String, V1Service> getClusters() {
+    return clusters;
   }
 
   /**
