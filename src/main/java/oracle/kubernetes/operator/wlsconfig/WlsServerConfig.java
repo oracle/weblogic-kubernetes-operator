@@ -106,15 +106,15 @@ public class WlsServerConfig {
      //        "cluster-1"
      //    ]}]
      //}]}
-    System.out.println("jsonString = " + appJsonResult);
+
+    LOGGER.fine(appJsonResult);
+
     ObjectMapper mapper = new ObjectMapper();
     try {
       Map result = mapper.readValue(appJsonResult, Map.class);
-      System.out.println("map = " + result);
 
-      // items=[{sourcePath=/shared/applications/SessionHandling_stage.war, name=simpleApp, targets=[{identity=[clusters, cluster-1]}]}]
+      // items=[{sourcePath=/shared/applications/simpleApp.war, name=simpleApp, targets=[{identity=[clusters, cluster-1]}]}]
       List<Map<String,Object>> items = (List<Map<String,Object>>) result.get("items");
-      System.out.println("items = " + items + ", items.size() = " + items.size());
 
       Map<String, WlsAppConfig> wlsAppConfigMap = new HashMap<String, WlsAppConfig>();
 
@@ -125,7 +125,6 @@ public class WlsServerConfig {
           WlsAppConfig wlsAppConfig = new WlsAppConfig();
 
           String appNameFromJson = (String)thisApp.get("name");
-          System.out.println("appName = " + appNameFromJson);
 
           if (!patchAppMap.containsKey(appNameFromJson)) {
             continue;
@@ -133,7 +132,6 @@ public class WlsServerConfig {
 
           wlsAppConfig.setAppName(appNameFromJson);
 
-          System.out.println("sourcePath = " + thisApp.get("sourcePath"));
           wlsAppConfig.setSourcePath((String)thisApp.get("sourcePath"));
 
           //update patchedLocation, backupLocation in wlsAppConfig.
@@ -154,35 +152,33 @@ public class WlsServerConfig {
           List<String> clustersList = new ArrayList<String>();
 
           List<Map<String, Object>> targetsList = (List<Map<String, Object>>)thisApp.get("targets");
-          System.out.println("targets = " + targetsList);
+          LOGGER.info("targets = " + targetsList);
 
           if (targetsList != null) {
             for (Map<String, Object> thisTargets : targetsList) {
               List<String> targetIdentity = (List<String>) thisTargets.get("identity");
 
 
-              System.out.println("targetIdentity = " + targetIdentity);
               // targetIdentity = [servers, admin-server]
               // convert each targetIdentity list to a MapEntry: servers=admin-server
               if (targetIdentity != null) {
 
                 String firstElem = targetIdentity.get(0);
 
-                  if (firstElem.equals("servers")) {
-                    serversList.add(targetIdentity.get(1));
-                  } else if (firstElem.equals("clusters")) {
-                    clustersList.add(targetIdentity.get(1));
-                  }
+                if (firstElem.equals("servers")) {
+                  serversList.add(targetIdentity.get(1));
+                } else if (firstElem.equals("clusters")) {
+                  clustersList.add(targetIdentity.get(1));
                 }
               }
             }
-            targets.put("servers", serversList);
-            targets.put("clusters", clustersList);
-
-
-          System.out.println("new targets = " + targets);
+          }
+          targets.put("servers", serversList);
+          targets.put("clusters", clustersList);
 
           wlsAppConfig.setTargets(targets);
+
+          LOGGER.fine(wlsAppConfig.toString());
 
           // add to the map
           wlsAppConfigMap.put(appNameFromJson, wlsAppConfig);
@@ -193,10 +189,7 @@ public class WlsServerConfig {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
-      System.out.println("JSON string parsing failed. " + e.getMessage());
       LOGGER.warning(MessageKeys.JSON_PARSING_FAILED, appJsonResult, e.getMessage());
-
     }
     return null;
 
