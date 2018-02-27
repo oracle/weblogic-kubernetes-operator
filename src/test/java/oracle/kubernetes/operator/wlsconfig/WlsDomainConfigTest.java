@@ -2,12 +2,18 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,6 +25,19 @@ import static org.junit.Assert.assertTrue;
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 public class WlsDomainConfigTest {
+
+  private static final Logger UNDERLYING_LOGGER = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+  private List<Handler> savedhandlers;
+
+  @Before
+  public void disableConsoleLogging() {
+    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+  }
+
+  @After
+  public void restoreConsoleLogging() {
+    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+  }
 
   @Test
   public void verifyServersLoadedFromJsonString() throws Exception {
@@ -113,7 +132,7 @@ public class WlsDomainConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsDomainConfig.updateDomainSpecAsNeeded(domainSpec);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in weblogic cluster with name noSuchCluster"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in WebLogic cluster with name noSuchCluster"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -128,7 +147,7 @@ public class WlsDomainConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsDomainConfig.updateDomainSpecAsNeeded(domainSpec);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in domainSpec for cluster DockerCluster is specified with a value of 10 which is larger than the number of configured WLS servers in the cluster: 5"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in domainSpec for cluster DockerCluster is specified with a value of 10 which is larger than the number of configured WLS servers in the cluster: 5"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -142,7 +161,7 @@ public class WlsDomainConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsDomainConfig);
       wlsDomainConfig.updateDomainSpecAsNeeded(domainSpec);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasInfoMessageWithSubString("replicas specified in Domain spec is ignored because there number of configured WLS cluster is not 1."));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasInfoMessageWithSubString("Replicas specified in Domain spec is ignored because there number of configured WLS cluster is not 1."));
     } finally {
       TestUtil.removeLogHandler(wlsDomainConfig, handler);
     }
@@ -156,7 +175,7 @@ public class WlsDomainConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsDomainConfig);
       wlsDomainConfig.updateDomainSpecAsNeeded(domainSpec);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasInfoMessageWithSubString("replicas specified in Domain spec is ignored because there number of configured WLS cluster is not 1."));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasInfoMessageWithSubString("Replicas specified in Domain spec is ignored because there number of configured WLS cluster is not 1."));
     } finally {
       TestUtil.removeLogHandler(wlsDomainConfig, handler);
     }
@@ -201,7 +220,7 @@ public class WlsDomainConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsDomainConfig.updateDomainSpecAsNeeded(domainSpec);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster DockerCluster2 is specified with a value of 3 which is larger than the number of configured WLS servers in the cluster: 2"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster DockerCluster2 is specified with a value of 3 which is larger than the number of configured WLS servers in the cluster: 2"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -218,8 +237,8 @@ public class WlsDomainConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsDomainConfig.updateDomainSpecAsNeeded(domainSpec);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster DockerCluster is specified with a value of 10 which is larger than the number of configured WLS servers in the cluster: 3"));
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster DockerCluster2 is specified with a value of 10 which is larger than the number of configured WLS servers in the cluster: 2"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster DockerCluster is specified with a value of 10 which is larger than the number of configured WLS servers in the cluster: 3"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster DockerCluster2 is specified with a value of 10 which is larger than the number of configured WLS servers in the cluster: 2"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
