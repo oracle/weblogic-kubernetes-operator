@@ -258,7 +258,6 @@ Metadata:
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
-  As Env:
   As Name:  admin-server
   As Port:  7001
   Cluster Startup:
