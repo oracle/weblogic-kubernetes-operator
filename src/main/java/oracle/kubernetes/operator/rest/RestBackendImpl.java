@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationsModel;
 import oracle.kubernetes.operator.wlsconfig.WlsAppConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsConfigRetriever;
@@ -480,13 +481,13 @@ public class RestBackendImpl implements RestBackend {
    * {@inheritDoc}
    */
   @Override
-  public void upgradeApplications(String domainUID, Map<String, List<String>> appsInfoMap ) {
+  public void upgradeApplications(String domainUID, UpgradeApplicationsModel appsToUpgrade ) {
     LOGGER.entering(domainUID, "upgrade applications");
 
     ClientHolder client = null;
     try {
       client = clientHelper.take();
-      upgradeApplications(client, domainUID, appsInfoMap);
+      upgradeApplications(client, domainUID, appsToUpgrade);
     } finally {
       recycleClient(clientHelper, client);
     }
@@ -494,7 +495,7 @@ public class RestBackendImpl implements RestBackend {
 
   }
 
-  private void upgradeApplications(ClientHolder client, String domainUID, Map<String, List<String>> appsInfoMap) {
+  private void upgradeApplications(ClientHolder client, String domainUID, UpgradeApplicationsModel appsToUpgrade) {
     authorize(client, domainUID, Operation.update);
 
     List<Domain> domains = getDomainsList(client);
@@ -503,7 +504,7 @@ public class RestBackendImpl implements RestBackend {
     String namespace = getNamespace(domainUID, domains);
 
     // Use WLS REST API to get a list of WLS application configuration
-    Map<String, WlsAppConfig> wlsAppConfigMap = getWlsAppConfigs(client, namespace, domain, appsInfoMap);
+    Map<String, WlsAppConfig> wlsAppConfigMap = getWlsAppConfigs(client, namespace, domain, appsToUpgrade);
     System.out.println("WlsAppConfig: " + wlsAppConfigMap);
 
     // TBD  do later
@@ -513,7 +514,7 @@ public class RestBackendImpl implements RestBackend {
   private Map<String, WlsAppConfig> getWlsAppConfigs(ClientHolder client,
                                        String namespace,
                                        Domain domain,
-                                       Map<String, List<String>> appsInfoMap) {
+                                       UpgradeApplicationsModel appsToUpgrade) {
 
     String adminServerServiceName = getAdminServerServiceName(domain);
     String adminSecretName = getAdminServiceSecretName(domain);
@@ -522,7 +523,7 @@ public class RestBackendImpl implements RestBackend {
                                                                       adminServerServiceName,
                                                                       adminSecretName);
 
-    return wlsConfigRetriever.readWlsAppConfigs(principal,appsInfoMap);
+    return wlsConfigRetriever.readWlsAppConfigs(principal,appsToUpgrade);
 
   }
 }

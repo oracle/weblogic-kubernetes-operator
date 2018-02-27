@@ -2,15 +2,18 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationModel;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationsModel;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
@@ -20,25 +23,31 @@ public class WlsServerConfigTest {
   @Test
   public void verifyOneAppLoadedFromJsonString() throws Exception {
 
-    Map<String, List<String>> patchedAppInfoMap = new HashMap<>();
-    List<String> locationList = new ArrayList<>();
-    locationList.add("/path/to/patchedLocation1v1");
-    locationList.add("/patch/to/backupLocation1v1");
-    patchedAppInfoMap.put("simpleApp", locationList);
+    UpgradeApplicationsModel appsToUpgrade = new UpgradeApplicationsModel();
 
-    System.out.println("JSON_STRING_1_APP = " + JSON_STRING_1_APP);
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp");
+    app1ParamsModel.setPatchedLocation("/tmp/test1v2.war");
+    app1ParamsModel.setBackupLocation("/tmp/test1v1.war");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    appsToUpgrade.setApplications(appsParamsModelList);
 
     Map<String, WlsAppConfig> wlsAppConfigMap =
-      WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_1_APP, patchedAppInfoMap);
+      WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_1_APP, appsToUpgrade);
 
     assertNotNull(wlsAppConfigMap);
     assertEquals(1, wlsAppConfigMap.size());
 
     for (String key : wlsAppConfigMap.keySet()) {
-      assertEquals("simpleApp", key);
-      assertEquals("simpleApp", wlsAppConfigMap.get(key).getAppName());
-      assertEquals("/path/to/patchedLocation1v1", wlsAppConfigMap.get(key).getPatchedLocation());
-      assertEquals("/patch/to/backupLocation1v1", wlsAppConfigMap.get(key).getBackupLocation());
+      assertEquals("testApp", key);
+      assertEquals("testApp", wlsAppConfigMap.get(key).getAppName());
+      assertEquals("/tmp/test1v2.war", wlsAppConfigMap.get(key).getPatchedLocation());
+      assertEquals("/tmp/test1v1.war", wlsAppConfigMap.get(key).getBackupLocation());
+
       assertEquals("/shared/applications/simpleApp.war", wlsAppConfigMap.get(key).getSourcePath());
 
       Map<String, List<String>> targetsMap = wlsAppConfigMap.get(key).getTargets();
@@ -51,30 +60,39 @@ public class WlsServerConfigTest {
   @Test
   public void verifyTwoAppLoadedFromJsonString() throws Exception {
 
-    Map<String, List<String>> patchedAppInfoMap = new HashMap<>();
-    List<String> locationList = new ArrayList<>();
-    locationList.add("/path/to/patchedLocation1v1");
-    locationList.add("/patch/to/backupLocation1v1");
-    patchedAppInfoMap.put("app1", locationList);
+    UpgradeApplicationsModel appsToUpgrade = new UpgradeApplicationsModel();
 
-    locationList = new ArrayList<>();
-    locationList.add("/path/to/patchedLocation2v1");
-    locationList.add("/patch/to/backupLocation2v1");
-    patchedAppInfoMap.put("app2", locationList);
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp1");
+    app1ParamsModel.setPatchedLocation("/tmp/test1v2.war");
+    app1ParamsModel.setBackupLocation("/tmp/test1v1.war");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    UpgradeApplicationModel app2ParamsModel = new UpgradeApplicationModel();
+    app2ParamsModel.setApplicationName("testApp2");
+    app2ParamsModel.setPatchedLocation("/tmp/test2v2.war");
+    app2ParamsModel.setBackupLocation("/tmp/test2v1.war");
+
+    appsParamsModelList.add(app2ParamsModel);
+    appsToUpgrade.setApplications(appsParamsModelList);
 
     Map<String, WlsAppConfig> wlsAppConfigMap =
-      WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_2_APPS, patchedAppInfoMap);
+      WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_2_APPS, appsToUpgrade);
 
     assertNotNull(wlsAppConfigMap);
     assertEquals(2, wlsAppConfigMap.size());
 
-    // for app1
-    assertEquals("app1", wlsAppConfigMap.get("app1").getAppName());
-    assertEquals("/path/to/patchedLocation1v1", wlsAppConfigMap.get("app1").getPatchedLocation());
-    assertEquals("/patch/to/backupLocation1v1", wlsAppConfigMap.get("app1").getBackupLocation());
-    assertEquals("/shared/applications/app1.war", wlsAppConfigMap.get("app1").getSourcePath());
+    // for testApp1
+    assertEquals("testApp1", wlsAppConfigMap.get("testApp1").getAppName());
+    assertEquals("/tmp/test1v2.war", wlsAppConfigMap.get("testApp1").getPatchedLocation());
+    assertEquals("/tmp/test1v1.war", wlsAppConfigMap.get("testApp1").getBackupLocation());
 
-    Map<String, List<String>> targetsMap = wlsAppConfigMap.get("app1").getTargets();
+    assertEquals("/shared/applications/app1.war", wlsAppConfigMap.get("testApp1").getSourcePath());
+
+    Map<String, List<String>> targetsMap = wlsAppConfigMap.get("testApp1").getTargets();
 
     // should be {servers=[admin-server,ms1],clusters=[]}
     assertEquals(2,targetsMap.get("servers").size());
@@ -82,19 +100,127 @@ public class WlsServerConfigTest {
     assertEquals("ms1", targetsMap.get("servers").get(1));
     assertEquals(0, targetsMap.get("clusters").size());
 
-    // for app2
-    assertEquals("app2", wlsAppConfigMap.get("app2").getAppName());
-    assertEquals("/path/to/patchedLocation2v1", wlsAppConfigMap.get("app2").getPatchedLocation());
-    assertEquals("/patch/to/backupLocation2v1", wlsAppConfigMap.get("app2").getBackupLocation());
-    assertEquals("/shared/applications/app2.war", wlsAppConfigMap.get("app2").getSourcePath());
+    // for testApp2
+    assertEquals("testApp2", wlsAppConfigMap.get("testApp2").getAppName());
+    assertEquals("/tmp/test2v2.war", wlsAppConfigMap.get("testApp2").getPatchedLocation());
+    assertEquals("/tmp/test2v1.war", wlsAppConfigMap.get("testApp2").getBackupLocation());
 
-    targetsMap = wlsAppConfigMap.get("app2").getTargets();
+    assertEquals("/shared/applications/app2.war", wlsAppConfigMap.get("testApp2").getSourcePath());
+
+    targetsMap = wlsAppConfigMap.get("testApp2").getTargets();
 
     // should be {servers=[], clusters=[cluster-1]}
     assertEquals(0,targetsMap.get("servers").size());
     assertEquals(1,targetsMap.get("clusters").size());
     assertEquals("cluster-1", targetsMap.get("clusters").get(0));
   }
+
+
+  @Test
+  public void verifyEmptyPatchedLocation() throws Exception {
+
+    UpgradeApplicationsModel appsToUpgrade = new UpgradeApplicationsModel();
+
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp");
+    app1ParamsModel.setPatchedLocation("");
+    app1ParamsModel.setBackupLocation("/tmp/test1v1.war");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    appsToUpgrade.setApplications(appsParamsModelList);
+
+
+    try {
+      Map<String, WlsAppConfig> wlsAppConfigMap =
+        WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_1_APP, appsToUpgrade);
+      assertFalse("Should throw exception because of the empty patchedLocation", true);
+    } catch (Exception e) {
+      assertTrue("Catch the exception as expected because of the empty patchedLocation", true);
+    }
+
+  }
+
+  @Test
+  public void verifyNotSetPatchedLocation() throws Exception {
+
+    UpgradeApplicationsModel appsToUpgrade = new UpgradeApplicationsModel();
+
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp");
+    app1ParamsModel.setBackupLocation("/tmp/test1v1.war");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    appsToUpgrade.setApplications(appsParamsModelList);
+
+    try {
+      Map<String, WlsAppConfig> wlsAppConfigMap =
+        WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_1_APP, appsToUpgrade);
+      assertFalse("Should throw exception because of the missing patchedLocation", true);
+    } catch (Exception e) {
+      assertTrue("Catch the exception as expected because of the missing patchedLocation", true);
+    }
+  }
+
+
+  @Test
+  public void verifyEmptyBackupLocation() throws Exception {
+
+    UpgradeApplicationsModel appsToUpgrade = new UpgradeApplicationsModel();
+
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp");
+    app1ParamsModel.setPatchedLocation("/tmp/test1v1.war");
+    app1ParamsModel.setBackupLocation("");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    appsToUpgrade.setApplications(appsParamsModelList);
+
+    System.out.println("JSON_STRING_1_APP = " + JSON_STRING_1_APP);
+
+    try {
+      Map<String, WlsAppConfig> wlsAppConfigMap =
+        WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_1_APP, appsToUpgrade);
+      assertFalse("Should throw exception because of the empty backupLocation", true);
+    } catch (Exception e) {
+      assertTrue("Catch the exception as expected because of the empty backupLocation", true);
+    }
+
+  }
+
+  @Test
+  public void verifyNotSetBackupLocation() throws Exception {
+
+    UpgradeApplicationsModel appsToUpgrade = new UpgradeApplicationsModel();
+
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp");
+    app1ParamsModel.setPatchedLocation("/tmp/test1v1.war");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    appsToUpgrade.setApplications(appsParamsModelList);
+
+    try {
+      Map<String, WlsAppConfig> wlsAppConfigMap =
+        WlsServerConfig.loadAppsFromJsonResult(JSON_STRING_1_APP, appsToUpgrade);
+      assertFalse("Should throw exception because of the missing backupLocation", true);
+    } catch (Exception e) {
+      assertTrue("Catch the exception as expected because of the missing backupLocation", true);
+    }
+  }
+
+
 
 
      // {"items": [{
@@ -109,7 +235,7 @@ public class WlsServerConfigTest {
   final String JSON_STRING_1_APP = "{\"items\": [\n" +
           "    {\n" +
           "        \"sourcePath\": \"/shared/applications/simpleApp.war\",\n" +
-          "        \"name\": \"simpleApp\",\n" +
+          "        \"name\": \"testApp\",\n" +
           "        \"targets\": [\n" +
           "            {\"identity\":[\"clusters\", \"cluster-1\"]\n" +
           "            }\n" +
@@ -119,7 +245,7 @@ public class WlsServerConfigTest {
   final String JSON_STRING_2_APPS = "{\"items\": [\n" +
                                     "    {\n" +
                                     "        \"sourcePath\": \"\\/shared\\/applications\\/app1.war\",\n" +
-                                    "        \"name\": \"app1\",\n" +
+                                    "        \"name\": \"testApp1\",\n" +
                                     "        \"targets\": [\n" +
                                     "            {\"identity\": [\n" +
                                     "                \"servers\",\n" +
@@ -133,7 +259,7 @@ public class WlsServerConfigTest {
                                     "    },\n" +
                                     "    {\n" +
                                     "        \"sourcePath\": \"\\/shared\\/applications\\/app2.war\",\n" +
-                                    "        \"name\": \"app2\",\n" +
+                                    "        \"name\": \"testApp2\",\n" +
                                     "        \"targets\": [{\"identity\": [\n" +
                                     "            \"clusters\",\n" +
                                     "            \"cluster-1\"\n" +

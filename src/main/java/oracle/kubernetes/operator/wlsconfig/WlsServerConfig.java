@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationModel;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationsModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,11 +93,12 @@ public class WlsServerConfig {
   /** Load the applications to be upgraded from the json result
    *
    * @param appJsonResult A JSON string result from getting all applications deployed to WebLogic domain using REST API
-   * @param patchAppMap A map containing a list of application info provided as REST client input data
+   * @param appsToUpgrade Containing a list of application info provided via REST client input data
    * @return A map containing a list of applications to be upgraded.
    */
   public static synchronized Map<String, WlsAppConfig> loadAppsFromJsonResult(String appJsonResult,
-                                                                       Map<String, List<String>> patchAppMap) {
+                                                                              UpgradeApplicationsModel appsToUpgrade)
+    throws Exception {
 
      // The jsonResult looks like this:
      // {"items": [{
@@ -126,7 +129,8 @@ public class WlsServerConfig {
 
           String appNameFromJson = (String)thisApp.get("name");
 
-          if (!patchAppMap.containsKey(appNameFromJson)) {
+          if (!needUpgrade(appsToUpgrade, appNameFromJson)) {
+            // Only dealing with the application to upgraded.
             continue;
           }
 
@@ -135,13 +139,12 @@ public class WlsServerConfig {
           wlsAppConfig.setSourcePath((String)thisApp.get("sourcePath"));
 
           //update patchedLocation, backupLocation in wlsAppConfig.
-          // The first element for the value of the MapEntry of patchAppMap is the patchedLocation,
-          // the second element is the backupLocation. The patchAppMap is built at UpgradeApplicationsResource.
-          wlsAppConfig.setPatchedLocation(patchAppMap.get(appNameFromJson).get(0));
-          wlsAppConfig.setBackupLocation(patchAppMap.get(appNameFromJson).get(1));
+          wlsAppConfig.setPatchedLocation(getPatchedLocation(appsToUpgrade,appNameFromJson));
+          wlsAppConfig.setBackupLocation(getBackupLocation(appsToUpgrade, appNameFromJson));
 
-          // The targets looks like: [{identity=[servers, admin-server]}, {identity=[clusters, cluster-1]},
-          //                          {identity=[servers, ms3]}, {identity=[clusters,cluster-2]}]
+          // Now handling the targets the application is deployed to.
+          // The targets from JSON result looks like: [{identity=[servers, admin-server]}, {identity=[clusters, cluster-1]},
+          //                                           {identity=[servers, ms3]}, {identity=[clusters,cluster-2]}]
           // Change this targets Map to Map<String, List<String>> type for easy handling later:
           // e.g., [servers={admin-server,ms3}, clusters={cluster-1,cluster-2}]
 
@@ -189,9 +192,55 @@ public class WlsServerConfig {
 
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.JSON_PARSING_FAILED, appJsonResult, e.getMessage());
+      throw e;
     }
     return null;
 
   }
+
+  private static boolean needUpgrade(UpgradeApplicationsModel appsToPatch, String appName) {
+    List<UpgradeApplicationModel> appList = appsToPatch.getApplications();
+    for (UpgradeApplicationModel theApp : appList) {
+      if (theApp.getApplicationName().equals(appName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static String getPatchedLocation(UpgradeApplicationsModel appsToPatch, String appName) {
+    List<UpgradeApplicationModel> appList = appsToPatch.getApplications();
+    String patchedLoc = null;
+    for (UpgradeApplicationModel theApp : appList) {
+      if (theApp.getApplicationName().equals(appName)) {
+        patchedLoc = theApp.getPatchedLocation();
+        if (patchedLoc != null) {
+          if (patchedLoc.isEmpty()) {
+            throw new IllegalArgumentException(MessageKeys.APPUPGRADE_MISSING_PATCHED_LOCATION + " " + appName);
+          }
+          return patchedLoc;
+        }
+      }
+    }
+    throw new IllegalArgumentException(MessageKeys.APPUPGRADE_MISSING_PATCHED_LOCATION + " " + appName);
+  }
+
+  private static String getBackupLocation(UpgradeApplicationsModel appsToPatch, String appName) {
+    List<UpgradeApplicationModel> appList = appsToPatch.getApplications();
+    String backupLoc = null;
+    for (UpgradeApplicationModel theApp : appList) {
+      if (theApp.getApplicationName().equals(appName)) {
+        backupLoc = theApp.getBackupLocation();
+        if (backupLoc != null) {
+          if (backupLoc.isEmpty()) {
+            throw new IllegalArgumentException(MessageKeys.APPUPGRADE_MISSING_BACKUP_LOCATION + " " + appName);
+          }
+          return backupLoc;
+        }
+      }
+    }
+    throw new IllegalArgumentException(MessageKeys.APPUPGRADE_MISSING_BACKUP_LOCATION + " " + appName);
+  }
+
 
 }

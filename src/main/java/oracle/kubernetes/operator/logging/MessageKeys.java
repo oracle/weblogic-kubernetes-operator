@@ -135,4 +135,6 @@ public class MessageKeys {
   public static final String WLS_APP_CONFIGURATION_READ = "WLSKO-0214";
   public static final String WLS_APP_CONFIGURATION_READ_FAILED = "WLSKO-0215";
   public static final String WLS_APP_CONFIGURATION_READ_TIMED_OUT = "WLSKO-0216";
+  public static final String APPUPGRADE_MISSING_PATCHED_LOCATION = "WLSKO-0217";
+  public static final String APPUPGRADE_MISSING_BACKUP_LOCATION = "WLSKO-0218";
 }

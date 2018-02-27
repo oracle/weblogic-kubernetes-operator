@@ -15,6 +15,7 @@ import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationsModel;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -300,18 +301,18 @@ public class WlsConfigRetriever {
    * the admin server to retrieve the configuration until the configured timeout occurs.
    *
    * @param principal The principal that should be used to retrieve the configuration.
-   * @param appsInfoMap A map containing the info of the app to be upgraded provided as input data for REST API.
+   * @param appsToUpgrade Containing the info of the app to be upgraded. It's provided as input data of REST API.
    *
    * @return A map of WlsClusterConfig objects containing the info of the patched applications.
    */
-  public Map<String, WlsAppConfig> readWlsAppConfigs(String principal, Map<String, List<String>> appsInfoMap) {
+  public Map<String, WlsAppConfig> readWlsAppConfigs(String principal, UpgradeApplicationsModel appsToUpgrade) {
 
     LOGGER.entering();
 
     long timeout = READ_CONFIG_TIMEOUT_MILLIS;
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     long startTime = System.currentTimeMillis();
-    Future<Map<String, WlsAppConfig>> future = executorService.submit(() -> getWlsAppConfigs(principal, appsInfoMap, timeout));
+    Future<Map<String, WlsAppConfig>> future = executorService.submit(() -> getWlsAppConfigs(principal, appsToUpgrade, timeout));
     executorService.shutdown();
     Map<String, WlsAppConfig> wlsAppConfigs = null;
     try {
@@ -330,7 +331,7 @@ public class WlsConfigRetriever {
     return wlsAppConfigs;
   }
 
-  private Map<String, WlsAppConfig> getWlsAppConfigs(String principal, Map<String, List<String>> appsInfoMap, long timeout)
+  private Map<String, WlsAppConfig> getWlsAppConfigs(String principal, UpgradeApplicationsModel appsToUpgrade, long timeout)
     throws Exception  {
 
     LOGGER.entering();
@@ -352,7 +353,7 @@ public class WlsConfigRetriever {
                                                                     client, asServiceName, namespace);
 
         if (jsonResult != null) {
-          result = WlsServerConfig.loadAppsFromJsonResult(jsonResult, appsInfoMap);
+          result = WlsServerConfig.loadAppsFromJsonResult(jsonResult, appsToUpgrade);
         }
       } catch (Exception e) {
         exception = e;

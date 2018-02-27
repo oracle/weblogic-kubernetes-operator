@@ -53,7 +53,9 @@ public class UpgradeApplicationsResource extends BaseResource {
 
     }
 
-    getBackend().upgradeApplications(getDomainUid(),appsInfoMap);
+    //getBackend().upgradeApplications(getDomainUid(),appsInfoMap);
+
+    getBackend().upgradeApplications(getDomainUid(),params);
 
   }
 

@@ -489,7 +489,7 @@ public class RestTest {
     }
 
     @Override
-    public void upgradeApplications(String domainId, Map<String, List<String>> appsInfoMap) {
+    public void upgradeApplications(String domainId, UpgradeApplicationsModel appsToUpgrade) {
     }
 
   }
