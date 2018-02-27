@@ -242,7 +242,7 @@ public class PodHelper {
             return doNext(create, packet);
           } else if (!isExplicitRestartThisServer && (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentPod(adminPod, result))) {
             // existing Pod has correct spec
-            LOGGER.info(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, spec.getAsName());
+            LOGGER.fine(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, spec.getAsName());
             sko.getPod().set(result);
             return doNext(packet);
           } else {
@@ -583,7 +583,7 @@ public class PodHelper {
             return doNext(DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, create), packet);
           } else if (!isExplicitRestartThisServer && (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentPod(pod, result))) {
             // existing Pod has correct spec
-            LOGGER.info(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
+            LOGGER.fine(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
             sko.getPod().set(result);
             return doNext(packet);
           } else {

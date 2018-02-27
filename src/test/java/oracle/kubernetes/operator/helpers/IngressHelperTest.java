@@ -52,6 +52,7 @@ public class IngressHelperTest {
   private final String service1Name = CallBuilder.toDNS1123LegalName(domainUID + "-" + server1Name);
   private final String service2Name = CallBuilder.toDNS1123LegalName(domainUID + "-" + server2Name);
   private final String ingressName =  CallBuilder.toDNS1123LegalName(domainUID + "-" + clusterName);
+  private final String clusterServiceName = CallBuilder.toDNS1123LegalName(domainUID + "-cluster-" + clusterName);
 
   
   private DomainPresenceInfo info;
@@ -143,7 +144,7 @@ public class IngressHelperTest {
     p.put(ProcessingConstants.SERVER_NAME, server1Name);
 
     Fiber f = engine.createFiber();
-    Step s = IngressHelper.createAddServerStep(null);
+    Step s = IngressHelper.createClusterStep(null);
     AtomicReference<Throwable> t = new AtomicReference<>();
     f.start(s, p, new CompletionCallback() {
       @Override
@@ -170,85 +171,9 @@ public class IngressHelperTest {
     Assert.assertEquals("/", v1beta1HTTPIngressPath.getPath());
     V1beta1IngressBackend v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
     Assert.assertNotNull("IngressBackend Object should not be null", v1beta1IngressBackend);
-    Assert.assertEquals("Service name should be " + service1Name, service1Name, v1beta1IngressBackend.getServiceName());
+    Assert.assertEquals("Service name should be " + clusterServiceName, clusterServiceName, v1beta1IngressBackend.getServiceName());
     Assert.assertEquals("Service port should be " + server1Port, server1Port, v1beta1IngressBackend.getServicePort().getIntValue());
 
-    // Add Server 2
-    p = new Packet();
-    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info));
-    p.put(ProcessingConstants.SERVER_SCAN, info.getScan().getServerConfig(server2Name));
-    p.put(ProcessingConstants.CLUSTER_SCAN, info.getScan().getClusterConfig(clusterName));
-    p.put(ProcessingConstants.SERVER_NAME, server2Name);
-
-    f = engine.createFiber();
-    f.start(s, p, new CompletionCallback() {
-      @Override
-      public void onCompletion(Packet packet) {
-        // no-op
-      }
-
-      @Override
-      public void onThrowable(Packet packet, Throwable throwable) {
-        t.set(throwable);
-      }
-    });
-    f.get(30, TimeUnit.SECONDS);
-    if (t.get() != null) {
-      throw t.get();
-    }
-    
-    // Now check
-    v1beta1Ingress = CallBuilder.create().readIngress(ingressName, namespace);
-    
-    v1beta1HTTPIngressPaths = getPathArray(v1beta1Ingress);
-    Assert.assertEquals("IngressPaths should have two instances of IngressPath", 2, v1beta1HTTPIngressPaths.size());
-    v1beta1HTTPIngressPath = v1beta1HTTPIngressPaths.get(0);
-    Assert.assertEquals("/", v1beta1HTTPIngressPath.getPath());
-    v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
-    Assert.assertNotNull("IngressBackend Object should not be null", v1beta1IngressBackend);
-    Assert.assertEquals("Service name should be " + service1Name, service1Name, v1beta1IngressBackend.getServiceName());
-    Assert.assertEquals("Service port should be " + server1Port, server1Port, v1beta1IngressBackend.getServicePort().getIntValue());
-    v1beta1HTTPIngressPath = v1beta1HTTPIngressPaths.get(1);
-    Assert.assertEquals("/", v1beta1HTTPIngressPath.getPath());
-    v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
-    Assert.assertNotNull("IngressBackend Object should not be null", v1beta1IngressBackend);
-    Assert.assertEquals("Service name should be " + service2Name, service2Name, v1beta1IngressBackend.getServiceName());
-    Assert.assertEquals("Service port should be " + server2Port, server2Port, v1beta1IngressBackend.getServicePort().getIntValue());
-    
-    // Remove server 1, but leave server 2
-    p = new Packet();
-    p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info));
-    p.put(ProcessingConstants.SERVER_SCAN, info.getScan().getServerConfig(server1Name));
-    p.put(ProcessingConstants.CLUSTER_SCAN, info.getScan().getClusterConfig(clusterName));
-    
-    f = engine.createFiber();
-    Step r = IngressHelper.createRemoveServerStep(server1Name, null);
-    f.start(r, p, new CompletionCallback() {
-      @Override
-      public void onCompletion(Packet packet) {
-        // no-op
-      }
-
-      @Override
-      public void onThrowable(Packet packet, Throwable throwable) {
-        t.set(throwable);
-      }
-    });
-    f.get(30, TimeUnit.SECONDS);
-    if (t.get() != null) {
-      throw t.get();
-    }
-    
-    v1beta1Ingress = CallBuilder.create().readIngress(ingressName, namespace);
-
-    v1beta1HTTPIngressPaths = getPathArray(v1beta1Ingress);
-    Assert.assertEquals("IngressPaths should have one instance of IngressPath", 1, v1beta1HTTPIngressPaths.size());
-    v1beta1HTTPIngressPath = v1beta1HTTPIngressPaths.get(0);
-    Assert.assertEquals("/", v1beta1HTTPIngressPath.getPath());
-    v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
-    Assert.assertNotNull("IngressBackend Object should not be null", v1beta1IngressBackend);
-    Assert.assertEquals("Service name should be " + service2Name, service2Name, v1beta1IngressBackend.getServiceName());
-    Assert.assertEquals("Service port should be " + server2Port, server2Port, v1beta1IngressBackend.getServicePort().getIntValue());
   }
 
   private List<V1beta1HTTPIngressPath> getPathArray(V1beta1Ingress v1beta1Ingress) {
