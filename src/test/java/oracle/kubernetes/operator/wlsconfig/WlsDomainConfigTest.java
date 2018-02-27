@@ -2,12 +2,18 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,6 +25,19 @@ import static org.junit.Assert.assertTrue;
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 public class WlsDomainConfigTest {
+
+  private static final Logger UNDERLYING_LOGGER = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+  private List<Handler> savedhandlers;
+
+  @Before
+  public void disableConsoleLogging() {
+    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+  }
+
+  @After
+  public void restoreConsoleLogging() {
+    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+  }
 
   @Test
   public void verifyDomainNameLoadedFromJsonString() throws Exception {

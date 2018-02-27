@@ -8,9 +8,11 @@ import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
+@Ignore
 public class WlsConfigRetreiverTest {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

@@ -3,11 +3,15 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -15,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
@@ -23,7 +29,20 @@ import static org.junit.Assert.*;
  */
 public class WlsClusterConfigTest {
 
-  @Test
+    private static final Logger UNDERLYING_LOGGER = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+    private List<Handler> savedhandlers;
+
+    @Before
+    public void disableConsoleLogging() {
+        savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+    }
+
+    @After
+    public void restoreConsoleLogging() {
+        TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+    }
+
+    @Test
   public void verifyClusterSizeIsSameAsNumberOfServers() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", null, null));

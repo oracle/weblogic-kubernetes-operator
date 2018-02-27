@@ -4,11 +4,14 @@
 package oracle.kubernetes.operator;
 
 import io.kubernetes.client.models.V1ObjectMeta;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,6 +19,8 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -60,6 +65,19 @@ public class ExternalChannelTest {
            "        \"networkAccessPoints\": {\"items\": []}" +
            "    }" +
            "]}}";
+
+   private static final Logger UNDERLYING_LOGGER = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+   private List<Handler> savedhandlers;
+
+   @Before
+   public void disableConsoleLogging() {
+      savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+   }
+
+   @After
+   public void restoreConsoleLogging() {
+      TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+   }
 
    @Before
    public void setupConstants() throws NoSuchFieldException {

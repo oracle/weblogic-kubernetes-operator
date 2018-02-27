@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -19,19 +20,24 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 
 /**
  * Test CustomResourceDefinitions and custom objects
  */
-public class TestCustomObjectApis {
+@Ignore("Ignore - sometimes runs indefinitely")
+public class CustomObjectApisTest {
 
   // Parameters for custom resources
   static final String NAMESPACE = "default";
@@ -44,6 +50,17 @@ public class TestCustomObjectApis {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private AtomicBoolean finished = new AtomicBoolean(false);
   private int timeoutLoop = 0;
+  private List<Handler> savedHandlers;
+
+  @Before
+  public void setUp() throws Exception {
+    savedHandlers = TestUtils.removeConsoleHandlers(LOGGER.getUnderlyingLogger());
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    TestUtils.restoreConsoleHandlers(LOGGER.getUnderlyingLogger(), savedHandlers);
+  }
 
   @Test
   public void testCustomResourceWatches() throws Exception {
@@ -67,7 +84,6 @@ public class TestCustomObjectApis {
       e.printStackTrace();
       LOGGER.info(MessageKeys.EXCEPTION, e);
     } finally {
-      System.out.println("End of this test");
       ClientHelper.getInstance().recycle(client);
     }
   }
@@ -167,7 +183,6 @@ public class TestCustomObjectApis {
 
       private void formatTheObject(String type, Object object) {
         TestDomain dom = (TestDomain) object;
-        System.out.println(">>>>> " + type + " " + dom.toString());
       }
 
       @Override
