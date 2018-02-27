@@ -120,6 +120,12 @@ public class ServiceHelper {
           if (result == null) {
             Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
               @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ForServerStep.this, packet, e, statusCode, responseHeaders);
+              }
+
+              @Override
               public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
@@ -227,6 +233,12 @@ public class ServiceHelper {
           if (result == null) {
             Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
               @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ForClusterStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
               public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
@@ -245,6 +257,7 @@ public class ServiceHelper {
             return doNext(packet);
           } else {
             // we need to cycle the Service
+            info.getClusters().remove(clusterName);
             Step delete = CallBuilder.create().deleteServiceAsync(namespace, name, new ResponseStep<V1Status>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -252,13 +265,19 @@ public class ServiceHelper {
                 if (statusCode == CallBuilder.NOT_FOUND) {
                   return onSuccess(packet, null, statusCode, responseHeaders);
                 }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
+                return super.onFailure(ForClusterStep.this, packet, e, statusCode, responseHeaders);
               }
 
               @Override
               public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+                  @Override
+                  public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                      Map<String, List<String>> responseHeaders) {
+                    return super.onFailure(ForClusterStep.this, packet, e, statusCode, responseHeaders);
+                  }
+                  
                   @Override
                   public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
                       Map<String, List<String>> responseHeaders) {
@@ -356,13 +375,19 @@ public class ServiceHelper {
           if (statusCode == CallBuilder.NOT_FOUND) {
             return onSuccess(packet, null, statusCode, responseHeaders);
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
+          return super.onFailure(CycleServiceStep.this, packet, e, statusCode, responseHeaders);
         }
 
         @Override
         public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           Step create = CallBuilder.create().createServiceAsync(namespace, newService, new ResponseStep<V1Service>(next) {
+            @Override
+            public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                Map<String, List<String>> responseHeaders) {
+              return super.onFailure(CycleServiceStep.this, packet, e, statusCode, responseHeaders);
+            }
+
             @Override
             public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
                 Map<String, List<String>> responseHeaders) {
@@ -459,7 +484,7 @@ public class ServiceHelper {
           if (statusCode == CallBuilder.NOT_FOUND) {
             return onSuccess(packet, null, statusCode, responseHeaders);
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
+          return super.onFailure(ForExternalChannelStep.this, packet, e, statusCode, responseHeaders);
         }
 
         @Override
@@ -467,6 +492,12 @@ public class ServiceHelper {
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
             Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ForExternalChannelStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
               @Override
               public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
