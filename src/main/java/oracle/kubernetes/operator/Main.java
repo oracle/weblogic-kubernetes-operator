@@ -25,9 +25,6 @@ import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.Watch;
@@ -37,6 +34,7 @@ import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
@@ -152,7 +150,7 @@ public class Main {
         startRestServer(principal, targetNamespaces);
   
         // create the Custom Resource Definitions if they are not already there
-        checkAndCreateCustomResourceDefinition(client);
+        CRDHelper.checkAndCreateCustomResourceDefinition(client);
   
         try {
           HealthCheckHelper healthCheck = new HealthCheckHelper(client, namespace, targetNamespaces);
@@ -353,50 +351,6 @@ public class Main {
   // -----------------------------------------------------------------------------
 
 
-  private static void checkAndCreateCustomResourceDefinition(ClientHolder client) {
-    LOGGER.entering();
-
-    V1beta1CustomResourceDefinition crd = new V1beta1CustomResourceDefinition();
-    crd.setApiVersion("apiextensions.k8s.io/v1beta1");
-    crd.setKind("CustomResourceDefinition");
-    V1ObjectMeta om = new V1ObjectMeta();
-    om.setName("domains.weblogic.oracle");
-    crd.setMetadata(om);
-    V1beta1CustomResourceDefinitionSpec crds = new V1beta1CustomResourceDefinitionSpec();
-    crds.setGroup("weblogic.oracle");
-    crds.setVersion("v1");
-    crds.setScope("Namespaced");
-    V1beta1CustomResourceDefinitionNames crdn = new V1beta1CustomResourceDefinitionNames();
-    crdn.setPlural("domains");
-    crdn.setSingular("domain");
-    crdn.setKind("Domain");
-    crdn.setShortNames(Collections.singletonList("dom"));
-    crds.setNames(crdn);
-    crd.setSpec(crds);
-
-    V1beta1CustomResourceDefinition existingCRD = null;
-    try {
-
-      existingCRD = client.callBuilder().readCustomResourceDefinition(
-          crd.getMetadata().getName());
-
-    } catch (ApiException e) {
-      if (e.getCode() != CallBuilder.NOT_FOUND) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-      }
-    }
-
-    try {
-      if (existingCRD == null) {
-        LOGGER.info(MessageKeys.CREATING_CRD, crd.toString());
-        client.callBuilder().createCustomResourceDefinition(crd);
-      }
-    } catch (ApiException e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-    }
-    LOGGER.exiting();
-  }
-  
   private static void normalizeDomainSpec(DomainSpec spec) {
     // Normalize DomainSpec so that equals() will work correctly
     String imageName = spec.getImage();

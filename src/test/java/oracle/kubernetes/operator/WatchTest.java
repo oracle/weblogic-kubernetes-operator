@@ -4,11 +4,11 @@ package oracle.kubernetes.operator;
 
 
 import com.google.gson.reflect.TypeToken;
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -22,8 +22,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-
-import static junit.framework.TestCase.fail;
 
 @NotThreadSafe
 public class WatchTest {
@@ -47,6 +45,7 @@ public class WatchTest {
 
     ClientHolder client = ClientHelper.getInstance().take();
 
+      @SuppressWarnings("unused")
       Watch<V1Namespace> watch = Watch.createWatch(
           client.getApiClient(),
           client.getCoreApiClient().listNamespaceCall(null,
@@ -71,6 +70,9 @@ public class WatchTest {
     Assume.assumeTrue(TestUtils.isKubernetesAvailable());
 
     ClientHolder client = ClientHelper.getInstance().take();
+    CRDHelper.checkAndCreateCustomResourceDefinition(client);
+    
+      @SuppressWarnings("unused")
       Watch<Domain> watch = Watch.createWatch(
           client.getApiClient(),
           client.getWeblogicApiClient().listWebLogicOracleV1DomainForAllNamespacesCall(null,
