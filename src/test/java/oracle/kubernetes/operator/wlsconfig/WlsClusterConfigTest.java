@@ -2,12 +2,18 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -17,7 +23,20 @@ import static org.junit.Assert.assertTrue;
  */
 public class WlsClusterConfigTest {
 
-  @Test
+    private static final Logger UNDERLYING_LOGGER = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+    private List<Handler> savedhandlers;
+
+    @Before
+    public void disableConsoleLogging() {
+        savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+    }
+
+    @After
+    public void restoreConsoleLogging() {
+        TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+    }
+
+    @Test
   public void verifyClusterSizeIsSameAsNumberOfServers() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", null, null));
@@ -61,7 +80,7 @@ public class WlsClusterConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in weblogic cluster with name cluster1"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in WebLogic cluster with name cluster1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
@@ -76,7 +95,7 @@ public class WlsClusterConfigTest {
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
       wlsClusterConfig.validateClusterStartup(cs);
-      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
