@@ -130,5 +130,9 @@ public class MessageKeys {
   public static final String POD_DELETED = "WLSKO-0114";
   public static final String SERVICE_DELETED = "WLSKO-0115";
   public static final String INGRESS_DELETED = "WLSKO-0116";
-
+  public static final String WLS_APP_CONFIGURATION_READ_TRYING = "WLSKO-0212";
+  public static final String WLS_APP_CONFIGURATION_READ_RETRY = "WLSKO-0213";
+  public static final String WLS_APP_CONFIGURATION_READ = "WLSKO-0214";
+  public static final String WLS_APP_CONFIGURATION_READ_FAILED = "WLSKO-0215";
+  public static final String WLS_APP_CONFIGURATION_READ_TIMED_OUT = "WLSKO-0216";
 }

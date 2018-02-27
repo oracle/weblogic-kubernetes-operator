@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.wlsconfig.WlsAppConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsConfigRetriever;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -473,5 +474,55 @@ public class RestBackendImpl implements RestBackend {
       }
     }
     throw new AssertionError(formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void upgradeApplications(String domainUID, Map<String, List<String>> appsInfoMap ) {
+    LOGGER.entering(domainUID, "upgrade applications");
+
+    ClientHolder client = null;
+    try {
+      client = clientHelper.take();
+      upgradeApplications(client, domainUID, appsInfoMap);
+    } finally {
+      recycleClient(clientHelper, client);
+    }
+    LOGGER.exiting();
+
+  }
+
+  private void upgradeApplications(ClientHolder client, String domainUID, Map<String, List<String>> appsInfoMap) {
+    authorize(client, domainUID, Operation.update);
+
+    List<Domain> domains = getDomainsList(client);
+    Domain domain = findDomain(domainUID, domains);
+
+    String namespace = getNamespace(domainUID, domains);
+
+    // Use WLS REST API to get a list of WLS application configuration
+    Map<String, WlsAppConfig> wlsAppConfigMap = getWlsAppConfigs(client, namespace, domain, appsInfoMap);
+    System.out.println("WlsAppConfig: " + wlsAppConfigMap);
+
+    // TBD  do later
+    //Main.doAppRollingUpgrade(principle, domainUID, wlsAppConfigMap);
+  }
+
+  private Map<String, WlsAppConfig> getWlsAppConfigs(ClientHolder client,
+                                       String namespace,
+                                       Domain domain,
+                                       Map<String, List<String>> appsInfoMap) {
+
+    String adminServerServiceName = getAdminServerServiceName(domain);
+    String adminSecretName = getAdminServiceSecretName(domain);
+    WlsConfigRetriever wlsConfigRetriever = WlsConfigRetriever.create(client.getHelper(),
+                                                                      namespace,
+                                                                      adminServerServiceName,
+                                                                      adminSecretName);
+
+    return wlsConfigRetriever.readWlsAppConfigs(principal,appsInfoMap);
+
   }
 }

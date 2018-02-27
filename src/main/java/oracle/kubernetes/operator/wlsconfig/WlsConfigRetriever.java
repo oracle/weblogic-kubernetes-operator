@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -17,7 +18,11 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.joda.time.DateTime;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -25,10 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import org.joda.time.DateTime;
-
-import io.kubernetes.client.models.V1ObjectMeta;
 
 /**
  * A helper class to retrieve configuration information from WebLogic.
@@ -294,4 +295,86 @@ public class WlsConfigRetriever {
     }
   }
 
+  /**
+   * Returns a set of applications to be upgraded in the domain. The method would repeatedly try to connect to
+   * the admin server to retrieve the configuration until the configured timeout occurs.
+   *
+   * @param principal The principal that should be used to retrieve the configuration.
+   * @param appsInfoMap A map containing the info of the app to be upgraded provided as input data for REST API.
+   *
+   * @return A map of WlsClusterConfig objects containing the info of the patched applications.
+   */
+  public Map<String, WlsAppConfig> readWlsAppConfigs(String principal, Map<String, List<String>> appsInfoMap) {
+
+    LOGGER.entering();
+
+    long timeout = READ_CONFIG_TIMEOUT_MILLIS;
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    long startTime = System.currentTimeMillis();
+    Future<Map<String, WlsAppConfig>> future = executorService.submit(() -> getWlsAppConfigs(principal, appsInfoMap, timeout));
+    executorService.shutdown();
+    Map<String, WlsAppConfig> wlsAppConfigs = null;
+    try {
+      wlsAppConfigs = future.get(timeout, TimeUnit.MILLISECONDS);
+      LOGGER.info(MessageKeys.WLS_APP_CONFIGURATION_READ, (System.currentTimeMillis() - startTime), wlsAppConfigs);
+    } catch (InterruptedException | ExecutionException e) {
+      LOGGER.warning(MessageKeys.WLS_APP_CONFIGURATION_READ_FAILED, e);
+    } catch (TimeoutException e) {
+      LOGGER.warning(MessageKeys.WLS_APP_CONFIGURATION_READ_TIMED_OUT, timeout);
+    }
+    if (wlsAppConfigs == null) {
+      wlsAppConfigs = new HashMap<String, WlsAppConfig>();
+    }
+
+    LOGGER.exiting(wlsAppConfigs);
+    return wlsAppConfigs;
+  }
+
+  private Map<String, WlsAppConfig> getWlsAppConfigs(String principal, Map<String, List<String>> appsInfoMap, long timeout)
+    throws Exception  {
+
+    LOGGER.entering();
+
+    long stopTime = System.currentTimeMillis() + timeout;
+    Exception exception = null;
+    Map<String, WlsAppConfig> result = null;
+    long timeRemaining = stopTime - System.currentTimeMillis();
+    // keep trying and ignore exceptions until timeout.
+    while (timeRemaining > 0 && result == null) {
+      LOGGER.info(MessageKeys.WLS_APP_CONFIGURATION_READ_TRYING, timeRemaining);
+      exception = null;
+      ClientHolder client = null;
+      try {
+        client = clientHelper.take();
+
+        connectAdminServer(client, principal);
+        String jsonResult = httpClient.executeGetOnServiceClusterIP(WlsAppConfig.getRetrieveServersSearchUrl(),
+                                                                    client, asServiceName, namespace);
+
+        if (jsonResult != null) {
+          result = WlsServerConfig.loadAppsFromJsonResult(jsonResult, appsInfoMap);
+        }
+      } catch (Exception e) {
+        exception = e;
+        LOGGER.info(MessageKeys.WLS_APP_CONFIGURATION_READ_RETRY, e, READ_CONFIG_RETRY_MILLIS);
+      } finally {
+        if (client != null)
+          clientHelper.recycle(client);
+      }
+      try {
+        // sleep before retrying
+        Thread.sleep(READ_CONFIG_RETRY_MILLIS);
+      } catch (InterruptedException ex) {
+        // ignore
+      }
+      timeRemaining = stopTime - System.currentTimeMillis();
+    }
+    if (result == null && exception != null) {
+      LOGGER.throwing(exception);
+      throw exception;
+    }
+    LOGGER.exiting(result);
+    return result;
+
+  }
 }

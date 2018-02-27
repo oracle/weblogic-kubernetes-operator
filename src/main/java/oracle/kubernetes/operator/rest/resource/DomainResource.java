@@ -42,6 +42,7 @@ public class DomainResource extends BaseResource {
     DomainModel item = new DomainModel(getDomainUID());
     addSelfAndParentLinks(item);
     addLink(item, "clusters");
+    addActionLink(item, "upgradeApplications");
     LOGGER.exiting(item);
     return item;
   }
@@ -54,6 +55,18 @@ public class DomainResource extends BaseResource {
   public ClustersResource getClustersResource() {
     LOGGER.entering(href());
     ClustersResource result = new ClustersResource(this, "clusters");
+    LOGGER.exiting(result);
+    return result;
+  }
+
+  /**
+   * Construct and return the 'UpgradeApplications' jaxrs child resource.
+   * @return the appUpgrade sub resource.
+   */
+  @Path("upgradeApplications")
+  public UpgradeApplicationsResource getAppUpgradeResource() {
+    LOGGER.entering(href());
+    UpgradeApplicationsResource result = new UpgradeApplicationsResource(this, "upgradeApplications");
     LOGGER.exiting(result);
     return result;
   }
