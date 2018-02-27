@@ -890,14 +890,18 @@ public class Main {
           
           info.setServerStartupInfo(ssic);
           LOGGER.exiting();
-          return doNext(scaleDownIfNecessary(info, servers, new ManagedServerUpIteratorStep(ssic, next)), packet);
+          return doNext(scaleDownIfNecessary(info, servers, 
+              checkServerServices(info, new ManagedServerUpIteratorStep(ssic, next))), 
+              packet);
         case StartupControlConstants.ADMIN_STARTUPCONTROL:
         case StartupControlConstants.NONE_STARTUPCONTROL:
         default:
           
           info.setServerStartupInfo(null);
           LOGGER.exiting();
-          return doNext(scaleDownIfNecessary(info, servers, next), packet);
+          return doNext(scaleDownIfNecessary(info, servers, 
+              checkServerServices(info, next)), 
+              packet);
       }
     }
   }
@@ -931,6 +935,113 @@ public class Main {
     jo.setValue(value);
     
     return env;
+  }
+  
+  private static Step checkServerServices(DomainPresenceInfo info, Step next) {
+    Collection<String> allServers = new ArrayList<>();
+    Collection<ServerStartupInfo> ssic = new ArrayList<>();
+    
+    WlsDomainConfig scan = info.getScan();
+
+    // Iterate all servers
+    for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
+      for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+        String serverName = wlsServerConfig.getListenAddress();
+        if (!allServers.contains(serverName)) {
+          allServers.add(serverName);
+          ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, null, null));
+        }
+      }
+    }
+    for (Map.Entry<String, WlsServerConfig> wlsServerConfig : scan.getServerConfigs().entrySet()) {
+      String serverName = wlsServerConfig.getKey();
+      if (!allServers.contains(serverName)) {
+        allServers.add(serverName);
+        ssic.add(new ServerStartupInfo(wlsServerConfig.getValue(), null, null, null));
+      }
+    }
+
+    return new ManagedServerServicesStep(info, ssic, next);
+  }
+  
+  private static class ManagedServerServicesStep extends Step {
+    private final DomainPresenceInfo info;
+    private final Collection<ServerStartupInfo> ssic;
+
+    public ManagedServerServicesStep(DomainPresenceInfo info, Collection<ServerStartupInfo> ssic, Step next) {
+      super(next);
+      this.info = info;
+      this.ssic = ssic;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+      
+      for (ServerStartupInfo ssi : ssic) {
+        Packet p = packet.clone();
+        WlsServerConfig serverConfig = ssi.serverConfig;
+        ServerStartup serverStartup = ssi.serverStartup;
+        String serverName = serverConfig.getName();
+        p.put(ProcessingConstants.SERVER_SCAN, serverConfig);
+        p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
+        p.put(ProcessingConstants.ENVVARS, ssi.envVars);
+        
+        DomainSpec spec = info.getDomain().getSpec();
+        Integer nodePort = null;
+        if (serverStartup == null) {
+          List<ServerStartup> ssl = spec.getServerStartup();
+          if (ssl != null) {
+            for (ServerStartup ss : ssl) {
+              if (serverName.equals(ss.getServerName())) {
+                serverStartup = ss;
+                break;
+              }
+            }
+          }
+        }
+
+        if (serverStartup != null) {
+          nodePort = serverStartup.getNodePort();
+        }
+        if (nodePort == null && serverName.equals(spec.getAsName())) {
+          nodePort = spec.getAsNodePort();
+        }
+        
+        p.put(ProcessingConstants.SERVER_NAME, serverName);
+        if (ssi.clusterConfig != null) {
+          p.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
+        }
+        p.put(ProcessingConstants.PORT, serverConfig.getListenPort());
+        p.put(ProcessingConstants.NODE_PORT, nodePort);
+
+        startDetails.add(new StepAndPacket(ServiceHelper.createForServerStep(null), p));
+      }
+      
+      // Add cluster services
+      WlsDomainConfig scan = info.getScan();
+      if (scan != null) {
+        for (Map.Entry<String, WlsClusterConfig> entry : scan.getClusterConfigs().entrySet()) {
+          Packet p = packet.clone();
+          WlsClusterConfig clusterConfig = entry.getValue();
+          p.put(ProcessingConstants.CLUSTER_SCAN, clusterConfig);
+          p.put(ProcessingConstants.CLUSTER_NAME, clusterConfig.getClusterName());
+          for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
+            p.put(ProcessingConstants.PORT, serverConfig.getListenPort());
+            break;
+          }
+
+          startDetails.add(new StepAndPacket(
+              ServiceHelper.createForClusterStep(
+                  IngressHelper.createClusterStep(null)), p));
+        }
+      }
+      
+      if (startDetails.isEmpty()) {
+        return doNext(packet);
+      }
+      return doForkJoin(next, packet, startDetails);
+    }
   }
   
   private static Step scaleDownIfNecessary(DomainPresenceInfo info, Collection<String> servers, Step next) {
@@ -1082,9 +1193,7 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(IngressHelper.createRemoveServerStep(serverName,
-          ServiceHelper.deleteServicesStep(sko, 
-              PodHelper.deletePodStep(sko, new ServerDownFinalizeStep(serverName, next)))), packet);
+      return doNext(PodHelper.deletePodStep(sko, new ServerDownFinalizeStep(serverName, next)), packet);
     }
   }
   
@@ -1110,40 +1219,9 @@ public class Main {
   //                 "clusterScan"
   //                 "envVars"
   private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
-    return PodHelper.createManagedPodStep(
-        new BeforeManagedServerStep(
-            ssi,
-            ServiceHelper.createForServerStep(
-                IngressHelper.createAddServerStep(next))));
+    return PodHelper.createManagedPodStep(next);
   }
 
-  private static class BeforeManagedServerStep extends Step {
-    private final ServerStartupInfo ssi;
-    
-    public BeforeManagedServerStep(ServerStartupInfo ssi, Step next) {
-      super(next);
-      this.ssi = ssi;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      WlsServerConfig scan = ssi.serverConfig;
-      ServerStartup ss = ssi.serverStartup;
-      Integer nodePort = null;
-      if (ss != null) {
-        nodePort = ss.getNodePort();
-      }
-      
-      packet.put(ProcessingConstants.SERVER_NAME, scan.getName());
-      if (ssi.clusterConfig != null) {
-        packet.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
-      }
-      packet.put(ProcessingConstants.PORT, scan.getListenPort());
-      packet.put(ProcessingConstants.NODE_PORT, nodePort);
-      return doNext(packet);
-    }
-  }
-  
   private static void deleteDomainPresence(Domain dom) {
     V1ObjectMeta meta = dom.getMetadata();
     DomainSpec spec = dom.getSpec();
@@ -1464,22 +1542,30 @@ public class Main {
       String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       String channelName = metadata.getLabels().get(LabelConstants.CHANNELNAME_LABEL);
+      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
-        if (info != null && serverName != null) {
-          ServerKubernetesObjects created = new ServerKubernetesObjects();
-          ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
-          ServerKubernetesObjects sko = current != null ? current : created;
-          if (sko != null) {
-            switch (item.type) {
-              case "ADDED":
+        ServerKubernetesObjects sko = null;
+        if (info != null) {
+          if (serverName != null) {
+            ServerKubernetesObjects created = new ServerKubernetesObjects();
+            ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
+            sko = current != null ? current : created;
+          }
+          switch (item.type) {
+            case "ADDED":
+              if (sko != null) {
                 if (channelName != null) {
                   sko.getChannels().put(channelName, s);
                 } else {
                   sko.getService().set(s);
                 }
-                break;
-              case "MODIFIED":
+              } else if (clusterName != null) {
+                info.getClusters().put(clusterName, s);
+              }
+              break;
+            case "MODIFIED":
+              if (sko != null) {
                 if (channelName != null) {
                   V1Service skoService = sko.getChannels().get(channelName);
                   if (skoService != null) {
@@ -1491,28 +1577,42 @@ public class Main {
                     sko.getService().compareAndSet(skoService, s);
                   }
                 }
-                break;
-              case "DELETED":
+              } else if (clusterName != null) {
+                V1Service clusterService = info.getClusters().get(clusterName);
+                if (clusterService != null) {
+                  info.getClusters().replace(clusterName, clusterService, s);
+                }
+              }
+              break;
+            case "DELETED":
+              if (sko != null) {
                 if (channelName != null) {
                   V1Service oldService = sko.getChannels().put(channelName, null);
                   if (oldService != null) {
                     // Service was deleted, but sko still contained a non-null entry
-                    LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
+                    LOGGER.info(MessageKeys.SERVER_SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
                     doCheckAndCreateDomainPresence(info.getDomain(), true);
                   }
                 } else {
                   V1Service oldService = sko.getService().getAndSet(null);
                   if (oldService != null) {
                     // Service was deleted, but sko still contained a non-null entry
-                    LOGGER.info(MessageKeys.SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
+                    LOGGER.info(MessageKeys.SERVER_SERVICE_DELETED, domainUID, metadata.getNamespace(), serverName);
                     doCheckAndCreateDomainPresence(info.getDomain(), true);
                   }
                 }
-                break;
+              } else if (clusterName != null) {
+                V1Service oldService = info.getClusters().put(clusterName, null);
+                if (oldService != null) {
+                  // Service was deleted, but clusters still contained a non-null entry
+                  LOGGER.info(MessageKeys.CLUSTER_SERVICE_DELETED, domainUID, metadata.getNamespace(), clusterName);
+                  doCheckAndCreateDomainPresence(info.getDomain(), true);
+                }
+              }
+              break;
 
-              case "ERROR":
-              default:
-            }
+            case "ERROR":
+            default:
           }
         }
       }
