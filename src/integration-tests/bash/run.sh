@@ -44,20 +44,24 @@
 # It will not delete the aforementioned tar.gz archive files
 # which run.sh creates after a run completes or fails.
 #
-# ---------------
-# Logging Levels
-# ---------------
+# -----------------------
+# Logging Levels & Output
+# -----------------------
 #
 # The test has different levels of logging verboseness.  Output that begins with:
 #
-#   - "##TEST_INFO" is very concise (one line per test (either PASS or FAIL).
-#   - "[timestamp]" is concise.
-#   - "+" is verbose.
-#   - Anything else is semi-verbose.
+#   - ##TEST_INFO   -  is very concise (one line per test (either PASS or FAIL)).
+#   - [timestamp]   -  is concise.
+#   - +             -  is verbose.
+#   - Anything else -  is semi-verbose.
 #
-# By default the test copies all output to /tmp/test_suite.out, and 
-# echos non-verbose output to stdout.  To echo all output to stdout
-# see the VERBOSE env var below.
+# By default stand-alone mode copies all output (verbose included)
+# to /tmp/test_suite.out, and echos non-verbose output to stdout.  Jenkins
+# and Wercker modes similarly only echo non-verbose output to stdout by
+# default, but they do not copy output to /tmp/test_suite.out.
+#
+# To echo verbose output to stdout, set VERBOSE to true (see VERBOSE
+# env var setting below).
 #
 # ------------------------
 # Test Settings (Env Vars)
@@ -2485,7 +2489,6 @@ function test_suite {
 
     # create and start first operator, manages namespaces default & test1
     test_first_operator oper1
-if [ ! "${QUICKTEST:-false}" = "true" ]; then
 
     # test elk intgration
     test_elk_integration
@@ -2501,7 +2504,7 @@ if [ ! "${QUICKTEST:-false}" = "true" ]; then
 
     # test scaling domain1 cluster from 2 to 3 servers and back down to 2
     test_cluster_scale domain1 
-fi    
+
     # if QUICKTEST is true skip the rest of the tests
     if [ ! "${QUICKTEST:-false}" = "true" ]; then
    
