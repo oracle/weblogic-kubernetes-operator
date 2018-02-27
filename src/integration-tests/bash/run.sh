@@ -2485,6 +2485,7 @@ function test_suite {
 
     # create and start first operator, manages namespaces default & test1
     test_first_operator oper1
+if [ ! "${QUICKTEST:-false}" = "true" ]; then
 
     # test elk intgration
     test_elk_integration
@@ -2500,7 +2501,7 @@ function test_suite {
 
     # test scaling domain1 cluster from 2 to 3 servers and back down to 2
     test_cluster_scale domain1 
-    
+fi    
     # if QUICKTEST is true skip the rest of the tests
     if [ ! "${QUICKTEST:-false}" = "true" ]; then
    
