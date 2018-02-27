@@ -5,17 +5,17 @@ package oracle.kubernetes.operator.work;
 
 import java.util.AbstractMap;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Context of a single processing flow.  Acts as a map and as a registry of components.
  * 
  */
 public class Packet extends AbstractMap<String, Object> implements ComponentRegistry, ComponentEx {
-  private final Map<String, Component> components = new HashMap<String, Component>();
-  private final Map<String, Object> delegate = new HashMap<String, Object>();
+  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
+  private final Map<String, Object> delegate = new ConcurrentHashMap<String, Object>();
 
   public Packet() {}
   
