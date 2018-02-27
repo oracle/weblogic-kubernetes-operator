@@ -1917,7 +1917,7 @@ function verify_domain_created {
     fi
 }
 
-function verify_service_and_pod_deleted {
+function verify_pod_deleted {
     if [ "$#" != 2 ] ; then
       fail "requires 2 parameters: domainkey serverNum, set serverNum to 0 to indicate the admin server"
     fi
@@ -1934,27 +1934,9 @@ function verify_service_and_pod_deleted {
       local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME}${SERVER_NUM}"
     fi
 
-    local SERVICE_NAME="${POD_NAME}"
-
     local max_count_srv=50
     local max_count_pod=50
     local wait_time=10
-    local count=0
-    local srv_count=1
-
-    trace "checking if service $SERVICE_NAME is deleted"
-    while [ "${srv_count:=Error}" != "0" -a $count -lt $max_count_srv ] ; do
-      local count=`expr $count + 1`
-      local srv_count=`kubectl -n $NAMESPACE get services | grep "^$SERVICE_NAME " | wc -l`
-      if [ "${srv_count:=Error}" != "0" ]; then
-        trace "service $SERVICE_NAME still exists, iteration $count of $max_count_srv"
-        sleep $wait_time
-      fi
-    done
-
-    if [ "${srv_count:=Error}" != "0" ]; then
-      fail "ERROR: the service $SERVICE_NAME is not deleted, exiting!"
-    fi
 
     trace "checking if pod $POD_NAME is deleted"
     local pod_count=1
@@ -2001,15 +1983,15 @@ function verify_domain_deleted {
       fail "ERROR: domain still exists, exiting!"
     fi
 
-    trace "verify the service and pod of admin server is deleted"
-    verify_service_and_pod_deleted $DOM_KEY 0
+    trace "verify the pod of admin server is deleted"
+    verify_pod_deleted $DOM_KEY 0
 
     trace "verify $MS_NUM number of managed servers for deletion"
     local i
     for i in $(seq 1 $MS_NUM);
     do
-      trace "verify service and pod of managed server $i is deleted"
-      verify_service_and_pod_deleted $DOM_KEY $i
+      trace "verify pod of managed server $i is deleted"
+      verify_pod_deleted $DOM_KEY $i
     done
     trace Done. Verified.
 }
@@ -2241,7 +2223,7 @@ function test_cluster_scale {
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 2/"  $domainCR
     kubectl apply -f $domainCR
 
-    verify_service_and_pod_deleted $DOM_KEY 3
+    verify_pod_deleted $DOM_KEY 3
     verify_webapp_load_balancing $DOM_KEY 2 
 
     # verify that scaling $DOM_KEY had no effect on another domain
