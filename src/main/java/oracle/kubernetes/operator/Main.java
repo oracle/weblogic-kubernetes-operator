@@ -1007,8 +1007,7 @@ public class Main {
       }
     }
 
-    return new ManagedServerServicesStep(info, ssic, 
-        IngressHelper.createClusterStep(next));
+    return new ManagedServerServicesStep(info, ssic, next);
   }
   
   private static class ManagedServerServicesStep extends Step {
@@ -1028,16 +1027,34 @@ public class Main {
       for (ServerStartupInfo ssi : ssic) {
         Packet p = packet.clone();
         WlsServerConfig serverConfig = ssi.serverConfig;
-        ServerStartup ss = ssi.serverStartup;
+        ServerStartup serverStartup = ssi.serverStartup;
+        String serverName = serverConfig.getName();
         p.put(ProcessingConstants.SERVER_SCAN, serverConfig);
         p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
         p.put(ProcessingConstants.ENVVARS, ssi.envVars);
+        
+        DomainSpec spec = info.getDomain().getSpec();
         Integer nodePort = null;
-        if (ss != null) {
-          nodePort = ss.getNodePort();
+        if (serverStartup == null) {
+          List<ServerStartup> ssl = spec.getServerStartup();
+          if (ssl != null) {
+            for (ServerStartup ss : ssl) {
+              if (serverName.equals(ss.getServerName())) {
+                serverStartup = ss;
+                break;
+              }
+            }
+          }
+        }
+
+        if (serverStartup != null) {
+          nodePort = serverStartup.getNodePort();
+        }
+        if (nodePort == null && serverName.equals(spec.getAsName())) {
+          nodePort = spec.getAsNodePort();
         }
         
-        p.put(ProcessingConstants.SERVER_NAME, serverConfig.getName());
+        p.put(ProcessingConstants.SERVER_NAME, serverName);
         if (ssi.clusterConfig != null) {
           p.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
         }
@@ -1060,7 +1077,9 @@ public class Main {
             break;
           }
 
-          startDetails.add(new StepAndPacket(ServiceHelper.createForClusterStep(null), p));
+          startDetails.add(new StepAndPacket(
+              ServiceHelper.createForClusterStep(
+                  IngressHelper.createClusterStep(null)), p));
         }
       }
       
