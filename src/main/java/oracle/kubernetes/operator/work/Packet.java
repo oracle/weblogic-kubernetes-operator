@@ -8,14 +8,15 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Context of a single processing flow.  Acts as a map and as a registry of components.
  * 
  */
 public class Packet extends AbstractMap<String, Object> implements ComponentRegistry, ComponentEx {
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
-  private final Map<String, Object> delegate = new ConcurrentHashMap<String, Object>();
+  private final ConcurrentMap<String, Component> components = new ConcurrentHashMap<String, Component>();
+  private final ConcurrentMap<String, Object> delegate = new ConcurrentHashMap<String, Object>();
 
   public Packet() {}
   
@@ -33,9 +34,6 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
   }
   
   public <S> S getSPI(Class<S> spiType) {
-    if (components == null) {
-      return null;
-    }
     for (Component c : components.values()) {
       S s = c.getSPI(spiType);
       if (s != null) {
@@ -66,6 +64,6 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
 
   @Override
   public Object put(String key, Object value) {
-    return delegate.put(key, value);
+    return value != null ? delegate.put(key, value) : delegate.remove(key);
   }
 }
