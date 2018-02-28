@@ -11,32 +11,57 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.Fiber.ExitCallback;
 
+/**
+ * Allows at most one running Fiber per key value.  However, rather than queue later arriving Fibers this class cancels 
+ * the earlier arriving Fibers.  For the operator, this makes sense as domain presence Fibers that come later will always complete
+ * or correct work that may have been in-flight.
+ */
 public class FiberGate {
   private final Engine engine;
   private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<String, Fiber>();
 
+  /**
+   * Constructor taking Engine for running Fibers
+   * @param engine Engine
+   */
   public FiberGate(Engine engine) {
     this.engine = engine;
   }
   
+  /**
+   * Starts Fiber that cancels any earlier running Fibers with the same key.  Fiber map is not updated if no Fiber
+   * is started.
+   * @param key Key
+   * @param strategy Step for Fiber to begin with
+   * @param packet Packet
+   * @param callback Completion callback
+   * @return started Fiber
+   */
   public Fiber startFiber(String key, Step strategy, Packet packet, CompletionCallback callback) {
-    return replaceAndStartFiber(key, null, strategy, packet, callback);
+    return startFiberIfLastFiberMatches(key, null, strategy, packet, callback);
   }
   
-  public Fiber replaceAndStartFiber(String key, Fiber old, Step strategy, Packet packet, CompletionCallback callback) {
+  /**
+   * Starts Fiber only if the last started Fiber matches the given old Fiber.
+   * @param key Key
+   * @param old Expected last Fiber
+   * @param strategy Step for Fiber to begin with
+   * @param packet Packet
+   * @param callback Completion callback
+   * @return started Fiber, or null, if no Fiber started
+   */
+  public synchronized Fiber startFiberIfLastFiberMatches(String key, Fiber old, Step strategy, Packet packet, CompletionCallback callback) {
     Fiber f = engine.createFiber();
     WaitForOldFiberStep wfofs;
-    synchronized (this) {
-      if (old != null) {
-        if (!gateMap.replace(key, old, f)) {
-          return null;
-        }
-      } else {
-        old = gateMap.put(key, f);
+    if (old != null) {
+      if (!gateMap.replace(key, old, f)) {
+        return null;
       }
-      wfofs = new WaitForOldFiberStep(old, strategy);
-      f.getComponents().put(ProcessingConstants.FIBER_COMPONENT_NAME, Component.createFor(wfofs));
+    } else {
+      old = gateMap.put(key, f);
     }
+    wfofs = new WaitForOldFiberStep(old, strategy);
+    f.getComponents().put(ProcessingConstants.FIBER_COMPONENT_NAME, Component.createFor(wfofs));
     f.start(wfofs, packet, new CompletionCallback() {
       @Override
       public void onCompletion(Packet packet) {
@@ -87,5 +112,4 @@ public class FiberGate {
       });
     }
   }
-  
 }
