@@ -29,16 +29,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <T> The type of the object to be watched.
  */
 public class Watcher<T> {
-
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  
   private final Watching<T> watching;
   private final Object userContext;
   private final AtomicBoolean isAlive = new AtomicBoolean(true);
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private String resourceVersion = "";
   private Watch<T> watch = null;
-  //TODO Remove this when the Watch support is integrated into the K8S API
-  public static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   /*
    * ErrorResponse is used when the response is not returning data but an error
    * from the server.
@@ -189,6 +188,8 @@ public class Watcher<T> {
             // When draining just throw away anything new.
             continue;
           }
+
+          LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
 
           if (item.type.equalsIgnoreCase("ERROR")) {
             // Check the type of error. If code is 410 meaning
