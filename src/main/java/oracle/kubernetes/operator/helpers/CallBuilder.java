@@ -181,6 +181,8 @@ public class CallBuilder {
     if (client == null) {
       throw new IllegalStateException();
     }
+    
+    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listDomain", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
     return client.getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainCall(namespace, pretty, _continue,
         fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
   }
@@ -375,6 +377,7 @@ public class CallBuilder {
    */
   public com.squareup.okhttp.Call listPodCall(String namespace) throws ApiException {
     String _continue = "";
+    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listPod", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
     return client.getCoreApiClient().listNamespacedPodCall(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
   }
@@ -606,6 +609,7 @@ public class CallBuilder {
    */
   public com.squareup.okhttp.Call listServiceCall(String namespace) throws ApiException {
     String _continue = "";
+    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listService", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
     return client.getCoreApiClient().listNamespacedServiceCall(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
   }
@@ -979,6 +983,7 @@ public class CallBuilder {
    */
   public com.squareup.okhttp.Call listIngressCall(String namespace) throws ApiException {
     String _continue = "";
+    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listIngress", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
     return client.getExtensionsV1beta1ApiClient().listNamespacedIngressCall(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
   }
