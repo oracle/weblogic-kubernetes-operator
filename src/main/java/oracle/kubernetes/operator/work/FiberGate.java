@@ -55,17 +55,18 @@ public class FiberGate {
   
   private static class WaitForOldFiberStep extends Step {
     private final AtomicReference<Fiber> old;
-    private WaitForOldFiberStep current;
+    private final AtomicReference<WaitForOldFiberStep> current;
 
     public WaitForOldFiberStep(Fiber old, Step next) {
       super(next);
       this.old = new AtomicReference<>(old);
-      current = this;
+      current = new AtomicReference<>(this);
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      Fiber o = current != null ? current.old.getAndSet(null) : null;
+      WaitForOldFiberStep c = current.get();
+      Fiber o = c != null ? c.old.getAndSet(null) : null;
       if (o == null) {
         return doNext(packet);
       }
@@ -74,13 +75,13 @@ public class FiberGate {
         boolean isWillCall = o.cancelAndExitCallback(true, new ExitCallback() {
           @Override
           public void onExit() {
-            current = o.getSPI(WaitForOldFiberStep.class);
+            current.set(o.getSPI(WaitForOldFiberStep.class));
             fiber.resume(packet);
           }
         });
 
         if (!isWillCall) {
-          current = o.getSPI(WaitForOldFiberStep.class);
+          current.set(o.getSPI(WaitForOldFiberStep.class));
           fiber.resume(packet);
         }
       });
