@@ -814,12 +814,12 @@ public class Main {
               WlsClusterConfig wlsClusterConfig = scan.getClusterConfig(clusterName);
               if (wlsClusterConfig != null) {
                 for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+                  // done with the current cluster
+                  if (startedCount >= cs.getReplicas() && !startAll) 
+                    continue cluster;
+
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
-                    // done with the current cluster
-                    if (startedCount >= cs.getReplicas() && !startAll) 
-                      continue cluster;
-
                     List<V1EnvVar> env = cs.getEnv();
                     ServerStartup ssi = null;
                     ssl = spec.getServerStartup();
@@ -874,15 +874,15 @@ public class Main {
                 int startedCount = 0;
                 WlsClusterConfig config = wlsClusterConfig.getValue();
                 for (WlsServerConfig wlsServerConfig : config.getServerConfigs()) {
+                  if (startedCount >= spec.getReplicas())
+                    break;
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
                     // start server
                     servers.add(serverName);
                     ssic.add(new ServerStartupInfo(wlsServerConfig, config, null, null));
+                    startedCount++;
                   }
-                  // outside the serverName check because these servers are already running
-                  if (++startedCount >= spec.getReplicas())
-                    break;
                 }
               }
             }
