@@ -55,19 +55,23 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
   @Override
   protected boolean matchesSafely(ExecResult execResult, Description description) {
     boolean rtn = true;
-    //if (hasIncorrectExitValue(description, execResult)) {
-    //  rtn = false;
-    if (hasIncorrectOutputStream(description, "stdout", execResult.stdout(), stdoutRegExps))
+    if (hasIncorrectExitValue(description, execResult)) {
       rtn = false;
-    if (hasIncorrectOutputStream(description, "stderr", execResult.stderr(), stderrRegExps))
+    }
+    if (hasIncorrectOutputStream(description, "stdout", execResult.stdout(), stdoutRegExps)) {
       rtn = false;
+    }
+    if (hasIncorrectOutputStream(description, "stderr", execResult.stderr(), stderrRegExps)) {
+      rtn = false;
+    }
     return rtn;
   }
 
   private boolean hasIncorrectExitValue(Description description, ExecResult execResult) {
-    if (execResult.exitValue() == expectedExitValue)
+    if (execResult.exitValue() != expectedExitValue) {
+      description.appendText("exit value was ").appendValue(execResult.exitValue());
       return true;
-    description.appendText("exit value was ").appendValue(execResult.exitValue());
+    }
     return false;
   }
 
@@ -91,8 +95,9 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
   private List<String> getMissingRegexps(String have, String... regExpsWant) {
     List<String> missing = new ArrayList<>();
     for (String regExp : regExpsWant) {
-      if (!have.matches(MULTI_LINE_REGEXP_PREFIX + toContainsRegExp(regExp)))
+      if (!have.matches(MULTI_LINE_REGEXP_PREFIX + toContainsRegExp(regExp))) {
         missing.add(regExp);
+      }
     }
     return missing;
   }
@@ -105,9 +110,10 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
   }
 
   private void describeRequiredOutputStream(Description description, String streamName, String[] regExps) {
-    if (regExps == null)
+    if (regExps == null) {
       description.appendText("\n with an empty " + streamName);
-    else
+    } else {
       description.appendValueList("\n with " + streamName + " containing [", ",", "]", regExps);
+    }
   }
 }

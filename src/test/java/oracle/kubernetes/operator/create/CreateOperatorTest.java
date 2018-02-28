@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+
 /**
  * Base test class for testing create-weblogic-operator.sh
  */
@@ -37,7 +39,7 @@ public class CreateOperatorTest extends CreateTest {
 
   protected CreateOperatorInputs readDefaultInputsFile() throws IOException {
     Reader r = Files.newBufferedReader(defaultInputsPath(), Charset.forName("UTF-8"));
-    return (CreateOperatorInputs)yaml().loadAs(r, CreateOperatorInputs.class);
+    return (CreateOperatorInputs)newYaml().loadAs(r, CreateOperatorInputs.class);
   }
 
   protected Path defaultInputsPath() {
@@ -56,13 +58,13 @@ public class CreateOperatorTest extends CreateTest {
     return scratch().userProjects().resolve("weblogic-operators").resolve(inputs.namespace);
   }
 
-  protected ExecResult exexCreateOperatorResult(CreateOperatorInputs inputs) throws Exception {
+  protected ExecResult execCreateOperator(CreateOperatorInputs inputs) throws Exception {
     Path p = scratch().path().resolve("inputs.yaml");
-    yaml().dump(inputs, Files.newBufferedWriter(p));
-    return exexCreateOperatorResult(" -g -o " + scratch().userProjects().toString() + " -i " + p.toString());
+    newYaml().dump(inputs, Files.newBufferedWriter(p));
+    return execCreateOperator(" -g -o " + scratch().userProjects().toString() + " -i " + p.toString());
   }
 
-  protected ExecResult exexCreateOperatorResult(String options) throws Exception {
+  protected ExecResult execCreateOperator(String options) throws Exception {
     return exec(CREATE_SCRIPT + options);
   }
 }
