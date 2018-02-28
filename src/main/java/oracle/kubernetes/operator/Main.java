@@ -361,9 +361,6 @@ public class Main {
     if (imagePullPolicy == null || imagePullPolicy.length() == 0) {
       spec.setImagePullPolicy(imagePullPolicy = (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX)) ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY);
     }
-    if (spec.getAsEnv() == null) {
-      spec.setAsEnv(new ArrayList<V1EnvVar>());
-    }
     if (spec.getExportT3Channels() == null) {
       spec.setExportT3Channels(new ArrayList<String>());
     }
@@ -822,12 +819,12 @@ public class Main {
               WlsClusterConfig wlsClusterConfig = scan.getClusterConfig(clusterName);
               if (wlsClusterConfig != null) {
                 for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+                  // done with the current cluster
+                  if (startedCount >= cs.getReplicas() && !startAll) 
+                    continue cluster;
+
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
-                    // done with the current cluster
-                    if (startedCount >= cs.getReplicas() && !startAll) 
-                      continue cluster;
-
                     List<V1EnvVar> env = cs.getEnv();
                     ServerStartup ssi = null;
                     ssl = spec.getServerStartup();
@@ -882,15 +879,15 @@ public class Main {
                 int startedCount = 0;
                 WlsClusterConfig config = wlsClusterConfig.getValue();
                 for (WlsServerConfig wlsServerConfig : config.getServerConfigs()) {
+                  if (startedCount >= spec.getReplicas())
+                    break;
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
                     // start server
                     servers.add(serverName);
                     ssic.add(new ServerStartupInfo(wlsServerConfig, config, null, null));
+                    startedCount++;
                   }
-                  // outside the serverName check because these servers are already running
-                  if (++startedCount >= spec.getReplicas())
-                    break;
                 }
               }
             }

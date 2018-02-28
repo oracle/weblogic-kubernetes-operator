@@ -1520,13 +1520,6 @@
       "description": "Administration server port.  Note: Possibly temporary as we could find this value through domain home inspection.",
       "type": "integer"
      },
-     "asEnv": {
-      "description": "Environment variables for use in starting the administration server.",
-      "type": "array",
-      "items": {
-       "$ref": "#/definitions/io.k8s.api.core.v1.EnvVar"
-      }
-     },
      "exportT3Channels": {
       "description": "List of specific T3 channels to export.  Named T3 Channels will be exposed using NodePort Services.  The internal and external ports must match; therefore, it is required that the channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes cluster's legal NodePort port range.",
       "type": "array",
