@@ -12,6 +12,8 @@ import oracle.kubernetes.operator.rest.model.CollectionModel;
 import oracle.kubernetes.operator.rest.model.DomainModel;
 import oracle.kubernetes.operator.rest.model.ErrorModel;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationModel;
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationsModel;
 import oracle.kubernetes.operator.rest.model.VersionModel;
 import org.junit.After;
 import org.junit.Before;
@@ -64,6 +66,7 @@ public class RestTest {
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/" + CLUSTERS;
   private static final String DOMAIN1_CLUSTER1_HREF = DOMAIN1_CLUSTERS_HREF + "/" + CLUSTER1;
   private static final String DOMAIN1_CLUSTER1_SCALE_HREF = DOMAIN1_CLUSTER1_HREF + "/scale";
+  private static final String DOMAIN1_UPGRADE_APPLICATIONS_HREF = DOMAIN1_HREF + "/upgradeApplications";
 
   private static final String CA_CERT_DATA = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3VENDQXFtZ0F3SUJBZ0lFVHVHU216QU5CZ2txaGtpRzl3MEJBUXNGQURDQmdURUxNQWtHQTFVRUJoTUMNClZWTXhFREFPQmdOVkJBZ1RCMDE1VTNSaGRHVXhEekFOQmdOVkJBY1RCazE1Vkc5M2JqRVhNQlVHQTFVRUNoTU8NClRYbFBjbWRoYm1sNllYUnBiMjR4R1RBWEJnTlZCQXNURUVaUFVpQlVSVk5VU1U1SElFOU9URmt4R3pBWkJnTlYNCkJBTVRFbGRsWW14dloybGpUM0JsY21GMGIzSkRRVEFlRncweE56RXlNRFV5TXpJNE1ERmFGdzB5TnpFeU1ETXkNCk16STRNREZhTUlHQk1Rc3dDUVlEVlFRR0V3SlZVekVRTUE0R0ExVUVDQk1IVFhsVGRHRjBaVEVQTUEwR0ExVUUNCkJ4TUdUWGxVYjNkdU1SY3dGUVlEVlFRS0V3NU5lVTl5WjJGdWFYcGhkR2x2YmpFWk1CY0dBMVVFQ3hNUVJrOVMNCklGUkZVMVJKVGtjZ1QwNU1XVEViTUJrR0ExVUVBeE1TVjJWaWJHOW5hV05QY0dWeVlYUnZja05CTUlJQklqQU4NCkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQWp1Q1JtOE5Wck02bjQrQ1ptZFh3M3FqRjV3T00NCnZYZVJDZG9TZ1dEalRrUmtKV1RZOVlVaGVIaVB1TGozdXZRbFNwNUNZdngwTUYyM2pxbzcyaEJqM3U2cGZqbVMNCnJBeEpSdjZQV1E3Y3dTbGU3SU1URk5Qb3NvS0wrSEZmTWxmL2o2WUtqZzlQZXJPY09ocEI2WnJWS0NxeDdvOCsNCmRpb2FxdXlYV2drKzQxdkNKeGs5QVlqRGdBM1BnNC8xQ1BPVUU4eGN4Z29ldi9teW4yTFMvZkU5NzJsNVo4eUINCnFtcXI1V09EbUZLVWNqV0tSVGlnWjFSNVBoQjNVaHhBUXN4aHJKYVZFM3drT1ZjYWdza2QvWHM2eWY3cS9pVXMNClUxL1VCc3Q1SE5Dd2hnWUZ3bkV1RXZvaVNPeFl2UEx4cjRWTU1RM2lPR21QS0VBKzJoUUtxc214b3dJREFRQUINCm96OHdQVEFQQmdOVkhSTUVDREFHQVFIL0FnRUJNQXNHQTFVZER3UUVBd0lDQkRBZEJnTlZIUTRFRmdRVVlFcDANCmkxc2hZcDh5N1lQTEk5MXh6L2pXWVVBd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFIZFNtUVZZT0pzdmJFR1QNCmxwdk1CcjhCL0M1cUdGQjF4N3BBZWRlOFA1TXk0MHg1QnNjTjg4ZkN3djZSVStUbDNjenQ4ZHBMc0RZaTIzR2QNCnEwSk1LT2docXdSa2w4bEZRNmY0ZUdsZGFLMGlOc3hxQkJZUVFBeHNscTV0RXRUZk4rYmdVbGUyMmhpNERjUGsNClh0UDNncGhHdzRjSXlpZ09DbWpiOVk5VnNQY0M2Rit2bmhNaWxkRVhmUEFJcWRQSnlWZFMrWWNXOXdkaXF2d28NClVsK0h2VDhyMnFSbTV0U2NReFRySEY1emdwZzZhUmRENk1qWGQwZFAydzUzazVQeUZPb0o4eE1Qd1JGeE1xazkNCmkzdm9ZcUFBNXBNZXBVR3ladllKenUrUEk2cmFJNlllc3NMcW02NEE0NlZYS0xIOEZvTnYwMEQ2Y0o5R1NwMUUNCkJmRm85L3M9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K";
   private static final String OP_CERT_DATA = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR4ekNDQXErZ0F3SUJBZ0lFT2lMdG1EQU5CZ2txaGtpRzl3MEJBUXNGQURDQmdURUxNQWtHQTFVRUJoTUMNClZWTXhFREFPQmdOVkJBZ1RCMDE1VTNSaGRHVXhEekFOQmdOVkJBY1RCazE1Vkc5M2JqRVhNQlVHQTFVRUNoTU8NClRYbFBjbWRoYm1sNllYUnBiMjR4R1RBWEJnTlZCQXNURUVaUFVpQlVSVk5VU1U1SElFOU9URmt4R3pBWkJnTlYNCkJBTVRFbGRsWW14dloybGpUM0JsY21GMGIzSkRRVEFlRncweE56RXlNRFV5TXpJNE1EUmFGdzB5TnpFeU1ETXkNCk16STRNRFJhTUhneEN6QUpCZ05WQkFZVEFsVlRNUkF3RGdZRFZRUUlFd2ROZVZOMFlYUmxNUTh3RFFZRFZRUUgNCkV3Wk5lVlJ2ZDI0eEZ6QVZCZ05WQkFvVERrMTVUM0puWVc1cGVtRjBhVzl1TVJrd0Z3WURWUVFMRXhCR1QxSWcNClZFVlRWRWxPUnlCUFRreFpNUkl3RUFZRFZRUURFd2xzYjJOaGJHaHZjM1F3Z2dFaU1BMEdDU3FHU0liM0RRRUINCkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDOCs1MVNYcnpPUm8xaHYwb1doZFhnNTBCczRJc0pUSUw4ZVdZV1R6SGINCkxVcVMxQldWZllVMHJGWXZYTDBGQnh6SGdtL1lVZ0dHVkQwZEVtdVBMSXc3cEd4TS84Sm5HbGpvampnZSs5QmUNCk9rMFBKSXc3MmpPazA0a3ZOK1V6QnJodk5kRnRUQ3VnaVZDWG1ncjZLYjlIM2JpSlkraWZIMmR1OTRIamcrQ2ENCkRYZU5qZXlSRmVZQmdmRTd1cERBNGx6aXNrRVFjczVTSHJNcVB5TFViZVRrYk1aSy82bVVYazdOTGhyQ3BRNmMNCjNnVGgrSDVLaElBd0lXR2hXTEhOTGkzWm5kbWhRRW53enZMOUlDYVpHazZ3QmlxNDJsdUUxYndPdmpMVnRKOEsNCmVJWGFONnlIdXFFamNMUFBEeEhtYkZwVWlaZmgrWTk0K29RQTRMS3lGdWhOQWdNQkFBR2pUekJOTUI4R0ExVWQNCkl3UVlNQmFBRkdCS2RJdGJJV0tmTXUyRHl5UGRjYy80MW1GQU1Bc0dBMVVkRHdRRUF3SUQrREFkQmdOVkhRNEUNCkZnUVVvcFFvY0ExaVpGN042ZDhMdmoyM1Ezc0FJTVl3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQUlHZFpkMVMNCkhZdFMxQnVRSnpLcSthTEVHUzQvQk01aXk2Q0oxaGpvUnpyc0Y0TEhtTmNqOE04M1RYY1JXTHJraEhtd3FFU0cNCjVpU3o0bVJnbmxxSlIxcndxZjhOUnAwU3dnVVlmbmdvdGI2dlZxVUhWZzcvdWtaRURYV2dUMThaS1BrZkp4SnoNCmRPdlpEeDhETzVhOWhQVFZKeWwzekd3ckhBaVY3Zjg1RWdIVkxsUTFqbC91eG9zSXJaMm5VZ3BFVTlzaC8xd04NCkIyYUtZVk5WQVFNZVZuVHhHU0h0WW5pOUJ1U1FDMFhZS3FCbVlHWWlwUDlnenJBd0hFTXVEeFRxcUdIRU84WVgNCjgrem1xVGJTVzQ2NkNYL2RsTFhNKzR3MFErNU1XODZBbkpzVGhEeE5mWkMrd3o5ZHNwbm9lclVsYWVyMVhiaWkNCjAwd2ZNaU81UU9uTlF3TT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=";
@@ -189,6 +192,7 @@ public class RestTest {
     DomainModel want = createDomainUID1();
     want.addSelfAndParentLinks(DOMAIN1_HREF, DOMAINS_HREF);
     want.addLink("clusters", DOMAIN1_CLUSTERS_HREF);
+    want.addActionLink("upgradeApplications", DOMAIN1_UPGRADE_APPLICATIONS_HREF);
     verifyEntity(r, want);
   }
 
@@ -258,6 +262,17 @@ public class RestTest {
   }
 
   @Test
+  public void testUpgradeApplications() {
+    Entity entity = Entity.entity(createUpgradeApplications(), MediaType.APPLICATION_JSON);
+    verifyStatusCode(
+      request(DOMAIN1_UPGRADE_APPLICATIONS_HREF)
+        .header("X-Requested-By", "TestClient")
+        .post(entity),
+      Status.NO_CONTENT
+    );
+  }
+
+  @Test
   public void testMissingAuthorizationHeader() {
     Response r = externalHttpsTarget.path(OPERATOR_HREF).request().get();
     verifyNotAuthenticated(r);
@@ -301,6 +316,30 @@ public class RestTest {
     ScaleClusterParamsModel params = new ScaleClusterParamsModel();
     params.setManagedServerCount(3);
     return params;
+  }
+
+  private UpgradeApplicationsModel createUpgradeApplications() {
+    UpgradeApplicationsModel appsParamsModel = new UpgradeApplicationsModel();
+
+    List<UpgradeApplicationModel> appsParamsModelList = new ArrayList<UpgradeApplicationModel>();
+
+    UpgradeApplicationModel app1ParamsModel = new UpgradeApplicationModel();
+    app1ParamsModel.setApplicationName("testApp1");
+    app1ParamsModel.setPatchedLocation("/tmp/test1v2.war");
+    app1ParamsModel.setBackupLocation("/tmp/test1v1.war");
+
+    appsParamsModelList.add(app1ParamsModel);
+
+    UpgradeApplicationModel app2ParamsModel = new UpgradeApplicationModel();
+    app2ParamsModel.setApplicationName("testApp2");
+    app2ParamsModel.setPatchedLocation("/tmp/test2v2.war");
+    app2ParamsModel.setBackupLocation("/tmp/test2v1.war");
+
+    appsParamsModelList.add(app2ParamsModel);
+
+    appsParamsModel.setApplications(appsParamsModelList);
+
+    return appsParamsModel;
   }
 
   private void verifyOK(Response resp) {
@@ -448,6 +487,11 @@ public class RestTest {
     @Override
     public void scaleCluster(String domainId, String cluster, int managedServerCount) {
     }
+
+    @Override
+    public void upgradeApplications(String domainId, UpgradeApplicationsModel appsToUpgrade) {
+    }
+
   }
 
   private KeyStore createTrustStore() throws Exception {

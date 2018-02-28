@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.rest.backend;
 
+import oracle.kubernetes.operator.rest.model.UpgradeApplicationsModel;
+
 import java.util.Set;
 
 /**
@@ -63,4 +65,16 @@ public interface RestBackend {
    * @param managedServerCount - the desired number of WebLogic managed servers.
    */
   public void scaleCluster(String domainUID, String cluster, int managedServerCount);
+
+
+  /**
+   * Upgrade applications
+   * @param domainUID - the unique identifier assigned to a WebLogic domain
+   * when it was registered with the WebLogic operator.  The caller is responsible
+   * for calling isDomainUID first and not calling this method if the domain has not
+   * been registered.
+   * @param appsToUpgrade - Containing info of the application to be upgraded.
+   *                        It's provided as REST API input data.
+   */
+  public void upgradeApplications(String domainUID, UpgradeApplicationsModel appsToUpgrade);
 }

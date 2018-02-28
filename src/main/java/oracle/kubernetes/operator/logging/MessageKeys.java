@@ -134,5 +134,12 @@ public class MessageKeys {
   public static final String SERVER_SERVICE_DELETED = "WLSKO-0118";
   public static final String CLUSTER_SERVICE_DELETED = "WLSKO-0119";
   public static final String INGRESS_DELETED = "WLSKO-0120";
+  public static final String WLS_APP_CONFIGURATION_READ_TRYING = "WLSKO-0121";
+  public static final String WLS_APP_CONFIGURATION_READ_RETRY = "WLSKO-0122";
+  public static final String WLS_APP_CONFIGURATION_READ = "WLSKO-0123";
+  public static final String WLS_APP_CONFIGURATION_READ_FAILED = "WLSKO-0124";
+  public static final String WLS_APP_CONFIGURATION_READ_TIMED_OUT = "WLSKO-0125";
+  public static final String APPUPGRADE_MISSING_PATCHED_LOCATION = "WLSKO-0126";
+  public static final String APPUPGRADE_MISSING_BACKUP_LOCATION = "WLSKO-0127";
 
 }
