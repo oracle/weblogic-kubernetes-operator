@@ -4,10 +4,6 @@ package oracle.kubernetes.operator.create;
 import oracle.kubernetes.operator.create.ExecResult;
 import org.junit.After;
 import org.junit.Before;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -21,25 +17,18 @@ import java.util.stream.Collectors;
  */
 public class CreateTest {
 
-  private Yaml yaml = null;
   private ScratchDir scratch;
 
   @Before
   public void setUp() throws Exception {
-    DumperOptions options = new DumperOptions();
-    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-    options.setPrettyFlow(true);
-    this.yaml = new Yaml(new Constructor(), new Representer(), options);
     this.scratch = new ScratchDir();
   }
 
   @After
   public void tearDown() throws Exception {
-    this.yaml = null;
     this.scratch.remove();
   }
 
-  protected Yaml yaml() { return yaml; }
   protected ScratchDir scratch() { return this.scratch; }
 
   protected ExecResult exec(String command) throws Exception {

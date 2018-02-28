@@ -39,7 +39,7 @@ public class CreateOperatorInputsFileTest extends CreateOperatorTest {
   @Test
   public void createOperatorWithoutSpecifyingInputsFile_usesDefaultInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
     String userProjects = scratch().userProjects().toString();
-    assertThat(exexCreateOperatorResult(" -g -o " + userProjects), succeedsAndPrints("Completed"));
+    assertThat(execCreateOperator(" -g -o " + userProjects), succeedsAndPrints("Completed"));
     assertGeneratedYamlFilesExist(readDefaultInputsFile());
   }
 
@@ -48,7 +48,7 @@ public class CreateOperatorInputsFileTest extends CreateOperatorTest {
     CreateOperatorInputs inputs = readDefaultInputsFile();
     // customize the namespace name so that we can tell that it generated the yaml files based on this inputs instead of the default one
     inputs.namespace = "weblogic-operator-2";
-    assertThat(exexCreateOperatorResult(inputs), succeedsAndPrints("Completed"));
+    assertThat(execCreateOperator(inputs), succeedsAndPrints("Completed"));
     assertGeneratedYamlFilesExist(inputs);
   }
 

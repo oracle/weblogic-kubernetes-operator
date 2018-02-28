@@ -18,26 +18,26 @@ public class CreateOperatorUsageTest extends CreateOperatorTest {
 
   @Test
   public void helpOption_succeedsAndPrintsUsage() throws Exception {
-    assertThat(exexCreateOperatorResult(" -h"), succeedsAndPrints(USAGE));
+    assertThat(execCreateOperator(" -h"), succeedsAndPrints(USAGE));
   }
 
   @Test
   public void noOption_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(exexCreateOperatorResult(""), failsAndPrints(allOf(USAGE, CREATE_SCRIPT, "-o must be specified")));
+    assertThat(execCreateOperator(""), failsAndPrints(allOf(USAGE, CREATE_SCRIPT, "-o must be specified")));
   }
 
   @Test
   public void missingOutputDir_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(exexCreateOperatorResult(" -o"), failsAndPrints(USAGE, toArray("option requires an argument -- o")));
+    assertThat(execCreateOperator(" -o"), failsAndPrints(USAGE, toArray("option requires an argument -- o")));
   }
 
   @Test
   public void missingInputFileName_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(exexCreateOperatorResult(" -i"), failsAndPrints(USAGE, toArray("option requires an argument -- i")));
+    assertThat(execCreateOperator(" -i"), failsAndPrints(USAGE, toArray("option requires an argument -- i")));
   }
 
   @Test
   public void unsupportedOption_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(exexCreateOperatorResult(" -z"), failsAndPrints(USAGE, toArray("illegal option -- z")));
+    assertThat(execCreateOperator(" -z"), failsAndPrints(USAGE, toArray("illegal option -- z")));
   }
 }
