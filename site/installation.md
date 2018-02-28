@@ -82,7 +82,7 @@ The following parameters must be provided in the input file:
 | serviceAccount	| The name of the service account that the operator will use to make requests to the Kubernetes API server. |	weblogic-operator |
 | loadBalancer	| Determines which load balancer should be installed to provide load balancing for WebLogic clusters.  Allowed values are:<br/>-	`none` – do not configure a load balancer<br/>- `traefik` – configure the Traefik Ingress provider<br/>- `nginx` – reserved for future use<br/>- `ohs` – reserved for future use |	traefik |
 | loadBalancerWebPort	| The NodePort for the load balancer to accept user traffic. |	30305 |
-| enableELKintegration	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, logstash and Kibana will be installed, and logstash will be configured to export the operator’s logs to ElasticSearch. |	false |
+| elkIntegrationEnabled	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, logstash and Kibana will be installed, and logstash will be configured to export the operator’s logs to ElasticSearch. |	false |
 
 ## Decide which REST configuration to use
 
@@ -110,9 +110,9 @@ Note that Ingresses are not created for servers that are not part of a WebLogic 
 
 ### Log integration with ELK
 
-The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a logstash pod will be created in the operator’s namespace.  Logstash will be configured to publish the operator’s logs into ElasticSearch, and the log data will be available for visualization and analysis in Kibana.
+The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a logstash container will be created in the operator pod.  Logstash will be configured to publish the operator’s logs into ElasticSearch, and the log data will be available for visualization and analysis in Kibana.
 
-To enable the ELK integration, set the `enableELKintegration` option to `true`.
+To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
 
 ## Deploying the operator to a Kubernetes cluster
 
@@ -129,7 +129,6 @@ The script will carry out the following actions:
 *	A set of Kubernetes YAML files will be created from the inputs provided.
 *	A namespace will be created for the operator.
 *	A service account will be created in that namespace.
-*	If ELK integration was enabled, a persistent volume for ELK will be created.
 *	A set of RBAC roles and bindings will be created.
 *	The operator will be deployed.
 *	If requested, the load balancer will be deployed.
@@ -213,8 +212,8 @@ The spec section provides details for the container that the operator will execu
           secretName: operator-secrets
       # Uncomment this volume if using ELK integration:
       # - name: log-dir
-      #   persistentVolumeClaim:
-      #     claimName: elk-pvc
+      #   emptyDir:
+      #    medium: Memory
       # Update the imagePullSecrets with the name of your Kubernetes secret containing
       # your credentials for the Docker Store/Oracle Container Registry.
       imagePullSecrets:
