@@ -10,33 +10,76 @@
 # Summary and Usage
 # -----------------
 #
-# This script runs a series of acceptance tests and archives the results
-# into tar.gz files upon completion.  It currently runs in three modes,
-# "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode
-# is controlled by the WERCKER and JENKINS environment variables described
-# below.  A standalone run filters out verbose lines from the console output
-# while redirecting full output to the file /tmp/test_suite.out
+# This script builds the operator, runs a series of acceptance tests,
+# and archives the results into tar.gz files upon completion.
 #
-# To cleanup after a run, see "cleanup.sh".
+# It currently runs in three modes, "Wercker", "Jenkins",
+# and "standalone" Oracle Linux, where the mode is controlled by
+# the WERCKER and JENKINS environment variables described below.
+# The default is "standalone".
 #
-# The test has three levels of logging output. Output that begins with:
+# Steps to run this script:
 #
-#     "##TEST_INFO" is very concise (one line per test (either PASS or FAIL).
-#     "[timestamp]" is concise.
-#     "+" is verbose.
-#     Anything else is semi-verbose.
+#   (1) set the optional env vars described below
+#   (2) call "cleanup.sh" (more on cleanup below)
+#   (3) call "run.sh" without any parameters
 #
+# A succesfull run will have a trace statement with the
+# words 'Acceptance Test Suite Completed' and have
+# an exit status of 0.
+#
+# A failed run will have a trace statement with the
+# word 'FAIL', and a non-zero exit status.
+#
+# -------------------------
+# Test Cleanup (cleanup.sh)
+# -------------------------
+#
+# To cleanup before or after a run, set the RESULT_ROOT and PV_ROOT
+# env vars that are described below to the same values that were
+# used when calling run.sh, and then call "cleanup.sh".
+#
+# Cleanup deletes test temporary files, test PV directories, and
+# test kubernetes artifacts (such as pods, services, secrets, etc). 
+# It will not delete the aforementioned tar.gz archive files
+# which run.sh creates after a run completes or fails.
+#
+# -----------------------
+# Logging Levels & Output
+# -----------------------
+#
+# The test has different levels of logging verboseness.  Output that begins with:
+#
+#   - ##TEST_INFO   -  is very concise (one line per test (either PASS or FAIL)).
+#   - [timestamp]   -  is concise.
+#   - +             -  is verbose.
+#   - Anything else -  is semi-verbose.
+#
+# By default stand-alone mode copies all output (verbose included)
+# to /tmp/test_suite.out, and echos non-verbose output to stdout.  Jenkins
+# and Wercker modes similarly only echo non-verbose output to stdout by
+# default, but they do not copy output to /tmp/test_suite.out.
+#
+# To echo verbose output to stdout, set VERBOSE to true (see VERBOSE
+# env var setting below).
+#
+# ------------------------
+# Test Settings (Env Vars)
+# ------------------------
 #
 # This script accepts optional env var overrides:
 #
-#   RESULT_ROOT    The root directory of the test temporary files.
+#   RESULT_ROOT    The root directory to use for the tests temporary files.
 #                  See "Directory Configuration and Structure" below for
-#                  defaults and a detailed description of test directies.
+#                  defaults and a detailed description of test directories.
 #
 #   PV_ROOT        The root directory on the kubernetes cluster
 #                  used for persistent volumes.
 #                  See "Directory Configuration and Structure" below for
-#                  defaults and a detailed description of test directies.
+#                  defaults and a detailed description of test directories.
+#
+#   VERBOSE        Set to 'true' to echo verbose output to stdout.
+#                  Default is 'false'.
 #
 #   QUICKTEST      When set to "true", limits testing to a subset of
 #                  of the tests.
@@ -277,8 +320,8 @@ function trace {
 
 # 
 # state_dump <dir-suffix>
-#   - places k8s logs, descriptions, etc in directory $RESULT_DIR/state-dump-$1
 #   - called at the end of a run, and from fail
+#   - places k8s logs, descriptions, etc in directory $RESULT_DIR/state-dump-$1
 #   - calls archive.sh on RESULT_DIR locally, and on PV_ROOT via a job
 #   - IMPORTANT: this method must never call fail (since it is called from fail)
 #   - IMPORTANT: this method should not rely on exports 
@@ -312,33 +355,43 @@ function state_dump {
   # dumping kubectl state
   #   get domains is in its own command since this can fail if domain CRD undefined
 
-  trace Dumping kubectl gets to ${DUMP_DIR}/kgetmany.out and ${DUMP_DIR}/kgetdomains.out 
+  trace Dumping kubectl gets to kgetmany.out and kgetdomains.out in ${DUMP_DIR}
   kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetmany.out 2>&1
   kubectl get domains --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetdomains.out 2>&1
 
   # Get all pod logs and redirect/copy to files 
 
+  set +x
   local namespaces="`kubectl get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
+  set -x
 
   local namespace
+  trace "Copying logs and describes to pod-log.NAMESPACE.PODNAME and pod-describe.NAMESPACE.PODNAME in ${DUMP_DIR}"
   for namespace in $namespaces; do
-    trace Looking for pods in namespace $namespace
+    set +x
     local pods="`kubectl get pods -n $namespace --ignore-not-found | egrep -v -e "(STATUS)" | awk '{print $1}'`"
+    set -x
     local pod
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      trace "See $logfile and $descfile"
       kubectl log $pod -n $namespace > $logfile 2>&1
       kubectl describe pod $pod -n $namespace > $descfile 2>&1
     done
   done
 
-
-  $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
-
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive"
+  trace "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
+  local outfile=${DUMP_DIR}/archive_pv_job.out
+  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" > ${outfile} 2>&1
+  if [ "$?" = "0" ]; then
+     trace Job complete.
+  else
+     trace Job failed.  See ${outfile}.
+  fi
+
+  # now archive all the local test files
+  $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
 
   trace Done with state dump
 }
@@ -352,7 +405,7 @@ function state_dump {
 function fail {
   set +x
   #See also a similar echo in function trace
-  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: [ERROR] ""$@"
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: [FAIL] ""$@"
 
   #echo current test failure in a special format
   declare_test_fail
@@ -370,7 +423,7 @@ function fail {
 
   state_dump fail
   
-  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: [ERROR] Exiting with status 1"
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: [FAIL] Exiting with status 1"
 
   exit 1
 }
@@ -789,7 +842,7 @@ function deploy_webapp_via_REST {
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy "*" \
+    local HTTP_RESPONSE=$(curl --silent --show-error --noproxy "*" \
       --user ${WLS_ADMIN_USERNAME}:${WLS_ADMIN_PASSWORD} \
       -H X-Requested-By:Integration-Test \
       -H Accept:application/json \
@@ -855,7 +908,7 @@ function verify_managed_servers_ready {
     do
       local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME}$i"
       trace "verify that $MS_NAME pod is ready"
-      local count=1
+      local count=0
       local status="0/1"
       while [ "${status}" != "1/1" -a $count -lt $max_count ] ; do
         local status=`kubectl get pods -n $NAMESPACE | egrep $MS_NAME | awk '{print $2}'`
@@ -957,8 +1010,9 @@ function verify_webapp_load_balancing {
 
     trace "confirm the load balancer is working"
 
-    trace 'verify that ingress is created'
-    kubectl describe ingress -n $NAMESPACE
+    trace "verify that ingress is created.  see $TMP_DIR/describe.ingress.out"
+    date >> $TMP_DIR/describe.ingress.out
+    kubectl describe ingress -n $NAMESPACE >> $TMP_DIR/describe.ingress.out 2>&1
 
     local TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
@@ -966,12 +1020,12 @@ function verify_webapp_load_balancing {
     trace 'wait for test app to become available'
     local max_count=30
     local wait_time=6
-    local count=1
+    local count=0
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+      local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
         --write-out "%{http_code}" \
         -o ${CURL_RESPONSE_BODY} \
       )
@@ -1004,13 +1058,13 @@ function verify_webapp_load_balancing {
       do
         echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-        local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+        local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
           --write-out "%{http_code}" \
           -o ${CURL_RESPONSE_BODY} \
         )
 
-        echo $HTTP_RESPONSE
-        cat $CURL_RESPONSE_BODY
+        echo $HTTP_RESPONSE | sed 's/^/+/'
+        cat $CURL_RESPONSE_BODY | sed 's/^/+/'
 
         if [ "${HTTP_RESPONSE}" != "200" ]; then
           trace "curl did not return a 200 status code, got ${HTTP_RESPONSE}"
@@ -1066,8 +1120,10 @@ function verify_admin_server_ext_service {
     local get_service_nodePort="kubectl get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$ADMIN_SERVER_NODEPORT_SERVICE\")].spec.ports[0].nodePort}'"
    
     trace get_service_nodePort
- 
+
+    set +x     
     local nodePort=`eval $get_service_nodePort`
+    set -x     
 
     if [ -z ${nodePort} ]; then
       fail "nodePort not found in domain $DOMAIN_UID"
@@ -1083,12 +1139,14 @@ function verify_admin_server_ext_service {
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_REST_URL} \
+    set +x
+    local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_REST_URL} \
       --user ${WLS_ADMIN_USERNAME}:${WLS_ADMIN_PASSWORD} \
       -H X-Requested-By:Integration-Test \
       --write-out "%{http_code}" \
       -o ${CURL_RESPONSE_BODY} \
     )
+    set -x
 
     trace "REST test: $HTTP_RESPONSE "
 
@@ -1101,10 +1159,12 @@ function verify_admin_server_ext_service {
 
     echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-    local HTTP_RESPONSE=$(curl --noproxy ${NODEPORT_HOST} ${TEST_CONSOLE_URL} \
+    set +x
+    local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_CONSOLE_URL} \
       --write-out "%{http_code}" \
       -o ${CURL_RESPONSE_BODY} \
     )
+    set -x
 
     trace "console test: $HTTP_RESPONSE "
 
@@ -1171,12 +1231,16 @@ function call_operator_rest {
     trace "URL_TAIL=$URL_TAIL"
 
     trace "Checking REST service is running"
+    set +x
     local REST_SERVICE="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")]}'`"
+    set -x
     if [ -z "$REST_SERVICE" ]; then
         fail 'operator rest service was not created'
     fi
 
+    set +x
     local REST_PORT="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")].spec.ports[?(@.name == "rest-https")].nodePort}'`"
+    set -x
     local REST_ADDR="https://${NODEPORT_HOST}:${REST_PORT}"
     local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
     local ENCODED_TOKEN="`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`"
@@ -1202,7 +1266,7 @@ function call_operator_rest {
     echo "NO_DATA" > $OPER_CURL_STDERR
     echo "NO_DATA" > $OPER_CURL_RESPONSE_BODY
 
-    local STATUS_CODE="`curl \
+    local STATUS_CODE="`curl --silent --show-error \
         -v \
         --cacert ${OPERATOR_CERT_FILE} \
         -H "Authorization: Bearer ${TOKEN}" \
@@ -1339,7 +1403,7 @@ EOF
 
     local status="0"
     local max=20
-    local count=1
+    local count=0
     while [ ${status:=0} != "1" -a $count -lt $max ] ; do
       sleep 30
       local status=`kubectl get job $job_name | egrep $job_name | awk '{print $3}'`
@@ -1454,15 +1518,7 @@ function verify_wlst_access {
   connect(sys.argv[1],sys.argv[2],sys.argv[3])
 EOF
 
-  if [ "$WERCKER" = "true" ]; then
-    # hybrid causes script to run on admin pod with a 'NODEPORT_HOST' URL instead of 'pod-name' URL.
-    # like local, it uses the t3 channel...
-    run_wlst_script $1 hybrid ${pyfile_con} 
-  else
-    # TODO The following has a dependency on java and WebLogic being in the path/classpath.
-    #      We should run on 'hybrid' mode instead if java and WebLogic aren't already setup.
-    run_wlst_script $1 local ${pyfile_con} 
-  fi
+  run_wlst_script $1 local ${pyfile_con} 
 
   trace Passed
 }
@@ -1507,6 +1563,24 @@ function run_wlst_script {
   shift
   shift
 
+  if [ "$location" = "local" ]; then
+  
+    # If local java weblogic.WLST isn't setup, then switch to 'hybrid' mode.
+
+    cat << EOF > $TMP_DIR/empty.py
+EOF
+    java weblogic.WLST $TMP_DIR/empty.py > $TMP_DIR/empty.py.out 2>&1
+    if [ "$?" = "0" ]; then
+      # We're running WLST locally.  No need to do anything fancy.
+      local mycommand="java weblogic.WLST ${pyfile_lcl} ${username} ${password} ${t3url_lcl}"
+    else
+      trace "Warning - Could not run 'java weblogic.WLST' locally.  Running WLST remotely in a pod instead.  See $TMP_DIR/empty.py.out for details."
+      # prepend verbose output with a '+':
+      cat $TMP_DIR/empty.py.out | sed 's/^/+/g'
+      location="hybrid"
+    fi
+  fi
+
   if [ "$location" = "remote" -o "$location" = "hybrid" ]; then
 
     # We're running WLST remotely, so we need to copy the py script 
@@ -1550,12 +1624,6 @@ EOF
       # otherwise let's use an URL constructed from the pod name (still using t3 port)
       mycommand="${mycommand} ${t3url_pod}"
     fi
-
-  else
-   
-    # We're running WLST locally.  No need to do anything fancy.
-
-    local mycommand="java weblogic.WLST ${pyfile_lcl} ${username} ${password} ${t3url_lcl}"
   fi
  
   trace "Running \"$mycommand $@\""
@@ -1720,7 +1788,7 @@ function verify_service_and_pod_created {
     local max_count_srv=50
     local max_count_pod=50
     local wait_time=10
-    local count=1
+    local count=0
     local srv_count=0
 
     trace "checking if service $SERVICE_NAME is created"
@@ -1747,6 +1815,7 @@ function verify_service_and_pod_created {
     if [ "${IS_ADMIN_SERVER}" == "true" ]; then
       local EXTCHANNEL_T3CHANNEL_SERVICE_NAME=${SERVICE_NAME}-extchannel-t3channel
       trace "checking if service ${EXTCHANNEL_T3CHANNEL_SERVICE_NAME} is created"
+      count=0
       while [ "${srv_count:=Error}" != "1" -a $count -lt $max_count_srv ] ; do
         local count=`expr $count + 1`
         local srv_count=`kubectl -n $NAMESPACE get services | grep "^$SERVICE_NAME " | wc -l`
@@ -1770,7 +1839,7 @@ function verify_service_and_pod_created {
 
     trace "checking if pod $POD_NAME is successfully started"
     local status="NotRunning"
-    local count=1
+    local count=0
     while [ ${status:=Error} != "Running" -a $count -lt $max_count_pod ] ; do
       local status=`kubectl -n $NAMESPACE describe pod $POD_NAME | grep "^Status:" | awk ' { print $2; } '`
       local count=`expr $count + 1`
@@ -1786,7 +1855,7 @@ function verify_service_and_pod_created {
 
     trace "checking if pod $POD_NAME is ready"
     local ready="false"
-    local count=1
+    local count=0
     while [ ${ready:=Error} != "true" -a $count -lt $max_count_pod ] ; do
       local ready=`kubectl -n $NAMESPACE get pod $POD_NAME -o jsonpath='{.status.containerStatuses[0].ready}'`
       local count=`expr $count + 1`
@@ -1875,7 +1944,7 @@ function verify_pod_deleted {
 
     trace "checking if pod $POD_NAME is deleted"
     local pod_count=1
-    local count=1
+    local count=0
 
     while [ "${pod_count:=Error}" != "0" -a $count -lt $max_count_pod ] ; do
       local pod_count=`kubectl -n $NAMESPACE get pod $POD_NAME | grep "^$POD_NAME " | wc -l`
@@ -2007,7 +2076,9 @@ function shutdown_operator {
 
     kubectl delete -f $TMP_DIR/weblogic-operator.yaml
     trace "Checking REST service is deleted"
+    set +x
     local servicenum=`kubectl get services -n $OPERATOR_NS | egrep weblogic-operator-service | wc -l`
+    set -x
     trace "servicenum=$servicenum"
     if [ "$servicenum" != "0" ]; then
         fail 'operator fail to be deleted'
@@ -2028,7 +2099,7 @@ function startup_operator {
     trace Waiting for operator deployment to be ready...
     local AVAILABLE="0"
     local max=30
-    local count=1
+    local count=0
     while [ "$AVAILABLE" != "1" -a $count -lt $max ] ; do
         sleep 10
         local AVAILABLE=`kubectl get deploy weblogic-operator -n $namespace -o jsonpath='{.status.availableReplicas}'`
@@ -2060,7 +2131,9 @@ function startup_operator {
     fi
 
     trace "Checking REST service is running"
+    set +x
     local REST_SERVICE=`kubectl get services -n ${namespace} -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")]}'`
+    set -x
     if [ -z "$REST_SERVICE" ]; then
         fail 'operator rest service was not created'
     fi
@@ -2076,7 +2149,9 @@ function verify_no_domain_via_oper_rest {
     local OPER_CURL_RESPONSE_BODY="$TMP_DIR/operator.rest.response.body"
     call_operator_rest $OP_KEY "operator/latest/domains"
     # verify that curl returned an empty list of domains, e.g. { ..., "items": [], ... }
+    set +x
     local DOMAIN_COUNT=`cat ${OPER_CURL_RESPONSE_BODY} | processJson 'print(len(j["items"]))'`
+    set -x
     if [ "${DOMAIN_COUNT}" != "0" ]; then
         fail "expect no domain CR created but return $DOMAIN_COUNT domain(s)"
     fi 
@@ -2094,7 +2169,9 @@ function verify_domain_exists_via_oper_rest {
 
     local OPER_CURL_RESPONSE_BODY="$OPERATOR_TMP_DIR/operator.rest.response.body"
     call_operator_rest $OP_KEY "operator/latest/domains" 
+    set +x
     local DOMAIN_COUNT=`cat ${OPER_CURL_RESPONSE_BODY} | processJson 'print(len(j["items"]))'`
+    set -x
     if [ "${DOMAIN_COUNT}" != "1" ]; then
         fail "expect one domain CR created but return $DOMAIN_COUNT domain(s)"
     fi
@@ -2214,6 +2291,8 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   VERBOSE \
+                   QUICKTEST \
                    NODEPORT_HOST \
                    JVM_ARGS \
                    BRANCH_NAME \
@@ -2251,6 +2330,8 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   VERBOSE \
+                   QUICKTEST \
                    NODEPORT_HOST \
                    JVM_ARGS \
                    BRANCH_NAME \
@@ -2423,7 +2504,7 @@ function test_suite {
 
     # test scaling domain1 cluster from 2 to 3 servers and back down to 2
     test_cluster_scale domain1 
-    
+
     # if QUICKTEST is true skip the rest of the tests
     if [ ! "${QUICKTEST:-false}" = "true" ]; then
    
@@ -2484,13 +2565,28 @@ function test_suite {
 
 # entry point
 
-if [ "${FOREGROUND:-false}" = "true" ] || [ "$JENKINS" = "true" ] || [ "$WERCKER" = "true" ]; then
-    test_suite
+local exit_status=0
+if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
+  if [ "${VERBOSE:-false}" = "true" ]; then
+    test_suite 2>&1 
+    exit_status="$?"
+  else
+    test_suite 2>&1 | grep -v "^+"
+    exit_status="${PIPESTATUS[0]}"
+  fi
 else
-    export TESTOUT=/tmp/test_suite.out
-    trace See $TESTOUT for full trace.
-    # Ultra-detailed debugging begins with a "+"
+  export TESTOUT=/tmp/test_suite.out
+  trace See $TESTOUT for full trace.
+
+  if [ "${VERBOSE:-false}" = "true" ]; then
+    test_suite 2>&1 | tee /tmp/test_suite.out 
+    exit_status="${PIPESTATUS[0]}"
+  else
     test_suite 2>&1 | tee /tmp/test_suite.out | grep -v "^+"
-    trace See $TESTOUT for full trace.
+    exit_status="${PIPESTATUS[0]}"
+  fi
+  trace See $TESTOUT for full trace.
 fi
+
+exit $exit_status
 

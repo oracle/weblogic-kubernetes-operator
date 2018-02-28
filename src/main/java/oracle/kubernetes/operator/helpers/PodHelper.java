@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -171,9 +172,13 @@ public class PodHelper {
       livenessProbe.setFailureThreshold(1);
       container.livenessProbe(livenessProbe);
 
-      if (spec.getAsEnv() != null) {
-        for (V1EnvVar ev : spec.getAsEnv()) {
-          container.addEnvItem(ev);
+      if (spec.getServerStartup() != null) {
+        for (ServerStartup ss : spec.getServerStartup()) {
+          if (ss.getServerName().equals(spec.getAsName())) {
+            for (V1EnvVar ev : ss.getEnv()) {
+              container.addEnvItem(ev);
+            }
+          }
         }
       }
 
