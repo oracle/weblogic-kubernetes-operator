@@ -202,9 +202,6 @@ public class DomainSpec {
     this.asPort = asPort;
   }
 
-    return this;
-  }
-
   public DomainSpec exportT3Channels(List<String> exportT3Channels) {
     this.exportT3Channels = exportT3Channels;
     return this;
