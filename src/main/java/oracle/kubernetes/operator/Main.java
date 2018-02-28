@@ -658,7 +658,15 @@ public class Main {
 
       packet.put(ProcessingConstants.SERVER_NAME, spec.getAsName());
       packet.put(ProcessingConstants.PORT, spec.getAsPort());
-      packet.put(ProcessingConstants.NODE_PORT, spec.getAsNodePort());
+      List<ServerStartup> ssl = spec.getServerStartup();
+      if (ssl != null) {
+        for (ServerStartup ss : ssl) {
+          if (ss.getServerName().equals(spec.getAsName())) {
+            packet.put(ProcessingConstants.NODE_PORT, ss.getNodePort());
+            break;
+          }
+        }
+      }
       return doNext(packet);
     }
   }
@@ -1003,9 +1011,6 @@ public class Main {
 
         if (serverStartup != null) {
           nodePort = serverStartup.getNodePort();
-        }
-        if (nodePort == null && serverName.equals(spec.getAsName())) {
-          nodePort = spec.getAsNodePort();
         }
         
         p.put(ProcessingConstants.SERVER_NAME, serverName);

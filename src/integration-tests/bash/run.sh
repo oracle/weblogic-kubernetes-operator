@@ -1051,15 +1051,15 @@ function verify_admin_server_ext_service {
 
     trace "verify that admin server REST and console are accessible from outside of the kubernetes cluster"
 
-    local get_configured_nodePort="kubectl get domains -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$DOMAIN_UID\")].spec.asNodePort}'"
+    local get_configured_nodePort="kubectl get domains -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$DOMAIN_UID\")].spec.serverStartup[?(@.serverName == \"admin-server\")].nodePort}'"
 
     local configuredNodePort=`eval $get_configured_nodePort`
 
-    trace "configured asNodePort in domain $DOMAIN_UID is ${configuredNodePort}"
+    trace "configured NodePort for the admin server in domain $DOMAIN_UID is ${configuredNodePort}"
 
     if [ -z ${configuredNodePort} ]; then
       kubectl describe domain $DOMAIN_UID -n $NAMESPACE
-      trace "Either domain $DOMAIN_UID does not exist or asNodePort is not configured in domain $DOMAIN_UID. Skipping this verify"
+      trace "Either domain $DOMAIN_UID does not exist or no NodePort is not configured for the admin server in domain $DOMAIN_UID. Skipping this verify"
       return
     fi
 
@@ -1074,7 +1074,7 @@ function verify_admin_server_ext_service {
     fi
 
     if [ "$nodePort" -ne "$configuredNodePort" ]; then
-      fail "Configured asNodePort of ${configuredNodePort} is different from nodePort found in service ${ADMIN_SERVER_NODEPORT_SERVICE}: ${nodePort}"
+      fail "Configured NodePort of ${configuredNodePort} for the admin server is different from nodePort found in service ${ADMIN_SERVER_NODEPORT_SERVICE}: ${nodePort}"
     fi
 
     local TEST_REST_URL="http://${NODEPORT_HOST}:${nodePort}/management/weblogic/latest/serverRuntime"
