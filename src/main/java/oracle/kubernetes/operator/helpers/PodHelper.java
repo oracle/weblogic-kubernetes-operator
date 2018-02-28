@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -171,9 +172,13 @@ public class PodHelper {
       livenessProbe.setFailureThreshold(1);
       container.livenessProbe(livenessProbe);
 
-      if (spec.getAsEnv() != null) {
-        for (V1EnvVar ev : spec.getAsEnv()) {
-          container.addEnvItem(ev);
+      if (spec.getServerStartup() != null) {
+        for (ServerStartup ss : spec.getServerStartup()) {
+          if (ss.getServerName().equals(spec.getAsName())) {
+            for (V1EnvVar ev : ss.getEnv()) {
+              container.addEnvItem(ev);
+            }
+          }
         }
       }
 
@@ -238,7 +243,7 @@ public class PodHelper {
             return doNext(create, packet);
           } else if (!isExplicitRestartThisServer && (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentPod(adminPod, result))) {
             // existing Pod has correct spec
-            LOGGER.info(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, spec.getAsName());
+            LOGGER.fine(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, spec.getAsName());
             sko.getPod().set(result);
             return doNext(packet);
           } else {
@@ -573,7 +578,7 @@ public class PodHelper {
             return doNext(DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, create), packet);
           } else if (!isExplicitRestartThisServer && (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentPod(pod, result))) {
             // existing Pod has correct spec
-            LOGGER.info(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
+            LOGGER.fine(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
             sko.getPod().set(result);
             return doNext(packet);
           } else {

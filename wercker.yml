@@ -150,7 +150,7 @@ integration-test:
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="latest"
       fi
-      export IMAGE_PULL_POLICY_OPERATOR="IfNotPresent"
+      export IMAGE_PULL_POLICY_OPERATOR="Always"
       export IMAGE_PULL_SECRET_OPERATOR="quay-io"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
 
