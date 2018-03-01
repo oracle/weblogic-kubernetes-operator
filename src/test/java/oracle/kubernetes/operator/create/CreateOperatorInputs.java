@@ -12,6 +12,7 @@ public class CreateOperatorInputs {
   public String targetNamespaces;
   public String image;
   public String imagePullPolicy;
+  public String imagePullSecretName;
   public String externalRestOption;
   public int externalRestHttpsPort;
   public String externalSans;

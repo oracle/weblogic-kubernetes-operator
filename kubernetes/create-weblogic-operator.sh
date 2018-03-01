@@ -50,8 +50,12 @@ function initialize {
   # Validate the required files exist
   validateErrors=false
 
-  if ! [ -x "$(command -v kubectl)" ]; then
-    validationError "kubectl is not installed"
+  # we don't use kubectl if we're only generating the yaml files
+  # (e.g. so that we can unit test without installing kubectl)
+  if [ "${generateOnly}" = false ]; then 
+    if ! [ -x "$(command -v kubectl)" ]; then
+      validationError "kubectl is not installed"
+    fi
   fi
 
   if ! [ -d ${outputDir} ]; then
@@ -134,7 +138,11 @@ function validateImagePullSecretName {
   if [ ! -z ${imagePullSecretName} ]; then
     validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
     imagePullSecretPrefix=""
-    validateImagePullSecret
+    # we don't use kubectl if we're only generating the yaml files
+    # (e.g. so that we can unit test without installing kubectl)
+    if [ "${generateOnly}" = false ]; then 
+      validateImagePullSecret
+    fi
   else
     # Set name blank when not specified, and comment out the yaml
     imagePullSecretName=""
