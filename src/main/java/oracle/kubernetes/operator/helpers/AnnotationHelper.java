@@ -31,8 +31,10 @@ public class AnnotationHelper {
 
   /**
    * Marks metadata with annotations that let Prometheus know how to retrieve metrics from
-   * the wls-exporter web-app.  The specified httpPort should be the listen port of the wl server
+   * the wls-exporter web-app.  The specified httpPort should be the listen port of the WebLogic server
    * running in the pod.
+   * @param meta Metadata
+   * @param httpPort HTTP listen port
    */
   public static void annotateForPrometheus(V1ObjectMeta meta, int httpPort) {
      meta.putAnnotationsItem("prometheus.io/port", "" + httpPort); // should be the ListenPort of the server in the pod
