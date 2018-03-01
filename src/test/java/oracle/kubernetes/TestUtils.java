@@ -1,3 +1,5 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes;
 
 import org.apache.commons.exec.CommandLine;
@@ -24,21 +26,35 @@ public class TestUtils {
     return kubernetesStatus;
   }
 
-    private static Boolean checkKubernetes() {
-      PrintStream savedOut = System.out;
-      System.setOut(new PrintStream(new ByteArrayOutputStream()));
-      try {
-        CommandLine cmdLine = CommandLine.parse("kubectl cluster-info");
-        DefaultExecutor executor = new DefaultExecutor();
-        executor.execute(cmdLine);
-        return true;
-      } catch (IOException e) {
-        return false;
-      } finally {
-        System.setOut(savedOut);
-      }
+  private static Boolean checkKubernetes() {
+    PrintStream savedOut = System.out;
+    System.setOut(new PrintStream(new ByteArrayOutputStream()));
+    try {
+      CommandLine cmdLine = CommandLine.parse("kubectl cluster-info");
+      DefaultExecutor executor = new DefaultExecutor();
+      executor.execute(cmdLine);
+      return true;
+    } catch (IOException e) {
+      return false;
+    } finally {
+      System.setOut(savedOut);
     }
+  }
 
+  /**
+   * Returns true if the current system is running Linux
+   * @return a boolean indicating the operating system match
+   */
+  public static boolean isLinux() {
+    return System.getProperty("os.name").toLowerCase().contains("linux");
+  }
+
+  /**
+   * Removes the console handlers from the specified logger, in order to silence them during a test.
+   *
+   * @param logger a logger to silence
+   * @return a collection of the removed handlers
+   */
   public static List<Handler> removeConsoleHandlers(Logger logger) {
     List<Handler> savedHandlers = new ArrayList<>();
     for (Handler handler : logger.getHandlers()) {
@@ -51,6 +67,12 @@ public class TestUtils {
     return savedHandlers;
   }
 
+  /**
+   * Restores the silenced logger handlers.
+   *
+   * @param logger a logger to restore
+   * @param savedHandlers the handlers to restore
+   */
   public static void restoreConsoleHandlers(Logger logger, List<Handler> savedHandlers) {
     for (Handler handler : savedHandlers) {
       logger.addHandler(handler);

@@ -1,9 +1,8 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017,2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 
 package oracle.kubernetes.operator;
 
 
-import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.TestUtils;
@@ -12,13 +11,13 @@ import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.annotation.concurrent.NotThreadSafe;
-
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
@@ -45,23 +44,8 @@ public class WatchTest {
 
     ClientHolder client = ClientHelper.getInstance().take();
 
-      @SuppressWarnings("unused")
-      Watch<V1Namespace> watch = Watch.createWatch(
-          client.getApiClient(),
-          client.getCoreApiClient().listNamespaceCall(null,
-              null,
-              null,
-              null,
-              null,
-              5,
-              null,
-              60,
-              Boolean.TRUE,
-              null,
-              null),
-          new TypeToken<Watch.Response<V1Namespace>>() {
-          }.getType());
-
+    @SuppressWarnings("unused")
+    Watch<V1Namespace> watch = new WatchBuilder(client).createNamespaceWatch();
   }
 
 
@@ -71,24 +55,9 @@ public class WatchTest {
 
     ClientHolder client = ClientHelper.getInstance().take();
     CRDHelper.checkAndCreateCustomResourceDefinition(client);
-    
-      @SuppressWarnings("unused")
-      Watch<Domain> watch = Watch.createWatch(
-          client.getApiClient(),
-          client.getWeblogicApiClient().listWebLogicOracleV1DomainForAllNamespacesCall(null,
-              null,
-              null,
-              null,
-              5,
-              null,
-              null,
-              60,
-              Boolean.TRUE,
-              null,
-              null),
-          new TypeToken<Watch.Response<Domain>>() {
-          }.getType());
 
+    @SuppressWarnings("unused")
+    Watch<Domain> watch = new WatchBuilder(client).createDomainsInAllNamespacesWatch();
   }
 
 
