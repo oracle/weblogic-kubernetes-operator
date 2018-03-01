@@ -1,4 +1,4 @@
-// Copyright 2017-2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017,2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 
 package oracle.kubernetes.operator;
 
@@ -58,7 +58,6 @@ public class WatchTest {
 
     @SuppressWarnings("unused")
     Watch<Domain> watch = new WatchBuilder(client).createDomainsInAllNamespacesWatch();
-
   }
 
 
