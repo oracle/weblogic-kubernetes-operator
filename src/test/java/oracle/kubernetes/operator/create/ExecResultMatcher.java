@@ -69,7 +69,7 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
 
   private boolean hasIncorrectExitValue(Description description, ExecResult execResult) {
     if (execResult.exitValue() != expectedExitValue) {
-      description.appendText("exit value was ").appendValue(execResult.exitValue());
+      description.appendText("\n  exit value was ").appendValue(execResult.exitValue());
       return true;
     }
     return false;
@@ -79,13 +79,13 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
     if (regExps == null) {
       // null regExps implies that the stream should return no content
       if (streamContent.length() != 0) {
-        description.appendText(streamName + " has ").appendValue(streamContent);
+        description.appendText("\n  " + streamName + " has ").appendValue(streamContent);
         return true;
       }
     }  else {
       List<String> missingRegexps = getMissingRegexps(streamContent, regExps);
       if (!missingRegexps.isEmpty()) {
-        description.appendValueList("actual stdout \n'" + streamContent + "'\n is missing [", ", ", "]", missingRegexps);
+        description.appendValueList("\n  actual " + streamName + " was\n'" + streamContent + "'\n  is missing [", ", ", "]", missingRegexps);
         return true;
       }
     }
@@ -104,16 +104,16 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
 
   @Override
   public void describeTo(Description description) {
-    description.appendText("exit code ").appendValue(expectedExitValue);
+    description.appendText("\n  exit code ").appendValue(expectedExitValue);
     describeRequiredOutputStream(description, "stdout", stdoutRegExps);
     describeRequiredOutputStream(description, "stderr", stderrRegExps);
   }
 
   private void describeRequiredOutputStream(Description description, String streamName, String[] regExps) {
     if (regExps == null) {
-      description.appendText("\n with an empty " + streamName);
+      description.appendText("\n  with an empty " + streamName);
     } else {
-      description.appendValueList("\n with " + streamName + " containing [", ",", "]", regExps);
+      description.appendValueList("\n  with " + streamName + " containing [", ",", "]", regExps);
     }
   }
 }
