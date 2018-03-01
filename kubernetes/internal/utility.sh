@@ -10,7 +10,7 @@
 # Function to exit and print an error message
 # $1 - text of message
 function fail {
-  printError $1
+  printError $*
   exit 1
 }
 
@@ -18,13 +18,13 @@ function fail {
 # Function to note that a validate error has occurred
 #
 function validationError {
-  printError $1
+  printError $*
   validateErrors=true
 }
 
 # Function to print an error message
 function printError {
-  echo [ERROR] $1
+  echo [ERROR] $*
 }
 
 #
