@@ -544,7 +544,7 @@ public class Main {
           public void onThrowable(Packet packet, Throwable throwable) {
             LOGGER.severe(MessageKeys.EXCEPTION, throwable);
             
-            domainUpdaters.replaceAndStartFiber(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
+            domainUpdaters.startFiberIfLastFiberMatches(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
               @Override
               public void onCompletion(Packet packet) {
                 // no-op
