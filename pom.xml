@@ -65,7 +65,7 @@
                             <sources>
                                 <source>${src-generated-swagger}</source>
                                 <source>${project.build.sourceDirectory}</source>
-                                <source>${project.build.sourceDirectory}/../../build/java</source>
+                                <source>${project.basedir}/src/build/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -161,52 +161,6 @@
                     <mainClass>oracle.kubernetes.operator.SwaggerBuildHelper</mainClass>
                 </configuration>
             </plugin>
-
-            <!-- build the javadocs -->
-            <!-- TODO use githab pages with the standard site and site-deploy instead.
-             -->
-            <!--
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <excludePackageNames>io.*</excludePackageNames>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>javadoc</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            -->
-
-            <!-- publish the javadocs -->
-            <!--
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.5</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/doc/apidocs</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/site/apidocs</directory>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            -->
 
         </plugins>
     </build>
