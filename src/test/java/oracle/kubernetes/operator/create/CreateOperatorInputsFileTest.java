@@ -24,6 +24,7 @@ public class CreateOperatorInputsFileTest extends CreateOperatorTest {
     assertThat(i.targetNamespaces, equalTo("default"));
     assertThat(i.image, equalTo("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest"));
     assertThat(i.imagePullPolicy, equalTo("IfNotPresent"));
+    assertThat(i.imagePullSecretName, nullValue());
     assertThat(i.externalRestOption, equalTo("none"));
     assertThat(i.externalRestHttpsPort, is(31001));
     assertThat(i.externalSans, nullValue());
