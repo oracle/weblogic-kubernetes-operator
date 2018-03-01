@@ -48,6 +48,7 @@ public class PodWatcher implements Runnable {
    * Factory for PodWatcher
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
+   * @param destination Callback for watch events
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
