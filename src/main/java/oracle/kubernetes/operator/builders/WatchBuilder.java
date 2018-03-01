@@ -22,12 +22,16 @@ import java.util.function.BiFunction;
 @SuppressWarnings("unused")
 public class WatchBuilder {
 
-    private static final String START_LIST = "";
+    /** Always true for watches. */
     private static final boolean WATCH = true;
-    private static WatchFactory FACTORY = new WatchFactoryImpl();
-    private ClientHolder clientHolder;
 
-    private CallParams callParams = new CallParams();
+    /** Ignored for watches. */
+    private static final String START_LIST = null;
+
+    private static WatchFactory FACTORY = new WatchFactoryImpl();
+
+    private ClientHolder clientHolder;
+    private CallParamsImpl callParams = new CallParamsImpl();
 
     public interface WatchFactory {
         <T> Watch<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException;

@@ -1,4 +1,4 @@
-// Copyright 2017-2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017,2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 
 package oracle.kubernetes.custom;
 
