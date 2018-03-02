@@ -1,8 +1,7 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017,2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 
 package oracle.kubernetes.custom;
 
-import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -12,7 +11,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -22,7 +21,6 @@ import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,10 +31,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 
+import static oracle.kubernetes.TestUtils.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
+
 /**
  * Test CustomResourceDefinitions and custom objects
  */
-@Ignore("Ignore - sometimes runs indefinitely")
 public class CustomObjectApisTest {
 
   // Parameters for custom resources
@@ -54,16 +56,17 @@ public class CustomObjectApisTest {
 
   @Before
   public void setUp() throws Exception {
-    savedHandlers = TestUtils.removeConsoleHandlers(LOGGER.getUnderlyingLogger());
+    savedHandlers = removeConsoleHandlers(LOGGER.getUnderlyingLogger());
   }
 
   @After
   public void tearDown() throws Exception {
-    TestUtils.restoreConsoleHandlers(LOGGER.getUnderlyingLogger(), savedHandlers);
+    restoreConsoleHandlers(LOGGER.getUnderlyingLogger(), savedHandlers);
   }
 
   @Test
   public void testCustomResourceWatches() throws Exception {
+    assumeTrue(isKubernetesAvailable());
 
     ClientHolder client = ClientHelper.getInstance().take();
     try {
@@ -156,29 +159,18 @@ public class CustomObjectApisTest {
     Watching<TestDomain> w = new Watching<TestDomain>() {
 
       @Override
-      public Watch initiateWatch(Object context, String resourceVersion) throws ApiException {
+      public Watch<TestDomain> initiateWatch(Object context, String resourceVersion) throws ApiException {
 
         // resourceVersion is passed for each watch creation interation
         // to skip previous watch events in the resource history. It
         // must be passed each time a watch is created.
 
-        return Watch.createWatch(
-            client.getApiClient()
-            , client.getCustomObjectsApiClient().listNamespacedCustomObjectCall(
-                GROUP                 // group
-                , VERSION               // version
-                , NAMESPACE             // namespace
-                , PLURAL                // plural
-                , "true"                // pretty
-                , ""                    // labelSelector
-                , resourceVersion       // resourceVersion
-                , Boolean.TRUE          // watch is true
-                , null                  // progressListener
-                , null                  // progressRequestListener
-            )
-            , new TypeToken<Watch.Response<TestDomain>>() {
-            }.getType()
-        );
+        //noinspection unchecked
+        return new WatchBuilder(client)
+                    .withResourceVersion(resourceVersion)
+                    .withLabelSelector("")
+                    .withPrettyPrinting()
+                .createCustomObjectWatch(NAMESPACE, TestDomain.class, GROUP, VERSION, PLURAL);
       }
 
       private void formatTheObject(String type, Object object) {
@@ -207,18 +199,18 @@ public class CustomObjectApisTest {
       }
     };
     
-    return new Watcher<TestDomain>(w);
+    return new Watcher<>(w);
   }
 
   /**
    * Just wait for the watch operator to complete or terminate after
-   * a total of 5 minutes.
+   * a total of 3 seconds.
    *
    * @param watcher
    */
   private void waitForFinished(ClientHolder client, Watcher watcher) throws InterruptedException {
 
-    while (!finished.get() && timeoutLoop < 300) {
+    while (!finished.get() && timeoutLoop < 30) {
 
       switch (timeoutLoop) {
         case 3:
@@ -240,12 +232,11 @@ public class CustomObjectApisTest {
           break;
       }
 
-      Thread.sleep(1000); // sleep for a second and check
+      Thread.sleep(100); // sleep for a second and check
       timeoutLoop++;
     }
-    if (!finished.get()) {
-      LOGGER.info("Test timed out due to inactivity");
-    }
+
+    assertThat(finished.get(), is(true));
   }
 
   /**

@@ -3,20 +3,19 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class handles Service watching. It service change events and sends
@@ -76,15 +75,10 @@ public class ServiceWatcher implements Runnable {
        */
       @Override
       public Watch<V1Service> initiateWatch(Object context, String resourceVersion) throws ApiException {
-        return Watch.createWatch(client.getApiClient(),
-            client.callBuilder().with($ -> {
-              $.resourceVersion = resourceVersion;
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any Service with a domainUID label
-              $.timeoutSeconds = 30;
-              $.watch = true;
-            }).listServiceCall(ns),
-            new TypeToken<Watch.Response<V1Service>>() {
-            }.getType());
+        return new WatchBuilder(client)
+                  .withResourceVersion(resourceVersion)
+                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL)   // Any Service with a domainUID label
+                .createServiceWatch(ns);
       }
 
       @Override
