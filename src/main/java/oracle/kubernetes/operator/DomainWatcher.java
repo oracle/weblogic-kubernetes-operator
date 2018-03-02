@@ -75,7 +75,7 @@ public class DomainWatcher implements Runnable {
       public Watch<Domain> initiateWatch(Object context, String resourceVersion) throws ApiException {
         return new WatchBuilder(client)
                   .withResourceVersion(resourceVersion)
-                .createDomainsInNamespaceWatch(ns);
+                .createDomainWatch(ns);
       }
 
       @Override
