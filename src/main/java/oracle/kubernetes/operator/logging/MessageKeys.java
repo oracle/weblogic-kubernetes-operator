@@ -143,4 +143,7 @@ public class MessageKeys {
   public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0205";
   public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0206";
   public static final String WLS_CREATING_MACHINE = "WLSKO-0207";
+  public static final String WLS_EDIT_SESSION_STARTED = "WLSKO-0208";
+  public static final String WLS_EDIT_SESSION_ACTIVATED = "WLSKO-0209";
+  public static final String WLS_EDIT_SESSION_CANCELLED = "WLSKO-0210";
 }
