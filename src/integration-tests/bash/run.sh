@@ -716,15 +716,15 @@ function run_create_domain_job {
     mkdir -p $tmp_dir
 
     local CREDENTIAL_NAME="$DOMAIN_UID-weblogic-credentials"
-    local CREDENTIAL_FILE="${tmp_dir}/$CREDENTIAL_NAME.yaml"
+    local CREDENTIAL_FILE="${tmp_dir}/weblogic-credentials.yaml"
 
     trace 'Create the secret with weblogic admin credentials'
-    cp $CUSTOM_YAML/domain1-weblogic-credentials.yaml  $CREDENTIAL_FILE
+    cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $CREDENTIAL_FILE
 
-    sed -i -e "s|namespace: default|namespace: $NAMESPACE|g" $CREDENTIAL_FILE
-    sed -i -e "s|name: domain1-weblogic-credentials|name: $CREDENTIAL_NAME|g" $CREDENTIAL_FILE
+    sed -i -e "s|%NAMESPACE%|$NAMESPACE|g" $CREDENTIAL_FILE
+    sed -i -e "s|%DOMAIN_UID%|$DOMAIN_UID|g" $CREDENTIAL_FILE
 
-    kubectl apply -f $CREDENTIAL_FILE -n $NAMESPACE
+    kubectl apply -f $CREDENTIAL_FILE
 
     trace 'Check secret'
     local ADMINSECRET=`kubectl get secret $CREDENTIAL_NAME -n $NAMESPACE | grep $CREDENTIAL_NAME | wc -l `
@@ -816,8 +816,8 @@ function deploy_webapp_via_REST {
     local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local WLS_ADMIN_USERNAME="`get_wladmin_user`"
-    local WLS_ADMIN_PASSWORD="`get_wladmin_pass`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
 
     local AS_NAME="$DOMAIN_UID-admin-server"
 
@@ -1098,8 +1098,8 @@ function verify_admin_server_ext_service {
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
-    local WLS_ADMIN_USERNAME="`get_wladmin_user`"
-    local WLS_ADMIN_PASSWORD="`get_wladmin_pass`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
 
     local ADMIN_SERVER_NODEPORT_SERVICE="$DOMAIN_UID-admin-server"
 
@@ -1480,11 +1480,12 @@ function check_pv {
 }
 
 function get_wladmin_cred {
-  if [ "$#" != 1 ]; then
-    fail "requires one parameter, keyword 'username' or 'password'."
+  if [ "$#" != 2 ]; then
+    fail "requires two parameters:  domainKey and keyword 'username' or 'password'."
   fi
   # All domains use the same user/pass
-  if ! val=`grep "^  $1:" $CUSTOM_YAML/domain1-weblogic-credentials.yaml | awk '{ print $2 }' | base64 -d`
+  local TMP_DIR="`dom_get $1 TMP_DIR`"
+  if ! val=`grep "^  $2:" $TMP_DIR/weblogic-credentials.yaml | awk '{ print $2 }' | base64 -d`
   then
     fail "get_wladmin_cred:  Could not determine $1"
   fi
@@ -1492,11 +1493,17 @@ function get_wladmin_cred {
 }
 
 function get_wladmin_pass {
-  get_wladmin_cred password
+  if [ "$#" != 1 ] ; then
+    fail "requires 1 parameter: domainKey"
+  fi 
+  get_wladmin_cred $1 password
 }
 
 function get_wladmin_user {
-  get_wladmin_cred username
+  if [ "$#" != 1 ] ; then
+    fail "requires 1 parameter: domainKey"
+  fi 
+  get_wladmin_cred $1 username
 }
 
 function verify_wlst_access {
@@ -1550,8 +1557,8 @@ function run_wlst_script {
   local TMP_DIR="`dom_get $1 TMP_DIR`"
   local AS_NAME="$DOMAIN_UID-admin-server"
   local location="$2"
-  local username=`get_wladmin_user` 
-  local password=`get_wladmin_pass`
+  local username=`get_wladmin_user $1` 
+  local password=`get_wladmin_pass $1`
   local pyfile_lcl="$3"
   local pyfile_pod="/shared/`basename $pyfile_lcl`"
   local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
