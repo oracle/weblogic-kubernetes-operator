@@ -11,13 +11,6 @@ import oracle.kubernetes.operator.work.Step;
 public interface ConfigUpdate {
 
   /**
-   * Perform the suggested WebLogic configuration update
-   * @param wlsConfigRetriever The WlsConfigRetriever object to be used for performing the update
-   * @return true if the update was successful, false otherwise
-   */
-  boolean doUpdate(WlsConfigRetriever wlsConfigRetriever);
-
-  /**
    * Create a Step to perform the suggested WebLogic configuration update
    * @param next Next Step to be performed after the WebLogic configuration update
    * @return Step to perform the suggested WebLogic configuration update

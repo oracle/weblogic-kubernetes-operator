@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Contains a snapshot of WebLogic domain configuration
+ */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -69,6 +72,12 @@ public class WlsDomainConfig {
     this.wlsServerTemplates = wlsServerTemplates;
     this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
+    // set domainConfig for each WlsClusterConfig
+    if (wlsClusterConfigs != null) {
+      for (WlsClusterConfig wlsClusterConfig: wlsClusterConfigs.values()) {
+        wlsClusterConfig.setWlsDomainConfig(this);
+      }
+    }
   }
 
   /**
@@ -138,7 +147,7 @@ public class WlsDomainConfig {
    */
   public synchronized WlsServerConfig getServerConfig(String serverName) {
     WlsServerConfig result = null;
-    if (serverName != null) {
+    if (serverName != null && wlsServerConfigs != null) {
       result = wlsServerConfigs.get(serverName);
     }
     return result;
@@ -153,7 +162,7 @@ public class WlsDomainConfig {
    */
   public synchronized WlsMachineConfig getMachineConfig(String machineName) {
     WlsMachineConfig result = null;
-    if (machineName != null) {
+    if (machineName != null && wlsMachineConfigs != null) {
       result = wlsMachineConfigs.get(machineName);
     }
     return result;

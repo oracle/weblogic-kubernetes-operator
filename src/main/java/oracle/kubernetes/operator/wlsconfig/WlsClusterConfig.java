@@ -24,6 +24,7 @@ public class WlsClusterConfig {
   private final String clusterName;
   private List<WlsServerConfig> serverConfigs = new ArrayList<>();
   private final WlsDynamicServersConfig dynamicServersConfig;
+  private WlsDomainConfig wlsDomainConfig;
 
   /**
    * Constructor for a static cluster when Json result is not available
@@ -36,7 +37,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Constructor for a dynamic cluster
+   * Constructor that can also be used for a dynamic cluster
    * *
    * @param clusterName Name of the WLS cluster
    * @param dynamicServersConfig A WlsDynamicServersConfig object containing the dynamic servers configuration for this
@@ -94,6 +95,22 @@ public class WlsClusterConfig {
    */
   public String getClusterName() {
     return clusterName;
+  }
+
+  /**
+   * Associate this cluster to the WlsDomainConfig object for the WLS domain that this cluster belongs to
+   * @param wlsDomainConfig the WlsDomainConfig object for the WLS domain that this cluster belongs to
+   */
+  public void setWlsDomainConfig(WlsDomainConfig wlsDomainConfig) {
+    this.wlsDomainConfig = wlsDomainConfig;
+  }
+
+  /**
+   * Returns the WlsDomainConfig object for the WLS domain that this cluster belongs to
+   * @return the WlsDomainConfig object for the WLS domain that this cluster belongs to
+   */
+  public WlsDomainConfig getWlsDomainConfig() {
+    return wlsDomainConfig;
   }
 
   /**
@@ -190,8 +207,7 @@ public class WlsClusterConfig {
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
    *                               method. Optional.
    */
-  public void validateReplicas(Integer replicas, String source,
-                               List<ConfigUpdate> suggestedConfigUpdates) {
+  public void validateReplicas(Integer replicas, String source, List<ConfigUpdate> suggestedConfigUpdates) {
     if (replicas == null) {
       return;
     }
@@ -206,6 +222,34 @@ public class WlsClusterConfig {
         suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, replicas));
       }
     }
+  }
+
+  /**
+   * Finds the names of a machine to be created for newly created dynamic servers in this dynamic cluster
+   *
+   * @param machineNamePrefix Prefix for the new machine names (should match machineNameMatchExpression in dynamic servers config)
+   * @param targetClusterSize the target dynamic cluster size
+   * @return A String array containing names of new machines that are not currently in used in the WebLogic domain
+   */
+  String[] getMachineNamesForNewDynamicServers(String machineNamePrefix, int targetClusterSize) {
+    if (targetClusterSize < 1 || !hasDynamicServers() || wlsDomainConfig == null) {
+      return new String[0];
+    }
+    // machine names needed are [machineNamePrefix] appended by id of the new dynamic servers
+    // for example, if prefix is "domain1-cluster1-machine" and the current cluster size is 2, and targetClusterSize
+    // is 4, the ids of the new dynamic servers would be 3 and 4,
+    // the method should return {"domain1-cluster1-machine3", "domain1-cluster1-machine4"}
+    ArrayList<String> names = new ArrayList<>();
+    for (int suffix=getDynamicClusterSize() + 1; suffix <= targetClusterSize; suffix++) {
+      String newMachineName = machineNamePrefix == null? "" + suffix: machineNamePrefix + suffix;
+      if (wlsDomainConfig.getMachineConfig(newMachineName) == null) {
+        // only need to create machine if it does not already exist
+        names.add(newMachineName);
+      }
+    }
+    String[] machineNameArray = new String[names.size()];
+    names.toArray(machineNameArray);
+    return machineNameArray;
   }
 
   /**
@@ -292,24 +336,13 @@ public class WlsClusterConfig {
    * ConfigUpdate implementation for updating a dynamic cluster size
    */
   static class DynamicClusterSizeConfigUpdate implements ConfigUpdate {
-    final int desiredClusterSize;
+    final int targetClusterSize;
     final WlsClusterConfig wlsClusterConfig;
 
     public DynamicClusterSizeConfigUpdate(WlsClusterConfig wlsClusterConfig,
-                                          int desiredClusterSize) {
-      this.desiredClusterSize = desiredClusterSize;
+                                          int targetClusterSize) {
+      this.targetClusterSize = targetClusterSize;
       this.wlsClusterConfig = wlsClusterConfig;
-    }
-
-    /**
-     * Update the cluster size of a WebLogic dynamic cluster
-     *
-     * @param wlsConfigRetriever The WlsConfigRetriever object to be used for performing the update
-     * @return true if the update was successful, false otherwise
-     */
-    @Override
-    public boolean doUpdate(WlsConfigRetriever wlsConfigRetriever) {
-      return wlsConfigRetriever.updateDynamicClusterSize(wlsClusterConfig, desiredClusterSize);
     }
 
     /**
@@ -320,7 +353,7 @@ public class WlsClusterConfig {
 
     @Override
     public Step createStep(Step next) {
-      return new WlsConfigRetriever.UpdateDynamicClusterStep(wlsClusterConfig, desiredClusterSize, next);
+      return new WlsConfigRetriever.UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
     }
   }
 }

@@ -46,28 +46,60 @@ public class HttpClient {
     this.encodedCredentials = encodedCredentials;
   }
 
-  public String executeGetOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace) {
-    String serviceURL = SERVICE_URL == null ? getServiceURL(client, serviceName, namespace) : SERVICE_URL;
+  /**
+   * Constructs a URL using the provided service URL and request URL, and use the resulting URL to issue a HTTP GET request
+   *
+   * @param requestUrl The request URL containing the request of the REST call
+   * @param serviceURL The service URL containing the host and port of the server where the HTTP
+   *                   request is to be sent to
+   *
+   * @return A Result object containing the respond from the REST call
+   */
+  public Result executeGetOnServiceClusterIP(String requestUrl, String serviceURL) {
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json").header("Authorization", "Basic " + encodedCredentials);
     Response response = invocationBuilder.get();
+    String responseString = null;
+    int status = response.getStatus();
+    boolean successful = false;
     if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+      successful = true;
       if (response.hasEntity()) {
-        return String.valueOf(response.readEntity(String.class));
+        responseString = String.valueOf(response.readEntity(String.class));
       }
     } else {
       LOGGER.warning(MessageKeys.HTTP_METHOD_FAILED, "GET", url, response.getStatus());
     }
-    return null;
+    return new Result(responseString, status, successful);
   }
 
-  public String executePostUrlOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace, String payload) {
-    String serviceURL = SERVICE_URL == null ? getServiceURL(client, serviceName, namespace) : SERVICE_URL;
-    return executePostUrlOnServiceClusterIP(requestUrl, serviceURL, payload);
+  public Result executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload) {
+    Result result = null;
+    try {
+      result = executePostUrlOnServiceClusterIP(requestUrl, serviceURL, payload, false);
+    } catch (HTTPException httpException) {
+      // ignore as executePostUrlOnServiceClusterIP only throw HTTPException if throwOnFailure is true
+    }
+    return result;
   }
-  
-  public String executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload) {
+
+  /**
+   * Constructs a URL using the provided service URL and request URL, and use the resulting URL and the
+   * payload provided to issue a HTTP POST request
+   *
+   * @param requestUrl The request URL containing the request of the REST call
+   * @param serviceURL The service URL containing the host and port of the server where the HTTP
+   *                   request is to be sent to
+   * @param payload The payload to be used in the HTTP POST request
+   * @param throwOnFailure Throws HTTPException if the status code in the HTTP response indicates any error
+   *
+   * @return A Result object containing the respond from the REST call
+   * @throws HTTPException if throwOnFailure is true and the status of the HTTP response indicates the request was not
+   *                       successful
+   */
+  public Result executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload,
+                                                 boolean throwOnFailure) throws HTTPException {
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json")
@@ -75,19 +107,25 @@ public class HttpClient {
         .header("X-Requested-By", "Weblogic Operator");
     Response response = invocationBuilder.post(Entity.json(payload));
     LOGGER.finer("Response is  " + response.getStatusInfo());
+    String responseString = null;
+    int status = response.getStatus();
+    boolean successful = false;
     if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+      successful = true;
       if (response.hasEntity()) {
-        return String.valueOf(response.readEntity(String.class));
+        responseString = String.valueOf(response.readEntity(String.class));
       }
     } else {
       LOGGER.warning(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
+      if (throwOnFailure) {
+        throw new HTTPException(status);
+      }
     }
-    return null;
+    return new Result(responseString, status, successful);
   }
 
   /**
    * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at an admin server
-   * @param principal Principal
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @param next Next processing step
@@ -189,6 +227,9 @@ public class HttpClient {
    * @return The URL of the Service, or null if it is not found or principal does not have sufficient permissions.
    */
   public static String getServiceURL(ClientHolder client, String name, String namespace) {
+    if (SERVICE_URL != null) {
+      return SERVICE_URL;
+    }
     try {
       return getServiceURL(client.callBuilder().readService(name, namespace));
     } catch (ApiException e) {
