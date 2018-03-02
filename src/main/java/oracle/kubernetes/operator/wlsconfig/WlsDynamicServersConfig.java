@@ -24,6 +24,7 @@ public class WlsDynamicServersConfig {
   final String serverNamePrefix;
   final boolean calculatedListenPorts;
   final WlsServerConfig serverTemplate;
+  final String machineNameMatchExpression;
   List<WlsServerConfig> serverConfigs;
 
   /**
@@ -43,6 +44,7 @@ public class WlsDynamicServersConfig {
     Integer maxDynamicClusterSize = null;
     String serverNamePrefix = null;
     boolean calculatedListenPorts = false;
+    String machineNameMatchExpression = null;
     WlsServerConfig serverTemplate = null;
     List<WlsServerConfig> serverConfigs = null;
     if (dynamicServerConfig != null) {
@@ -50,6 +52,7 @@ public class WlsDynamicServersConfig {
       maxDynamicClusterSize = (Integer) dynamicServerConfig.get("maxDynamicClusterSize");
       serverNamePrefix = (String) dynamicServerConfig.get("serverNamePrefix");
       calculatedListenPorts = (boolean) dynamicServerConfig.get("calculatedListenPorts");
+      machineNameMatchExpression = (String) dynamicServerConfig.get("machineNameMatchExpression");
       String serverTemplateName = getServerTemplateNameFromConfig(dynamicServerConfig);
 
       if (serverTemplateName != null) {
@@ -63,7 +66,7 @@ public class WlsDynamicServersConfig {
       }
     }
     return new WlsDynamicServersConfig(dynamicClusterSize, maxDynamicClusterSize, serverNamePrefix,
-            calculatedListenPorts, serverTemplate, serverConfigs);
+            calculatedListenPorts, machineNameMatchExpression, serverTemplate, serverConfigs);
   }
 
   /**
@@ -73,17 +76,19 @@ public class WlsDynamicServersConfig {
    * @param maxDynamicClusterSize maximum size of the dynamic cluster
    * @param serverNamePrefix prefix for names of servers in this dynamic cluster
    * @param calculatedListenPorts whether listen ports are fixed or calculated based on server index
+   * @param machineNameMatchExpression the expression is used when determining machines to use for server assignments
    * @param serverTemplate template of servers in the dynamic cluster
    * @param serverConfigs List of WlsServerConfig containing configurations of dynamic servers that corresponds to the
    *                      current cluster size
    */
   public WlsDynamicServersConfig(Integer dynamicClusterSize, Integer maxDynamicClusterSize, String serverNamePrefix,
-                                 boolean calculatedListenPorts, WlsServerConfig serverTemplate,
-                                 List<WlsServerConfig> serverConfigs) {
+                                 boolean calculatedListenPorts, String machineNameMatchExpression,
+                                 WlsServerConfig serverTemplate, List<WlsServerConfig> serverConfigs) {
     this.dynamicClusterSize = dynamicClusterSize;
     this.maxDynamicClusterSize = maxDynamicClusterSize;
     this.serverNamePrefix = serverNamePrefix;
     this.calculatedListenPorts = calculatedListenPorts;
+    this.machineNameMatchExpression = machineNameMatchExpression;
     this.serverTemplate = serverTemplate;
     this.serverConfigs = serverConfigs;
   }
@@ -131,6 +136,14 @@ public class WlsDynamicServersConfig {
    */
   public Integer getMaxDynamicClusterSize() {
     return maxDynamicClusterSize;
+  }
+
+  /**
+   * Return the expression used in matching machine names assigned to dynamic servers
+   * @return the expression used in matching machine names assigned to dynamic servers
+   */
+  public String getMachineNameMatchExpression() {
+    return machineNameMatchExpression;
   }
 
   /**
@@ -182,7 +195,7 @@ public class WlsDynamicServersConfig {
    * used in the payload to the REST call to WLS admin server
    */
   static String getSearchFields() {
-    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'serverNamePrefix', 'calculatedListenPorts', 'dynamicServerNames' ";
+    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'serverNamePrefix', 'calculatedListenPorts', 'dynamicServerNames', 'machineNameMatchExpression' ";
   }
 
   @Override
@@ -192,6 +205,7 @@ public class WlsDynamicServersConfig {
             ", maxDynamicClusterSize=" + maxDynamicClusterSize +
             ", serverNamePrefix='" + serverNamePrefix + '\'' +
             ", calculatedListenPorts=" + calculatedListenPorts +
+            ", machineNameMatchExpression=" + machineNameMatchExpression +
             ", serverTemplate=" + serverTemplate +
             ", serverConfigs=" + serverConfigs +
             '}';
