@@ -5,6 +5,8 @@ kind: ConfigMap
 metadata:
   name: domain-%DOMAIN_UID%-scripts
   namespace: %NAMESPACE%
+  labels:
+    weblogic.domainUID: %DOMAIN_UID%
 data:
   utility.sh: |-
     #!/bin/bash
