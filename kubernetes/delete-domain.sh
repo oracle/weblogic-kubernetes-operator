@@ -24,10 +24,9 @@ function usage {
 cat << EOF
   Usage:
 
-    $0 -d domain-uid,domain-uid,... [-s max-seconds] [-t]
-    $0 -d domain-uid [-s max-seconds] [-t]
-    $0 -d all [-s max-seconds] [-t]
-    $0 -h
+    $(basename $0) -d domain-uid,domain-uid,... [-s max-seconds] [-t]
+    $(basename $0) -d all [-s max-seconds] [-t]
+    $(basename $0) -h
 
   Perform a best-effort delete of the k8s artifacts for
   the given domain(s), and retry until either max-seconds is reached
