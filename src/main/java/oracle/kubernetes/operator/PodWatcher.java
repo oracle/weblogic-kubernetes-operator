@@ -2,14 +2,6 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.gson.reflect.TypeToken;
-
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
@@ -23,12 +15,19 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Watches for Pods to become Ready or leave Ready state
@@ -49,6 +48,7 @@ public class PodWatcher implements Runnable {
    * Factory for PodWatcher
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
+   * @param destination Callback for watch events
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
@@ -100,15 +100,10 @@ public class PodWatcher implements Runnable {
        */
       @Override
       public Watch<V1Pod> initiateWatch(Object context, String resourceVersion) throws ApiException {
-        return Watch.createWatch(client.getApiClient(),
-            client.callBuilder().with($ -> {
-              $.resourceVersion = resourceVersion;
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any Pod with a domainUID label
-              $.timeoutSeconds = 30;
-              $.watch = true;
-            }).listPodCall(ns),
-            new TypeToken<Watch.Response<V1Pod>>() {
-            }.getType());
+        return new WatchBuilder(client)
+                  .withResourceVersion(resourceVersion)
+                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL)  // Any Pod with a domainUID label
+                .createPodWatch(ns);
       }
 
       @Override
