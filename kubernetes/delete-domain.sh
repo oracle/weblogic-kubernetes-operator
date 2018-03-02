@@ -32,11 +32,12 @@ cat << EOF
   Perform a best-effort delete of the k8s artifacts for
   the given domain(s), and retry until either max-seconds is reached
   or all artifacts were deleted (default $default_maxwaitsecs seconds).
+
   The domains can be specified as a comma-separated list of 
   domain-uids (no spaces), or the keyword 'all'.
 
   Specify '-t' to run the script in a test mode which will
-  show the delete commands without actually performing them.
+  show delete commands but not actually perform them.
 
   This script exits with a zero status on success, and a 
   non-zero status on failure.
@@ -68,13 +69,15 @@ function getDomain {
 
   kubectl get $namespaced_types \
           -l "$label_selector" \
-          -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}'
+          -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
+          --all-namespaces=true
 
   # get all non-namespaced types with -l $label_selector
 
   kubectl get pv,crd,clusterroles,clusterrolebindings \
           -l "$label_selector" \
-          -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' 
+          -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
+          --all-namespaces=true
 }
 
 #
