@@ -3,11 +3,9 @@
 package oracle.kubernetes.operator.builders;
 
 import com.squareup.okhttp.Call;
-import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
-import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
@@ -19,7 +17,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.function.BiFunction;
 
-@SuppressWarnings("unused")
+@SuppressWarnings("WeakerAccess")
 public class WatchBuilder {
 
     /** Always true for watches. */
@@ -41,32 +39,7 @@ public class WatchBuilder {
         this.clientHolder = clientHolder;
     }
 
-    /**
-     * Creates a web hook object to track changes to the namespaces.
-     * @return the active web hook
-     * @throws ApiException if there is an error on the call that sets up the web hook.
-     */
-    public Watch<V1Namespace> createNamespaceWatch() throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, V1Namespace.class, WatchBuilder::listNamespaceCall);
-    }
-
-    private ApiClient getApiClient() {
-        return clientHolder.getApiClient();
-    }
-
-    private static Call listNamespaceCall(ClientHolder clientHolder, CallParams callParams) {
-        try {
-            return clientHolder.getCoreApiClient().listNamespaceCall(
-                        callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
-                        callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
-                        callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH,
-                        callParams.getProgressListener(), callParams.getProgressRequestListener());
-        } catch (ApiException e) {
-            throw new UncheckedApiException(e);
-        }
-    }
-
-    private static <T> Type getType(Class<?> responseBodyType) {
+    private static Type getType(Class<?> responseBodyType) {
         return new ParameterizedType() {
             @Override
             public Type[] getActualTypeArguments() {
@@ -173,39 +146,19 @@ public class WatchBuilder {
     }
 
     /**
-     * Creates a web hook object to track changes to weblogic domains in all namespaces
-     * @return the active web hook
-     * @throws ApiException if there is an error on the call that sets up the web hook.
-     */
-    public Watch<Domain> createDomainsInAllNamespacesWatch() throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, Domain.class, WatchBuilder::listDomainsForAllNamespacesCall);
-    }
-
-    private static Call listDomainsForAllNamespacesCall(ClientHolder clientHolder, CallParams callParams) {
-        try {
-            return clientHolder.getWeblogicApiClient().listWebLogicOracleV1DomainForAllNamespacesCall(START_LIST,
-                        callParams.getFieldSelector(), callParams.getIncludeUninitialized(), callParams.getLabelSelector(),
-                        callParams.getLimit(), callParams.getPretty(), callParams.getResourceVersion(),
-                        callParams.getTimeoutSeconds(), WATCH, callParams.getProgressListener(), callParams.getProgressRequestListener());
-        } catch (ApiException e) {
-            throw new UncheckedApiException(e);
-        }
-    }
-
-    /**
      * Creates a web hook object to track changes to weblogic domains in one namespaces
      * @param namespace the namespace in which to track domains
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
-    public Watch<Domain> createDomainsInNamespaceWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, Domain.class, new ListDomainsInNamespaceCall(namespace));
+    public Watch<Domain> createDomainWatch(String namespace) throws ApiException {
+        return FACTORY.createWatch(clientHolder, callParams, Domain.class, new ListDomainsCall(namespace));
     }
 
-    private class ListDomainsInNamespaceCall implements BiFunction<ClientHolder, CallParams, Call> {
+    private class ListDomainsCall implements BiFunction<ClientHolder, CallParams, Call> {
         private String namespace;
 
-        ListDomainsInNamespaceCall(String namespace) {
+        ListDomainsCall(String namespace) {
             this.namespace = namespace;
         }
 
@@ -301,11 +254,13 @@ public class WatchBuilder {
         return this;
     }
 
+    @SuppressWarnings("unused")
     public WatchBuilder withProgressListener(ProgressResponseBody.ProgressListener progressListener) {
         callParams.setProgressListener(progressListener);
         return this;
     }
 
+    @SuppressWarnings("unused")
     public WatchBuilder withProgressRequestListener(ProgressRequestBody.ProgressRequestListener progressRequestListener) {
         callParams.setProgressRequestListener(progressRequestListener);
         return this;
