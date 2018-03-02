@@ -485,6 +485,7 @@ public class WlsConfigRetriever {
     try {
       // start a WebLogic edit session
       httpClient.executePostUrlOnServiceClusterIP(START_EDIT_SESSION_URL, serviceURL, "");
+      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);
 
       // Create machine(s)
       String newMachineNames[] = wlsClusterConfig.getMachineNamesForNewDynamicServers(machineNamePrefix, targetClusterSize);
@@ -504,9 +505,11 @@ public class WlsConfigRetriever {
       httpClient.executePostUrlOnServiceClusterIP(ACTIVATE_EDIT_SESSION_URL, serviceURL, "", true);
 
       result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
+      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_ACTIVATED);
     } catch (HTTPException httpException) {
       // cancel the WebLogic edit session
       httpClient.executePostUrlOnServiceClusterIP(CANCEL_EDIT_SESSION_URL, serviceURL, "");
+      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_CANCELLED);
     }
     LOGGER.exiting(result);
     return result;
