@@ -2,6 +2,8 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes;
 
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 
@@ -52,6 +54,26 @@ public class TestUtils {
   /**
    * Removes the console handlers from the specified logger, in order to silence them during a test.
    *
+   * @return a collection of the removed handlers
+   */
+  public static Memento silenceOperatorLogger() {
+    Logger logger = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+    List<Handler> savedHandlers = new ArrayList<>();
+    for (Handler handler : logger.getHandlers()) {
+      if (handler instanceof ConsoleHandler) {
+        savedHandlers.add(handler);
+      }
+    }
+
+    for (Handler handler : savedHandlers)
+      logger.removeHandler(handler);
+
+    return new ConsoleHandlerMemento(logger, savedHandlers);
+  }
+
+  /**
+   * Removes the console handlers from the specified logger, in order to silence them during a test.
+   *
    * @param logger a logger to silence
    * @return a collection of the removed handlers
    */
@@ -76,6 +98,26 @@ public class TestUtils {
   public static void restoreConsoleHandlers(Logger logger, List<Handler> savedHandlers) {
     for (Handler handler : savedHandlers) {
       logger.addHandler(handler);
+    }
+  }
+
+  private static class ConsoleHandlerMemento implements Memento {
+    private Logger logger;
+    private List<Handler> savedHandlers;
+
+    ConsoleHandlerMemento(Logger logger, List<Handler> savedHandlers) {
+      this.logger = logger;
+      this.savedHandlers = savedHandlers;
+    }
+
+    @Override
+    public void revert() {
+      restoreConsoleHandlers(logger, savedHandlers);
+    }
+
+    @Override
+    public <T> T getOriginalValue() {
+      throw new UnsupportedOperationException();
     }
   }
 }
