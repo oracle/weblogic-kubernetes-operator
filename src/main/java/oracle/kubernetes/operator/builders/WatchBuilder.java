@@ -32,7 +32,7 @@ public class WatchBuilder {
     private CallParamsImpl callParams = new CallParamsImpl();
 
     public interface WatchFactory {
-        <T> Watch<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException;
+        <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException;
     }
 
     public WatchBuilder(ClientHolder clientHolder) {
@@ -63,7 +63,7 @@ public class WatchBuilder {
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
-    public Watch<V1Service> createServiceWatch(String namespace) throws ApiException {
+    public WatchI<V1Service> createServiceWatch(String namespace) throws ApiException {
         return FACTORY.createWatch(clientHolder, callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
     }
 
@@ -92,7 +92,7 @@ public class WatchBuilder {
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
-    public Watch<V1Pod> createPodWatch(String namespace) throws ApiException {
+    public WatchI<V1Pod> createPodWatch(String namespace) throws ApiException {
         return FACTORY.createWatch(clientHolder, callParams, V1Pod.class, new ListPodCall(namespace));
     }
 
@@ -121,7 +121,7 @@ public class WatchBuilder {
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
-    public Watch<V1beta1Ingress> createIngressWatch(String namespace) throws ApiException {
+    public WatchI<V1beta1Ingress> createIngressWatch(String namespace) throws ApiException {
         return FACTORY.createWatch(clientHolder, callParams, V1beta1Ingress.class, new ListIngressCall(namespace));
     }
 
@@ -151,7 +151,7 @@ public class WatchBuilder {
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
-    public Watch<Domain> createDomainWatch(String namespace) throws ApiException {
+    public WatchI<Domain> createDomainWatch(String namespace) throws ApiException {
         return FACTORY.createWatch(clientHolder, callParams, Domain.class, new ListDomainsCall(namespace));
     }
 
@@ -169,45 +169,6 @@ public class WatchBuilder {
                             callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
                             callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
                             callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
-            } catch (ApiException e) {
-                throw new UncheckedApiException(e);
-            }
-        }
-    }
-
-    /**
-     * Creates a web hook object to track changes to custom objects
-     * @param namespace the namespace in which to track custom objects.
-     * @param responseBodyType the type of objects returned in the events
-     * @param group the custom resource group name
-     * @param version the custom resource version
-     * @param plural the custom resource plural name    @return the active web hook
-     * @throws ApiException if there is an error on the call that sets up the web hook.
-     */
-    public <T> Watch<T> createCustomObjectWatch(String namespace, Class<?> responseBodyType, String group, String version, String plural) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, responseBodyType, new ListCustomObjectsInNamespaceCall(namespace, group, version, plural));
-    }
-
-    private class ListCustomObjectsInNamespaceCall implements BiFunction<ClientHolder, CallParams, Call> {
-        private String namespace;
-        private String group;
-        private String version;
-        private String plural;
-
-        ListCustomObjectsInNamespaceCall(String namespace, String group, String version, String plural) {
-            this.namespace = namespace;
-            this.group = group;
-            this.version = version;
-            this.plural = plural;
-        }
-
-        @Override
-        public Call apply(ClientHolder clientHolder, CallParams callParams) {
-            try {
-                return clientHolder.getCustomObjectsApiClient().listNamespacedCustomObjectCall(
-                            group, version, namespace, plural,
-                            callParams.getPretty(), callParams.getLabelSelector(), callParams.getResourceVersion(),
-                            WATCH, null, null);
             } catch (ApiException e) {
                 throw new UncheckedApiException(e);
             }
@@ -268,9 +229,9 @@ public class WatchBuilder {
 
     static class WatchFactoryImpl implements WatchFactory {
         @Override
-        public <T> Watch<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
+        public <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
             try {
-                return Watch.createWatch(clientHolder.getApiClient(), function.apply(clientHolder, callParams), getType(responseBodyType));
+                return new WatchImpl<T>(Watch.createWatch(clientHolder.getApiClient(), function.apply(clientHolder, callParams), getType(responseBodyType)));
             } catch (UncheckedApiException e) {
                 throw e.getCause();
             }

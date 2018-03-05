@@ -50,11 +50,19 @@ public class WatchEvent<T> {
     }
 
     public static <S> WatchEvent<S> createErrorEvent(int statusCode) {
-        return new WatchEvent<>(new V1Status().code(statusCode));
+        return new WatchEvent<>(new V1Status().code(statusCode).message("Oops"));
+    }
+
+    public static <S> WatchEvent<S> createErrorEvent(int statusCode, int resourceVersion) {
+        return new WatchEvent<>(new V1Status().code(statusCode).message(createMessageWithResourceVersion(resourceVersion)));
+    }
+
+    private static String createMessageWithResourceVersion(int resourceVersion) {
+        return String.format("Something wrong: continue from (%d)", resourceVersion);
     }
 
     public String toJson() {
-        return new GsonBuilder().create().toJson(this);
+        return new GsonBuilder().create().toJson(toWatchResponse());
     }
 
     public Watch.Response<T> toWatchResponse() {
