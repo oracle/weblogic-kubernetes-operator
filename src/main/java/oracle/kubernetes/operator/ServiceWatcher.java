@@ -3,20 +3,20 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class handles Service watching. It service change events and sends
@@ -53,7 +53,7 @@ public class ServiceWatcher implements Runnable {
     ClientHolder client = helper.take();
     try {
       Watching<V1Service> w = createWatching(client);
-      Watcher<V1Service> watcher = new Watcher<V1Service>(w, null, initialResourceVersion);
+      Watcher<V1Service> watcher = new Watcher<>(w, initialResourceVersion);
       
       // invoke watch on current Thread.  Won't return until watch stops
       watcher.doWatch();
@@ -69,22 +69,16 @@ public class ServiceWatcher implements Runnable {
       /**
        * Watcher callback to issue the list Service changes. It is driven by the
        * Watcher wrapper to issue repeated watch requests.
-       * @param context user defined contact object or null
        * @param resourceVersion resource version to omit older events
        * @return Watch object or null if the operation should end
        * @throws ApiException if there is an API error.
        */
       @Override
-      public Watch<V1Service> initiateWatch(Object context, String resourceVersion) throws ApiException {
-        return Watch.createWatch(client.getApiClient(),
-            client.callBuilder().with($ -> {
-              $.resourceVersion = resourceVersion;
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any Service with a domainUID label
-              $.timeoutSeconds = 30;
-              $.watch = true;
-            }).listServiceCall(ns),
-            new TypeToken<Watch.Response<V1Service>>() {
-            }.getType());
+      public WatchI<V1Service> initiateWatch(String resourceVersion) throws ApiException {
+        return new WatchBuilder(client)
+                  .withResourceVersion(resourceVersion)
+                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL)   // Any Service with a domainUID label
+                .createServiceWatch(ns);
       }
 
       @Override

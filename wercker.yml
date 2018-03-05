@@ -163,6 +163,9 @@ integration-test:
       # clean up
       yum clean all
 
+      # store the artifacts so we can download them easily 
+      tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
+
 # This pipeline runs quality checks 
 quality:
   steps:
