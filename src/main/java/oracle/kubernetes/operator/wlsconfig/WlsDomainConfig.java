@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Contains a snapshot of WebLogic domain configuration
+ */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -24,6 +27,8 @@ public class WlsDomainConfig {
   private Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
   // Contains all configured server templates in the WLS domain
   private Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
+  // Contains all configured machines in the WLS domain
+  private Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
 
   // Name of this WLS domain (This is NOT the domain UID in the weblogic domain kubernetes CRD)
   private final String name;
@@ -56,14 +61,23 @@ public class WlsDomainConfig {
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
    * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
+   * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   WlsDomainConfig(String name, Map<String, WlsClusterConfig> wlsClusterConfigs,
                   Map<String, WlsServerConfig> wlsServerConfigs,
-                  Map<String, WlsServerConfig> wlsServerTemplates) {
+                  Map<String, WlsServerConfig> wlsServerTemplates,
+                  Map<String, WlsMachineConfig> wlsMachineConfigs) {
     this.wlsClusterConfigs = wlsClusterConfigs;
     this.wlsServerConfigs = wlsServerConfigs;
     this.wlsServerTemplates = wlsServerTemplates;
+    this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
+    // set domainConfig for each WlsClusterConfig
+    if (wlsClusterConfigs != null) {
+      for (WlsClusterConfig wlsClusterConfig: wlsClusterConfigs.values()) {
+        wlsClusterConfig.setWlsDomainConfig(this);
+      }
+    }
   }
 
   /**
@@ -96,6 +110,15 @@ public class WlsDomainConfig {
   }
 
   /**
+   * Returns configuration of machines found in the WLS domain.
+   *
+   * @return A Map of WlsMachineConfig, keyed by name, for each machine configured the WLS domain
+   */
+  public synchronized Map<String, WlsMachineConfig> getMachineConfigs() {
+    return wlsMachineConfigs;
+  }
+
+  /**
    * Returns the configuration for the WLS cluster with the given name
    *
    * @param clusterName name of the WLS cluster
@@ -124,8 +147,23 @@ public class WlsDomainConfig {
    */
   public synchronized WlsServerConfig getServerConfig(String serverName) {
     WlsServerConfig result = null;
-    if (serverName != null) {
+    if (serverName != null && wlsServerConfigs != null) {
       result = wlsServerConfigs.get(serverName);
+    }
+    return result;
+  }
+
+  /**
+   * Returns the configuration for the WLS machine with the given name.
+   *
+   * @param machineName name of the WLS machine
+   * @return The WlsMachineConfig object containing configuration of the WLS machine with the given name. This methods
+   * return null if no WLS machine is configured with the given name.
+   */
+  public synchronized WlsMachineConfig getMachineConfig(String machineName) {
+    WlsMachineConfig result = null;
+    if (machineName != null && wlsMachineConfigs != null) {
+      result = wlsMachineConfigs.get(machineName);
     }
     return result;
   }
@@ -146,6 +184,7 @@ public class WlsDomainConfig {
     Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
     Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
     Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
+    Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
 
     // process list of server templates
     if (parsedResult.serverTemplates != null) {
@@ -154,7 +193,7 @@ public class WlsDomainConfig {
         wlsServerTemplates.put(wlsServerTemplate.getName(), wlsServerTemplate);
       }
     }
-    // process list of clusters
+    // process list of clusters (Note: must process server templates before processing clusters)
     if (parsedResult.clusters != null) {
       for (Map<String, Object> clusterConfig : parsedResult.clusters) {
         WlsClusterConfig wlsClusterConfig = WlsClusterConfig.create(clusterConfig, wlsServerTemplates, name);
@@ -173,7 +212,14 @@ public class WlsDomainConfig {
         }
       }
     }
-    return new WlsDomainConfig(name, wlsClusterConfigs, wlsServerConfigs, wlsServerTemplates);
+    // process list of machines
+    if (parsedResult.machines != null) {
+      for (Map<String, Object> machineConfig : parsedResult.machines) {
+        WlsMachineConfig wlsMachineConfig = WlsMachineConfig.create(machineConfig);
+        wlsMachineConfigs.put(wlsMachineConfig.getName(), wlsMachineConfig);
+      }
+    }
+    return new WlsDomainConfig(name, wlsClusterConfigs, wlsServerConfigs, wlsServerTemplates, wlsMachineConfigs);
   }
 
   public static String getRetrieveServersSearchUrl() {
@@ -186,7 +232,8 @@ public class WlsDomainConfig {
             "  children: { " +
             "    servers: { " + WlsServerConfig.getSearchPayload() + " }, " +
             "    serverTemplates: { " + WlsServerConfig.getSearchPayload() + " }, " +
-            "    clusters: { " + WlsClusterConfig.getSearchPayload() + " } " +
+            "    clusters: { " + WlsClusterConfig.getSearchPayload() + " }, " +
+            "    machines: { " + WlsMachineConfig.getSearchPayload() + " } " +
             "  } " +
             "}";
   }
@@ -221,6 +268,10 @@ public class WlsDomainConfig {
       Map clusters = (Map) result.get("clusters");
       if (clusters != null) {
         parsedJson.clusters = (List<Map<String, Object>>) clusters.get("items");
+      }
+      Map machines = (Map) result.get("machines");
+      if (machines != null) {
+        parsedJson.machines = (List<Map<String, Object>>) machines.get("items");
       }
       return parsedJson;
     } catch (Exception e) {
@@ -287,6 +338,7 @@ public class WlsDomainConfig {
     List<Map<String, Object>> servers;
     List<Map<String, Object>> serverTemplates;
     List<Map<String, Object>> clusters;
+    List<Map<String, Object>> machines;
   }
 
   @Override
@@ -295,6 +347,7 @@ public class WlsDomainConfig {
             "wlsClusterConfigs=" + wlsClusterConfigs +
             ", wlsServerConfigs=" + wlsServerConfigs +
             ", wlsServerTemplates=" + wlsServerTemplates +
+            ", wlsMachineConfigs=" + wlsMachineConfigs +
             ", name='" + name + '\'' +
             '}';
   }

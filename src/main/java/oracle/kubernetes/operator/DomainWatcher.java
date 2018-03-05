@@ -3,17 +3,17 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class handles Domain watching. It receives domain events and sends
@@ -73,14 +73,9 @@ public class DomainWatcher implements Runnable {
        */
       @Override
       public Watch<Domain> initiateWatch(Object context, String resourceVersion) throws ApiException {
-        return Watch.createWatch(client.getApiClient(),
-            client.callBuilder().with($ -> {
-              $.resourceVersion = resourceVersion;
-              $.timeoutSeconds = 30;
-              $.watch = true;
-            }).listDomainCall(ns),
-            new TypeToken<Watch.Response<Domain>>() {
-            }.getType());
+        return new WatchBuilder(client)
+                  .withResourceVersion(resourceVersion)
+                .createDomainWatch(ns);
       }
 
       @Override

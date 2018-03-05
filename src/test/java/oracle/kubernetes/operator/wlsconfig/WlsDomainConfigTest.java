@@ -10,6 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Handler;
@@ -99,6 +100,27 @@ public class WlsDomainConfigTest {
 
     assertEquals(6, wlsDomainConfig.getServerConfigs().size()); // does not include dynamic servers
   }
+
+  @Test
+  public void verifyMachinesLoadedFromJsonString() throws Exception {
+    WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_1_CLUSTER);
+    Map<String, WlsMachineConfig> wlsMachineConfigList = wlsDomainConfig.getMachineConfigs();
+    assertEquals(2, wlsMachineConfigList.size());
+
+    WlsMachineConfig domain1_machine1 = wlsDomainConfig.getMachineConfig("domain1-machine1");
+    assertEquals("domain1-machine1", domain1_machine1.getName());
+    assertEquals(new Integer(5556), domain1_machine1.getNodeManagerListenPort());
+    assertEquals("domain1-managed-server1", domain1_machine1.getNodeManagerListenAddress());
+    assertEquals("Plain", domain1_machine1.getNodeManagerType());
+
+    WlsMachineConfig domain1_machine2 = wlsDomainConfig.getMachineConfig("domain1-machine2");
+    assertEquals("domain1-machine2", domain1_machine2.getName());
+    assertEquals(new Integer(5556), domain1_machine2.getNodeManagerListenPort());
+    assertEquals("domain1-managed-server2", domain1_machine2.getNodeManagerListenAddress());
+    assertEquals("SSL", domain1_machine2.getNodeManagerType());
+
+  }
+
 
   @Test
   public void verifyGetServerConfigsDoesNotIncludeDynamicServers() throws Exception {
@@ -218,6 +240,12 @@ public class WlsDomainConfigTest {
   public void verifyGetServerConfigsReturnNullIfNotFound() throws Exception {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
     assertNull(wlsDomainConfig.getServerConfig("noSuchServer"));
+  }
+
+  @Test
+  public void verifyGetMachineConfigsReturnNullIfNotFound() throws Exception {
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
+    assertNull(wlsDomainConfig.getMachineConfig("noSuchMachine"));
   }
 
   @Test
@@ -599,7 +627,28 @@ public class WlsDomainConfigTest {
           "        ],\n" +
           "        \"networkAccessPoints\": {\"items\": []}\n" +
           "    }\n" +
-          "]}}";
+          "  ]}, " +
+          "    \"machines\": {\"items\": [\n" +
+          "        {\n" +
+          "            \"name\": \"domain1-machine1\",\n" +
+          "            \"nodeManager\": {\n" +
+          "                \"NMType\": \"Plain\",\n" +
+          "                \"listenAddress\": \"domain1-managed-server1\",\n" +
+          "                \"name\": \"domain1-machine1\",\n" +
+          "                \"listenPort\": 5556\n" +
+          "            }\n" +
+          "        },\n" +
+          "        {\n" +
+          "            \"name\": \"domain1-machine2\",\n" +
+          "            \"nodeManager\": {\n" +
+          "                \"NMType\": \"SSL\",\n" +
+          "                \"listenAddress\": \"domain1-managed-server2\",\n" +
+          "                \"name\": \"domain1-machine2\",\n" +
+          "                \"listenPort\": 5556\n" +
+          "            }\n" +
+          "        }\n" +
+          "    ]}\n" +
+          "}";
 
   final String JSON_STRING_2_CLUSTERS = "{\"servers\": {\"items\": [\n" +
           "    {\n" +

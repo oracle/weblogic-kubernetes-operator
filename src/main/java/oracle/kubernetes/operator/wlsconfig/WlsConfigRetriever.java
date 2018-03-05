@@ -8,6 +8,7 @@ import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.http.HTTPException;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -53,6 +54,15 @@ public class WlsConfigRetriever {
 
   // wait time before retrying to read server configured for the cluster from admin server - default is 1s
   private static final int READ_CONFIG_RETRY_MILLIS = Integer.getInteger("read.config.retry.ms", 1000);
+
+  // REST URL for starting a WebLogic edit session
+  private static final String START_EDIT_SESSION_URL = "/management/weblogic/latest/edit/changeManager/startEdit";
+
+  // REST URL for activating a WebLogic edit session
+  private static final String ACTIVATE_EDIT_SESSION_URL = "/management/weblogic/latest/edit/changeManager/activate";
+
+  // REST URL for canceling a WebLogic edit session
+  private static final String CANCEL_EDIT_SESSION_URL =  "/management/weblogic/latest/edit/changeManager/cancelEdit";
 
   /**
    * Constructor.
@@ -147,19 +157,20 @@ public class WlsConfigRetriever {
   static final class UpdateDynamicClusterStep extends Step {
 
     final WlsClusterConfig wlsClusterConfig;
-    final int desiredClusterSize;
+    final int targetClusterSize;
 
     /**
      * Constructor
      *
      * @param wlsClusterConfig The WlsClusterConfig object for the WebLogic dynamic cluster to be updated
-     * @param desiredClusterSize The desired dynamic cluster size
+     * @param targetClusterSize The target dynamic cluster size
      * @param next The next Step to be performed
      */
-    public UpdateDynamicClusterStep(WlsClusterConfig wlsClusterConfig, int desiredClusterSize, Step next) {
+    public UpdateDynamicClusterStep(WlsClusterConfig wlsClusterConfig,
+                                    int targetClusterSize, Step next) {
       super(next);
       this.wlsClusterConfig = wlsClusterConfig;
-      this.desiredClusterSize = desiredClusterSize;
+      this.targetClusterSize = targetClusterSize;
     }
 
     /**
@@ -174,7 +185,7 @@ public class WlsConfigRetriever {
         LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER, clusterName);
       } else {
         try {
-          LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, desiredClusterSize);
+          LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, targetClusterSize);
           HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
           DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
@@ -182,12 +193,15 @@ public class WlsConfigRetriever {
 
           String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
 
-          String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
-            wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
-            serviceURL, wlsClusterConfig.getUpdateDynamicClusterSizePayload(desiredClusterSize));
+          Domain dom = info.getDomain();
+          DomainSpec domainSpec = dom.getSpec();
+          String machineNamePrefix = domainSpec.getDomainUID() + "-" + wlsClusterConfig.getClusterName() + "-machine";
 
-          if (wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult)) {
-            LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, desiredClusterSize, (System.currentTimeMillis() - startTime));
+          boolean successful = updateDynamicClusterSizeWithServiceURL(wlsClusterConfig,
+                  machineNamePrefix, targetClusterSize, httpClient, serviceURL);
+
+          if (successful) {
+            LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, targetClusterSize, (System.currentTimeMillis() - startTime));
           } else {
             LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  null);
           }
@@ -222,7 +236,9 @@ public class WlsConfigRetriever {
         String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
         
         WlsDomainConfig wlsDomainConfig = null;
-        String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload());
+        String jsonResult =
+                httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(),
+                        serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
         if (jsonResult != null) {
           wlsDomainConfig = WlsDomainConfig.create(jsonResult);
         }
@@ -350,7 +366,8 @@ public class WlsConfigRetriever {
       LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_TRYING, timeRemaining);
       exception = null;
       try {
-        jsonResult = executePostUrl(url, payload);
+        String serviceURL = connectAndGetServiceURL();
+        jsonResult = httpClient.executePostUrlOnServiceClusterIP(url, serviceURL, payload).getResponse();
       } catch (Exception e) {
         exception = e;
         LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_RETRY, e, READ_CONFIG_RETRY_MILLIS);
@@ -374,41 +391,17 @@ public class WlsConfigRetriever {
   }
 
   /**
-   * Invokes a HTTP POST request using the provided URL and payload
-   *
-   * @param url The URL of the HTTP post request to be invoked
-   * @param payload The payload of the HTTP Post request to be invoked
-   *
-   * @return The Json string returned from the HTTP POST request
-   * @throws Exception Any exception thrown while invoking the HTTP POST request
-   */
-  private String executePostUrl(final String url, final String payload)
-          throws Exception {
-    LOGGER.entering();
-
-    String jsonResult = null;
-    ClientHolder client = null;
-    try {
-      client = clientHelper.take();
-
-      connectAdminServer(client);
-      jsonResult = httpClient.executePostUrlOnServiceClusterIP(url, client, asServiceName, namespace, payload);
-    } finally {
-      if (client != null)
-        clientHelper.recycle(client);
-    }
-    LOGGER.exiting(jsonResult);
-    return jsonResult;
-  }
-  /**
    * Update the dynamic cluster size of the WLS cluster configuration.
    *
    * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated
-   * @param clusterSize The desire dynamic cluster size
+   * @param machineNamePrefix Prefix of names of new machines to be created
+   * @param targetClusterSize The target dynamic cluster size
    * @return true if the request to update the cluster size is successful, false if it was not successful within the
    *         time period, or the cluster is not a dynamic cluster
    */
-  public boolean updateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig, int clusterSize) {
+  public boolean updateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig,
+                                          final String machineNamePrefix,
+                                          final int targetClusterSize) {
 
     LOGGER.entering();
 
@@ -423,13 +416,13 @@ public class WlsConfigRetriever {
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     long startTime = System.currentTimeMillis();
-    Future<Boolean> future = executorService.submit(() -> doUpdateDynamicClusterSize(wlsClusterConfig, clusterSize));
+    Future<Boolean> future = executorService.submit(() -> doUpdateDynamicClusterSize(wlsClusterConfig, machineNamePrefix, targetClusterSize));
     executorService.shutdown();
     boolean result = false;
     try {
       result = future.get(timeout, TimeUnit.MILLISECONDS);
       if (result) {
-        LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, clusterSize, (System.currentTimeMillis() - startTime));
+        LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, targetClusterSize, (System.currentTimeMillis() - startTime));
       } else {
         LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  null);
       }
@@ -448,33 +441,101 @@ public class WlsConfigRetriever {
    *
    * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
    *                         caller should make sure that the cluster is a dynamic cluster.
-   * @param clusterSize The desire dynamic cluster size
+   * @param wlsDomainConfig The WlsDomainConfig object for the WLS domain that contains the dynamic cluster to be updated
+   * @param machineNamePrefix Prefix of names of new machines to be created
+   * @param targetClusterSize The target dynamic cluster size
    * @return true if the request to update the cluster size is successful, false if it was not successful
    */
 
   private boolean doUpdateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig,
-                                             final int clusterSize) throws Exception {
+                                             final String machineNamePrefix,
+                                             final int targetClusterSize) throws Exception {
     LOGGER.entering();
 
+    String serviceURL = connectAndGetServiceURL();
 
-    String jsonResult = executePostUrl(
-            wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
-            wlsClusterConfig.getUpdateDynamicClusterSizePayload(clusterSize));
+    boolean result = updateDynamicClusterSizeWithServiceURL(wlsClusterConfig, machineNamePrefix,
+            targetClusterSize, httpClient, serviceURL);
 
-    boolean result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
     LOGGER.exiting(result);
     return result;
   }
 
   /**
-   * Connect to the WebLogic Administration Server.
+   * Static method to update the WebLogic dynamic cluster size configuration.
    *
-   * @param clientHolder The ClientHolder from which to get the Kubernetes API client.
+   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
+   *                         caller should make sure that the cluster is a dynamic cluster.
+   * @param machineNamePrefix Prefix of names of new machines to be created
+   * @param targetClusterSize The target dynamic cluster size
+   * @param httpClient HttpClient object for issuing the REST request
+   * @param serviceURL service URL of the WebLogic admin server
+   *
+   * @return true if the request to update the cluster size is successful, false if it was not successful
    */
-  public void connectAdminServer(ClientHolder clientHolder) {
-    if (httpClient == null) {
-      httpClient = HttpClient.createAuthenticatedClientForAdminServer(clientHolder, namespace, adminSecretName);
+
+  private static boolean updateDynamicClusterSizeWithServiceURL(final WlsClusterConfig wlsClusterConfig,
+                                                                final String machineNamePrefix,
+                                                                final int targetClusterSize,
+                                                                final HttpClient httpClient,
+                                                                final String serviceURL) {
+    LOGGER.entering();
+
+    boolean result = false;
+    try {
+      // start a WebLogic edit session
+      httpClient.executePostUrlOnServiceClusterIP(START_EDIT_SESSION_URL, serviceURL, "");
+      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);
+
+      // Create machine(s)
+      String newMachineNames[] = wlsClusterConfig.getMachineNamesForNewDynamicServers(machineNamePrefix, targetClusterSize);
+      for (String machineName: newMachineNames) {
+        LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
+        httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),
+                serviceURL, WlsMachineConfig.getCreatePayload(machineName), true);
+      }
+
+      // Update the dynamic cluster size of the WebLogic cluster
+      String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
+              wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+              serviceURL,
+              wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize), true).getResponse();
+
+      // activate the WebLogic edit session
+      httpClient.executePostUrlOnServiceClusterIP(ACTIVATE_EDIT_SESSION_URL, serviceURL, "", true);
+
+      result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
+      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_ACTIVATED);
+    } catch (HTTPException httpException) {
+      // cancel the WebLogic edit session
+      httpClient.executePostUrlOnServiceClusterIP(CANCEL_EDIT_SESSION_URL, serviceURL, "");
+      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_CANCELLED);
+    }
+    LOGGER.exiting(result);
+    return result;
+  }
+
+  /**
+   * Connect to the WebLogic Administration Server and returns the service URL
+   *
+   * @return serviceURL for issuing HTTP requests to the admin server
+   */
+  String connectAndGetServiceURL() {
+    ClientHolder clientHolder = null;
+    try {
+      clientHolder = clientHelper.take();
+
+      if (httpClient == null) {
+        httpClient = HttpClient.createAuthenticatedClientForAdminServer(clientHolder, namespace, adminSecretName);
+      }
+
+      return HttpClient.getServiceURL(clientHolder, asServiceName, namespace);
+
+    } finally {
+      if (clientHolder != null)
+        clientHelper.recycle(clientHolder);
     }
   }
+
 
 }

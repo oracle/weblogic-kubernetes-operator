@@ -49,12 +49,6 @@ public class DomainSpec {
   @SerializedName("asPort")
   private Integer asPort = null;
 
-  @SerializedName("asNodePort")
-  private Integer asNodePort = null;
-
-  @SerializedName("asEnv")
-  private List<io.kubernetes.client.models.V1EnvVar> asEnv = null;
-
   @SerializedName("exportT3Channels")
   private List<String> exportT3Channels = null;
 
@@ -206,55 +200,6 @@ public class DomainSpec {
 
   public void setAsPort(Integer asPort) {
     this.asPort = asPort;
-  }
-
-  public DomainSpec asNodePort(Integer asNodePort) {
-    this.asNodePort = asNodePort;
-    return this;
-  }
-
-  /**
-   * Administration server NodePort port. The port on each node on which the
-   * administration server will be exposed. If specified, this value must be an
-   * unused port. By default, the administration server will not be exposed
-   * outside the Kubernetes cluster.
-   * 
-   * @return asNodePort
-   **/
-  @ApiModelProperty(value = "Administration server NodePort port.  The port on each node on which the administration server will be exposed.  If specified, this value must be an unused port.  By default, the administration server will not be exposed outside the Kubernetes cluster.")
-  public Integer getAsNodePort() {
-    return asNodePort;
-  }
-
-  public void setAsNodePort(Integer asNodePort) {
-    this.asNodePort = asNodePort;
-  }
-
-  public DomainSpec asEnv(List<io.kubernetes.client.models.V1EnvVar> asEnv) {
-    this.asEnv = asEnv;
-    return this;
-  }
-
-  public DomainSpec addAsEnvItem(io.kubernetes.client.models.V1EnvVar asEnvItem) {
-    if (this.asEnv == null) {
-      this.asEnv = new ArrayList<io.kubernetes.client.models.V1EnvVar>();
-    }
-    this.asEnv.add(asEnvItem);
-    return this;
-  }
-
-  /**
-   * Environment variables for use in starting the administration server.
-   * 
-   * @return asEnv
-   **/
-  @ApiModelProperty(value = "Environment variables for use in starting the administration server.")
-  public List<io.kubernetes.client.models.V1EnvVar> getAsEnv() {
-    return asEnv;
-  }
-
-  public void setAsEnv(List<io.kubernetes.client.models.V1EnvVar> asEnv) {
-    this.asEnv = asEnv;
   }
 
   public DomainSpec exportT3Channels(List<String> exportT3Channels) {
@@ -409,8 +354,6 @@ public class DomainSpec {
         && Objects.equals(this.adminSecret, oracleKubernetesWeblogicDomainV1DomainSpec.adminSecret)
         && Objects.equals(this.asName, oracleKubernetesWeblogicDomainV1DomainSpec.asName)
         && Objects.equals(this.asPort, oracleKubernetesWeblogicDomainV1DomainSpec.asPort)
-        && Objects.equals(this.asNodePort, oracleKubernetesWeblogicDomainV1DomainSpec.asNodePort)
-        && Objects.equals(this.asEnv, oracleKubernetesWeblogicDomainV1DomainSpec.asEnv)
         && Objects.equals(this.exportT3Channels, oracleKubernetesWeblogicDomainV1DomainSpec.exportT3Channels)
         && Objects.equals(this.startupControl, oracleKubernetesWeblogicDomainV1DomainSpec.startupControl)
         && Objects.equals(this.serverStartup, oracleKubernetesWeblogicDomainV1DomainSpec.serverStartup)
@@ -420,7 +363,7 @@ public class DomainSpec {
 
   @Override
   public int hashCode() {
-    return Objects.hash(domainUID, domainName, image, imagePullPolicy, adminSecret, asName, asPort, asNodePort, asEnv,
+    return Objects.hash(domainUID, domainName, image, imagePullPolicy, adminSecret, asName, asPort, 
         exportT3Channels, startupControl, serverStartup, clusterStartup, replicas);
   }
 
@@ -436,8 +379,6 @@ public class DomainSpec {
     sb.append("    adminSecret: ").append(toIndentedString(adminSecret)).append("\n");
     sb.append("    asName: ").append(toIndentedString(asName)).append("\n");
     sb.append("    asPort: ").append(toIndentedString(asPort)).append("\n");
-    sb.append("    asNodePort: ").append(toIndentedString(asNodePort)).append("\n");
-    sb.append("    asEnv: ").append(toIndentedString(asEnv)).append("\n");
     sb.append("    exportT3Channels: ").append(toIndentedString(exportT3Channels)).append("\n");
     sb.append("    startupControl: ").append(toIndentedString(startupControl)).append("\n");
     sb.append("    serverStartup: ").append(toIndentedString(serverStartup)).append("\n");

@@ -26,7 +26,7 @@ JOB_NAME="weblogic-command-job"
 
 # Customizable env vars.  See run.sh for an explanation.
 
-echo "@@ Begin command job.  Job name='$JOB_NAME'.  Command='$*'."
+echo "@@ Begin kubernetes job to run a command.  Job name='$JOB_NAME'.  Command='$*'."
 
 echo "@@ At script entry:  RESULT_ROOT='$RESULT_ROOT'"
 echo "@@ At script entry:  PV_ROOT='$PV_ROOT'"
@@ -103,15 +103,7 @@ function launchCommandJob {
       break
     fi
 
-    local pods=$(kubectl get pods  --show-all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
-    local pod_status="unknown"
-    local pod
-    for pod in $pods; do
-      pod_status=`kubectl get pods --show-all --selector=job-name=$JOB_NAME | grep "$JOB_NAME" | awk '{ print $3 }'`
-      if [ "$pod_status" = "Completed" -o "$pod_status" = "Error" -o "$pod_status" = "ErrImagePull" ]; then
-        break
-      fi
-    done
+    local pod_status=`kubectl get pods --show-all --selector=job-name=$JOB_NAME | grep "$JOB_NAME" | awk '{ print $3 }'`
 
     if [ "$pod_status" = "Completed" ]; then
       echo "@@ Success.  job_status=$job_status pod_status=$pod_status"
@@ -140,10 +132,10 @@ function launchCommandJob {
   for pod in $pods; do
     echo @@
     echo "@@ Calling 'kubectl get pod $pod'"
-    kubectl get pod $pod 2>&1 
+    kubectl get pod $pod 2>&1
     echo @@
     echo "@@ Calling 'kubectl logs pod $pod'"
-    kubectl logs $pod 2>&1 
+    kubectl logs $pod 2>&1
     echo @@
   done
 
