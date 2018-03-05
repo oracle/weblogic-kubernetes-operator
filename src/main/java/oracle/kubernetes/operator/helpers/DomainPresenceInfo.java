@@ -53,7 +53,7 @@ public class DomainPresenceInfo {
 
   /**
    * Create presence for a domain
-   * @param domain Domain
+   * @param namespace Namespace
    */
   public DomainPresenceInfo(String namespace) {
     this.domain = new AtomicReference<>(null);

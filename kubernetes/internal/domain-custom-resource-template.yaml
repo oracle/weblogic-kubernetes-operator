@@ -28,8 +28,6 @@ spec:
   asName: "%ADMIN_SERVER_NAME%"
   # The Admin Server's ListenPort
   asPort: %ADMIN_PORT%
-  # The Admin Server's NodePort
-  %EXPOSE_ADMIN_PORT_PREFIX%asNodePort: %ADMIN_NODE_PORT%
   # startupControl legal values are "ALL", "ADMIN", "SPECIFIED", or "AUTO"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "ALL" will start up all defined servers
@@ -49,6 +47,8 @@ spec:
   - desiredState: "RUNNING"
     # the name of the server to apply these rules to
     serverName: "%ADMIN_SERVER_NAME%"
+    # The Admin Server's NodePort
+    %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
     # an (optional) list of environment variable to be set on the server
     env:
     - name: JAVA_OPTIONS
