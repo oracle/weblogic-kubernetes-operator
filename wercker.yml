@@ -42,7 +42,7 @@ build:
     code: |
       mkdir /operator
       cp -R src/main/scripts/* /operator/
-      cp target/weblogic-kubernetes-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
+      cp target/weblogic-kubernetes-operator-0.1.0-tech-preview-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="latest"
