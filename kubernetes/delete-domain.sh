@@ -12,11 +12,11 @@
 #   See "function usage" below or call this script with no parameters.
 #
 
-# default when to stop retrying (settable via command line)
-default_maxwaitsecs=90
+# default when to stop retrying (override via command line)
+default_maxwaitsecs=120
 
 # optional test mode that lists what would be deleted without 
-# actually deleting (settable via command line)
+# actually deleting (override via command line)
 test_mode=false
 
 
@@ -33,10 +33,27 @@ cat << EOF
   or all artifacts were deleted (default $default_maxwaitsecs seconds).
 
   The domains can be specified as a comma-separated list of 
-  domain-uids (no spaces), or the keyword 'all'.
+  domain-uids (no spaces), or the keyword 'all'.  The domains can be
+  located in any kubernetes namespace.
 
   Specify '-t' to run the script in a test mode which will
-  show delete commands but not actually perform them.
+  show kubernetes commands but not actually perform them.
+
+  The delete occurs in three phases:  
+
+    Phase 1:  Set the startupControl of each domain to NONE 
+              if it's not already NONE.  This should cause each
+              domain's operator to initiate a controlled
+              shutdown of the domain.
+
+    Phase 2:  Wait up to half the max wait seconds
+              for WebLogic Server pods to exit normally.
+
+    Phase 3:  Delete all kubernetes objects for the 
+              specified domains, including any pods
+              leftover from phase 2.  Give up if max
+              seconds is exceeded and there are any
+              leftover kubernetes objects for the domain(s).
 
   This script exits with a zero status on success, and a 
   non-zero status on failure.
@@ -45,18 +62,27 @@ EOF
 
 
 #
-# getDomain
-#   - get all k8s artifacts for domain $1 using label search weblogic.domainUID in $1
-#   - if $1 has special value "all" then get the k8s artifacts for all domains
+# getDomains domain(s) outfilename
 #
-function getDomain {
+# Usage:
+#   getDomains domainA,domainB,... outfilename
+#   getDomains all outfilename
+#
+# Internal helper function
+#
+# File output is all domain related artifacts for the given domain uids, one per line,
+# in the form:  'kind  name [-n namespace]'.  For example
+#    PersistentVolumeClaim domain1-pv-claim -n default 
+#    PersistentVolume domain1-pv 
+#
+function getDomains {
   if [ "$1" = "all" ]; then
     local label_selector="weblogic.domainUID"
   else
     local label_selector="weblogic.domainUID in ($1)"
   fi
 
-  # get all namespaced types with -l $label_selector
+  # first, let's get all namespaced types with -l $label_selector
 
   local namespaced_types="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
@@ -69,26 +95,37 @@ function getDomain {
   kubectl get $namespaced_types \
           -l "$label_selector" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
-          --all-namespaces=true
+          --all-namespaces=true > $2
 
-  # get all non-namespaced types with -l $label_selector
+  # now, get all non-namespaced types with -l $label_selector
 
   kubectl get pv,crd,clusterroles,clusterrolebindings \
           -l "$label_selector" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
-          --all-namespaces=true
+          --all-namespaces=true >> $2
 }
 
 #
-# deleteDomain
-#   - delete all k8s artifacts for domain $1 and retry up to $2 seconds
-#   - if $1 has special value "all" then delete the k8s artifacts for all domains
-#   - $2 is optional, default is $default_maxwaitsecs
-#   - if $test_mode is true, show deletes but don't actually perform them
-function deleteDomain {
+# deleteDomains domain(s) maxwaitsecs
+#
+# Usage:
+#   deleteDomains domainA,domainB,... maxwaitsecs
+#   deleteDomains all maxwaitsecs
+#
+# Internal helper function
+#   This function first sets the startupControl of each Domain to NONE
+#   and waits up to half of $2 for pods to 'self delete'.  It then deletes
+#   all remaining k8s artifacts for domain $1 (including any remaining pods)
+#   and retries up to $2 seconds.
+#
+#   If $1 has special value "all", it deletes all domains in all namespaces.
+#
+#   If global $test_mode is true, show candidate actions but don't actually perform them
+#
+function deleteDomains {
 
   if [ "$test_mode" = "true" ]; then
-    echo @@ Test mode. Delete commands for kubernetes artifacts with label weblogic.domainUID \'$1\'.
+    echo @@ Test mode! Displaying commands for deleting kubernetes artifacts with label weblogic.domainUID \'$1\' without actually deleting them.
   else
     echo @@ Deleting kubernetes artifacts with label weblogic.domainUID \'$1\'.
   fi
@@ -96,26 +133,70 @@ function deleteDomain {
   local maxwaitsecs=${2:-$default_maxwaitsecs}
   local tempfile="/tmp/getdomain.tmp.$1.$$"
   local mstart=`date +%s`
+  local phase=1
 
   while : ; do
-    getDomain $1 > $tempfile
-    local count=`wc -l $tempfile | awk '{ print $1 }'`
+    # get all k8s objects with matching domain-uid labels and put them in $tempfile
+    getDomains $1 $tempfile
+
+    # get a count of all k8s objects with matching domain-uid labels
+    local allcount=`wc -l $tempfile | awk '{ print $1 }'`
+
+    # get a count of all WLS pods (any pod with a matching domain-uid label that doesn't have 'traefik' embedded in its name)
+    local podcount=`grep "^Pod" $tempfile | grep -v traefik | wc -l | awk '{ print $1 }'`
 
     local mnow=`date +%s`
 
-    echo @@ $count objects remaining after $((mnow - mstart)) seconds. Max wait is $maxwaitsecs seconds.
-    if [ $count -eq 0 ]; then
+    echo @@ $allcount objects remaining after $((mnow - mstart)) seconds, including $podcount WebLogic Server pods. Max wait is $maxwaitsecs seconds.
+
+    # Exit if all k8s objects deleted are max wait seconds exceeded.
+
+    if [ $allcount -eq 0 ]; then
       echo @@ Success.
       rm -f $tempfile
       exit 0
-    fi
-
-    if [ $((mnow - mstart)) -gt $maxwaitsecs ]; then
-      echo @@ Error. Max wait of $maxwaitsecs seconds exceeded with $count objects remaining. giving up. Remaining objects:
+    elif [ $((mnow - mstart)) -gt $maxwaitsecs ]; then
+      echo @@ Error! Max wait of $maxwaitsecs seconds exceeded with $allcount objects remaining, including $podcount WebLogic Server pods. Giving up. Remaining objects:
       cat $tempfile
       rm -f $tempfile
-      exit $count
+      exit $allcount
     fi
+
+    # In phase 1, set the startupControl of each domain to NONE and then immediately
+    # proceed to phase 2.  If there are no domains or WLS pods, we also immediately go to phase 2.
+
+    if [ $phase -eq 1 -a $podcount -gt 0 ]; then
+      echo @@ "Setting startupControl to NONE on each domain (this should cause operator(s) to initiate a controlled shutdown of the domain's pods.)"
+      cat $tempfile | grep "^Domain" | while read line; do 
+        local name="`echo $line | awk '{ print $2 }'`"
+        local namespace="`echo $line | awk '{ print $4 }'`"
+        if [ "$test_mode" = "true" ]; then
+          echo "kubectl patch domain $name -n $namespace -p '{\"spec\":{\"startupControl\":\"NONE\"}}' --type merge"
+        else
+          kubectl patch domain $name -n $namespace -p '{"spec":{"startupControl":"NONE"}}' --type merge
+        fi
+      done
+    fi
+    phase=2
+
+    # In phase 2, wait for the WLS pod count to go down to 0 for at most half
+    # of 'maxwaitsecs'.  Otherwise proceed immediately to phase 3.
+
+    if [ $phase -eq 2 ]; then
+      if [ $podcount -eq 0 ]; then
+        echo @@ All pods shutdown, about to directly delete remaining artifacts.
+      elif [ $((mnow - mstart)) -gt $((maxwaitsecs / 2)) ]; then
+        echo @@ Warning! $podcount WebLogic Server pods remaining but wait time exceeds half of max wait seconds.  About to directly delete all remaining artifacts, including the leftover pods.
+      else
+        echo @@ "Waiting for operator to shutdown pods (will wait for no more than half of max wait seconds before directly deleting them)."
+        sleep 3
+        continue
+      fi
+    fi
+    phase=3
+
+    # In phase 3, directly delete all k8s artifacts for the given domainUids
+    # (including any leftover WLS pods from phases 1 & 2).
 
     cat $tempfile | while read line; do 
       if [ "$test_mode" = "true" ]; then
@@ -158,8 +239,8 @@ if [ "$domains" = "" ]; then
 fi
 
 if [ ! -x "$(command -v kubectl)" ]; then
-  echo "@@ Error. kubectl is not installed."
+  echo "@@ Error! kubectl is not installed."
   exit 9999
 fi
 
-deleteDomain "${domains}" "${maxwaitsecs}"
+deleteDomains "${domains}" "${maxwaitsecs:-$default_maxwaitsecs}"
