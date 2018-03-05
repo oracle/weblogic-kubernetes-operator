@@ -27,7 +27,7 @@ clusterName: cluster-1
 managedServerCount: 2
 
 # Number of managed servers to initially start for the domain
-managedServerStartCount: 1
+managedServerStartCount: 2
 
 # Base string used to generate managed server names
 managedServerNameBase: managed-server

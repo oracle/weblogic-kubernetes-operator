@@ -64,6 +64,7 @@ public class DomainStatusUpdater {
   /**
    * Asynchronous step to set Domain status to indicate pod availability
    * @param pod The pod
+   * @param isDelete true, if the pod was just deleted
    * @param next Next step
    * @return Step
    */

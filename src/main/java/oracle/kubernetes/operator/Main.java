@@ -361,9 +361,6 @@ public class Main {
     if (imagePullPolicy == null || imagePullPolicy.length() == 0) {
       spec.setImagePullPolicy(imagePullPolicy = (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX)) ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY);
     }
-    if (spec.getAsEnv() == null) {
-      spec.setAsEnv(new ArrayList<V1EnvVar>());
-    }
     if (spec.getExportT3Channels() == null) {
       spec.setExportT3Channels(new ArrayList<String>());
     }
@@ -547,7 +544,7 @@ public class Main {
           public void onThrowable(Packet packet, Throwable throwable) {
             LOGGER.severe(MessageKeys.EXCEPTION, throwable);
             
-            domainUpdaters.replaceAndStartFiber(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
+            domainUpdaters.startFiberIfLastFiberMatches(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
               @Override
               public void onCompletion(Packet packet) {
                 // no-op
@@ -658,7 +655,15 @@ public class Main {
 
       packet.put(ProcessingConstants.SERVER_NAME, spec.getAsName());
       packet.put(ProcessingConstants.PORT, spec.getAsPort());
-      packet.put(ProcessingConstants.NODE_PORT, spec.getAsNodePort());
+      List<ServerStartup> ssl = spec.getServerStartup();
+      if (ssl != null) {
+        for (ServerStartup ss : ssl) {
+          if (ss.getServerName().equals(spec.getAsName())) {
+            packet.put(ProcessingConstants.NODE_PORT, ss.getNodePort());
+            break;
+          }
+        }
+      }
       return doNext(packet);
     }
   }
@@ -814,12 +819,12 @@ public class Main {
               WlsClusterConfig wlsClusterConfig = scan.getClusterConfig(clusterName);
               if (wlsClusterConfig != null) {
                 for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+                  // done with the current cluster
+                  if (startedCount >= cs.getReplicas() && !startAll) 
+                    continue cluster;
+
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
-                    // done with the current cluster
-                    if (startedCount >= cs.getReplicas() && !startAll) 
-                      continue cluster;
-
                     List<V1EnvVar> env = cs.getEnv();
                     ServerStartup ssi = null;
                     ssl = spec.getServerStartup();
@@ -874,15 +879,15 @@ public class Main {
                 int startedCount = 0;
                 WlsClusterConfig config = wlsClusterConfig.getValue();
                 for (WlsServerConfig wlsServerConfig : config.getServerConfigs()) {
+                  if (startedCount >= spec.getReplicas())
+                    break;
                   String serverName = wlsServerConfig.getName();
                   if (!serverName.equals(asName) && !servers.contains(serverName)) {
                     // start server
                     servers.add(serverName);
                     ssic.add(new ServerStartupInfo(wlsServerConfig, config, null, null));
+                    startedCount++;
                   }
-                  // outside the serverName check because these servers are already running
-                  if (++startedCount >= spec.getReplicas())
-                    break;
                 }
               }
             }
@@ -1003,9 +1008,6 @@ public class Main {
 
         if (serverStartup != null) {
           nodePort = serverStartup.getNodePort();
-        }
-        if (nodePort == null && serverName.equals(spec.getAsName())) {
-          nodePort = spec.getAsNodePort();
         }
         
         p.put(ProcessingConstants.SERVER_NAME, serverName);

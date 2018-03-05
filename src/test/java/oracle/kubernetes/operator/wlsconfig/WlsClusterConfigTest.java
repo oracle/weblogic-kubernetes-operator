@@ -24,9 +24,6 @@ import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
-/**
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- */
 public class WlsClusterConfigTest {
 
     private static final Logger UNDERLYING_LOGGER = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
@@ -266,19 +263,6 @@ public class WlsClusterConfigTest {
   }
 
   @Test
-  public void verifyDynamicClusterSizeConfigUpdateCallsUpdateDynamicClusterSize() {
-    final WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
-    final int clusterSize = 8;
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate dynamicClusterSizeConfigUpdate =
-      new WlsClusterConfig.DynamicClusterSizeConfigUpdate(wlsClusterConfig, clusterSize);
-    MockWlsConfigRetriever mockWlsConfigRetriever = new MockWlsConfigRetriever(null, "namespace",
-      "asServiceName", "adminSecretName");
-    assertTrue(dynamicClusterSizeConfigUpdate.doUpdate(mockWlsConfigRetriever));
-    assertSame(wlsClusterConfig, mockWlsConfigRetriever.wlsClusterConfigParamValue);
-    assertEquals(clusterSize, mockWlsConfigRetriever.clusterSizeParamvalue);
-  }
-
-  @Test
   public void verifyStepCreatedFromDynamicClusterSizeConfigUpdate() throws NoSuchFieldException, IllegalAccessException {
     final WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     final int clusterSize = 8;
@@ -289,7 +273,7 @@ public class WlsClusterConfigTest {
     WlsConfigRetriever.UpdateDynamicClusterStep updateStep =
       (WlsConfigRetriever.UpdateDynamicClusterStep) dynamicClusterSizeConfigUpdate.createStep(nextStep);
     assertSame(wlsClusterConfig, updateStep.wlsClusterConfig);
-    assertEquals(clusterSize, updateStep.desiredClusterSize);
+    assertEquals(clusterSize, updateStep.targetClusterSize);
     assertSame(nextStep, getNext(updateStep));
   }
 
@@ -318,7 +302,116 @@ public class WlsClusterConfigTest {
     return WlsServerConfig.create(serverConfigMap);
   }
 
-  private WlsDynamicServersConfig createDynamicServersConfig(int clusterSize, int maxClusterSize,
+  @Test
+  public void verifyGetMachinesNameReturnsExpectedMachineName() {
+    WlsMachineConfig machine1 = new WlsMachineConfig("domain1-machine1", 5556, "localhost", "SSL");
+    WlsMachineConfig machine2 = new WlsMachineConfig("domain1-machine2", 5556, "localhost", "SSL");
+    Map<String, WlsMachineConfig> machines = new HashMap();
+    machines.put(machine1.getName(), machine1);
+    machines.put(machine2.getName(), machine2);
+
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1",
+            WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+    Map<String, WlsClusterConfig> clusters = new HashMap();
+    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, machines);
+    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
+
+    String names[] = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", 4);
+    assertEquals(2, names.length);
+    assertEquals("domain1-machine3", names[0]);
+    assertEquals("domain1-machine4", names[1]);
+  }
+
+  @Test
+  public void verifyGetMachinesNameDoesNotReturnExistingMachines() {
+    WlsMachineConfig machine1 = new WlsMachineConfig("domain1-machine1", 5556, "localhost", "SSL");
+    WlsMachineConfig machine2 = new WlsMachineConfig("domain1-machine2", 5556, "localhost", "SSL");
+    WlsMachineConfig machine3 = new WlsMachineConfig("domain1-machine3", 5556, "localhost", "SSL");
+    Map<String, WlsMachineConfig> machines = new HashMap();
+    machines.put(machine1.getName(), machine1);
+    machines.put(machine2.getName(), machine2);
+    machines.put(machine3.getName(), machine3);
+
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1",
+            WlsClusterConfigTest.createDynamicServersConfig(1, 5, "ms-", "cluster1"));
+    Map<String, WlsClusterConfig> clusters = new HashMap();
+    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, machines);
+    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
+
+    String names[] = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", 3);
+    assertEquals(0, names.length);
+  }
+
+  @Test
+  public void verifyGetMachinesNameReturnsEmptyArrayIfNoDomainConfig() {
+    WlsMachineConfig machine1 = new WlsMachineConfig("domain1-machine1", 5556, "localhost", "SSL");
+    WlsMachineConfig machine2 = new WlsMachineConfig("domain1-machine2", 5556, "localhost", "SSL");
+    Map<String, WlsMachineConfig> machines = new HashMap();
+    machines.put(machine1.getName(), machine1);
+    machines.put(machine2.getName(), machine2);
+
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1",
+            WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+
+    assertNull("verify no domain config is setup", wlsClusterConfig.getWlsDomainConfig());
+
+    String names[] = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", 4);
+    assertEquals(0, names.length);
+  }
+
+
+  @Test
+  public void verifyGetMachineNamesNoExceptionWhenPrefixIsNull() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1",
+            WlsClusterConfigTest.createDynamicServersConfig(1, 5, "ms-", "cluster1"));
+    Map<String, WlsClusterConfig> clusters = new HashMap();
+    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, null);
+    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
+
+    String[] names = wlsClusterConfig.getMachineNamesForNewDynamicServers(null, 2);
+    assertEquals(1, names.length);
+    assertEquals("2", names[0]);
+  }
+
+  @Test
+  public void verifyGetMachineNamesReturnsEmptyArrayWhenNumIsInvalid() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1",
+            WlsClusterConfigTest.createDynamicServersConfig(0, 5, "ms-", "clsuter1"));
+    Map<String, WlsClusterConfig> clusters = new HashMap();
+    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, null);
+    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
+    String[] names = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", 0);
+    assertEquals(0, names.length);
+
+    names = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", -1);
+    assertEquals(0, names.length);
+  }
+
+  @Test
+  public void verifyGetMachineNamesReturnsEmptyArrayWhenTargetSizeIsNotLarger() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1",
+            WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+    Map<String, WlsClusterConfig> clusters = new HashMap();
+    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, null);
+    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
+    String[] names = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", 2);
+    assertEquals(0, names.length);
+
+    names = wlsClusterConfig.getMachineNamesForNewDynamicServers("domain1-machine", 1);
+    assertEquals(0, names.length);
+  }
+
+  static WlsDynamicServersConfig createDynamicServersConfig(int clusterSize, int maxClusterSize,
                                                              String serverNamePrefix, String clusterName) {
     WlsServerConfig serverTemplate = new WlsServerConfig("serverTemplate1", 7001, "host1",
             7002, false, null, null);
@@ -331,25 +424,8 @@ public class WlsClusterConfigTest {
             serverNames, serverTemplate, clusterName, "base-domain", false);
 
     return new WlsDynamicServersConfig(clusterSize, maxClusterSize, serverNamePrefix,
-            false, serverTemplate, serverConfigs);
+            false, null, serverTemplate, serverConfigs);
 
-  }
-
-  static class MockWlsConfigRetriever extends WlsConfigRetriever {
-
-    WlsClusterConfig wlsClusterConfigParamValue;
-    int clusterSizeParamvalue;
-
-    public MockWlsConfigRetriever(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
-      super(clientHelper, namespace, asServiceName, adminSecretName);
-    }
-
-    @Override
-    public boolean updateDynamicClusterSize(WlsClusterConfig wlsClusterConfig, int clusterSize) {
-      wlsClusterConfigParamValue = wlsClusterConfig;
-      clusterSizeParamvalue = clusterSize;
-      return true;
-    }
   }
 
   static class MockStep extends Step {

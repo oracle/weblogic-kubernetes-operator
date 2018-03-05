@@ -24,20 +24,23 @@ function fail {
 function archive {
   local SOURCE_DIR="${1?}"
   local ARCHIVE_DIR="${2?}"
-  local ARCHIVE="$ARCHIVE_DIR/IntSuite.`date '+%Y%m%d%H%M%S'`.tar.gz"
+  local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.tar.gz"
+  local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
+  local OUTFILE="/tmp/$ARCHIVE_FILE"
 
-  trace About to archive a copy of \'$SOURCE_DIR\' to \'$ARCHIVE\'.
+  trace About to archive \'$SOURCE_DIR\'.
 
   [ ! -d "$SOURCE_DIR" ] && fail Could not archive, could not find source directory \'$SOURCE_DIR\'.
 
   mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
 
-  tar -czf $ARCHIVE $SOURCE_DIR 2>&1 
-  [ $? -eq 0 ] || fail "Could not archive, 'tar -czf $ARCHIVE $SOURCE_DIR' command failed."
+  tar -czf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1 
+  [ $? -eq 0 ] || fail "Could not archive, 'tar -czf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
+  rm -f $OUTFILE
 
   find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*tar.gz" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
 
-  trace Archived copy of \'$SOURCE_DIR\' to \'$ARCHIVE\'.
+  trace Archived to \'$ARCHIVE\'.
 }
 
 archive "$1" "$2"
