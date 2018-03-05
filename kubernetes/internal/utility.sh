@@ -54,12 +54,9 @@ function validateInputParamsSpecified {
 # $1 - the name of the secret
 # $2 - namespace
 function validateSecretExists {
-  # Verify the secret exists
-  echo "Checking to see if the secret ${1} exists in namespace ${2}"
-  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${1} was not found in namespace ${2}"
-  fi
+  # delegate to a function supplied by the caller so that while unit testing,
+  # where kubectl and kubernetes are not available, we can stub out this check
+  validateThatSecretExists $*
 }
 
 #
@@ -130,9 +127,9 @@ function toLower {
 # $1 - value to check
 # $2 - name of object being checked
 function validateLowerCase {
-  local lcVal=$(toLower $1)
-  if [ "$lcVal" != "$1" ]; then
-    validationError "The value of $2 must be lowercase: '$1' "
+  local lcVal=$(toLower $2)
+  if [ "$lcVal" != "$2" ]; then
+    validationError "The value of $1 must be lowercase: $2"
   fi
 }
 
@@ -140,7 +137,7 @@ function validateLowerCase {
 # Function to validate the namespace
 #
 function validateNamespace {
-  validateLowerCase ${namespace} "namespace"
+  validateLowerCase "namespace" ${namespace}
 }
 
 #

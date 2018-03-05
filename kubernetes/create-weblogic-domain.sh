@@ -66,7 +66,7 @@ function initAndValidateOutputDir {
 # Function to ensure the domain uid is lowercase
 #
 function validateDomainUid {
-  validateLowerCase ${domainUid} "domainUid"
+  validateLowerCase "domainUid" ${domainUid}
 }
 
 #
@@ -85,7 +85,7 @@ function validateStorageClass {
     persistenceStorageClass=$domainUid
     echo Defaulting the input parameter persistenceStorageClass to be $domainUid
   else
-    validateLowerCase ${persistenceStorageClass} "persistenceStorageClass"
+    validateLowerCase "persistenceStorageClass" ${persistenceStorageClass}
   fi
 }
 
@@ -93,7 +93,7 @@ function validateStorageClass {
 # Function to validate the persistent volume claim name
 #
 function validatePersistentVolumeClaimName {
-  validateLowerCase ${persistenceVolumeClaimName} "persistenceVolumeClaimName"
+  validateLowerCase "persistenceVolumeClaimName" ${persistenceVolumeClaimName}
 
   if [[ ${persistenceVolumeClaimName} != ${domainUid}-* ]] ; then
     echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
@@ -106,7 +106,7 @@ function validatePersistentVolumeClaimName {
 # Function to validate the persistent volume name
 #
 function validatePersistenVolumeName {
-  validateLowerCase ${persistenceVolumeName} "persistenceVolumeName"
+  validateLowerCase "persistenceVolumeName" ${persistenceVolumeName}
 
   if [[ ${persistenceVolumeName} != ${domainUid}-* ]] ; then
     echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
@@ -119,7 +119,7 @@ function validatePersistenVolumeName {
 # Function to validate the secret name
 #
 function validateSecretName {
-  validateLowerCase ${secretName} "secretName"
+  validateLowerCase "secretName" ${secretName}
 }
 
 #
@@ -167,7 +167,7 @@ function validateDomainSecret {
 #
 function validateImagePullSecretName {
   if [ ! -z ${imagePullSecretName} ]; then
-    validateLowerCase ${imagePullSecretName} "validateImagePullSecretName"
+    validateLowerCase "validateImagePullSecretName" ${imagePullSecretName}
     imagePullSecretPrefix=""
     if [ "${generateOnly}" = false ]; then
       validateImagePullSecret

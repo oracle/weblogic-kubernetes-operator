@@ -3,14 +3,9 @@ package oracle.kubernetes.operator.create;
 
 import org.junit.Test;
 
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1beta1RoleBinding;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-
-import org.apache.commons.codec.binary.Base64;
+import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.After;
+import org.junit.Before;
 
 import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,69 +17,35 @@ import static org.hamcrest.Matchers.*;
  */
 public class CreateOperatorGeneratedFilesTest extends CreateOperatorTest {
 
-  // TODO - write lots of test cases that vary the inputs
-  // and make sure that corresponding yaml files are as expected
+  protected CreateOperatorInputs inputs;
+  protected ParsedWeblogicOperatorYaml weblogicOperatorYaml;
+  protected ParsedWeblogicOperatorSecurityYaml weblogicOperatorSecurityYaml;
 
-  // TBD - should the tests look like:
-  //  a) create a set of inputs, verify all yamls generated to match
-  //  b) set one input, verify that one generated yaml matches
-  //  c) other?
-
-  @Test
-  public void generatedWeblogicOperator_matchesInputsNamespace() throws Exception {
-    // force it to create the external operator service so we can check its metadata name
-    CreateOperatorInputs inputs = readDefaultInputsFile();
-    inputs.namespace = "custom-operator-namespace";
-    inputs.externalRestOption = "custom-cert";
-    inputs.externalOperatorCert = "custom-certificate-pem";
-    inputs.externalOperatorKey = Base64.encodeBase64String("custom-private-key-pem".getBytes());
-/*
-    inputs.externalRestOption = "self-signed-cert";
-    inputs.externalSans = "DNS:localhost";
-*/
-
-    ParsedWeblogicOperatorYaml parsed = generateWeblogicOperatorYaml(inputs);
-
-    {
-      V1ConfigMap obj = parsed.operatorConfigMap;
-      assertThat(obj, notNullValue());
-      assertThat_metadataNamespace_matchesInputsNamespace(obj.getMetadata(), inputs);
-    }
-    {
-      ExtensionsV1beta1Deployment obj = parsed.operatorDeployment;
-      assertThat(obj, notNullValue());
-      assertThat_metadataNamespace_matchesInputsNamespace(obj.getMetadata(), inputs);
-    }
-    {
-      V1Secret obj = parsed.operatorSecrets;
-      assertThat(obj, notNullValue());
-      assertThat_metadataNamespace_matchesInputsNamespace(obj.getMetadata(), inputs);
-    }
-    {
-      V1Service obj = parsed.externalOperatorService;
-      assertThat(obj, notNullValue());
-      assertThat_metadataNamespace_matchesInputsNamespace(obj.getMetadata(), inputs);
-    }
-    {
-      V1Service obj = parsed.internalOperatorService;
-      assertThat(obj, notNullValue());
-      assertThat_metadataNamespace_matchesInputsNamespace(obj.getMetadata(), inputs);
+  @Before
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    inputs = createInputs();
+    if (inputs != null) {
+      assertThat(execCreateOperator(inputs), succeedsAndPrints("Completed"));
+      weblogicOperatorYaml = new ParsedWeblogicOperatorYaml(weblogicOperatorYamlPath(inputs), inputs);
+      weblogicOperatorSecurityYaml = new ParsedWeblogicOperatorSecurityYaml(weblogicOperatorSecurityYamlPath(inputs), inputs);
+    } else {
+      weblogicOperatorYaml = null;
+      weblogicOperatorSecurityYaml = null;
     }
   }
 
-  // TBD - rewrite as a matcher?
-  private void assertThat_metadataNamespace_matchesInputsNamespace(V1ObjectMeta metadata, CreateOperatorInputs inputs) {
-    assertThat(metadata, notNullValue());
-    assertThat(metadata.getNamespace(), equalTo(inputs.namespace));
+  @After
+  @Override
+  public void tearDown() throws Exception {
+    weblogicOperatorYaml = null;
+    weblogicOperatorSecurityYaml = null;
+    inputs = createInputs();
+    super.tearDown();
   }
 
-  private ParsedWeblogicOperatorYaml generateWeblogicOperatorYaml(CreateOperatorInputs inputs) throws Exception {
-    assertThat(execCreateOperator(inputs), succeedsAndPrints("Completed"));
-    return new ParsedWeblogicOperatorYaml(weblogicOperatorYamlPath(inputs), inputs);
-  }
-
-  private ParsedWeblogicOperatorSecurityYaml generateWeblogicOperatorSecurityYaml(CreateOperatorInputs inputs) throws Exception {
-    assertThat(execCreateOperator(inputs), succeedsAndPrints());
-    return new ParsedWeblogicOperatorSecurityYaml(weblogicOperatorSecurityYamlPath(inputs), inputs);
+  protected CreateOperatorInputs createInputs() throws Exception {
+    return newInputs();
   }
 }
