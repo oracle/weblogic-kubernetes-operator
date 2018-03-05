@@ -170,8 +170,8 @@
 		            <show>public</show>
 		            <author>false</author>
 		            <!--  later Copyright 2018, {currentYear} -->
-		            <bottom><![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl" />.<p>]]></bottom>
-		            <doctitle>Oracle WebLogic Server Kubernetes Operator v0.1 Technology Preview API</doctitle>
+		            <bottom><![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
+		            <doctitle>Oracle WebLogic Server Kubernetes Operator v 0.1 Technology Preview API</doctitle>
 		        </configuration>
 		    </plugin>
       
