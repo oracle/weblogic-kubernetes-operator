@@ -90,10 +90,17 @@ public class ServiceHelper {
       List<V1ServicePort> ports = new ArrayList<>();
       V1ServicePort servicePort = new V1ServicePort();
       servicePort.setPort(port);
+      servicePort.setName("weblogic");
       if (nodePort != null) {
         servicePort.setNodePort(nodePort);
       }
       ports.add(servicePort);
+
+      V1ServicePort nmPort = new V1ServicePort();
+      nmPort.setPort(5556);
+      nmPort.setName("node-manager");
+      ports.add(nmPort);
+
       serviceSpec.setPorts(ports);
       service.setSpec(serviceSpec);
 

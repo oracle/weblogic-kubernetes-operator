@@ -130,7 +130,14 @@ public class PodHelper {
       V1ContainerPort containerPort = new V1ContainerPort();
       containerPort.setContainerPort(spec.getAsPort());
       containerPort.setProtocol("TCP");
+      containerPort.setName("weblogic");
       container.addPortsItem(containerPort);
+
+      V1ContainerPort nmPort = new V1ContainerPort();
+      nmPort.setContainerPort(5556);
+      nmPort.setProtocol("TCP");
+      nmPort.setName("node-manager");
+      container.addPortsItem(nmPort);
 
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStopHandler = new V1Handler();
@@ -474,7 +481,14 @@ public class PodHelper {
       V1ContainerPort containerPort = new V1ContainerPort();
       containerPort.setContainerPort(scan.getListenPort());
       containerPort.setProtocol("TCP");
+      containerPort.setName("weblogic");
       container.addPortsItem(containerPort);
+
+      V1ContainerPort nmPort = new V1ContainerPort();
+      nmPort.setContainerPort(5556);
+      nmPort.setProtocol("TCP");
+      nmPort.setName("node-manager");
+      container.addPortsItem(nmPort);
 
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStop = new V1Handler();
