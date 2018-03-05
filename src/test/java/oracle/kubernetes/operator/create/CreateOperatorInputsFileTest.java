@@ -20,21 +20,21 @@ public class CreateOperatorInputsFileTest extends CreateOperatorTest {
   @Test
   public void defaultInputsFile_hasCorrectContents() throws Exception {
     CreateOperatorInputs i = readDefaultInputsFile();
-    assertThat(i.serviceAccount, equalTo("weblogic-operator"));
-    assertThat(i.targetNamespaces, equalTo("default"));
-    assertThat(i.image, equalTo("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest"));
-    assertThat(i.imagePullPolicy, equalTo("IfNotPresent"));
-    assertThat(i.imagePullSecretName, nullValue());
-    assertThat(i.externalRestOption, equalTo("none"));
-    assertThat(i.externalRestHttpsPort, is(31001));
-    assertThat(i.externalSans, nullValue());
-    assertThat(i.externalOperatorCert, nullValue());
-    assertThat(i.externalOperatorKey, nullValue());
-    assertThat(i.remoteDebugNodePortEnabled, is(false));
-    assertThat(i.internalDebugHttpPort, is(30999));
-    assertThat(i.externalDebugHttpPort, is(30999));
-    assertThat(i.javaLoggingLevel, equalTo("INFO"));
-    assertThat(i.elkIntegrationEnabled, is(false));
+    assertThat(i.getServiceAccount(), equalTo("weblogic-operator"));
+    assertThat(i.getTargetNamespaces(), equalTo("default"));
+    assertThat(i.getImage(), equalTo("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest"));
+    assertThat(i.getImagePullPolicy(), equalTo("IfNotPresent"));
+    assertThat(i.getImagePullSecretName(), nullValue());
+    assertThat(i.getExternalRestOption(), equalTo("none"));
+    assertThat(i.getExternalRestHttpsPort(), equalTo("31001"));
+    assertThat(i.getExternalSans(), nullValue());
+    assertThat(i.getExternalOperatorCert(), nullValue());
+    assertThat(i.getExternalOperatorKey(), nullValue());
+    assertThat(i.getRemoteDebugNodePortEnabled(), equalTo("false"));
+    assertThat(i.getInternalDebugHttpPort(), equalTo("30999"));
+    assertThat(i.getExternalDebugHttpPort(), equalTo("30999"));
+    assertThat(i.getJavaLoggingLevel(), equalTo("INFO"));
+    assertThat(i.getElkIntegrationEnabled(), equalTo("false"));
   }
 
   @Test
@@ -46,9 +46,8 @@ public class CreateOperatorInputsFileTest extends CreateOperatorTest {
 
   @Test
   public void createOperatorWithSpecifiedInputsFile_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
-    CreateOperatorInputs inputs = readDefaultInputsFile();
     // customize the namespace name so that we can tell that it generated the yaml files based on this inputs instead of the default one
-    inputs.namespace = "weblogic-operator-2";
+    CreateOperatorInputs inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
     assertThat(execCreateOperator(inputs), succeedsAndPrints("Completed"));
     assertGeneratedYamlFilesExist(inputs);
   }

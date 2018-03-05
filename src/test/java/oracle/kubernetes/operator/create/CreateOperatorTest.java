@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import org.apache.commons.codec.binary.Base64;
+
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 
 /**
@@ -15,27 +17,48 @@ import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
  */
 public class CreateOperatorTest extends CreateTest {
 
-  protected static final String CREATE_SCRIPT = "kubernetes/create-weblogic-operator.sh";
+  protected static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-operator.sh";
   protected static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-operator-inputs.yaml";
   protected static final String WEBLOGIC_OPERATOR_YAML = "weblogic-operator.yaml";
   protected static final String WEBLOGIC_OPERATOR_SECURITY_YAML = "weblogic-operator-security.yaml";
 
-/*
-  private void assertGeneratedYamls(CreateOperatorInputs inputs) {
-    assertGeneratedWeblogicOperatorYaml(inputs);
-    assertGeneratedWeblogicOperatorSecurityYaml(inputs);
+  protected CreateOperatorInputs newInputs() throws Exception {
+    return
+      readDefaultInputsFile()
+        .namespace("test-operator-namespace")
+        .serviceAccount("test-operator-service-account")
+        .targetNamespaces("test-target-namespace1,test-target-namespace2")
+        .image("test-operator-image")
+        .imagePullPolicy("Never")
+        .javaLoggingLevel("FINEST");
   }
 
-  private void assertGeneratedWeblogicOperatorYaml(CreateOperatorInputs inputs) {
-    assertThat(Files.isRegularFile(weblogicOperatorYamlPath(inputs)), is(true));
-    // TBD - check the yaml file contents - this is a big job
+  protected CreateOperatorInputs enableDebugging(CreateOperatorInputs inputs) {
+    return
+      inputs
+        .remoteDebugNodePortEnabled("true")
+        .internalDebugHttpPort("9090")
+        .externalDebugHttpPort("30090");
   }
 
-  private void assertGeneratedWeblogicOperatorSecurityYaml(CreateOperatorInputs inputs) {
-    assertThat(Files.isRegularFile(weblogicOperatorSecurityYamlPath(inputs)), is(true));
-    // TBD - check the yaml file contents - this is a big job
+  protected CreateOperatorInputs setupExternalRestSelfSignedCert(CreateOperatorInputs inputs) {
+    return
+      inputs
+        .externalRestHttpsPort("30070")
+        .externalRestOption("self-signed-cert")
+        .externalSans("DNS:localhost");
   }
-*/
+
+  protected CreateOperatorInputs setupExternalRestCustomCert(CreateOperatorInputs inputs) {
+    return
+      inputs
+        .externalRestHttpsPort("30070")
+        .externalRestOption("custom-cert")
+        .externalOperatorCert("test-custom-certificate-pem")
+        .externalOperatorKey(
+          Base64.encodeBase64String("test-custom-private-key-pem".getBytes())
+        );
+  }
 
   protected CreateOperatorInputs readDefaultInputsFile() throws IOException {
     Reader r = Files.newBufferedReader(defaultInputsPath(), Charset.forName("UTF-8"));
@@ -55,7 +78,7 @@ public class CreateOperatorTest extends CreateTest {
   }
 
   protected Path weblogicOperatorPath(CreateOperatorInputs inputs) {
-    return scratch().userProjects().resolve("weblogic-operators").resolve(inputs.namespace);
+    return scratch().userProjects().resolve("weblogic-operators").resolve(inputs.getNamespace());
   }
 
   protected ExecResult execCreateOperator(CreateOperatorInputs inputs) throws Exception {

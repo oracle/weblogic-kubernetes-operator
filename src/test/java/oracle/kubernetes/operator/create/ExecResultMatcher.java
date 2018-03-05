@@ -34,7 +34,7 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
   }
 
   public static String errorRegexp(String regexp) {
-    return "ERROR: " + ExecResultMatcher.toContainsRegExp(regexp);
+    return toContainsRegExp("ERROR" + toContainsRegExp(regexp));
   }
 
   public static String toContainsRegExp(String regexp) {
