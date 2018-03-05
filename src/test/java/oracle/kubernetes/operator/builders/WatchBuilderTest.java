@@ -13,31 +13,28 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.BiFunction;
 
-import static java.net.HttpURLConnection.HTTP_GONE;
+import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.builders.EventMatcher.*;
-import static oracle.kubernetes.operator.builders.WatchBuilderTest.JsonServlet.withResponses;
+import static oracle.kubernetes.operator.builders.WatchBuilderTest.JsonServletAction.withResponses;
 import static oracle.kubernetes.operator.builders.WatchBuilderTest.ParameterValidation.parameter;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Tests watches created by the WatchBuilder, verifying that they are created with the correct query URLs and
@@ -52,10 +49,11 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     private static final String POD_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/pods";
     private static final String INGRESS_RESOURCE = "/apis/extensions/v1beta1/namespaces/" + NAMESPACE + "/ingresses";
     private static final String EOL = "\n";
+    private static final int INITIAL_RESOURCE_VERSION = 123;
 
     private static List<AssertionError> validationErrors;
 
-    private int resourceVersion = 10000;
+    private int resourceVersion = INITIAL_RESOURCE_VERSION;
     private final static ClientHolder clientHolder = createTestClient();
     private List<Memento> mementos = new ArrayList<>();
 
@@ -85,9 +83,9 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     @Test
     public void whenDomainWatchReceivesAddResponse_returnItFromIterator() throws Exception {
         Domain domain = new Domain().apiVersion(API_VERSION).kind("Domain").metadata(createMetaData("domain1", NAMESPACE));
-        defineHttpResponse(DOMAIN_RESOURCE, createAddedResponse(domain));
+        defineHttpResponse(DOMAIN_RESOURCE, withResponses(createAddedResponse(domain)));
 
-        Watch<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
+        WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
 
         assertThat(domainWatch, contains(addEvent(domain)));
     }
@@ -96,20 +94,20 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     public void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator() throws Exception {
         Domain domain1 = new Domain().apiVersion(API_VERSION).kind("Domain").metadata(createMetaData("domain1", NAMESPACE));
         Domain domain2 = new Domain().apiVersion(API_VERSION).kind("Domain").metadata(createMetaData("domain2", NAMESPACE));
-        defineHttpResponse(DOMAIN_RESOURCE, createModifiedResponse(domain1), createDeletedResponse(domain2));
+        defineHttpResponse(DOMAIN_RESOURCE, withResponses(createModifiedResponse(domain1), createDeletedResponse(domain2)));
 
-        Watch<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
+        WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
 
         assertThat(domainWatch, contains(modifyEvent(domain1), deleteEvent(domain2)));
     }
 
     @Test
     public void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
-        defineHttpResponse(DOMAIN_RESOURCE, createErrorResponse(HTTP_GONE));
+        defineHttpResponse(DOMAIN_RESOURCE, withResponses(createErrorResponse(HTTP_ENTITY_TOO_LARGE)));
 
-        Watch<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
+        WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
 
-        assertThat(domainWatch, contains(errorEvent(HTTP_GONE)));
+        assertThat(domainWatch, contains(errorEvent(HTTP_ENTITY_TOO_LARGE)));
     }
 
     @Test
@@ -122,7 +120,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                                                     parameter("labelSelector").withValue(DOMAINUID_LABEL),
                                                     parameter("watch").withValue("true")));
 
-        Watch<V1Service> serviceWatch = new WatchBuilder(clientHolder)
+        WatchI<V1Service> serviceWatch = new WatchBuilder(clientHolder)
                                             .withResourceVersion(startResourceVersion)
                                             .withLabelSelector(DOMAINUID_LABEL)
                                           .createServiceWatch(NAMESPACE);
@@ -139,13 +137,22 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                                                 parameter("includeUninitialized").withValue("false"),
                                                 parameter("limit").withValue("25")));
 
-        Watch<V1Pod> podWatch = new WatchBuilder(clientHolder)
+        WatchI<V1Pod> podWatch = new WatchBuilder(clientHolder)
                                             .withFieldSelector("thisValue")
                                             .withIncludeUninitialized(false)
                                             .withLimit(25)
                                           .createPodWatch(NAMESPACE);
 
         assertThat(podWatch, contains(addEvent(pod)));
+    }
+
+    @Test
+    public void whenPodWatchFindsNoData_hasNextReturnsFalse() throws Exception {
+        defineHttpResponse(POD_RESOURCE, NO_RESPONSES);
+
+        WatchI<V1Pod> podWatch = new WatchBuilder(clientHolder).createPodWatch(NAMESPACE);
+
+        assertThat(podWatch.hasNext(), is(false));
     }
 
     @Test
@@ -157,7 +164,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                                                 parameter("timeoutSeconds").withValue("15"),
                                                 parameter("limit").withValue("500")));
 
-        Watch<V1beta1Ingress> ingressWatch = new WatchBuilder(clientHolder)
+        WatchI<V1beta1Ingress> ingressWatch = new WatchBuilder(clientHolder)
                                                 .withPrettyPrinting()
                                                 .withTimeoutSeconds(15)
                                               .createIngressWatch(NAMESPACE);
@@ -165,12 +172,8 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         assertThat(ingressWatch, contains(deleteEvent(ingress)));
     }
 
-    private void defineHttpResponse(String resourceName, String... responses) {
-        defineResource(resourceName, withResponses(responses));
-    }
-
-    private void defineHttpResponse(String resourceName, PseudoServlet pseudoServlet) {
-        defineResource(resourceName, pseudoServlet);
+    private void defineHttpResponse(String resourceName, JsonServletAction... responses) {
+        defineResource(resourceName, new JsonServlet(responses));
     }
 
 
@@ -198,39 +201,54 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                 validationErrors.add(e);
             }
         }
-
-        private String getSingleValue(String[] values) {
-            if (values == null || values.length == 0)
-                return null;
-            else
-                return values[0];
-        }
     }
 
-    static class JsonServlet extends PseudoServlet {
+    private static String getSingleValue(String[] values) {
+        if (values == null || values.length == 0)
+            return null;
+        else
+            return values[0];
+    }
+
+    static class JsonServletAction {
         private ParameterValidation[] validations = new ParameterValidation[0];
         private WebResource webResource;
 
-        private JsonServlet(String... responses) {
+        private JsonServletAction(String... responses) {
             webResource = new WebResource(String.join(EOL, responses), "application/json");
+        }
+
+        static JsonServletAction withResponses(String... responses) {
+            return new JsonServletAction(responses);
+        }
+
+        JsonServletAction andValidations(ParameterValidation... validations) {
+            this.validations = validations;
+            return this;
+        }
+    }
+
+    private final static JsonServletAction NO_RESPONSES = new JsonServletAction();
+
+    static class JsonServlet extends PseudoServlet {
+        private List<JsonServletAction> actions;
+        int requestNum = 0;
+
+        private JsonServlet(JsonServletAction... actions) {
+            this.actions = new ArrayList<>(Arrays.asList(actions));
         }
 
         @Override
         public WebResource getGetResponse() throws IOException {
-            for (ParameterValidation validation : validations)
+            if (requestNum >= actions.size()) return new WebResource("Unexpected Request #" + requestNum, HTTP_UNAVAILABLE);
+
+            JsonServletAction action = actions.get(requestNum++);
+            for (ParameterValidation validation : action.validations)
                 validation.verify(getParameter(validation.parameterName));
 
-            return webResource;
+            return action.webResource;
         }
 
-        static JsonServlet withResponses(String... responses) {
-            return new JsonServlet(responses);
-        }
-
-        JsonServlet andValidations(ParameterValidation... validations) {
-            this.validations = validations;
-            return this;
-        }
     }
 
     private V1ObjectMeta createMetaData(String name, String namespace) {
@@ -238,7 +256,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     }
 
     private String getNextResourceVersion() {
-        return Integer.toString(++resourceVersion);
+        return Integer.toString(resourceVersion++);
     }
 
     private <T> String createAddedResponse(T object) {
@@ -269,76 +287,10 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         }
 
         @Override
-        public <T> Watch<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
+        public <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
             clientHolder.getApiClient().setBasePath(basePath);
             return super.createWatch(clientHolder, callParams, responseBodyType, function);
         }
-    }
-}
-
-class EventMatcher extends TypeSafeDiagnosingMatcher<Watch.Response<?>> {
-    private String expectedType;
-    private Object expectedObject;
-    private int expectedStatusCode;
-
-    private EventMatcher(String expectedType, Object expectedObject) {
-        this.expectedType = expectedType;
-        this.expectedObject = expectedObject;
-    }
-
-    private EventMatcher(String expectedType, int expectedStatusCode) {
-        this.expectedType = expectedType;
-        this.expectedStatusCode = expectedStatusCode;
-    }
-
-    static EventMatcher addEvent(Object object) {
-        return new EventMatcher("ADDED", object);
-    }
-
-    static EventMatcher deleteEvent(Object object) {
-        return new EventMatcher("DELETED", object);
-    }
-
-    static EventMatcher modifyEvent(Object object) {
-        return new EventMatcher("MODIFIED", object);
-    }
-
-    static EventMatcher errorEvent(int expectedStatusCode) {
-        return new EventMatcher("ERROR", expectedStatusCode);
-    }
-
-    @Override
-    protected boolean matchesSafely(Watch.Response<?> item, Description mismatchDescription) {
-        if (isExpectedUpdateResponse(item) || isExpectedErrorResponse(item)) return true;
-
-        if (isError(item.type) && item.status != null)
-            mismatchDescription.appendText("Error with status code ").appendValue(item.status.getCode());
-        else if (isError(item.type))
-            mismatchDescription.appendValue("Error with no status code");
-        else
-            mismatchDescription.appendValue(item.type).appendText(" event for ").appendValue(item.object);
-        return false;
-    }
-
-    private boolean isError(String expectedType) {
-        return expectedType.equals("ERROR");
-    }
-
-    private boolean isExpectedUpdateResponse(Watch.Response<?> item) {
-        return item.type.equals(expectedType) && Objects.equals(item.object, expectedObject);
-    }
-
-    private boolean isExpectedErrorResponse(Watch.Response<?> item) {
-        return isError(item.type) && item.status != null && Objects.equals(item.status.getCode(), expectedStatusCode);
-    }
-
-    @Override
-    public void describeTo(Description description) {
-        String expectedType = this.expectedType;
-        if (isError(expectedType))
-            description.appendText("error event with code ").appendValue(expectedStatusCode);
-        else
-            description.appendValue(this.expectedType).appendText(" event for ").appendValue(expectedObject);
     }
 }
 
