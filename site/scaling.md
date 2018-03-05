@@ -6,7 +6,7 @@ The operator provides the ability to scale WebLogic clusters by simply editing t
 
 Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes cloud environments, scaling WebLogic clusters involves scaling the corresponding pods in which WebLogic Managed Server instances are running.  Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.
 
-**Note:** In the Technology Preview release, only WebLogic Server configured clusters are supported by the operator, and the operator will scale up only to the number of Managed Servers that are already defined.  Support for WebLogic Server dynamic clusters, and for scaling configured clusters to more servers than are defined, is planned for a future release.
+**Note:** In the technology preview release, only WebLogic Server configured clusters are supported by the operator, and the operator will scale up only to the number of Managed Servers that are already defined.  Support for WebLogic Server dynamic clusters, and for scaling configured clusters to more servers than are defined, is planned for a future release.
 
 The following URL format is used for describing the resources for scaling (scale up and scale down) a WebLogic cluster:
 
