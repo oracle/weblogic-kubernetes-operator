@@ -60,6 +60,7 @@ public class WatchBuilder {
 
     /**
      * Creates a web hook object to track service calls
+     * @param namespace the namespace
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
@@ -89,6 +90,7 @@ public class WatchBuilder {
 
     /**
      * Creates a web hook object to track pods
+     * @param namespace the namespace
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
@@ -118,6 +120,7 @@ public class WatchBuilder {
 
     /**
      * Creates a web hook object to track changes to the cluster ingress
+     * @param namespace the namespace
      * @return the active web hook
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */

@@ -6,7 +6,7 @@
   
     <groupId>oracle.kubernetes</groupId>
     <artifactId>weblogic-kubernetes-operator</artifactId>
-    <version>0.1.0-alpha-SNAPSHOT</version>
+    <version>0.1.0-tech-preview-SNAPSHOT</version>
 
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>weblogic-kubernetes-operator</name>
@@ -162,6 +162,19 @@
                 </configuration>
             </plugin>
 
+		    <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-javadoc-plugin</artifactId>
+		        <version>3.0.0</version>
+		        <configuration>
+		            <show>public</show>
+		            <author>false</author>
+		            <!--  later Copyright 2018, {currentYear} -->
+		            <bottom><![CDATA[<p>Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.<p>]]></bottom>
+		            <doctitle>Oracle WebLogic Server Kubernetes Operator v0.1 Technology Preview API</doctitle>
+		        </configuration>
+		    </plugin>
+      
         </plugins>
     </build>
 

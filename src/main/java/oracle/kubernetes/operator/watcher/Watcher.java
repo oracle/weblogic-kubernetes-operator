@@ -40,6 +40,7 @@ public class Watcher<T> {
   
   /**
    * Kick off the watcher processing that runs in a separate thread.
+   * @return Started thread
    */
   public Thread start() {
     Thread thread = new Thread(this::doWatch);
