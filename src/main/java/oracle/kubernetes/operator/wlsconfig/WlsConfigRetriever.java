@@ -195,7 +195,7 @@ public class WlsConfigRetriever {
 
           Domain dom = info.getDomain();
           DomainSpec domainSpec = dom.getSpec();
-          String machineNamePrefix = domainSpec.getDomainUID() + "-" + wlsClusterConfig.getClusterName() + "-machine";
+          String machineNamePrefix = Util.getMachineNamePrefix(domainSpec, wlsClusterConfig);
 
           boolean successful = updateDynamicClusterSizeWithServiceURL(wlsClusterConfig,
                   machineNamePrefix, targetClusterSize, httpClient, serviceURL);
@@ -488,7 +488,7 @@ public class WlsConfigRetriever {
       LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);
 
       // Create machine(s)
-      String newMachineNames[] = wlsClusterConfig.getMachineNamesForNewDynamicServers(machineNamePrefix, targetClusterSize);
+      String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
       for (String machineName: newMachineNames) {
         LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
         httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),

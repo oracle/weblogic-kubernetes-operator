@@ -172,11 +172,14 @@ public class WlsClusterConfig {
    * It is the responsibility of the caller to persist the changes to ClusterStartup to kubernetes.
    *
    * @param clusterStartup The ClusterStartup to be validated against the WLS configuration
+   * @param machineNamePrefix Optional, if this is not null, also validate whether the WebLogic domain already contains
+   *                          all the machines that will be used by the dynamic cluster
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
    *                              method. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
   public boolean validateClusterStartup(ClusterStartup clusterStartup,
+                                        String machineNamePrefix,
                                         List<ConfigUpdate> suggestedConfigUpdates) {
     LOGGER.entering();
 
@@ -188,7 +191,7 @@ public class WlsClusterConfig {
     }
 
     // Warns if replicas is larger than the number of servers configured in the cluster
-    validateReplicas(clusterStartup.getReplicas(), "clusterStartup", suggestedConfigUpdates);
+    validateReplicas(clusterStartup.getReplicas(), machineNamePrefix,"clusterStartup", suggestedConfigUpdates);
 
     LOGGER.exiting(modified);
 
@@ -202,12 +205,15 @@ public class WlsClusterConfig {
    *
    * @param replicas The configured replicas value for this cluster in the kubernetes weblogic domain spec
    *                 for this cluster
+   * @param machineNamePrefix Optional, if this is not null, also validate whether the WebLogic domain already contains
+   *                          all the machines that will be used by the dynamic cluster
    * @param source The name of the section in the domain spec where the replicas is specified,
    *               for logging purposes
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
    *                               method. Optional.
    */
-  public void validateReplicas(Integer replicas, String source, List<ConfigUpdate> suggestedConfigUpdates) {
+  public void validateReplicas(Integer replicas, String machineNamePrefix,
+                               String source, List<ConfigUpdate> suggestedConfigUpdates) {
     if (replicas == null) {
       return;
     }
@@ -215,32 +221,61 @@ public class WlsClusterConfig {
     if (!hasDynamicServers() && replicas > getClusterSize()) {
       LOGGER.warning(MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS, source, clusterName, replicas, getClusterSize());
     }
-    // recommend updating WLS dynamic cluster size if replicas value is larger than current
-    // dynamic cluster size
-    if (hasDynamicServers() && replicas > getDynamicClusterSize()) {
-      if (suggestedConfigUpdates != null) {
-        suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, replicas));
+    // recommend updating WLS dynamic cluster size and machines if requested to recommend
+    // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
+    // the current dynamic cluster size, or if some of the machines to be used for the dynamic
+    // servers are not yet configured.
+    if (suggestedConfigUpdates != null) {
+      if (hasDynamicServers()) {
+        if (replicas > getDynamicClusterSize() || !verifyMachinesConfigured(machineNamePrefix, replicas)) {
+          suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, replicas));
+        }
       }
     }
   }
 
   /**
-   * Finds the names of a machine to be created for newly created dynamic servers in this dynamic cluster
+   * Verify whether the WebLogic domain already has all the machines configured for use by
+   * the dynamic cluster. For example, if machineNamePrefix is "domain1-cluster1-machine"
+   * and numMachinesNeeded is 2, this method return true if machines named
+   * "domain1-cluster1-machine1" and "domain1-cluster1-machine2" are configured in the
+   * WebLogic domain.
+   *
+   * @param machineNamePrefix Prefix of the names of the machines
+   * @param numMachinesNeeded Number of machines needed for this dynamic cluster
+   * @return True if the WebLogic domain already has all the machines configured, or if
+   * there is no WlsDomainConfig object associated with this cluster, in which case we
+   * cannot perform the verification, or if machineNamePrefix is null, false otherwise
+   */
+  boolean verifyMachinesConfigured(String machineNamePrefix, int numMachinesNeeded) {
+    if (wlsDomainConfig != null && machineNamePrefix != null) {
+      for (int suffix = 1; suffix <= numMachinesNeeded; suffix++) {
+        if (wlsDomainConfig.getMachineConfig(machineNamePrefix + suffix) == null) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Finds the names of a machine to be created for all dynamic servers in this dynamic cluster
    *
    * @param machineNamePrefix Prefix for the new machine names (should match machineNameMatchExpression in dynamic servers config)
    * @param targetClusterSize the target dynamic cluster size
-   * @return A String array containing names of new machines that are not currently in used in the WebLogic domain
+   * @return A String array containing names of new machines to be created in the WebLogic domain for use by dynamic
+   *         servers in this cluster
    */
-  String[] getMachineNamesForNewDynamicServers(String machineNamePrefix, int targetClusterSize) {
+  String[] getMachineNamesForDynamicServers(String machineNamePrefix, int targetClusterSize) {
     if (targetClusterSize < 1 || !hasDynamicServers() || wlsDomainConfig == null) {
       return new String[0];
     }
-    // machine names needed are [machineNamePrefix] appended by id of the new dynamic servers
-    // for example, if prefix is "domain1-cluster1-machine" and the current cluster size is 2, and targetClusterSize
-    // is 4, the ids of the new dynamic servers would be 3 and 4,
-    // the method should return {"domain1-cluster1-machine3", "domain1-cluster1-machine4"}
+    // machine names needed are [machineNamePrefix] appended by id of the dynamic servers
+    // for example, if prefix is "domain1-cluster1-machine" and targetClusterSize is 3, and machine with name
+    // "domain1-cluster1-machine1" already exists, the names of machines to be created should be
+    // {"domain1-cluster1-machine2", "domain1-cluster1-machine3"}
     ArrayList<String> names = new ArrayList<>();
-    for (int suffix=getDynamicClusterSize() + 1; suffix <= targetClusterSize; suffix++) {
+    for (int suffix=1; suffix <= targetClusterSize; suffix++) {
       String newMachineName = machineNamePrefix == null? "" + suffix: machineNamePrefix + suffix;
       if (wlsDomainConfig.getMachineConfig(newMachineName) == null) {
         // only need to create machine if it does not already exist
