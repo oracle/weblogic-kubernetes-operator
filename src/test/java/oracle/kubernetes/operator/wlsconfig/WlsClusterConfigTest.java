@@ -218,7 +218,9 @@ public class WlsClusterConfigTest {
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
     assertEquals(1, suggestedConfigUpdates.size());
-    assertTrue(suggestedConfigUpdates.get(0) instanceof WlsClusterConfig.DynamicClusterSizeConfigUpdate);
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
+      (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
+    assertEquals(2, configUpdate.targetClusterSize);
   }
 
   @Test
@@ -252,7 +254,35 @@ public class WlsClusterConfigTest {
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);
     assertEquals(1, suggestedConfigUpdates.size());
-    assertTrue(suggestedConfigUpdates.get(0) instanceof WlsClusterConfig.DynamicClusterSizeConfigUpdate);
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
+      (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
+    assertEquals(2, configUpdate.targetClusterSize);
+  }
+
+  @Test
+  public void verifyValidateClusterStartupDoNotLowerClusterSizeIfNotEnoughMachines() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 1, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+
+    Map<String, WlsClusterConfig> clusters = new HashMap();
+    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+
+    Map<String, WlsMachineConfig> machines = new HashMap();
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, machines);
+    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
+
+    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(1);
+
+    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+
+    // replica = 1, dynamicClusterSize = 2, num of machines = 0 ==> need to create one machine
+    // but need to ensure that the update will not reduce dynamicClusterSize from 2 to 1
+    wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);
+    assertEquals(1, suggestedConfigUpdates.size());
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
+      (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
+    assertEquals(2, configUpdate.targetClusterSize);
   }
 
   @Test
