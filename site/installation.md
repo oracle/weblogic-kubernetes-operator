@@ -100,7 +100,7 @@ The operator provides some optional features that can be enabled in the configur
 
 The operator can install the Traefik Ingress provider to provide load balancing for web applications running in WebLogic clusters.  If enabled, an instance of Traefik and an Ingress will be created for each WebLogic cluster.  Additional configuration is performed when creating the domain.
 
-Note that the Technology Preview release provides only basic load balancing:
+Note that the technology preview release provides only basic load balancing:
 
 *	Only HTTP(S) is supported. Other protocols are not supported.
 *	A root path rule is created for each cluster.  Rules based on the DNS name, or on URL paths other than ‘/’, are not supported.

@@ -4,7 +4,7 @@
 package oracle.kubernetes.operator.watcher;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.builders.WatchI;
 
 /**
  * This interface is used to drive the user's watch request by call backs within
@@ -16,12 +16,11 @@ public interface Watching<T> extends WatchingEventDestination<T> {
   /**
    * Initiate a watch operation, repeated when timed out by framework.
    *
-   * @param api Optional context object or null.
    * @param resourceVersion Provided resourceVersion from last event
    * @return Watch object returned from API.
    * @throws ApiException in the event of an API error.
    */
-  public Watch<T> initiateWatch(Object api, String resourceVersion) throws ApiException;
+  public WatchI<T> initiateWatch(String resourceVersion) throws ApiException;
 
   /**
    * Return true when the watch process should stop

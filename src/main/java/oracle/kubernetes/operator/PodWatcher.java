@@ -8,6 +8,8 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodCondition;
 import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
@@ -15,7 +17,6 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
@@ -77,7 +78,7 @@ public class PodWatcher implements Runnable {
     ClientHolder client = helper.take();
     try {
       Watching<V1Pod> w = createWatching(client);
-      Watcher<V1Pod> watcher = new Watcher<V1Pod>(w, null, initialResourceVersion);
+      Watcher<V1Pod> watcher = new Watcher<>(w, initialResourceVersion);
       
       // invoke watch on current Thread.  Won't return until watch stops
       watcher.doWatch();
@@ -93,13 +94,12 @@ public class PodWatcher implements Runnable {
       /**
        * Watcher callback to issue the list Pod changes. It is driven by the
        * Watcher wrapper to issue repeated watch requests.
-       * @param context user defined contact object or null
        * @param resourceVersion resource version to omit older events
        * @return Watch object or null if the operation should end
        * @throws ApiException if there is an API error.
        */
       @Override
-      public Watch<V1Pod> initiateWatch(Object context, String resourceVersion) throws ApiException {
+      public WatchI<V1Pod> initiateWatch(String resourceVersion) throws ApiException {
         return new WatchBuilder(client)
                   .withResourceVersion(resourceVersion)
                   .withLabelSelector(LabelConstants.DOMAINUID_LABEL)  // Any Pod with a domainUID label
