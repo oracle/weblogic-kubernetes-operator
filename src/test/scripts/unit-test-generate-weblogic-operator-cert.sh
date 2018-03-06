@@ -15,7 +15,7 @@
 
 if [ ! $# -eq 1 ]; then
   echo "Syntax: ${BASH_SOURCE[0]} <subject alternative names, e.g. DNS:localhost,DNS:mymachine,DNS:mymachine.us.oracle.com,IP:127.0.0.1>"
-  exit
+  exit 1
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -25,6 +25,14 @@ OP_PREFIX="weblogic-operator"
 OP_CERT_PEM="${CERT_DIR}/${OP_PREFIX}.cert.pem"
 OP_KEY_PEM="${CERT_DIR}/${OP_PREFIX}.key.pem"
 SANS=$1
+
+# we want to be able to unit test that, if this script fails, the overal script exits with an error exit code
+# normally the subject alternative names are validated when the certificate is created
+# simulate this by exiting with an error if SANS starts with "invalid"
+if [[ ${SANS} == invalid* ]]; then
+  echo "[ERROR] invalid subject alternative names: ${SANS}"
+  exit 1
+fi
 
 rm -rf ${CERT_DIR}
 mkdir ${CERT_DIR}

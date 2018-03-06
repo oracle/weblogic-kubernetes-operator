@@ -173,16 +173,16 @@ public class CreateOperatorInputsValidationTest {
     );
   }
 
-/*
   @Test
   public void createOperator_with_externalRestSelfSignedCert_invalidExternalSans_FailsAndReturnsError() throws Exception {
     String val = "invalid-sans";
-    assertThatFailsAndReturnsParamMissingError(
-      newInputs().setupExternalRestSelfSignedCert().externalSans(val),
-      PARAM_EXTERNAL_SANS
+    assertThat(
+      execCreateOperator(
+        newInputs().setupExternalRestSelfSignedCert().externalSans(val)
+      ),
+      failsAndPrints("invalid subject alternative names", val)
     );
   }
-*/
 
   @Test
   public void createOperator_with_missingJavaLoggingLevel_FailsAndReturnsError() throws Exception {

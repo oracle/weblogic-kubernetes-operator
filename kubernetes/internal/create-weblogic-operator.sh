@@ -285,6 +285,9 @@ dirname "${script}"
   internal_sans="DNS:${internal_host},DNS:${internal_host}.${namespace},DNS:${internal_host}.${namespace}.svc,DNS:${internal_host}.${namespace}.svc.cluster.local"
   echo "Generating a self-signed certificate for the operator's internal https port with the subject alternative names ${internal_sans}"
   ${genOprCertScript} ${internal_sans}
+  if [ $? -ne 0 ]; then
+    fail "Problem generating the internal weblogic operator REST certificate and private key with the subject alternative names ${internal_sans}"
+  fi
 
   # copy the cert and key into internal_cert_data and internal_key_data then remove them
   internal_cert_data=`base64 -i $generatedCertFile | tr -d '\n'`
@@ -295,6 +298,9 @@ dirname "${script}"
     # EXT_REST_OPT_SELF_SIGNED was specified.  Generate a self signed cert and use it.
     echo "Generating a self-signed certificate for the operator's external ssl port with the subject alternative names ${externalSans}"
     ${genOprCertScript} ${externalSans}
+    if [ $? -ne 0 ]; then
+      fail "Problem generating the external weblogic operator REST certificate and private key with the subject alternative names ${externalSans}"
+    fi
     # copy the generated cert and key into external_cert_data and external_key_data then remove them
     external_cert_data=`base64 -i $generatedCertFile | tr -d '\n'`
     external_key_data=`base64 -i $generatedKeyFile | tr -d '\n'`
