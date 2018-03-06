@@ -6,20 +6,27 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 internalDir="${scriptDir}/internal"
 
-# abstract away the parts of the create script that are not available while unit testing:
-# a) can't generate certificates because keytool is not available
-# b) can't verify if a secret is registered with kubernetes because kubectl and kubernetes are not available
+# This is the script that the customers use to create an operator.
+# It requires that the customer has a real environment that includes
+# keytool, openssl, kubectl and kubernetes.
 
+# pass the name of this script to the internal create script
 createOperatorScript="${script}"
+
+# pass the location of the default operator inputs yaml file to the internal create script
 defaultOperatorInputsFile="${scriptDir}/create-weblogic-operator-inputs.yaml"
+
+# use the script that uses keytool and openssl to generate certificates and keys
 genOprCertScript="${internalDir}/generate-weblogic-operator-cert.sh"
 
+# try to execute kubectl to see whether kubectl is available
 function validateKubectlAvailable {
   if ! [ -x "$(command -v kubectl)" ]; then
     validationError "kubectl is not installed"
   fi
 }
 
+# use kubectl to validate whether a secret has been registered with kubernetes
 function validateThatSecretExists {
   # Verify the secret exists
   echo "Checking to see if the secret ${1} exists in namespace ${2}"
@@ -29,4 +36,5 @@ function validateThatSecretExists {
   fi
 }
 
+# call the internal script to create the operator
 source ${internalDir}/create-weblogic-operator.sh

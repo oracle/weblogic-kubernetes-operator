@@ -2,6 +2,36 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+# This internal script is used to generate the yaml files for the operator.
+# Also, if -g is not specified, this script then loads these yaml files into kubernetes.
+#
+# This requires generating certificates and keys, and validating
+# whether secrets have been registered with kubectl.
+#
+# Also, the script needs to be unit tested in an environment where
+# keytool, openssl, kubectl and kubernetes are not available.  This
+# means that we need a way to mock this functionality.
+#
+# To accomplish this, the create split has been split into:
+#  - this internal script that abstracts away generating certs, validating secrets, ...
+#  - the public script that customers call.  it implements the abstracted behavior by calling keytool, ...
+#  - a unit testing script that only the tests call.  it implements the abstracted behavior by mocking it out
+#
+# The caller of this script must define:
+#   createOperatorScript shell variable that has the full pathname of the script calling this script
+#   defaultOperatorInputsFile shell variable that has the full pathname to kubernetes/create-weblogic-operator-inputs.yaml
+#   genOprCertScript shell variable that has the full pathname of the script to use to generate certificates
+#   validateKubectlAvailable shell function that validates whether kubectl is available
+#   validateThatSecretExists shell function that validates whether a secret has been registered with kubernetes
+#
+# TBD - should this script only generate the yaml files?  Or should it also load then into kubernetes?
+#
+# On the one hand, currently the unit tests only test the generated yaml files (i.e. always specify -g
+# to prevent this script from trying to load the yaml files into kubernetes.
+#
+# On the other hand, some day, we might want to try to unit test loading the files abstracting away
+# more behavior so that it can be mocked out.
+
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"

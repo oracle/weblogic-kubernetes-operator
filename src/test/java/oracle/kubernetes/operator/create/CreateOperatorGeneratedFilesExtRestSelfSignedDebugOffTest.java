@@ -1,6 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -8,27 +10,42 @@ import org.junit.Test;
  * creates that  are affected by the external rest and/or debug enabled input parameters
  * are correct when external rest is self-signed-cert and the remote debug port is disabled.
  */
-public class CreateOperatorGeneratedFilesExtRestSelfSignedDebugOffTest extends CreateOperatorGeneratedFilesTest {
+public class CreateOperatorGeneratedFilesExtRestSelfSignedDebugOffTest {
 
-  @Override
-  protected CreateOperatorInputs createInputs() throws Exception {
-    return setupExternalRestSelfSignedCert(super.createInputs());
+  private static CreateOperatorInputs inputs;
+  private static GeneratedOperatorYamlFiles generatedFiles;
+
+  @BeforeClass
+  public static void setup() throws Exception {
+    inputs = CreateOperatorInputs.newInputs().setupExternalRestSelfSignedCert();
+    generatedFiles = GeneratedOperatorYamlFiles.generateOperatorYamlFiles(inputs);
+  }
+
+  @AfterClass
+  public static void tearDown() throws Exception {
+    if (generatedFiles != null) {
+      generatedFiles.remove();
+    }
   }
 
   @Test
   public void generatesCorrectOperatorConfigMap() throws Exception {
     // haven't figured out how to compare self signed certs yet
-    //weblogicOperatorYaml.assertThatOperatorConfigMapIsCorrect(inputs, inputs.getExternalOperatorCert());
+    // weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, inputs.getExternalOperatorCert());
   }
 
   @Test
   public void generatesCorrectOperatorSecrets() throws Exception {
     // haven't figured out how to compare self signed cert keys yet
-    //weblogicOperatorYaml.assertThatOperatorSecretsAreCorrect(inputs, inputs.getExternalOperatorKey());
+    // weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, inputs.getExternalOperatorKey());
   }
 
   @Test
   public void generatesCorrectExternalOperatorService() throws Exception {
-    weblogicOperatorYaml.assertThatExternalOperatorServiceIsCorrect(inputs, false, true);
+    weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, false, true);
+  }
+
+  private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {
+    return generatedFiles.getWeblogicOperatorYaml();
   }
 }

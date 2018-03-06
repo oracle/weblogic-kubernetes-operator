@@ -1,6 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
@@ -8,10 +10,27 @@ import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+import static oracle.kubernetes.operator.create.CreateOperatorInputs.newInputs;
+
 /**
- * TBD
+ * Tests that create-weblogic-operator.sh properly validates the parameters
+ * that a customer can specify in the inputs yaml file.
  */
-public class CreateOperatorParseInputsTest extends CreateOperatorTest {
+public class CreateOperatorInputsValidationTest {
+
+  private UserProjects userProjects;
+
+  @Before
+  public void setup() throws Exception {
+    userProjects = UserProjects.createUserProjectsDirectory();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (userProjects != null) {
+      userProjects.remove();
+    }
+  }
 
   private static final String PARAM_SERVICE_ACCOUNT = "serviceAccount";
   private static final String PARAM_NAMESPACE = "namespace";
@@ -108,7 +127,7 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
   public void createOperator_with_externalRestCustomCert_missingExternalRestHttpsPort_FailsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
-        setupExternalRestCustomCert(newInputs()).externalRestHttpsPort("")
+        newInputs().setupExternalRestCustomCert().externalRestHttpsPort("")
       ),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_REST_HTTPS_PORT))
     );
@@ -118,7 +137,7 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
   public void createOperator_with_externalRestCustomCert_missingExternalOperatorCert_FailsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
-        setupExternalRestCustomCert(newInputs()).externalOperatorCert("")
+        newInputs().setupExternalRestCustomCert().externalOperatorCert("")
       ),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_OPERATOR_CERT))
     );
@@ -128,7 +147,7 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
   public void createOperator_with_externalRestCustomCert_missingExternalOperatorKey_FailsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
-        setupExternalRestCustomCert(newInputs()).externalOperatorKey("")
+        newInputs().setupExternalRestCustomCert().externalOperatorKey("")
       ),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_OPERATOR_KEY))
     );
@@ -138,7 +157,7 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
   public void createOperator_with_externalRestSelfSignedCert_missingExternalRestHttpsPort_FailsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
-        setupExternalRestSelfSignedCert(newInputs()).externalRestHttpsPort("")
+        newInputs().setupExternalRestSelfSignedCert().externalRestHttpsPort("")
       ),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_REST_HTTPS_PORT))
     );
@@ -148,7 +167,7 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
   public void createOperator_with_externalRestSelfSignedCert_missingExternalSans_FailsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
-        setupExternalRestSelfSignedCert(newInputs()).externalSans("")
+        newInputs().setupExternalRestSelfSignedCert().externalSans("")
       ),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_SANS))
     );
@@ -159,7 +178,7 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
   public void createOperator_with_externalRestSelfSignedCert_invalidExternalSans_FailsAndReturnsError() throws Exception {
     String val = "invalid-sans";
     assertThatFailsAndReturnsParamMissingError(
-      setupExternalRestSelfSignedCert(newInputs()).externalSans(val),
+      newInputs().setupExternalRestSelfSignedCert().externalSans(val),
       PARAM_EXTERNAL_SANS
     );
   }
@@ -179,6 +198,10 @@ public class CreateOperatorParseInputsTest extends CreateOperatorTest {
 
   private String paramNotLowercaseError(String param, String val) {
     return errorRegexp(param + ".*lowercase.*" + val);
+  }
+
+  private ExecResult execCreateOperator(CreateOperatorInputs inputs) throws Exception {
+    return ExecCreateOperator.execCreateOperator(userProjects.getPath(), inputs);
   }
 
 /*

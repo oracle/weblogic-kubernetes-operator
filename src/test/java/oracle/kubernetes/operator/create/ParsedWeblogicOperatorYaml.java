@@ -27,11 +27,17 @@ import static org.hamcrest.Matchers.*;
  */
 public class ParsedWeblogicOperatorYaml {
 
-  public V1ConfigMap operatorConfigMap;
-  public V1Secret operatorSecrets;
-  public ExtensionsV1beta1Deployment operatorDeployment;
-  public V1Service externalOperatorService;
-  public V1Service internalOperatorService;
+  private V1ConfigMap operatorConfigMap;
+  private V1Secret operatorSecrets;
+  private ExtensionsV1beta1Deployment operatorDeployment;
+  private V1Service externalOperatorService;
+  private V1Service internalOperatorService;
+
+  public V1ConfigMap getOperatorConfigMap() { return operatorConfigMap; }
+  public V1Secret getOperatorSecrets() { return operatorSecrets; }
+  public ExtensionsV1beta1Deployment getOperatorDeployment() { return operatorDeployment; }
+  public V1Service getExternalOperatorService() { return externalOperatorService; }
+  public V1Service getInternalOperatorService() { return internalOperatorService; }
 
   public ParsedWeblogicOperatorYaml(Path yamlPath, CreateOperatorInputs inputs) throws Exception {
     ParsedKubernetesYaml parsed = new ParsedKubernetesYaml(yamlPath);
@@ -63,7 +69,7 @@ public class ParsedWeblogicOperatorYaml {
         externalOperatorCert: TBD
         internalOperatorCert: TBD
     */
-    V1ConfigMap configMap = operatorConfigMap;
+    V1ConfigMap configMap = getOperatorConfigMap();
     assertThat(configMap, notNullValue());
     assertThat(configMap.getKind(), equalTo("ConfigMap"));
     assertThat(configMap.getApiVersion(), equalTo(API_V1));
@@ -89,7 +95,7 @@ public class ParsedWeblogicOperatorYaml {
         externalOperatorKey: TBD
         internalOperatorKey: TBD
     */
-    V1Secret secret = operatorSecrets;
+    V1Secret secret = getOperatorSecrets();
     assertThat(secret, notNullValue());
     assertThat(secret.getKind(), equalTo("Secret"));
     assertThat(secret.getApiVersion(), equalTo(API_V1));
@@ -126,7 +132,7 @@ public class ParsedWeblogicOperatorYaml {
             nodePort: inputs.getExternalDebugHttpPort()
             name: debug
     */
-    V1Service service = externalOperatorService;
+    V1Service service = getExternalOperatorService();
     if (!debuggingEnabled && !externalRestEnabled) {
       assertThat(service, nullValue());
       return;
