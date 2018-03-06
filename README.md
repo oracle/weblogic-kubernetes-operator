@@ -69,7 +69,7 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 
 # Restrictions
 
-The following features are not certified or supported in the Technology Preview release at the time of writing:
+The following features are not certified or supported in the technology preview release at the time of writing:
 
 *	Whole Server Migration
 *	Consensus Leasing
