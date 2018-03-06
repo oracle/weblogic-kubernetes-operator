@@ -228,7 +228,7 @@ public class WlsClusterConfig {
     if (suggestedConfigUpdates != null) {
       if (hasDynamicServers()) {
         if (replicas > getDynamicClusterSize() || !verifyMachinesConfigured(machineNamePrefix, replicas)) {
-          suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, replicas));
+          suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, Math.max(replicas, getDynamicClusterSize())));
         }
       }
     }
