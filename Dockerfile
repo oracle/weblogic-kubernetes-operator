@@ -7,7 +7,7 @@ RUN mkdir /operator
 ENV PATH=$PATH:/operator
 
 COPY src/main/scripts/* /operator/
-COPY target/weblogic-kubernetes-operator-0.1.0-alpha-SNAPSHOT.jar /operator/weblogic-kubernetes-operator.jar
+COPY target/weblogic-kubernetes-operator-0.1.0.jar /operator/weblogic-kubernetes-operator.jar
 
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /operator/livenessProbe.sh
