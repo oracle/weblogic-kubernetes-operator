@@ -6,7 +6,7 @@ set -e
 
 if [ ! $# -eq 1 ]; then
   echo "Syntax: ${BASH_SOURCE[0]} <subject alternative names, e.g. DNS:localhost,DNS:mymachine,DNS:mymachine.us.oracle.com,IP:127.0.0.1>"
-  exit
+  exit 1
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -17,6 +17,7 @@ function cleanup {
   if [ $? -ne 0 ]; then
     echo "Failed to generate the weblogic operator certificate and private key."
     rm -rf ${CERT_DIR}
+    exit 1
   fi
 }
 
@@ -38,6 +39,9 @@ OP_KEY_PEM="${CERT_DIR}/${OP_PREFIX}.key.pem"
 
 rm -rf ${CERT_DIR}
 mkdir ${CERT_DIR}
+
+# TBD - validate that keytool and openssl are available
+# should we import utility.sh so that we can call its 'fail' function?
 
 # generate a keypair for the WebLogic Operator, putting it in a keystore
 keytool \
