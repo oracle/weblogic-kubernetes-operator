@@ -30,12 +30,12 @@ public class CreateOperatorGeneratedFilesExtRestCustomDebugOffTest {
 
   @Test
   public void generatesCorrectOperatorConfigMap() throws Exception {
-    weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, inputs.getExternalOperatorCert());
+    weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, inputs.externalOperatorCustomCertPem());
   }
 
   @Test
   public void generatesCorrectOperatorSecrets() throws Exception {
-    weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, inputs.getExternalOperatorKey());
+    weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, inputs.externalOperatorCustomKeyPem());
   }
 
   @Test
