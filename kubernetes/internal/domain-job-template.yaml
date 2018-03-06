@@ -129,7 +129,7 @@ data:
     server_name=\$2
     as_name=\$3
     as_port=\$4
-    as_hostname="\$1-\$3"
+    as_hostname=\$1-\$3
 
     echo "debug arguments are \$1 \$2 \$3 \$4"
 
@@ -235,8 +235,13 @@ data:
     echo "Update JVM arguments"
     echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> \${startProp}
 
+    admin_server_t3_url=
+    if [ -n "\$3" ]; then
+      admin_server_t3_url=t3://\$domain_uid-\$as_name:\$as_port
+    fi
+
     echo "Start the server"
-    wlst.sh -skipWLSModuleScanning ${pyFile} \$domain_uid \$server_name
+    wlst.sh -skipWLSModuleScanning ${pyFile} \$domain_uid \$server_name \$admin_server_t3_url
 
     echo "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
     while true; do sleep 60; done
@@ -253,12 +258,17 @@ data:
 
     domain_uid = sys.argv[1]
     server_name = sys.argv[2]
+    if (len(sys.argv) == 4):
+      admin_server_url = sys.argv[3]
+    else:
+      admin_server_url = None
 
     domain_path= "${DOMAIN_HOME}"
 
     print 'admin username is %s' % admin_username
     print 'domain path is %s' % domain_path
     print 'server name is %s' % server_name
+    print 'admin server url is %s' % admin_server_url
 
     # Encrypt the admin username and password
     adminUsernameEncrypted=encrypt(admin_username, domain_path)
@@ -286,11 +296,41 @@ data:
     service_name = domain_uid + "-" + server_name
 
     # Connect to nodemanager and start server
-    nmConnect(admin_username, admin_password, service_name,  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
-    nmStart(server_name)
+    try:
+      nmConnect(admin_username, admin_password, service_name,  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
+      nmStart(server_name)
+      nmDisconnect()
+    except WLSTException, e:
+      nmDisconnect()
+      print e
+
+    # Update node manager listen address
+    if admin_server_url is not None:
+      connect(admin_username, admin_password, admin_server_url)
+      serverConfig()
+      server=cmo.lookupServer(server_name)
+      machineName=server.getMachine().getName()
+
+      print 'Name of machine assigned to server %s is %s' % (server_name, machineName)
+
+      if machineName is not None:
+        print 'Updating listen address of machine %s' % machineName
+        try:
+          edit()
+          startEdit()
+          cd('/')
+          machine=cmo.lookupMachine(machineName)
+          print 'Machine is %s' % machine
+          nm=machine.getNodeManager()
+          nm.setListenAddress(service_name)
+          nm.setNMType('Plain')
+          activate()
+          print 'Updated listen address of machine %s to %s' % (machineName, service_name)
+        except:
+          cancelEdit()
+          raise
 
     # Exit WLST
-    nmDisconnect()
     exit()
     EOF
 
@@ -475,16 +515,19 @@ data:
 
     # Configure machines
     # ======================
-    for index in range(0, number_of_ms):
+    if cluster_type == "configured":
 
-      msIndex = index+1
-      machineName = '%DOMAIN_UID%-machine%s' % msIndex
-      cd('/')
-      create(machineName, 'Machine')
-      cd('Machine/%s' % machineName)
-      create(machineName, 'NodeManager')
-      cd('NodeManager/%s' % machineName)
-      set('ListenAddress', '%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%%s' % msIndex)
+      for index in range(0, number_of_ms):
+
+        msIndex = index+1
+        machineName = '%DOMAIN_UID%-machine%s' % msIndex
+        cd('/')
+        create(machineName, 'Machine')
+        cd('Machine/%s' % machineName)
+        create(machineName, 'NodeManager')
+        cd('NodeManager/%s' % machineName)
+        set('ListenAddress', '%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%%s' % msIndex)
+        set('NMType', 'Plain')
 
     # Create a cluster
     cd('/')
@@ -536,6 +579,8 @@ data:
       set('MaxDynamicClusterSize', 800)
       set('CalculatedMachineNames', true)
       set('CalculatedListenPorts', false)
+      machineNameExpression = '%DOMAIN_UID%-%s-machine*' % cluster_name
+      set('MachineNameMatchExpression', machineNameExpression)
       set('Id', 1)
 
       print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);

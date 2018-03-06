@@ -306,7 +306,8 @@ public class WlsDomainConfig {
         String clusterName = clusterStartup.getClusterName();
         if (clusterName != null) {
           WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
-          updated |= wlsClusterConfig.validateClusterStartup(clusterStartup, suggestedConfigUpdates);
+          updated |= wlsClusterConfig.validateClusterStartup(clusterStartup,
+            Util.getMachineNamePrefix(domainSpec, wlsClusterConfig), suggestedConfigUpdates);
         }
       }
     }
@@ -317,7 +318,9 @@ public class WlsDomainConfig {
       // WLS domain contains only one cluster
       if (clusterConfigs != null && clusterConfigs.size() == 1) {
         for (WlsClusterConfig wlsClusterConfig : clusterConfigs) {
-          wlsClusterConfig.validateReplicas(domainSpec.getReplicas(), "domainSpec",
+          wlsClusterConfig.validateReplicas(domainSpec.getReplicas(),
+            Util.getMachineNamePrefix(domainSpec, wlsClusterConfig),
+            "domainSpec",
             suggestedConfigUpdates);
         }
       } else {
