@@ -82,6 +82,9 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, false, false);
   }
 
+  // TBD - add tests for the generated weblogic-operator-security.yaml file
+  // which has been already been parsed into generatedFiles.getWeblogicOperatorSecurityYaml()
+
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {
     return generatedFiles.getWeblogicOperatorYaml();
   }
