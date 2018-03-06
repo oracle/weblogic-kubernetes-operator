@@ -2572,7 +2572,6 @@ function test_suite {
 
 # entry point
 
-local exit_status=0
 if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
   if [ "${VERBOSE:-false}" = "true" ]; then
     test_suite 2>&1 
