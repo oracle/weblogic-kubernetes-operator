@@ -3,6 +3,8 @@ package oracle.kubernetes.operator.create;
 
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.create.ExecCreateOperator.CREATE_SCRIPT;
+import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.allOf;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
@@ -12,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test the various create-weblogic-operator.sh command line options that print usage messages
  */
-public class CreateOperatorUsageTest extends CreateOperatorTest {
+public class CreateOperatorUsageTest {
 
   private static final String[] USAGE = { "usage", "-o", "-i", "-g", "-h" };
 
