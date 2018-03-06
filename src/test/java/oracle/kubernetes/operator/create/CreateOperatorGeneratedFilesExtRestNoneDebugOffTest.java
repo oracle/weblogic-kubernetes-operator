@@ -38,12 +38,12 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
 
   @Test
   public void generatesCorrectOperatorConfigMap() throws Exception {
-    weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, "");
+    weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, ""); // no external operator cert
   }
 
   @Test
   public void generatesCorrectOperatorSecrets() throws Exception {
-    weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, "");
+    weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, ""); // no external operator key
   }
 
   @Test
@@ -81,9 +81,6 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrectExternalOperatorService() throws Exception {
     weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, false, false);
   }
-
-  // TBD - add tests for the generated weblogic-operator-security.yaml file
-  // which has been already been parsed into generatedFiles.getWeblogicOperatorSecurityYaml()
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {
     return generatedFiles.getWeblogicOperatorYaml();

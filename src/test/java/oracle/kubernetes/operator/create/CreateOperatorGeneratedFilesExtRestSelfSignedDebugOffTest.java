@@ -30,14 +30,12 @@ public class CreateOperatorGeneratedFilesExtRestSelfSignedDebugOffTest {
 
   @Test
   public void generatesCorrectOperatorConfigMap() throws Exception {
-    // haven't figured out how to compare self signed certs yet
-    // weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, inputs.getExternalOperatorCert());
+    weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, inputs.externalOperatorSelfSignedCertPem());
   }
 
   @Test
   public void generatesCorrectOperatorSecrets() throws Exception {
-    // haven't figured out how to compare self signed cert keys yet
-    // weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, inputs.getExternalOperatorKey());
+    weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, inputs.externalOperatorSelfSignedKeyPem());
   }
 
   @Test

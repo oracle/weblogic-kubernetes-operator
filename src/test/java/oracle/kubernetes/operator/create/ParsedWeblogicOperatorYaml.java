@@ -2,6 +2,8 @@
 package oracle.kubernetes.operator.create;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -13,9 +15,6 @@ import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1ServicePort;
-
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -66,8 +65,8 @@ public class ParsedWeblogicOperatorYaml {
       data:
         serviceaccount: inputs.getServiceAccount()
         targetNamespaces: inputs.getTargetNamespaces()
-        externalOperatorCert: TBD
-        internalOperatorCert: TBD
+        externalOperatorCert: base64 encoded string
+        internalOperatorCert: base64 encoded string
     */
     V1ConfigMap configMap = getOperatorConfigMap();
     assertThat(configMap, notNullValue());
@@ -79,8 +78,8 @@ public class ParsedWeblogicOperatorYaml {
     assertThat(data.keySet(), containsInAnyOrder(SERVICE_ACCOUNT, TARGET_NAMESPACES, EXTERNAL_OPERATOR_CERT, INTERNAL_OPERATOR_CERT));
     assertThat(data, hasEntry(SERVICE_ACCOUNT, inputs.getServiceAccount()));
     assertThat(data, hasEntry(TARGET_NAMESPACES, inputs.getTargetNamespaces()));
-    assertThat(data, hasEntry(EXTERNAL_OPERATOR_CERT, externalOperatorCertWant)); // TBD - how do we handle generated?
-    assertThat(data.get(INTERNAL_OPERATOR_CERT), notNullValue()); // TBD - generated - if we mock the generation, then we might be able to test for a specific string
+    assertThatCertMatches(data.get(EXTERNAL_OPERATOR_CERT), externalOperatorCertWant);
+    assertThatCertMatches(data.get(INTERNAL_OPERATOR_CERT), inputs.internalOperatorSelfSignedCertPem());
   }
 
   public void assertThatOperatorSecretsAreCorrect(CreateOperatorInputs inputs, String externalOperatorKeyWant) throws Exception {
@@ -92,8 +91,8 @@ public class ParsedWeblogicOperatorYaml {
         namespace: inputs.getNamespace()
       type: Opaque
       data:
-        externalOperatorKey: TBD
-        internalOperatorKey: TBD
+        externalOperatorKey: bytes[] = cleartext key
+        internalOperatorKey: bytes[] = cleartext key
     */
     V1Secret secret = getOperatorSecrets();
     assertThat(secret, notNullValue());
@@ -103,11 +102,22 @@ public class ParsedWeblogicOperatorYaml {
     Map<String,byte[]> data = secret.getData();
     assertThat(data, notNullValue());
     assertThat(data.keySet(), containsInAnyOrder(EXTERNAL_OPERATOR_KEY, INTERNAL_OPERATOR_KEY));
-    byte[] externalOperatorKeyBytes = data.get(EXTERNAL_OPERATOR_KEY);
-    assertThat(externalOperatorKeyBytes, notNullValue());
-    String externalOperatorKeyHave = Base64.encodeBase64String(externalOperatorKeyBytes);
-    assertThat(externalOperatorKeyWant, equalTo(externalOperatorKeyHave)); // TBD - how do we test generated?
-    assertThat(data.get(INTERNAL_OPERATOR_KEY), notNullValue()); // TBD - generated - if we mock the generation, then we might be able to test for a specific string
+    assertThatKeyMatches(data.get(EXTERNAL_OPERATOR_KEY), externalOperatorKeyWant);
+    assertThatKeyMatches(data.get(INTERNAL_OPERATOR_KEY), inputs.internalOperatorSelfSignedKeyPem());
+  }
+
+  private void assertThatCertMatches(String base64CertHave, String certWant) {
+    assertThat(base64CertHave, notNullValue());
+    assertThat(Base64.isBase64(base64CertHave), is(true));
+    byte[] certBytesHave = Base64.decodeBase64(base64CertHave);
+    String certHave = new String(certBytesHave);
+    assertThat(certHave, equalTo(certWant));
+  }
+
+  private void assertThatKeyMatches(byte[] keyBytesHave, String keyWant) {
+    assertThat(keyBytesHave, notNullValue());
+    String keyHave = new String(keyBytesHave);
+    assertThat(keyWant, equalTo(keyHave));
   }
 
   public void assertThatExternalOperatorServiceIsCorrect(CreateOperatorInputs inputs, boolean debuggingEnabled, boolean externalRestEnabled) throws Exception {

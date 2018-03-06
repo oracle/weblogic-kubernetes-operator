@@ -68,10 +68,57 @@ public class CreateOperatorInputs {
       this
         .externalRestHttpsPort("30070")
         .externalRestOption("custom-cert")
-        .externalOperatorCert("test-custom-certificate-pem")
+        .externalOperatorCert(
+          Base64.encodeBase64String(CUSTOM_CERT_PEM.getBytes())
+        )
         .externalOperatorKey(
-          Base64.encodeBase64String("test-custom-private-key-pem".getBytes())
+          Base64.encodeBase64String(CUSTOM_KEY_PEM.getBytes())
         );
+  }
+
+  private static final String CUSTOM_CERT_PEM = "test-custom-certificate-pem";
+  private static final String CUSTOM_KEY_PEM = "test-custom-private-key-pem";
+
+  public String externalOperatorCustomCertPem() { return CUSTOM_CERT_PEM; }
+  public String externalOperatorCustomKeyPem() { return CUSTOM_KEY_PEM; }
+
+  public String externalOperatorSelfSignedCertPem() {
+    return selfSignedCertPem(getExternalSans());
+  }
+
+  public String externalOperatorSelfSignedKeyPem() {
+    return selfSignedKeyPem(getExternalSans());
+  }
+
+  public String internalOperatorSelfSignedCertPem() {
+    return selfSignedCertPem(internalSans());
+  }
+
+  public String internalOperatorSelfSignedKeyPem() {
+    return selfSignedKeyPem(internalSans());
+  }
+
+  private String selfSignedCertPem(String sans) {
+    // Must match computation in src/tests/scripts/unit-test-generate-weblogic-operator-cert.sh
+    return "unit test mock cert pem for sans:" + sans + "\n";
+  }
+
+  private String selfSignedKeyPem(String sans) {
+    // Must match computation in src/tests/scripts/unit-test-generate-weblogic-operator-cert.sh
+    return "unit test mock key pem for sans:" + sans + "\n";
+  }
+
+  private String internalSans() {
+    // Must match internal sans computation in kubernetes/internal/create-weblogic-operator.sh
+    String host = "internal-weblogic-operator-service";
+    String ns = getNamespace();
+    StringBuilder sb  = new StringBuilder();
+    sb
+      .append("DNS:").append(host)
+      .append(",DNS:").append(host).append(".").append(ns)
+      .append(",DNS:").append(host).append(".").append(ns).append(".svc")
+      .append(",DNS:").append(host).append(".").append(ns).append(".svc.cluster.local");
+    return sb.toString();
   }
 
   // Note: don't allow null strings since, if you use snakeyaml to write out the instance
