@@ -4,10 +4,10 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -159,7 +159,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupWarnsIfNoServersInCluster() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(1);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
@@ -174,7 +174,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupWarnsIfReplicasTooHigh() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
@@ -189,7 +189,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupDoNotSuggestsUpdateToConfiguredClusterIfReplicasTooHigh() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
     assertEquals(0, suggestedConfigUpdates.size());
@@ -199,7 +199,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupDoesNotWarnIfDynamicCluster() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
@@ -214,7 +214,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfReplicasTooHigh() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
     assertEquals(1, suggestedConfigUpdates.size());
@@ -227,7 +227,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasNotHigh() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(1);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
     TestUtil.LogHandlerImpl handler = null;
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
@@ -249,7 +249,7 @@ public class WlsClusterConfigTest {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);
@@ -272,7 +272,7 @@ public class WlsClusterConfigTest {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(1);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -300,7 +300,7 @@ public class WlsClusterConfigTest {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("base_domain", clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(1);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);

@@ -1,0 +1,58 @@
+{
+    "type": "object",
+    "javaType": "oracle.kubernetes.weblogic.domain.v1.DomainStatus",
+    "description": "DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.",
+    "properties": {
+     "conditions": {
+      "description": "Current service state of domain.",
+      "type": "array",
+      "items": {
+       "javaType": "oracle.kubernetes.weblogic.domain.v1.DomainCondition",
+       "type": "object"
+      },
+      "x-kubernetes-patch-merge-key": "type",
+      "x-kubernetes-patch-strategy": "merge"
+     },
+     "message": {
+      "description": "A human readable message indicating details about why the domain is in this condition.",
+      "type": "string"
+     },
+     "reason": {
+      "description": "A brief CamelCase message indicating details about why the domain is in this state.",
+      "type": "string"
+     },
+     "availableServers": {
+      "description": "List of specific server instances that are available.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "unavailableServers": {
+      "description": "List of specific server instances that are configured to be available but that are either not yet available or have failed.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "availableClusters": {
+      "description": "List of specific cluster instances where the configured number of replicas are now available.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "unavailableClusters": {
+      "description": "List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "startTime": {
+      "description": "RFC 3339 date and time at which the operator started the domain.  This will be when the operator begins processing and will precede when the various servers or clusters are available.",
+      "type": "date-time",
+      "javaType": "org.joda.time.DateTime"
+     }
+    }
+ }

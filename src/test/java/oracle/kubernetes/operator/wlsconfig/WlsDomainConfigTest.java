@@ -3,14 +3,14 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Handler;
@@ -251,7 +251,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecWarnsIfNoServersInClusterStartupCluster() throws Exception {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("noSuchCluster"));
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("noSuchCluster")));
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("noSuchCluster");
     try {
@@ -266,7 +266,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecWarnsIfReplicasTooLarge() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_1_CLUSTER);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster")).replicas(10);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster"))).withReplicas(10);
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     try {
@@ -281,7 +281,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecInfoIfReplicasAndZeroClusters() throws Exception {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster")).replicas(10);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster"))).withReplicas(10);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsDomainConfig);
@@ -295,7 +295,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecInfoIfReplicasAndTwoClusters() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_2_CLUSTERS);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster")).replicas(10);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster"))).withReplicas(10);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsDomainConfig);
@@ -309,7 +309,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecReplicasNotValidatedWithMoreThan1Clusters() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_2_CLUSTERS);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster")).replicas(10);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster"))).withReplicas(10);
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     try {
@@ -324,7 +324,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecNoWarningIfReplicasOK() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_1_CLUSTER);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster")).replicas(5);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster"))).withReplicas(5);
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     try {
@@ -339,7 +339,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_2_CLUSTERS);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster2").replicas(3)).replicas(5);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster2").withReplicas(3))).withReplicas(5);
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster2");
     try {
@@ -354,9 +354,9 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge_2clusters() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_2_CLUSTERS);
-    ClusterStartup dockerCluster = new ClusterStartup().clusterName("DockerCluster").replicas(10);
-    ClusterStartup dockerCluster2 = new ClusterStartup().clusterName("DockerCluster2").replicas(10);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(dockerCluster).addClusterStartupItem(dockerCluster2);
+    ClusterStartup dockerCluster = new ClusterStartup().withClusterName("DockerCluster").withReplicas(10);
+    ClusterStartup dockerCluster2 = new ClusterStartup().withClusterName("DockerCluster2").withReplicas(10);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(dockerCluster, dockerCluster2));
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster2");
     try {
@@ -372,7 +372,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecNoWarningIfClusterStatupReplicasOK() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_2_CLUSTERS);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster2").replicas(2)).replicas(5);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(Arrays.asList(new ClusterStartup().withClusterName("DockerCluster2").withReplicas(2))).withReplicas(5);
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster2");
     try {
@@ -387,7 +387,8 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecNoWarningIfClusterStatupOnDynamicCluster() throws Exception {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_MIXED_CLUSTER);
-    DomainSpec domainSpec = new DomainSpec().addClusterStartupItem(new ClusterStartup().clusterName("DockerCluster").replicas(10)).replicas(10);
+    DomainSpec domainSpec = new DomainSpec().withClusterStartup(
+            Arrays.asList(new ClusterStartup().withClusterName("DockerCluster").withReplicas(10))).withReplicas(10);
     TestUtil.LogHandlerImpl handler = null;
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     try {
