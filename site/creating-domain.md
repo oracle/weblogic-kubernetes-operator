@@ -123,7 +123,7 @@ The following parameters must be provided in the input file:
 
 ## Limitations of the create domain script
 
-This Technology Preview release has some limitations in the create domain script that users should be aware of.
+This technology preview release has some limitations in the create domain script that users should be aware of.
 
 *	The script assumes the use of the `HostPath` persistent volume provider.
 *	The script creates the specified number of Managed Servers and places them all in one cluster.

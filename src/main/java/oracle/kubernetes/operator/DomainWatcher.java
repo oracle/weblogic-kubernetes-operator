@@ -5,10 +5,11 @@ package oracle.kubernetes.operator;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
@@ -50,7 +51,7 @@ public class DomainWatcher implements Runnable {
     ClientHolder client = helper.take();
     try {
       Watching<Domain> w = createWatching(client);
-      Watcher<Domain> watcher = new Watcher<Domain>(w, null, initialResourceVersion);
+      Watcher<Domain> watcher = new Watcher<>(w, initialResourceVersion);
       
       // invoke watch on current Thread.  Won't return until watch stops
       watcher.doWatch();
@@ -66,13 +67,12 @@ public class DomainWatcher implements Runnable {
       /**
        * Watcher callback to issue the list Domain changes. It is driven by the
        * Watcher wrapper to issue repeated watch requests.
-       * @param context user defined contact object or null
        * @param resourceVersion resource version to omit older events
        * @return Watch object or null if the operation should end
        * @throws ApiException if there is an API error.
        */
       @Override
-      public Watch<Domain> initiateWatch(Object context, String resourceVersion) throws ApiException {
+      public WatchI<Domain> initiateWatch(String resourceVersion) throws ApiException {
         return new WatchBuilder(client)
                   .withResourceVersion(resourceVersion)
                 .createDomainWatch(ns);
