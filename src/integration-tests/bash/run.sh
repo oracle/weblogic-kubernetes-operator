@@ -2064,6 +2064,7 @@ function test_domain_lifecycle {
     shutdown_domain $DOM_KEY
     startup_domain $DOM_KEY 
     verify_domain_exists_via_oper_rest $DOM_KEY 
+    verify_domain $DOM_KEY
 
     # verify that scaling $DOM_KEY had no effect on another domain
     if [ ! "$VERIFY_DOM_KEY" = "" ]; then
