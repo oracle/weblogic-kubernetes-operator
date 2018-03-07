@@ -635,7 +635,7 @@ function test_second_operator {
     declare_test_pass
 }
 
-# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
 #   Sets up a table of domain values:  all of the above, plus TMP_DIR which is derived.
 #
 # dom_get      DOM_KEY <value>
@@ -651,21 +651,22 @@ function test_second_operator {
 #   echo Defined operator $opkey with `dom_echo_all $DOM_KEY`
 #
 function dom_define {
-    if [ "$#" != 12 ] ; then
-      fail "requires 12 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
+    if [ "$#" != 13 ] ; then
+      fail "requires 13 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
     fi
     local DOM_KEY="`echo \"${1}\" | sed 's/-/_/g'`"
     eval export DOM_${DOM_KEY}_OP_KEY="$2"
     eval export DOM_${DOM_KEY}_NAMESPACE="$3"
     eval export DOM_${DOM_KEY}_DOMAIN_UID="$4"
-    eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$5"
-    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$6"
-    eval export DOM_${DOM_KEY}_ADMIN_PORT="$7"
-    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$8"
-    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="$9"
-    eval export DOM_${DOM_KEY}_MS_PORT="${10}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${11}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${12}"
+    eval export DOM_${DOM_KEY}_STARTUP_CONTROL="$5"
+    eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$6"
+    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$7"
+    eval export DOM_${DOM_KEY}_ADMIN_PORT="$8"
+    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$9"
+    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${10}"
+    eval export DOM_${DOM_KEY}_MS_PORT="${11}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${12}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${13}"
 
     # derive TMP_DIR $RESULT_DIR/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$RESULT_DIR/$3-$4"
@@ -693,6 +694,7 @@ function run_create_domain_job {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
@@ -767,6 +769,7 @@ function run_create_domain_job {
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  ${tmp_dir}/create-domain-job-inputs.yaml
 
     # we will test cluster scale up and down in domain1 and domain4 
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
@@ -1883,6 +1886,7 @@ function verify_domain_created {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
     trace "verify domain $DOMAIN_UID in $NAMESPACE namespace"
@@ -1902,6 +1906,11 @@ function verify_domain_created {
     trace "verify the service and pod of admin server"
     verify_service_and_pod_created $DOM_KEY 0
 
+    local verify_as_only=false
+    if [ "$STARTUP_CONTROL" = "ADMIN" ] ; then
+      verify_as_only=true
+    fi
+
     local replicas=`get_cluster_replicas $DOM_KEY`
 
     trace "verify $replicas number of managed servers for creation"
@@ -1910,14 +1919,21 @@ function verify_domain_created {
     do
       local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME}$i"
       trace "verify service and pod of server $MS_NAME"
-      verify_service_and_pod_created $DOM_KEY $i
+      if [ "${verify_as_only}" = "true" ]; then 
+        verify_pod_deleted $DOM_KEY $i
+      else
+        verify_service_and_pod_created $DOM_KEY $i
+      fi
     done
 
     # Check if we got exepcted number of managed servers running
     local ms_name_common=${DOMAIN_UID}-${MS_BASE_NAME}
     local pod_count=`kubectl get pods -n $NAMESPACE |grep "^${ms_name_common}" | wc -l `
-    if [ ${pod_count:=Error} != $replicas ] ; then
+    if [ ${pod_count:=Error} != $replicas ] && [ "${verify_as_only}" != "true" ] ; then
       fail "ERROR: expected $replicas number of managed servers running, but got $pod_count, exiting!"
+    fi
+    if [ ${pod_count:=Error} != 0 ] && [ "${verify_as_only}" = "true" ] ; then
+      fail "ERROR: expected none of managed servers running, but got $pod_count, exiting!"
     fi
 }
 
@@ -2464,11 +2480,12 @@ function test_suite {
     op_define  oper1   weblogic-operator-1  "default,test1"    31001
     op_define  oper2   weblogic-operator-2  test2              32001
 
-    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
-    dom_define domain1  oper1   default   domain1    cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  oper1   default   domain2    cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  oper1   test1     domain3    cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
-    dom_define domain4  oper2   test2     domain4    cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
+    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
+    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
+    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
+    dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
+    dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       managed-server 7051       30061           30705           8051    30309                  30319
 
     # create namespaces for domains (the operator job creates a namespace if needed)
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
@@ -2532,6 +2549,10 @@ function test_suite {
   
       # cycle domain1 down and back up, plus verify no impact on domain4
       test_domain_lifecycle domain1 domain4 
+
+      # create another domain in the default namespace with startupControl="ADMIN", and verify that only admin server is created
+      run_create_domain_job domain5
+      verify_domain_created domain5
 
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1
