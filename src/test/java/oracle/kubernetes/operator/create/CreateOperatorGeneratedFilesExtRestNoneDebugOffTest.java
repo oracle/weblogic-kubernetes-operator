@@ -1,26 +1,22 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1beta1ClusterRole;
+import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import io.kubernetes.client.models.V1beta1PolicyRule;
+import io.kubernetes.client.models.V1beta1RoleBinding;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+
 import static java.util.Arrays.asList;
-
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
-import io.kubernetes.client.models.V1beta1RoleBinding;
-import io.kubernetes.client.models.V1beta1PolicyRule;
-import io.kubernetes.client.models.V1beta1RoleRef;
-import io.kubernetes.client.models.V1beta1Subject;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ServiceAccount;
-
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -198,27 +194,89 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingNonResource() throws Exception {
-    // TBD
+    assertThat(weblogicOperatorSecurityYaml().getOperatorRoleBindingNonResource(),
+               equalTo(newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-nonresource")
+                          .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
+                          .roleRef(newRoleRef("weblogic-operator-cluster-role-nonresource", "rbac.authorization.k8s.io"))));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingDiscovery() throws Exception {
-    // TBD
+    assertThat(weblogicOperatorSecurityYaml().getOperatorRoleBindingDiscovery(),
+               equalTo(newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-discovery")
+                          .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
+                          .roleRef(newRoleRef("system:discovery", "rbac.authorization.k8s.io"))));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingAuthDelegator() throws Exception {
-    // TBD
+    assertThat(weblogicOperatorSecurityYaml().getOperatorRoleBindingAuthDelegator(),
+               equalTo(newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-auth-delegator")
+                          .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
+                          .roleRef(newRoleRef("system:auth-delegator", "rbac.authorization.k8s.io"))));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorNamespaceRole() throws Exception {
-    // TBD
+    assertThat(weblogicOperatorSecurityYaml().getWeblogicOperatorNamespaceRole(),
+               equalTo(new V1beta1ClusterRole()
+                            .apiVersion("rbac.authorization.k8s.io/v1beta1")
+                            .kind("ClusterRole")
+                            .metadata(new V1ObjectMeta().name("weblogic-operator-namespace-role"))
+                            .addRulesItem(new V1beta1PolicyRuleBuilder()
+                                                 .withResources("secrets", "persistentvolumeclaims")
+                                                 .withVerbs("get", "list", "watch")
+                                                .create())
+                            .addRulesItem(new V1beta1PolicyRuleBuilder()
+                                                 .withResources("services", "pods", "networkpolicies")
+                                                 .withVerbs("get", "list", "watch", "create", "update", "patch", "delete", "deletecollection")
+                                                .create())));
+  }
+
+  private class V1beta1PolicyRuleBuilder {
+    String[] resources = new String[0];
+    String[] verbs = new String[0];
+
+    V1beta1PolicyRuleBuilder withResources(String... resources) {
+      this.resources = resources;
+      return this;
+    }
+
+    V1beta1PolicyRuleBuilder withVerbs(String... verbs) {
+      this.verbs = verbs;
+      return this;
+    }
+
+    V1beta1PolicyRule create() {
+      V1beta1PolicyRule rule = new V1beta1PolicyRule();
+      rule.addApiGroupsItem("");
+      for (String resource : resources)
+        rule.addResourcesItem(resource);
+      for (String verb : verbs)
+        rule.addVerbsItem(verb);
+      return rule;
+    }
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorRoleBinding() throws Exception {
-    // TBD
+    assertThat(weblogicOperatorSecurityYaml().getWeblogicOperatorRoleBinding(),
+               equalTo(new V1beta1RoleBinding()
+                          .apiVersion("rbac.authorization.k8s.io/v1beta1")
+                          .kind("RoleBinding")
+                          .metadata(new V1ObjectMeta().name("weblogic-operator-rolebinding")
+                                                      .namespace(lastEntry(inputs.getTargetNamespaces())))
+                          .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
+                          .roleRef(newRoleRef("weblogic-operator-namespace-role", ""))
+               ));
+  }
+
+
+  //TODO - this is a workaround for the fact that the getWeblogicOperatorRoleBinding() method only returns the last
+  //TODO - binding created, rather than all of them.
+  private String lastEntry(String targetNamespaces) {
+    String[] split = targetNamespaces.split(",");
+    return split[split.length-1];
   }
 
   private ParsedWeblogicOperatorSecurityYaml weblogicOperatorSecurityYaml() {
