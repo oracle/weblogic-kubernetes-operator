@@ -33,7 +33,6 @@ import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -161,10 +160,11 @@ public class CallBuilder {
    * @throws ApiException API exception
    */
   public DomainList listDomain(String namespace) throws ApiException {
+    String _continue = "";
     ClientUsage cu = useClient();
     try {
-      return (DomainList) cu.client().getCustomObjectsApiClient().listNamespacedCustomObject(KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
-          namespace, KubernetesConstants.DOMAIN_PLURAL, pretty, labelSelector, resourceVersion, watch);
+      return cu.client().getWeblogicApiClient().listWebLogicOracleV1NamespacedDomain(namespace, pretty, _continue,
+        fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
       cu.recycle();
     }
@@ -177,19 +177,19 @@ public class CallBuilder {
    * @throws ApiException API exception
    */
   public com.squareup.okhttp.Call listDomainCall(String namespace) throws ApiException {
+    String _continue = "";
     if (client == null) {
       throw new IllegalStateException();
     }
     
     LOGGER.fine(MessageKeys.WATCH_REQUEST, "listDomain", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
-    return client.getCustomObjectsApiClient().listNamespacedCustomObjectCall(KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
-        namespace, KubernetesConstants.DOMAIN_PLURAL, pretty, labelSelector, resourceVersion, watch, null, null);
+    return client.getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainCall(namespace, pretty, _continue,
+        fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
   }
 
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   private com.squareup.okhttp.Call listDomainAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<DomainList> callback) throws ApiException {
-    return usage.client().getCustomObjectsApiClient().listNamespacedCustomObjectAsync(KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
-        namespace, KubernetesConstants.DOMAIN_PLURAL, pretty, labelSelector, resourceVersion, watch, (ApiCallback) callback);
+    return usage.client().getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainAsync(namespace, pretty, _continue,
+      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
   private final CallFactory<DomainList> LIST_DOMAIN = (requestParams, usage, cont, callback) -> {
@@ -217,17 +217,14 @@ public class CallBuilder {
   public Domain replaceDomain(String name, String namespace, Domain body) throws ApiException {
     ClientUsage cu = useClient();
     try {
-      return (Domain) cu.client().getCustomObjectsApiClient().replaceNamespacedCustomObject(KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
-          namespace, KubernetesConstants.DOMAIN_PLURAL, name, body);
+      return cu.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomain(name, namespace, body, pretty);
     } finally {
       cu.recycle();
     }
   }
   
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   private com.squareup.okhttp.Call replaceDomainAsync(ClientUsage usage, String name, String namespace, Domain body, ApiCallback<Domain> callback) throws ApiException {
-    return usage.client().getCustomObjectsApiClient().replaceNamespacedCustomObjectAsync(KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
-        namespace, KubernetesConstants.DOMAIN_PLURAL, name, body, (ApiCallback) callback);
+    return usage.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomainAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN = (requestParams, usage, cont, callback) -> {
@@ -244,6 +241,43 @@ public class CallBuilder {
    */
   public Step replaceDomainAsync(String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("replaceDomain", namespace, name, body), REPLACE_DOMAIN);
+  }
+  
+  /**
+   * Replace domain status
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Domain replaceDomainStatus(String name, String namespace, Domain body) throws ApiException {
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomainStatus(name, namespace, body, pretty);
+    } finally {
+      cu.recycle();
+    }
+  }
+  
+  private com.squareup.okhttp.Call replaceDomainStatusAsync(ClientUsage usage, String name, String namespace, Domain body, ApiCallback<Domain> callback) throws ApiException {
+    return usage.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomainStatusAsync(name, namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<Domain> REPLACE_STATUS_DOMAIN = (requestParams, usage, cont, callback) -> {
+    return replaceDomainStatusAsync(usage, requestParams.name, requestParams.namespace, (Domain) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for replacing domain status
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceDomainStatusAsync(String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("replaceDomainStatus", namespace, name, body), REPLACE_STATUS_DOMAIN);
   }
   
   /* Custom Resource Definitions */

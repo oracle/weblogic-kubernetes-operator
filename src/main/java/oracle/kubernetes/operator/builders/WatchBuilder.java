@@ -1,5 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.builders;
 
 import com.squareup.okhttp.Call;
@@ -11,7 +12,6 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 
 import java.lang.reflect.ParameterizedType;
@@ -169,11 +169,10 @@ public class WatchBuilder {
         @Override
         public Call apply(ClientHolder clientHolder, CallParams callParams) {
             try {
-                return clientHolder.getCustomObjectsApiClient().listNamespacedCustomObjectCall(
-                            KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
-                            namespace, KubernetesConstants.DOMAIN_PLURAL,
-                            callParams.getPretty(), callParams.getLabelSelector(), callParams.getResourceVersion(), 
-                            WATCH, null, null);
+                return clientHolder.getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainCall(namespace,
+                            callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
+                            callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
+                            callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
             } catch (ApiException e) {
                 throw new UncheckedApiException(e);
             }
