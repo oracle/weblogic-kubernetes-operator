@@ -1,0 +1,73 @@
+{
+    "type": "object",
+    "javaType": "oracle.kubernetes.weblogic.domain.v1.DomainSpec",
+    "description": "DomainSpec is a description of a domain.",
+    "required": [
+     "domainUID",
+     "domainName",
+     "adminSecret",
+     "asName",
+     "asPort"
+    ],
+    "properties": {
+     "domainUID": {
+      "description": "Domain unique identifier.  Must be unique across the Kubernetes cluster.",
+      "type": "string"
+     },
+     "domainName": {
+      "description": "Domain name",
+      "type": "string"
+     },
+     "image": {
+      "description": "WebLogic Docker image.  Defaults to store/oracle/weblogic:12.2.1.3",
+      "type": "string"
+     },
+     "imagePullPolicy": {
+      "description": "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
+      "type": "string"
+     },
+     "adminSecret": {
+      "description": "Reference to secret containing domain administrator username and password.  Secret must contain keys names 'username' and 'password'",
+      "javaType": "io.kubernetes.client.models.V1SecretReference",
+      "type": "object"
+     },
+     "asName": {
+      "description": "Admin server name.  Note: Possibly temporary as we could find this value through domain home inspection.",
+      "type": "string"
+     },
+     "asPort": {
+      "description": "Administration server port.  Note: Possibly temporary as we could find this value through domain home inspection.",
+      "type": "integer"
+     },
+     "exportT3Channels": {
+      "description": "List of specific T3 channels to export.  Named T3 Channels will be exposed using NodePort Services.  The internal and external ports must match; therefore, it is required that the channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes cluster's legal NodePort port range.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "startupControl": {
+      "description": "Controls which managed servers will be started.  Legal values are NONE, ADMIN, ALL, SPECIFIED or AUTO.  Defaults to AUTO.  NONE indicates that no servers, including the administration server, will be started.  ADMIN indicates that only the administration server is started.  ALL indicates that all servers in the domain will be started.  SPECIFIED indicates that the administration server is started and then additionally only those servers listed under serverStartup or managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas field will be started.  AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.",
+      "type": "string"
+     },
+     "serverStartup": {
+      "description": "List of server startup details for selected servers.",
+      "type": "array",
+      "items": {
+       "$ref": "serverstartup.json"
+      }
+     },
+     "clusterStartup": {
+      "description": "List of server startup details for selected clusters",
+      "type": "array",
+      "items": {
+       "$ref": "clusterstartup.json"
+      }
+     },
+     "replicas": {
+      "description": "Replicas is the desired number of managed servers running in each WebLogic cluster that is not configured under clusterStartup.  Provided so that administrators can scale the Domain resource.  Ignored if startupControl is not AUTO.",
+      "type": "integer",
+      "format": "int32"
+     }
+    }
+ }

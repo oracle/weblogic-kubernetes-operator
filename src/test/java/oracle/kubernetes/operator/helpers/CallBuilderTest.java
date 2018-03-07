@@ -18,7 +18,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import io.kubernetes.client.ApiException;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
