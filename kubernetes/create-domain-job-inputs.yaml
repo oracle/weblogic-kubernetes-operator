@@ -17,7 +17,8 @@ domainName: base_domain
 # This id must be lowercase and unique across all domains in a Kubernetes cluster
 domainUid: domain1
 
-#
+# Determines which WebLogic Servers the Operator will start up
+# Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
 startupControl: AUTO
 
 # Cluster name
