@@ -67,7 +67,7 @@ public class DomainCondition {
 
     /**
      * Last time we probed the condition.
-     * 
+     * @return time
      */
     public DateTime getLastProbeTime() {
         return lastProbeTime;
@@ -75,12 +75,17 @@ public class DomainCondition {
 
     /**
      * Last time we probed the condition.
-     * 
+     * @param lastProbeTime time
      */
     public void setLastProbeTime(DateTime lastProbeTime) {
         this.lastProbeTime = lastProbeTime;
     }
 
+    /**
+     * Last time we probed the condition.
+     * @param lastProbeTime time
+     * @return this
+     */
     public DomainCondition withLastProbeTime(DateTime lastProbeTime) {
         this.lastProbeTime = lastProbeTime;
         return this;
@@ -88,7 +93,7 @@ public class DomainCondition {
 
     /**
      * Last time the condition transitioned from one status to another.
-     * 
+     * @return time
      */
     public DateTime getLastTransitionTime() {
         return lastTransitionTime;
@@ -96,12 +101,17 @@ public class DomainCondition {
 
     /**
      * Last time the condition transitioned from one status to another.
-     * 
+     * @param lastTransitionTime time
      */
     public void setLastTransitionTime(DateTime lastTransitionTime) {
         this.lastTransitionTime = lastTransitionTime;
     }
 
+    /**
+     * Last time the condition transitioned from one status to another.
+     * @param lastTransitionTime time
+     * @return this
+     */
     public DomainCondition withLastTransitionTime(DateTime lastTransitionTime) {
         this.lastTransitionTime = lastTransitionTime;
         return this;
@@ -109,7 +119,7 @@ public class DomainCondition {
 
     /**
      * Human-readable message indicating details about last transition.
-     * 
+     * @return message
      */
     public String getMessage() {
         return message;
@@ -117,12 +127,17 @@ public class DomainCondition {
 
     /**
      * Human-readable message indicating details about last transition.
-     * 
+     * @param message message
      */
     public void setMessage(String message) {
         this.message = message;
     }
 
+    /**
+     * Human-readable message indicating details about last transition.
+     * @param message message
+     * @return this
+     */
     public DomainCondition withMessage(String message) {
         this.message = message;
         return this;
@@ -130,7 +145,7 @@ public class DomainCondition {
 
     /**
      * Unique, one-word, CamelCase reason for the condition's last transition.
-     * 
+     * @return reason
      */
     public String getReason() {
         return reason;
@@ -138,12 +153,17 @@ public class DomainCondition {
 
     /**
      * Unique, one-word, CamelCase reason for the condition's last transition.
-     * 
+     * @param reason reason
      */
     public void setReason(String reason) {
         this.reason = reason;
     }
 
+    /**
+     * Unique, one-word, CamelCase reason for the condition's last transition.
+     * @param reason reason
+     * @return this
+     */
     public DomainCondition withReason(String reason) {
         this.reason = reason;
         return this;
@@ -152,7 +172,7 @@ public class DomainCondition {
     /**
      * Status is the status of the condition. Can be True, False, Unknown.
      * (Required)
-     * 
+     * @return status
      */
     public String getStatus() {
         return status;
@@ -161,12 +181,18 @@ public class DomainCondition {
     /**
      * Status is the status of the condition. Can be True, False, Unknown.
      * (Required)
-     * 
+     * @param status status
      */
     public void setStatus(String status) {
         this.status = status;
     }
 
+    /**
+     * Status is the status of the condition. Can be True, False, Unknown.
+     * (Required)
+     * @param status status
+     * @return this
+     */
     public DomainCondition withStatus(String status) {
         this.status = status;
         return this;
@@ -175,7 +201,7 @@ public class DomainCondition {
     /**
      * Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure.
      * (Required)
-     * 
+     * @return type
      */
     public String getType() {
         return type;
@@ -184,12 +210,18 @@ public class DomainCondition {
     /**
      * Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure.
      * (Required)
-     * 
+     * @param type type
      */
     public void setType(String type) {
         this.type = type;
     }
 
+    /**
+     * Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure.
+     * (Required)
+     * @param type type
+     * @return this
+     */
     public DomainCondition withType(String type) {
         this.type = type;
         return this;

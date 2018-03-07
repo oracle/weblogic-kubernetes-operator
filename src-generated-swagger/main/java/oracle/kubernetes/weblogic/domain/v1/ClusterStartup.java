@@ -55,7 +55,7 @@ public class ClusterStartup {
 
     /**
      * Desired startup state for any managed server started in this cluster. Legal values are RUNNING or ADMIN.
-     * 
+     * @return Desired state
      */
     public String getDesiredState() {
         return desiredState;
@@ -63,12 +63,17 @@ public class ClusterStartup {
 
     /**
      * Desired startup state for any managed server started in this cluster. Legal values are RUNNING or ADMIN.
-     * 
+     * @param desiredState Desired status
      */
     public void setDesiredState(String desiredState) {
         this.desiredState = desiredState;
     }
 
+    /**
+     * Desired startup state for any managed server started in this cluster. Legal values are RUNNING or ADMIN.
+     * @param desiredState Desired status
+     * @return this
+     */
     public ClusterStartup withDesiredState(String desiredState) {
         this.desiredState = desiredState;
         return this;
@@ -77,7 +82,7 @@ public class ClusterStartup {
     /**
      * Name of specific cluster to start.  Managed servers in the cluster will be started beginning with replicas instances.
      * (Required)
-     * 
+     * @return Cluster name
      */
     public String getClusterName() {
         return clusterName;
@@ -86,12 +91,18 @@ public class ClusterStartup {
     /**
      * Name of specific cluster to start.  Managed servers in the cluster will be started beginning with replicas instances.
      * (Required)
-     * 
+     * @param clusterName Cluster name
      */
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
     }
 
+    /**
+     * Name of specific cluster to start.  Managed servers in the cluster will be started beginning with replicas instances.
+     * (Required)
+     * @param clusterName Cluster name
+     * @return this
+     */
     public ClusterStartup withClusterName(String clusterName) {
         this.clusterName = clusterName;
         return this;
@@ -99,7 +110,7 @@ public class ClusterStartup {
 
     /**
      * Replicas is the desired number of managed servers running for this cluster.
-     * 
+     * @return Replicas
      */
     public Integer getReplicas() {
         return replicas;
@@ -107,12 +118,17 @@ public class ClusterStartup {
 
     /**
      * Replicas is the desired number of managed servers running for this cluster.
-     * 
+     * @param replicas Replicas
      */
     public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 
+    /**
+     * Replicas is the desired number of managed servers running for this cluster.
+     * @param replicas Replicas
+     * @return this
+     */
     public ClusterStartup withReplicas(Integer replicas) {
         this.replicas = replicas;
         return this;
@@ -120,7 +136,7 @@ public class ClusterStartup {
 
     /**
      * Environment variables to pass while starting managed servers in this cluster.
-     * 
+     * @return Environment variables
      */
     public List<V1EnvVar> getEnv() {
         return env;
@@ -128,12 +144,17 @@ public class ClusterStartup {
 
     /**
      * Environment variables to pass while starting managed servers in this cluster.
-     * 
+     * @param env Environment variables
      */
     public void setEnv(List<V1EnvVar> env) {
         this.env = env;
     }
 
+    /**
+     * Environment variables to pass while starting managed servers in this cluster.
+     * @param env Environment variables
+     * @return this
+     */
     public ClusterStartup withEnv(List<V1EnvVar> env) {
         this.env = env;
         return this;

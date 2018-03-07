@@ -55,7 +55,7 @@ public class ServerStartup {
 
     /**
      * Desired startup state.  Legal values are RUNNING or ADMIN.
-     * 
+     * @return desired state
      */
     public String getDesiredState() {
         return desiredState;
@@ -63,12 +63,17 @@ public class ServerStartup {
 
     /**
      * Desired startup state.  Legal values are RUNNING or ADMIN.
-     * 
+     * @param desiredState desired state
      */
     public void setDesiredState(String desiredState) {
         this.desiredState = desiredState;
     }
 
+    /**
+     * Desired startup state.  Legal values are RUNNING or ADMIN.
+     * @param desiredState desired state
+     * @return this
+     */
     public ServerStartup withDesiredState(String desiredState) {
         this.desiredState = desiredState;
         return this;
@@ -77,7 +82,7 @@ public class ServerStartup {
     /**
      * Managed server name of instance to start.
      * (Required)
-     * 
+     * @return server name
      */
     public String getServerName() {
         return serverName;
@@ -86,12 +91,18 @@ public class ServerStartup {
     /**
      * Managed server name of instance to start.
      * (Required)
-     * 
+     * @param serverName server name
      */
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
 
+    /**
+     * Managed server name of instance to start.
+     * (Required)
+     * @param serverName server name
+     * @return this
+     */
     public ServerStartup withServerName(String serverName) {
         this.serverName = serverName;
         return this;
@@ -99,7 +110,7 @@ public class ServerStartup {
 
     /**
      * Managed server NodePort port.  The port on each node on which this managed server will be exposed.  If specified, this value must be an unused port.  By default, the server will not be exposed outside the Kubernetes cluster.
-     * 
+     * @return node port
      */
     public Integer getNodePort() {
         return nodePort;
@@ -107,12 +118,17 @@ public class ServerStartup {
 
     /**
      * Managed server NodePort port.  The port on each node on which this managed server will be exposed.  If specified, this value must be an unused port.  By default, the server will not be exposed outside the Kubernetes cluster.
-     * 
+     * @param nodePort node port
      */
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
     }
 
+    /**
+     * Managed server NodePort port.  The port on each node on which this managed server will be exposed.  If specified, this value must be an unused port.  By default, the server will not be exposed outside the Kubernetes cluster.
+     * @param nodePort node port
+     * @return this
+     */
     public ServerStartup withNodePort(Integer nodePort) {
         this.nodePort = nodePort;
         return this;
@@ -120,7 +136,7 @@ public class ServerStartup {
 
     /**
      * Environment variables to pass while starting this managed server.
-     * 
+     * @return Environment variables
      */
     public List<V1EnvVar> getEnv() {
         return env;
@@ -128,12 +144,17 @@ public class ServerStartup {
 
     /**
      * Environment variables to pass while starting this managed server.
-     * 
+     * @param env Environment variables
      */
     public void setEnv(List<V1EnvVar> env) {
         this.env = env;
     }
 
+    /**
+     * Environment variables to pass while starting this managed server.
+     * @param env Environment variables
+     * @return this
+     */
     public ServerStartup withEnv(List<V1EnvVar> env) {
         this.env = env;
         return this;
