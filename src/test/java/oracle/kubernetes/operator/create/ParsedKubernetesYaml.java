@@ -20,24 +20,14 @@ import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 
-import org.apache.commons.codec.binary.Base64;
-
+import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Holds the results of a kubernetes yaml file that has been converted to k8s typed java objects
  */
 public class ParsedKubernetesYaml {
-
-  private static final String KIND_CONFIG_MAP = "ConfigMap";
-  private static final String KIND_CLUSTER_ROLE = "ClusterRole";
-  private static final String KIND_CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
-  private static final String KIND_DEPLOYMENT = "Deployment";
-  private static final String KIND_NAMESPACE = "Namespace";
-  private static final String KIND_ROLE_BINDING = "RoleBinding";
-  private static final String KIND_SECRET = "Secret";
-  private static final String KIND_SERVICE = "Service";
-  private static final String KIND_SERVICE_ACCOUNT = "ServiceAccount";
 
   private Map<String,TypeHandler> kindToHandler = new HashMap();
 
