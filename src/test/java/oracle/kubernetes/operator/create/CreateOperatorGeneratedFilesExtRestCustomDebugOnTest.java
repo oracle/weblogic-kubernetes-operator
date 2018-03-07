@@ -29,7 +29,8 @@ public class CreateOperatorGeneratedFilesExtRestCustomDebugOnTest {
   }
 
   @Test
-  public void generatesCorrectExternalOperatorService() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
+    // TBD - rework to new pattern
     generatedFiles.getWeblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, true, true);
   }
 }

@@ -6,10 +6,22 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+import static java.util.Arrays.asList;
+
+import io.kubernetes.client.models.V1beta1ClusterRole;
+import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import io.kubernetes.client.models.V1beta1RoleBinding;
+import io.kubernetes.client.models.V1beta1PolicyRule;
+import io.kubernetes.client.models.V1beta1RoleRef;
+import io.kubernetes.client.models.V1beta1Subject;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ServiceAccount;
 
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 
+import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -25,7 +37,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
 
   @BeforeClass
   public static void setup() throws Exception {
-    inputs = CreateOperatorInputs.newInputs();
+    inputs = CreateOperatorInputs.newInputs(); // defaults to external rest none, debug off
     generatedFiles = GeneratedOperatorYamlFiles.generateOperatorYamlFiles(inputs);
   }
 
@@ -37,17 +49,31 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   }
 
   @Test
-  public void generatesCorrectOperatorConfigMap() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_operatorConfigMap() throws Exception {
+    // TBD - rework to new pattern
     weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, ""); // no external operator cert
   }
 
   @Test
-  public void generatesCorrectOperatorSecrets() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_operatorSecrets() throws Exception {
+    // TBD - rework to new pattern
     weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, ""); // no external operator key
   }
 
   @Test
-  public void generatesCorrectInternalOperatorService() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_operatorDeployment() throws Exception {
+    // TBD
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
+    // TBD - rework to new pattern
+    weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, false, false);
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorYaml_internalOperatorService() throws Exception {
+    // TBD - rework to new pattern
     /* Expected yaml:
       apiVersion: v1
       kind: Service
@@ -78,8 +104,125 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   }
 
   @Test
-  public void generatesCorrectExternalOperatorService() throws Exception {
-    weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, false, false);
+  public void generatesCorrect_weblogicOperatorSecurityYaml_operatorNamespace() throws Exception {
+    String name = inputs.getNamespace();
+    V1Namespace want =
+      newNamespace(name);
+    V1Namespace have =
+      weblogicOperatorSecurityYaml().getOperatorNamespace();
+    assertThat(have, equalTo(want));
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_operatorServiceAccount() throws Exception {
+    String name = inputs.getServiceAccount();
+    V1ServiceAccount want =
+      newServiceAccount(name, inputs.getNamespace());
+    V1ServiceAccount have =
+      weblogicOperatorSecurityYaml().getOperatorServiceAccount();
+    assertThat(have, equalTo(want));
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorClusterRole() throws Exception {
+    String name = "weblogic-operator-cluster-role";
+    V1beta1ClusterRole want =
+      newClusterRole(name)
+        .addRulesItem(
+          (new V1beta1PolicyRule())
+            .addApiGroupsItem("")
+            .resources(asList("namespaces", "persistentvolumes"))
+            .verbs(asList("get", "list", "watch"))
+        )
+        .addRulesItem(
+          (new V1beta1PolicyRule())
+            .addApiGroupsItem("apiextensions.k8s.io")
+            .addResourcesItem("customresourcedefinitions")
+            .verbs(asList("get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"))
+        )
+        .addRulesItem(
+          (new V1beta1PolicyRule())
+            .addApiGroupsItem("weblogic.oracle")
+            .addResourcesItem("domains")
+            .verbs(asList("get", "list", "watch", "update", "patch"))
+        )
+        .addRulesItem(
+          (new V1beta1PolicyRule())
+            .addApiGroupsItem("weblogic.oracle")
+            .addResourcesItem("domains/status")
+            .addVerbsItem("update")
+        )
+        .addRulesItem(
+          (new V1beta1PolicyRule())
+            .addApiGroupsItem("extensions")
+            .addResourcesItem("ingresses")
+            .verbs(asList("get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"))
+        );
+    V1beta1ClusterRole have =
+      weblogicOperatorSecurityYaml().getWeblogicOperatorClusterRole();
+    assertThat(have, equalTo(want));
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorClusterRoleNonResource() throws Exception {
+    String name = "weblogic-operator-cluster-role-nonresource";
+    V1beta1ClusterRole want =
+      newClusterRole(name)
+        .addRulesItem(
+          (new V1beta1PolicyRule())
+            .addNonResourceURLsItem("/version/*")
+            .addVerbsItem("get")
+        );
+
+    V1beta1ClusterRole have =
+      weblogicOperatorSecurityYaml().getWeblogicOperatorClusterRoleNonResource();
+
+    assertThat(have, equalTo(want));
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBinding() throws Exception {
+    String name = inputs.getNamespace() + "-operator-rolebinding";
+    V1beta1ClusterRoleBinding want =
+      newClusterRoleBinding(name)
+        .addSubjectsItem(
+          newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), "")
+        )
+        .roleRef(
+          newRoleRef("weblogic-operator-cluster-role", "rbac.authorization.k8s.io")
+        );
+    V1beta1ClusterRoleBinding have =
+      weblogicOperatorSecurityYaml().getOperatorRoleBinding();
+    assertThat(have, equalTo(want));
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingNonResource() throws Exception {
+    // TBD
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingDiscovery() throws Exception {
+    // TBD
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingAuthDelegator() throws Exception {
+    // TBD
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorNamespaceRole() throws Exception {
+    // TBD
+  }
+
+  @Test
+  public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorRoleBinding() throws Exception {
+    // TBD
+  }
+
+  private ParsedWeblogicOperatorSecurityYaml weblogicOperatorSecurityYaml() {
+    return generatedFiles.getWeblogicOperatorSecurityYaml();
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

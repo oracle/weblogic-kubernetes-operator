@@ -28,7 +28,32 @@ public class CreateOperatorGeneratedFilesELKEnabledTest {
   }
 
   @Test
-  public void generatesCorrectDeploymentElkArtifacts() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_operatorDeployment() throws Exception {
     // TBD
+    /* Expected yaml:
+      spec:
+        template:
+          spec:
+            containers:
+            - name: weblogic-operator
+              - mountPath: /logs
+                name: log-dir
+                readOnly: false
+            - name: logstash
+              image: logstash:5
+              args: ["-f", "/logs/logstash.conf"]
+              volumeMounts:
+              - mountPath: /logs
+                name: log-dir
+              env:
+              - name: ELASTICSEARCH_HOST
+                value: "elasticsearch.default.svc.cluster.local"
+              - name: ELASTICSEARCH_PORT
+                value: "9200"
+            volumes:
+            - name: log-dir
+              emptyDir:
+                medium: Memory
+      */
   }
 }

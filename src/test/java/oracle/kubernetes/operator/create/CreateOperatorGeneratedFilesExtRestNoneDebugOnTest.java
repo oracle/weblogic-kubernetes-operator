@@ -29,12 +29,13 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOnTest {
   }
 
   @Test
-  public void generatesCorrectExternalOperatorService() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
+    // TBD - rework to new pattern
     weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, true, false);
   }
 
   @Test
-  public void generatesCorrectDeploymentDebugPortInfo() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_operatorDeployment() throws Exception {
     // TBD
   }
 

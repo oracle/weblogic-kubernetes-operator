@@ -42,7 +42,8 @@ public class CreateOperatorGeneratedFilesHaveImagePullSecretTest {
   }
 
   @Test
-  public void generatesCorrectDeploymentImagePullSecrets() throws Exception {
+  public void generatesCorrect_weblogicOperatorYaml_operatorDeployment() throws Exception {
+    // TBD - rework to new pattern
     /* Expected yaml:
       kind: Deployment
       spec:
