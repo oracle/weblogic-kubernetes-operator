@@ -28,7 +28,7 @@ spec:
   asName: "%ADMIN_SERVER_NAME%"
   # The Admin Server's ListenPort
   asPort: %ADMIN_PORT%
-  # startupControl legal values are "ALL", "ADMIN", "SPECIFIED", or "AUTO"
+  # startupControl legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "ALL" will start up all defined servers
   # - "ADMIN" will start up only the AdminServer (no managed servers will be started)
