@@ -14,7 +14,7 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import org.junit.After;
@@ -82,7 +82,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
 
     @Test
     public void whenDomainWatchReceivesAddResponse_returnItFromIterator() throws Exception {
-        Domain domain = new Domain().apiVersion(API_VERSION).kind("Domain").metadata(createMetaData("domain1", NAMESPACE));
+        Domain domain = new Domain().withApiVersion(API_VERSION).withKind("Domain").withMetadata(createMetaData("domain1", NAMESPACE));
         defineHttpResponse(DOMAIN_RESOURCE, withResponses(createAddedResponse(domain)));
 
         WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
@@ -92,8 +92,8 @@ public class WatchBuilderTest extends HttpUserAgentTest {
 
     @Test
     public void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator() throws Exception {
-        Domain domain1 = new Domain().apiVersion(API_VERSION).kind("Domain").metadata(createMetaData("domain1", NAMESPACE));
-        Domain domain2 = new Domain().apiVersion(API_VERSION).kind("Domain").metadata(createMetaData("domain2", NAMESPACE));
+        Domain domain1 = new Domain().withApiVersion(API_VERSION).withKind("Domain").withMetadata(createMetaData("domain1", NAMESPACE));
+        Domain domain2 = new Domain().withApiVersion(API_VERSION).withKind("Domain").withMetadata(createMetaData("domain2", NAMESPACE));
         defineHttpResponse(DOMAIN_RESOURCE, withResponses(createModifiedResponse(domain1), createDeletedResponse(domain2)));
 
         WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);

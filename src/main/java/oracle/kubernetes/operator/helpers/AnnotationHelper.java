@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Objects;
 
 import io.kubernetes.client.models.V1ObjectMeta;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 
 /**
  * Annotates pods, services with details about the Domain instance and checks these annotations.

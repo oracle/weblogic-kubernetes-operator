@@ -7,7 +7,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.watcher.Watcher;
