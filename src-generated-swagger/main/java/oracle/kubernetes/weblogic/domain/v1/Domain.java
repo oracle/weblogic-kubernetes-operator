@@ -59,7 +59,7 @@ public class Domain {
 
     /**
      * APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
-     * 
+     * @return API version
      */
     public String getApiVersion() {
         return apiVersion;
@@ -67,12 +67,17 @@ public class Domain {
 
     /**
      * APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
-     * 
+     * @param apiVersion API version
      */
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
     }
 
+    /**
+     * APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+     * @param apiVersion API version
+     * @return this
+     */
     public Domain withApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
         return this;
@@ -80,7 +85,7 @@ public class Domain {
 
     /**
      * Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-     * 
+     * @return kind
      */
     public String getKind() {
         return kind;
@@ -88,12 +93,17 @@ public class Domain {
 
     /**
      * Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-     * 
+     * @param kind Kind
      */
     public void setKind(String kind) {
         this.kind = kind;
     }
 
+    /**
+     * Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+     * @param kind Kind
+     * @return this
+     */
     public Domain withKind(String kind) {
         this.kind = kind;
         return this;
@@ -101,7 +111,7 @@ public class Domain {
 
     /**
      * Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-     * 
+     * @return Metadata
      */
     public V1ObjectMeta getMetadata() {
         return metadata;
@@ -109,12 +119,17 @@ public class Domain {
 
     /**
      * Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-     * 
+     * @param metadata Metadata
      */
     public void setMetadata(V1ObjectMeta metadata) {
         this.metadata = metadata;
     }
 
+    /**
+     * Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+     * @param metadata Metadata
+     * @return this
+     */
     public Domain withMetadata(V1ObjectMeta metadata) {
         this.metadata = metadata;
         return this;
@@ -122,7 +137,7 @@ public class Domain {
 
     /**
      * DomainSpec is a description of a domain.
-     * 
+     * @return Specification
      */
     public DomainSpec getSpec() {
         return spec;
@@ -130,12 +145,17 @@ public class Domain {
 
     /**
      * DomainSpec is a description of a domain.
-     * 
+     * @param spec Specification
      */
     public void setSpec(DomainSpec spec) {
         this.spec = spec;
     }
 
+    /**
+     * DomainSpec is a description of a domain.
+     * @param spec Specification
+     * @return this
+     */
     public Domain withSpec(DomainSpec spec) {
         this.spec = spec;
         return this;
@@ -143,7 +163,7 @@ public class Domain {
 
     /**
      * DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.
-     * 
+     * @return Status
      */
     public DomainStatus getStatus() {
         return status;
@@ -151,12 +171,17 @@ public class Domain {
 
     /**
      * DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.
-     * 
+     * @param status Status
      */
     public void setStatus(DomainStatus status) {
         this.status = status;
     }
 
+    /**
+     * DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.
+     * @param status Status
+     * @return this
+     */
     public Domain withStatus(DomainStatus status) {
         this.status = status;
         return this;

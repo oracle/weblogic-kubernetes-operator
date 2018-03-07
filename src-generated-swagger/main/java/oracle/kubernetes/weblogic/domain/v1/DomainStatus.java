@@ -84,7 +84,7 @@ public class DomainStatus {
 
     /**
      * Current service state of domain.
-     * 
+     * @return conditions
      */
     public List<DomainCondition> getConditions() {
         return conditions;
@@ -92,12 +92,17 @@ public class DomainStatus {
 
     /**
      * Current service state of domain.
-     * 
+     * @param conditions conditions
      */
     public void setConditions(List<DomainCondition> conditions) {
         this.conditions = conditions;
     }
 
+    /**
+     * Current service state of domain.
+     * @param conditions conditions
+     * @return this
+     */
     public DomainStatus withConditions(List<DomainCondition> conditions) {
         this.conditions = conditions;
         return this;
@@ -105,7 +110,7 @@ public class DomainStatus {
 
     /**
      * A human readable message indicating details about why the domain is in this condition.
-     * 
+     * @return message
      */
     public String getMessage() {
         return message;
@@ -113,12 +118,17 @@ public class DomainStatus {
 
     /**
      * A human readable message indicating details about why the domain is in this condition.
-     * 
+     * @param message message
      */
     public void setMessage(String message) {
         this.message = message;
     }
 
+    /**
+     * A human readable message indicating details about why the domain is in this condition.
+     * @param message message
+     * @return this
+     */
     public DomainStatus withMessage(String message) {
         this.message = message;
         return this;
@@ -126,7 +136,7 @@ public class DomainStatus {
 
     /**
      * A brief CamelCase message indicating details about why the domain is in this state.
-     * 
+     * @return reason
      */
     public String getReason() {
         return reason;
@@ -134,12 +144,17 @@ public class DomainStatus {
 
     /**
      * A brief CamelCase message indicating details about why the domain is in this state.
-     * 
+     * @param reason reason
      */
     public void setReason(String reason) {
         this.reason = reason;
     }
 
+    /**
+     * A brief CamelCase message indicating details about why the domain is in this state.
+     * @param reason reason
+     * @return this
+     */
     public DomainStatus withReason(String reason) {
         this.reason = reason;
         return this;
@@ -147,7 +162,7 @@ public class DomainStatus {
 
     /**
      * List of specific server instances that are available.
-     * 
+     * @return available servers
      */
     public List<String> getAvailableServers() {
         return availableServers;
@@ -155,12 +170,17 @@ public class DomainStatus {
 
     /**
      * List of specific server instances that are available.
-     * 
+     * @param availableServers available servers
      */
     public void setAvailableServers(List<String> availableServers) {
         this.availableServers = availableServers;
     }
 
+    /**
+     * List of specific server instances that are available.
+     * @param availableServers available servers
+     * @return this
+     */
     public DomainStatus withAvailableServers(List<String> availableServers) {
         this.availableServers = availableServers;
         return this;
@@ -168,7 +188,7 @@ public class DomainStatus {
 
     /**
      * List of specific server instances that are configured to be available but that are either not yet available or have failed.
-     * 
+     * @return unavailable servers
      */
     public List<String> getUnavailableServers() {
         return unavailableServers;
@@ -176,12 +196,17 @@ public class DomainStatus {
 
     /**
      * List of specific server instances that are configured to be available but that are either not yet available or have failed.
-     * 
+     * @param unavailableServers unavailable servers
      */
     public void setUnavailableServers(List<String> unavailableServers) {
         this.unavailableServers = unavailableServers;
     }
 
+    /**
+     * List of specific server instances that are configured to be available but that are either not yet available or have failed.
+     * @param unavailableServers unavailable servers
+     * @return this
+     */
     public DomainStatus withUnavailableServers(List<String> unavailableServers) {
         this.unavailableServers = unavailableServers;
         return this;
@@ -189,7 +214,7 @@ public class DomainStatus {
 
     /**
      * List of specific cluster instances where the configured number of replicas are now available.
-     * 
+     * @return available clusters
      */
     public List<String> getAvailableClusters() {
         return availableClusters;
@@ -197,12 +222,17 @@ public class DomainStatus {
 
     /**
      * List of specific cluster instances where the configured number of replicas are now available.
-     * 
+     * @param availableClusters available clusters
      */
     public void setAvailableClusters(List<String> availableClusters) {
         this.availableClusters = availableClusters;
     }
 
+    /**
+     * List of specific cluster instances where the configured number of replicas are now available.
+     * @param availableClusters available clusters
+     * @return this
+     */
     public DomainStatus withAvailableClusters(List<String> availableClusters) {
         this.availableClusters = availableClusters;
         return this;
@@ -210,7 +240,7 @@ public class DomainStatus {
 
     /**
      * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
-     * 
+     * @return unavailable clusters
      */
     public List<String> getUnavailableClusters() {
         return unavailableClusters;
@@ -218,12 +248,17 @@ public class DomainStatus {
 
     /**
      * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
-     * 
+     * @param unavailableClusters unavailable clusters
      */
     public void setUnavailableClusters(List<String> unavailableClusters) {
         this.unavailableClusters = unavailableClusters;
     }
 
+    /**
+     * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
+     * @param unavailableClusters unavailable clusters
+     * @return this
+     */
     public DomainStatus withUnavailableClusters(List<String> unavailableClusters) {
         this.unavailableClusters = unavailableClusters;
         return this;
@@ -231,7 +266,7 @@ public class DomainStatus {
 
     /**
      * RFC 3339 date and time at which the operator started the domain.  This will be when the operator begins processing and will precede when the various servers or clusters are available.
-     * 
+     * @return start time
      */
     public DateTime getStartTime() {
         return startTime;
@@ -239,12 +274,17 @@ public class DomainStatus {
 
     /**
      * RFC 3339 date and time at which the operator started the domain.  This will be when the operator begins processing and will precede when the various servers or clusters are available.
-     * 
+     * @param startTime start time
      */
     public void setStartTime(DateTime startTime) {
         this.startTime = startTime;
     }
 
+    /**
+     * RFC 3339 date and time at which the operator started the domain.  This will be when the operator begins processing and will precede when the various servers or clusters are available.
+     * @param startTime start time
+     * @return this
+     */
     public DomainStatus withStartTime(DateTime startTime) {
         this.startTime = startTime;
         return this;
