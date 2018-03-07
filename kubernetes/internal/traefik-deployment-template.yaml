@@ -6,6 +6,7 @@ metadata:
   namespace: %NAMESPACE%
   labels:
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME_LC%
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -15,6 +16,7 @@ metadata:
   labels:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME_LC%
 spec:
   replicas: 1
   selector:
@@ -25,6 +27,7 @@ spec:
       labels:
         app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
         weblogic.domainUID: %DOMAIN_UID%
+        weblogic.clusterName: %CLUSTER_NAME_LC%
     spec:
       serviceAccountName: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
       terminationGracePeriodSeconds: 60
@@ -79,6 +82,7 @@ metadata:
   labels:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME_LC%
 data:
   traefik.toml: |
     # traefik.toml
@@ -100,6 +104,7 @@ metadata:
   namespace: %NAMESPACE%
   labels:
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME_LC%
 spec:
   selector:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
@@ -118,6 +123,7 @@ metadata:
   labels:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME_LC%
 spec:
   selector:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik

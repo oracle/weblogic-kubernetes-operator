@@ -32,6 +32,7 @@ metadata:
   name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
   labels:
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME_LC%
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
