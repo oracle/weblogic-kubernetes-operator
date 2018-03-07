@@ -15,5 +15,11 @@ public interface KubernetesConstants {
   public static final String KIND_INGRESS = "Ingress";
   public static final String CLASS_INGRESS = "kubernetes.io/ingress.class";
   public static final String CLASS_INGRESS_VALUE = "traefik";
+  
+  public static final String DOMAIN_GROUP = "weblogic.oracle";
+  public static final String DOMAIN_VERSION = "v1";
+  public static final String DOMAIN_PLURAL = "domains";
+  public static final String DOMAIN_SINGULAR = "domain";
+  public static final String DOMAIN_SHORT = "dom";
 
 }
