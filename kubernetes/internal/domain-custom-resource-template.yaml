@@ -36,7 +36,7 @@ spec:
   #   "clusterStartup" entries below to work out which servers to start
   # - "AUTO" will start the servers as with "SPECIFIED", but then also start servers from
   #   other clusters up to the replicas count
-  startupControl: "AUTO"
+  startupControl: "%STARTUP_CONTROL%"
   # serverStartup is used to list the desired behavior for starting servers.  The Operator will
   # use this field only if startupControl is set to "SPECIFIED" or "AUTO".  You may provide a list of 
   # entries, each entry should contain the keys should below:

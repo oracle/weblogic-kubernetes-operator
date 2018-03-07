@@ -17,6 +17,9 @@ domainName: base_domain
 # This id must be lowercase and unique across all domains in a Kubernetes cluster
 domainUid: domain1
 
+#
+startupControl: AUTO
+
 # Cluster name
 clusterName: cluster-1
 
