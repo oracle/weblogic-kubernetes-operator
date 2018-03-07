@@ -11,6 +11,7 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
+import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -23,6 +24,7 @@ public class ClientHolder {
   private final ApiClient client;
   private ApiextensionsV1beta1Api apiextensionsApi = null;
   private CoreV1Api coreApi = null;
+  private WeblogicApi wlsApi = null;
   private AuthorizationV1Api authzApi = null;
   private AuthenticationV1Api authApi = null;
   private VersionApi verApi = null;
@@ -60,6 +62,14 @@ public class ClientHolder {
       coreApi = new CoreV1Api(client);
     }
     return coreApi;
+  }
+
+  public WeblogicApi getWeblogicApiClient() {
+    if (wlsApi == null) {
+      LOGGER.fine(MessageKeys.CREATING_WEBLOGIC_API_CLIENT);
+      wlsApi = new WeblogicApi(client);
+    }
+    return wlsApi;
   }
 
   public AuthorizationV1Api getAuthorizationApiClient() {
