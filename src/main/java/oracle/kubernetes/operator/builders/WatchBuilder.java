@@ -10,7 +10,8 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 
 import java.lang.reflect.ParameterizedType;
@@ -168,10 +169,11 @@ public class WatchBuilder {
         @Override
         public Call apply(ClientHolder clientHolder, CallParams callParams) {
             try {
-                return clientHolder.getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainCall(namespace,
-                            callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
-                            callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
-                            callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
+                return clientHolder.getCustomObjectsApiClient().listNamespacedCustomObjectCall(
+                            KubernetesConstants.DOMAIN_GROUP, KubernetesConstants.DOMAIN_VERSION, 
+                            namespace, KubernetesConstants.DOMAIN_PLURAL,
+                            callParams.getPretty(), callParams.getLabelSelector(), callParams.getResourceVersion(), 
+                            WATCH, null, null);
             } catch (ApiException e) {
                 throw new UncheckedApiException(e);
             }

@@ -3,7 +3,7 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -75,7 +75,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupWarnsIfNoServersInCluster() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(1);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
@@ -90,7 +90,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupWarnsIfReplicasTooHigh() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
-    ClusterStartup cs = new ClusterStartup().clusterName("cluster1").replicas(2);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
