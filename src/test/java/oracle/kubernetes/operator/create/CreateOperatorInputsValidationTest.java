@@ -10,7 +10,7 @@ import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.newInputs;
+import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 
 /**
  * Tests that create-weblogic-operator.sh properly validates the parameters
@@ -49,14 +49,14 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
 
   @Test
-  public void createOperator_with_missingServiceAccount_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_missingServiceAccount_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().serviceAccount("")),
       failsAndPrints(paramMissingError(PARAM_SERVICE_ACCOUNT)));
   }
 
   @Test
-  public void createOperator_with_upperCaseServiceAccount_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_upperCaseServiceAccount_failsAndReturnsError() throws Exception {
     String val = "TestServiceAccount";
     assertThat(
       execCreateOperator(newInputs().serviceAccount(val)),
@@ -64,14 +64,14 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_missingNamespace_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_missingNamespace_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().namespace("")),
       failsAndPrints(paramMissingError(PARAM_NAMESPACE)));
   }
 
   @Test
-  public void createOperator_with_upperCaseNamespace_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_upperCaseNamespace_failsAndReturnsError() throws Exception {
     String val = "TestNamespace";
     assertThat(
       execCreateOperator(newInputs().namespace(val)),
@@ -79,43 +79,66 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_missingTargetNamespaces_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_missingTargetNamespaces_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().targetNamespaces("")),
       failsAndPrints(paramMissingError(PARAM_TARGET_NAMESPACES)));
   }
 
   @Test
-  public void createOperator_with_missingImage_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_missingImage_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().image("")),
       failsAndPrints(paramMissingError(PARAM_IMAGE)));
   }
 
   @Test
-  public void createOperator_with_missingImagePullPolicy_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_missingImagePullPolicy_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().imagePullPolicy("")),
       failsAndPrints(paramMissingError(PARAM_IMAGE_PULL_POLICY)));
   }
 
   @Test
-  public void createOperator_with_missingExternalRestOption_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_invalidImagePullPolicy_failsAndReturnsError() throws Exception {
+    String val = "invalid-image-pull-policy";
+    assertThat(
+      execCreateOperator(newInputs().imagePullPolicy(val)),
+      failsAndPrints(invalidParmValueError(PARAM_IMAGE_PULL_POLICY, val)));
+  }
+
+  @Test
+  public void createOperator_with_ImagePullPolicyIfNotPresent_succeeds() throws Exception {
+    createOperator_with_validImagePullPolicy_succeeds(IMAGE_PULL_POLICY_IF_NOT_PRESENT);
+  }
+
+  @Test
+  public void createOperator_with_ImagePullPolicyAlways_succeeds() throws Exception {
+    createOperator_with_validImagePullPolicy_succeeds(IMAGE_PULL_POLICY_ALWAYS);
+  }
+
+  @Test
+  public void createOperator_with_ImagePullPolicyNever_succeeds() throws Exception {
+    createOperator_with_validImagePullPolicy_succeeds(IMAGE_PULL_POLICY_NEVER);
+  }
+
+  @Test
+  public void createOperator_with_missingExternalRestOption_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().externalRestOption("")),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_REST_OPTION)));
   }
 
   @Test
-  public void createOperator_with_invalidExternalRestOption_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_invalidExternalRestOption_failsAndReturnsError() throws Exception {
     String val = "invalid-rest-option";
     assertThat(
       execCreateOperator(newInputs().externalRestOption(val)),
-      failsAndPrints(errorRegexp("Invalid.*" + PARAM_EXTERNAL_REST_OPTION + ".*" + val)));
+      failsAndPrints(invalidParmValueError(PARAM_EXTERNAL_REST_OPTION, val)));
   }
 
   @Test
-  public void createOperator_with_externalRestCustomCert_missingExternalRestHttpsPort_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_externalRestCustomCert_missingExternalRestHttpsPort_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
         newInputs().setupExternalRestCustomCert().externalRestHttpsPort("")),
@@ -123,7 +146,7 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_externalRestCustomCert_missingExternalOperatorCert_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_externalRestCustomCert_missingExternalOperatorCert_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
         newInputs().setupExternalRestCustomCert().externalOperatorCert("")),
@@ -131,7 +154,7 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_externalRestCustomCert_missingExternalOperatorKey_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_externalRestCustomCert_missingExternalOperatorKey_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
         newInputs().setupExternalRestCustomCert().externalOperatorKey("")),
@@ -139,7 +162,7 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_externalRestSelfSignedCert_missingExternalRestHttpsPort_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_externalRestSelfSignedCert_missingExternalRestHttpsPort_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
         newInputs().setupExternalRestSelfSignedCert().externalRestHttpsPort("")),
@@ -147,7 +170,7 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_externalRestSelfSignedCert_missingExternalSans_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_externalRestSelfSignedCert_missingExternalSans_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(
         newInputs().setupExternalRestSelfSignedCert().externalSans("")),
@@ -155,7 +178,7 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_externalRestSelfSignedCert_invalidExternalSans_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_externalRestSelfSignedCert_invalidExternalSans_failsAndReturnsError() throws Exception {
     String val = "invalid-sans";
     assertThat(
       execCreateOperator(
@@ -164,10 +187,70 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_missingJavaLoggingLevel_FailsAndReturnsError() throws Exception {
+  public void createOperator_with_missingJavaLoggingLevel_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().javaLoggingLevel("")),
       failsAndPrints(paramMissingError(PARAM_JAVA_LOGGING_LEVEL)));
+  }
+
+  @Test
+  public void createOperator_with_invalidJavaLoggingLevel_failsAndReturnsError() throws Exception {
+    String val = "invalid-java-logging-level";
+    assertThat(
+      execCreateOperator(newInputs().javaLoggingLevel(val)),
+      failsAndPrints(invalidParmValueError(PARAM_JAVA_LOGGING_LEVEL, val)));
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelSevere_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_SEVERE);
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelWarning_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_WARNING);
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelInfo_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_INFO);
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelConfig_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_CONFIG);
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelFine_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_FINE);
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelFiner_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_FINER);
+  }
+
+  @Test
+  public void createOperator_with_javaLoggingLevelFinest_succeeds() throws Exception {
+    createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_FINEST);
+  }
+
+  private void createOperator_with_validJavaLoggingLevel_succeeds(String level) throws Exception {
+    createOperator_with_validInputs_succeeds(newInputs().javaLoggingLevel(level));
+  }
+
+  private void createOperator_with_validImagePullPolicy_succeeds(String policy) throws Exception {
+    createOperator_with_validInputs_succeeds(newInputs().imagePullPolicy(policy));
+  }
+
+  private void createOperator_with_validInputs_succeeds(CreateOperatorInputs inputs) throws Exception {
+    // throws an error if the inputs are not valid, succeeds otherwise:
+    GeneratedOperatorYamlFiles.generateOperatorYamlFiles(inputs).remove();
+  }
+
+  private String invalidParmValueError(String param, String val) {
+    return errorRegexp("Invalid.*" + param + ".*" + val);
   }
 
   private String paramMissingError(String param) {
@@ -184,24 +267,13 @@ public class CreateOperatorInputsValidationTest {
 
 /*
 TODO
-  - test all valid enum values
-  - test bogus enum values
-  - test upper / lower case
-  - test ext rest option dependent sub options (might have already done this)
 
-targetNamespaces
-image
-imagePullPolicy
-imagePullSecretName
-externalRestOption
-externalRestHttpsPort
-externalSans
-externalOperatorCert
-externalOperatorKey
-remoteDebugNodePortEnabled
-internalDebugHttpPort
-externalDebugHttpPort
-javaLoggingLevel
-elkIntegrationEnabled
+test upper case fails:
+  imagePullSecretName
+  targetNamespaces
+
+test option missing dependent sub options fails:
+  external rest already done
+  check debug enabled rules
 */
 }
