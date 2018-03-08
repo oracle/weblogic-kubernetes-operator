@@ -120,9 +120,9 @@ public class KubernetesArtifactUtils {
         .metadata(newObjectMeta().name(name));
   }
 
-  public static V1beta1ClusterRoleBinding newRoleBinding(String name, String namespace) {
+  public static V1beta1RoleBinding newRoleBinding(String name, String namespace) {
     return
-      (new V1beta1ClusterRoleBinding())
+      (new V1beta1RoleBinding())
         .apiVersion(API_VERSION_RBAC_V1BETA1)
         .kind(KIND_ROLE_BINDING)
         .metadata(newObjectMeta().name(name).namespace(namespace));
