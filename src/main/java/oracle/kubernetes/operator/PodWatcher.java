@@ -102,7 +102,8 @@ public class PodWatcher implements Runnable {
       public WatchI<V1Pod> initiateWatch(String resourceVersion) throws ApiException {
         return new WatchBuilder(client)
                   .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL)  // Any Pod with a domainUID label
+                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL 
+                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
                 .createPodWatch(ns);
       }
 
