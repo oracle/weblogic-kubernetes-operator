@@ -10,7 +10,8 @@ import java.util.Map;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -43,37 +44,54 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      String name = "weblogic-domain-config-map";
+      String name = KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
       V1ConfigMap cm = new V1ConfigMap();
       
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+      
+      Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      metadata.setLabels(labels);
+
       cm.setMetadata(metadata);
 
       Map<String, String> data = new HashMap<>();
       
-      // HERE
       data.put("livenessProbe.sh", 
           "#!/bin/bash\n" + 
-          "\n" + 
           "# Kubernetes periodically calls this liveness probe script to determine whether\n" + 
           "# the pod should be restarted. The script checks a WebLogic Server state file which\n" + 
           "# is updated by the node manager.\n" + 
+          "STATEFILE=/shared/domain/$1/servers/$2/data/nodemanager/$2.state\n" + 
+          "if [ \\`jps -l | grep -c \" weblogic.NodeManager\"\\` -eq 0 ]; then\n" + 
+          "  exit 1\n" + 
+          "fi\n" + 
+          "if [ -f \\${STATEFILE} ] && [ \\`grep -c \"FAILED_NOT_RESTARTABLE\" \\${STATEFILE}\\` -eq 1 ]; then\n" + 
+          "  exit 1\n" + 
+          "fi\n" + 
+          "exit 0");
+      
+      data.put("readinessProbe.sh", 
+          "#!/bin/bash\n" + 
           "\n" + 
-          "STATEFILE=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
+          "# Kubernetes periodically calls this readiness probe script to determine whether\n" + 
+          "# the pod should be included in load balancing. The script checks a WebLogic Server state\n" + 
+          "# file which is updated by the node manager.\n" + 
+          "\n" + 
+          "STATEFILE=/shared/domain/$1/servers/$2/data/nodemanager/$2.state\n" + 
           "\n" + 
           "if [ \\`jps -l | grep -c \" weblogic.NodeManager\"\\` -eq 0 ]; then\n" + 
-          "  echo \"Error: WebLogic NodeManager process not found.\"\n" + 
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
-          "if [ -f \\${STATEFILE} ] && [ \\`grep -c \"FAILED_NOT_RESTARTABLE\" \\${STATEFILE}\\` -eq 1 ]; then\n" + 
-          "  echo \"Error: WebLogic Server FAILED_NOT_RESTARTABLE.\"\n" + 
+          "if [ -f \\${STATEFILE} ] && [ \\`grep -c \"RUNNING\" \\${STATEFILE}\\` -ne 1 ]; then\n" + 
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
-          "echo \"Info: Probe check passed.\"\n" + 
           "exit 0");
       
       cm.setData(data);
@@ -97,14 +115,14 @@ public class ConfigMapHelper {
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
-                LOGGER.info(MessageKeys.ADMIN_POD_CREATED, weblogicDomainUID, spec.getAsName());
+                LOGGER.info(MessageKeys.CM_CREATED, namespace);
                 return doNext(packet);
               }
             });
             return doNext(create, packet);
-          } else if (result.getData().entrySet().containsAll(data.entrySet())) {
+          } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(data.entrySet())) {
             // existing config map has correct data
-            LOGGER.fine(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, spec.getAsName());
+            LOGGER.fine(MessageKeys.CM_EXISTS, namespace);
             return doNext(packet);
           } else {
             // we need to update the config map
@@ -115,7 +133,7 @@ public class ConfigMapHelper {
               @Override
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
-                LOGGER.info(MessageKeys.ADMIN_POD_REPLACED, weblogicDomainUID, spec.getAsName());
+                LOGGER.info(MessageKeys.CM_REPLACED, namespace);
                 return doNext(packet);
               }
             });
