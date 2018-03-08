@@ -4,6 +4,8 @@ package oracle.kubernetes.operator.create;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh
@@ -30,20 +32,30 @@ public class CreateOperatorGeneratedFilesExtRestCustomDebugOffTest {
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorConfigMap() throws Exception {
-    // TBD - rework to new pattern
-    weblogicOperatorYaml().assertThatOperatorConfigMapIsCorrect(inputs, inputs.externalOperatorCustomCertPem());
+    assertThat(
+      weblogicOperatorYaml().getOperatorConfigMap(),
+      equalTo(
+        weblogicOperatorYaml().getExpectedOperatorConfigMap(inputs.externalOperatorCustomCertPem())
+      )
+    );
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorSecrets() throws Exception {
-    // TBD - rework to new pattern
-    weblogicOperatorYaml().assertThatOperatorSecretsAreCorrect(inputs, inputs.externalOperatorCustomKeyPem());
+    ParsedWeblogicOperatorYaml.assertThat_secretsAreEqual(
+      weblogicOperatorYaml().getOperatorSecrets(),
+      weblogicOperatorYaml().getExpectedOperatorSecrets(inputs.externalOperatorCustomKeyPem())
+    );
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
-    // TBD - rework to new pattern
-    weblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, false, true);
+    assertThat(
+      weblogicOperatorYaml().getExternalOperatorService(),
+      equalTo(
+        weblogicOperatorYaml().getExpectedExternalOperatorService(false, true)
+      )
+    );
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

@@ -2,22 +2,15 @@
 package oracle.kubernetes.operator.create;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceSpec;
-import io.kubernetes.client.models.V1ServicePort;
 
+import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 import org.apache.commons.codec.binary.Base64;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -26,6 +19,7 @@ import static org.hamcrest.Matchers.*;
  */
 public class ParsedWeblogicOperatorYaml {
 
+  private CreateOperatorInputs inputs;
   private V1ConfigMap operatorConfigMap;
   private V1Secret operatorSecrets;
   private ExtensionsV1beta1Deployment operatorDeployment;
@@ -39,6 +33,7 @@ public class ParsedWeblogicOperatorYaml {
   public V1Service getInternalOperatorService() { return internalOperatorService; }
 
   public ParsedWeblogicOperatorYaml(Path yamlPath, CreateOperatorInputs inputs) throws Exception {
+    this.inputs = inputs;
     ParsedKubernetesYaml parsed = new ParsedKubernetesYaml(yamlPath);
     operatorConfigMap = parsed.getConfigMap("operator-config-map");
     operatorSecrets = parsed.getSecret("operator-secrets");
@@ -47,149 +42,98 @@ public class ParsedWeblogicOperatorYaml {
     externalOperatorService = parsed.getService("external-weblogic-operator-service");
   }
 
-  private static final String API_V1 = "v1";
-  private static final String SERVICE_ACCOUNT = "serviceaccount";
-  private static final String TARGET_NAMESPACES = "targetNamespaces";
-  private static final String EXTERNAL_OPERATOR_CERT = "externalOperatorCert";
-  private static final String INTERNAL_OPERATOR_CERT = "internalOperatorCert";
-  private static final String EXTERNAL_OPERATOR_KEY = "externalOperatorKey";
-  private static final String INTERNAL_OPERATOR_KEY = "internalOperatorKey";
-
-  public void assertThatOperatorConfigMapIsCorrect(CreateOperatorInputs inputs, String externalOperatorCertWant) throws Exception {
-    /* Expected yaml:
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: operator-config-map
-        namespace: inputs.getNamespace()
-      data:
-        serviceaccount: inputs.getServiceAccount()
-        targetNamespaces: inputs.getTargetNamespaces()
-        externalOperatorCert: base64 encoded string
-        internalOperatorCert: base64 encoded string
-    */
-    V1ConfigMap configMap = getOperatorConfigMap();
-    assertThat(configMap, notNullValue());
-    assertThat(configMap.getKind(), equalTo("ConfigMap"));
-    assertThat(configMap.getApiVersion(), equalTo(API_V1));
-    assertThat_MetadataMatches(configMap.getMetadata(), "operator-config-map", inputs.getNamespace());
-    Map<String,String> data = configMap.getData();
-    assertThat(data, notNullValue());
-    assertThat(data.keySet(), containsInAnyOrder(SERVICE_ACCOUNT, TARGET_NAMESPACES, EXTERNAL_OPERATOR_CERT, INTERNAL_OPERATOR_CERT));
-    assertThat(data, hasEntry(SERVICE_ACCOUNT, inputs.getServiceAccount()));
-    assertThat(data, hasEntry(TARGET_NAMESPACES, inputs.getTargetNamespaces()));
-    assertThatCertMatches(data.get(EXTERNAL_OPERATOR_CERT), externalOperatorCertWant);
-    assertThatCertMatches(data.get(INTERNAL_OPERATOR_CERT), inputs.internalOperatorSelfSignedCertPem());
+  // TBD - where should these utils live?
+  public V1ConfigMap getExpectedOperatorConfigMap(String externalOperatorCertWant) {
+    return
+      newConfigMap("operator-config-map", inputs.getNamespace())
+        .putDataItem("serviceaccount", inputs.getServiceAccount())
+        .putDataItem("targetNamespaces", inputs.getTargetNamespaces())
+        .putDataItem("externalOperatorCert", Base64.encodeBase64String(externalOperatorCertWant.getBytes()))
+        .putDataItem("internalOperatorCert", Base64.encodeBase64String(inputs.internalOperatorSelfSignedCertPem().getBytes()));
   }
 
-  public void assertThatOperatorSecretsAreCorrect(CreateOperatorInputs inputs, String externalOperatorKeyWant) throws Exception {
-    /* Expected yaml:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: operator-secrets
-        namespace: inputs.getNamespace()
-      type: Opaque
-      data:
-        externalOperatorKey: bytes[] = cleartext key
-        internalOperatorKey: bytes[] = cleartext key
-    */
-    V1Secret secret = getOperatorSecrets();
-    assertThat(secret, notNullValue());
-    assertThat(secret.getKind(), equalTo("Secret"));
-    assertThat(secret.getApiVersion(), equalTo(API_V1));
-    assertThat_MetadataMatches(secret.getMetadata(), "operator-secrets", inputs.getNamespace());
-    Map<String,byte[]> data = secret.getData();
-    assertThat(data, notNullValue());
-    assertThat(data.keySet(), containsInAnyOrder(EXTERNAL_OPERATOR_KEY, INTERNAL_OPERATOR_KEY));
-    assertThatKeyMatches(data.get(EXTERNAL_OPERATOR_KEY), externalOperatorKeyWant);
-    assertThatKeyMatches(data.get(INTERNAL_OPERATOR_KEY), inputs.internalOperatorSelfSignedKeyPem());
+  public static void assertThat_secretsAreEqual(V1Secret have, V1Secret want) {
+    // The secret values are stored as byte[], and V1Secret.equal isn't smart
+    // enough to compare them byte by byte, therefore equals always fails.
+    // However, they get converted to cleartext strings in the yaml.
+    // So, just convert the secrets to yaml strings, then compare those.
+    assertThat(newYaml().dump(have), equalTo(newYaml().dump(want)));
   }
 
-  private void assertThatCertMatches(String base64CertHave, String certWant) {
-    assertThat(base64CertHave, notNullValue());
-    assertThat(Base64.isBase64(base64CertHave), is(true));
-    byte[] certBytesHave = Base64.decodeBase64(base64CertHave);
-    String certHave = new String(certBytesHave);
-    assertThat(certHave, equalTo(certWant));
+  public V1Secret getExpectedOperatorSecrets(String externalOperatorKeyWant) {
+    return
+      newSecret("operator-secrets", inputs.getNamespace())
+        .type("Opaque")
+        .putDataItem("externalOperatorKey", externalOperatorKeyWant.getBytes())
+        .putDataItem("internalOperatorKey", inputs.internalOperatorSelfSignedKeyPem().getBytes());
   }
 
-  private void assertThatKeyMatches(byte[] keyBytesHave, String keyWant) {
-    assertThat(keyBytesHave, notNullValue());
-    String keyHave = new String(keyBytesHave);
-    assertThat(keyWant, equalTo(keyHave));
-  }
-
-  public void assertThatExternalOperatorServiceIsCorrect(CreateOperatorInputs inputs, boolean debuggingEnabled, boolean externalRestEnabled) throws Exception {
-    /* Expected yaml:
-      // if debugging enabled or external rest enabled:
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: external-weblogic-operator-service
-        namespace: inputs.getNamespace()
-      spec:
-        type: NodePort
-        selector:
-          app: weblogic-operator
-        ports:
-          // if external rest enabled:
-          - port: 8081
-            nodePort: inputs.getExternalRestHttpsPort()
-            name: rest-https
-          // if debugging enabled:
-          - port: inputs.getInternalDebugHttpPort()
-            nodePort: inputs.getExternalDebugHttpPort()
-            name: debug
-    */
-    V1Service service = getExternalOperatorService();
-    if (!debuggingEnabled && !externalRestEnabled) {
-      assertThat(service, nullValue());
-      return;
-    }
-    List<V1ServicePort> ports =
-      assertThatServiceExistsThenReturnPorts(service, "external-weblogic-operator-service", inputs.getNamespace(), "NodePort");
-    int nextPortIndex = 0;
+  public V1Service getExpectedExternalOperatorService(boolean debuggingEnabled, boolean externalRestEnabled) {
+    V1Service want =
+      newService("external-weblogic-operator-service", inputs.getNamespace());
+    want.getSpec()
+      .type("NodePort")
+      .putSelectorItem("app", "weblogic-operator");
     if (externalRestEnabled) {
-      assertThatNodePortMatches(ports, nextPortIndex++, "rest-https", "8081", inputs.getExternalRestHttpsPort());
+      want.getSpec().addPortsItem(newServicePort("rest-https")
+        .port(8081)
+        .nodePort(Integer.parseInt(inputs.getExternalRestHttpsPort())));
     }
     if (debuggingEnabled) {
-      assertThatNodePortMatches(ports, nextPortIndex++, "debug", inputs.getInternalDebugHttpPort(), inputs.getExternalDebugHttpPort());
+      want.getSpec().addPortsItem(newServicePort("debug")
+        .port(Integer.parseInt(inputs.getInternalDebugHttpPort()))
+        .nodePort(Integer.parseInt(inputs.getExternalDebugHttpPort())));
     }
-    assertThat(ports.size(), is(nextPortIndex));
+    return want;
   }
 
-  public void assertThatNodePortMatches(List<V1ServicePort> ports, int nextPortIndex, String name, String port, String nodePort) {
-    assertThat(ports.size(), greaterThan(nextPortIndex));
-    V1ServicePort p = ports.get(nextPortIndex);
-    assertThat(p, notNullValue());
-    assertThat(p.getName(), equalTo(name));
-    // k8s port numbers are ints, while our testing inputs class uses strings so that it can test non-int values.
-    // therefore convert the k8s port numbers to strings so that we can compare them to the ones in the inputs class
-    assertThat("" + p.getPort(), equalTo(port));
-    assertThat("" + p.getNodePort(), equalTo(nodePort));
-  }
-
-  public List<V1ServicePort> assertThatServiceExistsThenReturnPorts(V1Service service, String name, String namespace, String type) {
-    assertThat(service, notNullValue());
-    assertThat(service.getKind(), equalTo("Service"));
-    assertThat(service.getApiVersion(), equalTo(API_V1));
-    assertThat_MetadataMatches(service.getMetadata(), name, namespace);
-    V1ServiceSpec spec = service.getSpec();
-    assertThat(spec, notNullValue());
-    assertThat(spec.getType(), equalTo(type));
-    Map<String,String> selector = spec.getSelector();
-    assertThat(selector, notNullValue());
-    assertThat(selector, hasEntry("app", "weblogic-operator")); // TBD - take as input args?
-    List<V1ServicePort> ports = spec.getPorts();
-    assertThat(ports, notNullValue());
-    return ports;
-  }
-
-  public void assertThat_MetadataMatches(V1ObjectMeta metadata, String name, String namespace) {
-    assertThat(metadata, notNullValue());
-    assertThat(metadata.getName(), equalTo(name));
-    assertThat(metadata.getNamespace(), equalTo(namespace));
+  public ExtensionsV1beta1Deployment getBaseExpectedOperatorDeployment() {
+    return
+      newDeployment("weblogic-operator", inputs.getNamespace())
+        .spec(newDeploymentSpec()
+          .replicas(1)
+          .template(newPodTemplateSpec()
+            .metadata(newObjectMeta()
+              .putLabelsItem("app", "weblogic-operator"))
+            .spec(newPodSpec()
+              .serviceAccountName(inputs.getServiceAccount())
+              .addContainersItem(newContainer()
+                .name("weblogic-operator")
+                .image(inputs.getImage())
+                .imagePullPolicy(inputs.getImagePullPolicy())
+                .addCommandItem("bash")
+                .addArgsItem("/operator/operator.sh")
+                .addEnvItem(newEnvVar()
+                  .name("OPERATOR_NAMESPACE")
+                  .valueFrom(newEnvVarSource()
+                    .fieldRef(newObjectFieldSelector()
+                      .fieldPath("metadata.namespace"))))
+                .addEnvItem(newEnvVar()
+                  .name("OPERATOR_VERBOSE")
+                  .value("false"))
+                .addEnvItem(newEnvVar()
+                  .name("JAVA_LOGGING_LEVEL")
+                  .value(inputs.getJavaLoggingLevel()))
+                .addVolumeMountsItem(newVolumeMount()
+                  .name("operator-config-volume")
+                  .mountPath("/operator/config"))
+                .addVolumeMountsItem(newVolumeMount()
+                  .name("operator-secrets-volume")
+                  .mountPath("/operator/secrets")
+                  .readOnly(true))
+                .livenessProbe(newProbe()
+                  .initialDelaySeconds(120)
+                  .periodSeconds(5)
+                  .exec(newExecAction()
+                    .addCommandItem("bash")
+                    .addCommandItem("/operator/livenessProbe.sh"))))
+              .addVolumesItem(newVolume()
+                .name("operator-config-volume")
+                  .configMap(newConfigMapVolumeSource()
+                    .name("operator-config-map")))
+              .addVolumesItem(newVolume()
+                .name("operator-secrets-volume")
+                  .secret(newSecretVolumeSource()
+                    .secretName("operator-secrets"))))));
   }
 }
-
