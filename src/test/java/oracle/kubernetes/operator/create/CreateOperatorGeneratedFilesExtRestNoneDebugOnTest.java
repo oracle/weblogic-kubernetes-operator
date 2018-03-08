@@ -34,10 +34,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOnTest {
   public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
     assertThat(
       weblogicOperatorYaml().getExternalOperatorService(),
-      equalTo(
-        weblogicOperatorYaml().getExpectedExternalOperatorService(true, false)
-      )
-    );
+      equalTo(weblogicOperatorYaml().getExpectedExternalOperatorService(true, false)));
   }
 
   @Test

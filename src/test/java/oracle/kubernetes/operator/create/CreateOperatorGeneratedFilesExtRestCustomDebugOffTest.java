@@ -34,28 +34,21 @@ public class CreateOperatorGeneratedFilesExtRestCustomDebugOffTest {
   public void generatesCorrect_weblogicOperatorYaml_operatorConfigMap() throws Exception {
     assertThat(
       weblogicOperatorYaml().getOperatorConfigMap(),
-      equalTo(
-        weblogicOperatorYaml().getExpectedOperatorConfigMap(inputs.externalOperatorCustomCertPem())
-      )
-    );
+      equalTo(weblogicOperatorYaml().getExpectedOperatorConfigMap(inputs.externalOperatorCustomCertPem())));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorSecrets() throws Exception {
     ParsedWeblogicOperatorYaml.assertThat_secretsAreEqual(
       weblogicOperatorYaml().getOperatorSecrets(),
-      weblogicOperatorYaml().getExpectedOperatorSecrets(inputs.externalOperatorCustomKeyPem())
-    );
+      weblogicOperatorYaml().getExpectedOperatorSecrets(inputs.externalOperatorCustomKeyPem()));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
     assertThat(
       weblogicOperatorYaml().getExternalOperatorService(),
-      equalTo(
-        weblogicOperatorYaml().getExpectedExternalOperatorService(false, true)
-      )
-    );
+      equalTo(weblogicOperatorYaml().getExpectedExternalOperatorService(false, true)));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

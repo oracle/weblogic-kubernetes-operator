@@ -62,8 +62,7 @@ public class CreateOperatorGeneratedFilesELKEnabledTest {
         .medium("Memory")));
     assertThat(
       weblogicOperatorYaml().getOperatorDeployment(),
-      equalTo(want)
-    );
+      equalTo(want));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

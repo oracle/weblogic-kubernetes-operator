@@ -43,8 +43,7 @@ public class CreateOperatorGeneratedFilesHaveImagePullSecretTest {
       .name(TEST_OPERATOR_IMAGE_PULL_SECRET_NAME));
     assertThat(
       weblogicOperatorYaml().getOperatorDeployment(),
-      equalTo(want)
-    );
+      equalTo(want));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {
