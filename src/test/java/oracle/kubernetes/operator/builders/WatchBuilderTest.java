@@ -30,6 +30,7 @@ import java.util.function.BiFunction;
 import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.builders.EventMatcher.*;
 import static oracle.kubernetes.operator.builders.WatchBuilderTest.JsonServletAction.withResponses;
 import static oracle.kubernetes.operator.builders.WatchBuilderTest.ParameterValidation.parameter;
@@ -117,12 +118,14 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         defineHttpResponse(SERVICE_RESOURCE, withResponses(createModifiedResponse(service))
                                             .andValidations(
                                                     parameter("resourceVersion").withValue(startResourceVersion),
-                                                    parameter("labelSelector").withValue(DOMAINUID_LABEL),
+                                                    parameter("labelSelector").withValue(DOMAINUID_LABEL
+                                                                                         + "," + CREATEDBYOPERATOR_LABEL),
                                                     parameter("watch").withValue("true")));
 
         WatchI<V1Service> serviceWatch = new WatchBuilder(clientHolder)
                                             .withResourceVersion(startResourceVersion)
-                                            .withLabelSelector(DOMAINUID_LABEL)
+                                            .withLabelSelector(DOMAINUID_LABEL
+                                                               + "," + CREATEDBYOPERATOR_LABEL)
                                           .createServiceWatch(NAMESPACE);
 
         assertThat(serviceWatch, contains(modifyEvent(service)));
