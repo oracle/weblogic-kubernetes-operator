@@ -291,11 +291,8 @@ function initialize {
   validateSecretName
   validateImagePullSecretName
   validateLoadBalancer
-<<<<<<< HEAD:kubernetes/create-weblogic-domain.sh
   initAndValidateOutputDir
-=======
   validateStartupControl
->>>>>>> 382fa6326adb0bcc2c02f40cfe5410634c7213a5:kubernetes/create-domain-job.sh
   failIfValidationErrors
 }
 
