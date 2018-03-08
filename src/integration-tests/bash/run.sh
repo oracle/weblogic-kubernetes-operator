@@ -744,7 +744,7 @@ function run_create_domain_job {
     # Customize the create domain job inputs
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
 
-    # Customize more configuraiton 
+    # Customize more configuration 
     sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" $inputs
     sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" $inputs
     sed -i -e "s;^persistencePath:.*;persistencePath: $PV_ROOT/acceptance_test_pv/$PV_DIR;" $inputs
@@ -761,16 +761,10 @@ function run_create_domain_job {
     if [ -n "${IMAGE_PULL_SECRET_WEBLOGIC}" ]; then
       sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" $inputs
     fi
-<<<<<<< HEAD
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" $inputs
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
-=======
-    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  ${tmp_dir}/create-domain-job-inputs.yaml
->>>>>>> 382fa6326adb0bcc2c02f40cfe5410634c7213a5
+    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
 
     # we will test cluster scale up and down in domain1 and domain4 
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
