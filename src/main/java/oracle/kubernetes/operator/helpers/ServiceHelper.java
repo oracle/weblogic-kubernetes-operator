@@ -7,8 +7,8 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.*;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -69,6 +69,7 @@ public class ServiceHelper {
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
       service.setMetadata(metadata);
 
@@ -81,6 +82,7 @@ public class ServiceHelper {
       Map<String, String> selector = new HashMap<>();
       selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
+      selector.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       serviceSpec.setSelector(selector);
 
       if (version != null && (version.major > 1 || (version.major == 1 && version.minor >= 8))) {
@@ -196,6 +198,7 @@ public class ServiceHelper {
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
       service.setMetadata(metadata);
 
@@ -207,6 +210,7 @@ public class ServiceHelper {
       Map<String, String> selector = new HashMap<>();
       selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       selector.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+      selector.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       serviceSpec.setSelector(selector);
 
       List<V1ServicePort> ports = new ArrayList<>();
@@ -450,6 +454,7 @@ public class ServiceHelper {
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       labels.put(LabelConstants.CHANNELNAME_LABEL, networkAccessPoint.getName());
       metadata.setLabels(labels);
       service.setMetadata(metadata);
@@ -461,6 +466,7 @@ public class ServiceHelper {
       Map<String, String> selector = new HashMap<>();
       selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
+      selector.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       serviceSpec.setSelector(selector);
       List<V1ServicePort> ports = new ArrayList<>();
       V1ServicePort servicePort = new V1ServicePort();

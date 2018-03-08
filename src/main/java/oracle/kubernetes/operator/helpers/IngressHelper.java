@@ -19,8 +19,8 @@ import io.kubernetes.client.models.V1beta1IngressSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -83,6 +83,7 @@ public class IngressHelper {
         labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
         labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
         labels.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+        labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
         v1ObjectMeta.setLabels(labels);
         v1beta1Ingress.setMetadata(v1ObjectMeta);
 

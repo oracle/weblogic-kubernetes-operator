@@ -631,7 +631,7 @@ function test_second_operator {
     declare_test_pass
 }
 
-# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
 #   Sets up a table of domain values:  all of the above, plus TMP_DIR which is derived.
 #
 # dom_get      DOM_KEY <value>
@@ -647,21 +647,22 @@ function test_second_operator {
 #   echo Defined operator $opkey with `dom_echo_all $DOM_KEY`
 #
 function dom_define {
-    if [ "$#" != 12 ] ; then
-      fail "requires 12 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
+    if [ "$#" != 13 ] ; then
+      fail "requires 13 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
     fi
     local DOM_KEY="`echo \"${1}\" | sed 's/-/_/g'`"
     eval export DOM_${DOM_KEY}_OP_KEY="$2"
     eval export DOM_${DOM_KEY}_NAMESPACE="$3"
     eval export DOM_${DOM_KEY}_DOMAIN_UID="$4"
-    eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$5"
-    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$6"
-    eval export DOM_${DOM_KEY}_ADMIN_PORT="$7"
-    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$8"
-    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="$9"
-    eval export DOM_${DOM_KEY}_MS_PORT="${10}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${11}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${12}"
+    eval export DOM_${DOM_KEY}_STARTUP_CONTROL="$5"
+    eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$6"
+    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$7"
+    eval export DOM_${DOM_KEY}_ADMIN_PORT="$8"
+    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$9"
+    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${10}"
+    eval export DOM_${DOM_KEY}_MS_PORT="${11}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${12}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${13}"
 
     # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
@@ -689,6 +690,7 @@ function run_create_domain_job {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
@@ -712,15 +714,15 @@ function run_create_domain_job {
     mkdir -p $tmp_dir
 
     local CREDENTIAL_NAME="$DOMAIN_UID-weblogic-credentials"
-    local CREDENTIAL_FILE="${tmp_dir}/$CREDENTIAL_NAME.yaml"
+    local CREDENTIAL_FILE="${tmp_dir}/weblogic-credentials.yaml"
 
     trace 'Create the secret with weblogic admin credentials'
-    cp $CUSTOM_YAML/domain1-weblogic-credentials.yaml  $CREDENTIAL_FILE
+    cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $CREDENTIAL_FILE
 
-    sed -i -e "s|namespace: default|namespace: $NAMESPACE|g" $CREDENTIAL_FILE
-    sed -i -e "s|name: domain1-weblogic-credentials|name: $CREDENTIAL_NAME|g" $CREDENTIAL_FILE
+    sed -i -e "s|%NAMESPACE%|$NAMESPACE|g" $CREDENTIAL_FILE
+    sed -i -e "s|%DOMAIN_UID%|$DOMAIN_UID|g" $CREDENTIAL_FILE
 
-    kubectl apply -f $CREDENTIAL_FILE -n $NAMESPACE
+    kubectl apply -f $CREDENTIAL_FILE
 
     trace 'Check secret'
     local ADMINSECRET=`kubectl get secret $CREDENTIAL_NAME -n $NAMESPACE | grep $CREDENTIAL_NAME | wc -l `
@@ -759,9 +761,16 @@ function run_create_domain_job {
     if [ -n "${IMAGE_PULL_SECRET_WEBLOGIC}" ]; then
       sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" $inputs
     fi
+<<<<<<< HEAD
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" $inputs
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
+=======
+    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  ${tmp_dir}/create-domain-job-inputs.yaml
+>>>>>>> 382fa6326adb0bcc2c02f40cfe5410634c7213a5
 
     # we will test cluster scale up and down in domain1 and domain4 
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
@@ -811,8 +820,8 @@ function deploy_webapp_via_REST {
     local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local WLS_ADMIN_USERNAME="`get_wladmin_user`"
-    local WLS_ADMIN_PASSWORD="`get_wladmin_pass`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
 
     local AS_NAME="$DOMAIN_UID-admin-server"
 
@@ -1093,8 +1102,8 @@ function verify_admin_server_ext_service {
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
-    local WLS_ADMIN_USERNAME="`get_wladmin_user`"
-    local WLS_ADMIN_PASSWORD="`get_wladmin_pass`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
 
     local ADMIN_SERVER_NODEPORT_SERVICE="$DOMAIN_UID-admin-server"
 
@@ -1475,11 +1484,12 @@ function check_pv {
 }
 
 function get_wladmin_cred {
-  if [ "$#" != 1 ]; then
-    fail "requires one parameter, keyword 'username' or 'password'."
+  if [ "$#" != 2 ]; then
+    fail "requires two parameters:  domainKey and keyword 'username' or 'password'."
   fi
   # All domains use the same user/pass
-  if ! val=`grep "^  $1:" $CUSTOM_YAML/domain1-weblogic-credentials.yaml | awk '{ print $2 }' | base64 -d`
+  local TMP_DIR="`dom_get $1 TMP_DIR`"
+  if ! val=`grep "^  $2:" $TMP_DIR/weblogic-credentials.yaml | awk '{ print $2 }' | base64 -d`
   then
     fail "get_wladmin_cred:  Could not determine $1"
   fi
@@ -1487,11 +1497,17 @@ function get_wladmin_cred {
 }
 
 function get_wladmin_pass {
-  get_wladmin_cred password
+  if [ "$#" != 1 ] ; then
+    fail "requires 1 parameter: domainKey"
+  fi 
+  get_wladmin_cred $1 password
 }
 
 function get_wladmin_user {
-  get_wladmin_cred username
+  if [ "$#" != 1 ] ; then
+    fail "requires 1 parameter: domainKey"
+  fi 
+  get_wladmin_cred $1 username
 }
 
 function verify_wlst_access {
@@ -1545,8 +1561,8 @@ function run_wlst_script {
   local TMP_DIR="`dom_get $1 TMP_DIR`"
   local AS_NAME="$DOMAIN_UID-admin-server"
   local location="$2"
-  local username=`get_wladmin_user` 
-  local password=`get_wladmin_pass`
+  local username=`get_wladmin_user $1` 
+  local password=`get_wladmin_pass $1`
   local pyfile_lcl="$3"
   local pyfile_pod="/shared/`basename $pyfile_lcl`"
   local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
@@ -1878,6 +1894,7 @@ function verify_domain_created {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
     trace "verify domain $DOMAIN_UID in $NAMESPACE namespace"
@@ -1897,6 +1914,11 @@ function verify_domain_created {
     trace "verify the service and pod of admin server"
     verify_service_and_pod_created $DOM_KEY 0
 
+    local verify_as_only=false
+    if [ "$STARTUP_CONTROL" = "ADMIN" ] ; then
+      verify_as_only=true
+    fi
+
     local replicas=`get_cluster_replicas $DOM_KEY`
 
     trace "verify $replicas number of managed servers for creation"
@@ -1905,14 +1927,21 @@ function verify_domain_created {
     do
       local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME}$i"
       trace "verify service and pod of server $MS_NAME"
-      verify_service_and_pod_created $DOM_KEY $i
+      if [ "${verify_as_only}" = "true" ]; then 
+        verify_pod_deleted $DOM_KEY $i
+      else
+        verify_service_and_pod_created $DOM_KEY $i
+      fi
     done
 
     # Check if we got exepcted number of managed servers running
     local ms_name_common=${DOMAIN_UID}-${MS_BASE_NAME}
     local pod_count=`kubectl get pods -n $NAMESPACE |grep "^${ms_name_common}" | wc -l `
-    if [ ${pod_count:=Error} != $replicas ] ; then
+    if [ ${pod_count:=Error} != $replicas ] && [ "${verify_as_only}" != "true" ] ; then
       fail "ERROR: expected $replicas number of managed servers running, but got $pod_count, exiting!"
+    fi
+    if [ ${pod_count:=Error} != 0 ] && [ "${verify_as_only}" = "true" ] ; then
+      fail "ERROR: expected none of managed servers running, but got $pod_count, exiting!"
     fi
 }
 
@@ -2052,6 +2081,7 @@ function test_domain_lifecycle {
     shutdown_domain $DOM_KEY
     startup_domain $DOM_KEY 
     verify_domain_exists_via_oper_rest $DOM_KEY 
+    verify_domain $DOM_KEY
 
     # verify that scaling $DOM_KEY had no effect on another domain
     if [ ! "$VERIFY_DOM_KEY" = "" ]; then
@@ -2462,11 +2492,12 @@ function test_suite {
     op_define  oper1   weblogic-operator-1  "default,test1"    31001
     op_define  oper2   weblogic-operator-2  test2              32001
 
-    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
-    dom_define domain1  oper1   default   domain1    cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  oper1   default   domain2    cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  oper1   test1     domain3    cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
-    dom_define domain4  oper2   test2     domain4    cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
+    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
+    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
+    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
+    dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
+    dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       managed-server 7051       30061           30705           8051    30309                  30319
 
     # create namespaces for domains (the operator job creates a namespace if needed)
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
@@ -2531,6 +2562,10 @@ function test_suite {
       # cycle domain1 down and back up, plus verify no impact on domain4
       test_domain_lifecycle domain1 domain4 
 
+      # create another domain in the default namespace with startupControl="ADMIN", and verify that only admin server is created
+      run_create_domain_job domain5
+      verify_domain_created domain5
+
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1
     
@@ -2563,7 +2598,6 @@ function test_suite {
 
 # entry point
 
-local exit_status=0
 if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
   if [ "${VERBOSE:-false}" = "true" ]; then
     test_suite 2>&1 

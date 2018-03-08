@@ -191,6 +191,33 @@ function validateImagePullSecret {
 }
 
 #
+# Function to validate the server startup control value
+#
+function validateStartupControl {
+  STARTUP_CONTROL_NONE="NONE"
+  STARTUP_CONTROL_ALL="ALL"
+  STARTUP_CONTROL_ADMIN="ADMIN"
+  STARTUP_CONTROL_SPECIFIED="SPECIFIED"
+  STARTUP_CONTROL_AUTO="AUTO"
+
+  case ${startupControl} in
+    ${STARTUP_CONTROL_NONE})
+    ;;
+    ${STARTUP_CONTROL_ALL})
+    ;;
+    ${STARTUP_CONTROL_ADMIN})
+    ;;
+    ${STARTUP_CONTROL_SPECIFIED})
+    ;;
+    ${STARTUP_CONTROL_AUTO})
+    ;;
+    *)
+      validationError "Invalid valid for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+    ;;
+  esac
+}
+
+#
 # Function to setup the environment to run the create domain job
 #
 function initialize {
@@ -255,7 +282,7 @@ function initialize {
   validateInputParamsSpecified adminPort adminServerName createDomainScript domainName domainUid clusterName managedServerCount managedServerStartCount managedServerNameBase
   validateInputParamsSpecified managedServerPort persistencePath persistenceSize persistenceVolumeClaimName persistenceVolumeName
   validateInputParamsSpecified productionModeEnabled secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
-  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer javaOptions
+  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer javaOptions startupControl
   validateDomainUid
   validateClusterName
   validateStorageClass
@@ -264,7 +291,11 @@ function initialize {
   validateSecretName
   validateImagePullSecretName
   validateLoadBalancer
+<<<<<<< HEAD:kubernetes/create-weblogic-domain.sh
   initAndValidateOutputDir
+=======
+  validateStartupControl
+>>>>>>> 382fa6326adb0bcc2c02f40cfe5410634c7213a5:kubernetes/create-domain-job.sh
   failIfValidationErrors
 }
 
@@ -362,6 +393,7 @@ function createYamlFiles {
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
+  sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
 
   # Traefik file
   cp ${traefikInput} ${traefikOutput}
@@ -423,7 +455,7 @@ function createDomain {
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
-  max=10
+  max=20
   count=0
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30

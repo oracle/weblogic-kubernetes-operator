@@ -181,6 +181,37 @@
     <profiles>
 
         <profile>
+            <id>generate-model</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jsonschema2pojo</groupId>
+                        <artifactId>jsonschema2pojo-maven-plugin</artifactId>
+                        <version>0.5.1</version>
+                        <configuration>
+                            <sourceDirectory>${basedir}/src/main/resources/schema</sourceDirectory>
+                            <targetPackage>oracle.kubernetes.operator.domain.model.v1</targetPackage>
+                            <targetVersion>1.8</targetVersion>
+                            <annotationStyle>gson</annotationStyle>
+                            <includeJsr303Annotations>true</includeJsr303Annotations>
+                            <generateBuilders>true</generateBuilders>
+                            <useJodaDates>true</useJodaDates>
+                            <useCommonsLang3>true</useCommonsLang3>
+                            <removeOldOutput>true</removeOldOutput>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>sign-artifacts</id>
             <build>
                 <plugins>
@@ -406,6 +437,11 @@
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
             <version>${jodatime-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
         </dependency>
 
         <!-- Grizzly & jersey server side code -->
