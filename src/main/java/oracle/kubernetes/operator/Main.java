@@ -29,11 +29,11 @@ import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.Watch;
 
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.operator.domain.model.oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
@@ -207,13 +207,16 @@ public class Main {
         });
         
         Step initialize = CallBuilder.create().with($ -> {
-          $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any with a domainUID label
+          $.labelSelector = LabelConstants.DOMAINUID_LABEL
+                            + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
         }).listPodAsync(ns, new ResponseStep<V1PodList>(
             CallBuilder.create().with($ -> {
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any with a domainUID label
+              $.labelSelector = LabelConstants.DOMAINUID_LABEL
+                                + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
             }).listServiceAsync(ns, new ResponseStep<V1ServiceList>(
                 CallBuilder.create().with($ -> {
-                  $.labelSelector = LabelConstants.DOMAINUID_LABEL; // Any with a domainUID label
+                  $.labelSelector = LabelConstants.DOMAINUID_LABEL
+                                    + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
                 }).listIngressAsync(ns, new ResponseStep<V1beta1IngressList>(domainList) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -1267,7 +1270,8 @@ public class Main {
     @Override
     public NextAction apply(Packet packet) {
       Step deletePods = CallBuilder.create().with($ -> {
-        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID;
+        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID
+                          + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
       }).deleteCollectionPodAsync(namespace, new ResponseStep<V1Status>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -1286,7 +1290,8 @@ public class Main {
       });
       
       Step serviceList = CallBuilder.create().with($ -> {
-        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID;
+        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID
+                          + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
       }).listServiceAsync(namespace, new ResponseStep<V1ServiceList>(deletePods) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -1309,7 +1314,8 @@ public class Main {
 
       LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, domainUID, namespace);
       Step deleteIngress = CallBuilder.create().with($ -> {
-        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID;
+        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID
+                          + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
       }).listIngressAsync(namespace, new ResponseStep<V1beta1IngressList>(serviceList) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,

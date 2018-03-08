@@ -10,6 +10,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -38,14 +39,14 @@ public class CRDHelper {
     om.setName("domains.weblogic.oracle");
     crd.setMetadata(om);
     V1beta1CustomResourceDefinitionSpec crds = new V1beta1CustomResourceDefinitionSpec();
-    crds.setGroup("weblogic.oracle");
-    crds.setVersion("v1");
+    crds.setGroup(KubernetesConstants.DOMAIN_GROUP);
+    crds.setVersion(KubernetesConstants.DOMAIN_VERSION);
     crds.setScope("Namespaced");
     V1beta1CustomResourceDefinitionNames crdn = new V1beta1CustomResourceDefinitionNames();
-    crdn.setPlural("domains");
-    crdn.setSingular("domain");
+    crdn.setPlural(KubernetesConstants.DOMAIN_PLURAL);
+    crdn.setSingular(KubernetesConstants.DOMAIN_SINGULAR);
     crdn.setKind("Domain");
-    crdn.setShortNames(Collections.singletonList("dom"));
+    crdn.setShortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT));
     crds.setNames(crdn);
     crd.setSpec(crds);
 
