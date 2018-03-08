@@ -1,6 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,7 +32,15 @@ public class CreateOperatorGeneratedFilesExtRestCustomDebugOnTest {
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
-    // TBD - rework to new pattern
-    generatedFiles.getWeblogicOperatorYaml().assertThatExternalOperatorServiceIsCorrect(inputs, true, true);
+    assertThat(
+      weblogicOperatorYaml().getExternalOperatorService(),
+      equalTo(
+        weblogicOperatorYaml().getExpectedExternalOperatorService(true, true)
+      )
+    );
+  }
+
+  private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {
+    return generatedFiles.getWeblogicOperatorYaml();
   }
 }

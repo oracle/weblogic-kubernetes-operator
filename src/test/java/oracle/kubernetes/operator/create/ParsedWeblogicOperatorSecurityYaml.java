@@ -1,13 +1,13 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import java.nio.file.Path;
-
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1ServiceAccount;
+
+import java.nio.file.Path;
 
 /**
  * Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects
@@ -32,7 +32,7 @@ public class ParsedWeblogicOperatorSecurityYaml {
   public V1beta1ClusterRoleBinding getOperatorRoleBinding() { return operatorRoleBinding; }
   public V1beta1ClusterRoleBinding getOperatorRoleBindingNonResource() { return operatorRoleBindingNonResource; }
   public V1beta1ClusterRoleBinding getOperatorRoleBindingDiscovery() { return operatorRoleBindingDiscovery; }
-  public V1beta1ClusterRoleBinding operatorRoleBindingAuthDelegator() { return operatorRoleBindingAuthDelegator; }
+  public V1beta1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() { return operatorRoleBindingAuthDelegator; }
   public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() { return weblogicOperatorNamespaceRole; }
   public V1beta1RoleBinding getWeblogicOperatorRoleBinding() { return weblogicOperatorRoleBinding; }
 
