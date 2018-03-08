@@ -119,7 +119,9 @@ function initialize {
   # Parse the common inputs file
   parseCommonInputs
 
-  validateInputParamsSpecified serviceAccount namespace targetNamespaces image elkIntegrationEnabled
+  validateInputParamsSpecified serviceAccount namespace targetNamespaces image
+
+  validateBooleanInputParamsSpecified elkIntegrationEnabled
 
   validateServiceAccount
 
@@ -162,7 +164,7 @@ function initAndValidateOutputDir {
 #
 function validateImagePullSecretName {
   if [ ! -z ${imagePullSecretName} ]; then
-    validateLowerCase "validateImagePullSecretName" ${imagePullSecretName}
+    validateLowerCase "imagePullSecretName" ${imagePullSecretName}
     imagePullSecretPrefix=""
     validateImagePullSecret
   else
@@ -187,7 +189,7 @@ function validateImagePullSecret {
 #
 function validateImagePullPolicy {
 
-  # Validate that javaLoggingLevel was specified
+  # Validate that image pull policy was specified
   validateInputParamsSpecified imagePullPolicy
 
   # And validate that it's one of the allowed logging levels
@@ -223,11 +225,11 @@ function validateTargetNamespaces {
 function validateRemoteDebugNodePort {
 
   # Validate that remoteDebugNodePortEnabled  was specified
-  validateInputParamsSpecified remoteDebugNodePortEnabled 
+  validateBooleanInputParamsSpecified remoteDebugNodePortEnabled 
 
   if [ "${remoteDebugNodePortEnabled}" = true ]; then
     # Validate that the required sub options were specified
-    validateInputParamsSpecified externalDebugHttpPort internalDebugHttpPort
+    validateIntegerInputParamsSpecified externalDebugHttpPort internalDebugHttpPort
   fi
 }
 
@@ -279,11 +281,13 @@ function validateExternalRest {
       ;;
       ${EXT_REST_OPT_SELF_SIGNED})
         echo The WebLogic operator REST interface is externally exposed using a generated self-signed certificate that contains the customer-provided list of subject alternative names.
-        validateInputParamsSpecified externalSans externalRestHttpsPort
+        validateInputParamsSpecified externalSans
+        validateIntegerInputParamsSpecified externalRestHttpsPort
       ;;
       ${EXT_REST_OPT_CUSTOM})
         echo The WebLogic operator REST interface is externally exposed using a customer-provided certificate and private key pair.
-        validateInputParamsSpecified externalOperatorCert externalOperatorKey externalRestHttpsPort
+        validateInputParamsSpecified externalOperatorCert externalOperatorKey
+        validateIntegerInputParamsSpecified externalRestHttpsPort
       ;;
       *)
         validationError "Invalid externalRestOption: \"${externalRestOption}\".  Valid values are $EXT_REST_OPT_NONE, $EXT_REST_OPT_SELF_SIGNED and $EXT_REST_OPT_CUSTOM."

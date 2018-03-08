@@ -279,10 +279,38 @@ function initialize {
 
   # Parse the commonn inputs file
   parseCommonInputs
-  validateInputParamsSpecified adminPort adminServerName createDomainScript domainName domainUid clusterName managedServerCount managedServerStartCount managedServerNameBase
-  validateInputParamsSpecified managedServerPort persistencePath persistenceSize persistenceVolumeClaimName persistenceVolumeName
-  validateInputParamsSpecified productionModeEnabled secretName t3ChannelPort exposeAdminT3Channel adminNodePort exposeAdminNodePort
-  validateInputParamsSpecified namespace loadBalancer loadBalancerWebPort loadBalancerAdminPort loadBalancer javaOptions startupControl
+  validateInputParamsSpecified \
+    adminServerName \
+    createDomainScript \
+    domainName \
+    domainUid \
+    clusterName \
+    managedServerNameBase \
+    persistencePath \
+    persistenceSize \
+    persistenceVolumeClaimName \
+    persistenceVolumeName \
+    secretName \
+    namespace \
+    loadBalancer \
+    javaOptions \
+    startupControl
+
+  validateIntegerInputParamsSpecified \
+    adminPort \
+    managedServerCount \
+    managedServerStartCount \
+    managedServerPort \
+    t3ChannelPort \
+    adminNodePort \
+    loadBalancerWebPort \
+    loadBalancerAdminPort
+
+  validateBooleanInputParamsSpecified \
+    productionModeEnabled \
+    exposeAdminT3Channel \
+    exposeAdminNodePort
+
   validateDomainUid
   validateClusterName
   validateStorageClass
