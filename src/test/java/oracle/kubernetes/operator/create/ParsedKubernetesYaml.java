@@ -2,11 +2,11 @@
 package oracle.kubernetes.operator.create;
 
 import java.io.*;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
@@ -67,44 +67,40 @@ public class ParsedKubernetesYaml {
     getHandler(kind).add(objectAsMap);
   }
 
-  public V1ConfigMap getConfigMap(String name) {
-    return (V1ConfigMap)find(KIND_CONFIG_MAP, name);
+  public TypeHandler<V1ConfigMap> getConfigMaps() {
+    return (TypeHandler<V1ConfigMap>)getHandler(KIND_CONFIG_MAP);
   }
 
-  public V1beta1ClusterRole getClusterRole(String name) {
-    return (V1beta1ClusterRole)find(KIND_CLUSTER_ROLE, name);
+  public TypeHandler<V1beta1ClusterRole> getClusterRoles() {
+    return (TypeHandler<V1beta1ClusterRole>)getHandler(KIND_CLUSTER_ROLE);
   }
 
-  public V1beta1ClusterRoleBinding getClusterRoleBinding(String name) {
-    return (V1beta1ClusterRoleBinding)find(KIND_CLUSTER_ROLE_BINDING, name);
+  public TypeHandler<V1beta1ClusterRoleBinding> getClusterRoleBindings() {
+    return (TypeHandler<V1beta1ClusterRoleBinding>)getHandler(KIND_CLUSTER_ROLE_BINDING);
   }
 
-  public ExtensionsV1beta1Deployment getDeployment(String name) {
-    return (ExtensionsV1beta1Deployment)find(KIND_DEPLOYMENT, name);
+  public TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
+    return (TypeHandler<ExtensionsV1beta1Deployment>)getHandler(KIND_DEPLOYMENT);
   }
 
-  public V1Namespace getNamespace(String name) {
-    return (V1Namespace)find(KIND_NAMESPACE, name);
+  public TypeHandler<V1Namespace> getNamespaces() {
+    return (TypeHandler<V1Namespace>)getHandler(KIND_NAMESPACE);
   }
 
-  public V1beta1RoleBinding getRoleBinding(String name) {
-    return (V1beta1RoleBinding)find(KIND_ROLE_BINDING, name);
+  public TypeHandler<V1beta1RoleBinding> getRoleBindings() {
+    return (TypeHandler<V1beta1RoleBinding>)getHandler(KIND_ROLE_BINDING);
   }
 
-  public V1Secret getSecret(String name) {
-    return (V1Secret)find(KIND_SECRET, name);
+  public TypeHandler<V1Secret> getSecrets() {
+    return (TypeHandler<V1Secret>)getHandler(KIND_SECRET);
   }
 
-  public V1Service getService(String name) {
-    return (V1Service)find(KIND_SERVICE, name);
+  public TypeHandler<V1Service> getServices() {
+    return (TypeHandler<V1Service>)getHandler(KIND_SERVICE);
   }
 
-  public V1ServiceAccount getServiceAccount(String name) {
-    return (V1ServiceAccount)find(KIND_SERVICE_ACCOUNT, name);
-  }
-
-  private Object find(String kind, String name) {
-    return getHandler(kind).find(name);
+  public TypeHandler<V1ServiceAccount> getServiceAccounts() {
+    return (TypeHandler<V1ServiceAccount>)getHandler(KIND_SERVICE_ACCOUNT);
   }
 
   private TypeHandler getHandler(String kind) {
@@ -115,21 +111,42 @@ public class ParsedKubernetesYaml {
     return handler;
   }
 
-  public int getInstanceCount() {
-    int count = 0;
-    for (TypeHandler handler : kindToHandler.values()) {
-      count += handler.getInstanceCount();
-    }
-    return count;
-  }
-
-  private static abstract class TypeHandler<T extends Object> {
+  public static abstract class TypeHandler<T extends Object> {
 
     private Class k8sClass;
-    private Map<String,T> instances = new HashMap<String,T>();
+    private List<T> instances = new ArrayList();
 
     protected TypeHandler(Class k8sClass) {
       this.k8sClass = k8sClass;
+    }
+
+    public T find(String name) {
+      T result = null;
+      for (T instance : instances) {
+        if (name.equals(getName(instance))) {
+          if (result == null) {
+            result = instance;
+          } else {
+            throw new AssertionError("Found more than one instance with the name '" + name + "' for the type '" + this.getClass() + "'");
+          }
+        }
+      }
+      return result;
+    }
+
+    public T find(String name, String namespace) {
+      T result = null;
+      for (T instance : instances) {
+        V1ObjectMeta md = getMetadata(instance);
+        if (name.equals(getName(instance)) && namespace.equals(getNamespace(instance))) {
+          if (result == null) {
+            result = instance;
+          } else {
+            throw new AssertionError("Found more than one instance with the name '" + name + "' and namespace '" + namespace + "' for the type '" + this.getClass() + "'");
+          }
+        }
+      }
+      return result;
     }
 
     public void add(Map objectAsMap) {
@@ -137,22 +154,17 @@ public class ParsedKubernetesYaml {
       // corresponding k8s class
       String yaml = newYaml().dump(objectAsMap);
       T instance = (T)newYaml().loadAs(yaml, k8sClass);
-      String name = getName(instance);
-      instances.put(name, instance);
-    }
-
-    protected String getName(T instance) {
-      return getMetadata(instance).getName();
+      instances.add(instance);
     }
 
     protected abstract V1ObjectMeta getMetadata(T instance);
 
-    public T find(String name) {
-      return instances.get(name);
+    private String getName(T instance) {
+      return getMetadata(instance).getName();
     }
 
-    public int getInstanceCount() {
-      return instances.size();
+    private String getNamespace(T instance) {
+      return getMetadata(instance).getNamespace();
     }
   }
 

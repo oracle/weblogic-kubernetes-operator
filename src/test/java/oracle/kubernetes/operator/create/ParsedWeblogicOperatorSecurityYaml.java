@@ -14,40 +14,51 @@ import java.nio.file.Path;
  */
 public class ParsedWeblogicOperatorSecurityYaml {
 
-  private V1Namespace operatorNamespace;
-  private V1ServiceAccount operatorServiceAccount;
-  private V1beta1ClusterRole weblogicOperatorClusterRole;
-  private V1beta1ClusterRole weblogicOperatorClusterRoleNonResource;
-  private V1beta1ClusterRoleBinding operatorRoleBinding;
-  private V1beta1ClusterRoleBinding operatorRoleBindingNonResource;
-  private V1beta1ClusterRoleBinding operatorRoleBindingDiscovery;
-  private V1beta1ClusterRoleBinding operatorRoleBindingAuthDelegator;
-  private V1beta1ClusterRole weblogicOperatorNamespaceRole;
-  private V1beta1RoleBinding weblogicOperatorRoleBinding;
-
-  public V1Namespace getOperatorNamespace() { return operatorNamespace; }
-  public V1ServiceAccount getOperatorServiceAccount() { return operatorServiceAccount; }
-  public V1beta1ClusterRole getWeblogicOperatorClusterRole() { return weblogicOperatorClusterRole; }
-  public V1beta1ClusterRole getWeblogicOperatorClusterRoleNonResource() { return weblogicOperatorClusterRoleNonResource; }
-  public V1beta1ClusterRoleBinding getOperatorRoleBinding() { return operatorRoleBinding; }
-  public V1beta1ClusterRoleBinding getOperatorRoleBindingNonResource() { return operatorRoleBindingNonResource; }
-  public V1beta1ClusterRoleBinding getOperatorRoleBindingDiscovery() { return operatorRoleBindingDiscovery; }
-  public V1beta1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() { return operatorRoleBindingAuthDelegator; }
-  public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() { return weblogicOperatorNamespaceRole; }
-  public V1beta1RoleBinding getWeblogicOperatorRoleBinding() { return weblogicOperatorRoleBinding; }
+  private CreateOperatorInputs inputs;
+  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedWeblogicOperatorSecurityYaml(Path yamlPath, CreateOperatorInputs inputs) throws Exception {
-    ParsedKubernetesYaml parsedYaml = new ParsedKubernetesYaml(yamlPath);
-    operatorNamespace = parsedYaml.getNamespace(inputs.getNamespace());
-    operatorServiceAccount = parsedYaml.getServiceAccount(inputs.getServiceAccount());
-    weblogicOperatorClusterRole = parsedYaml.getClusterRole("weblogic-operator-cluster-role");
-    weblogicOperatorClusterRoleNonResource = parsedYaml.getClusterRole("weblogic-operator-cluster-role-nonresource");
-    operatorRoleBinding = parsedYaml.getClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding");
-    operatorRoleBindingNonResource = parsedYaml.getClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-nonresource");
-    operatorRoleBindingDiscovery = parsedYaml.getClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-discovery");
-    operatorRoleBindingAuthDelegator = parsedYaml.getClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-auth-delegator");
-    weblogicOperatorNamespaceRole = parsedYaml.getClusterRole("weblogic-operator-namespace-role");
-    weblogicOperatorRoleBinding = parsedYaml.getRoleBinding("weblogic-operator-rolebinding");
+    this.inputs = inputs;
+    parsedYaml = new ParsedKubernetesYaml(yamlPath);
+  }
+
+  public V1Namespace getOperatorNamespace() {
+    return parsedYaml.getNamespaces().find(inputs.getNamespace());
+  }
+
+  public V1ServiceAccount getOperatorServiceAccount() {
+    return parsedYaml.getServiceAccounts().find(inputs.getServiceAccount());
+  }
+
+  public V1beta1ClusterRole getWeblogicOperatorClusterRole() {
+    return parsedYaml.getClusterRoles().find("weblogic-operator-cluster-role");
+  }
+  public V1beta1ClusterRole getWeblogicOperatorClusterRoleNonResource() {
+    return parsedYaml.getClusterRoles().find("weblogic-operator-cluster-role-nonresource");
+  }
+
+  public V1beta1ClusterRoleBinding getOperatorRoleBinding() {
+    return parsedYaml.getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding");
+  }
+
+  public V1beta1ClusterRoleBinding getOperatorRoleBindingNonResource() {
+    return parsedYaml.getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding-nonresource");
+  }
+
+  public V1beta1ClusterRoleBinding getOperatorRoleBindingDiscovery() {
+    return parsedYaml.getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding-discovery");
+  }
+
+  public V1beta1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() {
+    return parsedYaml.getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding-auth-delegator");
+  }
+
+  public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() {
+    return parsedYaml.getClusterRoles().find("weblogic-operator-namespace-role");
+  }
+
+  public V1beta1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
+    return parsedYaml.getRoleBindings().find("weblogic-operator-rolebinding", namespace);
   }
 }
 
