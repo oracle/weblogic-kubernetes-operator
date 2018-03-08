@@ -38,7 +38,7 @@ import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.helpers.ConfigMapHelper;
+import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
@@ -117,9 +117,8 @@ public class Main {
 
     Collection<String> targetNamespaces = getTargetNamespaces(namespace);
 
-    ConfigMapHelper cmh = new ConfigMapHelper("/operator/config");
-
-    String serviceAccountName = cmh.get("serviceaccount");
+    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
+    String serviceAccountName = cmc.get("serviceaccount");
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
@@ -1414,8 +1413,8 @@ public class Main {
   private static Collection<String> getTargetNamespaces(String namespace) {
     Collection<String> targetNamespaces = new ArrayList<String>();
 
-    ConfigMapHelper cmh = new ConfigMapHelper("/operator/config");
-    String tnValue = cmh.get("targetNamespaces");
+    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
+    String tnValue = cmc.get("targetNamespaces");
     if (tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {
