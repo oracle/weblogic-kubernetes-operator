@@ -27,6 +27,22 @@ public class CreateOperatorInputs {
 
   private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-operator-inputs.yaml";
 
+  public static final String EXTERNAL_REST_OPTION_NONE = "none";
+  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "custom-cert";
+  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "self-signed-cert";
+
+  public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
+  public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
+  public static final String JAVA_LOGGING_LEVEL_INFO = "INFO";
+  public static final String JAVA_LOGGING_LEVEL_CONFIG = "CONFIG";
+  public static final String JAVA_LOGGING_LEVEL_FINE = "FINE";
+  public static final String JAVA_LOGGING_LEVEL_FINER = "FINER";
+  public static final String JAVA_LOGGING_LEVEL_FINEST = "FINEST";
+
+  public static final String IMAGE_PULL_POLICY_IF_NOT_PRESENT = "IfNotPresent";
+  public static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
+  public static final String IMAGE_PULL_POLICY_NEVER = "Never";
+
   public static CreateOperatorInputs newInputs() throws Exception {
     return
       readDefaultInputsFile()
@@ -59,7 +75,7 @@ public class CreateOperatorInputs {
     return
       this
         .externalRestHttpsPort("30070")
-        .externalRestOption("self-signed-cert")
+        .externalRestOption(EXTERNAL_REST_OPTION_SELF_SIGNED_CERT)
         .externalSans("DNS:localhost");
   }
 
@@ -67,7 +83,7 @@ public class CreateOperatorInputs {
     return
       this
         .externalRestHttpsPort("30070")
-        .externalRestOption("custom-cert")
+        .externalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT)
         .externalOperatorCert(
           Base64.encodeBase64String(CUSTOM_CERT_PEM.getBytes())
         )

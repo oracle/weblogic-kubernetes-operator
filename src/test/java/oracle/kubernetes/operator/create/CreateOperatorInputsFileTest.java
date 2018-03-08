@@ -11,7 +11,7 @@ import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPri
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.readDefaultInputsFile;
+import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
 
 /**
@@ -44,7 +44,7 @@ public class CreateOperatorInputsFileTest {
     assertThat(i.getImage(), equalTo("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest"));
     assertThat(i.getImagePullPolicy(), equalTo("IfNotPresent"));
     assertThat(i.getImagePullSecretName(), equalTo(""));
-    assertThat(i.getExternalRestOption(), equalTo("none"));
+    assertThat(i.getExternalRestOption(), equalTo(EXTERNAL_REST_OPTION_NONE));
     assertThat(i.getExternalRestHttpsPort(), equalTo("31001"));
     assertThat(i.getExternalSans(), equalTo(""));
     assertThat(i.getExternalOperatorCert(), equalTo(""));
@@ -52,7 +52,7 @@ public class CreateOperatorInputsFileTest {
     assertThat(i.getRemoteDebugNodePortEnabled(), equalTo("false"));
     assertThat(i.getInternalDebugHttpPort(), equalTo("30999"));
     assertThat(i.getExternalDebugHttpPort(), equalTo("30999"));
-    assertThat(i.getJavaLoggingLevel(), equalTo("INFO"));
+    assertThat(i.getJavaLoggingLevel(), equalTo(JAVA_LOGGING_LEVEL_INFO));
     assertThat(i.getElkIntegrationEnabled(), equalTo("false"));
   }
 

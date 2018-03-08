@@ -119,7 +119,7 @@ function initialize {
   # Parse the common inputs file
   parseCommonInputs
 
-  validateInputParamsSpecified serviceAccount namespace targetNamespaces image imagePullPolicy elkIntegrationEnabled
+  validateInputParamsSpecified serviceAccount namespace targetNamespaces image elkIntegrationEnabled
 
   validateServiceAccount
 
@@ -133,6 +133,8 @@ function initialize {
 
   validateExternalRest
   
+  validateImagePullPolicy
+
   validateImagePullSecretName
 
   initAndValidateOutputDir
@@ -178,6 +180,27 @@ function validateImagePullSecret {
   # If it was specified, make sure it exists.
   validateSecretExists ${imagePullSecretName} ${namespace}
   failIfValidationErrors
+}
+
+#
+# Function to validate that the image pull policy has been properly configured
+#
+function validateImagePullPolicy {
+
+  # Validate that javaLoggingLevel was specified
+  validateInputParamsSpecified imagePullPolicy
+
+  # And validate that it's one of the allowed logging levels
+  if [ ! -z "${imagePullPolicy}" ]; then
+    IF_NOT_PRESENT="IfNotPresent"
+    ALWAYS="Always"
+    NEVER="Never"
+    if [ $imagePullPolicy != $IF_NOT_PRESENT  ] && \
+       [ $imagePullPolicy != $ALWAYS          ] && \
+       [ $imagePullPolicy != $NEVER           ]; then
+      validationError "Invalid imagePullPolicy: \"${imagePullPolicy}\". Valid values are $IF_NOT_PRESENT, $ALWAYS and $NEVER."
+    fi
+  fi
 }
 
 #
