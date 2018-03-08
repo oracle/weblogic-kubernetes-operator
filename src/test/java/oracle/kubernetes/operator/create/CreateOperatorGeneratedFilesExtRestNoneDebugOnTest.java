@@ -1,6 +1,10 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1Container;
+
+import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
@@ -39,7 +43,13 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOnTest {
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorDeployment() throws Exception {
-    // TBD
+    ExtensionsV1beta1Deployment want =
+      weblogicOperatorYaml().getBaseExpectedOperatorDeployment();
+    V1Container operatorContainer = want.getSpec().getTemplate().getSpec().getContainers().get(0);
+    operatorContainer.addEnvItem(newEnvVar()
+        .name("REMOTE_DEBUG_PORT")
+        .value(inputs.getInternalDebugHttpPort()));
+    assertThat(weblogicOperatorYaml().getOperatorDeployment(), equalTo(want));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {
