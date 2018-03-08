@@ -183,7 +183,7 @@ public class PodHelper {
       }
 
       // Add internal-weblogic-operator-service certificate to Admin Server pod
-      ConfigMapHelper configMapHelper = new ConfigMapHelper("/operator/config");
+      ConfigMapConsumer configMapHelper = new ConfigMapConsumer("/operator/config");
       String internalOperatorCert = configMapHelper.get(INTERNAL_OPERATOR_CERT_FILE);
       addEnvVar(container, INTERNAL_OPERATOR_CERT_ENV, internalOperatorCert);
 
