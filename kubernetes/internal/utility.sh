@@ -50,6 +50,41 @@ function validateInputParamsSpecified {
 }
 
 #
+# Function to validate that a list of input parameters have boolean values.
+# It assumes that validateInputParamsSpecified will also be called for these params.
+#
+function validateBooleanInputParamsSpecified {
+  validateInputParamsSpecified $*
+  for p in $*; do
+    local name=$p
+    local val=${!name}
+    if ! [ -z $val ]; then
+      if [ "true" != "$val" ] && [ "false" != "$val" ]; then
+        validationError "The value of $name must be true or false: $val"
+      fi
+    fi
+  done
+}
+
+#
+# Function to validate that a list of input parameters have integer values.
+#
+function validateIntegerInputParamsSpecified {
+  validateInputParamsSpecified $*
+  for p in $*; do
+    local name=$p
+    local val=${!name}
+    if ! [ -z $val ]; then
+      local intVal=""
+      printf -v intVal '%d' "$val" 2>/dev/null
+      if ! [ "${val}" == "${intVal}" ]; then
+        validationError "The value of $name must be an integer: $val"
+      fi
+    fi
+  done
+}
+
+#
 # Function to validate a kubernetes secret exists
 # $1 - the name of the secret
 # $2 - namespace

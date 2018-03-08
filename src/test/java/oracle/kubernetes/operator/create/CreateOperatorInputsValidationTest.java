@@ -37,6 +37,7 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_TARGET_NAMESPACES = "targetNamespaces";
   private static final String PARAM_IMAGE = "image";
   private static final String PARAM_IMAGE_PULL_POLICY = "imagePullPolicy";
+  private static final String PARAM_IMAGE_PULL_SECRET_NAME = "imagePullSecretName";
   private static final String PARAM_EXTERNAL_REST_OPTION = "externalRestOption";
   private static final String PARAM_EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
   private static final String PARAM_EXTERNAL_SANS = "externalSans";
@@ -86,6 +87,14 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
+  public void createOperator_with_upperCaseTargetNamespaces_failsAndReturnsError() throws Exception {
+    String val = "TestTargetNamespace";
+    assertThat(
+      execCreateOperator(newInputs().targetNamespaces(val)),
+      failsAndPrints(paramNotLowercaseError(PARAM_TARGET_NAMESPACES, val)));
+  }
+
+  @Test
   public void createOperator_with_missingImage_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().image("")),
@@ -104,7 +113,7 @@ public class CreateOperatorInputsValidationTest {
     String val = "invalid-image-pull-policy";
     assertThat(
       execCreateOperator(newInputs().imagePullPolicy(val)),
-      failsAndPrints(invalidParmValueError(PARAM_IMAGE_PULL_POLICY, val)));
+      failsAndPrints(invalidEnumParamValueError(PARAM_IMAGE_PULL_POLICY, val)));
   }
 
   @Test
@@ -123,6 +132,14 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
+  public void createOperator_with_upperCaseImagePullSecretName_failsAndReturnsError() throws Exception {
+    String val = "TestImagePullSecretName";
+    assertThat(
+      execCreateOperator(newInputs().imagePullSecretName(val)),
+      failsAndPrints(paramNotLowercaseError(PARAM_IMAGE_PULL_SECRET_NAME, val)));
+  }
+
+  @Test
   public void createOperator_with_missingExternalRestOption_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateOperator(newInputs().externalRestOption("")),
@@ -134,7 +151,7 @@ public class CreateOperatorInputsValidationTest {
     String val = "invalid-rest-option";
     assertThat(
       execCreateOperator(newInputs().externalRestOption(val)),
-      failsAndPrints(invalidParmValueError(PARAM_EXTERNAL_REST_OPTION, val)));
+      failsAndPrints(invalidEnumParamValueError(PARAM_EXTERNAL_REST_OPTION, val)));
   }
 
   @Test
@@ -143,6 +160,15 @@ public class CreateOperatorInputsValidationTest {
       execCreateOperator(
         newInputs().setupExternalRestCustomCert().externalRestHttpsPort("")),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_REST_HTTPS_PORT)));
+  }
+
+  @Test
+  public void createOperator_with_externalRestCustomCert_invalidExternalRestHttpsPort_failsAndReturnsError() throws Exception {
+    String val = "invalid-external-rest-https-port";
+    assertThat(
+      execCreateOperator(
+        newInputs().setupExternalRestCustomCert().externalRestHttpsPort(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_EXTERNAL_REST_HTTPS_PORT, val)));
   }
 
   @Test
@@ -167,6 +193,15 @@ public class CreateOperatorInputsValidationTest {
       execCreateOperator(
         newInputs().setupExternalRestSelfSignedCert().externalRestHttpsPort("")),
       failsAndPrints(paramMissingError(PARAM_EXTERNAL_REST_HTTPS_PORT)));
+  }
+
+  @Test
+  public void createOperator_with_externalRestSelfSignedCert_invalidExternalRestHttpsPort_failsAndReturnsError() throws Exception {
+    String val = "invalid-external-rest-https-port";
+    assertThat(
+      execCreateOperator(
+        newInputs().setupExternalRestSelfSignedCert().externalRestHttpsPort(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_EXTERNAL_REST_HTTPS_PORT, val)));
   }
 
   @Test
@@ -198,7 +233,7 @@ public class CreateOperatorInputsValidationTest {
     String val = "invalid-java-logging-level";
     assertThat(
       execCreateOperator(newInputs().javaLoggingLevel(val)),
-      failsAndPrints(invalidParmValueError(PARAM_JAVA_LOGGING_LEVEL, val)));
+      failsAndPrints(invalidEnumParamValueError(PARAM_JAVA_LOGGING_LEVEL, val)));
   }
 
   @Test
@@ -236,6 +271,66 @@ public class CreateOperatorInputsValidationTest {
     createOperator_with_validJavaLoggingLevel_succeeds(JAVA_LOGGING_LEVEL_FINEST);
   }
 
+  @Test
+  public void createOperator_with_missingRemoteDebugNodePortEnabled_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateOperator(newInputs().remoteDebugNodePortEnabled("")),
+      failsAndPrints(paramMissingError(PARAM_REMOTE_DEBUG_NODE_PORT_ENABLED)));
+  }
+
+  @Test
+  public void createOperator_with_invalidRemoteDebugNodePortEnabled_failsAndReturnsError() throws Exception {
+    String val = "invalid-remote-debug-node-port-enabled";
+    assertThat(
+      execCreateOperator(newInputs().remoteDebugNodePortEnabled(val)),
+      failsAndPrints(invalidBooleanParamValueError(PARAM_REMOTE_DEBUG_NODE_PORT_ENABLED, val)));
+  }
+
+  @Test
+  public void createOperator_with_missingInternalDebugHttpPort_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateOperator(newInputs().remoteDebugNodePortEnabled("true").internalDebugHttpPort("")),
+      failsAndPrints(paramMissingError(PARAM_INTERNAL_DEBUG_HTTP_PORT)));
+  }
+
+  @Test
+  public void createOperator_with_invalidInternalDebugHttpPort_failsAndReturnsError() throws Exception {
+    String val = "invalid-internal-debug-http-port";
+    assertThat(
+      execCreateOperator(newInputs().remoteDebugNodePortEnabled("true").internalDebugHttpPort(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_INTERNAL_DEBUG_HTTP_PORT, val)));
+  }
+
+  @Test
+  public void createOperator_with_missingExternalDebugHttpPort_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateOperator(newInputs().remoteDebugNodePortEnabled("true").externalDebugHttpPort("")),
+      failsAndPrints(paramMissingError(PARAM_EXTERNAL_DEBUG_HTTP_PORT)));
+  }
+
+  @Test
+  public void createOperator_with_invalidExternalDebugHttpPort_failsAndReturnsError() throws Exception {
+    String val = "invalid-external-debug-http-port";
+    assertThat(
+      execCreateOperator(newInputs().remoteDebugNodePortEnabled("true").externalDebugHttpPort(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_EXTERNAL_DEBUG_HTTP_PORT, val)));
+  }
+
+  @Test
+  public void createOperator_with_missingElkIntegrationEnabled_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateOperator(newInputs().elkIntegrationEnabled("")),
+      failsAndPrints(paramMissingError(PARAM_ELK_INTEGRATION_ENABLED)));
+  }
+
+  @Test
+  public void createOperator_with_invalidElkIntegrationEnabled_failsAndReturnsError() throws Exception {
+    String val = "invalid-elk-integration-enabled";
+    assertThat(
+      execCreateOperator(newInputs().elkIntegrationEnabled(val)),
+      failsAndPrints(invalidBooleanParamValueError(PARAM_ELK_INTEGRATION_ENABLED, val)));
+  }
+
   private void createOperator_with_validJavaLoggingLevel_succeeds(String level) throws Exception {
     createOperator_with_validInputs_succeeds(newInputs().javaLoggingLevel(level));
   }
@@ -249,7 +344,15 @@ public class CreateOperatorInputsValidationTest {
     GeneratedOperatorYamlFiles.generateOperatorYamlFiles(inputs).remove();
   }
 
-  private String invalidParmValueError(String param, String val) {
+  private String invalidBooleanParamValueError(String param, String val) {
+    return errorRegexp(param + ".*true.*" + val);
+  }
+
+  private String invalidIntegerParamValueError(String param, String val) {
+    return errorRegexp(param + ".*integer.*" + val);
+  }
+
+  private String invalidEnumParamValueError(String param, String val) {
     return errorRegexp("Invalid.*" + param + ".*" + val);
   }
 
@@ -264,16 +367,4 @@ public class CreateOperatorInputsValidationTest {
   private ExecResult execCreateOperator(CreateOperatorInputs inputs) throws Exception {
     return ExecCreateOperator.execCreateOperator(userProjects.getPath(), inputs);
   }
-
-/*
-TODO
-
-test upper case fails:
-  imagePullSecretName
-  targetNamespaces
-
-test option missing dependent sub options fails:
-  external rest already done
-  check debug enabled rules
-*/
 }
