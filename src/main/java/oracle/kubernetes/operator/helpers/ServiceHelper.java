@@ -65,16 +65,17 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+      metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
-      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "");
       metadata.setLabels(labels);
       service.setMetadata(metadata);
-
-      AnnotationHelper.annotateWithDomain(metadata, dom);
-      metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
@@ -139,7 +140,7 @@ public class ServiceHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+          } else if (validateCurrentService(service, result)) {
             // existing Service has correct spec
             LOGGER.fine(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
             sko.getService().set(result);
@@ -194,6 +195,9 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
@@ -201,8 +205,6 @@ public class ServiceHelper {
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
       service.setMetadata(metadata);
-
-      AnnotationHelper.annotateWithDomain(metadata, dom);
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType("ClusterIP");
@@ -254,7 +256,7 @@ public class ServiceHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+          } else if (validateCurrentService(service, result)) {
             // existing Service has correct spec
             LOGGER.fine(MessageKeys.CLUSTER_SERVICE_EXISTS, weblogicDomainUID, clusterName);
             info.getClusters().put(clusterName, result);
@@ -308,6 +310,10 @@ public class ServiceHelper {
   private static boolean validateCurrentService(V1Service build, V1Service current) {
     V1ServiceSpec buildSpec = build.getSpec();
     V1ServiceSpec currentSpec = current.getSpec();
+    
+    if (!AnnotationHelper.checkFormatAnnotation(current.getMetadata())) {
+      return false;
+    }
     
     String buildType = buildSpec.getType();
     if (buildType == null) {
@@ -450,6 +456,9 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
@@ -458,8 +467,6 @@ public class ServiceHelper {
       labels.put(LabelConstants.CHANNELNAME_LABEL, networkAccessPoint.getName());
       metadata.setLabels(labels);
       service.setMetadata(metadata);
-
-      AnnotationHelper.annotateWithDomain(metadata, dom);
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType("NodePort");
@@ -516,7 +523,7 @@ public class ServiceHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+          } else if (validateCurrentService(service, result)) {
             // existing Service has correct spec
             LOGGER.fine(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
             sko.getChannels().put(networkAccessPoint.getName(), result);

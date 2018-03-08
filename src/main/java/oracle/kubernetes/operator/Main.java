@@ -39,6 +39,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
@@ -205,7 +206,8 @@ public class Main {
           }
         });
         
-        Step initialize = CallBuilder.create().with($ -> {
+        Step initialize = ConfigMapHelper.createScriptConfigMapStep(ns,
+            CallBuilder.create().with($ -> {
           $.labelSelector = LabelConstants.DOMAINUID_LABEL
                             + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
         }).listPodAsync(ns, new ResponseStep<V1PodList>(
@@ -317,7 +319,7 @@ public class Main {
             podWatchers.put(ns, createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
             return doNext(packet);
           }
-        });
+        }));
         
         engine.createFiber().start(initialize, new Packet(), new CompletionCallback() {
           @Override
