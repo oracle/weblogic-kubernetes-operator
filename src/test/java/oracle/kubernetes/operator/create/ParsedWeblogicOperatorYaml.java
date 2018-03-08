@@ -20,26 +20,31 @@ import static org.hamcrest.Matchers.*;
 public class ParsedWeblogicOperatorYaml {
 
   private CreateOperatorInputs inputs;
-  private V1ConfigMap operatorConfigMap;
-  private V1Secret operatorSecrets;
-  private ExtensionsV1beta1Deployment operatorDeployment;
-  private V1Service externalOperatorService;
-  private V1Service internalOperatorService;
-
-  public V1ConfigMap getOperatorConfigMap() { return operatorConfigMap; }
-  public V1Secret getOperatorSecrets() { return operatorSecrets; }
-  public ExtensionsV1beta1Deployment getOperatorDeployment() { return operatorDeployment; }
-  public V1Service getExternalOperatorService() { return externalOperatorService; }
-  public V1Service getInternalOperatorService() { return internalOperatorService; }
+  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedWeblogicOperatorYaml(Path yamlPath, CreateOperatorInputs inputs) throws Exception {
     this.inputs = inputs;
-    ParsedKubernetesYaml parsed = new ParsedKubernetesYaml(yamlPath);
-    operatorConfigMap = parsed.getConfigMap("operator-config-map");
-    operatorSecrets = parsed.getSecret("operator-secrets");
-    operatorDeployment = parsed.getDeployment("weblogic-operator");
-    internalOperatorService = parsed.getService("internal-weblogic-operator-service");
-    externalOperatorService = parsed.getService("external-weblogic-operator-service");
+    parsedYaml = new ParsedKubernetesYaml(yamlPath);
+  }
+
+  public V1ConfigMap getOperatorConfigMap() {
+    return parsedYaml.getConfigMaps().find("operator-config-map");
+  }
+
+  public V1Secret getOperatorSecrets() {
+    return parsedYaml.getSecrets().find("operator-secrets");
+  }
+
+  public ExtensionsV1beta1Deployment getOperatorDeployment() {
+    return parsedYaml.getDeployments().find("weblogic-operator");
+  }
+
+  public V1Service getExternalOperatorService() {
+    return parsedYaml.getServices().find("external-weblogic-operator-service");
+  }
+
+  public V1Service getInternalOperatorService() {
+    return parsedYaml.getServices().find("internal-weblogic-operator-service");
   }
 
   // TBD - where should these utils live?

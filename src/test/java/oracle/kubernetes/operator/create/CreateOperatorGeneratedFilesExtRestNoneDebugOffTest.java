@@ -184,19 +184,16 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorRoleBinding() throws Exception {
-    assertThat(
-      weblogicOperatorSecurityYaml().getWeblogicOperatorRoleBinding(),
-      equalTo(newRoleBinding("weblogic-operator-rolebinding", lastEntry(inputs.getTargetNamespaces()))
-        .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
-        .roleRef(newRoleRef("weblogic-operator-namespace-role", ""))));
-  }
-
-  //TODO - this is a workaround for the fact that the getWeblogicOperatorRoleBinding() method only returns the last
-  //TODO - binding created, rather than all of them.
-  private String lastEntry(String targetNamespaces) {
-    String[] split = targetNamespaces.split(",");
-    return split[split.length-1];
+  public void generatesCorrect_weblogicOperatorSecurityYaml_targetNamespaces_weblogicOperatorRoleBindings() throws Exception {
+    for (String targetNamespace : inputs.getTargetNamespaces().split(",")) {
+      String ns = targetNamespace.trim();
+      assertThat(
+        weblogicOperatorSecurityYaml().getWeblogicOperatorRoleBinding(ns),
+        equalTo(
+          newRoleBinding("weblogic-operator-rolebinding", ns)
+            .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
+            .roleRef(newRoleRef("weblogic-operator-namespace-role", ""))));
+    }
   }
 
   private ParsedWeblogicOperatorSecurityYaml weblogicOperatorSecurityYaml() {
