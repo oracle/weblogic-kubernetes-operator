@@ -83,6 +83,7 @@ public class IngressHelper {
         labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
         labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
         labels.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+        labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
         v1ObjectMeta.setLabels(labels);
         v1beta1Ingress.setMetadata(v1ObjectMeta);
 

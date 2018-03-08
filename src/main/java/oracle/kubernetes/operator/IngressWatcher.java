@@ -77,7 +77,8 @@ public class IngressWatcher implements Runnable {
       public WatchI<V1beta1Ingress> initiateWatch(String resourceVersion) throws ApiException {
         return new WatchBuilder(client)
                   .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL) // Any Ingress with a domainUID label
+                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL
+                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
                 .createIngressWatch(ns);
       }
 
