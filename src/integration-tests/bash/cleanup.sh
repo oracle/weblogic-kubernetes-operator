@@ -41,8 +41,8 @@
 #   Phase 4:  Delete the local test output directory.
 #
 
-DOMAINS=(domain1 domain2 domain3 domain4)
-DOMAIN_NAMESPACES=(default default test1 test2)
+DOMAINS=(domain1 domain2 domain3 domain4 domain5)
+DOMAIN_NAMESPACES=(default default test1 test2 default)
 DCOUNT=${#DOMAINS[@]}
 
 OPER_NAMESPACES=(weblogic-operator-1 weblogic-operator-2)

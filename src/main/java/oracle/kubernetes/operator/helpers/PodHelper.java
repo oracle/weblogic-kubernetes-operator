@@ -112,6 +112,7 @@ public class PodHelper {
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, spec.getAsName());
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
 
       V1PodSpec podSpec = new V1PodSpec();
@@ -467,6 +468,7 @@ public class PodHelper {
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, weblogicServerName);
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       if (weblogicClusterName != null)
         labels.put(LabelConstants.CLUSTERNAME_LABEL, weblogicClusterName);
       metadata.setLabels(labels);

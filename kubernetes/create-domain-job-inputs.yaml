@@ -20,6 +20,10 @@ domainUid: domain1
 # Type of WebLogic Cluster (configured or dynamic)
 clusterType: dynamic
 
+# Determines which WebLogic Servers the Operator will start up
+# Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
+startupControl: AUTO
+
 # Cluster name
 clusterName: cluster-1
 
