@@ -21,7 +21,7 @@ public class ParsedWeblogicDomainPersistentVolumeClaimYaml {
     parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
 
-  public V1PersistentVolumeClaim getPersistentVolumeClaim() {
-    return parsedYaml.getPersistentVolumeClaims().find(inputs.getPersistenceVolumeClaimName());
+  public V1PersistentVolumeClaim getWeblogicDomainPersistentVolumeClaim() {
+    return parsedYaml.getPersistentVolumeClaims().find(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeClaimName());
   }
 }

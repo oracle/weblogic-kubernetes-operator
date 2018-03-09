@@ -3,6 +3,9 @@ package oracle.kubernetes.operator.create;
 
 import java.nio.file.Path;
 
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Job;
+
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 
 /**
@@ -17,9 +20,12 @@ public class ParsedCreateWeblogicDomainJobYaml {
     this.inputs = inputs;
     parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
-}
 
-/*
-ConfigMap - domain-domainuid-scripts
-kind: Job - domain-domainuid-job
-*/
+  public V1ConfigMap getCreateWeblogicDomainConfigMap() {
+    return parsedYaml.getConfigMaps().find("domain-" + inputs.getDomainUid() + "-scripts");
+  }
+
+  public V1Job getCreateWeblogicDomainJob() {
+    return parsedYaml.getJobs().find("domain-" + inputs.getDomainUid() + "-job");
+  }
+}
