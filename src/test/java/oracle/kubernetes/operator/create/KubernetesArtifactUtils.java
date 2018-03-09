@@ -45,8 +45,11 @@ public class KubernetesArtifactUtils {
   public static final String KIND_CLUSTER_ROLE = "ClusterRole";
   public static final String KIND_CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
   public static final String KIND_DOMAIN = "Domain";
+  public static final String KIND_JOB = "Job";
   public static final String KIND_DEPLOYMENT = "Deployment";
   public static final String KIND_NAMESPACE = "Namespace";
+  public static final String KIND_PERSISTENT_VOLUME = "PersistentVolume";
+  public static final String KIND_PERSISTENT_VOLUME_CLAIM = "PersistentVolumeClaim";
   public static final String KIND_ROLE_BINDING = "RoleBinding";
   public static final String KIND_SECRET = "Secret";
   public static final String KIND_SERVICE = "Service";

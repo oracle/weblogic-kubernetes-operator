@@ -15,8 +15,12 @@ public class GeneratedDomainYamlFiles {
 
   private UserProjects userProjects;
   private DomainFiles domainFiles;
+  private ParsedCreateWeblogicDomainJobYaml createDomainJobYaml;
   private ParsedDomainCustomResourceYaml domainCustomResourceYaml;
-  // TBD - other generated yaml files
+  private ParsedTraefikYaml traefikYaml;
+  private ParsedTraefikSecurityYaml traefikSecurityYaml;
+  private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
+  private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
   public static GeneratedDomainYamlFiles generateDomainYamlFiles(CreateDomainInputs inputs) throws Exception {
     return new GeneratedDomainYamlFiles(inputs);
@@ -28,9 +32,18 @@ public class GeneratedDomainYamlFiles {
     try {
       domainFiles = new DomainFiles(userProjects.getPath(), inputs);
       assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
+      createDomainJobYaml =
+        new ParsedCreateWeblogicDomainJobYaml(domainFiles.getCreateWeblogicDomainJobYamlPath(), inputs);
       domainCustomResourceYaml =
         new ParsedDomainCustomResourceYaml(domainFiles.getDomainCustomResourceYamlPath(), inputs);
-      // TBD - other generated yaml files
+      traefikYaml =
+        new ParsedTraefikYaml(domainFiles.getTraefikYamlPath(), inputs);
+      traefikSecurityYaml =
+        new ParsedTraefikSecurityYaml(domainFiles.getTraefikSecurityYamlPath(), inputs);
+      weblogicDomainPersistentVolumeYaml =
+        new ParsedWeblogicDomainPersistentVolumeYaml(domainFiles.getWeblogicDomainPersistentVolumeYamlPath(), inputs);
+      weblogicDomainPersistentVolumeClaimYaml =
+        new ParsedWeblogicDomainPersistentVolumeClaimYaml(domainFiles.getWeblogicDomainPersistentVolumeClaimYamlPath(), inputs);
       ok = true;
     } finally {
       if (!ok) {

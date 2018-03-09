@@ -72,7 +72,11 @@ public class CreateDomainInputsFileTest {
     CreateDomainInputs inputs = readDefaultInputsFile().domainUid("test-domain-uid");
     assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
     DomainFiles domainFiles = new DomainFiles(userProjects.getPath(), inputs);
+    assertThat(Files.isRegularFile(domainFiles.getCreateWeblogicDomainJobYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getDomainCustomResourceYamlPath()), is(true));
-    // TBD - other per-domain generated yaml files once they're added to DomainFiles
+    assertThat(Files.isRegularFile(domainFiles.getTraefikYamlPath()), is(true));
+    assertThat(Files.isRegularFile(domainFiles.getTraefikSecurityYamlPath()), is(true));
+    assertThat(Files.isRegularFile(domainFiles.getWeblogicDomainPersistentVolumeYamlPath()), is(true));
+    assertThat(Files.isRegularFile(domainFiles.getWeblogicDomainPersistentVolumeClaimYamlPath()), is(true));
   }
 }

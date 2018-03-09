@@ -14,8 +14,11 @@ import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
@@ -43,7 +46,10 @@ public class ParsedKubernetesYaml {
     kindToHandler.put(KIND_CLUSTER_ROLE_BINDING, new ClusterRoleBindingHandler());
     kindToHandler.put(KIND_DEPLOYMENT, new DeploymentHandler());
     kindToHandler.put(KIND_DOMAIN, new DomainHandler());
+    kindToHandler.put(KIND_JOB, new JobHandler());
     kindToHandler.put(KIND_NAMESPACE, new NamespaceHandler());
+    kindToHandler.put(KIND_PERSISTENT_VOLUME, new PersistentVolumeHandler());
+    kindToHandler.put(KIND_PERSISTENT_VOLUME_CLAIM, new PersistentVolumeClaimHandler());
     kindToHandler.put(KIND_ROLE_BINDING, new RoleBindingHandler());
     kindToHandler.put(KIND_SECRET, new SecretHandler());
     kindToHandler.put(KIND_SERVICE, new ServiceHandler());
@@ -89,8 +95,20 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<Domain>)getHandler(KIND_DOMAIN);
   }
 
+  public TypeHandler<V1Job> getJobs() {
+    return (TypeHandler<V1Job>)getHandler(KIND_JOB);
+  }
+
   public TypeHandler<V1Namespace> getNamespaces() {
     return (TypeHandler<V1Namespace>)getHandler(KIND_NAMESPACE);
+  }
+
+  public TypeHandler<V1PersistentVolume> getPersistentVolumes() {
+    return (TypeHandler<V1PersistentVolume>)getHandler(KIND_PERSISTENT_VOLUME);
+  }
+
+  public TypeHandler<V1PersistentVolumeClaim> getPersistentVolumeClaims() {
+    return (TypeHandler<V1PersistentVolumeClaim>)getHandler(KIND_PERSISTENT_VOLUME_CLAIM);
   }
 
   public TypeHandler<V1beta1RoleBinding> getRoleBindings() {
@@ -199,9 +217,24 @@ public class ParsedKubernetesYaml {
     @Override protected V1ObjectMeta getMetadata(Domain instance) { return instance.getMetadata(); }
   }
 
+  private static class JobHandler extends TypeHandler<V1Job> {
+    private JobHandler() { super(V1Job.class); }
+    @Override protected V1ObjectMeta getMetadata(V1Job instance) { return instance.getMetadata(); }
+  }
+
   private static class NamespaceHandler extends TypeHandler<V1Namespace> {
     private NamespaceHandler() { super(V1Namespace.class); }
     @Override protected V1ObjectMeta getMetadata(V1Namespace instance) { return instance.getMetadata(); }
+  }
+
+  private static class PersistentVolumeHandler extends TypeHandler<V1PersistentVolume> {
+    private PersistentVolumeHandler() { super(V1PersistentVolume.class); }
+    @Override protected V1ObjectMeta getMetadata(V1PersistentVolume instance) { return instance.getMetadata(); }
+  }
+
+  private static class PersistentVolumeClaimHandler extends TypeHandler<V1PersistentVolumeClaim> {
+    private PersistentVolumeClaimHandler() { super(V1PersistentVolumeClaim.class); }
+    @Override protected V1ObjectMeta getMetadata(V1PersistentVolumeClaim instance) { return instance.getMetadata(); }
   }
 
   private static class RoleBindingHandler extends TypeHandler<V1beta1RoleBinding> {
