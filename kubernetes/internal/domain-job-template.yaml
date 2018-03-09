@@ -312,13 +312,12 @@ data:
       serverConfig()
       server=cmo.lookupServer(server_name)
       machineName=server.getMachine().getName()
-
       print 'Name of machine assigned to server %s is %s' % (server_name, machineName)
 
       if machineName is not None:
         print 'Updating listen address of machine %s' % machineName
         try:
-          edit()
+          edit("weblogic-operator-%s" % server_name)
           startEdit()
           cd('/')
           machine=cmo.lookupMachine(machineName)
@@ -326,6 +325,7 @@ data:
           nm=machine.getNodeManager()
           nm.setListenAddress(service_name)
           nm.setNMType('Plain')
+          save()
           activate()
           print 'Updated listen address of machine %s to %s' % (machineName, service_name)
         except:
