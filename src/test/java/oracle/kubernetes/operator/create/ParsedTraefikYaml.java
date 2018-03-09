@@ -31,7 +31,7 @@ public class ParsedTraefikYaml {
     return parsedYaml.getDeployments().find(getTraefikScope());
   }
 
-  public V1ConfigMap getTraefikConfig() {
+  public V1ConfigMap getTraefikConfigMap() {
     return parsedYaml.getConfigMaps().find(getTraefikScope());
   }
 
