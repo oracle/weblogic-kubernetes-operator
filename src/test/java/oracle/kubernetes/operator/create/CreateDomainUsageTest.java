@@ -3,39 +3,39 @@ package oracle.kubernetes.operator.create;
 
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
+import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Test the various create-weblogic-operator.sh command line options that print usage messages
+ * Test the various create-weblogic-Domain.sh command line options that print usage messages
  */
-public class CreateOperatorUsageTest {
+public class CreateDomainUsageTest {
 
   private static final String[] USAGE = { "usage", "-o", "-i", "-g", "-h" };
 
   @Test
   public void helpOption_succeedsAndPrintsUsage() throws Exception {
-    assertThat(execCreateOperator(" -h"), succeedsAndPrints(USAGE));
+    assertThat(execCreateDomain(" -h"), succeedsAndPrints(USAGE));
   }
 
   @Test
   public void noOption_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(execCreateOperator(""), failsAndPrints(allOf(USAGE, CREATE_SCRIPT, "-o must be specified")));
+    assertThat(execCreateDomain(""), failsAndPrints(allOf(USAGE, CREATE_SCRIPT, "-o must be specified", "-i must be specified")));
   }
 
   @Test
   public void missingOutputDir_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(execCreateOperator(" -o"), failsAndPrints(USAGE, toArray("option requires an argument -- o")));
+    assertThat(execCreateDomain(" -o"), failsAndPrints(USAGE, toArray("option requires an argument -- o")));
   }
 
   @Test
   public void missingInputFileName_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(execCreateOperator(" -i"), failsAndPrints(USAGE, toArray("option requires an argument -- i")));
+    assertThat(execCreateDomain(" -i"), failsAndPrints(USAGE, toArray("option requires an argument -- i")));
   }
 
   @Test
   public void unsupportedOption_failsAndPrintsErrorAndUsage() throws Exception {
-    assertThat(execCreateOperator(" -z"), failsAndPrints(USAGE, toArray("illegal option -- z")));
+    assertThat(execCreateDomain(" -z"), failsAndPrints(USAGE, toArray("illegal option -- z")));
   }
 }

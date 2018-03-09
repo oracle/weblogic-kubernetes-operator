@@ -4,15 +4,13 @@ package oracle.kubernetes.operator.create;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.nio.file.Files;
-
-import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
+import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Tests that:

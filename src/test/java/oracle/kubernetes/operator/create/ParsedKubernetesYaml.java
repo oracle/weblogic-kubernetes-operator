@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1ServiceAccount;
 
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -41,6 +42,7 @@ public class ParsedKubernetesYaml {
     kindToHandler.put(KIND_CLUSTER_ROLE, new ClusterRoleHandler());
     kindToHandler.put(KIND_CLUSTER_ROLE_BINDING, new ClusterRoleBindingHandler());
     kindToHandler.put(KIND_DEPLOYMENT, new DeploymentHandler());
+    kindToHandler.put(KIND_DOMAIN, new DomainHandler());
     kindToHandler.put(KIND_NAMESPACE, new NamespaceHandler());
     kindToHandler.put(KIND_ROLE_BINDING, new RoleBindingHandler());
     kindToHandler.put(KIND_SECRET, new SecretHandler());
@@ -81,6 +83,10 @@ public class ParsedKubernetesYaml {
 
   public TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
     return (TypeHandler<ExtensionsV1beta1Deployment>)getHandler(KIND_DEPLOYMENT);
+  }
+
+  public TypeHandler<Domain> getDomains() {
+    return (TypeHandler<Domain>)getHandler(KIND_DOMAIN);
   }
 
   public TypeHandler<V1Namespace> getNamespaces() {
@@ -186,6 +192,11 @@ public class ParsedKubernetesYaml {
   private static class DeploymentHandler extends TypeHandler<ExtensionsV1beta1Deployment> {
     private DeploymentHandler() { super(ExtensionsV1beta1Deployment.class); }
     @Override protected V1ObjectMeta getMetadata(ExtensionsV1beta1Deployment instance) { return instance.getMetadata(); }
+  }
+
+  private static class DomainHandler extends TypeHandler<Domain> {
+    private DomainHandler() { super(Domain.class); }
+    @Override protected V1ObjectMeta getMetadata(Domain instance) { return instance.getMetadata(); }
   }
 
   private static class NamespaceHandler extends TypeHandler<V1Namespace> {
