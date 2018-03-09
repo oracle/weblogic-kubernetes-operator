@@ -223,7 +223,7 @@ public class PodHelper {
       volumeDomainConfigMap.setName("scripts");
       V1ConfigMapVolumeSource cm = new V1ConfigMapVolumeSource();
       cm.setName(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME);
-      cm.setDefaultMode(555); // read and execute
+      cm.setDefaultMode(0555); // read and execute
       volumeDomainConfigMap.setConfigMap(cm);
       podSpec.addVolumesItem(volumeDomainConfigMap);
 
@@ -250,6 +250,12 @@ public class PodHelper {
           if (result == null) {
             Step create = CallBuilder.create().createPodAsync(namespace, adminPod, new ResponseStep<V1Pod>(next) {
               @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(AdminPodStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
               public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
@@ -269,6 +275,7 @@ public class PodHelper {
           } else {
             // we need to update the Pod
             Step replace = new CyclePodStep(
+                AdminPodStep.this,
                 podName, namespace, adminPod, MessageKeys.ADMIN_POD_REPLACED, 
                 weblogicDomainUID, spec.getAsName(), sko, next);
             return doNext(replace, packet);
@@ -281,6 +288,7 @@ public class PodHelper {
   }
 
   private static class CyclePodStep extends Step  {
+    private final Step conflictStep;
     private final String podName;
     private final String namespace;
     private final V1Pod newPod;
@@ -289,8 +297,9 @@ public class PodHelper {
     private final String serverName;
     private final ServerKubernetesObjects sko;
     
-    public CyclePodStep(String podName, String namespace, V1Pod newPod, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, Step next) {
+    public CyclePodStep(Step conflictStep, String podName, String namespace, V1Pod newPod, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, Step next) {
       super(next);
+      this.conflictStep = conflictStep;
       this.podName = podName;
       this.namespace = namespace;
       this.newPod = newPod;
@@ -312,13 +321,19 @@ public class PodHelper {
           if (statusCode == CallBuilder.NOT_FOUND) {
             return onSuccess(packet, null, statusCode, responseHeaders);
           }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
+          return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
         }
 
         @Override
         public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           Step create = CallBuilder.create().createPodAsync(namespace, newPod, new ResponseStep<V1Pod>(next) {
+            @Override
+            public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                Map<String, List<String>> responseHeaders) {
+              return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+            }
+            
             @Override
             public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
                 Map<String, List<String>> responseHeaders) {
@@ -573,7 +588,7 @@ public class PodHelper {
       volumeDomainConfigMap.setName("scripts");
       V1ConfigMapVolumeSource cm = new V1ConfigMapVolumeSource();
       cm.setName(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME);
-      cm.setDefaultMode(555); // read and execute
+      cm.setDefaultMode(0555); // read and execute
       volumeDomainConfigMap.setConfigMap(cm);
       podSpec.addVolumesItem(volumeDomainConfigMap);
 
@@ -610,6 +625,12 @@ public class PodHelper {
           if (result == null) {
             Step create = CallBuilder.create().createPodAsync(namespace, pod, new ResponseStep<V1Pod>(next) {
               @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ManagedPodStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
               public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
@@ -630,6 +651,7 @@ public class PodHelper {
             // we need to update the Pod
             // defer to Pod rolling step
             Step replace = new CyclePodStep(
+                ManagedPodStep.this,
                 podName, namespace, pod, MessageKeys.MANAGED_POD_REPLACED, 
                 weblogicDomainUID, weblogicServerName, sko, next);
             synchronized (packet) {

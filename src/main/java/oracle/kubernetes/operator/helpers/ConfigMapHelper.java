@@ -67,10 +67,10 @@ public class ConfigMapHelper {
           "# the pod should be restarted. The script checks a WebLogic Server state file which\n" + 
           "# is updated by the node manager.\n" + 
           "STATEFILE=/shared/domain/$1/servers/$2/data/nodemanager/$2.state\n" + 
-          "if [ \\`jps -l | grep -c \" weblogic.NodeManager\"\\` -eq 0 ]; then\n" + 
+          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
           "  exit 1\n" + 
           "fi\n" + 
-          "if [ -f \\${STATEFILE} ] && [ \\`grep -c \"FAILED_NOT_RESTARTABLE\" \\${STATEFILE}\\` -eq 1 ]; then\n" + 
+          "if [ -f ${STATEFILE} ] && [ `grep -c \"FAILED_NOT_RESTARTABLE\" ${STATEFILE}` -eq 1 ]; then\n" + 
           "  exit 1\n" + 
           "fi\n" + 
           "exit 0");
@@ -84,11 +84,11 @@ public class ConfigMapHelper {
           "\n" + 
           "STATEFILE=/shared/domain/$1/servers/$2/data/nodemanager/$2.state\n" + 
           "\n" + 
-          "if [ \\`jps -l | grep -c \" weblogic.NodeManager\"\\` -eq 0 ]; then\n" + 
+          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
-          "if [ -f \\${STATEFILE} ] && [ \\`grep -c \"RUNNING\" \\${STATEFILE}\\` -ne 1 ]; then\n" + 
+          "if [ ! -f ${STATEFILE} ] || [ `grep -c \"RUNNING\" ${STATEFILE}` -ne 1 ]; then\n" + 
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
@@ -112,6 +112,12 @@ public class ConfigMapHelper {
           if (result == null) {
             Step create = CallBuilder.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
               @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
@@ -130,6 +136,12 @@ public class ConfigMapHelper {
             updated.putAll(data);
             cm.setData(updated);
             Step replace = CallBuilder.create().replaceConfigMapAsync(name, namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
               @Override
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
