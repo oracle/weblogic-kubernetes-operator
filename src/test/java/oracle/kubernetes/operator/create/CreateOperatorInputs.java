@@ -1,15 +1,15 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
 import java.io.*;
-
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-
-import org.apache.commons.codec.binary.Base64;
+import java.util.Objects;
 
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Class that mirrors create-weblogic-operator-inputs.yaml
@@ -17,11 +17,12 @@ import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
  * Used to parse create-weblogic-operator-inputs.yaml into java
  * and convert java to create-weblogic-operator-inputs.yaml
  *
- * Also includes methods to configure common combinations of inputs.
- *
- * Note use strings to represent params that must be ints or booleans at runtime
+ * Note: use strings to represent params that must be ints or booleans at runtime
  * so that we can test more invalid input options (e.g. missing value, not int value)
  *
+ * Note: initialize to empty strings and change nulls to empty strings
+ * so that when this is written out to a yaml file, the files don't
+ * include the literal "null" string. 
  */
 public class CreateOperatorInputs {
 
@@ -220,5 +221,7 @@ public class CreateOperatorInputs {
   public void setElkIntegrationEnabled(String val) { elkIntegrationEnabled = convertNullToEmptyString(val); }
   public CreateOperatorInputs elkIntegrationEnabled(String val) { setElkIntegrationEnabled(val); return this; }
 
-  private String convertNullToEmptyString(String val) { return (val != null) ? val : ""; }
+  private String convertNullToEmptyString(String val) {
+    return Objects.toString(val, "");
+  }
 }

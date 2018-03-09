@@ -79,8 +79,6 @@ function initialize {
   # Validate the required files exist
   validateErrors=false
 
-  # we don't use kubectl if we're only generating the yaml files
-  # (e.g. so that we can unit test without installing kubectl)
   validateKubectlAvailable
 
   if ! [ -d ${outputDir} ]; then

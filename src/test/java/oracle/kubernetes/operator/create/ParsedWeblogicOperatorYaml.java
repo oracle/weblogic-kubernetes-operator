@@ -11,8 +11,6 @@ import io.kubernetes.client.models.V1Service;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 import org.apache.commons.codec.binary.Base64;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 /**
  * Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects
@@ -55,14 +53,6 @@ public class ParsedWeblogicOperatorYaml {
         .putDataItem("targetNamespaces", inputs.getTargetNamespaces())
         .putDataItem("externalOperatorCert", Base64.encodeBase64String(externalOperatorCertWant.getBytes()))
         .putDataItem("internalOperatorCert", Base64.encodeBase64String(inputs.internalOperatorSelfSignedCertPem().getBytes()));
-  }
-
-  public static void assertThat_secretsAreEqual(V1Secret have, V1Secret want) {
-    // The secret values are stored as byte[], and V1Secret.equal isn't smart
-    // enough to compare them byte by byte, therefore equals always fails.
-    // However, they get converted to cleartext strings in the yaml.
-    // So, just convert the secrets to yaml strings, then compare those.
-    assertThat(newYaml().dump(have), equalTo(newYaml().dump(want)));
   }
 
   public V1Secret getExpectedOperatorSecrets(String externalOperatorKeyWant) {

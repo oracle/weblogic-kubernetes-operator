@@ -4,6 +4,7 @@ package oracle.kubernetes.operator.create;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -39,7 +40,8 @@ public class CreateOperatorGeneratedFilesExtRestCustomDebugOffTest {
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorSecrets() throws Exception {
-    ParsedWeblogicOperatorYaml.assertThat_secretsAreEqual(
+    // Need to compare the yamls since Secret.equal only works for the same instance
+    assertThat_yamlIsEqual(
       weblogicOperatorYaml().getOperatorSecrets(),
       weblogicOperatorYaml().getExpectedOperatorSecrets(inputs.externalOperatorCustomKeyPem()));
   }
