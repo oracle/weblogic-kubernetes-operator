@@ -28,4 +28,6 @@ public interface ProcessingConstants {
   public static final String EXPLICIT_RESTART_SERVERS = "explicitRestartServers";
   public static final String EXPLICIT_RESTART_CLUSTERS = "explicitRestartClusters";
   
+  public static final String SCRIPT_CONFIG_MAP = "scriptConfigMap";
+  
 }

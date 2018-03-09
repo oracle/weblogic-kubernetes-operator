@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -122,6 +123,7 @@ public class ConfigMapHelper {
                   Map<String, List<String>> responseHeaders) {
                 
                 LOGGER.info(MessageKeys.CM_CREATED, namespace);
+                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
                 return doNext(packet);
               }
             });
@@ -129,6 +131,7 @@ public class ConfigMapHelper {
           } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(data.entrySet())) {
             // existing config map has correct data
             LOGGER.fine(MessageKeys.CM_EXISTS, namespace);
+            packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
             return doNext(packet);
           } else {
             // we need to update the config map
@@ -146,6 +149,7 @@ public class ConfigMapHelper {
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 LOGGER.info(MessageKeys.CM_REPLACED, namespace);
+                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
                 return doNext(packet);
               }
             });
