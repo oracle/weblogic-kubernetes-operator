@@ -327,9 +327,11 @@ data:
           nm.setNMType('Plain')
           save()
           activate()
+          destroyEditSession("weblogic-operator-%s" % server_name)
           print 'Updated listen address of machine %s to %s' % (machineName, service_name)
         except:
           cancelEdit()
+          destroyEditSession("weblogic-operator-%s" % server_name)
           raise
 
     # Exit WLST
