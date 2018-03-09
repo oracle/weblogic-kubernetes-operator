@@ -9,6 +9,7 @@ The initial version of the WebLogic Operator did not use consistent naming conve
 The following files are used to create the operator and to create domains.
 
 | Previous File Name | New File Name |
+| ------------------ | ------------- |
 | kubernetes/create-weblogic-operator.sh | same |
 | kubernetes/create-domain-job.sh | kubernetes/create-weblogic-domain.sh |
 | kubernetes/create-operator-inputs.yaml | kubernetes/create-weblogic-operator-inputs.yaml |
@@ -67,6 +68,7 @@ Note: my-inputs.yaml will be copied to /scratch/my-user-projects/weblogic-domain
 The names of several of the generated YAML files have changed.
 
 | Previous File Name | New File Name |
+| ------------------ | ------------- |
 | weblogic-operator.yaml | same |
 | rbac.yaml | weblogic-operator-security.yaml |
 | domain-custom-resource.yaml | same |
@@ -75,3 +77,5 @@ The names of several of the generated YAML files have changed.
 | persistent-volume-claim.yaml | weblogic-domain-persistent-volume-claim.yaml |
 | traefik-deployment.yaml | traefik.yaml |
 | traefik-rbac.yaml | traefik-security.yaml |
+
+#### 
