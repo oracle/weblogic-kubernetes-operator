@@ -10,10 +10,10 @@ The following files are used to create the operator and to create domains.
 
 | Previous File Name | New File Name |
 | --- | --- |
-| kubernetes/create-weblogic-operator.sh | same |
 | kubernetes/create-domain-job.sh | kubernetes/create-weblogic-domain.sh |
-| kubernetes/create-operator-inputs.yaml | kubernetes/create-weblogic-operator-inputs.yaml |
 | kubernetes/create-domain-job-inputs.yaml | kubernetes/create-weblogic-domain-inputs.yaml |
+| kubernetes/create-operator-inputs.yaml | kubernetes/create-weblogic-operator-inputs.yaml |
+| kubernetes/create-weblogic-operator.sh | same |
 
 ### Generated YAML Files for Operators and Domains
 
@@ -69,14 +69,14 @@ The names of several of the generated YAML files have changed.
 
 | Previous File Name | New File Name |
 | --- | --- |
-| weblogic-operator.yaml | same |
-| rbac.yaml | weblogic-operator-security.yaml |
 | domain-custom-resource.yaml | same |
 | domain-job.yaml | create-weblogic-domain-job.yaml |
 | persistent-volume.yaml | weblogic-domain-persistent-volume.yaml |
 | persistent-volume-claim.yaml | weblogic-domain-persistent-volume-claim.yaml |
+| rbac.yaml | weblogic-operator-security.yaml |
 | traefik-deployment.yaml | traefik.yaml |
 | traefik-rbac.yaml | traefik-security.yaml |
+| weblogic-operator.yaml | same |
 
 ## Input File Contents (not implemented yet)
 
@@ -86,9 +86,22 @@ The names of several of the generated YAML files have changed.
 
 | Previous Property Name | New Property Name |
 | --- | --- |
+| elkIntegrationEnabled | same |
+| externalDebugHttpPort | same |
+| externalOperatorCert | same |
+| externalOperatorKey| same |
+| externalRestHttpsPort | same |
+| externalRestOption | same |
+| externalSans | same |
 | image | weblogicOperatorImage |
 | imagePullPolicy | weblogicOperatorImagePullPolicy |
 | imagePullSecretName | weblogicOperatorImagePullSecretName |
+| internalDebugHttpPort | same |
+| javaLoggingLevel | same |
+| namespace | same |
+| remoteDebugNodePortEnabled | same |
+| serviceAccount | same |
+| targetNamespaces| same |
 
 #### Property Values
 
@@ -105,15 +118,35 @@ The names of several of the generated YAML files have changed.
 
 | Previous Property Name | New Property Name |
 | --- | --- |
-| domainUid | domainUID |
+| adminPort | same |
+| adminNodePort | same |
+| adminServerName | same |
+| clusterName | same |
 | createDomainScript | This property has been removed |
+| domainName | same |
+| domainUid | domainUID |
+| exposeAdminNodePort | same |
+| exposeAdminT3Channel | same |
+| imagePullSecretName | weblogicImagePullSecretName |
+| javaOptions | same |
+| loadBalancer | same |
+| loadBalancerAdminPort | loadBalancerDashboardPort |
+| loadBalancerWebPort | same |
 | managedServerCount | configuredManagedServerCount |
+| managedServerNameBase | same |
+| managedServerPort | same |
 | managedServerStartCount | initialManagedServerReplicas |
+| namespace | same |
 | persistencePath | weblogicDomainStoragePath |
 | persistenceSize | weblogicDomainStorageSize |
 | persistenceStorageClass | This property has been removed |
+| persistenceVolumeClaimName | This property has been removed |
+| persistenceVolumeName | This property has been removed |
+| productionModeEnabled | same |
 | secretName | weblogicCredentialsSecretName |
-| loadBalancerAdminPort | loadBalancerDashboardPort |
+| startupControl | TBD |
+| t3ChannelPort | same |
+| t3PublicAddress | same |
 
 #### Property Values
 
@@ -121,4 +154,8 @@ The names of several of the generated YAML files have changed.
 | --- | --- | --- |
 | loadBalancer | none | NONE |
 | loadBalancer | traefik | TRAEFIK |
-
+| startupControl | ADMIN | TBD |
+| startupControl | ALL | TBD |
+| startupControl | AUTO | TBD |
+| startupControl | NONE | TBD |
+| startupControl | SPECIFIED | TBD |

@@ -189,7 +189,7 @@ function validateImagePullSecret {
 #
 function validateImagePullPolicy {
 
-  # Validate that image pull policy was specified
+  # Validate that imagePullPolicy was specified
   validateInputParamsSpecified imagePullPolicy
 
   # And validate that it's one of the allowed logging levels
