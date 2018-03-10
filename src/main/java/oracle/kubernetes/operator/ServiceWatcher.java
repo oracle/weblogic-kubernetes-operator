@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * This class handles Service watching. It service change events and sends
+ * This class handles Service watching. It receives service change events and sends
  * them into the operator for processing.
  */
 public class ServiceWatcher implements Runnable {
