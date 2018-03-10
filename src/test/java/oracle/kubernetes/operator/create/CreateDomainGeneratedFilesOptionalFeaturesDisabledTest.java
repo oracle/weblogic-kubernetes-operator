@@ -13,7 +13,7 @@ import org.junit.Test;
  * creates are correct when the admin node port is disabled and t3 channel is disable,
  * and there is no image pull secret.
  */
-public class CreateDomainGeneratedFilesAdminNodePortDisabledT3ChannelDisabledTest {
+public class CreateDomainGeneratedFilesOptionalFeaturesDisabledTest {
 
   private static CreateDomainInputs inputs;
   private static GeneratedDomainYamlFiles generatedFiles;
