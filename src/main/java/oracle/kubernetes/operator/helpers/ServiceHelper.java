@@ -65,6 +65,10 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+      metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
@@ -72,9 +76,6 @@ public class ServiceHelper {
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
       service.setMetadata(metadata);
-
-      AnnotationHelper.annotateWithDomain(metadata, dom);
-      metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
@@ -139,7 +140,7 @@ public class ServiceHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+          } else if (validateCurrentService(service, result)) {
             // existing Service has correct spec
             LOGGER.fine(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
             sko.getService().set(result);
@@ -147,6 +148,7 @@ public class ServiceHelper {
           } else {
             // we need to update the Service
             Step replace = new CycleServiceStep(
+                ForServerStep.this,
                 name, namespace, service, 
                 serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_REPLACED : MessageKeys.MANAGED_SERVICE_REPLACED,
                 weblogicDomainUID, serverName, sko, next);
@@ -194,6 +196,9 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
@@ -201,8 +206,6 @@ public class ServiceHelper {
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
       service.setMetadata(metadata);
-
-      AnnotationHelper.annotateWithDomain(metadata, dom);
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType("ClusterIP");
@@ -254,7 +257,7 @@ public class ServiceHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+          } else if (validateCurrentService(service, result)) {
             // existing Service has correct spec
             LOGGER.fine(MessageKeys.CLUSTER_SERVICE_EXISTS, weblogicDomainUID, clusterName);
             info.getClusters().put(clusterName, result);
@@ -262,7 +265,7 @@ public class ServiceHelper {
           } else {
             // we need to cycle the Service
             info.getClusters().remove(clusterName);
-            Step delete = CallBuilder.create().deleteServiceAsync(namespace, name, new ResponseStep<V1Status>(next) {
+            Step delete = CallBuilder.create().deleteServiceAsync(name, namespace, new ResponseStep<V1Status>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -309,6 +312,10 @@ public class ServiceHelper {
     V1ServiceSpec buildSpec = build.getSpec();
     V1ServiceSpec currentSpec = current.getSpec();
     
+    if (!AnnotationHelper.checkFormatAnnotation(current.getMetadata())) {
+      return false;
+    }
+    
     String buildType = buildSpec.getType();
     if (buildType == null) {
       buildType = "ClusterIP";
@@ -340,6 +347,7 @@ public class ServiceHelper {
   }
   
   private static class CycleServiceStep extends Step  {
+    private final Step conflictStep;
     private final String serviceName;
     private final String namespace;
     private final V1Service newService;
@@ -349,12 +357,13 @@ public class ServiceHelper {
     private final ServerKubernetesObjects sko;
     private final String channelName;
     
-    public CycleServiceStep(String serviceName, String namespace, V1Service newService, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, Step next) {
-      this(serviceName, namespace, newService, messageKey, weblogicDomainUID, serverName, sko, null, next);
+    public CycleServiceStep(Step conflictStep, String serviceName, String namespace, V1Service newService, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, Step next) {
+      this(conflictStep, serviceName, namespace, newService, messageKey, weblogicDomainUID, serverName, sko, null, next);
     }
     
-    public CycleServiceStep(String serviceName, String namespace, V1Service newService, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, String channelName, Step next) {
+    public CycleServiceStep(Step conflictStep, String serviceName, String namespace, V1Service newService, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, String channelName, Step next) {
       super(next);
+      this.conflictStep = conflictStep;
       this.serviceName = serviceName;
       this.namespace = namespace;
       this.newService = newService;
@@ -379,7 +388,7 @@ public class ServiceHelper {
           if (statusCode == CallBuilder.NOT_FOUND) {
             return onSuccess(packet, null, statusCode, responseHeaders);
           }
-          return super.onFailure(CycleServiceStep.this, packet, e, statusCode, responseHeaders);
+          return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
         }
 
         @Override
@@ -389,7 +398,7 @@ public class ServiceHelper {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                 Map<String, List<String>> responseHeaders) {
-              return super.onFailure(CycleServiceStep.this, packet, e, statusCode, responseHeaders);
+              return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
             }
 
             @Override
@@ -450,6 +459,9 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
@@ -458,8 +470,6 @@ public class ServiceHelper {
       labels.put(LabelConstants.CHANNELNAME_LABEL, networkAccessPoint.getName());
       metadata.setLabels(labels);
       service.setMetadata(metadata);
-
-      AnnotationHelper.annotateWithDomain(metadata, dom);
 
       V1ServiceSpec serviceSpec = new V1ServiceSpec();
       serviceSpec.setType("NodePort");
@@ -516,7 +526,7 @@ public class ServiceHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkDomainAnnotation(result.getMetadata(), dom) || validateCurrentService(service, result)) {
+          } else if (validateCurrentService(service, result)) {
             // existing Service has correct spec
             LOGGER.fine(serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_EXISTS : MessageKeys.MANAGED_SERVICE_EXISTS, weblogicDomainUID, serverName);
             sko.getChannels().put(networkAccessPoint.getName(), result);
@@ -524,6 +534,7 @@ public class ServiceHelper {
           } else {
             // we need to update the Service
             Step replace = new CycleServiceStep(
+                ForExternalChannelStep.this,
                 name, namespace, service, 
                 serverName.equals(spec.getAsName()) ? MessageKeys.ADMIN_SERVICE_REPLACED : MessageKeys.MANAGED_SERVICE_REPLACED,
                 weblogicDomainUID, serverName, sko, networkAccessPoint.getName(), next);

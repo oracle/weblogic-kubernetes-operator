@@ -181,8 +181,17 @@ rules:
 - apiGroups: [""]
   resources: ["secrets", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["services", "pods", "networkpolicies"]
+  resources: ["services", "configmaps", "pods", "jobs", "events"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["settings.k8s.io"]
+  resources: ["podpresets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["extensions"]
+  resources: ["podsecuritypolicies", "networkpolicies"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 ---
 EOF

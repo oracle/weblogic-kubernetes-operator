@@ -1,143 +1,172 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ObjectMeta;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-/**
- * Kubernetes mounts ConfigMaps in the Pod's file-system as directories where the contained
- * files are named with the keys and the contents of the file are the values.  This class
- * assists with parsing this data and representing it as a Map.
- */
-public class ConfigMapHelper implements Map<String, String> {
+public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final File mountPointDir;
-
-  public ConfigMapHelper(String mountPoint) {
-    this.mountPointDir = new File(mountPoint);
+  private ConfigMapHelper() {}
+  
+  /**
+   * Factory for {@link Step} that creates config map containing scripts
+   * @param namespace Namespace
+   * @param next Next processing step
+   * @return Step for creating config map containing scripts
+   */
+  public static Step createScriptConfigMapStep(String namespace, Step next) {
+    return new ScriptConfigMapStep(namespace, next);
   }
 
-  @Override
-  public int size() {
-    String[] list = mountPointDir.list();
-    return list == null ? null : list.length;
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return size() == 0;
-  }
-
-  @Override
-  public boolean containsKey(Object key) {
-    if (key instanceof String) {
-      File child = new File(mountPointDir, (String) key);
-      return child.exists();
+  private static class ScriptConfigMapStep extends Step {
+    private final String namespace;
+    
+    public ScriptConfigMapStep(String namespace, Step next) {
+      super(next);
+      this.namespace = namespace;
     }
-    return false;
-  }
 
-  @Override
-  public boolean containsValue(Object value) {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public NextAction apply(Packet packet) {
+      String name = KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
+      V1ConfigMap cm = new V1ConfigMap();
+      
+      V1ObjectMeta metadata = new V1ObjectMeta();
+      metadata.setName(name);
+      metadata.setNamespace(namespace);
+      
+      AnnotationHelper.annotateWithFormat(metadata);
+      
+      Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      metadata.setLabels(labels);
 
-  @Override
-  public String get(Object key) {
-    if (key instanceof String) {
-      return readValue((String) key);
-    }
-    return null;
-  }
+      cm.setMetadata(metadata);
 
-  @Override
-  public String put(String key, String value) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public String remove(Object key) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void putAll(Map<? extends String, ? extends String> m) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void clear() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Set<String> keySet() {
-    Set<String> keys = new HashSet<>();
-    String[] list = mountPointDir.list();
-    if (list != null) {
-      for (String s : list) {
-        keys.add(s);
-      }
-    }
-    return keys;
-  }
-
-  @Override
-  public Collection<String> values() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Set<Entry<String, String>> entrySet() {
-    Set<Entry<String, String>> entries = new HashSet<>();
-    String[] list = mountPointDir.list();
-    if (list != null) {
-      for (String s : list) {
-        entries.add(new Entry<String, String>() {
-
-          @Override
-          public String getKey() {
-            return s;
+      Map<String, String> data = new HashMap<>();
+      
+      data.put("livenessProbe.sh", 
+          "#!/bin/bash\n" + 
+          "# Kubernetes periodically calls this liveness probe script to determine whether\n" + 
+          "# the pod should be restarted. The script checks a WebLogic Server state file which\n" + 
+          "# is updated by the node manager.\n" + 
+          "DOMAIN_NAME=$1\n" +
+          "SERVER_NAME=$2\n" +
+          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
+          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
+          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
+          "  exit 1\n" + 
+          "fi\n" + 
+          "if [ -f ${STATEFILE} ] && [ `grep -c \"FAILED_NOT_RESTARTABLE\" ${STATEFILE}` -eq 1 ]; then\n" + 
+          "  echo \"Error: WebLogic Server FAILED_NOT_RESTARTABLE.\"\n" +
+          "  exit 1\n" + 
+          "fi\n" + 
+          "exit 0");
+      
+      data.put("readinessProbe.sh", 
+          "#!/bin/bash\n" + 
+          "\n" + 
+          "# Kubernetes periodically calls this readiness probe script to determine whether\n" + 
+          "# the pod should be included in load balancing. The script checks a WebLogic Server state\n" + 
+          "# file which is updated by the node manager.\n" + 
+          "\n" + 
+          "DOMAIN_NAME=$1\n" +
+          "SERVER_NAME=$2\n" +
+          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
+          "\n" + 
+          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
+          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
+          "  exit 1\n" + 
+          "fi\n" + 
+          "\n" + 
+          "if [ ! -f ${STATEFILE} ] || [ `grep -c \"RUNNING\" ${STATEFILE}` -ne 1 ]; then\n" + 
+          "  exit 1\n" + 
+          "fi\n" + 
+          "\n" + 
+          "exit 0");
+      
+      cm.setData(data);
+      
+      Step read = CallBuilder.create().readConfigMapAsync(name, namespace, new ResponseStep<V1ConfigMap>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return onSuccess(packet, null, statusCode, responseHeaders);
           }
+          return super.onFailure(packet, e, statusCode, responseHeaders);
+        }
 
-          @Override
-          public String getValue() {
-            return readValue(s);
+        @Override
+        public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (result == null) {
+            Step create = CallBuilder.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
+              public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                
+                LOGGER.info(MessageKeys.CM_CREATED, namespace);
+                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
+                return doNext(packet);
+              }
+            });
+            return doNext(create, packet);
+          } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(data.entrySet())) {
+            // existing config map has correct data
+            LOGGER.fine(MessageKeys.CM_EXISTS, namespace);
+            packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
+            return doNext(packet);
+          } else {
+            // we need to update the config map
+            Map<String, String> updated = result.getData();
+            updated.putAll(data);
+            cm.setData(updated);
+            Step replace = CallBuilder.create().replaceConfigMapAsync(name, namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
+              public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                LOGGER.info(MessageKeys.CM_REPLACED, namespace);
+                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
+                return doNext(packet);
+              }
+            });
+            return doNext(replace, packet);
           }
-
-          @Override
-          public String setValue(String value) {
-            throw new UnsupportedOperationException();
-          }
-        });
-      }
+        }
+      });
+      
+      return doNext(read, packet);
     }
-    return entries;
-  }
-
-  private String readValue(String key) {
-    File child = new File(mountPointDir, key);
-    if (child.exists()) {
-      try {
-        return new String(Files.readAllBytes(child.toPath()));
-      } catch (IOException e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-      }
-    }
-
-    return null;
   }
 
 }
