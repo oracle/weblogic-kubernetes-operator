@@ -67,11 +67,15 @@ public class ConfigMapHelper {
           "# Kubernetes periodically calls this liveness probe script to determine whether\n" + 
           "# the pod should be restarted. The script checks a WebLogic Server state file which\n" + 
           "# is updated by the node manager.\n" + 
-          "STATEFILE=/shared/domain/$1/servers/$2/data/nodemanager/$2.state\n" + 
+          "DOMAIN_NAME=$1\n" +
+          "SERVER_NAME=$2\n" +
+          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
           "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
+          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
           "  exit 1\n" + 
           "fi\n" + 
           "if [ -f ${STATEFILE} ] && [ `grep -c \"FAILED_NOT_RESTARTABLE\" ${STATEFILE}` -eq 1 ]; then\n" + 
+          "  echo \"Error: WebLogic Server FAILED_NOT_RESTARTABLE.\"\n" +
           "  exit 1\n" + 
           "fi\n" + 
           "exit 0");
@@ -83,9 +87,12 @@ public class ConfigMapHelper {
           "# the pod should be included in load balancing. The script checks a WebLogic Server state\n" + 
           "# file which is updated by the node manager.\n" + 
           "\n" + 
-          "STATEFILE=/shared/domain/$1/servers/$2/data/nodemanager/$2.state\n" + 
+          "DOMAIN_NAME=$1\n" +
+          "SERVER_NAME=$2\n" +
+          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
           "\n" + 
           "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
+          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
