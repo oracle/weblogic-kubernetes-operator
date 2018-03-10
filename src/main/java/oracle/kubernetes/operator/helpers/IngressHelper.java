@@ -75,9 +75,8 @@ public class IngressHelper {
         v1ObjectMeta.setName(ingressName);
         v1ObjectMeta.setNamespace(namespace);
 
-        Map<String, String> annotations = new HashMap<>();
-        annotations.put(KubernetesConstants.CLASS_INGRESS, KubernetesConstants.CLASS_INGRESS_VALUE);
-        v1ObjectMeta.setAnnotations(annotations);
+        v1ObjectMeta.putAnnotationsItem(KubernetesConstants.CLASS_INGRESS, KubernetesConstants.CLASS_INGRESS_VALUE);
+        AnnotationHelper.annotateWithFormat(v1ObjectMeta);
 
         Map<String, String> labels = new HashMap<>();
         labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
@@ -139,7 +138,7 @@ public class IngressHelper {
                         }
                       }), packet);
                 } else {
-                  if (v1beta1Ingress.getSpec().equals(result.getSpec())) {
+                  if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && v1beta1Ingress.getSpec().equals(result.getSpec())) {
                     return doNext(packet);
                   }
                   return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(),

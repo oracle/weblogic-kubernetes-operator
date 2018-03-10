@@ -21,5 +21,7 @@ public interface KubernetesConstants {
   public static final String DOMAIN_PLURAL = "domains";
   public static final String DOMAIN_SINGULAR = "domain";
   public static final String DOMAIN_SHORT = "dom";
+  
+  public static final String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-config-map";
 
 }
