@@ -166,9 +166,9 @@ public class PodHelper {
       readinessAction.addCommandItem(weblogicDomainName);
       readinessAction.addCommandItem(spec.getAsName());
       readinessProbe.exec(readinessAction);
-      readinessProbe.setInitialDelaySeconds(2);
+      readinessProbe.setInitialDelaySeconds(5);
       readinessProbe.setTimeoutSeconds(5);
-      readinessProbe.setPeriodSeconds(10);
+      readinessProbe.setPeriodSeconds(5);
       readinessProbe.setFailureThreshold(1);
       container.readinessProbe(readinessProbe);
 
@@ -180,7 +180,7 @@ public class PodHelper {
       livenessProbe.exec(livenessAction);
       livenessProbe.setInitialDelaySeconds(10);
       livenessProbe.setTimeoutSeconds(5);
-      livenessProbe.setPeriodSeconds(10);
+      livenessProbe.setPeriodSeconds(5);
       livenessProbe.setFailureThreshold(1);
       container.livenessProbe(livenessProbe);
 
