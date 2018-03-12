@@ -27,7 +27,7 @@
 #  - a unit testing script that only the tests call.  it implements the abstracted behavior by mocking it out
 #
 # The caller of this script must define:
-#   createDomainScript shell variable that has the full pathname of the script calling this script
+#   createScript shell variable that has the full pathname of the script calling this script
 #   validateKubectlAvailable shell function that validates whether kubectl is available
 #   validateThatSecretExists shell function that validates whether a secret has been registered with kubernetes
 #
@@ -45,7 +45,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/utility.sh
 
 function usage {
-  echo usage: ${createDomainScript} -o dir -i file [-g] [-h]
+  echo usage: ${createScript} -o dir -i file [-g] [-h]
   echo "  -o Ouput directory for the generated yaml files, must be specified."
   echo "  -i Parameter input file, must be specified."
   echo "  -g Only generate the files to create the domain, do not execute them"
@@ -108,6 +108,13 @@ function initAndValidateOutputDir {
 #
 function validateDomainUid {
   validateLowerCase "domainUid" ${domainUid}
+}
+
+#
+# Function to ensure the namespace is lowercase
+#
+function validateNamespace {
+  validateLowerCase "namespace" ${namespace}
 }
 
 #
@@ -208,7 +215,7 @@ function validateDomainSecret {
 #
 function validateImagePullSecretName {
   if [ ! -z ${imagePullSecretName} ]; then
-    validateLowerCase "validateImagePullSecretName" ${imagePullSecretName}
+    validateLowerCase imagePullSecretName ${imagePullSecretName}
     imagePullSecretPrefix=""
     if [ "${generateOnly}" = false ]; then
       validateImagePullSecret
@@ -333,7 +340,8 @@ function initialize {
     namespace \
     loadBalancer \
     javaOptions \
-    startupControl
+    startupControl \
+    t3PublicAddress
 
   validateIntegerInputParamsSpecified \
     adminPort \
@@ -351,6 +359,7 @@ function initialize {
     exposeAdminNodePort
 
   validateDomainUid
+  validateNamespace
   validateClusterName
   validateStorageClass
   validatePersistenVolumeName

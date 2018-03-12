@@ -17,7 +17,7 @@ kubernetesDir="${scriptDir}/../../../kubernetes"
 internalDir="${kubernetesDir}/internal"
 
 # pass the name of this script to the internal create script
-createOperatorScript="${script}"
+createScript="${script}"
 
 # pass the location of the default operator inputs yaml file to the internal create script
 defaultOperatorInputsFile="${kubernetesDir}/create-weblogic-operator-inputs.yaml"
