@@ -121,7 +121,7 @@ public class PodHelper {
 
       List<V1Container> containers = new ArrayList<>();
       V1Container container = new V1Container();
-      container.setName("weblogic-server");
+      container.setName(KubernetesConstants.CONTAINER_NAME);
       containers.add(container);
       podSpec.setContainers(containers);
 
@@ -505,7 +505,7 @@ public class PodHelper {
 
       List<V1Container> containers = new ArrayList<>();
       V1Container container = new V1Container();
-      container.setName("weblogic-server");
+      container.setName(KubernetesConstants.CONTAINER_NAME);
       containers.add(container);
       podSpec.setContainers(containers);
 
