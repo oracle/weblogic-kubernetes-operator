@@ -13,7 +13,7 @@ kubernetesDir="${scriptDir}/../../../kubernetes"
 internalDir="${kubernetesDir}/internal"
 
 # pass the name of this script to the internal create script
-createDomainScript="${script}"
+createScript="${script}"
 
 # mock out validating whether kubectl is available
 function validateKubectlAvailable {

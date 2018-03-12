@@ -18,7 +18,7 @@
 #  - a unit testing script that only the tests call.  it implements the abstracted behavior by mocking it out
 #
 # The caller of this script must define:
-#   createOperatorScript shell variable that has the full pathname of the script calling this script
+#   createScript shell variable that has the full pathname of the script calling this script
 #   defaultOperatorInputsFile shell variable that has the full pathname to kubernetes/create-weblogic-operator-inputs.yaml
 #   genOprCertScript shell variable that has the full pathname of the script to use to generate certificates
 #   validateKubectlAvailable shell function that validates whether kubectl is available
@@ -38,7 +38,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/utility.sh
 
 function usage {
-  echo usage: ${createOperatorScript} -o dir [-i file] [-g] [-h]
+  echo usage: ${createScript} -o dir [-i file] [-g] [-h]
   echo "  -o Ouput directory for the generated yaml files, must be specified."
   echo "  -i Parameter input file, defaults to kubernetes/create-weblogic-operator-inputs.yaml"
   echo "  -g Only generate the files to create the operator, do not execute them"
@@ -162,7 +162,7 @@ function initAndValidateOutputDir {
 #
 function validateImagePullSecretName {
   if [ ! -z ${imagePullSecretName} ]; then
-    validateLowerCase "imagePullSecretName" ${imagePullSecretName}
+    validateLowerCase imagePullSecretName ${imagePullSecretName}
     imagePullSecretPrefix=""
     validateImagePullSecret
   else

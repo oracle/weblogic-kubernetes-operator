@@ -11,7 +11,7 @@ internalDir="${scriptDir}/internal"
 # keytool, openssl, kubectl and kubernetes.
 
 # pass the name of this script to the internal create script
-createOperatorScript="${script}"
+createScript="${script}"
 
 # pass the location of the default operator inputs yaml file to the internal create script
 defaultOperatorInputsFile="${scriptDir}/create-weblogic-operator-inputs.yaml"
