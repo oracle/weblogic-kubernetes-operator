@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -38,6 +39,7 @@ import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -90,6 +92,7 @@ public class Main {
   private static String principal;
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
+  private static Map<String, ConfigMapWatcher> configMapWatchers = new HashMap<>();
   private static Map<String, DomainWatcher> domainWatchers = new HashMap<>();
   private static Map<String, PodWatcher> podWatchers = new HashMap<>();
   private static Map<String, ServiceWatcher> serviceWatchers = new HashMap<>();
@@ -117,9 +120,8 @@ public class Main {
 
     Collection<String> targetNamespaces = getTargetNamespaces(namespace);
 
-    ConfigMapHelper cmh = new ConfigMapHelper("/operator/config");
-
-    String serviceAccountName = cmh.get("serviceaccount");
+    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
+    String serviceAccountName = cmc.get("serviceaccount");
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
@@ -206,7 +208,9 @@ public class Main {
           }
         });
         
-        Step initialize = CallBuilder.create().with($ -> {
+        Step initialize = ConfigMapHelper.createScriptConfigMapStep(ns,
+            new ConfigMapAfterStep(ns,
+            CallBuilder.create().with($ -> {
           $.labelSelector = LabelConstants.DOMAINUID_LABEL
                             + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
         }).listPodAsync(ns, new ResponseStep<V1PodList>(
@@ -318,7 +322,7 @@ public class Main {
             podWatchers.put(ns, createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
             return doNext(packet);
           }
-        });
+        })));
         
         engine.createFiber().start(initialize, new Packet(), new CompletionCallback() {
           @Override
@@ -1420,8 +1424,8 @@ public class Main {
   private static Collection<String> getTargetNamespaces(String namespace) {
     Collection<String> targetNamespaces = new ArrayList<String>();
 
-    ConfigMapHelper cmh = new ConfigMapHelper("/operator/config");
-    String tnValue = cmh.get("targetNamespaces");
+    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
+    String tnValue = cmc.get("targetNamespaces");
     if (tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {
@@ -1663,6 +1667,53 @@ public class Main {
             default:
           }
         }
+      }
+    }
+  }
+  
+  private static class ConfigMapAfterStep extends Step {
+    private final String ns;
+    
+    public ConfigMapAfterStep(String ns, Step next) {
+      super(next);
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
+      configMapWatchers.put(ns, createConfigMapWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      return doNext(packet);
+    }
+  }
+  
+  private static ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion)  {
+    return ConfigMapWatcher.create(namespace, initialResourceVersion, Main::dispatchConfigMapWatch, stopping);
+  }
+
+  private static void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
+    V1ConfigMap c = item.object;
+    if (c != null) {
+      switch (item.type) {
+        case "MODIFIED":
+        case "DELETED":
+          engine.createFiber().start(
+              ConfigMapHelper.createScriptConfigMapStep(c.getMetadata().getNamespace(), null), 
+              new Packet(), new CompletionCallback() {
+            @Override
+            public void onCompletion(Packet packet) {
+              // no-op
+            }
+
+            @Override
+            public void onThrowable(Packet packet, Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            }
+          });
+          break;
+
+        case "ERROR":
+        default:
       }
     }
   }
