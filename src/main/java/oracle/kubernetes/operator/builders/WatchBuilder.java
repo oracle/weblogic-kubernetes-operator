@@ -7,6 +7,7 @@ import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
+import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
@@ -173,6 +174,36 @@ public class WatchBuilder {
                             callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
                             callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
                             callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
+            } catch (ApiException e) {
+                throw new UncheckedApiException(e);
+            }
+        }
+    }
+
+    /**
+     * Creates a web hook object to track config map calls
+     * @param namespace the namespace
+     * @return the active web hook
+     * @throws ApiException if there is an error on the call that sets up the web hook.
+     */
+    public WatchI<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
+        return FACTORY.createWatch(clientHolder, callParams, V1ConfigMap.class, new ListNamespacedConfigMapCall(namespace));
+    }
+
+    private class ListNamespacedConfigMapCall implements BiFunction<ClientHolder, CallParams, Call> {
+        private String namespace;
+
+        ListNamespacedConfigMapCall(String namespace) {
+            this.namespace = namespace;
+        }
+
+        @Override
+        public Call apply(ClientHolder clientHolder, CallParams callParams) {
+            try {
+                return clientHolder.getCoreApiClient().listNamespacedConfigMapCall(namespace,
+                              callParams.getPretty(), START_LIST,
+                              callParams.getFieldSelector(), callParams.getIncludeUninitialized(), callParams.getLabelSelector(),
+                              callParams.getLimit(), callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
             } catch (ApiException e) {
                 throw new UncheckedApiException(e);
             }

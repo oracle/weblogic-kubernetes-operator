@@ -16,6 +16,8 @@ import com.squareup.okhttp.Call;
 
 import io.kubernetes.client.ApiCallback;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
@@ -348,6 +350,188 @@ public class CallBuilder {
    */
   public Step createCustomResourceDefinitionAsync(String name, V1beta1CustomResourceDefinition body, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("createCustomResourceDefinition", null, name, body), CREATE_CUSTOMRESOURCEDEFINITION);
+  }
+  
+  /* Config Maps */
+  
+  /**
+   * List config maps
+   * @param namespace Namespace
+   * @return List of config maps
+   * @throws ApiException API Exception
+   */
+  public V1ConfigMapList listConfigMap(String namespace) throws ApiException {
+    String _continue = "";
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getCoreApiClient().listNamespacedConfigMap(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+    } finally {
+      cu.recycle();
+    }
+  }
+
+  private com.squareup.okhttp.Call listConfigMapAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1ConfigMapList> callback) throws ApiException {
+    return usage.client().getCoreApiClient().listNamespacedConfigMapAsync(namespace, pretty, _continue,
+      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
+  }
+
+  private final CallFactory<V1ConfigMapList> LIST_CONFIGMAP = (requestParams, usage, cont, callback) -> {
+    return listConfigMapAsync(usage, requestParams.namespace, cont, callback);
+  };
+  
+  /**
+   * Asynchronous step for listing config maps
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listConfigMapAsync(String namespace, ResponseStep<V1ConfigMapList> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("listConfigMap", namespace, null, null), LIST_CONFIGMAP);
+  }
+  
+  /**
+   * Read config map
+   * @param name Name
+   * @param namespace Namespace
+   * @return Read config map
+   * @throws ApiException API Exception
+   */
+  public V1ConfigMap readConfigMap(String name, String namespace) throws ApiException {
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getCoreApiClient().readNamespacedConfigMap(name, namespace, pretty, exact, export);
+    } finally {
+      cu.recycle();
+    }
+  }
+
+  private com.squareup.okhttp.Call readConfigMapAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1ConfigMap> callback) throws ApiException {
+    return usage.client().getCoreApiClient().readNamespacedConfigMapAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  private final CallFactory<V1ConfigMap> READ_CONFIGMAP = (requestParams, usage, cont, callback) -> {
+    return readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback);
+  };
+  
+  /**
+   * Asynchronous step for reading config map
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readConfigMapAsync(String name, String namespace, ResponseStep<V1ConfigMap> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("readConfigMap", namespace, name, null), READ_CONFIGMAP);
+  }
+  
+  /**
+   * Create config map
+   * @param namespace Namespace
+   * @param body Body
+   * @return Created config map
+   * @throws ApiException API Exception
+   */
+  public V1ConfigMap createConfigMap(String namespace, V1ConfigMap body) throws ApiException {
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getCoreApiClient().createNamespacedConfigMap(namespace, body, pretty);
+    } finally {
+      cu.recycle();
+    }
+  }
+
+  private com.squareup.okhttp.Call createConfigMapAsync(ClientUsage usage, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback) throws ApiException {
+    return usage.client().getCoreApiClient().createNamespacedConfigMapAsync(namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<V1ConfigMap> CREATE_CONFIGMAP = (requestParams, usage, cont, callback) -> {
+    return createConfigMapAsync(usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for creating config map
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createConfigMapAsync(String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("createConfigMap", namespace, null, body), CREATE_CONFIGMAP);
+  }
+  
+  /**
+   * Replace config map
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced config map
+   * @throws ApiException API Exception
+   */
+  public V1ConfigMap replaceConfigMap(String name, String namespace, V1ConfigMap body) throws ApiException {
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getCoreApiClient().replaceNamespacedConfigMap(name, namespace, body, pretty);
+    } finally {
+      cu.recycle();
+    }
+  }
+
+  private com.squareup.okhttp.Call replaceConfigMapAsync(ClientUsage usage, String name, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback) throws ApiException {
+    return usage.client().getCoreApiClient().replaceNamespacedConfigMapAsync(name, namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<V1ConfigMap> REPLACE_CONFIGMAP = (requestParams, usage, cont, callback) -> {
+    return replaceConfigMapAsync(usage, requestParams.name, requestParams.namespace, (V1ConfigMap) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for replacing config map
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceConfigMapAsync(String name, String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("replaceConfigMap", namespace, name, body), REPLACE_CONFIGMAP);
+  }
+  
+  /**
+   * Delete config map
+   * @param name Name
+   * @param namespace Namespace
+   * @param deleteOptions Delete options
+   * @return Status of deletion
+   * @throws ApiException API Exception
+   */
+  public V1Status deleteConfigMap(String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getCoreApiClient().deleteNamespacedConfigMap(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
+        orphanDependents, propagationPolicy);
+    } finally {
+      cu.recycle();
+    }
+  }
+
+  private com.squareup.okhttp.Call deleteConfigMapAsync(ClientUsage usage, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return usage.client().getCoreApiClient().deleteNamespacedConfigMapAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_CONFIGMAP = (requestParams, usage, cont, callback) -> {
+    return deleteConfigMapAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for deleting config map
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteConfigMapAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("deleteConfigMap", namespace, name, null), DELETE_CONFIGMAP);
   }
   
   /* Pods */

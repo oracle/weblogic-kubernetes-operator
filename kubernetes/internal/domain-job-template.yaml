@@ -338,37 +338,6 @@ data:
 
       checkFileExists ${pyFile}
 
-      # Create a liveness probe script. It checks a WL server state file maintained by the node manager.
-      # The script and 'EOF' on the following lines must not be indented!
-
-      scriptFile=${nmdir}/livenessProbe.sh
-
-    cat << EOF > $scriptFile
-    #!/bin/bash
-
-    # Kubernetes periodically calls this liveness probe script to determine whether
-    # the pod should be restarted. The script checks a WebLogic Server state file which
-    # is updated by the node manager.
-
-    STATEFILE=/shared/domain/\$1/servers/\$2/data/nodemanager/\$2.state
-
-    if [ \`jps -l | grep -c " weblogic.NodeManager"\` -eq 0 ]; then
-      echo "Error: WebLogic NodeManager process not found."
-      exit 1
-    fi
-
-    if [ -f \${STATEFILE} ] && [ \`grep -c "FAILED_NOT_RESTARTABLE" \${STATEFILE}\` -eq 1 ]; then
-      echo "Error: WebLogic Server FAILED_NOT_RESTARTABLE."
-      exit 1
-    fi
-
-    echo "Info: Probe check passed."
-    exit 0
-    EOF
-
-      checkFileExists ${scriptFile}
-      chmod +x ${scriptFile}
-
     }
 
     # Function to create script for stopping a server
