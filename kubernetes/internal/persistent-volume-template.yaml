@@ -14,5 +14,7 @@ spec:
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  hostPath:
+  %HOST_PATH_PREFIX%hostPath:
+  %NFS_PREFIX%nfs:
+    %NFS_PREFIX%server: %NFS_SERVER%
     path: "%PERSISTENT_VOLUME_PATH%"
