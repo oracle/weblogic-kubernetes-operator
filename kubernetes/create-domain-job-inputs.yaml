@@ -36,6 +36,13 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
+# Persistent volume type, the value must be hostPath or nfs.
+# If using nfs, nfsServer must be specified.
+persistenceType: hostPath
+
+# NFS server name or ip
+nfsServer: nfsServer
+
 # Physical path of the persistent volume storage
 persistencePath: /scratch/k8s_dir/persistentVolume001
 
