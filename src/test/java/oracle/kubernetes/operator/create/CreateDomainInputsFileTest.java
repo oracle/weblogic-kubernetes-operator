@@ -8,8 +8,9 @@ import org.junit.Test;
 import java.nio.file.Files;
 
 import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.create.ExecCreateDomain.execCreateDomain;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
+import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
+import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -36,34 +37,37 @@ public class CreateDomainInputsFileTest {
 
   @Test
   public void defaultInputsFile_hasCorrectContents() throws Exception {
-    CreateDomainInputs i = readDefaultInputsFile();
-    assertThat(i.getAdminNodePort(), equalTo("30701"));
-    assertThat(i.getAdminPort(), equalTo("7001"));
-    assertThat(i.getAdminServerName(), equalTo("admin-server"));
-    assertThat(i.getClusterName(), equalTo("cluster-1"));
-    assertThat(i.getCreateDomainScript(), equalTo("/u01/weblogic/create-domain-script.sh"));
-    assertThat(i.getDomainName(), equalTo("base_domain"));
-    assertThat(i.getDomainUid(), equalTo("domain1"));
-    assertThat(i.getExposeAdminNodePort(), equalTo("false"));
-    assertThat(i.getExposeAdminT3Channel(), equalTo("false"));
-    assertThat(i.getImagePullSecretName(), equalTo(""));
-    assertThat(i.getJavaOptions(), equalTo("-Dweblogic.StdoutDebugEnabled=false"));
-    assertThat(i.getLoadBalancer(), equalTo("traefik"));
-    assertThat(i.getLoadBalancerAdminPort(), equalTo("30315"));
-    assertThat(i.getLoadBalancerWebPort(), equalTo("30305"));
-    assertThat(i.getManagedServerCount(), equalTo("2"));
-    assertThat(i.getManagedServerNameBase(), equalTo("managed-server"));
-    assertThat(i.getManagedServerPort(), equalTo("8001"));
-    assertThat(i.getManagedServerStartCount(), equalTo("2"));
-    assertThat(i.getNamespace(), equalTo("default"));
-    assertThat(i.getPersistencePath(), equalTo("/scratch/k8s_dir/persistentVolume001"));
-    assertThat(i.getPersistenceSize(), equalTo("10Gi"));
-    assertThat(i.getPersistenceVolumeClaimName(), equalTo("pv001-claim"));
-    assertThat(i.getPersistenceVolumeName(), equalTo("pv001"));
-    assertThat(i.getProductionModeEnabled(), equalTo("true"));
-    assertThat(i.getSecretName(), equalTo("domain1-weblogic-credentials"));
-    assertThat(i.getStartupControl(), equalTo("AUTO"));
-    assertThat(i.getT3ChannelPort(), equalTo("30012"));
+    assertThat(
+      readDefaultInputsFile(),
+      yamlEqualTo((new CreateDomainInputs())
+        .adminNodePort("30701")
+        .adminPort("7001")
+        .adminServerName("admin-server")
+        .clusterName("cluster-1")
+        .createDomainScript("/u01/weblogic/create-domain-script.sh")
+        .domainName("base_domain")
+        .domainUid("domain1")
+        .exposeAdminNodePort("false")
+        .exposeAdminT3Channel("false")
+        .imagePullSecretName("")
+        .javaOptions("-Dweblogic.StdoutDebugEnabled=false")
+        .loadBalancer("traefik")
+        .loadBalancerAdminPort("30315")
+        .loadBalancerWebPort("30305")
+        .managedServerCount("2")
+        .managedServerNameBase("managed-server")
+        .managedServerPort("8001")
+        .managedServerStartCount("2")
+        .namespace("default")
+        .persistencePath("/scratch/k8s_dir/persistentVolume001")
+        .persistenceSize("10Gi")
+        .persistenceVolumeClaimName("pv001-claim")
+        .persistenceVolumeName("pv001")
+        .productionModeEnabled("true")
+        .secretName("domain1-weblogic-credentials")
+        .startupControl("AUTO")
+        .t3ChannelPort("30012")
+        .t3PublicAddress("kubernetes")));
   }
 
   @Test
@@ -72,11 +76,14 @@ public class CreateDomainInputsFileTest {
     CreateDomainInputs inputs = readDefaultInputsFile().domainUid("test-domain-uid");
     assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
     DomainFiles domainFiles = new DomainFiles(userProjects.getPath(), inputs);
+    assertThat(Files.isRegularFile(domainFiles.getCreateWeblogicDomainInputsYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getCreateWeblogicDomainJobYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getDomainCustomResourceYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getTraefikYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getTraefikSecurityYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getWeblogicDomainPersistentVolumeYamlPath()), is(true));
     assertThat(Files.isRegularFile(domainFiles.getWeblogicDomainPersistentVolumeClaimYamlPath()), is(true));
+    // TBD - assert that the generated per-domain directory doesn't contain any extra files?
+    // TBD - assert that the copy of the inputs in generated per-domain directory matches the origin one
   }
 }

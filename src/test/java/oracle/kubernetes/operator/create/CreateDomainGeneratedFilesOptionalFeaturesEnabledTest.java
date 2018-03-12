@@ -1,9 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,13 +38,13 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest {
 
   @Test
   public void generatesCorrect_createWeblogicDomainYaml_createWeblogicDomainJob() throws Exception {
-//System.out.println("MOREAUT_DEBUG create domain job =\n" + YamlUtils.newYaml().dump(generatedFiles.getCreateWeblogicDomainJobYaml().getCreateWeblogicDomainJob()));
+//System.out.println("MOREAUT_DEBUG create domain job =\n" + newYaml().dump(generatedFiles.getCreateWeblogicDomainJobYaml().getCreateWeblogicDomainJob()));
     // TBD
   }
 
   @Test
   public void generatesCorrect_domainCustomResourceYaml_domain() throws Exception {
-//System.out.println("MOREAUT_DEBUG domain custom resource =\n" + YamlUtils.newYaml().dump(generatedFiles.getDomainCustomResourceYaml().getDomain()));
+//System.out.println("MOREAUT_DEBUG domain custom resource =\n" + newYaml().dump(generatedFiles.getDomainCustomResourceYaml().getDomain()));
     // TBD
   }
 }

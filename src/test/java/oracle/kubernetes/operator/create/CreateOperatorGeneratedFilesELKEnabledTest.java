@@ -5,8 +5,8 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Container;
 
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,7 +62,7 @@ public class CreateOperatorGeneratedFilesELKEnabledTest {
         .medium("Memory")));
     assertThat(
       weblogicOperatorYaml().getOperatorDeployment(),
-      equalTo(want));
+      yamlEqualTo(want));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

@@ -9,8 +9,8 @@ import java.nio.file.Path;
 public class DomainFiles {
 
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-domain.sh";
+  private static final String CREATE_WEBLOGIC_DOMAIN_INPUTS_YAML = "create-weblogic-domain-inputs.yaml";
   private static final String DOMAIN_CUSTOM_RESOURCE_YAML = "domain-custom-resource.yaml";
-
   private static final String CREATE_WEBLOGIC_DOMAIN_JOB_YAML = "create-weblogic-domain-job.yaml";
   private static final String TRAEFIK_YAML = "traefik.yaml";
   private static final String TRAEFIK_SECURITY_YAML = "traefik-security.yaml";
@@ -26,6 +26,10 @@ public class DomainFiles {
   }
 
   public Path userProjectsPath() { return userProjectsPath; }
+
+  public Path getCreateWeblogicDomainInputsYamlPath() {
+    return getWeblogicDomainPath().resolve(CREATE_WEBLOGIC_DOMAIN_INPUTS_YAML);
+  }
 
   public Path getCreateWeblogicDomainJobYamlPath() {
     return getWeblogicDomainPath().resolve(CREATE_WEBLOGIC_DOMAIN_JOB_YAML);
