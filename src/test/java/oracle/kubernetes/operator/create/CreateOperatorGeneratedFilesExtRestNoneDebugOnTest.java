@@ -3,10 +3,9 @@ package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Container;
-
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,7 +37,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOnTest {
   public void generatesCorrect_weblogicOperatorYaml_externalOperatorService() throws Exception {
     assertThat(
       weblogicOperatorYaml().getExternalOperatorService(),
-      equalTo(weblogicOperatorYaml().getExpectedExternalOperatorService(true, false)));
+      yamlEqualTo(weblogicOperatorYaml().getExpectedExternalOperatorService(true, false)));
   }
 
   @Test
@@ -47,9 +46,9 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOnTest {
       weblogicOperatorYaml().getBaseExpectedOperatorDeployment();
     V1Container operatorContainer = want.getSpec().getTemplate().getSpec().getContainers().get(0);
     operatorContainer.addEnvItem(newEnvVar()
-        .name("REMOTE_DEBUG_PORT")
-        .value(inputs.getInternalDebugHttpPort()));
-    assertThat(weblogicOperatorYaml().getOperatorDeployment(), equalTo(want));
+      .name("REMOTE_DEBUG_PORT")
+      .value(inputs.getInternalDebugHttpPort()));
+    assertThat(weblogicOperatorYaml().getOperatorDeployment(), yamlEqualTo(want));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

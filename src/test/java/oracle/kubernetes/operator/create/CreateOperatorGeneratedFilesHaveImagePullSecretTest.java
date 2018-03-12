@@ -4,8 +4,8 @@ package oracle.kubernetes.operator.create;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class CreateOperatorGeneratedFilesHaveImagePullSecretTest {
       .name(TEST_OPERATOR_IMAGE_PULL_SECRET_NAME));
     assertThat(
       weblogicOperatorYaml().getOperatorDeployment(),
-      equalTo(want));
+      yamlEqualTo(want));
   }
 
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml() {

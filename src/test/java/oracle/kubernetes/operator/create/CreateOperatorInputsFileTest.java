@@ -7,8 +7,9 @@ import org.junit.Test;
 import java.nio.file.Files;
 
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
-import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
+import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
+import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
+import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -36,22 +37,26 @@ public class CreateOperatorInputsFileTest {
 
   @Test
   public void defaultInputsFile_hasCorrectContents() throws Exception {
-    CreateOperatorInputs i = readDefaultInputsFile();
-    assertThat(i.getServiceAccount(), equalTo("weblogic-operator"));
-    assertThat(i.getTargetNamespaces(), equalTo("default"));
-    assertThat(i.getImage(), equalTo("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest"));
-    assertThat(i.getImagePullPolicy(), equalTo("IfNotPresent"));
-    assertThat(i.getImagePullSecretName(), equalTo(""));
-    assertThat(i.getExternalRestOption(), equalTo(EXTERNAL_REST_OPTION_NONE));
-    assertThat(i.getExternalRestHttpsPort(), equalTo("31001"));
-    assertThat(i.getExternalSans(), equalTo(""));
-    assertThat(i.getExternalOperatorCert(), equalTo(""));
-    assertThat(i.getExternalOperatorKey(), equalTo(""));
-    assertThat(i.getRemoteDebugNodePortEnabled(), equalTo("false"));
-    assertThat(i.getInternalDebugHttpPort(), equalTo("30999"));
-    assertThat(i.getExternalDebugHttpPort(), equalTo("30999"));
-    assertThat(i.getJavaLoggingLevel(), equalTo(JAVA_LOGGING_LEVEL_INFO));
-    assertThat(i.getElkIntegrationEnabled(), equalTo("false"));
+    assertThat(
+      readDefaultInputsFile(),
+      yamlEqualTo((new CreateOperatorInputs())
+        .elkIntegrationEnabled("false")
+        .externalDebugHttpPort("30999")
+        .externalOperatorCert("")
+        .externalOperatorKey("")
+        .externalRestOption(EXTERNAL_REST_OPTION_NONE)
+        .externalRestHttpsPort("31001")
+        .externalSans("")
+        .remoteDebugNodePortEnabled("false")
+        .image("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest")
+        .imagePullPolicy("IfNotPresent")
+        .imagePullSecretName("")
+        .internalDebugHttpPort("30999")
+        .javaLoggingLevel(JAVA_LOGGING_LEVEL_INFO)
+        .namespace("weblogic-operator")
+        .remoteDebugNodePortEnabled("false")
+        .serviceAccount("weblogic-operator")
+        .targetNamespaces("default")));
   }
 
   @Test
@@ -70,7 +75,10 @@ public class CreateOperatorInputsFileTest {
 
   private void assertGeneratedYamlFilesExist(CreateOperatorInputs inputs) {
     OperatorFiles operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);
+    assertThat(Files.isRegularFile(operatorFiles.getCreateWeblogicOperatorInputsYamlPath()), is(true));
     assertThat(Files.isRegularFile(operatorFiles.getWeblogicOperatorYamlPath()), is(true));
     assertThat(Files.isRegularFile(operatorFiles.getWeblogicOperatorSecurityYamlPath()), is(true));
+    // TBD - assert that the generated per-operator directory doesn't contain any extra files?
+    // TBD - assert that the copy of the inputs in generated per-operator directory matches the origin one
   }
 }

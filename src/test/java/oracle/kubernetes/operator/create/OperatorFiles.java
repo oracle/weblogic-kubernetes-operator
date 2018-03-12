@@ -9,6 +9,7 @@ import java.nio.file.Path;
 public class OperatorFiles {
 
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-operator.sh";
+  private static final String CREATE_WEBLOGIC_OPERATOR_INPUTS_YAML = "create-weblogic-operator-inputs.yaml";
   private static final String WEBLOGIC_OPERATOR_YAML = "weblogic-operator.yaml";
   private static final String WEBLOGIC_OPERATOR_SECURITY_YAML = "weblogic-operator-security.yaml";
 
@@ -21,6 +22,10 @@ public class OperatorFiles {
   }
 
   public Path userProjectsPath() { return userProjectsPath; }
+
+  public Path getCreateWeblogicOperatorInputsYamlPath() {
+    return getWeblogicOperatorPath().resolve(CREATE_WEBLOGIC_OPERATOR_INPUTS_YAML);
+  }
 
   public Path getWeblogicOperatorYamlPath() {
     return getWeblogicOperatorPath().resolve(WEBLOGIC_OPERATOR_YAML);

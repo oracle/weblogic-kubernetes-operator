@@ -4,7 +4,6 @@ package oracle.kubernetes.operator.create;
 import static java.util.Arrays.asList;
 
 import io.kubernetes.client.models.V1Service;
-
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,22 +39,22 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorYaml_operatorConfigMap() throws Exception {
     assertThat(
       weblogicOperatorYaml().getOperatorConfigMap(),
-      equalTo(weblogicOperatorYaml().getExpectedOperatorConfigMap(""))); // no external operator cert
+      yamlEqualTo(weblogicOperatorYaml().getExpectedOperatorConfigMap(""))); // no external operator cert
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorSecrets() throws Exception {
     // Need to compare the yamls since Secret.equal only works for the same instance
-    assertThat_yamlIsEqual(
+    assertThat(
       weblogicOperatorYaml().getOperatorSecrets(),
-      weblogicOperatorYaml().getExpectedOperatorSecrets("")); // no external operator key
+      yamlEqualTo(weblogicOperatorYaml().getExpectedOperatorSecrets(""))); // no external operator key
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_operatorDeployment() throws Exception {
     assertThat(
       weblogicOperatorYaml().getOperatorDeployment(),
-      equalTo(weblogicOperatorYaml().getBaseExpectedOperatorDeployment()));
+      yamlEqualTo(weblogicOperatorYaml().getBaseExpectedOperatorDeployment()));
   }
 
   @Test
@@ -73,28 +72,28 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
       .addPortsItem(newServicePort("rest-https").port(8082));
     assertThat(
       weblogicOperatorYaml().getInternalOperatorService(),
-      equalTo(want));
+      yamlEqualTo(want));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorNamespace() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorNamespace(),
-      equalTo(newNamespace(inputs.getNamespace())));
+      yamlEqualTo(newNamespace(inputs.getNamespace())));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorServiceAccount() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorServiceAccount(),
-      equalTo(newServiceAccount(inputs.getServiceAccount(), inputs.getNamespace())));
+      yamlEqualTo(newServiceAccount(inputs.getServiceAccount(), inputs.getNamespace())));
   }
 
   @Test
   public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorClusterRole() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getWeblogicOperatorClusterRole(),
-      equalTo(
+      yamlEqualTo(
         newClusterRole("weblogic-operator-cluster-role")
           .addRulesItem(newPolicyRule()
             .addApiGroupsItem("")
@@ -122,7 +121,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorClusterRoleNonResource() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getWeblogicOperatorClusterRoleNonResource(),
-      equalTo(
+      yamlEqualTo(
         newClusterRole("weblogic-operator-cluster-role-nonresource")
           .addRulesItem(newPolicyRule()
             .addNonResourceURLsItem("/version/*")
@@ -133,7 +132,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBinding() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBinding(),
-      equalTo(
+      yamlEqualTo(
         newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding")
         .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
         .roleRef(newRoleRef("weblogic-operator-cluster-role", "rbac.authorization.k8s.io"))));
@@ -143,7 +142,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingNonResource() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBindingNonResource(),
-      equalTo(
+      yamlEqualTo(
         newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-nonresource")
         .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
         .roleRef(newRoleRef("weblogic-operator-cluster-role-nonresource", "rbac.authorization.k8s.io"))));
@@ -153,7 +152,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingDiscovery() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBindingDiscovery(),
-      equalTo(
+      yamlEqualTo(
         newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-discovery")
         .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
         .roleRef(newRoleRef("system:discovery", "rbac.authorization.k8s.io"))));
@@ -163,7 +162,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorRoleBindingAuthDelegator() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBindingAuthDelegator(),
-      equalTo(
+      yamlEqualTo(
         newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-auth-delegator")
         .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
         .roleRef(newRoleRef("system:auth-delegator", "rbac.authorization.k8s.io"))));
@@ -173,7 +172,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_weblogicOperatorNamespaceRole() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getWeblogicOperatorNamespaceRole(),
-      equalTo(
+      yamlEqualTo(
         newClusterRole("weblogic-operator-namespace-role")
           .addRulesItem(newPolicyRule()
             .addApiGroupsItem("")
@@ -203,7 +202,7 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
       String ns = targetNamespace.trim();
       assertThat(
         weblogicOperatorSecurityYaml().getWeblogicOperatorRoleBinding(ns),
-        equalTo(
+        yamlEqualTo(
           newRoleBinding("weblogic-operator-rolebinding", ns)
             .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
             .roleRef(newRoleRef("weblogic-operator-namespace-role", ""))));
