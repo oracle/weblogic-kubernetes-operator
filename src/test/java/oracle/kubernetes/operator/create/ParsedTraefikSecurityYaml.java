@@ -23,11 +23,15 @@ public class ParsedTraefikSecurityYaml {
   }
 
   public V1beta1ClusterRole getTraefikClusterRole() {
-    return parsedYaml.getClusterRoles().find(getClusterScope() + "-traefik");
+    return parsedYaml.getClusterRoles().find(getTraefikScope());
   }
 
   public V1beta1ClusterRoleBinding getTraefikDashboardClusterRoleBinding() {
-    return parsedYaml.getClusterRoleBindings().find(getClusterScope() + "-traefik-dashboard");
+    return parsedYaml.getClusterRoleBindings().find(getTraefikScope());
+  }
+
+  private String getTraefikScope() {
+    return getClusterScope() + "-traefik";
   }
 
   private String getClusterScope() {

@@ -3,7 +3,6 @@ package oracle.kubernetes.operator.create;
 
 import static java.util.Arrays.asList;
 
-import io.kubernetes.client.models.V1Service;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,15 +63,19 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
 
   @Test
   public void generatesCorrect_weblogicOperatorYaml_internalOperatorService() throws Exception {
-    V1Service want =
-      newService("internal-weblogic-operator-service", inputs.getNamespace());
-    want.getSpec()
-      .type("ClusterIP")
-      .putSelectorItem("app", "weblogic-operator")
-      .addPortsItem(newServicePort("rest-https").port(8082));
     assertThat(
       weblogicOperatorYaml().getInternalOperatorService(),
-      yamlEqualTo(want));
+      yamlEqualTo(
+        newService()
+          .metadata(newObjectMeta()
+            .name("internal-weblogic-operator-service")
+            .namespace(inputs.getNamespace()))
+          .spec(newServiceSpec()
+            .type("ClusterIP")
+            .putSelectorItem("app", "weblogic-operator")
+            .addPortsItem(newServicePort()
+              .name("rest-https")
+              .port(8082)))));
   }
 
   @Test
@@ -86,7 +89,11 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
   public void generatesCorrect_weblogicOperatorSecurityYaml_operatorServiceAccount() throws Exception {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorServiceAccount(),
-      yamlEqualTo(newServiceAccount(inputs.getServiceAccount(), inputs.getNamespace())));
+      yamlEqualTo(
+        newServiceAccount()
+          .metadata(newObjectMeta()
+            .name(inputs.getServiceAccount())
+            .namespace(inputs.getNamespace()))));
   }
 
   @Test
@@ -94,7 +101,9 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getWeblogicOperatorClusterRole(),
       yamlEqualTo(
-        newClusterRole("weblogic-operator-cluster-role")
+        newClusterRole()
+          .metadata(newObjectMeta()
+            .name("weblogic-operator-cluster-role"))
           .addRulesItem(newPolicyRule()
             .addApiGroupsItem("")
             .resources(asList("namespaces", "persistentvolumes"))
@@ -122,7 +131,9 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getWeblogicOperatorClusterRoleNonResource(),
       yamlEqualTo(
-        newClusterRole("weblogic-operator-cluster-role-nonresource")
+        newClusterRole()
+          .metadata(newObjectMeta()
+            .name("weblogic-operator-cluster-role-nonresource"))
           .addRulesItem(newPolicyRule()
             .addNonResourceURLsItem("/version/*")
             .addVerbsItem("get"))));
@@ -133,9 +144,17 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBinding(),
       yamlEqualTo(
-        newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding")
-        .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
-        .roleRef(newRoleRef("weblogic-operator-cluster-role", "rbac.authorization.k8s.io"))));
+        newClusterRoleBinding()
+          .metadata(newObjectMeta()
+            .name(inputs.getNamespace() + "-operator-rolebinding"))
+          .addSubjectsItem(newSubject()
+            .kind("ServiceAccount")
+            .name(inputs.getServiceAccount())
+            .namespace(inputs.getNamespace())
+            .apiGroup(""))
+          .roleRef(newRoleRef()
+            .name("weblogic-operator-cluster-role")
+            .apiGroup("rbac.authorization.k8s.io"))));
   }
 
   @Test
@@ -143,9 +162,17 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBindingNonResource(),
       yamlEqualTo(
-        newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-nonresource")
-        .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
-        .roleRef(newRoleRef("weblogic-operator-cluster-role-nonresource", "rbac.authorization.k8s.io"))));
+        newClusterRoleBinding()
+          .metadata(newObjectMeta()
+            .name(inputs.getNamespace() + "-operator-rolebinding-nonresource"))
+          .addSubjectsItem(newSubject()
+            .kind("ServiceAccount")
+            .name(inputs.getServiceAccount())
+            .namespace(inputs.getNamespace())
+            .apiGroup(""))
+          .roleRef(newRoleRef()
+            .name("weblogic-operator-cluster-role-nonresource")
+            .apiGroup("rbac.authorization.k8s.io"))));
   }
 
   @Test
@@ -153,9 +180,17 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBindingDiscovery(),
       yamlEqualTo(
-        newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-discovery")
-        .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
-        .roleRef(newRoleRef("system:discovery", "rbac.authorization.k8s.io"))));
+        newClusterRoleBinding()
+          .metadata(newObjectMeta()
+            .name(inputs.getNamespace() + "-operator-rolebinding-discovery"))
+          .addSubjectsItem(newSubject()
+            .kind("ServiceAccount")
+            .name(inputs.getServiceAccount())
+            .namespace(inputs.getNamespace())
+            .apiGroup(""))
+          .roleRef(newRoleRef()
+            .name("system:discovery")
+            .apiGroup("rbac.authorization.k8s.io"))));
   }
 
   @Test
@@ -163,9 +198,17 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getOperatorRoleBindingAuthDelegator(),
       yamlEqualTo(
-        newClusterRoleBinding(inputs.getNamespace() + "-operator-rolebinding-auth-delegator")
-        .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
-        .roleRef(newRoleRef("system:auth-delegator", "rbac.authorization.k8s.io"))));
+        newClusterRoleBinding()
+          .metadata(newObjectMeta()
+            .name(inputs.getNamespace() + "-operator-rolebinding-auth-delegator"))
+          .addSubjectsItem(newSubject()
+            .kind("ServiceAccount")
+            .name(inputs.getServiceAccount())
+            .namespace(inputs.getNamespace())
+            .apiGroup(""))
+          .roleRef(newRoleRef()
+            .name("system:auth-delegator")
+            .apiGroup("rbac.authorization.k8s.io"))));
   }
 
   @Test
@@ -173,7 +216,9 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
     assertThat(
       weblogicOperatorSecurityYaml().getWeblogicOperatorNamespaceRole(),
       yamlEqualTo(
-        newClusterRole("weblogic-operator-namespace-role")
+        newClusterRole()
+          .metadata(newObjectMeta()
+            .name("weblogic-operator-namespace-role"))
           .addRulesItem(newPolicyRule()
             .addApiGroupsItem("")
             .resources(asList("secrets", "persistentvolumeclaims"))
@@ -203,9 +248,18 @@ public class CreateOperatorGeneratedFilesExtRestNoneDebugOffTest {
       assertThat(
         weblogicOperatorSecurityYaml().getWeblogicOperatorRoleBinding(ns),
         yamlEqualTo(
-          newRoleBinding("weblogic-operator-rolebinding", ns)
-            .addSubjectsItem(newSubject("ServiceAccount", inputs.getServiceAccount(), inputs.getNamespace(), ""))
-            .roleRef(newRoleRef("weblogic-operator-namespace-role", ""))));
+          newRoleBinding()
+            .metadata(newObjectMeta()
+              .name("weblogic-operator-rolebinding")
+              .namespace(ns))
+            .addSubjectsItem(newSubject()
+              .kind("ServiceAccount")
+              .name(inputs.getServiceAccount())
+              .namespace(inputs.getNamespace())
+              .apiGroup(""))
+            .roleRef(newRoleRef()
+              .name("weblogic-operator-namespace-role")
+              .apiGroup(""))));
     }
   }
 
