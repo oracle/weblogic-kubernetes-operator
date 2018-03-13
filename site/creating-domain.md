@@ -102,10 +102,10 @@ The following parameters must be provided in the input file:
 | createDomainScript	| Script used to create the domain.  This parameter should not be modified. |	/u01/weblogic/create-domain-script.sh |
 | domainName	| Name of the WebLogic domain to create.	| base_domain |
 | domainUid	| Unique ID that will be used to identify this particular domain. This ID must be unique across all domains in a Kubernetes cluster.	| domain1 |
+| enableLoadBalancerAdminPort	| Determines whether the load balancer administration port should be exposed outside the Kubernetes cluster.	| false |
 | imagePullSecretName | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | docker-store-secret |
 | loadBalancerAdminPort	| The node port for the load balancer to accept admin requests.	| 30315 |
 | loadBalancerWebPort	| The node port for the load balancer to accept user traffic. 	| 30305 |
-| enableLoadBalancerAdminPort	| Determines whether the load balancer administration port should be exposed outside the Kubernetes cluster.	| false |
 | managedServerCount	| Number of Managed Server instances to generate for the domain.	| 2 |
 | managedServerNameBase	| Base string used to generate Managed Server names.	| managed-server |
 | managedServerPort	| Port number for each Managed Server.	| 8001 |
@@ -117,9 +117,9 @@ The following parameters must be provided in the input file:
 | persistenceVolumeName	| Name of the Kubernetes persistent volume for this domain.	| pv001 |
 | productionModeEnabled	| Boolean indicating if production mode is enabled for the domain. | true |
 | replaceExistingDomain | If set to 'true' the script will remove any data it finds in the persistent volume before creating the new domain.  Use with caution. | false |
-| startupControl	| Determines which WebLogic servers will be started up. Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO" |      AUTO |
 | secretName	| Name of the Kubernetes secret for the Administration Server's username and password. |	domain1-weblogic-credentials |
 | secretsMountPath |	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
+| startupControl	| Determines which WebLogic servers will be started up. Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO" |      AUTO |
 | T3ChannelPort	| Port for the T3Channel of the NetworkAccessPoint.	| 7002 |
 
 ## Limitations of the create domain script
