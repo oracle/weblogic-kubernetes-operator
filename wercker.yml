@@ -56,7 +56,7 @@ security-scan:
     code: |
       echo "Security Scan Step"
 
-deploy:
+deploy-with-atz:
   steps:
   - script:
     name: Deploy with ATZ
