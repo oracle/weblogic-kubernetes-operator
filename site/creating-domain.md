@@ -119,7 +119,7 @@ The following parameters must be provided in the input file:
 | replaceExistingDomain | If set to 'true' the script will remove any data it finds in the persistent volume before creating the new domain.  Use with caution. | false |
 | secretName	| Name of the Kubernetes secret for the Administration Server's username and password. |	domain1-weblogic-credentials |
 | secretsMountPath |	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
-| startupControl	| Determines which WebLogic servers will be started up. Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO" |      AUTO |
+| startupControl	| Determines which WebLogic servers will be started up. Legal values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', or 'AUTO' |      AUTO |
 | T3ChannelPort	| Port for the T3Channel of the NetworkAccessPoint.	| 7002 |
 
 ## Limitations of the create domain script
