@@ -28,4 +28,51 @@ public class ParsedCreateWeblogicDomainJobYaml {
   public V1Job getCreateWeblogicDomainJob() {
     return parsedYaml.getJobs().find("domain-" + inputs.getDomainUid() + "-job");
   }
+
+  public V1Job getExpectedBaseCreateWeblogicDomainJob() {
+    return
+      newJob()
+        .metadata(newObjectMeta()
+          .name("domain-" + inputs.getDomainUid() + "-job")
+          .namespace(inputs.getNamespace()))
+        .spec(newJobSpec()
+          .template(newPodTemplateSpec()
+            .metadata(newObjectMeta()
+              .putLabelsItem("app", "domain-" + inputs.getDomainUid() + "-job")
+              .putLabelsItem("weblogic.domainUID", inputs.getDomainUid()))
+            .spec(newPodSpec()
+              .restartPolicy("Never")
+              .addContainersItem(newContainer()
+                .name("domain-job")
+                .image("store/oracle/weblogic:12.2.1.3")
+                .imagePullPolicy("IfNotPresent")
+                .addCommandItem("/bin/sh")
+                .addArgsItem("/u01/weblogic/create-domain-job.sh")
+                .addEnvItem(newEnvVar()
+                  .name("SHARED_PATH")
+                  .value("/shared"))
+                .addPortsItem(newContainerPort()
+                  .containerPort(7001))
+                .addVolumeMountsItem(newVolumeMount()
+                  .name("config-map-scripts")
+                  .mountPath("/u01/weblogic"))
+                .addVolumeMountsItem(newVolumeMount()
+                  .name("pv-storage")
+                  .mountPath("/shared"))
+                .addVolumeMountsItem(newVolumeMount()
+                  .name("secrets")
+                  .mountPath("/weblogic-operator/secrets")))
+              .addVolumesItem(newVolume()
+                .name("config-map-scripts")
+                  .configMap(newConfigMapVolumeSource()
+                    .name("domain-" + inputs.getDomainUid() + "-scripts")))
+              .addVolumesItem(newVolume()
+                .name("pv-storage")
+                .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
+                  .claimName(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeClaimName())))
+              .addVolumesItem(newVolume()
+                .name("secrets")
+                  .secret(newSecretVolumeSource()
+                    .secretName(inputs.getSecretName()))))));
+  }
 }

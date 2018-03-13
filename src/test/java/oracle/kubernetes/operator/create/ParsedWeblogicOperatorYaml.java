@@ -7,6 +7,7 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceSpec;
 
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
@@ -48,7 +49,10 @@ public class ParsedWeblogicOperatorYaml {
   // TBD - where should these utils live?
   public V1ConfigMap getExpectedOperatorConfigMap(String externalOperatorCertWant) {
     return
-      newConfigMap("operator-config-map", inputs.getNamespace())
+      newConfigMap()
+        .metadata(newObjectMeta()
+          .name("operator-config-map")
+          .namespace(inputs.getNamespace()))
         .putDataItem("serviceaccount", inputs.getServiceAccount())
         .putDataItem("targetNamespaces", inputs.getTargetNamespaces())
         .putDataItem("externalOperatorCert", Base64.encodeBase64String(externalOperatorCertWant.getBytes()))
@@ -57,34 +61,45 @@ public class ParsedWeblogicOperatorYaml {
 
   public V1Secret getExpectedOperatorSecrets(String externalOperatorKeyWant) {
     return
-      newSecret("operator-secrets", inputs.getNamespace())
+      newSecret()
+        .metadata(newObjectMeta()
+          .name("operator-secrets")
+          .namespace(inputs.getNamespace()))
         .type("Opaque")
         .putDataItem("externalOperatorKey", externalOperatorKeyWant.getBytes())
         .putDataItem("internalOperatorKey", inputs.internalOperatorSelfSignedKeyPem().getBytes());
   }
 
   public V1Service getExpectedExternalOperatorService(boolean debuggingEnabled, boolean externalRestEnabled) {
-    V1Service want =
-      newService("external-weblogic-operator-service", inputs.getNamespace());
-    want.getSpec()
-      .type("NodePort")
-      .putSelectorItem("app", "weblogic-operator");
+    V1ServiceSpec spec =
+      newServiceSpec()
+        .type("NodePort")
+        .putSelectorItem("app", "weblogic-operator");
     if (externalRestEnabled) {
-      want.getSpec().addPortsItem(newServicePort("rest-https")
+      spec.addPortsItem(newServicePort()
+        .name("rest-https")
         .port(8081)
         .nodePort(Integer.parseInt(inputs.getExternalRestHttpsPort())));
     }
     if (debuggingEnabled) {
-      want.getSpec().addPortsItem(newServicePort("debug")
+      spec.addPortsItem(newServicePort()
+        .name("debug")
         .port(Integer.parseInt(inputs.getInternalDebugHttpPort()))
         .nodePort(Integer.parseInt(inputs.getExternalDebugHttpPort())));
     }
-    return want;
+    return newService()
+      .metadata(newObjectMeta()
+        .name("external-weblogic-operator-service")
+        .namespace(inputs.getNamespace()))
+      .spec(spec);
   }
 
   public ExtensionsV1beta1Deployment getBaseExpectedOperatorDeployment() {
     return
-      newDeployment("weblogic-operator", inputs.getNamespace())
+      newDeployment()
+        .metadata(newObjectMeta()
+          .name("weblogic-operator")
+          .namespace(inputs.getNamespace()))
         .spec(newDeploymentSpec()
           .replicas(1)
           .template(newPodTemplateSpec()

@@ -58,6 +58,7 @@ public class ParsedKubernetesYaml {
     // convert the input stream into a set of maps that represent the yaml
     for (Object object : newYaml().loadAll(is)) {
       // convert each map to its corresponding k8s class
+//printObject("", object);
       add((Map)object);
     }
   }
@@ -74,6 +75,34 @@ public class ParsedKubernetesYaml {
     String kind = (String)objectAsMap.get("kind");
     getHandler(kind).add(objectAsMap);
   }
+
+/*
+  private void printObject(String indent, Object obj) {
+    if (obj == null) {
+      System.out.println("MOREAUT_DEBUG " + indent + " obj null");
+    } else {
+      System.out.println("MOREAUT_DEBUG " + indent + " obj " + obj.getClass());
+      indent = indent + "  ";
+      if (obj instanceof Map) {
+        Map map = (Map)obj;
+        for (Map.Entry e : (java.util.Set<Map.Entry>)(map.entrySet())) {
+          Object key = e.getKey();
+          Object val = e.getValue();
+          System.out.println("MOREAUT_DEBUG " + indent + " key " + key.getClass() + " " + key);
+          printObject(indent + "  ", val);
+        }
+      } else if (obj instanceof java.util.List) {
+        java.util.List list = (java.util.List)obj;
+        for (int i = 0; i < list.size(); i++) {
+          System.out.println("MOREAUT_DEBUG " + indent + " item " + i);
+          printObject(indent + " ", list.get(i));
+        }
+      } else {
+        System.out.println("MOREAUT_DEBUG " + indent + " random val " + obj);
+      }
+    }
+  }
+*/
 
   public TypeHandler<V1ConfigMap> getConfigMaps() {
     return (TypeHandler<V1ConfigMap>)getHandler(KIND_CONFIG_MAP);

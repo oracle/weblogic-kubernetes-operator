@@ -66,6 +66,8 @@ public class CreateDomainInputs {
         .domainName("TestDomain")
         .domainUid("test-domain-uid")
         .javaOptions("TestJavaOptions")
+        .loadBalancerAdminPort("31315")
+        .loadBalancerWebPort("31305")
         .managedServerCount("4")
         .managedServerNameBase("TestManagedServer")
         .managedServerPort("8002")

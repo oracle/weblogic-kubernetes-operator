@@ -17,14 +17,14 @@ import org.junit.Test;
  */
 public class CreateOperatorGeneratedFilesHaveImagePullSecretTest {
 
-  private static final String TEST_OPERATOR_IMAGE_PULL_SECRET_NAME = "test-operator-image-pull-secret-name";
-
+  private static CreateOperatorInputs inputs;
   private static GeneratedOperatorYamlFiles generatedFiles;
 
   @BeforeClass
   public static void setup() throws Exception {
-    CreateOperatorInputs inputs =
-      CreateOperatorInputs.newInputs().imagePullSecretName(TEST_OPERATOR_IMAGE_PULL_SECRET_NAME);
+    inputs =
+      CreateOperatorInputs.newInputs()
+        .imagePullSecretName("test-operator-image-pull-secret-name");
     generatedFiles = GeneratedOperatorYamlFiles.generateOperatorYamlFiles(inputs);
   }
 
@@ -40,7 +40,7 @@ public class CreateOperatorGeneratedFilesHaveImagePullSecretTest {
     ExtensionsV1beta1Deployment want =
       weblogicOperatorYaml().getBaseExpectedOperatorDeployment();
     want.getSpec().getTemplate().getSpec().addImagePullSecretsItem(newLocalObjectReference()
-      .name(TEST_OPERATOR_IMAGE_PULL_SECRET_NAME));
+      .name(inputs.getImagePullSecretName()));
     assertThat(
       weblogicOperatorYaml().getOperatorDeployment(),
       yamlEqualTo(want));
