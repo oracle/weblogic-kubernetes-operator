@@ -86,13 +86,24 @@ function validatePersistentVolumeClaimName {
 #
 # Function to validate the persistent volume name
 #
-function validatePersistenVolumeName {
+function validatePersistentVolumeName {
   validateLowerCase ${persistenceVolumeName} "persistenceVolumeName"
 
   if [[ ${persistenceVolumeName} != ${domainUid}-* ]] ; then
     echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
     persistenceVolumeName=${domainUid}-${persistenceVolumeName}
     echo persistenceVolumeName is now ${persistenceVolumeName}
+  fi
+}
+
+#
+# Function to validate the persistence type
+#
+function validatePersistenceType {
+  if [ ${persistenceType} == "nfs" ] ; then
+    validateInputParamsSpecified nfsServer
+  elif [ ${persistenceType} != "hostPath" ] ; then
+    validationError "The persistenceType ${persistenceType} is invalid, it must be hostPath or nfs"
   fi
 }
 
@@ -262,7 +273,8 @@ function initialize {
   validateDomainUid
   validateClusterName
   validateStorageClass
-  validatePersistenVolumeName
+  validatePersistenceType
+  validatePersistentVolumeName
   validatePersistentVolumeClaimName
   validateSecretName
   validateImagePullSecretName
@@ -283,12 +295,22 @@ function createYamlFiles {
   echo Generating ${pvOutput}
 
   cp ${pvInput} ${pvOutput}
+  if [ "${persistenceType}" == "nfs" ]; then
+    hostPathPrefix="${disabledPrefix}"
+    nfsPrefix="${enabledPrefix}"
+    sed -i -e "s:%NFS_SERVER%:${nfsServer}:g" ${pvOutput}
+  else
+    hostPathPrefix="${enabledPrefix}"
+    nfsPrefix="${disabledPrefix}"
+  fi
   sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${pvOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${pvOutput}
   sed -i -e "s:%PERSISTENT_VOLUME%:${persistenceVolumeName}:g" ${pvOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_PATH%:${persistencePath}:g" ${pvOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${pvOutput}
   sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${pvOutput}
+  sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${pvOutput}
+  sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${pvOutput}
 
   # Generate the yaml to create the persistent volume claim
   echo Generating ${pvcOutput}
