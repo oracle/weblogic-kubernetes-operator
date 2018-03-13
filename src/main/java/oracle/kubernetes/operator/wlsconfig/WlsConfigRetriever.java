@@ -64,6 +64,16 @@ public class WlsConfigRetriever {
   // REST URL for canceling a WebLogic edit session
   private static final String CANCEL_EDIT_SESSION_URL =  "/management/weblogic/latest/edit/changeManager/cancelEdit";
 
+  // REST URL for creating a WebLogic named edit session
+  private static final String CREATE_EDIT_SESSION = "/management/weblogic/latest/domainRuntime/editSessionConfigurationManager/editSessionConfigurations";
+
+  // Name of WebLogic named edit session to be used by weblogic operator
+  private static final String EDIT_SESSION_NAME = "weblogic-operator";
+
+  // Payload for creating a WebLogic named edit session
+  private static final String CREATE_EDIT_SESSION_PAYLOAD =
+    " { name: '" + EDIT_SESSION_NAME + "' , description: 'edit session for weblogic operator' } ";
+
   /**
    * Constructor.
    *
@@ -483,9 +493,12 @@ public class WlsConfigRetriever {
 
     boolean result = false;
     try {
+      // create WebLogic named edit session
+//      httpClient.executePostUrlOnServiceClusterIP(CREATE_EDIT_SESSION, serviceURL, CREATE_EDIT_SESSION_PAYLOAD);
+
       // start a WebLogic edit session
-      httpClient.executePostUrlOnServiceClusterIP(START_EDIT_SESSION_URL, serviceURL, "");
-      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);
+//      httpClient.executePostUrlOnServiceClusterIP(START_EDIT_SESSION_URL, serviceURL, "");
+//      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);
 
       // Create machine(s)
       String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
@@ -501,15 +514,15 @@ public class WlsConfigRetriever {
               serviceURL,
               wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize), true).getResponse();
 
-      // activate the WebLogic edit session
-      httpClient.executePostUrlOnServiceClusterIP(ACTIVATE_EDIT_SESSION_URL, serviceURL, "", true);
+//      // activate the WebLogic edit session
+//      httpClient.executePostUrlOnServiceClusterIP(ACTIVATE_EDIT_SESSION_URL, serviceURL, "", true);
 
       result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
-      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_ACTIVATED);
+//      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_ACTIVATED);
     } catch (HTTPException httpException) {
       // cancel the WebLogic edit session
-      httpClient.executePostUrlOnServiceClusterIP(CANCEL_EDIT_SESSION_URL, serviceURL, "");
-      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_CANCELLED);
+//      httpClient.executePostUrlOnServiceClusterIP(CANCEL_EDIT_SESSION_URL, serviceURL, "");
+//      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_CANCELLED);
     }
     LOGGER.exiting(result);
     return result;
