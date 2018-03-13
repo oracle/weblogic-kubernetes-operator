@@ -317,7 +317,7 @@ data:
       if machineName is not None:
         print 'Updating listen address of machine %s' % machineName
         try:
-          edit("weblogic-operator-%s" % server_name)
+          edit()
           startEdit()
           cd('/')
           machine=cmo.lookupMachine(machineName)
@@ -357,7 +357,13 @@ data:
     #!/bin/bash
 
     echo "Stop the server"
-    wlst.sh -skipWLSModuleScanning ${pyFile}
+
+    admin_server_t3_url=
+    if [ -n "\$3" ]; then
+      admin_server_t3_url=t3://\$1-\$3:\$4
+    fi
+
+    wlst.sh -skipWLSModuleScanning ${pyFile} \$1 \$2 \$admin_server_t3_url
 
     # Return status of 2 means failed to stop a server through the NodeManager.
     # Look to see if there is a server process that can be killed.
@@ -378,6 +384,41 @@ data:
       # The script and 'EOF' on the following lines must not be indented!
       cat /u01/weblogic/read-domain-secret.py > ${pyFile}
       cat << EOF >> ${pyFile}
+
+    domain_uid = sys.argv[1]
+    server_name = sys.argv[2]
+    if (len(sys.argv) == 4):
+      admin_server_url = sys.argv[3]
+    else:
+      admin_server_url = None
+
+    print 'admin_server_url is %s' % admin_server_url
+
+    # Update node manager listen address to None
+    if admin_server_url is not None:
+      connect(admin_username, admin_password, admin_server_url)
+      serverConfig()
+      server=cmo.lookupServer(server_name)
+      machineName=server.getMachine().getName()
+      print 'Name of machine assigned to server %s is %s' % (server_name, machineName)
+
+      if machineName is not None:
+        print 'Updating listen address of machine %s' % machineName
+        try:
+          edit()
+          startEdit()
+          cd('/')
+          machine=cmo.lookupMachine(machineName)
+          print 'Machine is %s' % machine
+          nm=machine.getNodeManager()
+          nm.setListenAddress(None)
+          save()
+          activate()
+          destroyEditSession("weblogic-operator-%s" % server_name)
+          print 'Updated listen address of machine %s to None' % machineName
+        except:
+          cancelEdit()
+          destroyEditSession("weblogic-operator-%s" % server_name)
 
     # Connect to nodemanager and stop server
     try:

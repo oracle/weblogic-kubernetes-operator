@@ -536,7 +536,11 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStop = new V1Handler();
       V1ExecAction exec = new V1ExecAction();
-      exec.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/stopServer.sh");
+      exec.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/stopServer.sh");
+      exec.addCommandItem(weblogicDomainUID);
+      exec.addCommandItem(weblogicServerName);
+      exec.addCommandItem(spec.getAsName());
+      exec.addCommandItem(String.valueOf(spec.getAsPort()));
       preStop.setExec(exec);
       lifecycle.setPreStop(preStop);
       container.setLifecycle(lifecycle);
