@@ -64,16 +64,6 @@ public class WlsConfigRetriever {
   // REST URL for canceling a WebLogic edit session
   private static final String CANCEL_EDIT_SESSION_URL =  "/management/weblogic/latest/edit/changeManager/cancelEdit";
 
-  // REST URL for creating a WebLogic named edit session
-  private static final String CREATE_EDIT_SESSION = "/management/weblogic/latest/domainRuntime/editSessionConfigurationManager/editSessionConfigurations";
-
-  // Name of WebLogic named edit session to be used by weblogic operator
-  private static final String EDIT_SESSION_NAME = "weblogic-operator";
-
-  // Payload for creating a WebLogic named edit session
-  private static final String CREATE_EDIT_SESSION_PAYLOAD =
-    " { name: '" + EDIT_SESSION_NAME + "' , description: 'edit session for weblogic operator' } ";
-
   /**
    * Constructor.
    *
@@ -493,9 +483,6 @@ public class WlsConfigRetriever {
 
     boolean result = false;
     try {
-      // create WebLogic named edit session
-//      httpClient.executePostUrlOnServiceClusterIP(CREATE_EDIT_SESSION, serviceURL, CREATE_EDIT_SESSION_PAYLOAD);
-
       // start a WebLogic edit session
 //      httpClient.executePostUrlOnServiceClusterIP(START_EDIT_SESSION_URL, serviceURL, "");
 //      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);

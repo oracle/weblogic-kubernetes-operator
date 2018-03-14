@@ -143,7 +143,10 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStopHandler = new V1Handler();
       V1ExecAction lifecycleExecAction = new V1ExecAction();
-      lifecycleExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/stopServer.sh");
+      lifecycleExecAction.addCommandItem("/weblogic-operator/scripts/stopServer.sh");
+      lifecycleExecAction.addCommandItem(weblogicDomainUID);
+      lifecycleExecAction.addCommandItem(spec.getAsName());
+      lifecycleExecAction.addCommandItem(weblogicDomainName);
       preStopHandler.setExec(lifecycleExecAction);
       lifecycle.setPreStop(preStopHandler);
       container.setLifecycle(lifecycle);
@@ -165,9 +168,10 @@ public class PodHelper {
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/weblogic-operator/scripts/startServer.sh");
       container.addCommandItem(weblogicDomainUID);
       container.addCommandItem(spec.getAsName());
+      container.addCommandItem(weblogicDomainName);
 
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
@@ -536,9 +540,10 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStop = new V1Handler();
       V1ExecAction exec = new V1ExecAction();
-      exec.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/stopServer.sh");
+      exec.addCommandItem("/weblogic-operator/scripts/stopServer.sh");
       exec.addCommandItem(weblogicDomainUID);
       exec.addCommandItem(weblogicServerName);
+      exec.addCommandItem(weblogicDomainName);
       exec.addCommandItem(spec.getAsName());
       exec.addCommandItem(String.valueOf(spec.getAsPort()));
       preStop.setExec(exec);
@@ -562,9 +567,10 @@ public class PodHelper {
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/weblogic-operator/scripts/startServer.sh");
       container.addCommandItem(weblogicDomainUID);
       container.addCommandItem(weblogicServerName);
+      container.addCommandItem(weblogicDomainName);
       container.addCommandItem(spec.getAsName());
       container.addCommandItem(String.valueOf(spec.getAsPort()));
 
