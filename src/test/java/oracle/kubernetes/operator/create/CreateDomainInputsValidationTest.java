@@ -5,8 +5,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
+import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
+import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -31,8 +31,10 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_MANAGED_SERVER_START_COUNT = "managedServerStartCount";
   private static final String PARAM_MANAGED_SERVER_NAME_BASE = "managedServerNameBase";
   private static final String PARAM_MANAGED_SERVER_PORT = "managedServerPort";
+  private static final String PARAM_NFS_SERVER = "nfsServer";
   private static final String PARAM_PERSISTENCE_PATH = "persistencePath";
   private static final String PARAM_PERSISTENCE_SIZE = "persistenceSize";
+  private static final String PARAM_PERSISTENCE_TYPE = "persistenceType";
   private static final String PARAM_PERSISTENCE_VOLUME_CLAIM_NAME = "persistenceVolumeClaimName";
   private static final String PARAM_PERSISTENCE_VOLUME_NAME = "persistenceVolumeName";
   private static final String PARAM_PRODUCTION_MODE_ENABLED = "productionModeEnabled";
@@ -193,6 +195,23 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_persistencetTypeNfsAndMissingNfsServer_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(newInputs().persistenceType(PERSISTENCE_TYPE_NFS).nfsServer("")),
+      failsAndPrints(paramMissingError(PARAM_NFS_SERVER)));
+  }
+
+  @Test
+  public void createDomain_with_invalidPersistenceType_failsAndReturnsError() throws Exception {
+    String val = "invalid-persistence-type";
+    assertThat(
+      execCreateDomain(newInputs().persistenceType(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_PERSISTENCE_TYPE, val)));
+  }
+
+  // TBD - missingNfsServer when persistentType is hostPath is OK
+
+  @Test
   public void createDomain_with_missingPersistencePath_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateDomain(newInputs().persistencePath("")),
@@ -204,6 +223,13 @@ public class CreateDomainInputsValidationTest {
     assertThat(
       execCreateDomain(newInputs().persistenceSize("")),
       failsAndPrints(paramMissingError(PARAM_PERSISTENCE_SIZE)));
+  }
+
+  @Test
+  public void createDomain_with_missingPersistenceType_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(newInputs().persistenceType("")),
+      failsAndPrints(paramMissingError(PARAM_PERSISTENCE_TYPE)));
   }
 
   @Test
@@ -251,10 +277,6 @@ public class CreateDomainInputsValidationTest {
         newInputs().productionModeEnabled(val)),
       failsAndPrints(invalidBooleanParamValueError(PARAM_PRODUCTION_MODE_ENABLED, val)));
   }
-
-  // TBD - test productionModeEnabled true & false succeed?
-  // or could handle false in CreateDomainGeneratedFilesOptionalFeaturesDisabledTest
-  // and true in CreateDomainGeneratedFilesOptionalFeaturesEnabledTest
 
   @Test
   public void createDomain_with_missingSecretName_failsAndReturnsError() throws Exception {
@@ -374,8 +396,6 @@ public class CreateDomainInputsValidationTest {
       execCreateDomain(newInputs().loadBalancer("")),
       failsAndPrints(paramMissingError(PARAM_LOAD_BALANCER)));
   }
-
-  // TBD - load balancer enum legal vals? none / traefik
 
   @Test
   public void createDomain_with_invalidLoadBalancer_failsAndReturnsError() throws Exception {

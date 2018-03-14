@@ -8,6 +8,7 @@ import static java.util.Arrays.asList;
 
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1PersistentVolume;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -377,20 +378,14 @@ spec:
 
   @Test
   public void generatesCorrect_weblogicDomainPersistentVolumeYaml_weblogicDomainPersistentVolume() throws Exception {
+    V1PersistentVolume want =
+      generatedFiles.getWeblogicDomainPersistentVolumeYaml().getExpectedBaseCreateWeblogicDomainPersistentVolume();
+    want.getSpec()
+      .hostPath(newHostPathVolumeSource()
+        .path(inputs.getPersistencePath()));
     assertThat(
       generatedFiles.getWeblogicDomainPersistentVolumeYaml().getWeblogicDomainPersistentVolume(),
-      yamlEqualTo(
-        newPersistentVolume()
-          .metadata(newObjectMeta()
-            .name(getDomainScope() + "-" + inputs.getPersistenceVolumeName())
-            .putLabelsItem("weblogic.domainUID", inputs.getDomainUid()))
-          .spec(newPersistentVolumeSpec()
-            .storageClassName(inputs.getDomainUid())
-            .putCapacityItem("storage", inputs.getPersistenceSize())
-            .addAccessModesItem("ReadWriteMany")
-            .persistentVolumeReclaimPolicy("Retain")
-            .hostPath(newHostPathVolumeSource()
-              .path(inputs.getPersistencePath())))));
+      yamlEqualTo(want));
   }
 
   @Test
@@ -400,7 +395,7 @@ spec:
       yamlEqualTo(
         newPersistentVolumeClaim()
           .metadata(newObjectMeta()
-            .name(getDomainScope() + "-" + inputs.getPersistenceVolumeClaimName())
+            .name(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeClaimName())
             .namespace(inputs.getNamespace())
             .putLabelsItem("weblogic.domainUID", inputs.getDomainUid()))
           .spec(newPersistentVolumeClaimSpec()
@@ -415,11 +410,7 @@ spec:
   }
 
   private String getClusterLCScope() {
-    return getDomainScope() + "-" + getClusterNameLC();
-  }
-
-  public String getDomainScope() {
-    return inputs.getDomainUid();
+    return inputs.getDomainUid() + "-" + getClusterNameLC();
   }
 
   private String getClusterNameLC() {

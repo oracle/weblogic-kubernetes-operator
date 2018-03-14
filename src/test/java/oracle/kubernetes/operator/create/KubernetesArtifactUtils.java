@@ -27,6 +27,7 @@ import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NFSVolumeSource;
 import io.kubernetes.client.models.V1ObjectFieldSelector;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
@@ -275,6 +276,10 @@ public class KubernetesArtifactUtils {
 
   public static V1HostPathVolumeSource newHostPathVolumeSource() {
     return new V1HostPathVolumeSource();
+  }
+
+  public static V1NFSVolumeSource newNFSVolumeSource() {
+    return new V1NFSVolumeSource();
   }
 
   public static IntOrString newIntOrString(String val) {

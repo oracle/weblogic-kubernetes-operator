@@ -24,4 +24,17 @@ public class ParsedWeblogicDomainPersistentVolumeYaml {
   public V1PersistentVolume getWeblogicDomainPersistentVolume() {
     return parsedYaml.getPersistentVolumes().find(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeName());
   }
+
+  public V1PersistentVolume getExpectedBaseCreateWeblogicDomainPersistentVolume() {
+    return
+        newPersistentVolume()
+          .metadata(newObjectMeta()
+            .name(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeName())
+            .putLabelsItem("weblogic.domainUID", inputs.getDomainUid()))
+          .spec(newPersistentVolumeSpec()
+            .storageClassName(inputs.getDomainUid())
+            .putCapacityItem("storage", inputs.getPersistenceSize())
+            .addAccessModesItem("ReadWriteMany")
+            .persistentVolumeReclaimPolicy("Retain"));
+  }
 }
