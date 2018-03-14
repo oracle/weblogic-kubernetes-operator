@@ -105,6 +105,8 @@ The following parameters must be provided in the input file:
 | managedServerCount	| Number of Managed Server instances to generate for the domain.	| 2 |
 | managedServerNameBase	| Base string used to generate Managed Server names.	| managed-server |
 | managedServerPort	| Port number for each Managed Server.	| 8001 |
+| persistenceType	| Persistent volume type. The parameter value must be hostPath or nfs. If set to 'nfs', nfsServer must be specified | hostPath |
+| nfsServer	| NFS server name or ip.	| nfsServer |
 | persistencePath	| Physical path of the persistent volume storage. |	/scratch/k8s_dir/persistentVolume001 |
 | persistenceSize	| Total storage allocated by the persistent volume.	| 10Gi |
 | persistenceStorageClass	| Name of the storage class to set for the persistent volume and persistent volume claim.	| weblogic |
