@@ -885,6 +885,24 @@ function get_cluster_replicas {
     echo $replicas
 }
 
+function get_startup_control {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainkey"
+    fi
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+
+    local startup_control_cmd="kubectl get domain $DOMAIN_UID -n $NAMESPACE -o jsonpath='{.spec.startupControl}'"
+    local startup_control=`eval $startup_control_cmd`
+
+    if [ -z ${startup_control} ]; then
+      fail "startupControl not found in domain $DOMAIN_UID"
+    fi
+
+    echo $startup_control
+}
+
 function verify_managed_servers_ready {
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainkey"
@@ -1888,7 +1906,6 @@ function verify_domain_created {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
-    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
     trace "verify domain $DOMAIN_UID in $NAMESPACE namespace"
@@ -1908,8 +1925,10 @@ function verify_domain_created {
     trace "verify the service and pod of admin server"
     verify_service_and_pod_created $DOM_KEY 0
 
+    local startup_control=`get_startup_control $DOM_KEY`
+
     local verify_as_only=false
-    if [ "$STARTUP_CONTROL" = "ADMIN" ] ; then
+    if [ "${startup_control}" = "ADMIN" ] ; then
       verify_as_only=true
     fi
 
@@ -2214,6 +2233,22 @@ function test_operator_lifecycle {
     verify_domain_exists_via_oper_rest $DOM_KEY 
     verify_domain_created $DOM_KEY 
     trace 'end'
+
+    declare_test_pass
+}
+
+function test_create_domain_startup_control_admin {
+    declare_new_test 1 "$@"
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameters: domainKey"
+    fi
+
+    local DOM_KEY=${1}
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+
+    run_create_domain_job $DOMAIN_UID
+    verify_domain_created $DOMAIN_UID
 
     declare_test_pass
 }
@@ -2557,8 +2592,7 @@ function test_suite {
       test_domain_lifecycle domain1 domain4 
 
       # create another domain in the default namespace with startupControl="ADMIN", and verify that only admin server is created
-      run_create_domain_job domain5
-      verify_domain_created domain5
+      test_create_domain_startup_control_admin domain5
 
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1

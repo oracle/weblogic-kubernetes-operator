@@ -129,8 +129,8 @@ function validateClusterName {
 # When the parameter is not specified in the input file, it will default to use the value domainUid
 #
 function validateStorageClass {
-  if [ -z $persistenceStorageClass ]; then
-    persistenceStorageClass=$domainUid
+  if [ -z "${persistenceStorageClass}" ]; then
+    persistenceStorageClass=${domainUid}
     echo Defaulting the input parameter persistenceStorageClass to be $domainUid
   else
     validateLowerCase "persistenceStorageClass" ${persistenceStorageClass}
@@ -141,25 +141,51 @@ function validateStorageClass {
 # Function to validate the persistent volume claim name
 #
 function validatePersistentVolumeClaimName {
-  validateLowerCase "persistenceVolumeClaimName" ${persistenceVolumeClaimName}
-
-  if [[ ${persistenceVolumeClaimName} != ${domainUid}-* ]] ; then
-    echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
-    persistenceVolumeClaimName=${domainUid}-${persistenceVolumeClaimName}
-    echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
+  validateInputParamsSpecified persistenceVolumeClaimName
+  if [ ! -z "${persistenceVolumeClaimName}" ]; then
+    validateLowerCase "persistenceVolumeClaimName" ${persistenceVolumeClaimName}
+    if [[ "${persistenceVolumeClaimName}" != ${domainUid}-* ]] ; then
+      echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
+      persistenceVolumeClaimName=${domainUid}-${persistenceVolumeClaimName}
+      echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
+    fi
   fi
 }
 
 #
 # Function to validate the persistent volume name
 #
-function validatePersistenVolumeName {
-  validateLowerCase "persistenceVolumeName" ${persistenceVolumeName}
+function validatePersistentVolumeName {
+  validateInputParamsSpecified persistenceVolumeName
+  if [ ! -z "${persistenceVolumeName}" ]; then
+    validateLowerCase "persistenceVolumeName" ${persistenceVolumeName}
+    if [[ "${persistenceVolumeName}" != ${domainUid}-* ]] ; then
+      echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
+      persistenceVolumeName=${domainUid}-${persistenceVolumeName}
+      echo persistenceVolumeName is now ${persistenceVolumeName}
+    fi
+  fi
+}
 
-  if [[ ${persistenceVolumeName} != ${domainUid}-* ]] ; then
-    echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
-    persistenceVolumeName=${domainUid}-${persistenceVolumeName}
-    echo persistenceVolumeName is now ${persistenceVolumeName}
+#
+# Function to validate the persistence type
+#
+function validatePersistenceType {
+  validateInputParamsSpecified persistenceType
+  if [ ! -z "${persistenceType}" ]; then
+    PERSISTENCE_TYPE_HOST_PATH="hostPath"
+    PERSISTENCE_TYPE_NFS="nfs"
+    case ${persistenceType} in
+      ${PERSISTENCE_TYPE_HOST_PATH})
+      ;;
+      ${PERSISTENCE_TYPE_NFS})
+        validateInputParamsSpecified nfsServer
+      ;;
+      *)
+        validationError "Invalid value for persistenceType: ${persistenceType}. Valid values are hostPath and nfs."
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are traefik and none."
+      ;;
+    esac
   fi
 }
 
@@ -174,18 +200,20 @@ function validateSecretName {
 # Function to validate the load balancer value
 #
 function validateLoadBalancer {
-  LOAD_BALANCER_TRAEFIK="traefik"
-  LOAD_BALANCER_NONE="none"
-
-  case ${loadBalancer} in
-    ${LOAD_BALANCER_TRAEFIK})
-    ;;
-    ${LOAD_BALANCER_NONE})
-    ;;
-    *)
-      validationError "Invalid valid for loadBalancer: ${loadBalancer}. Valid values are traefik and none."
-    ;;
-  esac
+  validateInputParamsSpecified loadBalancer
+  if [ ! -z "${loadBalancer}" ]; then
+    LOAD_BALANCER_TRAEFIK="traefik"
+    LOAD_BALANCER_NONE="none"
+    case ${loadBalancer} in
+      ${LOAD_BALANCER_TRAEFIK})
+      ;;
+      ${LOAD_BALANCER_NONE})
+      ;;
+      *)
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are traefik and none."
+      ;;
+    esac
+  fi
 }
 
 #
@@ -231,7 +259,6 @@ function validateImagePullSecretName {
 # Function to validate the image pull secret exists
 #
 function validateImagePullSecret {
-
   # The kubernetes secret for pulling images from the docker store is optional.
   # If it was specified, make sure it exists.
   validateSecretExists ${imagePullSecretName} ${namespace}
@@ -242,27 +269,29 @@ function validateImagePullSecret {
 # Function to validate the server startup control value
 #
 function validateStartupControl {
-  STARTUP_CONTROL_NONE="NONE"
-  STARTUP_CONTROL_ALL="ALL"
-  STARTUP_CONTROL_ADMIN="ADMIN"
-  STARTUP_CONTROL_SPECIFIED="SPECIFIED"
-  STARTUP_CONTROL_AUTO="AUTO"
-
-  case ${startupControl} in
-    ${STARTUP_CONTROL_NONE})
-    ;;
-    ${STARTUP_CONTROL_ALL})
-    ;;
-    ${STARTUP_CONTROL_ADMIN})
-    ;;
-    ${STARTUP_CONTROL_SPECIFIED})
-    ;;
-    ${STARTUP_CONTROL_AUTO})
-    ;;
-    *)
-      validationError "Invalid valid for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
-    ;;
-  esac
+  validateInputParamsSpecified startupControl
+  if [ ! -z "${startupControl}" ]; then
+    STARTUP_CONTROL_NONE="NONE"
+    STARTUP_CONTROL_ALL="ALL"
+    STARTUP_CONTROL_ADMIN="ADMIN"
+    STARTUP_CONTROL_SPECIFIED="SPECIFIED"
+    STARTUP_CONTROL_AUTO="AUTO"
+    case ${startupControl} in
+      ${STARTUP_CONTROL_NONE})
+      ;;
+      ${STARTUP_CONTROL_ALL})
+      ;;
+      ${STARTUP_CONTROL_ADMIN})
+      ;;
+      ${STARTUP_CONTROL_SPECIFIED})
+      ;;
+      ${STARTUP_CONTROL_AUTO})
+      ;;
+      *)
+        validationError "Invalid valid for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+      ;;
+    esac
+  fi
 }
 
 #
@@ -334,13 +363,11 @@ function initialize {
     managedServerNameBase \
     persistencePath \
     persistenceSize \
-    persistenceVolumeClaimName \
     persistenceVolumeName \
+    persistenceVolumeClaimName \
     secretName \
     namespace \
-    loadBalancer \
     javaOptions \
-    startupControl \
     t3PublicAddress
 
   validateIntegerInputParamsSpecified \
@@ -362,7 +389,8 @@ function initialize {
   validateNamespace
   validateClusterName
   validateStorageClass
-  validatePersistenVolumeName
+  validatePersistenceType
+  validatePersistentVolumeName
   validatePersistentVolumeClaimName
   validateSecretName
   validateImagePullSecretName
@@ -398,12 +426,23 @@ function createYamlFiles {
   echo Generating ${domainPVOutput}
 
   cp ${domainPVInput} ${domainPVOutput}
+  if [ "${persistenceType}" == "nfs" ]; then
+    hostPathPrefix="${disabledPrefix}"
+    nfsPrefix="${enabledPrefix}"
+    sed -i -e "s:%NFS_SERVER%:${nfsServer}:g" ${domainPVOutput}
+  else
+    hostPathPrefix="${enabledPrefix}"
+    nfsPrefix="${disabledPrefix}"
+  fi
+
   sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
   sed -i -e "s:%PERSISTENT_VOLUME%:${persistenceVolumeName}:g" ${domainPVOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_PATH%:${persistencePath}:g" ${domainPVOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${domainPVOutput}
   sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVOutput}
+  sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${domainPVOutput}
+  sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${domainPVOutput}
 
   # Generate the yaml to create the persistent volume claim
   echo Generating ${domainPVCOutput}

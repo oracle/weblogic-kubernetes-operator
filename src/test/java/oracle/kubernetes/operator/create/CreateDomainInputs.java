@@ -25,6 +25,16 @@ import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
  */
 public class CreateDomainInputs {
 
+  public static final String LOAD_BALANCER_NONE = "none";
+  public static final String LOAD_BALANCER_TRAEFIK = "traefik";
+  public static final String PERSISTENCE_TYPE_HOST_PATH = "hostPath";
+  public static final String PERSISTENCE_TYPE_NFS = "nfs";
+  public static final String STARTUP_CONTROL_NONE = "NONE";
+  public static final String STARTUP_CONTROL_ALL = "ALL";
+  public static final String STARTUP_CONTROL_ADMIN = "ADMIN";
+  public static final String STARTUP_CONTROL_SPECIFIED = "SPECIFIED";
+  public static final String STARTUP_CONTROL_AUTO = "AUTO";
+
   private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-domain-inputs.yaml";
 
   private String adminPort = "";
@@ -38,8 +48,10 @@ public class CreateDomainInputs {
   private String managedServerStartCount = "";
   private String managedServerNameBase = "";
   private String managedServerPort = "";
+  private String nfsServer = "";
   private String persistencePath = "";
   private String persistenceSize = "";
+  private String persistenceType = "";
   private String persistenceVolumeClaimName = "";
   private String persistenceVolumeName = "";
   private String productionModeEnabled = "";
@@ -72,6 +84,7 @@ public class CreateDomainInputs {
         .managedServerNameBase("TestManagedServer")
         .managedServerPort("8002")
         .managedServerStartCount("3")
+        .nfsServer("TestNfsServer")
         .namespace("test-domain-namespace")
         .persistencePath("TestPersistencePath")
         .persistenceSize("20Gi")
@@ -79,18 +92,9 @@ public class CreateDomainInputs {
         .persistenceVolumeName("test-domain-pv")
         .productionModeEnabled("false")
         .secretName("test-weblogic-credentials")
-        .startupControl("ALL")
+        .startupControl(STARTUP_CONTROL_ALL)
         .t3PublicAddress("TestT3PublicAddress")
         .t3ChannelPort("30013");
-/*
-    assertThat(i.getCreateDomainScript(), equalTo("/u01/weblogic/create-domain-script.sh"));
-    assertThat(i.getExposeAdminNodePort(), equalTo("false"));
-    assertThat(i.getExposeAdminT3Channel(), equalTo("false"));
-    assertThat(i.getImagePullSecretName(), equalTo(""));
-    assertThat(i.getLoadBalancer(), equalTo("traefik"));
-    assertThat(i.getLoadBalancerAdminPort(), equalTo("30315"));
-    assertThat(i.getLoadBalancerWebPort(), equalTo("30305"));
-*/
   }
 
   public static CreateDomainInputs readDefaultInputsFile() throws IOException {
@@ -245,6 +249,19 @@ public class CreateDomainInputs {
     return this;
   }
 
+  public String getNfsServer() {
+    return nfsServer;
+  }
+
+  public void setNfsServer(String nfsServer) {
+    this.nfsServer = convertNullToEmptyString(nfsServer);
+  }
+
+  public CreateDomainInputs nfsServer(String nfsServer) {
+    setNfsServer(nfsServer);
+    return this;
+  }
+
   public String getPersistencePath() {
     return persistencePath;
   }
@@ -268,6 +285,19 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs persistenceSize(String persistenceSize) {
     setPersistenceSize(persistenceSize);
+    return this;
+  }
+
+  public String getPersistenceType() {
+    return persistenceType;
+  }
+
+  public void setPersistenceType(String persistenceType) {
+    this.persistenceType = convertNullToEmptyString(persistenceType);
+  }
+
+  public CreateDomainInputs persistenceType(String persistenceType) {
+    setPersistenceType(persistenceType);
     return this;
   }
 

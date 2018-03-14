@@ -2,6 +2,8 @@
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1PersistentVolume;
+import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -27,6 +29,8 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest {
         .exposeAdminNodePort("true")
         .exposeAdminT3Channel("true")
         .imagePullSecretName("test-weblogic-image-pull-secret-name")
+        .loadBalancer(LOAD_BALANCER_TRAEFIK)
+        .persistenceType(PERSISTENCE_TYPE_NFS)
         .productionModeEnabled("true");
     generatedFiles = GeneratedDomainYamlFiles.generateDomainYamlFiles(inputs);
   }
@@ -56,6 +60,19 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest {
     want.getSpec().getServerStartup().get(0).withNodePort(Integer.parseInt(inputs.getAdminNodePort()));
     assertThat(
       generatedFiles.getDomainCustomResourceYaml().getDomain(),
+      yamlEqualTo(want));
+  }
+
+  @Test
+  public void generatesCorrect_weblogicDomainPersistentVolumeYaml_weblogicDomainPersistentVolume() throws Exception {
+    V1PersistentVolume want =
+      generatedFiles.getWeblogicDomainPersistentVolumeYaml().getExpectedBaseCreateWeblogicDomainPersistentVolume();
+    want.getSpec()
+      .nfs(newNFSVolumeSource()
+        .server(inputs.getNfsServer())
+        .path(inputs.getPersistencePath()));
+    assertThat(
+      generatedFiles.getWeblogicDomainPersistentVolumeYaml().getWeblogicDomainPersistentVolume(),
       yamlEqualTo(want));
   }
 }

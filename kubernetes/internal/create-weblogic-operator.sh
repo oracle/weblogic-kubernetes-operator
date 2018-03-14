@@ -161,7 +161,7 @@ function initAndValidateOutputDir {
 # Function to validate the image pull secret name
 #
 function validateImagePullSecretName {
-  if [ ! -z ${imagePullSecretName} ]; then
+  if [ ! -z "${imagePullSecretName}" ]; then
     validateLowerCase imagePullSecretName ${imagePullSecretName}
     imagePullSecretPrefix=""
     validateImagePullSecret
