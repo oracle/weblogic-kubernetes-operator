@@ -19,6 +19,8 @@ import oracle.kubernetes.operator.work.Fiber.ExitCallback;
 public class FiberGate {
   private final Engine engine;
   private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<String, Fiber>();
+  
+  private final Fiber PLACEHOLDER;
 
   /**
    * Constructor taking Engine for running Fibers
@@ -26,6 +28,7 @@ public class FiberGate {
    */
   public FiberGate(Engine engine) {
     this.engine = engine;
+    this.PLACEHOLDER = engine.createFiber();
   }
   
   /**
@@ -42,6 +45,19 @@ public class FiberGate {
   }
   
   /**
+   * Starts Fiber only if there is no running Fiber with the same key.  Fiber map is not updated if no Fiber
+   * is started.
+   * @param key Key
+   * @param strategy Step for Fiber to begin with
+   * @param packet Packet
+   * @param callback Completion callback
+   * @return started Fiber
+   */
+  public Fiber startFiberIfNoCurrentFiber(String key, Step strategy, Packet packet, CompletionCallback callback) {
+    return startFiberIfLastFiberMatches(key, PLACEHOLDER, strategy, packet, callback);
+  }
+  
+  /**
    * Starts Fiber only if the last started Fiber matches the given old Fiber.
    * @param key Key
    * @param old Expected last Fiber
@@ -54,7 +70,11 @@ public class FiberGate {
     Fiber f = engine.createFiber();
     WaitForOldFiberStep wfofs;
     if (old != null) {
-      if (!gateMap.replace(key, old, f)) {
+      if (old == PLACEHOLDER) {
+        if (gateMap.putIfAbsent(key, f) != null) {
+          return null;
+        }
+      } else if (!gateMap.replace(key, old, f)) {
         return null;
       }
     } else {

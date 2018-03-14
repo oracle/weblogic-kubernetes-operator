@@ -41,18 +41,20 @@ public class ServerStatusReader {
   private ServerStatusReader() {
   }
 
-  public static Step createDomainStatusReaderStep(DomainPresenceInfo info, long timeout, Step next) {
-    return new DomainStatusReaderStep(info, timeout, next);
+  public static Step createDomainStatusReaderStep(DomainPresenceInfo info, long timeout, TimeUnit unit, Step next) {
+    return new DomainStatusReaderStep(info, timeout, unit, next);
   }
   
   private static class DomainStatusReaderStep extends Step {
     private final DomainPresenceInfo info;
     private final long timeout;
+    private final TimeUnit unit;
 
-    public DomainStatusReaderStep(DomainPresenceInfo info, long timeout, Step next) {
+    public DomainStatusReaderStep(DomainPresenceInfo info, long timeout, TimeUnit unit, Step next) {
       super(next);
       this.info = info;
       this.timeout = timeout;
+      this.unit = unit;
     }
 
     @Override
@@ -74,7 +76,7 @@ public class ServerStatusReader {
           String serverName = entry.getKey();
           Packet p = packet.clone();
           startDetails.add(new StepAndPacket(
-              createServerStatusReaderStep(namespace, domainUID, domainName, serverName, timeout, null), p));
+              createServerStatusReaderStep(namespace, domainUID, domainName, serverName, timeout, unit, null), p));
         }
       }
 
@@ -96,8 +98,8 @@ public class ServerStatusReader {
    * @return Created step
    */
   public static Step createServerStatusReaderStep(String namespace, String domainUID, String domainName,
-      String serverName, long timeout, Step next) {
-    return new ServerStatusReaderStep(namespace, domainUID, domainName, serverName, timeout, next);
+      String serverName, long timeout, TimeUnit unit, Step next) {
+    return new ServerStatusReaderStep(namespace, domainUID, domainName, serverName, timeout, unit, next);
   }
 
   private static class ServerStatusReaderStep extends Step {
@@ -106,15 +108,17 @@ public class ServerStatusReader {
     private final String domainName;
     private final String serverName;
     private final long timeout;
+    private final TimeUnit unit;
 
     public ServerStatusReaderStep(String namespace, String domainUID, String domainName, String serverName, 
-        long timeout, Step next) {
+        long timeout, TimeUnit unit, Step next) {
       super(next);
       this.namespace = namespace;
       this.domainUID = domainUID;
       this.domainName = domainName;
       this.serverName = serverName;
       this.timeout = timeout;
+      this.unit = unit;
     }
 
     @Override
@@ -129,10 +133,10 @@ public class ServerStatusReader {
       return doSuspend(fiber -> {
         try {
           final Process proc = exec.exec(namespace, podName,
-              new String[] { "/weblogic-operator/scripts/readinessProbe.sh", domainName, serverName },
+              new String[] { "/weblogic-operator/scripts/readState.sh", domainName, serverName },
               KubernetesConstants.CONTAINER_NAME, stdin, tty);
 
-          if (proc.waitFor(timeout, TimeUnit.MILLISECONDS)) {
+          if (proc.waitFor(timeout, unit)) {
             String state = null;
             try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
               state = CharStreams.toString(reader);

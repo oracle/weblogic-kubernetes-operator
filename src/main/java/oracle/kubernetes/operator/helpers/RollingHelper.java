@@ -13,6 +13,7 @@ import java.util.Map;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -65,9 +66,14 @@ public class RollingHelper {
       Domain dom = info.getDomain();
       DomainStatus status = dom.getStatus();
       // These are presently Ready servers
-      List<String> availableServers = status.getAvailableServers();
-      if (availableServers == null) {
-        availableServers = new ArrayList<>();
+      List<String> availableServers = new ArrayList<>();
+      List<ServerStatus> ss = status.getStatus();
+      if (ss != null) {
+        for (ServerStatus s : ss) {
+          if ("RUNNING".equals(s.getState())) {
+            availableServers.add(s.getServerName());
+          }
+        }
       }
 
       Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
@@ -158,9 +164,14 @@ public class RollingHelper {
         Domain dom = info.getDomain();
         DomainStatus status = dom.getStatus();
         // These are presently Ready servers
-        List<String> availableServers = status.getAvailableServers();
-        if (availableServers == null) {
-          availableServers = new ArrayList<>();
+        List<String> availableServers = new ArrayList<>();
+        List<ServerStatus> ss = status.getStatus();
+        if (ss != null) {
+          for (ServerStatus s : ss) {
+            if ("RUNNING".equals(s.getState())) {
+              availableServers.add(s.getServerName());
+            }
+          }
         }
 
         List<String> servers = new ArrayList<>();

@@ -31,4 +31,6 @@ public interface ProcessingConstants {
   public static final String SCRIPT_CONFIG_MAP = "scriptConfigMap";
   public static final String SERVER_STATE_MAP = "serverStateMap";
   
+  public static final String CLEAN_STATUS = "cleanStatus";
+  
 }

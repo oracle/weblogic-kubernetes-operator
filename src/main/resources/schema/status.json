@@ -7,8 +7,7 @@
       "description": "Current service state of domain.",
       "type": "array",
       "items": {
-       "javaType": "oracle.kubernetes.weblogic.domain.v1.DomainCondition",
-       "type": "object"
+       "$ref": "condition.json"
       },
       "x-kubernetes-patch-merge-key": "type",
       "x-kubernetes-patch-strategy": "merge"
@@ -21,32 +20,11 @@
       "description": "A brief CamelCase message indicating details about why the domain is in this state.",
       "type": "string"
      },
-     "availableServers": {
-      "description": "List of specific server instances that are available.",
+     "status": {
+      "description": "Status of WebLogic servers in this domain.",
       "type": "array",
       "items": {
-       "type": "string"
-      }
-     },
-     "unavailableServers": {
-      "description": "List of specific server instances that are configured to be available but that are either not yet available or have failed.",
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
-     },
-     "availableClusters": {
-      "description": "List of specific cluster instances where the configured number of replicas are now available.",
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
-     },
-     "unavailableClusters": {
-      "description": "List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.",
-      "type": "array",
-      "items": {
-       "type": "string"
+       "$ref": "serverstatus.json"
       }
      },
      "startTime": {

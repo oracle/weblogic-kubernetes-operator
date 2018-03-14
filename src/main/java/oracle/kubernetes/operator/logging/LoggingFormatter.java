@@ -66,7 +66,7 @@ public class LoggingFormatter extends Formatter {
         for (int i=0; i<parameters.length; i++) {
           Object pi = parameters[i];
           if (pi != null) {
-            if (pi.getClass().getAnnotation(ApiModel.class) != null) {
+            if (pi.getClass().getAnnotation(ApiModel.class) != null || pi.getClass().getName().startsWith("oracle.kubernetes.weblogic.domain.")) {
               // this is a model object
               parameters[i] = j.serialize(pi);
             }

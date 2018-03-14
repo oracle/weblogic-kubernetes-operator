@@ -13,7 +13,10 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -455,6 +458,52 @@ public class Main {
       }
     }
   }
+  
+  private static void scheduleDomainStatusUpdating(DomainPresenceInfo info, long initialShortDelay, long eventualLongDelay, TimeUnit timeUnit) {
+    String domainUID = info.getDomain().getSpec().getDomainUID();
+    AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
+    ScheduledFuture<?> existing = statusUpdater.get();
+    if (existing == null || !validateExisting(initialShortDelay, timeUnit, existing)) {
+      Runnable command = new Runnable() {
+        public void run() {
+          Runnable r = this; // resolve visibility later
+          Packet packet = new Packet();
+          packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+          Step strategy = DomainStatusUpdater.createStatusStep(10, TimeUnit.SECONDS, null); // FIXME: configure
+          domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
+            @Override
+            public void onCompletion(Packet packet) {
+              Boolean isStatusClean = (Boolean) packet.get(ProcessingConstants.CLEAN_STATUS);
+              long delay = Boolean.TRUE.equals(isStatusClean) ? eventualLongDelay : initialShortDelay;
+              // retry after delay
+              statusUpdater.set(engine.getExecutor().schedule(r, delay, timeUnit));
+            }
+  
+            @Override
+            public void onThrowable(Packet packet, Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+              // retry after delay
+              statusUpdater.set(engine.getExecutor().schedule(r, initialShortDelay, timeUnit));
+            }
+          });
+        }
+      };
+      statusUpdater.set(engine.getExecutor().schedule(command, initialShortDelay, timeUnit));
+    }
+  }
+  
+  private static boolean validateExisting(long initialShortDelay, TimeUnit timeUnit, ScheduledFuture<?> existing) {
+    if (existing.isCancelled())
+      return false;
+    return existing.getDelay(timeUnit) <= initialShortDelay;
+  }
+  
+  private static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
+    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
+    if (statusUpdater != null) {
+      statusUpdater.cancel(true);
+    }
+  }
 
   private static void doCheckAndCreateDomainPresence(Domain dom) {
     doCheckAndCreateDomainPresence(dom, false, false, null, null);
@@ -494,6 +543,7 @@ public class Main {
       }
       info.setDomain(dom);
     }
+    scheduleDomainStatusUpdating(info, 3, 30, TimeUnit.SECONDS); // FIXME: configure
     
     LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
 
@@ -1244,8 +1294,10 @@ public class Main {
   private static void deleteDomainPresence(String namespace, String domainUID) {
     LOGGER.entering();
 
-    domains.remove(domainUID);
-
+    DomainPresenceInfo info = domains.remove(domainUID);
+    if (info != null) {
+      cancelDomainStatusUpdating(info);
+    }
     domainUpdaters.startFiber(domainUID, new DeleteDomainStep(namespace, domainUID), new Packet(), new CompletionCallback() {
       @Override
       public void onCompletion(Packet packet) {
@@ -1498,15 +1550,9 @@ public class Main {
           ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
           ServerKubernetesObjects sko = current != null ? current : created;
           if (sko != null) {
-            Fiber f;
-            Packet packet;
             switch (item.type) {
               case "ADDED":
                 sko.getPod().set(p);
-                f = engine.createFiber();
-                packet = new Packet();
-                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "MODIFIED":
                 V1Pod skoPod = sko.getPod().get();
@@ -1515,17 +1561,9 @@ public class Main {
                   // and modifications are to the terminating pod
                   sko.getPod().compareAndSet(skoPod, p);
                 }
-                f = engine.createFiber();
-                packet = new Packet();
-                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "DELETED":
                 V1Pod oldPod = sko.getPod().getAndSet(null);
-                f = engine.createFiber();
-                packet = new Packet();
-                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-                f.start(DomainStatusUpdater.createStatusStep(p, true, null), packet, null);
                 if (oldPod != null) {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
