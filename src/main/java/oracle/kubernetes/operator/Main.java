@@ -469,7 +469,7 @@ public class Main {
           Runnable r = this; // resolve visibility later
           Packet packet = new Packet();
           packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-          Step strategy = DomainStatusUpdater.createStatusStep(10, TimeUnit.SECONDS, null); // FIXME: configure
+          Step strategy = DomainStatusUpdater.createStatusStep(10, null); // FIXME: configure
           domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
             @Override
             public void onCompletion(Packet packet) {

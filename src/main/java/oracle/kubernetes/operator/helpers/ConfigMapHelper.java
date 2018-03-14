@@ -108,9 +108,9 @@ public class ConfigMapHelper {
           "# Reads the current state of a server. The script checks a WebLogic Server state\n" + 
           "# file which is updated by the node manager.\n" + 
           "\n" + 
-          "DOMAIN_NAME=$1\n" +
-          "SERVER_NAME=$2\n" +
-          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
+          "DN=${DOMAIN_NAME:-$1}\n" +
+          "SN=${SERVER_NAME:-$2}\n" +
+          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
           "\n" + 
           "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
           "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
