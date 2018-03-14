@@ -5,20 +5,24 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainCondition;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -62,24 +66,34 @@ public class DomainStatusUpdater {
   }
     
   /**
-   * Asynchronous step to set Domain status to indicate pod availability
-   * @param pod The pod
-   * @param isDelete true, if the pod was just deleted
+   * Asynchronous step to set Domain status to indicate WebLogic server status
    * @param next Next step
    * @return Step
    */
-  public static Step createStatusStep(V1Pod pod, boolean isDelete, Step next) {
-    return new StatusUpdateStep(pod, isDelete, next);
+  public static Step createStatusStep(long timeout, TimeUnit unit, Step next) {
+    return new StatusUpdateHookStep(timeout, unit, next);
+  }
+  
+  private static class StatusUpdateHookStep extends Step {
+    private final long timeout;
+    private final TimeUnit unit;
+    
+    public StatusUpdateHookStep(long timeout, TimeUnit unit, Step next) {
+      super(next);
+      this.timeout = timeout;
+      this.unit = unit;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      return doNext(ServerStatusReader.createDomainStatusReaderStep(info, timeout, unit, new StatusUpdateStep(next)), packet);
+    }
   }
   
   private static class StatusUpdateStep extends Step {
-    private final V1Pod pod;
-    private final boolean isDelete;
-    
-    public StatusUpdateStep(V1Pod pod, boolean isDelete, Step next) {
+    public StatusUpdateStep(Step next) {
       super(next);
-      this.pod = pod;
-      this.isDelete = isDelete;
     }
     
     @Override
@@ -94,125 +108,91 @@ public class DomainStatusUpdater {
       Domain dom = info.getDomain();
       DomainSpec spec = dom.getSpec();
       DomainStatus status = dom.getStatus();
+      List<ServerStatus> existingServerStatuses = null;
       if (status == null) {
         // If this is the first time, create status
         status = new DomainStatus();
         status.setStartTime(now);
         dom.setStatus(status);
         madeChange = true;
-      }
-      
-      V1ObjectMeta metadata = pod.getMetadata();
-      String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-  
-      List<String> availableServers = status.getAvailableServers();
-      if (availableServers == null) {
-        availableServers = new ArrayList<>();
-      }
-      List<String> unavailableServers = status.getUnavailableServers();
-      if (unavailableServers == null) {
-        unavailableServers = new ArrayList<>();
-      }
-      List<String> availableClusters = status.getAvailableClusters();
-      if (availableClusters == null) {
-        availableClusters = new ArrayList<>();
-      }
-      List<String> unavailableClusters = status.getUnavailableClusters();
-      if (unavailableClusters == null) {
-        unavailableClusters = new ArrayList<>();
-      }
-      
-      boolean failedPod = false;
-      if (isDelete) {
-        madeChange = availableServers.remove(serverName) || madeChange;
-        madeChange = unavailableServers.remove(serverName) || madeChange;
-      } else if (PodWatcher.isReady(pod)) {
-        if (!availableServers.contains(serverName)) {
-          availableServers.add(serverName);
-          madeChange = true;
-        }
-        madeChange = unavailableServers.remove(serverName) || madeChange;
       } else {
-        if (PodWatcher.isFailed(pod)) {
-          failedPod = true;
-        }
-        madeChange = availableServers.remove(serverName) || madeChange;
-        if (!unavailableServers.contains(serverName)) {
-          unavailableServers.add(serverName);
-          madeChange = true;
+        existingServerStatuses = status.getStatus();
+      }
+      
+      // Acquire current state
+      @SuppressWarnings("unchecked")
+      ConcurrentMap<String, String> serverState = (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
+      
+      Map<String, ServerStatus> serverStatuses = new LinkedHashMap<>();
+      WlsDomainConfig scan = info.getScan();
+      if (scan != null) {
+        for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
+          String serverName = entry.getKey();
+          ServerStatus ss = new ServerStatus().withServerName(serverName);
+          ss.setState(serverState.getOrDefault(serverName, "UNKNOWN"));
+          outer:
+          for (Map.Entry<String, WlsClusterConfig> cluster : scan.getClusterConfigs().entrySet()) {
+            for (WlsServerConfig sic : cluster.getValue().getServerConfigs()) {
+              if (serverName.equals(sic.getName())) {
+                ss.setClusterName(cluster.getKey());
+                break outer;
+              }
+            }
+          }
+          ServerKubernetesObjects sko = info.getServers().get(serverName);
+          if (sko != null) {
+            V1Pod pod = sko.getPod().get();
+            if (pod != null) {
+              ss.setNodeName(pod.getSpec().getNodeName());
+              ss.setStartTime(pod.getMetadata().getCreationTimestamp());
+            }
+          }
+          // TODO
+          //ss.setHealth(health);
+          //ss.setSubsystemName(subsystemName);
+          //ss.setSymptoms(symptoms);
+          serverStatuses.put(serverName, ss);
         }
       }
-      if (clusterName != null) {
-        boolean clusterAvailable = false;
-        WlsDomainConfig scan = info.getScan();
-        if (scan != null) {
-          WlsClusterConfig clusterConfig = scan.getClusterConfig(clusterName);
-          if (clusterConfig != null) {
-            // if at least two cluster servers are available, then cluster is available
-            int target = 2;
-            // also, if only configured to start one server and at least one is available, then cluster is available
-            String sc = spec.getStartupControl();
-            if (sc == null) {
-              sc = StartupControlConstants.AUTO_STARTUPCONTROL;
-            } else {
-              sc = sc.toUpperCase();
-            }
-            cluster:
-            switch (sc) {
-            case StartupControlConstants.AUTO_STARTUPCONTROL:
-            case StartupControlConstants.SPECIFIED_STARTUPCONTROL:
-              List<ClusterStartup> lcs = spec.getClusterStartup();
-              if (lcs != null) {
-                for (ClusterStartup cs : lcs) {
-                  if (clusterName.equals(cs.getClusterName())) {
-                    if (cs.getReplicas() < target) {
-                      target = cs.getReplicas();
-                    }
-                  }
-                  break cluster;
-                }
-              }
-              if (StartupControlConstants.AUTO_STARTUPCONTROL.equals(sc)) {
-                if (spec.getReplicas() < target) {
-                  target = spec.getReplicas();
-                }
-              }
-              break;
-            default:
-              break;
-            }
-            
-            int count = 0;
-            for (WlsServerConfig server : clusterConfig.getServerConfigs()) {
-              if (availableServers.contains(server.getName())) {
-                if (++count >= target) {
-                  clusterAvailable = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (clusterAvailable) {
-          if (!availableClusters.contains(clusterName)) {
-            availableClusters.add(clusterName);
-            madeChange = true;
-          }
-          madeChange = unavailableClusters.remove(clusterName) || madeChange;
-        } else {
-          madeChange = availableClusters.remove(clusterName) || madeChange;
-          if (!unavailableClusters.contains(clusterName)) {
-            unavailableClusters.add(clusterName);
-            madeChange = true;
+      for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+        String serverName = entry.getKey();
+        if (!serverStatuses.containsKey(serverName)) {
+          V1Pod pod = entry.getValue().getPod().get();
+          if (pod != null) {
+            ServerStatus ss = new ServerStatus().withServerName(serverName);
+            ss.setState(serverState.getOrDefault(serverName, "UNKNOWN"));
+            ss.setClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL));
+            ss.setNodeName(pod.getSpec().getNodeName());
+            ss.setStartTime(pod.getMetadata().getCreationTimestamp());
+            // TODO
+            //ss.setHealth(health);
+            //ss.setSubsystemName(subsystemName);
+            //ss.setSymptoms(symptoms);
+            serverStatuses.put(serverName, ss);
           }
         }
       }
       
-      status.setAvailableServers(availableServers);
-      status.setUnavailableServers(unavailableServers);
-      status.setAvailableClusters(availableClusters);
-      status.setUnavailableClusters(unavailableClusters);
+      if (existingServerStatuses != null) {
+        List<ServerStatus> currentServerStatuses = new ArrayList<>(serverStatuses.values());
+        if (!existingServerStatuses.equals(currentServerStatuses)) {
+          status.setStatus(currentServerStatuses);
+          madeChange = true;
+        }
+      } else {
+        status.setStatus(new ArrayList<>(serverStatuses.values()));
+        madeChange = true;
+      }
+      
+      // This will control if we need to re-check states soon or if we can slow down checks
+      Boolean areServerStatesClean = Boolean.TRUE;
+      for (ServerStatus ss : status.getStatus()) {
+        if (!"RUNNING".equals(ss.getState()) && !"SHUTDOWN".equals(ss.getState())) {
+          areServerStatesClean = Boolean.FALSE;
+          break;
+        }
+      }
+      packet.put(ProcessingConstants.CLEAN_STATUS, areServerStatesClean);
       
       // Now, we'll build the conditions.
       // Possible condition types are Progressing, Available, and Failed
@@ -223,47 +203,46 @@ public class DomainStatusUpdater {
         status.setConditions(conditions);
       }
       
-      if (isDelete) {
-        // If we have a Failed condition, then we might need to clear it
-        ListIterator<DomainCondition> it = conditions.listIterator();
-        while (it.hasNext()) {
-          DomainCondition dc = it.next();
-          switch (dc.getType()) {
-          case FAILED_TYPE:
-            if (TRUE.equals(dc.getStatus())) {
-              boolean failedFound = false;
-              for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-                if (serverName.equals(entry.getKey())) {
-                  continue;
-                }
-                if (entry.getValue() != null) {
-                  V1Pod existingPod = entry.getValue().getPod().get();
-                  if (existingPod != null && PodWatcher.isFailed(existingPod)) {
-                    failedFound = true;
-                    break;
-                  }
-                }
-              }
-              if (!failedFound) {
-                it.remove();
-                madeChange = true;
+      boolean haveFailedPod = false;
+      boolean allIntendedPodsToRunning = true;
+      Collection<String> serversIntendedToRunning = new ArrayList<>();
+      Collection<ServerStartupInfo> ssic = info.getServerStartupInfo();
+      if (ssic != null) {
+        for (ServerStartupInfo ssi : ssic) {
+          ServerStartup ss = ssi.serverStartup;
+          if (ss != null && !"ADMIN".equals(ss.getDesiredState())) {
+            continue;
+          }
+          serversIntendedToRunning.add(ssi.serverConfig.getName());
+        }
+      }
+      for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+        ServerKubernetesObjects sko = entry.getValue();
+        if (sko != null) {
+          V1Pod existingPod = sko.getPod().get();
+          if (existingPod != null) {
+            if (PodWatcher.isFailed(existingPod)) {
+              haveFailedPod = true;
+            }
+            String serverName = entry.getKey();
+            if (serversIntendedToRunning.contains(serverName)) {
+              ServerStatus ss = serverStatuses.get(serverName);
+              if (ss == null || !"RUNNING".equals(ss.getState())) {
+                allIntendedPodsToRunning = false;
               }
             }
-            break;
-          case PROGRESSING_TYPE:
-          case AVAILABLE_TYPE:
-          default:
-            break;
           }
         }
-      } else if (failedPod) {
-        // If we have failed pods, then the domain status is Failed
-        ListIterator<DomainCondition> it = conditions.listIterator();
-        boolean foundFailed = false;
-        while (it.hasNext()) {
-          DomainCondition dc = it.next();
-          switch (dc.getType()) {
-          case FAILED_TYPE:
+      }
+
+      boolean foundFailed = false;
+      boolean foundAvailable = false;
+      ListIterator<DomainCondition> it = conditions.listIterator();
+      while (it.hasNext()) {
+        DomainCondition dc = it.next();
+        switch (dc.getType()) {
+        case FAILED_TYPE:
+          if (haveFailedPod) {
             foundFailed = true;
             if (!TRUE.equals(dc.getStatus())) {
               dc.setStatus(TRUE);
@@ -271,69 +250,57 @@ public class DomainStatusUpdater {
               dc.setLastTransitionTime(now);
               madeChange = true;
             }
-            break;
-          case PROGRESSING_TYPE:
-          case AVAILABLE_TYPE:
-          default:
+          } else {
             it.remove();
             madeChange = true;
           }
-        }
-        if (!foundFailed) {
-          DomainCondition dc = new DomainCondition();
-          dc.setType(FAILED_TYPE);
-          dc.setStatus(TRUE);
-          dc.setReason("PodFailed");
-          dc.setLastTransitionTime(now);
-          conditions.add(dc);
-          madeChange = true;
-        }
-      } else if (!availableServers.isEmpty() && unavailableServers.isEmpty()) {
-        Collection<ServerStartupInfo> ssic = info.getServerStartupInfo();
-        if (ssic != null) {
-          boolean allServersAvailable = true;
-          for (ServerStartupInfo ssi : ssic) {
-            if (!availableServers.contains(ssi.serverConfig.getName())) {
-              allServersAvailable = false;
-              break;
-            }
+          break;
+        case PROGRESSING_TYPE:
+          if (haveFailedPod || allIntendedPodsToRunning) {
+            it.remove();
+            madeChange = true;
           }
-          if (allServersAvailable) {
-            ListIterator<DomainCondition> it = conditions.listIterator();
-            boolean foundAvailable = false;
-            while (it.hasNext()) {
-              DomainCondition dc = it.next();
-              switch (dc.getType()) {
-              case AVAILABLE_TYPE:
-                foundAvailable = true;
-                if (!TRUE.equals(dc.getStatus())) {
-                  dc.setStatus(TRUE);
-                  dc.setReason(SERVERS_READY_AVAILABLE_REASON);
-                  dc.setLastTransitionTime(now);
-                  madeChange = true;
-                }
-                break;
-              case PROGRESSING_TYPE:
-              case FAILED_TYPE:
-              default:
-                it.remove();
-                madeChange = true;
-              }
-            }
-            if (!foundAvailable) {
-              DomainCondition dc = new DomainCondition();
-              dc.setType(AVAILABLE_TYPE);
+          break;
+        case AVAILABLE_TYPE:
+          if (haveFailedPod) {
+            it.remove();
+            madeChange = true;
+          } else if (allIntendedPodsToRunning) {
+            foundAvailable = true;
+            if (!TRUE.equals(dc.getStatus()) || !SERVERS_READY_AVAILABLE_REASON.equals(dc.getReason())) {
               dc.setStatus(TRUE);
               dc.setReason(SERVERS_READY_AVAILABLE_REASON);
               dc.setLastTransitionTime(now);
-              conditions.add(dc);
               madeChange = true;
             }
           }
+          break;
+        default:
+          it.remove();
+          madeChange = true;
+          break;
         }
       }
+      if (haveFailedPod && !foundFailed) {
+        DomainCondition dc = new DomainCondition();
+        dc.setType(FAILED_TYPE);
+        dc.setStatus(TRUE);
+        dc.setReason("PodFailed");
+        dc.setLastTransitionTime(now);
+        conditions.add(dc);
+        madeChange = true;
+      }
+      if (allIntendedPodsToRunning && !foundAvailable) {
+        DomainCondition dc = new DomainCondition();
+        dc.setType(AVAILABLE_TYPE);
+        dc.setStatus(TRUE);
+        dc.setReason(SERVERS_READY_AVAILABLE_REASON);
+        dc.setLastTransitionTime(now);
+        conditions.add(dc);
+        madeChange = true;
+      }
   
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, spec.getDomainUID(), availableServers, availableClusters, unavailableServers, unavailableClusters, conditions);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, spec.getDomainUID(), status);
       LOGGER.exiting();
       
       return madeChange == true ? doDomainUpdate(dom, info, packet, StatusUpdateStep.this, next) : doNext(packet);
@@ -452,7 +419,7 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
       LOGGER.exiting();
       
       return madeChange == true ? doDomainUpdate(dom, info, packet, ProgressingStep.this, next) : doNext(packet);
@@ -517,7 +484,7 @@ public class DomainStatusUpdater {
         }
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
       LOGGER.exiting();
       
       return madeChange == true ? doDomainUpdate(dom, info, packet, EndProgressingStep.this, next) : doNext(packet);
@@ -629,7 +596,7 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
       LOGGER.exiting();
       return madeChange == true ? doDomainUpdate(dom, info, packet, AvailableStep.this, next) : doNext(packet);
     }
@@ -768,7 +735,7 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status.getAvailableServers(), status.getAvailableClusters(), status.getUnavailableServers(), status.getUnavailableClusters(), conditions);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
       LOGGER.exiting();
       
       return madeChange == true ? doDomainUpdate(dom, info, packet, FailedStep.this, next) : doNext(packet);
