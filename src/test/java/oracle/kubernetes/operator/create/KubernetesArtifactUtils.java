@@ -80,12 +80,11 @@ public class KubernetesArtifactUtils {
   public static final String KIND_SERVICE = "Service";
   public static final String KIND_SERVICE_ACCOUNT = "ServiceAccount";
 
-  public static V1Namespace newNamespace(String name) {
+  public static V1Namespace newNamespace() {
     return
       (new V1Namespace())
         .apiVersion(API_VERSION_V1)
-        .kind(KIND_NAMESPACE)
-        .metadata(newObjectMeta().name(name));
+        .kind(KIND_NAMESPACE);
   }
 
   public static V1ServiceAccount newServiceAccount() {

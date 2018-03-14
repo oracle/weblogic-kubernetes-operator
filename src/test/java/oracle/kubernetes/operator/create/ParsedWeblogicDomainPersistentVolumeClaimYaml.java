@@ -5,9 +5,6 @@ import java.nio.file.Path;
 
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-
 /**
  * Parses a generated weblogic-domain-persistent-volume-claim.yaml file into a set of typed k8s java objects
  */

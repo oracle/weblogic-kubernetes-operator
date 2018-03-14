@@ -8,8 +8,6 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-
 /**
  * Parses a generated traefik.yaml file into a set of typed k8s java objects
  */
