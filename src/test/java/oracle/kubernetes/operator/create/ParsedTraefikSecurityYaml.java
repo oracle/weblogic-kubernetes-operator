@@ -6,9 +6,6 @@ import java.nio.file.Path;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-
 /**
  * Parses a generated traefik-security.yaml file into a set of typed k8s java objects
  */
