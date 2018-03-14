@@ -3,26 +3,21 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-
-import com.google.common.io.CharStreams;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CallBuilder.ExecParams;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
@@ -41,20 +36,18 @@ public class ServerStatusReader {
   private ServerStatusReader() {
   }
 
-  public static Step createDomainStatusReaderStep(DomainPresenceInfo info, long timeout, TimeUnit unit, Step next) {
-    return new DomainStatusReaderStep(info, timeout, unit, next);
+  public static Step createDomainStatusReaderStep(DomainPresenceInfo info, int timeoutSeconds, Step next) {
+    return new DomainStatusReaderStep(info, timeoutSeconds, next);
   }
   
   private static class DomainStatusReaderStep extends Step {
     private final DomainPresenceInfo info;
-    private final long timeout;
-    private final TimeUnit unit;
+    private final int timeoutSeconds;
 
-    public DomainStatusReaderStep(DomainPresenceInfo info, long timeout, TimeUnit unit, Step next) {
+    public DomainStatusReaderStep(DomainPresenceInfo info, int timeoutSeconds, Step next) {
       super(next);
       this.info = info;
-      this.timeout = timeout;
-      this.unit = unit;
+      this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override
@@ -67,7 +60,6 @@ public class ServerStatusReader {
       
       String namespace = meta.getNamespace();
       String domainUID = spec.getDomainUID();
-      String domainName = spec.getDomainName();
       
       Collection<StepAndPacket> startDetails = new ArrayList<>();
       WlsDomainConfig scan = info.getScan();
@@ -76,7 +68,7 @@ public class ServerStatusReader {
           String serverName = entry.getKey();
           Packet p = packet.clone();
           startDetails.add(new StepAndPacket(
-              createServerStatusReaderStep(namespace, domainUID, domainName, serverName, timeout, unit, null), p));
+              createServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, null), p));
         }
       }
 
@@ -91,68 +83,63 @@ public class ServerStatusReader {
    * Creates asynchronous step to read WebLogic server state from a particular pod
    * @param namespace Namespace
    * @param domainUID Domain UID
-   * @param domainName Domain name
    * @param serverName Server name
-   * @param timeout Timeout in milliseconds
+   * @param timeoutSeconds Timeout in seconds
    * @param next Next step
    * @return Created step
    */
-  public static Step createServerStatusReaderStep(String namespace, String domainUID, String domainName,
-      String serverName, long timeout, TimeUnit unit, Step next) {
-    return new ServerStatusReaderStep(namespace, domainUID, domainName, serverName, timeout, unit, next);
+  public static Step createServerStatusReaderStep(String namespace, String domainUID,
+      String serverName, int timeoutSeconds, Step next) {
+    return new ServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, next);
   }
 
   private static class ServerStatusReaderStep extends Step {
     private final String namespace;
     private final String domainUID;
-    private final String domainName;
     private final String serverName;
-    private final long timeout;
-    private final TimeUnit unit;
+    private final int timeoutSeconds;
 
-    public ServerStatusReaderStep(String namespace, String domainUID, String domainName, String serverName, 
-        long timeout, TimeUnit unit, Step next) {
+    public ServerStatusReaderStep(String namespace, String domainUID, String serverName, 
+        int timeoutSeconds, Step next) {
       super(next);
       this.namespace = namespace;
       this.domainUID = domainUID;
-      this.domainName = domainName;
       this.serverName = serverName;
-      this.timeout = timeout;
-      this.unit = unit;
+      this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      Exec exec = new Exec();
-
       String podName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
 
-      final boolean stdin = false;
-      final boolean tty = false;
-
-      return doSuspend(fiber -> {
-        try {
-          final Process proc = exec.exec(namespace, podName,
-              new String[] { "/weblogic-operator/scripts/readState.sh", domainName, serverName },
-              KubernetesConstants.CONTAINER_NAME, stdin, tty);
-
-          if (proc.waitFor(timeout, unit)) {
-            String state = null;
-            try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
-              state = CharStreams.toString(reader);
-            }
-
-            @SuppressWarnings("unchecked")
-            ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
-                .get(ProcessingConstants.SERVER_STATE_MAP);
-            serverStateMap.put(serverName, state);
-          }
-        } catch (IOException | ApiException | InterruptedException e) {
-          LOGGER.warning(MessageKeys.EXCEPTION, e);
+      final ExecParams execParams = new ExecParams();
+      execParams.command = "/weblogic-operator/scripts/readState.sh";
+      execParams.container = KubernetesConstants.CONTAINER_NAME;
+      
+      return doNext(CallBuilder.create()
+          .with($ -> {$.timeoutSeconds = timeoutSeconds;})
+          .execPodAsync(podName, namespace, execParams, new ResponseStep<String>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          // Failures are okay
+          return onSuccess(packet, null, statusCode, responseHeaders);
         }
-        
-        fiber.resume(packet);
-      });
+
+        @Override
+        public NextAction onSuccess(Packet packet, String result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          @SuppressWarnings("unchecked")
+          ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
+              .get(ProcessingConstants.SERVER_STATE_MAP);
+          if (result != null) {
+            serverStateMap.put(serverName, result);
+          } else {
+            serverStateMap.remove(serverName);
+          }
+          return doNext(packet);
+        }
+      }), packet);
     }
   }
   

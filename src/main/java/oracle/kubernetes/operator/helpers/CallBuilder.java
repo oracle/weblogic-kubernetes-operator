@@ -766,6 +766,43 @@ public class CallBuilder {
     return createRequestAsync(responseStep, new RequestParams("deleteCollection", namespace, null, null), DELETECOLLECTION_POD);
   }
   
+  /**
+   * Exec pod
+   * @param name Name
+   * @param namespace Namespace
+   * @param execParams Exec parameters
+   * @return Stdout
+   * @throws ApiException API Exception
+   */
+  public String execPod(String name, String namespace, ExecParams execParams) throws ApiException {
+    ClientUsage cu = useClient();
+    try {
+      return cu.client().getCoreApiClient().connectGetNamespacedPodExec(name, namespace, execParams.command, execParams.container, execParams.stderr, execParams.stdin, execParams.stdout, execParams.tty);
+    } finally {
+      cu.recycle();
+    }
+  }
+
+  private com.squareup.okhttp.Call execPodAsync(ClientUsage usage, String name, String namespace, ExecParams execParams, ApiCallback<String> callback) throws ApiException {
+    return usage.client().getCoreApiClient().connectGetNamespacedPodExecAsync(name, namespace, execParams.command, execParams.container, execParams.stderr, execParams.stdin, execParams.stdout, execParams.tty, callback);
+  }
+
+  private final CallFactory<String> EXEC_POD = (requestParams, usage, cont, callback) -> {
+    return execPodAsync(usage, requestParams.name, requestParams.namespace, (ExecParams) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for exec on pod
+   * @param name Name
+   * @param namespace Namespace
+   * @param execParams Exec parameters
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step execPodAsync(String name, String namespace, ExecParams execParams, ResponseStep<String> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("execPod", namespace, name, execParams), EXEC_POD);
+  }
+  
   /* Services */
   
   /**
@@ -1365,6 +1402,15 @@ public class CallBuilder {
       this.name = name;
       this.body = body;
     }
+  }
+  
+  public static final class ExecParams {
+    public String command = null;
+    public String container = null;
+    public Boolean stderr = true;
+    public Boolean stdin = false;
+    public Boolean stdout = true;
+    public Boolean tty = false;
   }
   
   static final class CallResponse<T> {

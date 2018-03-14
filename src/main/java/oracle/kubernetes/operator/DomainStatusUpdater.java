@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
 
@@ -70,24 +69,22 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  public static Step createStatusStep(long timeout, TimeUnit unit, Step next) {
-    return new StatusUpdateHookStep(timeout, unit, next);
+  public static Step createStatusStep(int timeoutSeconds, Step next) {
+    return new StatusUpdateHookStep(timeoutSeconds, next);
   }
   
   private static class StatusUpdateHookStep extends Step {
-    private final long timeout;
-    private final TimeUnit unit;
+    private final int timeoutSeconds;
     
-    public StatusUpdateHookStep(long timeout, TimeUnit unit, Step next) {
+    public StatusUpdateHookStep(int timeoutSeconds, Step next) {
       super(next);
-      this.timeout = timeout;
-      this.unit = unit;
+      this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      return doNext(ServerStatusReader.createDomainStatusReaderStep(info, timeout, unit, new StatusUpdateStep(next)), packet);
+      return doNext(ServerStatusReader.createDomainStatusReaderStep(info, timeoutSeconds, new StatusUpdateStep(next)), packet);
     }
   }
   
