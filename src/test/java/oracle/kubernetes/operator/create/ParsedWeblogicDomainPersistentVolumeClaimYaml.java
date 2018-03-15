@@ -8,17 +8,20 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 /**
  * Parses a generated weblogic-domain-persistent-volume-claim.yaml file into a set of typed k8s java objects
  */
-public class ParsedWeblogicDomainPersistentVolumeClaimYaml {
+public class ParsedWeblogicDomainPersistentVolumeClaimYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
-  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedWeblogicDomainPersistentVolumeClaimYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+    super(yamlPath);
     this.inputs = inputs;
-    parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
 
   public V1PersistentVolumeClaim getWeblogicDomainPersistentVolumeClaim() {
-    return parsedYaml.getPersistentVolumeClaims().find(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeClaimName());
+    return getPersistentVolumeClaims().find(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeClaimName());
+  }
+
+  public int getExpectedObjectCount() {
+    return 1;
   }
 }

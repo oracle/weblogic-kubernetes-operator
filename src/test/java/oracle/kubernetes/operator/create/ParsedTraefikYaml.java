@@ -11,34 +11,37 @@ import io.kubernetes.client.models.V1ServiceAccount;
 /**
  * Parses a generated traefik.yaml file into a set of typed k8s java objects
  */
-public class ParsedTraefikYaml {
+public class ParsedTraefikYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
-  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedTraefikYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+    super(yamlPath);
     this.inputs = inputs;
-    parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
 
   public V1ServiceAccount getTraefikServiceAccount() {
-    return parsedYaml.getServiceAccounts().find(getTraefikScope());
+    return getServiceAccounts().find(getTraefikScope());
   }
 
   public ExtensionsV1beta1Deployment getTraefikDeployment() {
-    return parsedYaml.getDeployments().find(getTraefikScope());
+    return getDeployments().find(getTraefikScope());
   }
 
   public V1ConfigMap getTraefikConfigMap() {
-    return parsedYaml.getConfigMaps().find(getTraefikScope());
+    return getConfigMaps().find(getTraefikScope());
   }
 
   public V1Service getTraefikService() {
-    return parsedYaml.getServices().find(getTraefikScope());
+    return getServices().find(getTraefikScope());
   }
 
   public V1Service getTraefikDashboardService() {
-    return parsedYaml.getServices().find(getClusterScope() + "-traefik-dashboard");
+    return getServices().find(getClusterScope() + "-traefik-dashboard");
+  }
+
+  public int getExpectedObjectCount() {
+    return 5;
   }
 
   private String getTraefikScope() {

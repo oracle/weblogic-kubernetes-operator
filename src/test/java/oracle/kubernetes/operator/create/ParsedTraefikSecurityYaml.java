@@ -9,22 +9,25 @@ import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 /**
  * Parses a generated traefik-security.yaml file into a set of typed k8s java objects
  */
-public class ParsedTraefikSecurityYaml {
+public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
-  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedTraefikSecurityYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+    super(yamlPath);
     this.inputs = inputs;
-    parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
 
   public V1beta1ClusterRole getTraefikClusterRole() {
-    return parsedYaml.getClusterRoles().find(getTraefikScope());
+    return getClusterRoles().find(getTraefikScope());
   }
 
   public V1beta1ClusterRoleBinding getTraefikDashboardClusterRoleBinding() {
-    return parsedYaml.getClusterRoleBindings().find(getTraefikScope());
+    return getClusterRoleBindings().find(getTraefikScope());
+  }
+
+  public int getExpectedObjectCount() {
+    return 2;
   }
 
   private String getTraefikScope() {

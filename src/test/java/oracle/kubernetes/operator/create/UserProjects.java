@@ -26,9 +26,13 @@ public class UserProjects {
   public Path getPath() { return this.path; }
 
   public void remove() throws Exception {
-    final List<Path> pathsToDelete = Files.walk(getPath()).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+    final List<Path> pathsToDelete = getContents(path);
     for(Path p : pathsToDelete) {
       Files.deleteIfExists(p);
     }
+  }
+
+  public List<Path> getContents(Path path) throws Exception {
+    return Files.walk(path).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
   }
 }
