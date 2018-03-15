@@ -71,7 +71,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidAdminPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidAdminPort_failsAndReturnsError() throws Exception {
     String val = "invalid-admin-port";
     assertThat(
       execCreateDomain(
@@ -108,7 +108,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_upperCaseDomainUid_failsAndReturnsError() throws Exception {
+  public void createDomain_with_upperCaseDomainUid_failsAndReturnsError() throws Exception {
     String val = "TestDomainUid";
     assertThat(
       execCreateDomain(newInputs().domainUid(val)),
@@ -122,7 +122,30 @@ public class CreateDomainInputsValidationTest {
       failsAndPrints(paramMissingError(PARAM_STARTUP_CONTROL)));
   }
 
-  // TBD - startup control enum legal vals: NONE, ALL, ADMIN, SPECIFIED, AUTO
+  @Test
+  public void createDomain_with_startupControlNone_succeeds() throws Exception {
+    createDomain_with_validStartupControl_succeeds(STARTUP_CONTROL_NONE);
+  }
+
+  @Test
+  public void createDomain_with_startupControlAll_succeeds() throws Exception {
+    createDomain_with_validStartupControl_succeeds(STARTUP_CONTROL_ALL);
+  }
+
+  @Test
+  public void createDomain_with_startupControlAdmin_succeeds() throws Exception {
+    createDomain_with_validStartupControl_succeeds(STARTUP_CONTROL_ADMIN);
+  }
+
+  @Test
+  public void createDomain_with_startupControlSpecified_succeeds() throws Exception {
+    createDomain_with_validStartupControl_succeeds(STARTUP_CONTROL_SPECIFIED);
+  }
+
+  @Test
+  public void createDomain_with_startupControlAuto_succeeds() throws Exception {
+    createDomain_with_validStartupControl_succeeds(STARTUP_CONTROL_AUTO);
+  }
 
   @Test
   public void createDomain_with_invalidStartupControl_failsAndReturnsError() throws Exception {
@@ -147,7 +170,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidManagedServerCount_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidManagedServerCount_failsAndReturnsError() throws Exception {
     String val = "invalid-managed-server-count";
     assertThat(
       execCreateDomain(
@@ -163,7 +186,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidManagedServerStartCount_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidManagedServerStartCount_failsAndReturnsError() throws Exception {
     String val = "invalid-managed-server-start-count";
     assertThat(
       execCreateDomain(
@@ -186,7 +209,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidManagedServerPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidManagedServerPort_failsAndReturnsError() throws Exception {
     String val = "invalid-managed-server-port";
     assertThat(
       execCreateDomain(
@@ -209,7 +232,15 @@ public class CreateDomainInputsValidationTest {
       failsAndPrints(invalidEnumParamValueError(PARAM_PERSISTENCE_TYPE, val)));
   }
 
-  // TBD - missingNfsServer when persistentType is hostPath is OK
+  @Test
+  public void createDomain_with_persistenceTypeHostPath_and_missingNfsServer_succeeds() throws Exception {
+    GeneratedDomainYamlFiles
+      .generateDomainYamlFiles(
+        newInputs()
+          .persistenceType(PERSISTENCE_TYPE_HOST_PATH)
+          .nfsServer(""))
+      .remove();
+  }
 
   @Test
   public void createDomain_with_missingPersistencePath_failsAndReturnsError() throws Exception {
@@ -240,7 +271,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_upperCasePersistenceVolumeClaimName_failsAndReturnsError() throws Exception {
+  public void createDomain_with_upperCasePersistenceVolumeClaimName_failsAndReturnsError() throws Exception {
     String val = "TestPersistenceVolumeClaimName";
     assertThat(
       execCreateDomain(newInputs().persistenceVolumeClaimName(val)),
@@ -255,7 +286,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_upperCasePersistenceVolumeName_failsAndReturnsError() throws Exception {
+  public void createDomain_with_upperCasePersistenceVolumeName_failsAndReturnsError() throws Exception {
     String val = "TestPersistenceVolumeName";
     assertThat(
       execCreateDomain(newInputs().persistenceVolumeName(val)),
@@ -270,7 +301,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidProductionModeEnabled_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidProductionModeEnabled_failsAndReturnsError() throws Exception {
     String val = "invalid-production-mode-enabled";
     assertThat(
       execCreateDomain(
@@ -286,7 +317,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_upperCaseSecretName_failsAndReturnsError() throws Exception {
+  public void createDomain_with_upperCaseSecretName_failsAndReturnsError() throws Exception {
     String val = "TestSecretName";
     assertThat(
       execCreateDomain(newInputs().secretName(val)),
@@ -295,7 +326,7 @@ public class CreateDomainInputsValidationTest {
 
   // TBD - shouldn't this only be required if exposeAdminT3Channel is true?
   @Test
-  public void createOperator_with_upperCaseImagePullSecretName_failsAndReturnsError() throws Exception {
+  public void createDomain_with_upperCaseImagePullSecretName_failsAndReturnsError() throws Exception {
     String val = "TestImagePullSecretName";
     assertThat(
       execCreateDomain(newInputs().imagePullSecretName(val)),
@@ -318,7 +349,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidT3ChannelPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidT3ChannelPort_failsAndReturnsError() throws Exception {
     String val = "invalid-t3-channel-port";
     assertThat(
       execCreateDomain(
@@ -334,7 +365,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidExposeAdminT3Channel_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidExposeAdminT3Channel_failsAndReturnsError() throws Exception {
     String val = "invalid-t3-admin-channel";
     assertThat(
       execCreateDomain(
@@ -351,7 +382,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidAdminNodePort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidAdminNodePort_failsAndReturnsError() throws Exception {
     String val = "invalid-admon-node-port";
     assertThat(
       execCreateDomain(
@@ -367,7 +398,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidExposeAdminNodePort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidExposeAdminNodePort_failsAndReturnsError() throws Exception {
     String val = "invalid-admin-node-port";
     assertThat(
       execCreateDomain(
@@ -383,7 +414,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_upperCaseNamespace_failsAndReturnsError() throws Exception {
+  public void createDomain_with_upperCaseNamespace_failsAndReturnsError() throws Exception {
     String val = "TestNamespace";
     assertThat(
       execCreateDomain(newInputs().namespace(val)),
@@ -414,7 +445,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidLoadBalancerWebPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidLoadBalancerWebPort_failsAndReturnsError() throws Exception {
     String val = "invalid-load-balancer-web-port";
     assertThat(
       execCreateDomain(
@@ -431,7 +462,7 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_invalidLoadBalancerAdminPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidLoadBalancerAdminPort_failsAndReturnsError() throws Exception {
     String val = "invalid-load-balancer-admin-port";
     assertThat(
       execCreateDomain(
@@ -445,6 +476,15 @@ public class CreateDomainInputsValidationTest {
     assertThat(
       execCreateDomain(newInputs().javaOptions("")),
       failsAndPrints(paramMissingError(PARAM_JAVA_OPTIONS)));
+  }
+
+  private void createDomain_with_validStartupControl_succeeds(String startupControl) throws Exception {
+    createDomain_with_validInputs_succeeds(newInputs().startupControl(startupControl));
+  }
+
+  private void createDomain_with_validInputs_succeeds(CreateDomainInputs inputs) throws Exception {
+    // throws an error if the inputs are not valid, succeeds otherwise:
+    GeneratedDomainYamlFiles.generateDomainYamlFiles(inputs).remove();
   }
 
   private String invalidBooleanParamValueError(String param, String val) {

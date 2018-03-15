@@ -25,6 +25,7 @@ import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobSpec;
+import io.kubernetes.client.models.V1LabelSelector;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NFSVolumeSource;
@@ -46,6 +47,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
+import io.kubernetes.client.models.V1TCPSocketAction;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
@@ -62,6 +64,7 @@ public class KubernetesArtifactUtils {
 
   public static final String API_VERSION_APPS_V1BETA1 = "apps/v1beta1";
   public static final String API_VERSION_BATCH_V1 = "batch/v1";
+  public static final String API_VERSION_EXTENSIONS_V1BETA1 = "extensions/v1beta1";
   public static final String API_VERSION_RBAC_V1BETA1 = "rbac.authorization.k8s.io/v1beta1";
   public static final String API_VERSION_ORACLE_V1 = "weblogic.oracle/v1";
   public static final String API_VERSION_V1 = "v1";
@@ -319,6 +322,14 @@ public class KubernetesArtifactUtils {
 
   public static ClusterStartup newClusterStartup() {
     return new ClusterStartup();
+  }
+
+  public static V1LabelSelector newLabelSelector() {
+    return new V1LabelSelector();
+  }
+
+  public static V1TCPSocketAction newTCPSocketAction() {
+    return new V1TCPSocketAction();
   }
 
   public static FluentArrayList<String> newStringList() {

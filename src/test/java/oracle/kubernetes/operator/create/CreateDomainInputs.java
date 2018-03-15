@@ -11,10 +11,10 @@ import java.util.Objects;
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 
 /**
- * Class that mirrors create-weblogic-operator-inputs.yaml
+ * Class that mirrors create-weblogic-domain-inputs.yaml
  *
- * Used to parse create-weblogic-operator-inputs.yaml into java
- * and convert java to create-weblogic-operator-inputs.yaml
+ * Used to parse create-weblogic-domain-inputs.yaml into java
+ * and convert java to create-weblogic-domain-inputs.yaml
  *
  * Note: use strings to represent params that must be ints or booleans at runtime
  * so that we can test more invalid input options (e.g. missing value, not int value)
@@ -97,8 +97,12 @@ public class CreateDomainInputs {
         .t3ChannelPort("30013");
   }
 
-  public static CreateDomainInputs readDefaultInputsFile() throws IOException {
-    Reader r = Files.newBufferedReader(defaultInputsPath(), Charset.forName("UTF-8"));
+  public static CreateDomainInputs readDefaultInputsFile() throws Exception {
+    return readInputsYamlFile(defaultInputsPath());
+  }
+
+  public static CreateDomainInputs readInputsYamlFile(Path path) throws Exception {
+    Reader r = Files.newBufferedReader(path, Charset.forName("UTF-8"));
     return (CreateDomainInputs)newYaml().loadAs(r, CreateDomainInputs.class);
   }
 
