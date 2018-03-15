@@ -706,7 +706,7 @@ function run_create_domain_job {
     trace "WLS_JAVA_OPTIONS = \"$WLS_JAVA_OPTIONS\""
 
     local PV="pv"
-    local PV_DIR="persistentVolume-${DOMAIN_UID}"
+    local STORAGE_DIR="persistentVolume-${DOMAIN_UID}"
 
     trace "Create $DOMAIN_UID in $NAMESPACE namespace "
 
@@ -747,7 +747,7 @@ function run_create_domain_job {
     # Customize more configuration 
     sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" $inputs
     sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" $inputs
-    sed -i -e "s;^persistencePath:.*;persistencePath: $PV_ROOT/acceptance_test_pv/$PV_DIR;" $inputs
+    sed -i -e "s;^weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$STORAGE_DIR;" $inputs
     sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
@@ -762,7 +762,7 @@ function run_create_domain_job {
       sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
     fi
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
-    sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
+    sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
 
@@ -772,11 +772,11 @@ function run_create_domain_job {
     fi
 
     local outfile="${tmp_dir}/mkdir_physical_nfs.out"
-    trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$PV_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
+    trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$STORAGE_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
 
     # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
     # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
-    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$PV_DIR" > ${outfile} 2>&1
+    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$STORAGE_DIR" > ${outfile} 2>&1
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
        trace Job complete.  Directory created on k8s cluster.
