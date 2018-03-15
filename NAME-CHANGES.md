@@ -137,8 +137,10 @@ The names of several of the generated YAML files have changed.
 | managedServerPort | same |
 | managedServerStartCount | initialManagedServerReplicas |
 | namespace | same |
+| nfsServer | TBD - weblogicDomainStorageNFSServer ? |
 | persistencePath | weblogicDomainStoragePath |
 | persistenceSize | weblogicDomainStorageSize |
+| persistenceType | TBD - weblogicDomainStorageType ? |
 | persistenceStorageClass | This property has been removed |
 | persistenceVolumeClaimName | This property has been removed |
 | persistenceVolumeName | This property has been removed |
@@ -159,3 +161,6 @@ The names of several of the generated YAML files have changed.
 | startupControl | AUTO | TBD |
 | startupControl | NONE | TBD |
 | startupControl | SPECIFIED | TBD |
+| persistenceType | hostPath | HOST_PATH |
+| persistenceType | nfs | NFS |
+
