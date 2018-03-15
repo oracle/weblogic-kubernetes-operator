@@ -7,15 +7,12 @@ adminPort: 7001
 # Name of the Admin Server
 adminServerName: admin-server
 
-# Script used to create the domain.
-createDomainScript: /u01/weblogic/create-domain-script.sh
-
 # Name of the WebLogic domain to create
 domainName: base_domain
 
 # Unique id identifying a domain.
 # This id must be lowercase and unique across all domains in a Kubernetes cluster
-domainUid: domain1
+domainUID: domain1
 
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
@@ -25,10 +22,10 @@ startupControl: AUTO
 clusterName: cluster-1
 
 # Number of managed servers to generate for the domain
-managedServerCount: 2
+configuredManagedServerCount: 2
 
 # Number of managed servers to initially start for the domain
-managedServerStartCount: 2
+initialManagedServerReplicas: 2
 
 # Base string used to generate managed server names
 managedServerNameBase: managed-server
@@ -36,18 +33,21 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
-# Persistent volume type, the value must be hostPath or nfs.
-# If using nfs, nfsServer must be specified.
-persistenceType: hostPath
+# Persistent volume type for the domain's storage.
+# The value must be 'HOST_PATH' or 'NFS'. 
+# If using 'NFS', weblogicDomainStorageNFSServer must be specified.
+weblogicDomainStorageType: HOST_PATH
 
-# NFS server name or ip.  Only used if persistenceType is nfs.
-nfsServer: nfsServer
+# The server name or ip address of the NFS server to use
+# for the domain's storage.
+# Only used if persistenceType is nfs.
+weblogicDomainStorageNFSServer: nfsServer
 
-# Physical path of the persistent volume storage
-persistencePath: /scratch/k8s_dir/persistentVolume001
+# Physical path of the domain's persistent storage.
+weblogicDomainStoragePath: /scratch/k8s_dir/persistentVolume001
 
-# Total storage allocated by the persistent volume
-persistenceSize: 10Gi
+# Total storage allocated to the domain's persistent storage.
+weblogicDomainStorageSize: 10Gi
 
 # Name of the storage class to set for the persistent volume and persistent volume claim
 # The default value that will be used is the value of the domainUid input parameter
@@ -69,11 +69,11 @@ productionModeEnabled: true
 
 # Name of the Kubernetes secret for the Admin Server's username and password
 # The name must be lowercase
-secretName: domain1-weblogic-credentials
+weblogicCredentialsSecretName: domain1-weblogic-credentials
 
 # Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
 # The presence of the secret will be validated when this parameter is enabled.
-#imagePullSecretName:
+#weblogicImagePullSecretName:
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
@@ -96,14 +96,14 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-# Load balancer to deploy.  Supported values are: traefik, none
-loadBalancer: traefik
+# Load balancer to deploy.  Supported values are:TRAEFIK, NONE
+loadBalancer: TRAEFIK
 
 # Load balancer web port
 loadBalancerWebPort: 30305
 
-# Load balancer admin port
-loadBalancerAdminPort: 30315
+# Load balancer dashboard port
+loadBalancerDashboardPort: 30315
 
 #Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false

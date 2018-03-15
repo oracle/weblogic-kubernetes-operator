@@ -45,29 +45,28 @@ public class CreateDomainInputsFileTest {
         .adminPort("7001")
         .adminServerName("admin-server")
         .clusterName("cluster-1")
-        .createDomainScript("/u01/weblogic/create-domain-script.sh")
         .domainName("base_domain")
-        .domainUid("domain1")
+        .domainUID("domain1")
         .exposeAdminNodePort("false")
         .exposeAdminT3Channel("false")
-        .imagePullSecretName("")
+        .weblogicImagePullSecretName("")
         .javaOptions("-Dweblogic.StdoutDebugEnabled=false")
         .loadBalancer(LOAD_BALANCER_TRAEFIK)
-        .loadBalancerAdminPort("30315")
+        .loadBalancerDashboardPort("30315")
         .loadBalancerWebPort("30305")
-        .managedServerCount("2")
+        .configuredManagedServerCount("2")
         .managedServerNameBase("managed-server")
         .managedServerPort("8001")
-        .managedServerStartCount("2")
+        .initialManagedServerReplicas("2")
         .namespace("default")
-        .nfsServer("nfsServer")
-        .persistencePath("/scratch/k8s_dir/persistentVolume001")
-        .persistenceSize("10Gi")
-        .persistenceType(PERSISTENCE_TYPE_HOST_PATH)
+        .weblogicDomainStorageNFSServer("nfsServer") // TBD - should there be a default?
+        .weblogicDomainStoragePath("/scratch/k8s_dir/persistentVolume001") // TBD - should there be a default?
+        .weblogicDomainStorageSize("10Gi")
+        .weblogicDomainStorageType(STORAGE_TYPE_HOST_PATH)
         .persistenceVolumeClaimName("pv001-claim")
         .persistenceVolumeName("pv001")
         .productionModeEnabled("true")
-        .secretName("domain1-weblogic-credentials")
+        .weblogicCredentialsSecretName("domain1-weblogic-credentials")
         .startupControl(STARTUP_CONTROL_AUTO)
         .t3ChannelPort("30012")
         .t3PublicAddress("kubernetes")));
@@ -76,7 +75,7 @@ public class CreateDomainInputsFileTest {
   @Test
   public void createDomain_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
     // customize the domain uid so that we can tell that it generated the yaml files based on this inputs
-    CreateDomainInputs inputs = readDefaultInputsFile().domainUid("test-domain-uid");
+    CreateDomainInputs inputs = readDefaultInputsFile().domainUID("test-domain-uid");
     assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
 
     // Make sure the generated directory has the correct list of files

@@ -47,7 +47,7 @@ data:
     source /u01/weblogic/utility.sh
 
     # Verify the script to create the domain exists
-    script='%CREATE_DOMAIN_SCRIPT%'
+    script='/u01/weblogic/create-domain-script.sh'
     if [ -f $script ]; then
       echo The domain will be created using the script $script
     else
@@ -279,7 +279,7 @@ data:
 
     # Create the managed servers
     index=0
-    while [ $index -lt %NUMBER_OF_MS% ]
+    while [ $index -lt %CONFIGURED_MANAGED_SERVER_COUNT% ]
     do
       ((index++))
       createNodeMgrHome %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index} %DOMAIN_UID%-%ADMIN_SERVER_NAME%
@@ -298,7 +298,7 @@ data:
     server_port        = %MANAGED_SERVER_PORT%
     domain_path        = os.environ.get("DOMAIN_HOME")
     cluster_name       = "%CLUSTER_NAME%"
-    number_of_ms       = %NUMBER_OF_MS%
+    number_of_ms       = %CONFIGURED_MANAGED_SERVER_COUNT%
 
     print('domain_path        : [%s]' % domain_path);
     print('domain_name        : [%DOMAIN_NAME%]');
@@ -494,6 +494,6 @@ spec:
             claimName: %PERSISTENT_VOLUME_CLAIM%
         - name: secrets
           secret:
-            secretName: %SECRET_NAME%
-      %IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-      %IMAGE_PULL_SECRET_PREFIX%- name: %DOCKER_REGISTRY_SECRET%
+            secretName: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
+      %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+      %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%

@@ -12,8 +12,8 @@ import org.junit.BeforeClass;
 /**
  * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh
  * creates are correct when the admin node port is enabled, the t3 channel is enabled,
- * there is an image pull secret, production mode is enabled, and the persistence type
- * is nfs
+ * there is a weblogic image pull secret, production mode is enabled, and the 
+ * weblogic domain storage type is NFS.
  */
 public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest extends CreateDomainGeneratedFilesBaseTest {
 
@@ -23,9 +23,9 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest extends Creat
       CreateDomainInputs.newInputs()
         .exposeAdminNodePort("true")
         .exposeAdminT3Channel("true")
-        .imagePullSecretName("test-weblogic-image-pull-secret-name")
+        .weblogicImagePullSecretName("test-weblogic-image-pull-secret-name")
         .loadBalancer(LOAD_BALANCER_TRAEFIK)
-        .persistenceType(PERSISTENCE_TYPE_NFS)
+        .weblogicDomainStorageType(STORAGE_TYPE_NFS)
         .productionModeEnabled("true")
     );
   }
@@ -34,7 +34,7 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest extends Creat
   protected V1Job getExpectedCreateWeblogicDomainJob() {
     V1Job expected = super.getExpectedCreateWeblogicDomainJob();
     expected.getSpec().getTemplate().getSpec().addImagePullSecretsItem(newLocalObjectReference()
-      .name(getInputs().getImagePullSecretName()));
+      .name(getInputs().getWeblogicImagePullSecretName()));
     return expected;
   }
 
@@ -52,8 +52,8 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest extends Creat
     V1PersistentVolume expected = super.getExpectedWeblogicDomainPersistentVolume();
     expected.getSpec()
       .nfs(newNFSVolumeSource()
-        .server(getInputs().getNfsServer())
-        .path(getInputs().getPersistencePath()));
+        .server(getInputs().getWeblogicDomainStorageNFSServer())
+        .path(getInputs().getWeblogicDomainStoragePath()));
     return expected;
   }
 }

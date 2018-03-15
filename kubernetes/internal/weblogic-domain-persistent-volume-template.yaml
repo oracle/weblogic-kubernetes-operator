@@ -10,11 +10,11 @@ metadata:
 spec:
   storageClassName: %STORAGE_CLASS_NAME%
   capacity:
-    storage: %PERSISTENT_VOLUME_SIZE%
+    storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   %HOST_PATH_PREFIX%hostPath:
   %NFS_PREFIX%nfs:
-    %NFS_PREFIX%server: %NFS_SERVER%
-    path: "%PERSISTENT_VOLUME_PATH%"
+    %NFS_PREFIX%server: %WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%
+    path: "%WEBLOGIC_DOMAIN_STORAGE_PATH%"

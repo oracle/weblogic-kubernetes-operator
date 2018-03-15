@@ -91,7 +91,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}/weblogic-domains/${domainUid}"
+  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   validateOutputDir \
     ${domainOutputDir} \
     ${valuesInputFile} \
@@ -107,7 +107,7 @@ function initAndValidateOutputDir {
 # Function to ensure the domain uid is lowercase
 #
 function validateDomainUid {
-  validateLowerCase "domainUid" ${domainUid}
+  validateLowerCase "domainUID" ${domainUID}
 }
 
 #
@@ -126,12 +126,12 @@ function validateClusterName {
 
 #
 # Function to default the value of persistenceStorageClass.
-# When the parameter is not specified in the input file, it will default to use the value domainUid
+# When the parameter is not specified in the input file, it will default to use the value domainUID
 #
 function validateStorageClass {
   if [ -z "${persistenceStorageClass}" ]; then
-    persistenceStorageClass=${domainUid}
-    echo Defaulting the input parameter persistenceStorageClass to be $domainUid
+    persistenceStorageClass=${domainUID}
+    echo Defaulting the input parameter persistenceStorageClass to be $domainUID
   else
     validateLowerCase "persistenceStorageClass" ${persistenceStorageClass}
   fi
@@ -144,9 +144,9 @@ function validatePersistentVolumeClaimName {
   validateInputParamsSpecified persistenceVolumeClaimName
   if [ ! -z "${persistenceVolumeClaimName}" ]; then
     validateLowerCase "persistenceVolumeClaimName" ${persistenceVolumeClaimName}
-    if [[ "${persistenceVolumeClaimName}" != ${domainUid}-* ]] ; then
-      echo persistenceVolumeClaimName specified does not starts with \'${domainUid}-\', appending it
-      persistenceVolumeClaimName=${domainUid}-${persistenceVolumeClaimName}
+    if [[ "${persistenceVolumeClaimName}" != ${domainUID}-* ]] ; then
+      echo persistenceVolumeClaimName specified does not starts with \'${domainUID}-\', appending it
+      persistenceVolumeClaimName=${domainUID}-${persistenceVolumeClaimName}
       echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
     fi
   fi
@@ -159,31 +159,28 @@ function validatePersistentVolumeName {
   validateInputParamsSpecified persistenceVolumeName
   if [ ! -z "${persistenceVolumeName}" ]; then
     validateLowerCase "persistenceVolumeName" ${persistenceVolumeName}
-    if [[ "${persistenceVolumeName}" != ${domainUid}-* ]] ; then
-      echo persistenceVolumeName specified does not starts with \'${domainUid}-\', appending it
-      persistenceVolumeName=${domainUid}-${persistenceVolumeName}
+    if [[ "${persistenceVolumeName}" != ${domainUID}-* ]] ; then
+      echo persistenceVolumeName specified does not starts with \'${domainUID}-\', appending it
+      persistenceVolumeName=${domainUID}-${persistenceVolumeName}
       echo persistenceVolumeName is now ${persistenceVolumeName}
     fi
   fi
 }
 
 #
-# Function to validate the persistence type
+# Function to validate the weblogic domain storage type
 #
-function validatePersistenceType {
-  validateInputParamsSpecified persistenceType
-  if [ ! -z "${persistenceType}" ]; then
-    PERSISTENCE_TYPE_HOST_PATH="hostPath"
-    PERSISTENCE_TYPE_NFS="nfs"
-    case ${persistenceType} in
-      ${PERSISTENCE_TYPE_HOST_PATH})
+function validateWeblogicDomainStorageType {
+  validateInputParamsSpecified weblogicDomainStorageType
+  if [ ! -z "${weblogicDomainStorageType}" ]; then
+    case ${weblogicDomainStorageType} in
+      "HOST_PATH")
       ;;
-      ${PERSISTENCE_TYPE_NFS})
-        validateInputParamsSpecified nfsServer
+      "NFS")
+        validateInputParamsSpecified weblogicDomainStorageNFSServer
       ;;
       *)
-        validationError "Invalid value for persistenceType: ${persistenceType}. Valid values are hostPath and nfs."
-        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are traefik and none."
+        validationError "Invalid value for weblogicDomainStorageType: ${weblogicDomainStorageType}. Valid values are HOST_PATH and NFS."
       ;;
     esac
   fi
@@ -192,8 +189,8 @@ function validatePersistenceType {
 #
 # Function to validate the secret name
 #
-function validateSecretName {
-  validateLowerCase "secretName" ${secretName}
+function validateWeblogicCredentialsSecretName {
+  validateLowerCase "weblogicCredentialsSecretName" ${weblogicCredentialsSecretName}
 }
 
 #
@@ -202,15 +199,13 @@ function validateSecretName {
 function validateLoadBalancer {
   validateInputParamsSpecified loadBalancer
   if [ ! -z "${loadBalancer}" ]; then
-    LOAD_BALANCER_TRAEFIK="traefik"
-    LOAD_BALANCER_NONE="none"
     case ${loadBalancer} in
-      ${LOAD_BALANCER_TRAEFIK})
+      "TRAEFIK")
       ;;
-      ${LOAD_BALANCER_NONE})
+      "NONE")
       ;;
       *)
-        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are traefik and none."
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are TRAEFIK and NONE."
       ;;
     esac
   fi
@@ -221,47 +216,47 @@ function validateLoadBalancer {
 #
 function validateDomainSecret {
   # Verify the secret exists
-  validateSecretExists ${secretName} ${namespace}
+  validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
   failIfValidationErrors
 
   # Verify the secret contains a username
-  SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${secretName} in namespace ${namespace} does contain a username"
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
   fi
 
   # Verify the secret contains a password
-  SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${secretName} in namespace ${namespace} does contain a password"
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
   fi
   failIfValidationErrors
 }
 
 #
-# Function to validate the image pull secret name
+# Function to validate the weblogic image pull secret name
 #
-function validateImagePullSecretName {
-  if [ ! -z ${imagePullSecretName} ]; then
-    validateLowerCase imagePullSecretName ${imagePullSecretName}
-    imagePullSecretPrefix=""
+function validateWeblogicImagePullSecretName {
+  if [ ! -z ${weblogicImagePullSecretName} ]; then
+    validateLowerCase weblogicImagePullSecretName ${weblogicImagePullSecretName}
+    weblogicImagePullSecretPrefix=""
     if [ "${generateOnly}" = false ]; then
-      validateImagePullSecret
+      validateWeblogicImagePullSecret
     fi
   else
     # Set name blank when not specified, and comment out the yaml
-    imagePullSecretName=""
-    imagePullSecretPrefix="#"
+    weblogicImagePullSecretName=""
+    weblogicImagePullSecretPrefix="#"
   fi
 }
 
 #
-# Function to validate the image pull secret exists
+# Function to validate the weblogic image pull secret exists
 #
-function validateImagePullSecret {
+function validateWeblogicImagePullSecret {
   # The kubernetes secret for pulling images from the docker store is optional.
   # If it was specified, make sure it exists.
-  validateSecretExists ${imagePullSecretName} ${namespace}
+  validateSecretExists ${weblogicImagePullSecretName} ${namespace}
   failIfValidationErrors
 }
 
@@ -271,21 +266,16 @@ function validateImagePullSecret {
 function validateStartupControl {
   validateInputParamsSpecified startupControl
   if [ ! -z "${startupControl}" ]; then
-    STARTUP_CONTROL_NONE="NONE"
-    STARTUP_CONTROL_ALL="ALL"
-    STARTUP_CONTROL_ADMIN="ADMIN"
-    STARTUP_CONTROL_SPECIFIED="SPECIFIED"
-    STARTUP_CONTROL_AUTO="AUTO"
     case ${startupControl} in
-      ${STARTUP_CONTROL_NONE})
+      "NONE")
       ;;
-      ${STARTUP_CONTROL_ALL})
+      "ALL")
       ;;
-      ${STARTUP_CONTROL_ADMIN})
+      "ADMIN")
       ;;
-      ${STARTUP_CONTROL_SPECIFIED})
+      "SPECIFIED")
       ;;
-      ${STARTUP_CONTROL_AUTO})
+      "AUTO")
       ;;
       *)
         validationError "Invalid valid for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
@@ -356,29 +346,28 @@ function initialize {
   parseCommonInputs
   validateInputParamsSpecified \
     adminServerName \
-    createDomainScript \
     domainName \
-    domainUid \
+    domainUID \
     clusterName \
     managedServerNameBase \
-    persistencePath \
-    persistenceSize \
+    weblogicDomainStoragePath \
+    weblogicDomainStorageSize \
     persistenceVolumeName \
     persistenceVolumeClaimName \
-    secretName \
+    weblogicCredentialsSecretName \
     namespace \
     javaOptions \
     t3PublicAddress
 
   validateIntegerInputParamsSpecified \
     adminPort \
-    managedServerCount \
-    managedServerStartCount \
+    configuredManagedServerCount \
+    initialManagedServerReplicas \
     managedServerPort \
     t3ChannelPort \
     adminNodePort \
     loadBalancerWebPort \
-    loadBalancerAdminPort
+    loadBalancerDashboardPort
 
   validateBooleanInputParamsSpecified \
     productionModeEnabled \
@@ -389,11 +378,11 @@ function initialize {
   validateNamespace
   validateClusterName
   validateStorageClass
-  validatePersistenceType
+  validateWeblogicDomainStorageType
   validatePersistentVolumeName
   validatePersistentVolumeClaimName
-  validateSecretName
-  validateImagePullSecretName
+  validateWeblogicCredentialsSecretName
+  validateWeblogicImagePullSecretName
   validateLoadBalancer
   initAndValidateOutputDir
   validateStartupControl
@@ -426,20 +415,20 @@ function createYamlFiles {
   echo Generating ${domainPVOutput}
 
   cp ${domainPVInput} ${domainPVOutput}
-  if [ "${persistenceType}" == "nfs" ]; then
+  if [ "${weblogicDomainStorageType}" == "NFS" ]; then
     hostPathPrefix="${disabledPrefix}"
     nfsPrefix="${enabledPrefix}"
-    sed -i -e "s:%NFS_SERVER%:${nfsServer}:g" ${domainPVOutput}
+    sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%:${weblogicDomainStorageNFSServer}:g" ${domainPVOutput}
   else
     hostPathPrefix="${enabledPrefix}"
     nfsPrefix="${disabledPrefix}"
   fi
 
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${domainPVOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
   sed -i -e "s:%PERSISTENT_VOLUME%:${persistenceVolumeName}:g" ${domainPVOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_PATH%:${persistencePath}:g" ${domainPVOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${domainPVOutput}
+  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
+  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVOutput}
   sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVOutput}
   sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${domainPVOutput}
   sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${domainPVOutput}
@@ -449,27 +438,26 @@ function createYamlFiles {
 
   cp ${domainPVCInput} ${domainPVCOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${domainPVCOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVCOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${domainPVCOutput}
   sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVCOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_SIZE%:${persistenceSize}:g" ${domainPVCOutput}
+  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
   echo Generating ${jobOutput}
 
   cp ${jobInput} ${jobOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${jobOutput}
-  sed -i -e "s:%SECRET_NAME%:${secretName}:g" ${jobOutput}
-  sed -i -e "s:%DOCKER_REGISTRY_SECRET%:${imagePullSecretName}:g" ${jobOutput}
-  sed -i -e "s:%IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${jobOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${jobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${jobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${jobOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${jobOutput}
-  sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${jobOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${jobOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${jobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${jobOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${jobOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${jobOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${jobOutput}
-  sed -i -e "s:%NUMBER_OF_MS%:${managedServerCount}:g" ${jobOutput}
+  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${jobOutput}
   sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${jobOutput}
   sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${jobOutput}
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
@@ -493,13 +481,12 @@ function createYamlFiles {
 
   cp ${dcrInput} ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
-  sed -i -e "s:%SECRET_NAME%:${secretName}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
-  sed -i -e "s:%MANAGED_SERVER_START_COUNT%:${managedServerStartCount}:g" ${dcrOutput}
-  sed -i -e "s:%NUMBER_OF_MS%:${managedServerCount}:g" ${dcrOutput}
+  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
@@ -511,17 +498,17 @@ function createYamlFiles {
   cp ${traefikInput} ${traefikOutput}
   echo Generating ${traefikOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikOutput}
   sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
   sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
-  sed -i -e "s:%LOAD_BALANCER_ADMIN_PORT%:$loadBalancerAdminPort:g" ${traefikOutput}
+  sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${traefikOutput}
 
   # Traefik security file
   cp ${traefikSecurityInput} ${traefikSecurityOutput}
   echo Generating ${traefikSecurityOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikSecurityOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikSecurityOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikSecurityOutput}
   sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
 
   # Remove any "...yaml-e" files left over from running sed
@@ -561,7 +548,7 @@ function createDomainPVC {
 function createDomain {
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  JOB_NAME="domain-${domainUid}-job"
+  JOB_NAME="domain-${domainUID}-job"
   deleteK8sObj job $JOB_NAME ${jobOutput}
 
   echo Creating the domain by creating the job ${jobOutput}
@@ -574,8 +561,8 @@ function createDomain {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUid}" | awk ' { print $3; } '`
-    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUid}" | awk ' { print "pod", $1, "status is", $3; } '`
+    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print $3; } '`
+    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
     echo "$JOB_INFO"
 
@@ -593,7 +580,7 @@ function createDomain {
   done
 
   # Confirm the job pod is status completed
-  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUid}" | awk ' { print $1; } '`
+  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print $1; } '`
   if [ "$JOB_STATUS" != "Completed" ]; then
     echo The create domain job is not showing status completed after waiting 300 seconds
     echo Check the log output for errors
@@ -617,7 +604,7 @@ function createDomain {
 #
 function setupTraefikLoadBalancer {
 
-  traefikName="${domainUid}-${clusterNameLC}-traefik"
+  traefikName="${domainUID}-${clusterNameLC}-traefik"
 
   echo Setting up traefik security
   kubectl apply -f ${traefikSecurityOutput}
@@ -664,9 +651,9 @@ function createDomainCustomResource {
   kubectl apply -f ${dcrOutput}
 
   echo Checking the domain custom resource was created
-  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUid} | wc | awk ' { print $1; } '`
+  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
   if [ "${DCR_AVAIL}" != "1" ]; then
-    fail "The domain custom resource ${domainUid} was not found"
+    fail "The domain custom resource ${domainUID} was not found"
   fi
 }
 
@@ -710,9 +697,9 @@ function outputJobSummary {
   if [ "${exposeAdminT3Channel}" = true ]; then
     echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
   fi
-  if [ "${loadBalancer}" = "traefik" ]; then
+  if [ "${loadBalancer}" = "TRAEFIK" ]; then
     echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
-    echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerAdminPort}"
+    echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerDashboardPort}"
     echo ""
   fi
   echo "The following files were generated:"
@@ -721,7 +708,7 @@ function outputJobSummary {
   echo "  ${domainPVCOutput}"
   echo "  ${jobOutput}"
   echo "  ${dcrOutput}"
-  if [ "${loadBalancer}" = "traefik" ]; then
+  if [ "${loadBalancer}" = "TRAEFIK" ]; then
     echo "  ${traefikSecurityOutput}"
     echo "  ${traefikOutput}"
   fi
@@ -752,7 +739,7 @@ if [ "${generateOnly}" = false ]; then
   createDomain
 
   # Setup load balancer
-  if [ "${loadBalancer}" = "traefik" ]; then
+  if [ "${loadBalancer}" = "TRAEFIK" ]; then
     setupTraefikLoadBalancer
   fi
 

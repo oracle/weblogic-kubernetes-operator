@@ -58,7 +58,7 @@ public class DomainFiles {
   }
 
   public Path getWeblogicDomainPath() {
-    return userProjectsPath().resolve("weblogic-domains").resolve(inputs.getDomainUid());
+    return userProjectsPath().resolve("weblogic-domains").resolve(inputs.getDomainUID());
   }
 
   public List<Path> getExpectedContents(boolean includeDirectory) {

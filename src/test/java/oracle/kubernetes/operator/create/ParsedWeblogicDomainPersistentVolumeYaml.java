@@ -18,7 +18,7 @@ public class ParsedWeblogicDomainPersistentVolumeYaml extends ParsedKubernetesYa
   }
 
   public V1PersistentVolume getWeblogicDomainPersistentVolume() {
-    return getPersistentVolumes().find(inputs.getDomainUid() + "-" + inputs.getPersistenceVolumeName());
+    return getPersistentVolumes().find(inputs.getDomainUID() + "-" + inputs.getPersistenceVolumeName());
   }
 
   public int getExpectedObjectCount() {
