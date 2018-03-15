@@ -21,6 +21,37 @@ box: maven:3.5.2-jdk-8
 build:
   steps:
   - script:
+    name: Preparing Java Client ..."
+    code: |
+      echo "mkdir $SSCM_BUILD_DIR"
+      mkdir $SSCM_BUILD_DIR
+      echo "cd $SSCM_BUILD_DIR"
+      cd $SSCM_BUILD_DIR
+      echo "git clone https://github.com/wmhopkins/client-java.git"
+      git clone https://github.com/wmhopkins/client-java.git
+      echo "cd client-java"
+      cd client-java
+      echo "mvn clean install"
+      mvn clean install
+
+  - script:
+    name: Prepare Plugins
+    code: |
+      echo "Preparing SSCM Plugins ..."
+      echo "cd $SSCM_BUILD_DIR"
+      cd $SSCM_BUILD_DIR
+      echo "git clone https://github.com/wmhopkins/sscm-client.git"
+      git clone https://github.com/wmhopkins/sscm-client.git
+      echo "cd sscm-client"
+      cd sscm-client
+      echo "mvn clean install"
+      mvn clean install
+      echo "sudo cp $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh /usr/local/bin"
+      sudo cp $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh /usr/local/bin
+      echo "sudo chmod +x /usr/local/bin/gpg-script.sh"
+      sudo chmod +x /usr/local/bin/gpg-script.sh
+
+  - script:
     name: Hello
     code: |
       echo "Building Oracle WebLogic Server Kubernetes Operator..."
