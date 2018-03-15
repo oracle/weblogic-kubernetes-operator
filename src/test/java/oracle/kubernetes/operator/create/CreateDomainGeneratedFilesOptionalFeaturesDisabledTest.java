@@ -6,7 +6,7 @@ import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import org.junit.BeforeClass;
 
 /**
- * Tests that the all artifacts in the yaml files that create-domain-operator.sh
+ * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh
  * creates are correct when the admin node port is disabled, the t3 channel is disabled,
  * there is no image pull secret, production mode is disabled and the persistence type
  * is hostPath

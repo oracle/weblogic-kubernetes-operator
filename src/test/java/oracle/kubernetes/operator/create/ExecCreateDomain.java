@@ -14,12 +14,16 @@ public class ExecCreateDomain {
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-domain.sh";
 
   public static ExecResult execCreateDomain(Path userProjectsPath, CreateDomainInputs inputs) throws Exception {
-    Path p = userProjectsPath.resolve("inputs.yaml");
+    Path p = getInputsYamlPath(userProjectsPath);
     newYaml().dump(inputs, Files.newBufferedWriter(p));
     return execCreateDomain(" -g -o " + userProjectsPath.toString() + " -i " + p.toString());
   }
 
   public static ExecResult execCreateDomain(String options) throws Exception {
     return ExecCommand.exec(CREATE_SCRIPT + options);
+  }
+
+  public static Path getInputsYamlPath(Path userProjectsPath) {
+    return userProjectsPath.resolve("create-weblogic-domain-inputs.yaml");
   }
 }

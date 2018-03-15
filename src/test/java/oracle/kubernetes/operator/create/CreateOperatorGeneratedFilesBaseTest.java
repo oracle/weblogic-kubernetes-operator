@@ -13,8 +13,9 @@ import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceSpec;
+import static oracle.kubernetes.operator.create.CreateOperatorInputs.readInputsYamlFile;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
 import org.apache.commons.codec.binary.Base64;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -59,8 +60,10 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatedCorrect_weblogicOperatorInputsYaml() {
-    // TBD
+  public void generatedCorrect_weblogicOperatorInputsYaml() throws Exception {
+    assertThat(
+      readInputsYamlFile(generatedFiles.getOperatorFiles().getCreateWeblogicOperatorInputsYamlPath()),
+      yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
   }
 
   @Test

@@ -1,7 +1,9 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.ExecCreateDomain.execCreateDomain;
+import java.nio.file.Path;
+
+import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
 import static oracle.kubernetes.operator.create.UserProjects.createUserProjectsDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,6 +54,8 @@ public class GeneratedDomainYamlFiles {
     }
   }
 
+  public Path getInputsYamlPath() { return ExecCreateDomain.getInputsYamlPath(userProjects.getPath()); }
+  public DomainFiles getDomainFiles() { return domainFiles; }
   public ParsedCreateWeblogicDomainJobYaml getCreateWeblogicDomainJobYaml() { return createWeblogicDomainJobYaml; }
   public ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() { return domainCustomResourceYaml; }
   public ParsedTraefikYaml getTraefikYaml() { return traefikYaml; }

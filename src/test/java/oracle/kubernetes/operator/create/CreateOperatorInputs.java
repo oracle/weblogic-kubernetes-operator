@@ -55,8 +55,12 @@ public class CreateOperatorInputs {
         .javaLoggingLevel("FINEST");
   }
 
-  public static CreateOperatorInputs readDefaultInputsFile() throws IOException {
-    Reader r = Files.newBufferedReader(defaultInputsPath(), Charset.forName("UTF-8"));
+  public static CreateOperatorInputs readDefaultInputsFile() throws Exception {
+    return readInputsYamlFile(defaultInputsPath());
+  }
+
+  public static CreateOperatorInputs readInputsYamlFile(Path path) throws Exception {
+    Reader r = Files.newBufferedReader(path, Charset.forName("UTF-8"));
     return (CreateOperatorInputs)newYaml().loadAs(r, CreateOperatorInputs.class);
   }
 

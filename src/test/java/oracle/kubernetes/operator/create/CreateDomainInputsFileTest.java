@@ -52,7 +52,7 @@ public class CreateDomainInputsFileTest {
         .exposeAdminT3Channel("false")
         .imagePullSecretName("")
         .javaOptions("-Dweblogic.StdoutDebugEnabled=false")
-        .loadBalancer("traefik")
+        .loadBalancer(LOAD_BALANCER_TRAEFIK)
         .loadBalancerAdminPort("30315")
         .loadBalancerWebPort("30305")
         .managedServerCount("2")
@@ -63,12 +63,12 @@ public class CreateDomainInputsFileTest {
         .nfsServer("nfsServer")
         .persistencePath("/scratch/k8s_dir/persistentVolume001")
         .persistenceSize("10Gi")
-        .persistenceType("hostPath")
+        .persistenceType(PERSISTENCE_TYPE_HOST_PATH)
         .persistenceVolumeClaimName("pv001-claim")
         .persistenceVolumeName("pv001")
         .productionModeEnabled("true")
         .secretName("domain1-weblogic-credentials")
-        .startupControl("AUTO")
+        .startupControl(STARTUP_CONTROL_AUTO)
         .t3ChannelPort("30012")
         .t3PublicAddress("kubernetes")));
   }

@@ -1,7 +1,9 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
+import java.nio.file.Path;
+
+import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
 import static oracle.kubernetes.operator.create.UserProjects.createUserProjectsDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,6 +42,8 @@ public class GeneratedOperatorYamlFiles {
     }
   }
 
+  public Path getInputsYamlPath() { return ExecCreateOperator.getInputsYamlPath(userProjects.getPath()); }
+  public OperatorFiles getOperatorFiles() { return operatorFiles; }
   public ParsedWeblogicOperatorYaml getWeblogicOperatorYaml() { return weblogicOperatorYaml; }
   public ParsedWeblogicOperatorSecurityYaml getWeblogicOperatorSecurityYaml() { return weblogicOperatorSecurityYaml; }
 

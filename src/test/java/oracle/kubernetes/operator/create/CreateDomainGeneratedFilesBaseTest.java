@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import static java.util.Arrays.asList;
 
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -14,8 +15,9 @@ import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
+import static oracle.kubernetes.operator.create.CreateDomainInputs.readInputsYamlFile;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -23,7 +25,7 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 /**
- * Tests that the all artifacts in the yaml files that create-domain-operator.sh
+ * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh
  * creates are correct when the admin node port is disabled, the t3 channel is disabled,
  * there is no image pull secret, and production mode is disabled.
  */
@@ -84,8 +86,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatedCorrect_weblogicDomainInputsYaml() {
-    // TBD
+  public void generatedCorrect_weblogicDomainInputsYaml() throws Exception {
+    assertThat(
+      readInputsYamlFile(generatedFiles.getDomainFiles().getCreateWeblogicDomainInputsYamlPath()),
+      yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
   }
 
   @Test
@@ -410,80 +414,80 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
           .putLabelsItem("weblogic.clusterName", getClusterNameLC()));
   }
 
-/*
   @Test
   public void generatesCorrect_traefikDeployment() throws Exception {
-//System.out.println("MOREAUT_DEBUG traefik deployment =\n" + newYaml().dump(generatedFiles.getTraefikYaml().getTraefikDeployment()));
-
-//
-kind: Deployment
-apiVersion: extensions/v1beta1
-metadata:
-  name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-  namespace: %NAMESPACE%
-  labels:
-    app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-    weblogic.domainUID: %DOMAIN_UID%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-  template:
-    metadata:
-      labels:
-        app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-        weblogic.domainUID: %DOMAIN_UID%
-        weblogic.clusterName: %CLUSTER_NAME_LC%
-    spec:
-      serviceAccountName: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-      terminationGracePeriodSeconds: 60
-      containers:
-      - image: traefik:1.4.5
-        name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "20Mi"
-          limits:
-            cpu: "100m"
-            memory: "30Mi"
-        readinessProbe:
-          tcpSocket:
-            port: 80
-          failureThreshold: 1
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 2
-        livenessProbe:
-          tcpSocket:
-            port: 80
-          failureThreshold: 3
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 2
-        volumeMounts:
-        - mountPath: /config
-          name: config
-        ports:
-        - name: http
-          containerPort: 80
-          protocol: TCP
-        - name: dash
-          containerPort: 8080
-          protocol: TCP
-        args:
-        - --configfile=/config/traefik.toml
-      volumes:
-      - name: config
-        configMap:
-          name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
-//
+    assertThat(
+      getActualTraefikDeployment(),
+      yamlEqualTo(getExpectedTraefikDeployment()));
   }
-*/
+
+  protected ExtensionsV1beta1Deployment getActualTraefikDeployment() {
+    return getTraefikYaml().getTraefikDeployment();
+  }
+
+  protected ExtensionsV1beta1Deployment getExpectedTraefikDeployment() {
+    return
+      newDeployment()
+        .apiVersion(API_VERSION_EXTENSIONS_V1BETA1) // TBD - why is traefik using this older version?
+        .metadata(newObjectMeta()
+          .name(getTraefikScope())
+          .namespace(getInputs().getNamespace())
+          .putLabelsItem("app", getTraefikScope())
+          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUid())
+          .putLabelsItem("weblogic.clusterName", getClusterNameLC()))
+        .spec(newDeploymentSpec()
+          .replicas(1)
+          .selector(newLabelSelector()
+            .putMatchLabelsItem("app", getTraefikScope()))
+          .template(newPodTemplateSpec()
+            .metadata(newObjectMeta()
+              .putLabelsItem("app", getTraefikScope())
+              .putLabelsItem("weblogic.domainUID", getInputs().getDomainUid())
+              .putLabelsItem("weblogic.clusterName", getClusterNameLC()))
+            .spec(newPodSpec()
+              .serviceAccountName(getTraefikScope())
+              .terminationGracePeriodSeconds(60L)
+              .addContainersItem(newContainer()
+                .name(getTraefikScope())
+                .image("traefik:1.4.5")
+                .resources(newResourceRequirements()
+                  .putRequestsItem("cpu", "100m")
+                  .putRequestsItem("memory", "20Mi")
+                  .putLimitsItem("cpu", "100m")
+                  .putLimitsItem("memory", "30Mi"))
+                .readinessProbe(newProbe()
+                  .tcpSocket(newTCPSocketAction()
+                    .port(newIntOrString(80)))
+                  .failureThreshold(1)
+                  .initialDelaySeconds(10)
+                  .periodSeconds(10)
+                  .successThreshold(1)
+                  .timeoutSeconds(2))
+                .livenessProbe(newProbe()
+                  .tcpSocket(newTCPSocketAction()
+                    .port(newIntOrString(80)))
+                  .failureThreshold(3)
+                  .initialDelaySeconds(10)
+                  .periodSeconds(10)
+                  .successThreshold(1)
+                  .timeoutSeconds(2))
+                .addVolumeMountsItem(newVolumeMount()
+                  .name("config")
+                  .mountPath("/config"))
+                .addPortsItem(newContainerPort()
+                  .name("http")
+                  .containerPort(80)
+                  .protocol("TCP"))
+                .addPortsItem(newContainerPort()
+                  .name("dash")
+                  .containerPort(8080)
+                  .protocol("TCP"))
+                .addArgsItem("--configfile=/config/traefik.toml"))
+              .addVolumesItem(newVolume()
+                .name("config")
+                  .configMap(newConfigMapVolumeSource()
+                    .name(getTraefikScope()))))));
+  }
 
   @Test
   public void generatesCorrect_traefikConfigMap() throws Exception {
