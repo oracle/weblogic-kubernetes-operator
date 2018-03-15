@@ -482,35 +482,21 @@ public class WlsConfigRetriever {
     LOGGER.entering();
 
     boolean result = false;
-    try {
-      // start a WebLogic edit session
-//      httpClient.executePostUrlOnServiceClusterIP(START_EDIT_SESSION_URL, serviceURL, "");
-//      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_STARTED);
-
-      // Create machine(s)
-      String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
-      for (String machineName: newMachineNames) {
-        LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
-        httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),
-                serviceURL, WlsMachineConfig.getCreatePayload(machineName), true);
-      }
-
-      // Update the dynamic cluster size of the WebLogic cluster
-      String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
-              wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
-              serviceURL,
-              wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize), true).getResponse();
-
-//      // activate the WebLogic edit session
-//      httpClient.executePostUrlOnServiceClusterIP(ACTIVATE_EDIT_SESSION_URL, serviceURL, "", true);
-
-      result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
-//      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_ACTIVATED);
-    } catch (HTTPException httpException) {
-      // cancel the WebLogic edit session
-//      httpClient.executePostUrlOnServiceClusterIP(CANCEL_EDIT_SESSION_URL, serviceURL, "");
-//      LOGGER.info(MessageKeys.WLS_EDIT_SESSION_CANCELLED);
+    // Create machine(s)
+    String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
+    for (String machineName: newMachineNames) {
+      LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
+      httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),
+              serviceURL, WlsMachineConfig.getCreatePayload(machineName));
     }
+
+    // Update the dynamic cluster size of the WebLogic cluster
+    String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
+            wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+            serviceURL,
+            wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize)).getResponse();
+
+    result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
     LOGGER.exiting(result);
     return result;
   }
