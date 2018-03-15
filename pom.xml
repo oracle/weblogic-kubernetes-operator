@@ -186,7 +186,7 @@
                             <goal>buildDetails</goal>
                         </goals>
                         <configuration>
-                            <grafeasUrl>http://localhost:8080</grafeasUrl>
+                            <grafeasUrl>http://35.197.6.236:8080</grafeasUrl>
                             <projectName>${project.name}</projectName>
                             <projectNumber>1253</projectNumber>
                             <builderName>BuildDetails</builderName>
