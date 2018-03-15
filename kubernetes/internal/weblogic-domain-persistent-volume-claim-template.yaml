@@ -14,4 +14,4 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: %PERSISTENT_VOLUME_SIZE%
+      storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%

@@ -8,8 +8,8 @@ import org.junit.BeforeClass;
 /**
  * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh
  * creates are correct when the admin node port is disabled, the t3 channel is disabled,
- * there is no image pull secret, production mode is disabled and the persistence type
- * is hostPath
+ * there is no weblogic domain image pull secret, production mode is disabled and the
+ * weblogic domain storage type is HOST_PATH.
  */
 public class CreateDomainGeneratedFilesOptionalFeaturesDisabledTest extends CreateDomainGeneratedFilesBaseTest {
 
@@ -23,7 +23,7 @@ public class CreateDomainGeneratedFilesOptionalFeaturesDisabledTest extends Crea
     V1PersistentVolume expected = super.getExpectedWeblogicDomainPersistentVolume();
     expected.getSpec()
       .hostPath(newHostPathVolumeSource()
-        .path(getInputs().getPersistencePath()));
+        .path(getInputs().getWeblogicDomainStoragePath()));
     return expected;
   }
 }

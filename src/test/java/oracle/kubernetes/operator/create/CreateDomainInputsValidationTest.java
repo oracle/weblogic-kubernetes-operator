@@ -10,8 +10,6 @@ import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
-
 /**
  * Tests that create-weblogic-domain.sh properly validates the parameters
  * that a customer can specify in the inputs yaml file.
@@ -22,24 +20,23 @@ public class CreateDomainInputsValidationTest {
 
   private static final String PARAM_ADMIN_PORT = "adminPort";
   private static final String PARAM_ADMIN_SERVER_NAME = "adminServerName";
-  private static final String PARAM_CREATE_DOMAIN_SCRIPT = "createDomainScript";
   private static final String PARAM_DOMAIN_NAME = "domainName";
-  private static final String PARAM_DOMAIN_UID = "domainUid";
+  private static final String PARAM_DOMAIN_UID = "domainUID";
   private static final String PARAM_STARTUP_CONTROL = "startupControl";
   private static final String PARAM_CLUSTER_NAME = "clusterName";
-  private static final String PARAM_MANAGED_SERVER_COUNT = "managedServerCount";
-  private static final String PARAM_MANAGED_SERVER_START_COUNT = "managedServerStartCount";
+  private static final String PARAM_CONFIGURED_MANAGED_SERVER_COUNT = "configuredManagedServerCount";
+  private static final String PARAM_INITIAL_MANAGED_SERVER_REPLICAS = "initialManagedServerReplicas";
   private static final String PARAM_MANAGED_SERVER_NAME_BASE = "managedServerNameBase";
   private static final String PARAM_MANAGED_SERVER_PORT = "managedServerPort";
-  private static final String PARAM_NFS_SERVER = "nfsServer";
-  private static final String PARAM_PERSISTENCE_PATH = "persistencePath";
-  private static final String PARAM_PERSISTENCE_SIZE = "persistenceSize";
-  private static final String PARAM_PERSISTENCE_TYPE = "persistenceType";
+  private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER = "weblogicDomainStorageNFSServer";
+  private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH = "weblogicDomainStoragePath";
+  private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_SIZE = "weblogicDomainStorageSize";
+  private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_TYPE = "weblogicDomainStorageType";
   private static final String PARAM_PERSISTENCE_VOLUME_CLAIM_NAME = "persistenceVolumeClaimName";
   private static final String PARAM_PERSISTENCE_VOLUME_NAME = "persistenceVolumeName";
   private static final String PARAM_PRODUCTION_MODE_ENABLED = "productionModeEnabled";
-  private static final String PARAM_SECRET_NAME = "secretName";
-  private static final String PARAM_IMAGE_PULL_SECRET_NAME = "imagePullSecretName";
+  private static final String PARAM_WEBLOGIC_CREDENTIALS_SECRET_NAME = "weblogicCredentialsSecretName";
+  private static final String PARAM_WEBLOGIC_IMAGE_PULL_SECRET_NAME = "weblogicImagePullSecretName";
   private static final String PARAM_T3_PUBLIC_ADDRESS = "t3PublicAddress";
   private static final String PARAM_T3_CHANNEL_PORT = "t3ChannelPort";
   private static final String PARAM_EXPOSE_ADMIN_T3_CHANNEL = "exposeAdminT3Channel";
@@ -48,7 +45,7 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_NAMESPACE = "namespace";
   private static final String PARAM_LOAD_BALANCER = "loadBalancer";
   private static final String PARAM_LOAD_BALANCER_WEB_PORT = "loadBalancerWebPort";
-  private static final String PARAM_LOAD_BALANCER_ADMIN_PORT = "loadBalancerAdminPort";
+  private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerDashboardPort";
   private static final String PARAM_JAVA_OPTIONS = "javaOptions";
 
   @Before
@@ -87,13 +84,6 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createDomain_with_missingCreateDomainScript_failsAndReturnsError() throws Exception {
-    assertThat(
-      execCreateDomain(newInputs().createDomainScript("")),
-      failsAndPrints(paramMissingError(PARAM_CREATE_DOMAIN_SCRIPT)));
-  }
-
-  @Test
   public void createDomain_with_missingDomainName_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateDomain(newInputs().domainName("")),
@@ -101,17 +91,17 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createDomain_with_missinDomainUid_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missinDomainUID_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().domainUid("")),
+      execCreateDomain(newInputs().domainUID("")),
       failsAndPrints(paramMissingError(PARAM_DOMAIN_UID)));
   }
 
   @Test
-  public void createDomain_with_upperCaseDomainUid_failsAndReturnsError() throws Exception {
-    String val = "TestDomainUid";
+  public void createDomain_with_upperCaseDomainUID_failsAndReturnsError() throws Exception {
+    String val = "TestDomainUID";
     assertThat(
-      execCreateDomain(newInputs().domainUid(val)),
+      execCreateDomain(newInputs().domainUID(val)),
       failsAndPrints(paramNotLowercaseError(PARAM_DOMAIN_UID, val)));
   }
 
@@ -163,35 +153,35 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createDomain_with_missingManagedServerCount_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missingConfiguredManagedServerCount_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().managedServerCount("")),
-      failsAndPrints(paramMissingError(PARAM_MANAGED_SERVER_COUNT)));
+      execCreateDomain(newInputs().configuredManagedServerCount("")),
+      failsAndPrints(paramMissingError(PARAM_CONFIGURED_MANAGED_SERVER_COUNT)));
   }
 
   @Test
-  public void createDomain_with_invalidManagedServerCount_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidConfiguredManagedServerCount_failsAndReturnsError() throws Exception {
     String val = "invalid-managed-server-count";
     assertThat(
       execCreateDomain(
-        newInputs().managedServerCount(val)),
-      failsAndPrints(invalidIntegerParamValueError(PARAM_MANAGED_SERVER_COUNT, val)));
+        newInputs().configuredManagedServerCount(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_CONFIGURED_MANAGED_SERVER_COUNT, val)));
   }
 
   @Test
-  public void createDomain_with_missingManagedServerStartCount_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missingInitialManagedServerReplicas_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().managedServerStartCount("")),
-      failsAndPrints(paramMissingError(PARAM_MANAGED_SERVER_START_COUNT)));
+      execCreateDomain(newInputs().initialManagedServerReplicas("")),
+      failsAndPrints(paramMissingError(PARAM_INITIAL_MANAGED_SERVER_REPLICAS)));
   }
 
   @Test
-  public void createDomain_with_invalidManagedServerStartCount_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidInitialManagedServerReplicas_failsAndReturnsError() throws Exception {
     String val = "invalid-managed-server-start-count";
     assertThat(
       execCreateDomain(
-        newInputs().managedServerStartCount(val)),
-      failsAndPrints(invalidIntegerParamValueError(PARAM_MANAGED_SERVER_START_COUNT, val)));
+        newInputs().initialManagedServerReplicas(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_INITIAL_MANAGED_SERVER_REPLICAS, val)));
   }
 
   @Test
@@ -218,49 +208,49 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createDomain_with_persistencetTypeNfsAndMissingNfsServer_failsAndReturnsError() throws Exception {
+  public void createDomain_with_weblogicDomainStorageTypeNfsAndMissingWeblogicDomainStorageNFSServer_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().persistenceType(PERSISTENCE_TYPE_NFS).nfsServer("")),
-      failsAndPrints(paramMissingError(PARAM_NFS_SERVER)));
+      execCreateDomain(newInputs().weblogicDomainStorageType(STORAGE_TYPE_NFS).weblogicDomainStorageNFSServer("")),
+      failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER)));
   }
 
   @Test
-  public void createDomain_with_invalidPersistenceType_failsAndReturnsError() throws Exception {
-    String val = "invalid-persistence-type";
+  public void createDomain_with_invalidWeblogicDomainStorageType_failsAndReturnsError() throws Exception {
+    String val = "invalid-storage-type";
     assertThat(
-      execCreateDomain(newInputs().persistenceType(val)),
-      failsAndPrints(invalidEnumParamValueError(PARAM_PERSISTENCE_TYPE, val)));
+      execCreateDomain(newInputs().weblogicDomainStorageType(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_WEBLOGIC_DOMAIN_STORAGE_TYPE, val)));
   }
 
   @Test
-  public void createDomain_with_persistenceTypeHostPath_and_missingNfsServer_succeeds() throws Exception {
+  public void createDomain_with_weblogicDomainStorageTypeHostPath_and_missingWeblogicDomainStorageNFSServer_succeeds() throws Exception {
     GeneratedDomainYamlFiles
       .generateDomainYamlFiles(
         newInputs()
-          .persistenceType(PERSISTENCE_TYPE_HOST_PATH)
-          .nfsServer(""))
+          .weblogicDomainStorageType(STORAGE_TYPE_HOST_PATH)
+          .weblogicDomainStorageNFSServer(""))
       .remove();
   }
 
   @Test
-  public void createDomain_with_missingPersistencePath_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missingWeblogicDomainStoragePath_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().persistencePath("")),
-      failsAndPrints(paramMissingError(PARAM_PERSISTENCE_PATH)));
+      execCreateDomain(newInputs().weblogicDomainStoragePath("")),
+      failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH)));
   }
 
   @Test
-  public void createDomain_with_missingPersistenceSize_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missingWeblogicDomainStorageSize_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().persistenceSize("")),
-      failsAndPrints(paramMissingError(PARAM_PERSISTENCE_SIZE)));
+      execCreateDomain(newInputs().weblogicDomainStorageSize("")),
+      failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_SIZE)));
   }
 
   @Test
-  public void createDomain_with_missingPersistenceType_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missingWeblogicDomainStorageType_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().persistenceType("")),
-      failsAndPrints(paramMissingError(PARAM_PERSISTENCE_TYPE)));
+      execCreateDomain(newInputs().weblogicDomainStorageType("")),
+      failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_TYPE)));
   }
 
   @Test
@@ -312,25 +302,25 @@ public class CreateDomainInputsValidationTest {
   @Test
   public void createDomain_with_missingSecretName_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().secretName("")),
-      failsAndPrints(paramMissingError(PARAM_SECRET_NAME)));
+      execCreateDomain(newInputs().weblogicCredentialsSecretName("")),
+      failsAndPrints(paramMissingError(PARAM_WEBLOGIC_CREDENTIALS_SECRET_NAME)));
   }
 
   @Test
   public void createDomain_with_upperCaseSecretName_failsAndReturnsError() throws Exception {
-    String val = "TestSecretName";
+    String val = "TestWeblogicCredentialsSecretName";
     assertThat(
-      execCreateDomain(newInputs().secretName(val)),
-      failsAndPrints(paramNotLowercaseError(PARAM_SECRET_NAME, val)));
+      execCreateDomain(newInputs().weblogicCredentialsSecretName(val)),
+      failsAndPrints(paramNotLowercaseError(PARAM_WEBLOGIC_CREDENTIALS_SECRET_NAME, val)));
   }
 
   // TBD - shouldn't this only be required if exposeAdminT3Channel is true?
   @Test
   public void createDomain_with_upperCaseImagePullSecretName_failsAndReturnsError() throws Exception {
-    String val = "TestImagePullSecretName";
+    String val = "TestWeblogicImagePullSecretName";
     assertThat(
-      execCreateDomain(newInputs().imagePullSecretName(val)),
-      failsAndPrints(paramNotLowercaseError(PARAM_IMAGE_PULL_SECRET_NAME, val)));
+      execCreateDomain(newInputs().weblogicImagePullSecretName(val)),
+      failsAndPrints(paramNotLowercaseError(PARAM_WEBLOGIC_IMAGE_PULL_SECRET_NAME, val)));
   }
 
   @Test
@@ -455,19 +445,19 @@ public class CreateDomainInputsValidationTest {
 
   // TBD - should this only be required if loadBalancer is not 'none'?
   @Test
-  public void createDomain_with_missingLoadBalancerAdminPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_missingLoadBalancerDashboardPort_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().loadBalancerAdminPort("")),
-      failsAndPrints(paramMissingError(PARAM_LOAD_BALANCER_ADMIN_PORT)));
+      execCreateDomain(newInputs().loadBalancerDashboardPort("")),
+      failsAndPrints(paramMissingError(PARAM_LOAD_BALANCER_DASHBOARD_PORT)));
   }
 
   @Test
-  public void createDomain_with_invalidLoadBalancerAdminPort_failsAndReturnsError() throws Exception {
+  public void createDomain_with_invalidLoadBalancerDashboardPort_failsAndReturnsError() throws Exception {
     String val = "invalid-load-balancer-admin-port";
     assertThat(
       execCreateDomain(
-        newInputs().loadBalancerAdminPort(val)),
-      failsAndPrints(invalidIntegerParamValueError(PARAM_LOAD_BALANCER_ADMIN_PORT, val)));
+        newInputs().loadBalancerDashboardPort(val)),
+      failsAndPrints(invalidIntegerParamValueError(PARAM_LOAD_BALANCER_DASHBOARD_PORT, val)));
   }
 
   // TBD - shouldn't we allow empty java options?

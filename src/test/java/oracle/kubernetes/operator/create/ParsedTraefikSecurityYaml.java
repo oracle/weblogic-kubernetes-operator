@@ -35,6 +35,6 @@ public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
   }
 
   private String getClusterScope() {
-    return inputs.getDomainUid() + "-" + inputs.getClusterName().toLowerCase();
+    return inputs.getDomainUID() + "-" + inputs.getClusterName().toLowerCase();
   }
 }

@@ -18,7 +18,7 @@ public class ParsedDomainCustomResourceYaml extends ParsedKubernetesYaml {
   }
 
   public Domain getDomain() {
-    return getDomains().find(inputs.getDomainUid());
+    return getDomains().find(inputs.getDomainUID());
   }
 
   public int getExpectedObjectCount() {

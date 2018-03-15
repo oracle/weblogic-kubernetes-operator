@@ -19,11 +19,11 @@ public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getCreateWeblogicDomainConfigMap() {
-    return getConfigMaps().find("domain-" + inputs.getDomainUid() + "-scripts");
+    return getConfigMaps().find("domain-" + inputs.getDomainUID() + "-scripts");
   }
 
   public V1Job getCreateWeblogicDomainJob() {
-    return getJobs().find("domain-" + inputs.getDomainUid() + "-job");
+    return getJobs().find("domain-" + inputs.getDomainUID() + "-job");
   }
 
   public int getExpectedObjectCount() {

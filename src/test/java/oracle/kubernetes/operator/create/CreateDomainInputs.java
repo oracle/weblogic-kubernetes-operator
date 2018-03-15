@@ -25,10 +25,10 @@ import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
  */
 public class CreateDomainInputs {
 
-  public static final String LOAD_BALANCER_NONE = "none";
-  public static final String LOAD_BALANCER_TRAEFIK = "traefik";
-  public static final String PERSISTENCE_TYPE_HOST_PATH = "hostPath";
-  public static final String PERSISTENCE_TYPE_NFS = "nfs";
+  public static final String LOAD_BALANCER_NONE = "NONE";
+  public static final String LOAD_BALANCER_TRAEFIK = "TRAEFIK";
+  public static final String STORAGE_TYPE_HOST_PATH = "HOST_PATH";
+  public static final String STORAGE_TYPE_NFS = "NFS";
   public static final String STARTUP_CONTROL_NONE = "NONE";
   public static final String STARTUP_CONTROL_ALL = "ALL";
   public static final String STARTUP_CONTROL_ADMIN = "ADMIN";
@@ -39,24 +39,23 @@ public class CreateDomainInputs {
 
   private String adminPort = "";
   private String adminServerName = "";
-  private String createDomainScript = "";
   private String domainName = "";
-  private String domainUid = "";
+  private String domainUID = "";
   private String startupControl = "";
   private String clusterName = "";
-  private String managedServerCount = "";
-  private String managedServerStartCount = "";
+  private String configuredManagedServerCount = "";
+  private String initialManagedServerReplicas = "";
   private String managedServerNameBase = "";
   private String managedServerPort = "";
-  private String nfsServer = "";
-  private String persistencePath = "";
-  private String persistenceSize = "";
-  private String persistenceType = "";
+  private String weblogicDomainStorageNFSServer = "";
+  private String weblogicDomainStoragePath = "";
+  private String weblogicDomainStorageSize = "";
+  private String weblogicDomainStorageType = "";
   private String persistenceVolumeClaimName = "";
   private String persistenceVolumeName = "";
   private String productionModeEnabled = "";
-  private String secretName = "";
-  private String imagePullSecretName = "";
+  private String weblogicCredentialsSecretName = "";
+  private String weblogicImagePullSecretName = "";
   private String t3PublicAddress = "";
   private String t3ChannelPort = "";
   private String exposeAdminT3Channel = "";
@@ -65,7 +64,7 @@ public class CreateDomainInputs {
   private String namespace = "";
   private String loadBalancer = "";
   private String loadBalancerWebPort = "";
-  private String loadBalancerAdminPort = "";
+  private String loadBalancerDashboardPort = "";
   private String javaOptions = "";
 
   public static CreateDomainInputs newInputs() throws Exception {
@@ -76,22 +75,22 @@ public class CreateDomainInputs {
         .adminServerName("TestAdminServer")
         .clusterName("TestCluster")
         .domainName("TestDomain")
-        .domainUid("test-domain-uid")
+        .domainUID("test-domain-uid")
         .javaOptions("TestJavaOptions")
-        .loadBalancerAdminPort("31315")
+        .loadBalancerDashboardPort("31315")
         .loadBalancerWebPort("31305")
-        .managedServerCount("4")
+        .configuredManagedServerCount("4")
         .managedServerNameBase("TestManagedServer")
         .managedServerPort("8002")
-        .managedServerStartCount("3")
-        .nfsServer("TestNfsServer")
+        .initialManagedServerReplicas("3")
+        .weblogicDomainStorageNFSServer("TestDomainStorageNFSServer")
         .namespace("test-domain-namespace")
-        .persistencePath("TestPersistencePath")
-        .persistenceSize("20Gi")
+        .weblogicDomainStoragePath("TestDomainStoragePath")
+        .weblogicDomainStorageSize("20Gi")
         .persistenceVolumeClaimName("test-domain-pvc")
         .persistenceVolumeName("test-domain-pv")
         .productionModeEnabled("false")
-        .secretName("test-weblogic-credentials")
+        .weblogicCredentialsSecretName("test-weblogic-credentials")
         .startupControl(STARTUP_CONTROL_ALL)
         .t3PublicAddress("TestT3PublicAddress")
         .t3ChannelPort("30013");
@@ -136,19 +135,6 @@ public class CreateDomainInputs {
     return this;
   }
 
-  public String getCreateDomainScript() {
-    return createDomainScript;
-  }
-
-  public void setCreateDomainScript(String createDomainScript) {
-    this.createDomainScript = convertNullToEmptyString(createDomainScript);
-  }
-
-  public CreateDomainInputs createDomainScript(String createDomainScript) {
-    setCreateDomainScript(createDomainScript);
-    return this;
-  }
-
   public String getDomainName() {
     return domainName;
   }
@@ -162,16 +148,16 @@ public class CreateDomainInputs {
     return this;
   }
 
-  public String getDomainUid() {
-    return domainUid;
+  public String getDomainUID() {
+    return domainUID;
   }
 
-  public void setDomainUid(String domainUid) {
-    this.domainUid = convertNullToEmptyString(domainUid);
+  public void setDomainUID(String domainUID) {
+    this.domainUID = convertNullToEmptyString(domainUID);
   }
 
-  public CreateDomainInputs domainUid(String domainUid) {
-    setDomainUid(domainUid);
+  public CreateDomainInputs domainUID(String domainUID) {
+    setDomainUID(domainUID);
     return this;
   }
 
@@ -201,29 +187,29 @@ public class CreateDomainInputs {
     return this;
   }
 
-  public String getManagedServerCount() {
-    return managedServerCount;
+  public String getConfiguredManagedServerCount() {
+    return configuredManagedServerCount;
   }
 
-  public void setManagedServerCount(String managedServerCount) {
-    this.managedServerCount = convertNullToEmptyString(managedServerCount);
+  public void setConfiguredManagedServerCount(String configuredManagedServerCount) {
+    this.configuredManagedServerCount = convertNullToEmptyString(configuredManagedServerCount);
   }
 
-  public CreateDomainInputs managedServerCount(String managedServerCount) {
-    setManagedServerCount(managedServerCount);
+  public CreateDomainInputs configuredManagedServerCount(String configuredManagedServerCount) {
+    setConfiguredManagedServerCount(configuredManagedServerCount);
     return this;
   }
 
-  public String getManagedServerStartCount() {
-    return managedServerStartCount;
+  public String getInitialManagedServerReplicas() {
+    return initialManagedServerReplicas;
   }
 
-  public void setManagedServerStartCount(String managedServerStartCount) {
-    this.managedServerStartCount = convertNullToEmptyString(managedServerStartCount);
+  public void setInitialManagedServerReplicas(String initialManagedServerReplicas) {
+    this.initialManagedServerReplicas = convertNullToEmptyString(initialManagedServerReplicas);
   }
 
-  public CreateDomainInputs managedServerStartCount(String managedServerStartCount) {
-    setManagedServerStartCount(managedServerStartCount);
+  public CreateDomainInputs initialManagedServerReplicas(String initialManagedServerReplicas) {
+    setInitialManagedServerReplicas(initialManagedServerReplicas);
     return this;
   }
 
@@ -253,55 +239,55 @@ public class CreateDomainInputs {
     return this;
   }
 
-  public String getNfsServer() {
-    return nfsServer;
+  public String getWeblogicDomainStorageNFSServer() {
+    return weblogicDomainStorageNFSServer;
   }
 
-  public void setNfsServer(String nfsServer) {
-    this.nfsServer = convertNullToEmptyString(nfsServer);
+  public void setWeblogicDomainStorageNFSServer(String weblogicDomainStorageNFSServer) {
+    this.weblogicDomainStorageNFSServer = convertNullToEmptyString(weblogicDomainStorageNFSServer);
   }
 
-  public CreateDomainInputs nfsServer(String nfsServer) {
-    setNfsServer(nfsServer);
+  public CreateDomainInputs weblogicDomainStorageNFSServer(String weblogicDomainStorageNFSServer) {
+    setWeblogicDomainStorageNFSServer(weblogicDomainStorageNFSServer);
     return this;
   }
 
-  public String getPersistencePath() {
-    return persistencePath;
+  public String getWeblogicDomainStoragePath() {
+    return weblogicDomainStoragePath;
   }
 
-  public void setPersistencePath(String persistencePath) {
-    this.persistencePath = convertNullToEmptyString(persistencePath);
+  public void setWeblogicDomainStoragePath(String weblogicDomainStoragePath) {
+    this.weblogicDomainStoragePath = convertNullToEmptyString(weblogicDomainStoragePath);
   }
 
-  public CreateDomainInputs persistencePath(String persistencePath) {
-    setPersistencePath(persistencePath);
+  public CreateDomainInputs weblogicDomainStoragePath(String weblogicDomainStoragePath) {
+    setWeblogicDomainStoragePath(weblogicDomainStoragePath);
     return this;
   }
 
-  public String getPersistenceSize() {
-    return persistenceSize;
+  public String getWeblogicDomainStorageSize() {
+    return weblogicDomainStorageSize;
   }
 
-  public void setPersistenceSize(String persistenceSize) {
-    this.persistenceSize = convertNullToEmptyString(persistenceSize);
+  public void setWeblogicDomainStorageSize(String weblogicDomainStorageSize) {
+    this.weblogicDomainStorageSize = convertNullToEmptyString(weblogicDomainStorageSize);
   }
 
-  public CreateDomainInputs persistenceSize(String persistenceSize) {
-    setPersistenceSize(persistenceSize);
+  public CreateDomainInputs weblogicDomainStorageSize(String weblogicDomainStorageSize) {
+    setWeblogicDomainStorageSize(weblogicDomainStorageSize);
     return this;
   }
 
-  public String getPersistenceType() {
-    return persistenceType;
+  public String getWeblogicDomainStorageType() {
+    return weblogicDomainStorageType;
   }
 
-  public void setPersistenceType(String persistenceType) {
-    this.persistenceType = convertNullToEmptyString(persistenceType);
+  public void setWeblogicDomainStorageType(String weblogicDomainStorageType) {
+    this.weblogicDomainStorageType = convertNullToEmptyString(weblogicDomainStorageType);
   }
 
-  public CreateDomainInputs persistenceType(String persistenceType) {
-    setPersistenceType(persistenceType);
+  public CreateDomainInputs weblogicDomainStorageType(String weblogicDomainStorageType) {
+    setWeblogicDomainStorageType(weblogicDomainStorageType);
     return this;
   }
 
@@ -344,29 +330,29 @@ public class CreateDomainInputs {
     return this;
   }
 
-  public String getSecretName() {
-    return secretName;
+  public String getWeblogicCredentialsSecretName() {
+    return weblogicCredentialsSecretName;
   }
 
-  public void setSecretName(String secretName) {
-    this.secretName = convertNullToEmptyString(secretName);
+  public void setWeblogicCredentialsSecretName(String weblogicCredentialsSecretName) {
+    this.weblogicCredentialsSecretName = convertNullToEmptyString(weblogicCredentialsSecretName);
   }
 
-  public CreateDomainInputs secretName(String secretName) {
-    setSecretName(secretName);
+  public CreateDomainInputs weblogicCredentialsSecretName(String weblogicCredentialsSecretName) {
+    setWeblogicCredentialsSecretName(weblogicCredentialsSecretName);
     return this;
   }
 
-  public String getImagePullSecretName() {
-    return imagePullSecretName;
+  public String getWeblogicImagePullSecretName() {
+    return weblogicImagePullSecretName;
   }
 
-  public void setImagePullSecretName(String imagePullSecretName) {
-    this.imagePullSecretName = convertNullToEmptyString(imagePullSecretName);
+  public void setWeblogicImagePullSecretName(String weblogicImagePullSecretName) {
+    this.weblogicImagePullSecretName = convertNullToEmptyString(weblogicImagePullSecretName);
   }
 
-  public CreateDomainInputs imagePullSecretName(String imagePullSecretName) {
-    setImagePullSecretName(imagePullSecretName);
+  public CreateDomainInputs weblogicImagePullSecretName(String weblogicImagePullSecretName) {
+    setWeblogicImagePullSecretName(weblogicImagePullSecretName);
     return this;
   }
 
@@ -475,16 +461,16 @@ public class CreateDomainInputs {
     return this;
   }
 
-  public String getLoadBalancerAdminPort() {
-    return loadBalancerAdminPort;
+  public String getLoadBalancerDashboardPort() {
+    return loadBalancerDashboardPort;
   }
 
-  public void setLoadBalancerAdminPort(String loadBalancerAdminPort) {
-    this.loadBalancerAdminPort = convertNullToEmptyString(loadBalancerAdminPort);
+  public void setLoadBalancerDashboardPort(String loadBalancerDashboardPort) {
+    this.loadBalancerDashboardPort = convertNullToEmptyString(loadBalancerDashboardPort);
   }
 
-  public CreateDomainInputs loadBalancerAdminPort(String loadBalancerAdminPort) {
-    setLoadBalancerAdminPort(loadBalancerAdminPort);
+  public CreateDomainInputs loadBalancerDashboardPort(String loadBalancerDashboardPort) {
+    setLoadBalancerDashboardPort(loadBalancerDashboardPort);
     return this;
   }
 

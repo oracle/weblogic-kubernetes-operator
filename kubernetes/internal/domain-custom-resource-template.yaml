@@ -25,7 +25,7 @@ spec:
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   adminSecret: 
-    name: %SECRET_NAME%
+    name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
   # The name of the Admin Server
   asName: "%ADMIN_SERVER_NAME%"
   # The Admin Server's ListenPort
@@ -63,7 +63,7 @@ spec:
   clusterStartup:
   - desiredState: "RUNNING"
     clusterName: "%CLUSTER_NAME%"
-    replicas: %MANAGED_SERVER_START_COUNT%
+    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
     env:
     - name: JAVA_OPTIONS
       value: "%JAVA_OPTIONS%"
