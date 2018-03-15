@@ -46,6 +46,7 @@ build:
       echo "Building Java Client ..."
       echo "cd $SSCM_BUILD_DIR/client-java"
       cd $SSCM_BUILD_DIR/client-java
+      echo "mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install"
       mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install
 
   - script:
@@ -54,6 +55,7 @@ build:
       echo "Building SSCM Plugins ..."
       echo "cd $SSCM_BUILD_DIR/sscm-client"
       cd $SSCM_BUILD_DIR/sscm-client
+      echo "mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install"
       mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install
 
   - script:
