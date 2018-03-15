@@ -21,35 +21,40 @@ box: maven:3.5.2-jdk-8
 build:
   steps:
   - script:
-    name: Preparing Java Client ..."
+    name: Fetch SSCM Dependencies
     code: |
+      echo "Fetching SSCM Dependencies ..."
       echo "mkdir $SSCM_BUILD_DIR"
       mkdir $SSCM_BUILD_DIR
       echo "cd $SSCM_BUILD_DIR"
       cd $SSCM_BUILD_DIR
       echo "git clone https://github.com/wmhopkins/client-java.git"
       git clone https://github.com/wmhopkins/client-java.git
-      echo "cd client-java"
-      cd client-java
-      echo "mvn clean install"
-      mvn clean install
-
-  - script:
-    name: Prepare Plugins
-    code: |
-      echo "Preparing SSCM Plugins ..."
-      echo "cd $SSCM_BUILD_DIR"
-      cd $SSCM_BUILD_DIR
       echo "git clone https://github.com/wmhopkins/sscm-client.git"
       git clone https://github.com/wmhopkins/sscm-client.git
-      echo "cd sscm-client"
-      cd sscm-client
-      echo "mvn clean install"
-      mvn clean install
-      echo "sudo cp $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh /usr/local/bin"
-      sudo cp $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh /usr/local/bin
-      echo "sudo chmod +x /usr/local/bin/gpg-script.sh"
-      sudo chmod +x /usr/local/bin/gpg-script.sh
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh $WERCKER_CACHE_DIR"
+      cp -f $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh $WERCKER_CACHE_DIR
+      echo "chmod +x $WERCKER_CACHE_DIR/gpg-script.sh"
+      chmod +x $WERCKER_CACHE_DIR/gpg-script.sh
+      echo "ls -l $WERCKER_CACHE_DIR/gpg-script.sh"
+      ls -l $WERCKER_CACHE_DIR/gpg-script.sh
+      echo "GPG_SCRIPT env variable set to: '$GPG_SCRIPT'"
+
+  - script:
+    name: Build Java Client
+    code: |
+      echo "Building Java Client ..."
+      echo "cd $SSCM_BUILD_DIR/client-java"
+      cd $SSCM_BUILD_DIR/client-java
+      mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install
+
+  - script:
+    name: Build SSCM Plugins
+    code: |
+      echo "Building SSCM Plugins ..."
+      echo "cd $SSCM_BUILD_DIR/sscm-client"
+      cd $SSCM_BUILD_DIR/sscm-client
+      mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install
 
   - script:
     name: Hello
