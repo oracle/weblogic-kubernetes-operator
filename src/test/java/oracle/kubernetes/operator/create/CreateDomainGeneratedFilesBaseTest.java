@@ -84,6 +84,53 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   @Test
+  public void generatedCorrect_weblogicDomainInputsYaml() {
+    // TBD
+  }
+
+  @Test
+  public void createWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+      getCreateWeblogicDomainJobYaml().getObjectCount(),
+      is(getCreateWeblogicDomainJobYaml().getExpectedObjectCount()));
+  }
+
+  @Test
+  public void domainCustomResourceYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+      getDomainCustomResourceYaml().getObjectCount(),
+      is(getDomainCustomResourceYaml().getExpectedObjectCount()));
+  }
+
+  @Test
+  public void traefikSecurityYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+      getTraefikSecurityYaml().getObjectCount(),
+      is(getTraefikSecurityYaml().getExpectedObjectCount()));
+  }
+
+  @Test
+  public void traefikYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+      getTraefikYaml().getObjectCount(),
+      is(getTraefikYaml().getExpectedObjectCount()));
+  }
+
+  @Test
+  public void weblogicDomainPersistentVolumeClaimYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+      getWeblogicDomainPersistentVolumeClaimYaml().getObjectCount(),
+      is(getWeblogicDomainPersistentVolumeClaimYaml().getExpectedObjectCount()));
+  }
+
+  @Test
+  public void weblogicDomainPersistentVolumeYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+      getWeblogicDomainPersistentVolumeYaml().getObjectCount(),
+      is(getWeblogicDomainPersistentVolumeYaml().getExpectedObjectCount()));
+  }
+
+  @Test
   public void generatesCorrect_createWeblogicDomainJob() throws Exception {
     assertThat(
       getActualCreateWeblogicDomainJob(),

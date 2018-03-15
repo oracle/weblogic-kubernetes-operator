@@ -8,17 +8,20 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 /**
  * Parses a generated domain-custom-resource.yaml file into a set of typed k8s java objects
  */
-public class ParsedDomainCustomResourceYaml {
+public class ParsedDomainCustomResourceYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
-  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedDomainCustomResourceYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+    super(yamlPath);
     this.inputs = inputs;
-    parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
 
   public Domain getDomain() {
-    return parsedYaml.getDomains().find(inputs.getDomainUid());
+    return getDomains().find(inputs.getDomainUid());
+  }
+
+  public int getExpectedObjectCount() {
+    return 1;
   }
 }

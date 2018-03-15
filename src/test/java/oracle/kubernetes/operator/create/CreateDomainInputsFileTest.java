@@ -1,12 +1,13 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.nio.file.Files;
-
 import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
@@ -77,15 +78,18 @@ public class CreateDomainInputsFileTest {
     // customize the domain uid so that we can tell that it generated the yaml files based on this inputs
     CreateDomainInputs inputs = readDefaultInputsFile().domainUid("test-domain-uid");
     assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
+
+    // Make sure the generated directory has the correct list of files
     DomainFiles domainFiles = new DomainFiles(userProjects.getPath(), inputs);
-    assertThat(Files.isRegularFile(domainFiles.getCreateWeblogicDomainInputsYamlPath()), is(true));
-    assertThat(Files.isRegularFile(domainFiles.getCreateWeblogicDomainJobYamlPath()), is(true));
-    assertThat(Files.isRegularFile(domainFiles.getDomainCustomResourceYamlPath()), is(true));
-    assertThat(Files.isRegularFile(domainFiles.getTraefikYamlPath()), is(true));
-    assertThat(Files.isRegularFile(domainFiles.getTraefikSecurityYamlPath()), is(true));
-    assertThat(Files.isRegularFile(domainFiles.getWeblogicDomainPersistentVolumeYamlPath()), is(true));
-    assertThat(Files.isRegularFile(domainFiles.getWeblogicDomainPersistentVolumeClaimYamlPath()), is(true));
-    // TBD - assert that the generated per-domain directory doesn't contain any extra files?
-    // TBD - assert that the copy of the inputs in generated per-domain directory matches the origin one
+    List<Path> expectedFiles = domainFiles.getExpectedContents(true); // include the directory too
+    List<Path> actualFiles = userProjects.getContents(domainFiles.getWeblogicDomainPath());
+    assertThat(
+      actualFiles,
+      containsInAnyOrder(expectedFiles.toArray(new Path[expectedFiles.size()])));
+
+    // Make sure that the yaml files are regular files
+    for (Path path : domainFiles.getExpectedContents(false)) { // don't include the directory too
+      assertThat("Expect that " + path + " is a regular file", Files.isRegularFile(path), is(true));
+    }
   }
 }

@@ -524,6 +524,8 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUid}:g" ${traefikSecurityOutput}
   sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
 
+  # Remove any "...yaml-e" files left over from running sed
+  rm -f ${domainOutputDir}/*.yaml-e
 }
 
 #

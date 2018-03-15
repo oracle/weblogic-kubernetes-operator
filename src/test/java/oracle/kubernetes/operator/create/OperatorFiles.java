@@ -2,6 +2,8 @@
 package oracle.kubernetes.operator.create;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Manages the input and generated files for an operator
@@ -37,5 +39,16 @@ public class OperatorFiles {
 
   public Path getWeblogicOperatorPath() {
     return userProjectsPath().resolve("weblogic-operators").resolve(inputs.getNamespace());
+  }
+
+  public List<Path> getExpectedContents(boolean includeDirectory) {
+    List<Path> rtn = new ArrayList();
+    rtn.add(getCreateWeblogicOperatorInputsYamlPath());
+    rtn.add(getWeblogicOperatorYamlPath());
+    rtn.add(getWeblogicOperatorSecurityYamlPath());
+    if (includeDirectory) {
+      rtn.add(getWeblogicOperatorPath());
+    }
+    return rtn;
   }
 }

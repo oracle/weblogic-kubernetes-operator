@@ -1,11 +1,13 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import java.nio.file.Files;
-
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
@@ -62,7 +64,7 @@ public class CreateOperatorInputsFileTest {
   @Test
   public void createOperatorWithoutSpecifyingInputsFile_usesDefaultInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
     assertThat(execCreateOperator(" -g -o " + userProjects.getPath().toString()), succeedsAndPrints("Completed"));
-    assertGeneratedYamlFilesExist(readDefaultInputsFile());
+    assertThatOnlyTheExpectedGeneratedYamlFilesExist(readDefaultInputsFile());
   }
 
   @Test
@@ -70,15 +72,21 @@ public class CreateOperatorInputsFileTest {
     // customize the namespace name so that we can tell that it generated the yaml files based on this inputs instead of the default one
     CreateOperatorInputs inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
     assertThat(execCreateOperator(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
-    assertGeneratedYamlFilesExist(inputs);
+    assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
   }
 
-  private void assertGeneratedYamlFilesExist(CreateOperatorInputs inputs) {
+  private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(CreateOperatorInputs inputs) throws Exception {
+    // Make sure the generated directory has the correct list of files
     OperatorFiles operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);
-    assertThat(Files.isRegularFile(operatorFiles.getCreateWeblogicOperatorInputsYamlPath()), is(true));
-    assertThat(Files.isRegularFile(operatorFiles.getWeblogicOperatorYamlPath()), is(true));
-    assertThat(Files.isRegularFile(operatorFiles.getWeblogicOperatorSecurityYamlPath()), is(true));
-    // TBD - assert that the generated per-operator directory doesn't contain any extra files?
-    // TBD - assert that the copy of the inputs in generated per-operator directory matches the origin one
+    List<Path> expectedFiles = operatorFiles.getExpectedContents(true); // include the directory too
+    List<Path> actualFiles = userProjects.getContents(operatorFiles.getWeblogicOperatorPath());
+    assertThat(
+      actualFiles,
+      containsInAnyOrder(expectedFiles.toArray(new Path[expectedFiles.size()])));
+
+    // Make sure that the yaml files are regular files
+    for (Path path : operatorFiles.getExpectedContents(false)) { // don't include the directory too
+      assertThat("Expect that " + path + " is a regular file", Files.isRegularFile(path), is(true));
+    }
   }
 }

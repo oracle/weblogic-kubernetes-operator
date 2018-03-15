@@ -2,6 +2,8 @@
 package oracle.kubernetes.operator.create;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Manages the input and generated files for a domain
@@ -57,5 +59,20 @@ public class DomainFiles {
 
   public Path getWeblogicDomainPath() {
     return userProjectsPath().resolve("weblogic-domains").resolve(inputs.getDomainUid());
+  }
+
+  public List<Path> getExpectedContents(boolean includeDirectory) {
+    List<Path> rtn = new ArrayList();
+    rtn.add(getCreateWeblogicDomainInputsYamlPath());
+    rtn.add(getCreateWeblogicDomainJobYamlPath());
+    rtn.add(getDomainCustomResourceYamlPath());
+    rtn.add(getTraefikYamlPath());
+    rtn.add(getTraefikSecurityYamlPath());
+    rtn.add(getWeblogicDomainPersistentVolumeYamlPath());
+    rtn.add(getWeblogicDomainPersistentVolumeClaimYamlPath());
+    if (includeDirectory) {
+      rtn.add(getWeblogicDomainPath());
+    }
+    return rtn;
   }
 }

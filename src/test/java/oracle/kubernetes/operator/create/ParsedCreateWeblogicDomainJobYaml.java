@@ -9,21 +9,24 @@ import io.kubernetes.client.models.V1Job;
 /**
  * Parses a generated create-weblogic-domain-job.yaml file into a set of typed k8s java objects
  */
-public class ParsedCreateWeblogicDomainJobYaml {
+public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
-  private ParsedKubernetesYaml parsedYaml;
 
   public ParsedCreateWeblogicDomainJobYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+    super(yamlPath);
     this.inputs = inputs;
-    parsedYaml = new ParsedKubernetesYaml(yamlPath);
   }
 
   public V1ConfigMap getCreateWeblogicDomainConfigMap() {
-    return parsedYaml.getConfigMaps().find("domain-" + inputs.getDomainUid() + "-scripts");
+    return getConfigMaps().find("domain-" + inputs.getDomainUid() + "-scripts");
   }
 
   public V1Job getCreateWeblogicDomainJob() {
-    return parsedYaml.getJobs().find("domain-" + inputs.getDomainUid() + "-job");
+    return getJobs().find("domain-" + inputs.getDomainUid() + "-job");
+  }
+
+  public int getExpectedObjectCount() {
+    return 2;
   }
 }

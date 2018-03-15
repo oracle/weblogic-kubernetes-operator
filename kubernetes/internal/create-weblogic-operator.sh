@@ -416,6 +416,8 @@ function createYamlFiles {
   echo Running the weblogic operator security customization script
   ${genSecPolicyScript} ${serviceAccount} ${namespace} "${targetNamespaces}" -o ${oprSecurityFile}
 
+  # Remove any "...yaml-e" files left over from running sed
+  rm -f ${oprOutputDir}/*.yaml-e
 }
 
 #

@@ -34,12 +34,9 @@ import org.apache.commons.codec.binary.Base64;
 public class ParsedKubernetesYaml {
 
   private Map<String,TypeHandler> kindToHandler = new HashMap();
+  private int objectCount = 0;
 
-  public ParsedKubernetesYaml(Path path) throws Exception {
-    this(Files.newInputStream(path));
-  }
-
-  public ParsedKubernetesYaml(InputStream is) {
+  protected ParsedKubernetesYaml(Path path) throws Exception {
     // create handlers for all the supported k8s types
     kindToHandler.put(KIND_CONFIG_MAP, new ConfigMapHandler());
     kindToHandler.put(KIND_CLUSTER_ROLE, new ClusterRoleHandler());
@@ -56,14 +53,18 @@ public class ParsedKubernetesYaml {
     kindToHandler.put(KIND_SERVICE_ACCOUNT, new ServiceAccountHandler());
 
     // convert the input stream into a set of maps that represent the yaml
-    for (Object object : newYaml().loadAll(is)) {
+    for (Object object : newYaml().loadAll(Files.newInputStream(path))) {
       // convert each map to its corresponding k8s class
 //printObject("", object);
       add((Map)object);
     }
   }
 
-  public void add(Map objectAsMap) {
+  public int getObjectCount() {
+    return objectCount;
+  }
+
+  private void add(Map objectAsMap) {
     if (objectAsMap == null) {
       // there is no object.  e.g. the yaml has:
       // ---
@@ -74,6 +75,7 @@ public class ParsedKubernetesYaml {
     // what k8s class handles that kind of k8s object
     String kind = (String)objectAsMap.get("kind");
     getHandler(kind).add(objectAsMap);
+    objectCount++;
   }
 
 /*
@@ -187,7 +189,7 @@ public class ParsedKubernetesYaml {
       return result;
     }
 
-    public T find(String name, String namespace) {
+    protected T find(String name, String namespace) {
       T result = null;
       for (T instance : instances) {
         V1ObjectMeta md = getMetadata(instance);
