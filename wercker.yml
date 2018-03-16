@@ -27,6 +27,10 @@ build:
     name: Fetch SSCM Dependencies
     code: |
       echo "Fetching SSCM Dependencies ..."
+      echo "type gpg && gpg --version"
+      type gpg && gpg --version
+      echo "type gpg2 && gpg2 --version"
+      type gpg2 && gpg2 --version
       echo "mkdir $SSCM_BUILD_DIR"
       mkdir $SSCM_BUILD_DIR
       echo "cd $SSCM_BUILD_DIR"
