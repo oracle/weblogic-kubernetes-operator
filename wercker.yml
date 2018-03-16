@@ -96,6 +96,9 @@ security-scan:
 
 deploy-with-atz:
   steps:
+  - install-packages:
+      packages: jq
+
   - script:
     name: Deploy with ATZ
     code: |
