@@ -11,8 +11,10 @@ adminServerName: admin-server
 domainName: base_domain
 
 # Unique id identifying a domain.
-# This id must be lowercase and unique across all domains in a Kubernetes cluster
-domainUID: domain1
+# This id must be lowercase and unique across all domains in a Kubernetes cluster.
+# Best practice is to use a globally unique name.
+# The following line must be uncomment and customized:
+#domainUID: domain1.development-stage.yourcompany.com
 
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
@@ -38,31 +40,16 @@ managedServerPort: 8001
 # If using 'NFS', weblogicDomainStorageNFSServer must be specified.
 weblogicDomainStorageType: HOST_PATH
 
-# The server name or ip address of the NFS server to use
-# for the domain's storage.
-# Only used if persistenceType is nfs.
-weblogicDomainStorageNFSServer: nfsServer
+# The server name or ip address of the NFS server to use for the domain's storage.
+# The following line must be uncomment and customized if weblogicDomainStorateType is NFS:
+#weblogicDomainStorageNFSServer: nfsServer
 
 # Physical path of the domain's persistent storage.
-weblogicDomainStoragePath: /scratch/k8s_dir/persistentVolume001
+# The following line must be uncomment and customized:
+#weblogicDomainStoragePath: /scratch/k8s_dir/domain1
 
 # Total storage allocated to the domain's persistent storage.
 weblogicDomainStorageSize: 10Gi
-
-# Name of the storage class to set for the persistent volume and persistent volume claim
-# The default value that will be used is the value of the domainUid input parameter
-# The name of the storage class must be in lowercase
-#persistenceStorageClass:
-
-# Name of the Kubernetes persistent volume claim for this domain.  Name must be lowercase.
-# The persistent volume claim name will be prepended with '${domainUid}-' by create-domain-job.sh
-# if it is not already
-persistenceVolumeClaimName: pv001-claim
-
-# Name of the Kubernetes persistent volume for this domain.  Name must be lowercase.
-# The persistent volume name will be prepended with '${domainUid}-' by create-domain-job.sh
-# if it is not already
-persistenceVolumeName: pv001
 
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true

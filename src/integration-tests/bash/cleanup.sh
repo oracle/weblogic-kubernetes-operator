@@ -196,8 +196,8 @@ function orderlyDelete {
     kubectl -n $curns delete job domain-${curdomain}-job --ignore-not-found
   
     echo @@ Deleting domain pv and pvc for domain ${curdomain} in namespace $curns
-    kubectl delete pv ${curdomain}-pv --ignore-not-found
-    kubectl -n $curns delete pvc ${curdomain}-pv-claim --ignore-not-found
+    kubectl delete pv ${curdomain}-weblogic-domain-pv --ignore-not-found
+    kubectl -n $curns delete pvc ${curdomain}-weblogic-domain-pvc --ignore-not-found
   
     echo @@ Deleting ${curdomain}-weblogic-credentials secret in namespace $curns
     kubectl -n $curns delete secret ${curdomain}-weblogic-credentials --ignore-not-found
