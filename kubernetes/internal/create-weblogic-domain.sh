@@ -125,49 +125,6 @@ function validateClusterName {
 }
 
 #
-# Function to default the value of persistenceStorageClass.
-# When the parameter is not specified in the input file, it will default to use the value domainUID
-#
-function validateStorageClass {
-  if [ -z "${persistenceStorageClass}" ]; then
-    persistenceStorageClass=${domainUID}
-    echo Defaulting the input parameter persistenceStorageClass to be $domainUID
-  else
-    validateLowerCase "persistenceStorageClass" ${persistenceStorageClass}
-  fi
-}
-
-#
-# Function to validate the persistent volume claim name
-#
-function validatePersistentVolumeClaimName {
-  validateInputParamsSpecified persistenceVolumeClaimName
-  if [ ! -z "${persistenceVolumeClaimName}" ]; then
-    validateLowerCase "persistenceVolumeClaimName" ${persistenceVolumeClaimName}
-    if [[ "${persistenceVolumeClaimName}" != ${domainUID}-* ]] ; then
-      echo persistenceVolumeClaimName specified does not starts with \'${domainUID}-\', appending it
-      persistenceVolumeClaimName=${domainUID}-${persistenceVolumeClaimName}
-      echo persistenceVolumeClaimName is now ${persistenceVolumeClaimName}
-    fi
-  fi
-}
-
-#
-# Function to validate the persistent volume name
-#
-function validatePersistentVolumeName {
-  validateInputParamsSpecified persistenceVolumeName
-  if [ ! -z "${persistenceVolumeName}" ]; then
-    validateLowerCase "persistenceVolumeName" ${persistenceVolumeName}
-    if [[ "${persistenceVolumeName}" != ${domainUID}-* ]] ; then
-      echo persistenceVolumeName specified does not starts with \'${domainUID}-\', appending it
-      persistenceVolumeName=${domainUID}-${persistenceVolumeName}
-      echo persistenceVolumeName is now ${persistenceVolumeName}
-    fi
-  fi
-}
-
-#
 # Function to validate the weblogic domain storage type
 #
 function validateWeblogicDomainStorageType {
@@ -352,8 +309,6 @@ function initialize {
     managedServerNameBase \
     weblogicDomainStoragePath \
     weblogicDomainStorageSize \
-    persistenceVolumeName \
-    persistenceVolumeClaimName \
     weblogicCredentialsSecretName \
     namespace \
     javaOptions \
@@ -377,10 +332,7 @@ function initialize {
   validateDomainUid
   validateNamespace
   validateClusterName
-  validateStorageClass
   validateWeblogicDomainStorageType
-  validatePersistentVolumeName
-  validatePersistentVolumeClaimName
   validateWeblogicCredentialsSecretName
   validateWeblogicImagePullSecretName
   validateLoadBalancer
@@ -426,10 +378,8 @@ function createYamlFiles {
 
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME%:${persistenceVolumeName}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVOutput}
-  sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVOutput}
   sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${domainPVOutput}
   sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${domainPVOutput}
 
@@ -439,8 +389,6 @@ function createYamlFiles {
   cp ${domainPVCInput} ${domainPVCOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVCOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${domainPVCOutput}
-  sed -i -e "s:%STORAGE_CLASS_NAME%:${persistenceStorageClass}:g" ${domainPVCOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
@@ -451,7 +399,6 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${jobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${jobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${jobOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_CLAIM%:${persistenceVolumeClaimName}:g" ${jobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${jobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${jobOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${jobOutput}
@@ -519,26 +466,29 @@ function createYamlFiles {
 # Function to create the domain's persistent volume
 #
 function createDomainPV {
-
   # Check if the persistent volume is already available
-  checkPvExists ${persistenceVolumeName}
+  persistentVolumeName="${domainUID}-weblogic-domain-pv"
+  checkPvExists ${persistentVolumeName}
   if [ "${PV_EXISTS}" = "false" ]; then
-    echo Creating the persistent volume ${persistenceVolumeName}
+    echo Creating the persistent volume ${persistentVolumeName}
     kubectl create -f ${domainPVOutput}
-    checkPvState ${persistenceVolumeName} Available
+    checkPvState ${persistentVolumeName} Available
   fi
 }
 
 #
 # Function to create the domain's persistent volume claim
+# Must be called after createDomainPV since it relies on
+# createDomainPV defining persistentVolumeName
 #
 function createDomainPVC {
   # Check if the persistent volume claim is already available
-  checkPvcExists ${persistenceVolumeClaimName} ${namespace}
+  persistentVolumeClaimName="${domainUID}-weblogic-domain-pvc"
+  checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
-    echo Creating the persistent volume claim ${persistenceVolumeClaimName}
+    echo Creating the persistent volume claim ${persistentVolumeClaimName}
     kubectl create -f ${domainPVCOutput}
-    checkPvState ${persistenceVolumeName} Bound
+    checkPvState ${persistentVolumeName} Bound
   fi
 }
 

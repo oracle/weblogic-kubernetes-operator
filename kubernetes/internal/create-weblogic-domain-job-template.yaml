@@ -491,7 +491,7 @@ spec:
             name: domain-%DOMAIN_UID%-scripts
         - name: pv-storage
           persistentVolumeClaim:
-            claimName: %PERSISTENT_VOLUME_CLAIM%
+            claimName: %DOMAIN_UID%-weblogic-domain-pvc
         - name: secrets
           secret:
             secretName: %WEBLOGIC_CREDENTIALS_SECRET_NAME%

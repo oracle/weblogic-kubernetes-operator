@@ -182,7 +182,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
               .addVolumesItem(newVolume()
                 .name("pv-storage")
                 .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
-                  .claimName(getInputs().getDomainUID() + "-" + getInputs().getPersistenceVolumeClaimName())))
+                  .claimName(getInputs().getWeblogicDomainPersistentVolumeClaimName())))
               .addVolumesItem(newVolume()
                 .name("secrets")
                   .secret(newSecretVolumeSource()
@@ -652,10 +652,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
         newPersistentVolume()
           .metadata(newObjectMeta()
-            .name(getInputs().getDomainUID() + "-" + getInputs().getPersistenceVolumeName())
+            .name(getInputs().getWeblogicDomainPersistentVolumeName())
             .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
           .spec(newPersistentVolumeSpec()
-            .storageClassName(getInputs().getDomainUID())
+            .storageClassName(getInputs().getWeblogicDomainStorageClass())
             .putCapacityItem("storage", getInputs().getWeblogicDomainStorageSize())
             .addAccessModesItem("ReadWriteMany")
             .persistentVolumeReclaimPolicy("Retain"));
@@ -676,11 +676,11 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
       newPersistentVolumeClaim()
         .metadata(newObjectMeta()
-          .name(getInputs().getDomainUID() + "-" + getInputs().getPersistenceVolumeClaimName())
+          .name(getInputs().getWeblogicDomainPersistentVolumeClaimName())
           .namespace(getInputs().getNamespace())
           .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
         .spec(newPersistentVolumeClaimSpec()
-          .storageClassName(getInputs().getDomainUID())
+          .storageClassName(getInputs().getWeblogicDomainStorageClass())
           .addAccessModesItem("ReadWriteMany")
           .resources(newResourceRequirements()
             .putRequestsItem("storage", getInputs().getWeblogicDomainStorageSize())));

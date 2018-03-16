@@ -4,11 +4,11 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: %PERSISTENT_VOLUME%
+  name: %DOMAIN_UID%-weblogic-domain-pv
   labels:
     weblogic.domainUID: %DOMAIN_UID%
 spec:
-  storageClassName: %STORAGE_CLASS_NAME%
+  storageClassName: %DOMAIN_UID%-weblogic-domain-storage-class
   capacity:
     storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
   accessModes:

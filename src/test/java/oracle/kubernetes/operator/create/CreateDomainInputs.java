@@ -51,8 +51,6 @@ public class CreateDomainInputs {
   private String weblogicDomainStoragePath = "";
   private String weblogicDomainStorageSize = "";
   private String weblogicDomainStorageType = "";
-  private String persistenceVolumeClaimName = "";
-  private String persistenceVolumeName = "";
   private String productionModeEnabled = "";
   private String weblogicCredentialsSecretName = "";
   private String weblogicImagePullSecretName = "";
@@ -87,8 +85,6 @@ public class CreateDomainInputs {
         .namespace("test-domain-namespace")
         .weblogicDomainStoragePath("TestDomainStoragePath")
         .weblogicDomainStorageSize("20Gi")
-        .persistenceVolumeClaimName("test-domain-pvc")
-        .persistenceVolumeName("test-domain-pv")
         .productionModeEnabled("false")
         .weblogicCredentialsSecretName("test-weblogic-credentials")
         .startupControl(STARTUP_CONTROL_ALL)
@@ -107,6 +103,18 @@ public class CreateDomainInputs {
 
   private static Path defaultInputsPath() {
     return FileSystems.getDefault().getPath(DEFAULT_INPUTS);
+  }
+
+  public String getWeblogicDomainStorageClass() {
+    return getDomainUID() + "-weblogic-domain-storage-class";
+  }
+
+  public String getWeblogicDomainPersistentVolumeName() {
+    return getDomainUID() + "-weblogic-domain-pv";
+  }
+
+  public String getWeblogicDomainPersistentVolumeClaimName() {
+    return getDomainUID() + "-weblogic-domain-pvc";
   }
 
   public String getAdminPort() {
@@ -288,32 +296,6 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs weblogicDomainStorageType(String weblogicDomainStorageType) {
     setWeblogicDomainStorageType(weblogicDomainStorageType);
-    return this;
-  }
-
-  public String getPersistenceVolumeClaimName() {
-    return persistenceVolumeClaimName;
-  }
-
-  public void setPersistenceVolumeClaimName(String persistenceVolumeClaimName) {
-    this.persistenceVolumeClaimName = convertNullToEmptyString(persistenceVolumeClaimName);
-  }
-
-  public CreateDomainInputs persistenceVolumeClaimName(String persistenceVolumeClaimName) {
-    setPersistenceVolumeClaimName(persistenceVolumeClaimName);
-    return this;
-  }
-
-  public String getPersistenceVolumeName() {
-    return persistenceVolumeName;
-  }
-
-  public void setPersistenceVolumeName(String persistenceVolumeName) {
-    this.persistenceVolumeName = convertNullToEmptyString(persistenceVolumeName);
-  }
-
-  public CreateDomainInputs persistenceVolumeName(String persistenceVolumeName) {
-    setPersistenceVolumeName(persistenceVolumeName);
     return this;
   }
 

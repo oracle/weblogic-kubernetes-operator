@@ -46,7 +46,7 @@ public class CreateDomainInputsFileTest {
         .adminServerName("admin-server")
         .clusterName("cluster-1")
         .domainName("base_domain")
-        .domainUID("domain1")
+        .domainUID("")
         .exposeAdminNodePort("false")
         .exposeAdminT3Channel("false")
         .weblogicImagePullSecretName("")
@@ -59,12 +59,10 @@ public class CreateDomainInputsFileTest {
         .managedServerPort("8001")
         .initialManagedServerReplicas("2")
         .namespace("default")
-        .weblogicDomainStorageNFSServer("nfsServer") // TBD - should there be a default?
-        .weblogicDomainStoragePath("/scratch/k8s_dir/persistentVolume001") // TBD - should there be a default?
+        .weblogicDomainStorageNFSServer("")
+        .weblogicDomainStoragePath("")
         .weblogicDomainStorageSize("10Gi")
         .weblogicDomainStorageType(STORAGE_TYPE_HOST_PATH)
-        .persistenceVolumeClaimName("pv001-claim")
-        .persistenceVolumeName("pv001")
         .productionModeEnabled("true")
         .weblogicCredentialsSecretName("domain1-weblogic-credentials")
         .startupControl(STARTUP_CONTROL_AUTO)
@@ -73,9 +71,12 @@ public class CreateDomainInputsFileTest {
   }
 
   @Test
-  public void createDomain_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
-    // customize the domain uid so that we can tell that it generated the yaml files based on this inputs
-    CreateDomainInputs inputs = readDefaultInputsFile().domainUID("test-domain-uid");
+  public void createDomainWithCompletedDefaultsInputsFile_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
+    // customize the domain uid and weblogic storage path so that we have a valid inputs file
+    CreateDomainInputs inputs =
+     readDefaultInputsFile()
+       .domainUID("test-domain-uid")
+       .weblogicDomainStoragePath("/scratch/k8s_dir/domain1");
     assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
 
     // Make sure the generated directory has the correct list of files
@@ -90,5 +91,9 @@ public class CreateDomainInputsFileTest {
     for (Path path : domainFiles.getExpectedContents(false)) { // don't include the directory too
       assertThat("Expect that " + path + " is a regular file", Files.isRegularFile(path), is(true));
     }
+  }
+
+  private String paramMissingError(String param) {
+    return errorRegexp(param + ".*missing");
   }
 }

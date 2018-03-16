@@ -32,8 +32,6 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH = "weblogicDomainStoragePath";
   private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_SIZE = "weblogicDomainStorageSize";
   private static final String PARAM_WEBLOGIC_DOMAIN_STORAGE_TYPE = "weblogicDomainStorageType";
-  private static final String PARAM_PERSISTENCE_VOLUME_CLAIM_NAME = "persistenceVolumeClaimName";
-  private static final String PARAM_PERSISTENCE_VOLUME_NAME = "persistenceVolumeName";
   private static final String PARAM_PRODUCTION_MODE_ENABLED = "productionModeEnabled";
   private static final String PARAM_WEBLOGIC_CREDENTIALS_SECRET_NAME = "weblogicCredentialsSecretName";
   private static final String PARAM_WEBLOGIC_IMAGE_PULL_SECRET_NAME = "weblogicImagePullSecretName";
@@ -58,6 +56,15 @@ public class CreateDomainInputsValidationTest {
     if (userProjects != null) {
       userProjects.remove();
     }
+  }
+
+  @Test
+  public void createDomainWithUnmodifiedDefaultInputsFile_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(readDefaultInputsFile()),
+      failsAndPrints(
+        paramMissingError(PARAM_DOMAIN_UID),
+        paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH)));
   }
 
   @Test
@@ -251,36 +258,6 @@ public class CreateDomainInputsValidationTest {
     assertThat(
       execCreateDomain(newInputs().weblogicDomainStorageType("")),
       failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_TYPE)));
-  }
-
-  @Test
-  public void createDomain_with_missingPersistenceVolumeClaimName_failsAndReturnsError() throws Exception {
-    assertThat(
-      execCreateDomain(newInputs().persistenceVolumeClaimName("")),
-      failsAndPrints(paramMissingError(PARAM_PERSISTENCE_VOLUME_CLAIM_NAME)));
-  }
-
-  @Test
-  public void createDomain_with_upperCasePersistenceVolumeClaimName_failsAndReturnsError() throws Exception {
-    String val = "TestPersistenceVolumeClaimName";
-    assertThat(
-      execCreateDomain(newInputs().persistenceVolumeClaimName(val)),
-      failsAndPrints(paramNotLowercaseError(PARAM_PERSISTENCE_VOLUME_CLAIM_NAME, val)));
-  }
-
-  @Test
-  public void createDomain_with_missingPersistenceVolumeName_failsAndReturnsError() throws Exception {
-    assertThat(
-      execCreateDomain(newInputs().persistenceVolumeName("")),
-      failsAndPrints(paramMissingError(PARAM_PERSISTENCE_VOLUME_NAME)));
-  }
-
-  @Test
-  public void createDomain_with_upperCasePersistenceVolumeName_failsAndReturnsError() throws Exception {
-    String val = "TestPersistenceVolumeName";
-    assertThat(
-      execCreateDomain(newInputs().persistenceVolumeName(val)),
-      failsAndPrints(paramNotLowercaseError(PARAM_PERSISTENCE_VOLUME_NAME, val)));
   }
 
   @Test
