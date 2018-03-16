@@ -3,21 +3,26 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.io.CharStreams;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilder.ExecParams;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
@@ -36,15 +41,15 @@ public class ServerStatusReader {
   private ServerStatusReader() {
   }
 
-  public static Step createDomainStatusReaderStep(DomainPresenceInfo info, int timeoutSeconds, Step next) {
+  public static Step createDomainStatusReaderStep(DomainPresenceInfo info, long timeoutSeconds, Step next) {
     return new DomainStatusReaderStep(info, timeoutSeconds, next);
   }
   
   private static class DomainStatusReaderStep extends Step {
     private final DomainPresenceInfo info;
-    private final int timeoutSeconds;
+    private final long timeoutSeconds;
 
-    public DomainStatusReaderStep(DomainPresenceInfo info, int timeoutSeconds, Step next) {
+    public DomainStatusReaderStep(DomainPresenceInfo info, long timeoutSeconds, Step next) {
       super(next);
       this.info = info;
       this.timeoutSeconds = timeoutSeconds;
@@ -89,7 +94,7 @@ public class ServerStatusReader {
    * @return Created step
    */
   public static Step createServerStatusReaderStep(String namespace, String domainUID,
-      String serverName, int timeoutSeconds, Step next) {
+      String serverName, long timeoutSeconds, Step next) {
     return new ServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, next);
   }
 
@@ -97,10 +102,10 @@ public class ServerStatusReader {
     private final String namespace;
     private final String domainUID;
     private final String serverName;
-    private final int timeoutSeconds;
+    private final long timeoutSeconds;
 
     public ServerStatusReaderStep(String namespace, String domainUID, String serverName, 
-        int timeoutSeconds, Step next) {
+        long timeoutSeconds, Step next) {
       super(next);
       this.namespace = namespace;
       this.domainUID = domainUID;
@@ -110,40 +115,44 @@ public class ServerStatusReader {
 
     @Override
     public NextAction apply(Packet packet) {
+      Exec exec = new Exec();
+
       String podName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
 
-      final ExecParams execParams = new ExecParams();
-      execParams.command = "/weblogic-operator/scripts/readState.sh";
-      execParams.container = KubernetesConstants.CONTAINER_NAME;
-      
-      return doNext(CallBuilder.create()
-          .with($ -> {$.timeoutSeconds = timeoutSeconds;})
-          .execPodAsync(podName, namespace, execParams, new ResponseStep<String>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          // Failures are okay
-          return onSuccess(packet, null, statusCode, responseHeaders);
-        }
+      final boolean stdin = false;
+      final boolean tty = false;
 
-        @Override
-        public NextAction onSuccess(Packet packet, String result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          @SuppressWarnings("unchecked")
-          ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
-              .get(ProcessingConstants.SERVER_STATE_MAP);
-          if (result != null) {
-            serverStateMap.put(serverName, result);
-          } else {
-            serverStateMap.remove(serverName);
+      return doSuspend(fiber -> {
+        try {
+          final Process proc = exec.exec(namespace, podName,
+              new String[] { "/weblogic-operator/scripts/readState.sh" },
+              KubernetesConstants.CONTAINER_NAME, stdin, tty);
+
+          if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+            String state = null;
+            try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
+              state = CharStreams.toString(reader);
+            }
+
+            @SuppressWarnings("unchecked")
+            ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
+                .get(ProcessingConstants.SERVER_STATE_MAP);
+            if (state != null) {
+              serverStateMap.put(serverName, parseState(state));
+            } else {
+              serverStateMap.remove(serverName);
+            }
           }
-          return doNext(packet);
+        } catch (IOException | ApiException | InterruptedException e) {
+          LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
-      }), packet);
+        
+        fiber.resume(packet);
+      });
     }
   }
   
-  public static String parseState(String state) {
+  private static String parseState(String state) {
     // Format of state is "<serverState>:<Y or N, if server started>:<Y or N, if server failed>
     String s = "UNKNOWN";
     if (state != null) {
