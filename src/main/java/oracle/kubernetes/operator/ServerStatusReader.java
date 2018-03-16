@@ -19,6 +19,8 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ClientHelper;
+import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -115,14 +117,15 @@ public class ServerStatusReader {
 
     @Override
     public NextAction apply(Packet packet) {
-      Exec exec = new Exec();
-
       String podName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
 
       final boolean stdin = false;
       final boolean tty = false;
 
       return doSuspend(fiber -> {
+        ClientHelper helper = ClientHelper.getInstance();
+        ClientHolder holder = helper.take();
+        Exec exec = new Exec(holder.getApiClient());
         try {
           final Process proc = exec.exec(namespace, podName,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
@@ -145,6 +148,8 @@ public class ServerStatusReader {
           }
         } catch (IOException | ApiException | InterruptedException e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
+        } finally {
+          helper.recycle(holder);
         }
         
         fiber.resume(packet);
