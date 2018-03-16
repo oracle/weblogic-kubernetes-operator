@@ -70,9 +70,9 @@ The following parameters must be provided in the input file:
 
 | Parameter	| Definition	| Default |
 | --- | --- | --- |
-| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `custom-cert`. | |
-| externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to `custom-cert`. | |
-| externalRestOption	| Which of the available REST options is desired.  Allowed values: <br/>- `none` Disable the REST interface.  <br/>- `self-signed-cert` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `custom-cert` Provide custom certificates, for example from an external certification authority. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
+| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `CUSTOM_CERT`. | |
+| externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to `CUSTOM_CERT`. | |
+| externalRestOption	| Which of the available REST options is desired.  Allowed values: <br/>- `NONE` Disable the REST interface.  <br/>- `SELF_SIGNED_CERT` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `CUSTOM_CERT` Provide custom certificates, for example from an external certification authority. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
 | externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
 | namespace	| The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.	| weblogic-operator |
 | targetNamespaces	| A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here.	| default |
@@ -88,9 +88,9 @@ The following parameters must be provided in the input file:
 
 The operator provides three REST certificate options:
 
-*	`none` will disable the REST server.
-*	`self-signed-cert` will generate self-signed certificates.
-*	`custom-cert` provides a mechanism to provide certificates that were created and signed by some other means.
+*	`NONE` will disable the REST server.
+*	`SELF_SIGNED_CERT` will generate self-signed certificates.
+*	`CUSTOM_CERT` provides a mechanism to provide certificates that were created and signed by some other means.
 
 ## Decide which options to enable
 

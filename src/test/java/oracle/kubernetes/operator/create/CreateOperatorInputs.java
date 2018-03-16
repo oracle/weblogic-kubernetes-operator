@@ -29,9 +29,9 @@ public class CreateOperatorInputs {
 
   private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-operator-inputs.yaml";
 
-  public static final String EXTERNAL_REST_OPTION_NONE = "none";
-  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "custom-cert";
-  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "self-signed-cert";
+  public static final String EXTERNAL_REST_OPTION_NONE = "NONE";
+  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
+  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
 
   public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
   public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
