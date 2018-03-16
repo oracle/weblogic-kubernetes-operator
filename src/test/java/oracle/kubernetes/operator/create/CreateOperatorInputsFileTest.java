@@ -1,19 +1,21 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.util.List;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
-import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
-import static oracle.kubernetes.operator.create.YamlUtils.*;
+import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
+import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
+import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests that:
@@ -50,9 +52,9 @@ public class CreateOperatorInputsFileTest {
         .externalRestHttpsPort("31001")
         .externalSans("")
         .remoteDebugNodePortEnabled("false")
-        .image("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest")
-        .imagePullPolicy("IfNotPresent")
-        .imagePullSecretName("")
+        .weblogicOperatorImage("container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest")
+        .weblogicOperatorImagePullPolicy("IfNotPresent")
+        .weblogicOperatorImagePullSecretName("")
         .internalDebugHttpPort("30999")
         .javaLoggingLevel(JAVA_LOGGING_LEVEL_INFO)
         .namespace("weblogic-operator")
