@@ -557,10 +557,10 @@ function deploy_operator {
     cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
-    sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-    sed -i -e "s|\(image:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
+    sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
+    sed -i -e "s|\(weblogicOperatorImage:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
     if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
+      sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
     fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs

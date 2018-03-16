@@ -1,26 +1,18 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import static java.util.Arrays.asList;
+import io.kubernetes.client.models.*;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.AfterClass;
+import org.junit.Test;
 
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
-import io.kubernetes.client.models.V1beta1RoleBinding;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1ServiceSpec;
+import static java.util.Arrays.asList;
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.readInputsYamlFile;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
-import org.apache.commons.codec.binary.Base64;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import org.junit.AfterClass;
-import org.junit.Test;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that
@@ -155,8 +147,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
               .serviceAccountName(getInputs().getServiceAccount())
               .addContainersItem(newContainer()
                 .name("weblogic-operator")
-                .image(getInputs().getImage())
-                .imagePullPolicy(getInputs().getImagePullPolicy())
+                .image(getInputs().getWeblogicOperatorImage())
+                .imagePullPolicy(getInputs().getWeblogicOperatorImagePullPolicy())
                 .addCommandItem("bash")
                 .addArgsItem("/operator/operator.sh")
                 .addEnvItem(newEnvVar()
