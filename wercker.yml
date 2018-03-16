@@ -40,6 +40,8 @@ build:
       ls -l $WERCKER_CACHE_DIR/gpg-script.sh
       echo "GPG_SCRIPT env variable set to: '$GPG_SCRIPT'"
       echo "$GPG_SCRIPT data-to-sign"
+      echo "ls -l $WERCKER_CACHE_DIR/gnupg"
+      ls -l $WERCKER_CACHE_DIR/gnupg
       $GPG_SCRIPT data-to-sign
       echo "ls -l $WERCKER_CACHE_DIR/gnupg"
       ls -l $WERCKER_CACHE_DIR/gnupg
