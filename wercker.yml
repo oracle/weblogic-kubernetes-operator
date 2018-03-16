@@ -21,7 +21,7 @@ box: maven:3.5.2-jdk-8
 build:
   steps:
   - install-packages:
-    packages: jq gpg gpg2 gnupg gnupg2
+    packages: jq gpg gnupg gnupg2
 
   - script:
     name: Fetch SSCM Dependencies
