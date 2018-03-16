@@ -27,10 +27,6 @@ build:
     name: Fetch SSCM Dependencies
     code: |
       echo "Fetching SSCM Dependencies ..."
-      echo "type gpg && gpg --version"
-      type gpg && gpg --version
-      echo "type gpg2 && gpg2 --version"
-      type gpg2 && gpg2 --version
       echo "mkdir $SSCM_BUILD_DIR"
       mkdir $SSCM_BUILD_DIR
       echo "cd $SSCM_BUILD_DIR"
@@ -39,19 +35,21 @@ build:
       git clone https://github.com/wmhopkins/client-java.git
       echo "git clone https://github.com/wmhopkins/sscm-client.git"
       git clone https://github.com/wmhopkins/sscm-client.git
-      echo "cp -f $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh $WERCKER_CACHE_DIR"
-      cp -f $SSCM_BUILD_DIR/sscm-client/gnupg/gpg-script.sh $WERCKER_CACHE_DIR
-      echo "chmod +x $WERCKER_CACHE_DIR/gpg-script.sh"
-      chmod +x $WERCKER_CACHE_DIR/gpg-script.sh
-      echo "ls -l $WERCKER_CACHE_DIR/gpg-script.sh"
-      ls -l $WERCKER_CACHE_DIR/gpg-script.sh
-      echo "GPG_SCRIPT env variable set to: '$GPG_SCRIPT'"
-      echo "$GPG_SCRIPT data-to-sign"
-      echo "ls -l $WERCKER_CACHE_DIR/gnupg"
-      ls -l $WERCKER_CACHE_DIR/gnupg
-      $GPG_SCRIPT data-to-sign
-      echo "ls -l $WERCKER_CACHE_DIR/gnupg"
-      ls -l $WERCKER_CACHE_DIR/gnupg
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT"
+      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT
+      echo "chmod +x $GPG_SCRIPT"
+      chmod +x $GPG_SCRIPT
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-mgmt.sh $GPG_MGMT_SCRIPT"
+      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-mgmt.sh $GPG_MGMT_SCRIPT
+      echo "chmod +x $GPG_MGMT_SCRIPT"
+      chmod +x $GPG_MGMT_SCRIPT
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT"
+      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT
+      echo "chmod +x $SBAS_SCRIPT"
+      chmod +x $SBAS_SCRIPT
+      ls -ld $WERCKER_CACHE_DIR/*.sh || true
+      echo "$GPG_MGMT_SCRIPT init || true"
+      $GPG_MGMT_SCRIPT init || true
 
   - script:
     name: Build Java Client
