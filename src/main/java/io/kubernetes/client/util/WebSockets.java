@@ -95,6 +95,9 @@ public class WebSockets {
     headers.put(HttpHeaders.UPGRADE, SPDY_3_1);
     String[] localVarAuthNames = new String[] {"BearerToken"};
 
+    // TEST
+    System.out.println("*****: WebSockets: path: " + path + ", query: " + queryParams);
+    
     Request request =
         client.buildRequest(
             path,
