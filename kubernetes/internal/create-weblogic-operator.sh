@@ -117,7 +117,7 @@ function initialize {
   # Parse the common inputs file
   parseCommonInputs
 
-  validateInputParamsSpecified serviceAccount namespace targetNamespaces image
+  validateInputParamsSpecified serviceAccount namespace targetNamespaces weblogicOperatorImage
 
   validateBooleanInputParamsSpecified elkIntegrationEnabled
 
@@ -161,13 +161,13 @@ function initAndValidateOutputDir {
 # Function to validate the image pull secret name
 #
 function validateImagePullSecretName {
-  if [ ! -z "${imagePullSecretName}" ]; then
-    validateLowerCase imagePullSecretName ${imagePullSecretName}
+  if [ ! -z "${weblogicOperatorImagePullSecretName}" ]; then
+    validateLowerCase weblogicOperatorImagePullSecretName ${weblogicOperatorImagePullSecretName}
     imagePullSecretPrefix=""
     validateImagePullSecret
   else
     # Set name blank when not specified, and comment out the yaml
-    imagePullSecretName=""
+    weblogicOperatorImagePullSecretName=""
     imagePullSecretPrefix="#"
   fi
 }
@@ -178,7 +178,7 @@ function validateImagePullSecretName {
 function validateImagePullSecret {
   # The kubernetes secret for pulling images from the docker store is optional.
   # If it was specified, make sure it exists.
-  validateSecretExists ${imagePullSecretName} ${namespace}
+  validateSecretExists ${weblogicOperatorImagePullSecretName} ${namespace}
   failIfValidationErrors
 }
 
@@ -188,17 +188,17 @@ function validateImagePullSecret {
 function validateImagePullPolicy {
 
   # Validate that imagePullPolicy was specified
-  validateInputParamsSpecified imagePullPolicy
+  validateInputParamsSpecified weblogicOperatorImagePullPolicy
 
   # And validate that it's one of the allowed logging levels
-  if [ ! -z "${imagePullPolicy}" ]; then
+  if [ ! -z "${weblogicOperatorImagePullPolicy}" ]; then
     IF_NOT_PRESENT="IfNotPresent"
     ALWAYS="Always"
     NEVER="Never"
-    if [ $imagePullPolicy != $IF_NOT_PRESENT  ] && \
-       [ $imagePullPolicy != $ALWAYS          ] && \
-       [ $imagePullPolicy != $NEVER           ]; then
-      validationError "Invalid imagePullPolicy: \"${imagePullPolicy}\". Valid values are $IF_NOT_PRESENT, $ALWAYS and $NEVER."
+    if [ $weblogicOperatorImagePullPolicy != $IF_NOT_PRESENT  ] && \
+       [ $weblogicOperatorImagePullPolicy != $ALWAYS          ] && \
+       [ $weblogicOperatorImagePullPolicy != $NEVER           ]; then
+      validationError "Invalid weblogicOperatorImagePullPolicy: \"${weblogicOperatorImagePullPolicy}\". Valid values are $IF_NOT_PRESENT, $ALWAYS and $NEVER."
     fi
   fi
 }
@@ -389,9 +389,9 @@ function createYamlFiles {
   sed -i -e "s|%NAMESPACE%|$namespace|g" ${oprOutput}
   sed -i -e "s|%TARGET_NAMESPACES%|$targetNamespaces|g" ${oprOutput}
   sed -i -e "s|%ACCOUNT_NAME%|$serviceAccount|g" ${oprOutput}
-  sed -i -e "s|%IMAGE%|$image|g" ${oprOutput}
-  sed -i -e "s|%IMAGE_PULL_POLICY%|$imagePullPolicy|g" ${oprOutput}
-  sed -i -e "s|%DOCKER_REGISTRY_SECRET%|${imagePullSecretName}|g" ${oprOutput}
+  sed -i -e "s|%IMAGE%|$weblogicOperatorImage|g" ${oprOutput}
+  sed -i -e "s|%IMAGE_PULL_POLICY%|$weblogicOperatorImagePullPolicy|g" ${oprOutput}
+  sed -i -e "s|%DOCKER_REGISTRY_SECRET%|${weblogicOperatorImagePullSecretName}|g" ${oprOutput}
   sed -i -e "s|%IMAGE_PULL_SECRET_PREFIX%|${imagePullSecretPrefix}|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_OPERATOR_SERVICE_PREFIX%|$externalOperatorServicePrefix|g" ${oprOutput}
   sed -i -e "s|%EXTERNAL_REST_HTTPS_PORT%|$externalRestHttpsPort|g" ${oprOutput}

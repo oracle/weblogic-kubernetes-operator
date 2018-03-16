@@ -24,7 +24,7 @@ public class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTest extends Cre
         .setupExternalRestSelfSignedCert()
         .enableDebugging()
         .elkIntegrationEnabled("true")
-        .imagePullSecretName("test-operator-image-pull-secret-name")
+        .weblogicOperatorImagePullSecretName("test-operator-image-pull-secret-name")
     );
   }
 
@@ -75,7 +75,7 @@ public class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTest extends Cre
         .emptyDir(newEmptyDirVolumeSource()
           .medium("Memory")))
       .addImagePullSecretsItem(newLocalObjectReference()
-          .name(getInputs().getImagePullSecretName()));
+          .name(getInputs().getWeblogicOperatorImagePullSecretName()));
     return expected;
   }
 }
