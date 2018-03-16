@@ -6,14 +6,13 @@ package oracle.kubernetes.operator;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.io.CharStreams;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
@@ -22,11 +21,10 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -69,10 +67,10 @@ public class ServerStatusReader {
       String domainUID = spec.getDomainUID();
       
       Collection<StepAndPacket> startDetails = new ArrayList<>();
-      WlsDomainConfig scan = info.getScan();
-      if (scan != null) {
-        for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
-          String serverName = entry.getKey();
+      for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+        String serverName = entry.getKey();
+        ServerKubernetesObjects sko = entry.getValue();
+        if (sko != null && sko.getPod().get() != null) {
           Packet p = packet.clone();
           startDetails.add(new StepAndPacket(
               createServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, null), p));
@@ -127,6 +125,10 @@ public class ServerStatusReader {
         ClientHolder holder = helper.take();
         Exec exec = new Exec(holder.getApiClient());
         try {
+          
+          // TEST
+          System.out.println("***** pod: " + podName);
+          
           final Process proc = exec.exec(namespace, podName,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
               KubernetesConstants.CONTAINER_NAME, stdin, tty);
@@ -134,7 +136,12 @@ public class ServerStatusReader {
           if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
             String state = null;
             try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
-              state = CharStreams.toString(reader);
+              CharBuffer buf = CharBuffer.allocate(64); // longest: FAILED_NOT_RESTARTABLE:Y:Y
+              while (reader.read(buf) >= 0) {}
+              state = buf.toString();
+              
+              // TEST
+              System.out.println("***** state: " + state);
             }
 
             @SuppressWarnings("unchecked")
