@@ -20,6 +20,9 @@ box: maven:3.5.2-jdk-8
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
   steps:
+  - install-packages:
+    packages: jq gpg gpg2 gnupg gnupg2
+
   - script:
     name: Fetch SSCM Dependencies
     code: |
