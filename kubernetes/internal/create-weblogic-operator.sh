@@ -270,9 +270,9 @@ function validateExternalRest {
 
   if [ ! -z ${externalRestOption} ]; then
     # Validate the specified externalRestOption value and any sub options that it requires
-    EXT_REST_OPT_NONE="none"
-    EXT_REST_OPT_SELF_SIGNED="self-signed-cert"
-    EXT_REST_OPT_CUSTOM="custom-cert"
+    EXT_REST_OPT_NONE="NONE"
+    EXT_REST_OPT_SELF_SIGNED="SELF_SIGNED_CERT"
+    EXT_REST_OPT_CUSTOM="CUSTOM_CERT"
     case ${externalRestOption} in
       ${EXT_REST_OPT_NONE})
         echo The WebLogic Operator REST interface will not be externally exposed

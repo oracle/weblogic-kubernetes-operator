@@ -29,45 +29,45 @@ weblogicOperatorImagePullPolicy: IfNotPresent
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:
 #
-# "none"
+# "NONE"
 #    The REST interface is not exposed outside the Kubernetes cluster.
 #
-# "self-signed-cert"
+# "SELF_SIGNED_CERT"
 #    The REST interface is exposed outside of the Kubernetes cluster on the
 #    port specified by the 'externalRestHttpsPort' property.
 #    A self-signed certificate and private key are generated for the REST interface.
 #    The certificate's subject alternative names are specified by the 'externalSans'
 #    property.
 #
-# "custom-cert"
+# "CUSTOM_CERT"
 #    The REST interface is exposed outside of the Kubernetes cluster on the
 #    port specified by the 'externalRestHttpsPort' property.
 #    The customer supplied certificate and private key are used for the REST
 #    interface.  They are specified by the 'externalOperatorCert' and
 #    'eternalOperatorKey' properties.
-externalRestOption: none
+externalRestOption: NONE
 
 # The node port that should be allocated for the external operator REST https interface.
-# This parameter is required if 'externalRestOption' is not 'none'.
+# This parameter is required if 'externalRestOption' is not 'NONE'.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
 
 # The subject alternative names to put into the generated self-signed certificate
 # for the external WebLogic Operator REST https interface, for example:
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1
-# This parameter is required if 'externalRestOption' is 'self-signed-cert'.
+# This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
 # Otherwise, it is ignored.
 externalSans:
 
 # The customer supplied certificate to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM certificate.
-# This parameter is required if 'externalRestOption' is 'custom-cert'.
+# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
 # Otherwise, it is ignored.
 externalOperatorCert:
 
 # The customer supplied private key to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM key.
-# This parameter is required if 'externalRestOption' is 'custom-cert'.
+# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
 # Otherwise, it is ignored.
 externalOperatorKey:
 
