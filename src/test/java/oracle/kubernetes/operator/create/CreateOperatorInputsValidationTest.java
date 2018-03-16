@@ -8,7 +8,6 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 
@@ -35,9 +34,9 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_SERVICE_ACCOUNT = "serviceAccount";
   private static final String PARAM_NAMESPACE = "namespace";
   private static final String PARAM_TARGET_NAMESPACES = "targetNamespaces";
-  private static final String PARAM_IMAGE = "image";
-  private static final String PARAM_IMAGE_PULL_POLICY = "imagePullPolicy";
-  private static final String PARAM_IMAGE_PULL_SECRET_NAME = "imagePullSecretName";
+  private static final String PARAM_WEBLOGIC_OPERATOR_IMAGE = "weblogicOperatorImage";
+  private static final String PARAM_IMAGE_PULL_POLICY = "weblogicOperatorImagePullPolicy";
+  private static final String PARAM_IMAGE_PULL_SECRET_NAME = "weblogicOperatorImagePullSecretName";
   private static final String PARAM_EXTERNAL_REST_OPTION = "externalRestOption";
   private static final String PARAM_EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
   private static final String PARAM_EXTERNAL_SANS = "externalSans";
@@ -95,16 +94,16 @@ public class CreateOperatorInputsValidationTest {
   }
 
   @Test
-  public void createOperator_with_missingImage_failsAndReturnsError() throws Exception {
+  public void createOperator_with_missingWeblogicOperatorImage_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateOperator(newInputs().image("")),
-      failsAndPrints(paramMissingError(PARAM_IMAGE)));
+      execCreateOperator(newInputs().weblogicOperatorImage("")),
+      failsAndPrints(paramMissingError(PARAM_WEBLOGIC_OPERATOR_IMAGE)));
   }
 
   @Test
   public void createOperator_with_missingImagePullPolicy_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateOperator(newInputs().imagePullPolicy("")),
+      execCreateOperator(newInputs().weblogicOperatorImagePullPolicy("")),
       failsAndPrints(paramMissingError(PARAM_IMAGE_PULL_POLICY)));
   }
 
@@ -112,7 +111,7 @@ public class CreateOperatorInputsValidationTest {
   public void createOperator_with_invalidImagePullPolicy_failsAndReturnsError() throws Exception {
     String val = "invalid-image-pull-policy";
     assertThat(
-      execCreateOperator(newInputs().imagePullPolicy(val)),
+      execCreateOperator(newInputs().weblogicOperatorImagePullPolicy(val)),
       failsAndPrints(invalidEnumParamValueError(PARAM_IMAGE_PULL_POLICY, val)));
   }
 
@@ -135,7 +134,7 @@ public class CreateOperatorInputsValidationTest {
   public void createOperator_with_upperCaseImagePullSecretName_failsAndReturnsError() throws Exception {
     String val = "TestImagePullSecretName";
     assertThat(
-      execCreateOperator(newInputs().imagePullSecretName(val)),
+      execCreateOperator(newInputs().weblogicOperatorImagePullSecretName(val)),
       failsAndPrints(paramNotLowercaseError(PARAM_IMAGE_PULL_SECRET_NAME, val)));
   }
 
@@ -336,7 +335,7 @@ public class CreateOperatorInputsValidationTest {
   }
 
   private void createOperator_with_validImagePullPolicy_succeeds(String policy) throws Exception {
-    createOperator_with_validInputs_succeeds(newInputs().imagePullPolicy(policy));
+    createOperator_with_validInputs_succeeds(newInputs().weblogicOperatorImagePullPolicy(policy));
   }
 
   private void createOperator_with_validInputs_succeeds(CreateOperatorInputs inputs) throws Exception {

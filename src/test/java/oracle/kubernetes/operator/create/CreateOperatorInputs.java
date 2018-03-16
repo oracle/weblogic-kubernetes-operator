@@ -1,15 +1,16 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 package oracle.kubernetes.operator.create;
 
-import java.io.*;
+import org.apache.commons.codec.binary.Base64;
+
+import java.io.Reader;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
 import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
-import org.apache.commons.codec.binary.Base64;
 
 /**
  * Class that mirrors create-weblogic-operator-inputs.yaml
@@ -28,9 +29,9 @@ public class CreateOperatorInputs {
 
   private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-operator-inputs.yaml";
 
-  public static final String EXTERNAL_REST_OPTION_NONE = "none";
-  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "custom-cert";
-  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "self-signed-cert";
+  public static final String EXTERNAL_REST_OPTION_NONE = "NONE";
+  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
+  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
 
   public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
   public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
@@ -50,8 +51,8 @@ public class CreateOperatorInputs {
         .namespace("test-operator-namespace")
         .serviceAccount("test-operator-service-account")
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
-        .image("test-operator-image")
-        .imagePullPolicy("Never")
+        .weblogicOperatorImage("test-operator-image")
+        .weblogicOperatorImagePullPolicy("Never")
         .javaLoggingLevel("FINEST");
   }
 
@@ -160,20 +161,20 @@ public class CreateOperatorInputs {
   public void setTargetNamespaces(String val) { targetNamespaces = convertNullToEmptyString(val); }
   public CreateOperatorInputs targetNamespaces(String val) { setTargetNamespaces(val); return this; }
 
-  private String image = "";
-  public String getImage() { return image; }
-  public void setImage(String val) { image = convertNullToEmptyString(val); }
-  public CreateOperatorInputs image(String val) { setImage(val); return this; }
+  private String weblogicOperatorImage = "";
+  public String getWeblogicOperatorImage() { return weblogicOperatorImage; }
+  public void setWeblogicOperatorImage(String val) { weblogicOperatorImage = convertNullToEmptyString(val); }
+  public CreateOperatorInputs weblogicOperatorImage(String val) { setWeblogicOperatorImage(val); return this; }
 
-  private String imagePullPolicy = "";
-  public String getImagePullPolicy() { return imagePullPolicy; }
-  public void setImagePullPolicy(String val) { imagePullPolicy = convertNullToEmptyString(val); }
-  public CreateOperatorInputs imagePullPolicy(String val) { setImagePullPolicy(val); return this; }
+  private String weblogicOperatorImagePullPolicy = "";
+  public String getWeblogicOperatorImagePullPolicy() { return weblogicOperatorImagePullPolicy; }
+  public void setWeblogicOperatorImagePullPolicy(String val) { weblogicOperatorImagePullPolicy = convertNullToEmptyString(val); }
+  public CreateOperatorInputs weblogicOperatorImagePullPolicy(String val) { setWeblogicOperatorImagePullPolicy(val); return this; }
 
-  private String imagePullSecretName = "";
-  public String getImagePullSecretName() { return imagePullSecretName; }
-  public void setImagePullSecretName(String val) { imagePullSecretName = convertNullToEmptyString(val); }
-  public CreateOperatorInputs imagePullSecretName(String val) { setImagePullSecretName(val); return this; }
+  private String weblogicOperatorImagePullSecretName = "";
+  public String getWeblogicOperatorImagePullSecretName() { return weblogicOperatorImagePullSecretName; }
+  public void setWeblogicOperatorImagePullSecretName(String val) { weblogicOperatorImagePullSecretName = convertNullToEmptyString(val); }
+  public CreateOperatorInputs weblogicOperatorImagePullSecretName(String val) { setWeblogicOperatorImagePullSecretName(val); return this; }
 
   private String externalRestOption = "";
   public String getExternalRestOption() { return externalRestOption; }

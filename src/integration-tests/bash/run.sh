@@ -557,13 +557,13 @@ function deploy_operator {
     cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
-    sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-    sed -i -e "s|\(image:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
+    sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
+    sed -i -e "s|\(weblogicOperatorImage:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
     if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
+      sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
     fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
-    sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
+    sed -i -e "s|\(externalRestOption:\).*|\1SELF_SIGNED_CERT|g" $inputs
     sed -i -e "s|\(externalSans:\).*|\1DNS:${NODEPORT_HOST}|g" $inputs
     trace 'customize the inputs yaml file to set the java logging level to FINER'
     sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
@@ -2307,10 +2307,10 @@ function test_create_domain_on_exist_dir {
     trace "check domain directory exists"
     local tmp_dir="$TMP_DIR"
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    local persistence_path=`egrep 'persistencePath' $inputs | awk '{print $2}'`
+    local domain_storage_path=`egrep 'weblogicDomainStoragePath' $inputs | awk '{print $2}'`
     local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
 
-    local domain_dir=${persistence_path}"/domain/"${domain_name}
+    local domain_dir=${domain_storage_path}"/domain/"${domain_name}
     if [ ! -d ${domain_dir} ] ; then
       fail "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
     fi
