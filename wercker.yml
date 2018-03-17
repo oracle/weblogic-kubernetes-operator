@@ -60,7 +60,8 @@ build:
       $GPG_SCRIPT --sign authority-name "foobar" > /tmp/sig.txt
       cat /tmp/sig.txt
       echo "$GPG_SCRIPT --verify \"`cat /tmp/sig.txt`\""
-      $GPG_SCRIPT --verify "`cat /tmp/sig.txt`"
+      $GPG_SCRIPT --verify "`cat /tmp/sig.txt`" && echo VERIFIED!
+      $GPG_SCRIPT --verify "XX`cat /tmp/sig.txt`XX" || echo FAILED!
       $GPG_SCRIPT --get-signature-keyid "`cat /tmp/sig.txt`"
       $GPG_SCRIPT --get-signature-data "`cat /tmp/sig.txt`"
 
