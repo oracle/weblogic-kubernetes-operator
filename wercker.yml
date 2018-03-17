@@ -39,17 +39,18 @@ build:
       cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT
       echo "chmod +x $GPG_SCRIPT"
       chmod +x $GPG_SCRIPT
-      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-mgmt.sh $GPG_MGMT_SCRIPT"
-      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-mgmt.sh $GPG_MGMT_SCRIPT
-      echo "chmod +x $GPG_MGMT_SCRIPT"
-      chmod +x $GPG_MGMT_SCRIPT
       echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT"
       cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT
       echo "chmod +x $SBAS_SCRIPT"
       chmod +x $SBAS_SCRIPT
-      ls -ld $WERCKER_CACHE_DIR/*.sh || true
-      echo "$GPG_MGMT_SCRIPT init || true"
-      $GPG_MGMT_SCRIPT init || true
+      echo "ls -ld $WERCKER_CACHE_DIR/*.sh"
+      ls -ld $WERCKER_CACHE_DIR/*.sh
+      echo "$GPG_SCRIPT --init-keyring"
+      $GPG_SCRIPT --init-keyring
+      echo "$GPG_SCRIPT --get-authority-names"
+      $GPG_SCRIPT --get-authority-names
+      echo "$GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)"
+      $GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)
 
   - script:
     name: Build Java Client
