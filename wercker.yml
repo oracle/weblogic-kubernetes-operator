@@ -53,6 +53,13 @@ build:
       $GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)
 
   - script:
+    name: Test Signing
+    code: |
+      echo "Test signing ..."
+      echo "$GPG_SCRIPT --sign authority 'foobar'"
+      $GPG_SCRIPT --sign authority 'foobar'
+
+  - script:
     name: Build Java Client
     code: |
       echo "Building Java Client ..."
