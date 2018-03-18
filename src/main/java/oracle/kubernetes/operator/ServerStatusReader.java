@@ -4,9 +4,8 @@
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.CharBuffer;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -117,28 +116,33 @@ public class ServerStatusReader {
     public NextAction apply(Packet packet) {
       String podName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
 
-      final boolean stdin = false;
-      final boolean tty = false;
+      // Even though we don't need input data for this call, the API server is 
+      // returning 400 Bad Request any time we set these to false.  There is likely some bug in the client
+      final boolean stdin = true;
+      final boolean tty = true;
 
       return doSuspend(fiber -> {
         ClientHelper helper = ClientHelper.getInstance();
         ClientHolder holder = helper.take();
         Exec exec = new Exec(holder.getApiClient());
+        Process proc = null;
         try {
           
           // TEST
           System.out.println("***** pod: " + podName);
           
-          final Process proc = exec.exec(namespace, podName,
+          proc = exec.exec(namespace, podName,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
               KubernetesConstants.CONTAINER_NAME, stdin, tty);
 
           if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
             String state = null;
-            try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
-              CharBuffer buf = CharBuffer.allocate(64); // longest: FAILED_NOT_RESTARTABLE:Y:Y
-              while (reader.read(buf) >= 0) {}
-              state = buf.toString();
+            InputStream in = proc.getInputStream();
+            int a = in.available();
+            if (a > 0) {
+              byte[] data = new byte[a];
+              in.read(data);
+              state = new String(data, StandardCharsets.UTF_8);
               
               // TEST
               System.out.println("***** state: " + state);
@@ -157,6 +161,10 @@ public class ServerStatusReader {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         } finally {
           helper.recycle(holder);
+        }
+        
+        if (proc != null) {
+          proc.destroy();
         }
         
         fiber.resume(packet);
