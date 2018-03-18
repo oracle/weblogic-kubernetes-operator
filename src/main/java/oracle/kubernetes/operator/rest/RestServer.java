@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.rest;
 
+import org.apache.commons.codec.binary.Base64;
+
 import io.kubernetes.client.util.SSLUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -20,6 +22,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
@@ -270,11 +273,9 @@ public class RestServer {
     LOGGER.entering(certificateData, certificateFile);
     KeyManager[] result =
       SSLUtils.keyManagers(
-        certificateData,
-        certificateFile,
-        keyData,
-        keyFile,
-        "RSA", // key algorithm
+        Base64.decodeBase64(certificateData),
+        Base64.decodeBase64(keyData),
+        "", // Let utility figure it out, "RSA", // key algorithm
         "", // operator key passphrase in the temp keystore that gets created to hold the keypair
         null, // file name of the temp keystore
         null // pass phrase of the temp keystore
