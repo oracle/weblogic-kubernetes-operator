@@ -110,9 +110,11 @@ The following parameters must be provided in the input file:
 | managedServerNameBase	| Base string used to generate Managed Server names.	| managed-server |
 | managedServerPort	| Port number for each Managed Server.	| 8001 |
 | namespace	| The Kubernetes namespace to create the domain in.	| default |
+| nfsServer	| NFS server name or IP.	|  |
 | persistencePath	| Physical path of the persistent volume storage. |	/scratch/k8s_dir/persistentVolume001 |
 | persistenceSize	| Total storage allocated by the persistent volume.	| 10Gi |
 | persistenceStorageClass	| Name of the storage class to set for the persistent volume and persistent volume claim.	| weblogic |
+| persistenceType	| Persistent volume type. The parameter value must be hostPath or nfs. If set to 'nfs', nfsServer must be specified. | hostPath |
 | persistenceVolumeClaimName	| Name of the Kubernetes persistent volume claim for this domain.	| pv001-claim |
 | persistenceVolumeName	| Name of the Kubernetes persistent volume for this domain.	| pv001 |
 | productionModeEnabled	| Boolean indicating if production mode is enabled for the domain. | true |
@@ -126,7 +128,6 @@ The following parameters must be provided in the input file:
 
 This technology preview release has some limitations in the create domain script that users should be aware of.
 
-*	The script assumes the use of the `HostPath` persistent volume provider.
 *	The script creates the specified number of Managed Servers and places them all in one cluster.
 *	The script always creates one cluster.
 
