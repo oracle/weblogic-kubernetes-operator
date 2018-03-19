@@ -137,7 +137,8 @@ Some of the contents of the inputs files have changed:
 | secretName | weblogicCredentialsSecretName |
 
 #### Properties that must be customized
-The following input properties, which used to have default values, now must be uncommented and customized:
+The following input properties, which used to have default values, now must be uncommented and customized.
+
 | Previous Property Name | New Property Name | Previous Default Value | Notes |
 | --- | --- | --- | --- |
 | domainUid | domainUID | domain1 | Since the domain UID is supposed to be globally unique, the customer must choose one. |
