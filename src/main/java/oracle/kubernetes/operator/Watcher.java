@@ -1,7 +1,7 @@
 // Copyright 2017, 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.watcher;
+package oracle.kubernetes.operator;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.watcher.Watching;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -42,9 +43,9 @@ public class Watcher<T> {
    * Kick off the watcher processing that runs in a separate thread.
    * @return Started thread
    */
-  public Thread start() {
+  public Thread start(String threadName) {
     Thread thread = new Thread(this::doWatch);
-    thread.setName("Watcher");
+    thread.setName(threadName);
     thread.setDaemon(true);
     thread.start();
     return thread;

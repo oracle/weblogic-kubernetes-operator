@@ -10,7 +10,6 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.watcher.Watcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 
@@ -20,11 +19,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class handles Domain watching. It receives domain events and sends
  * them into the operator for processing.
  */
-public class DomainWatcher implements Runnable {
+public class DomainWatcher implements Runnable, oracle.kubernetes.operator.watcher.ThreadedWatcher {
   private final String ns;
   private final String initialResourceVersion;
   private final WatchingEventDestination<Domain> destination;
   private final AtomicBoolean isStopping;
+  private Thread thread;
   
   public static DomainWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<Domain> destination, AtomicBoolean isStopping) {
     DomainWatcher dlw = new DomainWatcher(ns, initialResourceVersion, destination, isStopping);
@@ -32,6 +32,7 @@ public class DomainWatcher implements Runnable {
     thread.setName("Thread-DomainWatcher-" + ns);
     thread.setDaemon(true);
     thread.start();
+    dlw.thread = thread;
     return dlw;
   }
 
@@ -40,6 +41,11 @@ public class DomainWatcher implements Runnable {
     this.initialResourceVersion = initialResourceVersion;
     this.destination = destination;
     this.isStopping = isStopping;
+  }
+
+  @Override
+  public Thread getThread() {
+    return thread;
   }
 
   /**
@@ -73,9 +79,11 @@ public class DomainWatcher implements Runnable {
        */
       @Override
       public WatchI<Domain> initiateWatch(String resourceVersion) throws ApiException {
-        return new WatchBuilder(client)
-                  .withResourceVersion(resourceVersion)
-                .createDomainWatch(ns);
+        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
+      }
+
+      public WatchI<Domain> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+        return watchBuilder.createDomainWatch(ns);
       }
 
       @Override
