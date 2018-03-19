@@ -62,27 +62,30 @@ Verify that you have the right image by running `docker images | grep webloogic-
 
 ## Customizing the operator parameters file
 
-The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-operator-inputs.yaml`, which needs to updated to reflect the target environment.
+The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-weblogic-operator-inputs.yaml`, which needs to updated to reflect the target environment.
 
 The following parameters must be provided in the input file:
 
 ### CONFIGURATION PARAMETERS FOR THE OPERATOR
 
-| Parameter	| Definition	| Default |
+| Parameter | Definition | Default |
 | --- | --- | --- |
-| externalOperatorCert	| A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `CUSTOM_CERT`. | |
-| externalOperatorKey	| A base64 encoded string containing the private key **ask tom** This value is only used when externalRestOption is set to `CUSTOM_CERT`. | |
-| externalRestOption	| Which of the available REST options is desired.  Allowed values: <br/>- `NONE` Disable the REST interface.  <br/>- `SELF_SIGNED_CERT` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `CUSTOM_CERT` Provide custom certificates, for example from an external certification authority. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.	| none |
-| externalSans	| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
-| namespace	| The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.	| weblogic-operator |
-| targetNamespaces	| A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here.	| default |
-| image | The Docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
-| remoteDebugNodePort	| The NodePort that the Java debugging server should listen on.  <br/>If the debug parameter if set to on, then the operator will start a Java remote debug server on the provided port and will suspend execution until a remote debugger has attached.	| 30999 |
-| restHttpsNodePort	| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. 	| 31001 |
-| serviceAccount	| The name of the service account that the operator will use to make requests to the Kubernetes API server. |	weblogic-operator |
-| loadBalancer	| Determines which load balancer should be installed to provide load balancing for WebLogic clusters.  Allowed values are:<br/>-	`none` – do not configure a load balancer<br/>- `traefik` – configure the Traefik Ingress provider<br/>- `nginx` – reserved for future use<br/>- `ohs` – reserved for future use |	traefik |
-| loadBalancerWebPort	| The NodePort for the load balancer to accept user traffic. |	30305 |
-| elkIntegrationEnabled	| Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, logstash and Kibana will be installed, and logstash will be configured to export the operator’s logs to ElasticSearch. |	false |
+| elkIntegrationEnabled | Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, logstash and Kibana will be installed, and logstash will be configured to export the operator’s logs to ElasticSearch. | false |
+| externalDebugHttpPort | The port number of the operator's debugging port outside of the Kubernetes cluster. | 30999 |
+| externalOperatorCert | A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `CUSTOM_CERT`. | |
+| externalOperatorKey | A base64 encoded string containing the private key of the operator's X.509 certificate.  This value is only used when externalRestOption is set to `CUSTOM_CERT`. | |
+| externalRestHttpsPort| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. | 31001 |
+| externalRestOption | Which of the available REST options is desired.  Allowed values: <br/>- `NONE` Disable the REST interface.  <br/>- `SELF_SIGNED_CERT` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `CUSTOM_CERT` Provide custom certificates, for example from an external certification authority. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.| NONE |
+| externalSans| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
+| internalDebugHttpPort | The port number of the operator's debugging port inside the Kubernetes cluster. | 30999 |
+| javaLoggingLevel | The level of Java logging that should be enabled in the operator.  Allowed values are `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST` | INFO |
+| namespace | The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.| weblogic-operator |
+| remoteDebugNodePortEnabled | Controls whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached. | false |
+| serviceAccount| The name of the service account that the operator will use to make requests to the Kubernetes API server. | weblogic-operator |
+| targetNamespaces | A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here. | default |
+| weblogicOperatorImage | The Docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
+| weblogicOperatorImagePullPolicy | The image pull policy for the operator docker image.  Allowed values are 'Always', 'Never' and 'IfNotPresent' | IfNotPresent |
+| weblogicOperatorImagePullSecretName | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image.  The presence of the secret will be validated when this parameter is enabled. | |
 
 ## Decide which REST configuration to use
 
@@ -119,14 +122,18 @@ To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
 To deploy the operator, run the deployment script and give it the location of your inputs file:
 
 ```
-./create-weblogic-operator.sh –i /path/to/create-operator-inputs.yaml
+# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /scratch/user-projects:
+export OUTPUT_DIR="/path/to/weblogic-operator-output-directory"
+mkdir -p $OUTPUT_DIR
+./create-weblogic-operator.sh –i /path/to/create-weblogic-operator-inputs.yaml -o $OUTPUT_DIR
 ```
 
 ## What the script does
 
 The script will carry out the following actions:
 
-*	A set of Kubernetes YAML files will be created from the inputs provided.
+*	Create a directory for the generated Kubernetes YAML files for this operator.  The pathname is $OUTPUT_DIR/weblogic-operators/<namespace parameter from create-weblogic-operator-inputs.yaml.
+*	A set of Kubernetes YAML files will be created from the inputs provided in this directory.
 *	A namespace will be created for the operator.
 *	A service account will be created in that namespace.
 *	A set of RBAC roles and bindings will be created.
@@ -209,7 +216,7 @@ The spec section provides details for the container that the operator will execu
           name: operator-config-map
       - name: operator-secrets-volume
         secret:
-          secretName: operator-secrets
+          weblogicCredentialsSecretName: operator-secrets
       # Uncomment this volume if using ELK integration:
       # - name: log-dir
       #   emptyDir:

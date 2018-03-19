@@ -36,7 +36,6 @@ In this documentation, several important terms are used and are intended to have
 | Secret	| A Kubernetes secret is a named object that can store secret information like usernames, passwords, X.509 certificates, or any other arbitrary data. |
 |Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
 
-
 # Getting Started
 
 Before using the operator, it is highly recommended to read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.  It is also worth reading the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
@@ -190,6 +189,11 @@ kubectl delete service internal-weblogic-operator-service –n NAMESPACE
 Replace `NAMESPACE` with the namespace that the operator is running in.
 
 To remove more than one operator, repeat these steps for each operator namespace.
+
+
+# Recent Changes
+
+See [Recent changes](site/recent-changes.md) for recent changes to the weblogic operator, including any backwards incompatible changes.
 
 
 # Developer guide

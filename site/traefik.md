@@ -1,6 +1,6 @@
 # Load balancing with Traefik
 
-If the `loadBalancer` option is set to `traefik` when running the `create-domain-job.sh` script to create a WebLogic domain in Kubernetes, then the Traefik Ingress Controller will be installed into the *cluster* and an *ingress* will be created for each WebLogic *cluster* in the *domain*.
+If the `loadBalancer` option is set to `traefik` when running the `create-weblogic-domain.sh` script to create a WebLogic domain in Kubernetes, then the Traefik Ingress Controller will be installed into the *cluster* and an *ingress* will be created for each WebLogic *cluster* in the *domain*.
 
 More information about the Traefik Ingress controller can be found at: [https://docs.traefik.io/user-guide/kubernetes/](https://docs.traefik.io/user-guide/kubernetes/)
 
@@ -10,8 +10,8 @@ Traefik will expose two `NodePorts` that allow access to the Ingress itself and 
 # Load balancer web port
 loadBalancerWebPort: 30305
 
-# Load balancer admin port
-loadBalancerAdminPort: 30315
+# Load balancer dashboard port
+loadBalancerDashboardPort: 30315
 ```
 The operator will automatically update the Ingress to ensure that it contains a list of only those pods that are "ready".  Here is an example of what the Ingress might look like for a WebLogic cluster called `cluster-1`, in a domain called `base_domain` with `domainUID domain1` that has three Managed Servers in the "ready" state:
 

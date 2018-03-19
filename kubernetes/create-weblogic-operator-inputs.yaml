@@ -72,7 +72,7 @@ externalOperatorCert:
 externalOperatorKey:
 
 # Controls whether or not the operator will start a Java remote debug server on the
-# provided port and will suspend execution until a remote debugger has attached.
+# provided port and suspend execution until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
 # cluster and the 'externalDebugHttpPort' property controls the port number outside
 # the Kubernetes cluster.
