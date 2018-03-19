@@ -75,11 +75,11 @@ The `SECRET_NAME` value specified here must be in the format `DOMAINUID-weblogic
 
 WebLogic domains that are managed by the operator are required to store their configuration and state on a persistent volume.  This volume is mounted read/write on all containers that are running a server in the domain.  There are many different persistent volume providers, but they do not all support multiple read/write mounts.  It is required that the chosen provider supports multiple read/write mounts. Details of available providers are available at [https://kubernetes.io/docs/concepts/storage/persistent-volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes).  Careful attention should be given to the table in the section titled “Access Modes”.
 
-In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HostPath` provides the simplest configuration.  In a multinode Kubernetes cluster a `HostPath` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
+In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
 
 ## Creating a persistent volume for the domain
 
-The persistent volume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the `HostPath` provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
+The persistent volume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the `HOST_PATH` provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
 
 ```
 mkdir –m 777 –p /path/to/domain1PersistentVolume
@@ -129,7 +129,6 @@ The following parameters must be provided in the input file:
 
 This technology preview release has some limitations in the create domain script that users should be aware of.
 
-*	The script assumes the use of the `HostPath` persistent volume provider.
 *	The script creates the specified number of Managed Servers and places them all in one cluster.
 *	The script always creates one cluster.
 
@@ -176,7 +175,7 @@ This section provides details of common problems that occur during domain creati
 
 Possibly the most common problem experienced during testing was incorrect configuration of the persistent volume provider.  The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many.  If this is not the case, the domain creation will fail.
 
-The simplest case is where the `HostPath` provider is used.  This can be either with one Kubernetes node, or with the `HostPath` residing in shared storage available at the same location on every node (for example, on an NFS mount).  In this case, the path used for the persistent volume must have its permission bits set to 777.
+The simplest case is where the `HOST_PATH` provider is used.  This can be either with one Kubernetes node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount).  In this case, the path used for the persistent volume must have its permission bits set to 777.
 
 ## YAML files created by the script
 
