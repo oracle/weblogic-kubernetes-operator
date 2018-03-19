@@ -11,17 +11,20 @@ If creating the domain manually, using a WLST script for example, the domain mus
 
 ## Use the scripts to create the sample YAML files
 
-The `create-domain-job.sh` script described in the previous section can be executed with the “-g” option, which will cause it to generate the YAML files but take no action at all against the Kubernetes environment.  This is a useful way to create the sample YAML files needed to manually create a domain.  Execute the script as follows:
+The `create-weblogic-domain.sh` script described in the previous section can be executed with the “-g” option, which will cause it to generate the YAML files but take no action at all against the Kubernetes environment.  This is a useful way to create the sample YAML files needed to manually create a domain.  Execute the script as follows:
 
 ```
-./create-domain-job.sh –i create-domain-job-inputs.yaml –g
+# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /scratch/user-projects:
+export OUTPUT_DIR="/path/to/weblogic-operator-output-directory"
+mkdir -p $OUTPUT_DIR
+./create-weblogic-domain.sh –i create-weblogic-domain-inputs.yaml –g -o $OUTPUT_DIR
 ```
 
-The following YAML files will be generated in the current directory:
+The following YAML files will be generated in the $OUTPUT_DIR/weblogic-domains/<domainUID> directory:
 
-*	`persistent-volume.yaml` can be customized and used to create the persistent volume for this domain.
-*	`persistent-volume-claim.yaml` can be customized and used to create the persistent volume claim for this domain.
-*	`domain-job.yaml` can be ignored when creating the domain manually.
+*	`weblogic-domain-persistent-volume.yaml` can be customized and used to create the persistent volume for this domain.
+*	`weblogic-domain-persistent-volume-claim.yaml` can be customized and used to create the persistent volume claim for this domain.
+*	`create-weblogic-domain-job.yaml` can be ignored when creating the domain manually.
 *	`domain-custom-resource.yaml` can be customized and used to create the domain custom resource.
 
 ## Preparing to create a persistent volume
@@ -35,7 +38,7 @@ The persistent volume will be mounted as `/shared` within every container that i
 *	`/shared/logs` contains log directories
 *	`/shared/stores` contains persistent stores
 
-The file `persistent-volume.yaml` contains a template to create a persistent volume. The customizable items are listed below:
+The file `weblogic-domain-persistent-volume.yaml` contains a template to create a persistent volume. The customizable items are listed below:
 
 *	Persistent volume name
 *	Storage class name
@@ -49,7 +52,7 @@ The file `persistent-volume.yaml` contains a template to create a persistent vol
 To create the persistent volume issue the following command:
 
 ```
-kubectl create –f persistent-volume.yaml
+kubectl create –f weblogic-domain-persistent-volume.yaml
 ```
 
 To verify the persistent volume was created, use this command:
@@ -62,7 +65,7 @@ Replace `PV_NAME` with the name of the persistent volume.
 
 ## Preparing to create the persistent volume claim
 
-The file `persistent-volume-claim.yaml` contains a template to claim a portion of the persistent volume storage. The customizable items are listed below:
+The file `weblogic-domain-persistent-volume-claim.yaml` contains a template to claim a portion of the persistent volume storage. The customizable items are listed below:
 
 *	Persistent volume claim name
 *	Namespace name
@@ -75,7 +78,7 @@ The file `persistent-volume-claim.yaml` contains a template to claim a portion o
 To create the persistent volume claim issue the following command:
 
 ```
-kubectl create –f persistent-volume-claim.yaml
+kubectl create –f weblogic-domain-persistent-volume-claim.yaml
 ```
 
 To verify the persistent volume was created, use this command:
