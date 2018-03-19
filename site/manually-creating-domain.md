@@ -11,12 +11,15 @@ If creating the domain manually, using a WLST script for example, the domain mus
 
 ## Use the scripts to create the sample YAML files
 
-The `create-weblogic-domain.sh` script described in the previous section can be executed with the “-g” option, which will cause it to generate the YAML files but take no action at all against the Kubernetes environment.  This is a useful way to create the sample YAML files needed to manually create a domain.  Execute the script as follows:
+The `create-weblogic-domain.sh` script described in the previous section can be executed with the “-g” option, which will cause it to generate the YAML files but take no action at all against the Kubernetes environment.  This is a useful way to create the sample YAML files needed to manually create a domain.
+
+First, make a copy of `create-weblogic-domain-inputs.yaml` and customize it.
+
+Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
+
+Then, execute the script, pointing it at your inputs file and output directory:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in,
-# e.g. /path/to/weblogic-operator-output-directory
-
 ./create-weblogic-domain.sh –g \
   –i create-weblogic-domain-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory

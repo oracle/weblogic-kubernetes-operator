@@ -62,9 +62,7 @@ Verify that you have the right image by running `docker images | grep webloogic-
 
 ## Customizing the operator parameters file
 
-The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The input to this script is the file `create-weblogic-operator-inputs.yaml`, which needs to updated to reflect the target environment.
-
-The following parameters must be provided in the input file:
+The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The default input to this script is the file `create-weblogic-operator-inputs.yaml`.  It contains the following parameters:
 
 ### CONFIGURATION PARAMETERS FOR THE OPERATOR
 
@@ -86,6 +84,8 @@ The following parameters must be provided in the input file:
 | weblogicOperatorImage | The Docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
 | weblogicOperatorImagePullPolicy | The image pull policy for the operator docker image.  Allowed values are 'Always', 'Never' and 'IfNotPresent' | IfNotPresent |
 | weblogicOperatorImagePullSecretName | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image.  The presence of the secret will be validated when this parameter is enabled. | |
+
+Review the default values to see if any need to be updated to reflect the target environment.  If so, then make a copy of the input file and modify it.  Otherwise, you can use the default input file.
 
 ## Decide which REST configuration to use
 
@@ -119,14 +119,15 @@ To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
 
 ## Deploying the operator to a Kubernetes cluster
 
-To deploy the operator, run the deployment script and give it the location of your inputs file:
+At this point, you've created a custom inputs file, or you've decided to use the default one.
+
+Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+
+Finally, run the operator installation script to deploy the operator, pointing it at your inputs file and your output directory:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in,
-# e.g. /path/to/weblogic-operator-output-directory
-
 ./create-weblogic-operator.sh \
-  –i /path/to/create-weblogic-operator-inputs.yaml \
+  -i /path/to/create-weblogic-operator-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
 

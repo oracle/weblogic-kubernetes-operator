@@ -89,7 +89,7 @@ For other providers, consult the documentation for the provider for instructions
 
 ## Customizing the domain parameters file
 
-The domain is created with the provided installation script (`create-weblogic-domain.sh`).  The input to this script is the file `create-weblogic-domain-inputs.yaml`, which needs to be updated to reflect the target environment.  
+The domain is created with the provided installation script (`create-weblogic-domain.sh`).  The input to this script is the file `create-weblogic-domain-inputs.yaml`, which must be copied and updated to reflect the target environment.  
 
 The following parameters must be provided in the input file:
 
@@ -125,6 +125,8 @@ The following parameters must be provided in the input file:
 | weblogicDomainStorageNFSServer| The name of ip address of the NFS server for the weblogic domain's storage. | no default |
 | weblogicImagePullSecretName | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | docker-store-secret |
 
+You must uncomment and customize `domainUID` and `weblogicDomainStoratePath`.
+
 ## Limitations of the create domain script
 
 This technology preview release has some limitations in the create domain script that users should be aware of.
@@ -136,11 +138,11 @@ Oracle intends to remove these limitations in a future release.
 
 ## Using the script to create a domain
 
-To execute the script and create a domain, issue the following command:
+At this point, you've created a customized copy of the inputs file.
 
-```
-# Choose and create a directory that generated weblogic operator related files will be stored in,
-# e.g. /path/to/weblogic-operator-output-directory
+Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+
+Finally, run the create script, pointing it at your inputs file and output directory:
 
 ./create-weblogic-domain.sh \
   –i create-domain-job-inputs.yaml \
@@ -151,7 +153,7 @@ To execute the script and create a domain, issue the following command:
 
 The script will perform the following steps:
 
-*	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is /path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID parameter from create-weblogic-domain-inputs.yaml.
+*	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is /path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>.
 *	Create Kubernetes YAML files based on the provided inputs.
 *	Create a persistent volume for the shared state.
 *	Create a persistent volume claim for that volume.
