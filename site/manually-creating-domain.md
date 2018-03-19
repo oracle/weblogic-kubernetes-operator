@@ -14,13 +14,11 @@ If creating the domain manually, using a WLST script for example, the domain mus
 The `create-weblogic-domain.sh` script described in the previous section can be executed with the “-g” option, which will cause it to generate the YAML files but take no action at all against the Kubernetes environment.  This is a useful way to create the sample YAML files needed to manually create a domain.  Execute the script as follows:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /scratch/user-projects:
-export OUTPUT_DIR="/path/to/weblogic-operator-output-directory"
-mkdir -p $OUTPUT_DIR
-./create-weblogic-domain.sh –i create-weblogic-domain-inputs.yaml –g -o $OUTPUT_DIR
+# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
+./create-weblogic-domain.sh –i create-weblogic-domain-inputs.yaml –g -o /path/to/weblogic-operator-output-directory
 ```
 
-The following YAML files will be generated in the $OUTPUT_DIR/weblogic-domains/<domainUID> directory:
+The following YAML files will be generated in the /path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID> directory:
 
 *	`weblogic-domain-persistent-volume.yaml` can be customized and used to create the persistent volume for this domain.
 *	`weblogic-domain-persistent-volume-claim.yaml` can be customized and used to create the persistent volume claim for this domain.
