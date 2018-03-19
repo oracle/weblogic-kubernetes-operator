@@ -10,7 +10,7 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.watcher.Watcher;
+import oracle.kubernetes.operator.watcher.ThreadedWatcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 
@@ -20,18 +20,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class handles ConfigMap watching. It receives config map change events and sends
  * them into the operator for processing.
  */
-public class ConfigMapWatcher implements Runnable {
+public class ConfigMapWatcher implements Runnable, ThreadedWatcher {
   private final String ns;
   private final String initialResourceVersion;
   private final WatchingEventDestination<V1ConfigMap> destination;
   private final AtomicBoolean isStopping;
-  
+  private Thread thread;
+
   public static ConfigMapWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<V1ConfigMap> destination, AtomicBoolean isStopping) {
     ConfigMapWatcher dlw = new ConfigMapWatcher(ns, initialResourceVersion, destination, isStopping);
     Thread thread = new Thread(dlw);
     thread.setName("Thread-ConfigMapWatcher-" + ns);
     thread.setDaemon(true);
     thread.start();
+    dlw.thread = thread;
     return dlw;
   }
 
@@ -40,6 +42,11 @@ public class ConfigMapWatcher implements Runnable {
     this.initialResourceVersion = initialResourceVersion;
     this.destination = destination;
     this.isStopping = isStopping;
+  }
+
+  @Override
+  public Thread getThread() {
+    return thread;
   }
 
   /**
@@ -73,10 +80,13 @@ public class ConfigMapWatcher implements Runnable {
        */
       @Override
       public WatchI<V1ConfigMap> initiateWatch(String resourceVersion) throws ApiException {
-        return new WatchBuilder(client)
-                  .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL)
-                .createConfigMapWatch(ns);
+        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
+      }
+
+      @Override
+      public WatchI<V1ConfigMap> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+        return watchBuilder.withLabelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL)
+                        .createConfigMapWatch(ns);
       }
 
       @Override

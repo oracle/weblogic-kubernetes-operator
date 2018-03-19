@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.watcher.Watcher;
+import oracle.kubernetes.operator.watcher.ThreadedWatcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 
@@ -22,18 +22,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class handles Ingress watching. It receives Ingress change events and sends
  * them into the operator for processing.
  */
-public class IngressWatcher implements Runnable {
+public class IngressWatcher implements Runnable, ThreadedWatcher {
   private final String ns;
   private final String initialResourceVersion;
   private final WatchingEventDestination<V1beta1Ingress> destination;
   private final AtomicBoolean isStopping;
-  
+  private Thread thread;
+
   public static IngressWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<V1beta1Ingress> destination, AtomicBoolean isStopping) {
     IngressWatcher dlw = new IngressWatcher(ns, initialResourceVersion, destination, isStopping);
     Thread thread = new Thread(dlw);
     thread.setName("Thread-IngressWatcher-" + ns);
     thread.setDaemon(true);
     thread.start();
+    dlw.thread = thread;
     return dlw;
   }
 
@@ -42,6 +44,10 @@ public class IngressWatcher implements Runnable {
     this.initialResourceVersion = initialResourceVersion;
     this.destination = destination;
     this.isStopping = isStopping;
+  }
+
+  public Thread getThread() {
+    return thread;
   }
 
   /**
@@ -63,7 +69,7 @@ public class IngressWatcher implements Runnable {
     }
   }
   
-  protected Watching<V1beta1Ingress> createWatching(ClientHolder client) {
+  private Watching<V1beta1Ingress> createWatching(ClientHolder client) {
     return new Watching<V1beta1Ingress>() {
 
       /**
@@ -75,11 +81,13 @@ public class IngressWatcher implements Runnable {
        */
       @Override
       public WatchI<V1beta1Ingress> initiateWatch(String resourceVersion) throws ApiException {
-        return new WatchBuilder(client)
-                  .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL
-                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-                .createIngressWatch(ns);
+        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
+      }
+
+      public WatchI<V1beta1Ingress> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+        return watchBuilder
+                    .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+                  .createIngressWatch(ns);
       }
 
       @Override

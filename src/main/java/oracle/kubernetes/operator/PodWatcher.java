@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.watcher.Watcher;
+import oracle.kubernetes.operator.watcher.ThreadedWatcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 import oracle.kubernetes.operator.work.NextAction;
@@ -34,13 +34,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Watches for Pods to become Ready or leave Ready state
  * 
  */
-public class PodWatcher implements Runnable {
+public class PodWatcher implements Runnable, ThreadedWatcher {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   
   private final String ns;
   private final String initialResourceVersion;
   private final WatchingEventDestination<V1Pod> destination;
   private final AtomicBoolean isStopping;
+  private Thread thread;
   
   // Map of Pod name to OnReady
   private final ConcurrentMap<String, OnReady> readyCallbackRegistrations = new ConcurrentHashMap<>();
@@ -59,6 +60,7 @@ public class PodWatcher implements Runnable {
     thread.setName("Thread-PodWatcher-" + ns);
     thread.setDaemon(true);
     thread.start();
+    prw.thread = thread;
     return prw;
   }
 
@@ -67,6 +69,10 @@ public class PodWatcher implements Runnable {
     this.initialResourceVersion = initialResourceVersion;
     this.destination = destination;
     this.isStopping = isStopping;
+  }
+
+  public Thread getThread() {
+    return thread;
   }
 
   /**
@@ -100,11 +106,14 @@ public class PodWatcher implements Runnable {
        */
       @Override
       public WatchI<V1Pod> initiateWatch(String resourceVersion) throws ApiException {
-        return new WatchBuilder(client)
-                  .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL 
-                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-                .createPodWatch(ns);
+        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
+      }
+
+      @Override
+      public WatchI<V1Pod> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+        return watchBuilder
+                    .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+                 .createPodWatch(ns);
       }
 
       @Override

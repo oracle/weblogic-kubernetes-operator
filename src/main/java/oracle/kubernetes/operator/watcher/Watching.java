@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.watcher;
 
 import io.kubernetes.client.ApiException;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 
 /**
@@ -21,6 +22,8 @@ public interface Watching<T> extends WatchingEventDestination<T> {
    * @throws ApiException in the event of an API error.
    */
   public WatchI<T> initiateWatch(String resourceVersion) throws ApiException;
+
+  WatchI<T> initiateWatch(WatchBuilder watchBuilder) throws ApiException;
 
   /**
    * Return true when the watch process should stop

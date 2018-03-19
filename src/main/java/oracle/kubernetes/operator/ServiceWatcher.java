@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.watcher.Watcher;
+import oracle.kubernetes.operator.watcher.ThreadedWatcher;
 import oracle.kubernetes.operator.watcher.Watching;
 import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 
@@ -22,18 +22,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class handles Service watching. It receives service change events and sends
  * them into the operator for processing.
  */
-public class ServiceWatcher implements Runnable {
+public class ServiceWatcher implements Runnable, ThreadedWatcher {
   private final String ns;
   private final String initialResourceVersion;
   private final WatchingEventDestination<V1Service> destination;
   private final AtomicBoolean isStopping;
-  
+  private Thread thread;
+
   public static ServiceWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<V1Service> destination, AtomicBoolean isStopping) {
     ServiceWatcher dlw = new ServiceWatcher(ns, initialResourceVersion, destination, isStopping);
     Thread thread = new Thread(dlw);
     thread.setName("Thread-ServiceWatcher-" + ns);
     thread.setDaemon(true);
     thread.start();
+    dlw.thread = thread;
     return dlw;
   }
 
@@ -42,6 +44,10 @@ public class ServiceWatcher implements Runnable {
     this.initialResourceVersion = initialResourceVersion;
     this.destination = destination;
     this.isStopping = isStopping;
+  }
+
+  public Thread getThread() {
+    return thread;
   }
 
   /**
@@ -63,7 +69,7 @@ public class ServiceWatcher implements Runnable {
     }
   }
   
-  protected Watching<V1Service> createWatching(ClientHolder client) {
+  private Watching<V1Service> createWatching(ClientHolder client) {
     return new Watching<V1Service>() {
 
       /**
@@ -75,11 +81,14 @@ public class ServiceWatcher implements Runnable {
        */
       @Override
       public WatchI<V1Service> initiateWatch(String resourceVersion) throws ApiException {
-        return new WatchBuilder(client)
-                  .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL
-                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-                .createServiceWatch(ns);
+        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
+      }
+
+      @Override
+      public WatchI<V1Service> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+        return watchBuilder
+                 .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+                 .createServiceWatch(ns);
       }
 
       @Override
