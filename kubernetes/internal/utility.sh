@@ -293,3 +293,24 @@ function internalValidateGeneratedYamlFilesDoNotExist {
   done
 }
 
+# Copy the inputs file from the command line into the output directory
+# for the domain/operator unless the output directory already has an
+# inputs file and the file is the same as the one from the commandline.
+# $1 the inputs file from the command line
+# $2 the file in the output directory that needs to be made the same as $1
+function copyInputsFileToOutputDirectory {
+  local from=$1
+  local to=$2
+  local doCopy="true"
+  if [ -f "${to}" ]; then
+    local difference=`diff ${from} ${to}`
+    if [ -z "${difference}" ]; then
+      # the output file already exists and is the same as the inputs file.
+      # don't make a copy.
+      doCopy="false"
+    fi
+  fi
+  if [ "${doCopy}" = "true" ]; then
+    cp ${from} ${to}
+  fi
+}

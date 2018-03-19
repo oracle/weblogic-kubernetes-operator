@@ -349,8 +349,12 @@ function createYamlFiles {
   # Create a directory for this operator's output files
   mkdir -p ${oprOutputDir}
 
-  # Save a copy of the inputs yaml file there
-  cp ${valuesInputFile} "${oprOutputDir}/create-weblogic-operator-inputs.yaml"
+  # Make sure the output directory has a copy of the inputs file.
+  # The user can either pre-create the output directory, put the inputs
+  # file there, and create the operator from it, or the user can put the
+  # inputs file some place else and let this script create the output directory
+  # (if needed) and copy the inputs file there.
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${oprOutputDir}/create-weblogic-operator-inputs.yaml"
 
   # Generate the yaml to create the WebLogic operator
   oprOutput="${oprOutputDir}/weblogic-operator.yaml"
