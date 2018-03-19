@@ -122,8 +122,12 @@ To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
 To deploy the operator, run the deployment script and give it the location of your inputs file:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
-./create-weblogic-operator.sh –i /path/to/create-weblogic-operator-inputs.yaml -o /path/to/weblogic-operator-output-directory
+# Choose and create a directory that generated weblogic operator related files will be stored in,
+# e.g. /path/to/weblogic-operator-output-directory
+
+./create-weblogic-operator.sh \
+  –i /path/to/create-weblogic-operator-inputs.yaml \
+  -o /path/to/weblogic-operator-output-directory
 ```
 
 ## What the script does
