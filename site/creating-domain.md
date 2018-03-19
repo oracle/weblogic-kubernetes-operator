@@ -139,8 +139,12 @@ Oracle intends to remove these limitations in a future release.
 To execute the script and create a domain, issue the following command:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
-./create-weblogic-domain.sh –i create-domain-job-inputs.yaml -o /path/to/weblogic-operator-output-directory
+# Choose and create a directory that generated weblogic operator related files will be stored in,
+# e.g. /path/to/weblogic-operator-output-directory
+
+./create-weblogic-domain.sh \
+  –i create-domain-job-inputs.yaml \
+  -o /path/to/weblogic-operator-output-directory
 ```
 
 ## What the script does

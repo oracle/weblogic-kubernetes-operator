@@ -76,8 +76,12 @@ To run the tests, uncomment the following `execution` element in the `pom.xml` f
 These tests assume that the RBAC definitions exist on the Kubernetes cluster.  To create them, update the inputs file and run the operator installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
-./create-weblogic-operator.sh -g -i create-weblogic-operator-inputs.yaml -o /path/to/weblogic-operator-output-directory
+# Choose and create a directory that generated weblogic operator related files will be stored in,
+# e.g. /path/to/weblogic-operator-output-directory
+
+./create-weblogic-operator.sh -g \
+  -i create-weblogic-operator-inputs.yaml \
+  -o /path/to/weblogic-operator-output-directory
 ```
 
 This will create a file called `/path/to/weblogic-operator-output-directory/weblogic-operators/weblogic-operator/weblogic-operator-security.yaml`, which you will need to apply to your cluster:
@@ -123,8 +127,12 @@ Verify that you have the right image by running `docker images | grep webloogic-
 To create the Kuberentes YAML file to deploy the operator, update the inputs file (`create-weblogic-operator-inputs.yaml`) and make sure the `imagePullPolicy` is set to `Never` and the `image` matches the name you used in your `docker build` command.  Then run the operator installation script to deploy the operator:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
-./create-weblogic-operator.sh -i create-weblogic-operator-inputs.yaml -o /path/to/weblogic-operator-output-directory
+# Choose and create a directory that generated weblogic operator related files will be stored in,
+# e.g. /path/to/weblogic-operator-output-directory
+
+./create-weblogic-operator.sh \
+  -i create-weblogic-operator-inputs.yaml \
+  -o /path/to/weblogic-operator-output-directory
 ```
 
 
