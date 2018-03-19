@@ -110,7 +110,7 @@ Some of the contents of the inputs files have changed:
 #### Property Values
 
 | Previous Property Name | Property Name | Old Property Value | New Property Value |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | externalRestOption | externalRestOption | none | NONE |
 | externalRestOption | externalRestOption | custom-cert | CUSTOM_CERT |
 | externalRestOption | externalRestOption | self-signed-cert | SELF_SIGNED_CERT |
@@ -139,6 +139,7 @@ Some of the contents of the inputs files have changed:
 #### Properties that must be customized
 The following input properties, which used to have default values, now must be uncommented and customized:
 | Previous Property Name | New Property Name | Previous Default Value | Notes |
+| --- | --- | --- | --- |
 | domainUid | domainUID | domain1 | Since the domain UID is supposed to be globally unique, the customer must choose one. |
 | persistencePath | weblogicDomainStoragePath | /scratch/k8s_dir/persistentVolume001 | The customer must select a directory for the domain's storage. |
 | nfsServer | weblogicDomainStorageNFSServer | nfsServer | If weblogicDomainStorageType is NFS, then the customer must specify the name or IP of the NFS server. |
@@ -146,7 +147,7 @@ The following input properties, which used to have default values, now must be u
 #### Property Values
 
 | Previous Property Name | New Property Name | Old Property Value | New Property Value |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | loadBalancer | loadBalancer | none | NONE |
 | loadBalancer | loadBalancer | traefik | TRAEFIK |
 | persistenceType | weblogicDomainStorageType | hostPath | HOST_PATH |
