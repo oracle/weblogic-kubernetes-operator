@@ -73,12 +73,15 @@ To run the tests, uncomment the following `execution` element in the `pom.xml` f
 -->
 ```
 
-These tests assume that the RBAC definitions exist on the Kubernetes cluster.  To create them, update the inputs file and run the operator installation script with the "generate only" option as shown below (see the [installation](installation.md) page for details about this script and the inputs):
+These tests assume that the RBAC definitions exist on the Kubernetes cluster.
+
+To create them, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it.
+
+Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+
+Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (see the [installation](installation.md) page for details about this script and the inputs):
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in,
-# e.g. /path/to/weblogic-operator-output-directory
-
 ./create-weblogic-operator.sh -g \
   -i create-weblogic-operator-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
@@ -124,14 +127,15 @@ docker load < /some/path/operator.tar
 
 Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
 
-To create the Kuberentes YAML file to deploy the operator, update the inputs file (`create-weblogic-operator-inputs.yaml`) and make sure the `imagePullPolicy` is set to `Never` and the `image` matches the name you used in your `docker build` command.  Then run the operator installation script to deploy the operator:
+To create and deploy the operator, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it, making sure that `weblogicOperatorImagePullPolicy` is set to `Never` and `weblogicOperatorImage` matches the name you used in your `docker build` command.
+
+Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+
+Finally, run the operator installation script to deploy the operator, pointing it at your inputs file and your output directory:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in,
-# e.g. /path/to/weblogic-operator-output-directory
-
 ./create-weblogic-operator.sh \
-  -i create-weblogic-operator-inputs.yaml \
+  -i /path/to/create-weblogic-operator-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
 
