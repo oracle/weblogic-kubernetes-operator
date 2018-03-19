@@ -78,7 +78,30 @@ public class CreateDomainInputsFileTest {
        .domainUID("test-domain-uid")
        .weblogicDomainStoragePath("/scratch/k8s_dir/domain1");
     assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
+    assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
+  }
 
+  @Test
+  public void createDomainFromPreCreatedInputsFileInPreCreatedOutputDirectory_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
+    // customize the domain uid and weblogic storage path so that we have a valid inputs file
+    CreateDomainInputs inputs =
+     readDefaultInputsFile()
+       .domainUID("test-domain-uid")
+       .weblogicDomainStoragePath("/scratch/k8s_dir/domain1");
+    // pre-create the output directory and the inputs file in the output directory, then
+    // use that inputs file to create the domain
+    DomainFiles domainFiles = new DomainFiles(userProjects.getPath(), inputs);
+    Files.createDirectories(domainFiles.getWeblogicDomainPath());
+    assertThat(
+      execCreateDomain(
+        userProjects.getPath(),
+        inputs,
+        domainFiles.getCreateWeblogicDomainInputsYamlPath()),
+      succeedsAndPrints("Completed"));
+    assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
+  }
+
+  private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(CreateDomainInputs inputs) throws Exception {
     // Make sure the generated directory has the correct list of files
     DomainFiles domainFiles = new DomainFiles(userProjects.getPath(), inputs);
     List<Path> expectedFiles = domainFiles.getExpectedContents(true); // include the directory too

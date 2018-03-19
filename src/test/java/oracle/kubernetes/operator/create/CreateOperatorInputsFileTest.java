@@ -77,6 +77,24 @@ public class CreateOperatorInputsFileTest {
     assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
   }
 
+
+  @Test
+  public void createDomainFromPreCreatedInputsFileInPreCreatedOutputDirectory_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles() throws Exception {
+    // customize the namespace name so that we can tell that it generated the yaml files based on this inputs instead of the default one
+    CreateOperatorInputs inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
+    // pre-create the output directory and the inputs file in the output directory, then
+    // use that inputs file to create the operator
+    OperatorFiles operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);
+    Files.createDirectories(operatorFiles.getWeblogicOperatorPath());
+    assertThat(
+      execCreateOperator(
+        userProjects.getPath(),
+        inputs,
+        operatorFiles.getCreateWeblogicOperatorInputsYamlPath()),
+      succeedsAndPrints("Completed"));
+    assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
+  }
+
   private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(CreateOperatorInputs inputs) throws Exception {
     // Make sure the generated directory has the correct list of files
     OperatorFiles operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);

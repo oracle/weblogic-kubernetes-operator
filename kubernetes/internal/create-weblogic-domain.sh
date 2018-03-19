@@ -350,8 +350,12 @@ function createYamlFiles {
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  # Save a copy of the inputs yaml file there
-  cp ${valuesInputFile} "${domainOutputDir}/create-weblogic-domain-inputs.yaml"
+  # Make sure the output directory has a copy of the inputs file.
+  # The user can either pre-create the output directory, put the inputs
+  # file there, and create the domain from it, or the user can put the
+  # inputs file some place else and let this script create the output directory
+  # (if needed) and copy the inputs file there.
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-weblogic-domain-inputs.yaml"
 
   domainPVOutput="${domainOutputDir}/weblogic-domain-persistent-volume.yaml"
   domainPVCOutput="${domainOutputDir}/weblogic-domain-persistent-volume-claim.yaml"

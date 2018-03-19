@@ -14,9 +14,12 @@ public class ExecCreateDomain {
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-domain.sh";
 
   public static ExecResult execCreateDomain(Path userProjectsPath, CreateDomainInputs inputs) throws Exception {
-    Path p = getInputsYamlPath(userProjectsPath);
-    newYaml().dump(inputs, Files.newBufferedWriter(p));
-    return execCreateDomain(" -g -o " + userProjectsPath.toString() + " -i " + p.toString());
+    return execCreateDomain(userProjectsPath, inputs, getInputsYamlPath(userProjectsPath));
+  }
+
+  public static ExecResult execCreateDomain(Path userProjectsPath, CreateDomainInputs inputs, Path inputsYamlPath) throws Exception {
+    newYaml().dump(inputs, Files.newBufferedWriter(inputsYamlPath));
+    return execCreateDomain(" -g -o " + userProjectsPath.toString() + " -i " + inputsYamlPath.toString());
   }
 
   public static ExecResult execCreateDomain(String options) throws Exception {

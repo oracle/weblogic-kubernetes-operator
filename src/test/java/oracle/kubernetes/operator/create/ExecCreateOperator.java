@@ -14,9 +14,12 @@ public class ExecCreateOperator {
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-operator.sh";
 
   public static ExecResult execCreateOperator(Path userProjectsPath, CreateOperatorInputs inputs) throws Exception {
-    Path p = getInputsYamlPath(userProjectsPath);
-    newYaml().dump(inputs, Files.newBufferedWriter(p));
-    return execCreateOperator(" -g -o " + userProjectsPath.toString() + " -i " + p.toString());
+    return execCreateOperator(userProjectsPath, inputs, getInputsYamlPath(userProjectsPath));
+  }
+
+  public static ExecResult execCreateOperator(Path userProjectsPath, CreateOperatorInputs inputs, Path inputsYamlPath) throws Exception {
+    newYaml().dump(inputs, Files.newBufferedWriter(inputsYamlPath));
+    return execCreateOperator(" -g -o " + userProjectsPath.toString() + " -i " + inputsYamlPath.toString());
   }
 
   public static ExecResult execCreateOperator(String options) throws Exception {
