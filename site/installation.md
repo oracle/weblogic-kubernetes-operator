@@ -122,17 +122,15 @@ To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
 To deploy the operator, run the deployment script and give it the location of your inputs file:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /scratch/user-projects:
-export OUTPUT_DIR="/path/to/weblogic-operator-output-directory"
-mkdir -p $OUTPUT_DIR
-./create-weblogic-operator.sh –i /path/to/create-weblogic-operator-inputs.yaml -o $OUTPUT_DIR
+# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
+./create-weblogic-operator.sh –i /path/to/create-weblogic-operator-inputs.yaml -o /path/to/weblogic-operator-output-directory
 ```
 
 ## What the script does
 
 The script will carry out the following actions:
 
-*	Create a directory for the generated Kubernetes YAML files for this operator.  The pathname is $OUTPUT_DIR/weblogic-operators/<namespace parameter from create-weblogic-operator-inputs.yaml.
+*	Create a directory for the generated Kubernetes YAML files for this operator.  The pathname is /path/to/weblogic-operator-output-directory/weblogic-operators/<namespace parameter from create-weblogic-operator-inputs.yaml.
 *	A set of Kubernetes YAML files will be created from the inputs provided in this directory.
 *	A namespace will be created for the operator.
 *	A service account will be created in that namespace.

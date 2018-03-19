@@ -139,17 +139,15 @@ Oracle intends to remove these limitations in a future release.
 To execute the script and create a domain, issue the following command:
 
 ```
-# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /scratch/user-projects:
-export OUTPUT_DIR="/path/to/weblogic-operator-output-directory"
-mkdir -p $OUTPUT_DIR
-./create-weblogic-domain.sh –i create-domain-job-inputs.yaml -o $OUTPUT_DIR
+# Choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
+./create-weblogic-domain.sh –i create-domain-job-inputs.yaml -o /path/to/weblogic-operator-output-directory
 ```
 
 ## What the script does
 
 The script will perform the following steps:
 
-*	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is $OUTPUT_DIR/weblogic-domains/<domainUID parameter from create-weblogic-domain-inputs.yaml.
+*	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is /path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID parameter from create-weblogic-domain-inputs.yaml.
 *	Create Kubernetes YAML files based on the provided inputs.
 *	Create a persistent volume for the shared state.
 *	Create a persistent volume claim for that volume.
