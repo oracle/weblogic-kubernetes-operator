@@ -5,13 +5,17 @@ package oracle.kubernetes.operator;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
@@ -127,25 +131,15 @@ public class ServerStatusReader {
         Exec exec = new Exec(holder.getApiClient());
         Process proc = null;
         try {
-          
-          // TEST
-          System.out.println("***** pod: " + podName);
-          
           proc = exec.exec(namespace, podName,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
               KubernetesConstants.CONTAINER_NAME, stdin, tty);
 
+          InputStream in = proc.getInputStream();
           if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
             String state = null;
-            InputStream in = proc.getInputStream();
-            int a = in.available();
-            if (a > 0) {
-              byte[] data = new byte[a];
-              in.read(data);
-              state = new String(data, StandardCharsets.UTF_8);
-              
-              // TEST
-              System.out.println("***** state: " + state);
+            try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
+                state = CharStreams.toString(reader);
             }
 
             @SuppressWarnings("unchecked")
@@ -161,10 +155,9 @@ public class ServerStatusReader {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         } finally {
           helper.recycle(holder);
-        }
-        
-        if (proc != null) {
-          proc.destroy();
+          if (proc != null) {
+            proc.destroy();
+          }
         }
         
         fiber.resume(packet);
