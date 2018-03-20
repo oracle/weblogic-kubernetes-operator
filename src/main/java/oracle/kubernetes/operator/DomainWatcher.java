@@ -4,14 +4,10 @@
 package oracle.kubernetes.operator;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.watcher.Watching;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,86 +15,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class handles Domain watching. It receives domain events and sends
  * them into the operator for processing.
  */
-public class DomainWatcher implements Runnable, oracle.kubernetes.operator.watcher.ThreadedWatcher {
+public class DomainWatcher extends Watcher<Domain> {
   private final String ns;
-  private final String initialResourceVersion;
-  private final WatchingEventDestination<Domain> destination;
-  private final AtomicBoolean isStopping;
-  private Thread thread;
-  
-  public static DomainWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<Domain> destination, AtomicBoolean isStopping) {
-    DomainWatcher dlw = new DomainWatcher(ns, initialResourceVersion, destination, isStopping);
-    Thread thread = new Thread(dlw);
-    thread.setName("Thread-DomainWatcher-" + ns);
-    thread.setDaemon(true);
-    thread.start();
-    dlw.thread = thread;
-    return dlw;
+
+  public static DomainWatcher create(String ns, String initialResourceVersion, WatchListener<Domain> listener, AtomicBoolean isStopping) {
+    DomainWatcher watcher = new DomainWatcher(ns, initialResourceVersion, listener, isStopping);
+    watcher.start("Thread-DomainWatcher-" + ns);
+    return watcher;
   }
 
-  private DomainWatcher(String ns, String initialResourceVersion, WatchingEventDestination<Domain> destination, AtomicBoolean isStopping) {
+  private DomainWatcher(String ns, String initialResourceVersion, WatchListener<Domain> listener, AtomicBoolean isStopping) {
+    super(initialResourceVersion, isStopping, listener);
     this.ns = ns;
-    this.initialResourceVersion = initialResourceVersion;
-    this.destination = destination;
-    this.isStopping = isStopping;
   }
 
   @Override
-  public Thread getThread() {
-    return thread;
+  public WatchI<Domain> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    return watchBuilder.createDomainWatch(ns);
   }
 
-  /**
-   * Polling loop. Get the next Domain object event and process it.
-   */
-  @Override
-  public void run() {
-    ClientHelper helper = ClientHelper.getInstance();
-    ClientHolder client = helper.take();
-    try {
-      Watching<Domain> w = createWatching(client);
-      Watcher<Domain> watcher = new Watcher<>(w, initialResourceVersion);
-      
-      // invoke watch on current Thread.  Won't return until watch stops
-      watcher.doWatch();
-      
-    } finally {
-      helper.recycle(client);
-    }
-  }
-  
-  protected Watching<Domain> createWatching(ClientHolder client) {
-    return new Watching<Domain>() {
-
-      /**
-       * Watcher callback to issue the list Domain changes. It is driven by the
-       * Watcher wrapper to issue repeated watch requests.
-       * @param resourceVersion resource version to omit older events
-       * @return Watch object or null if the operation should end
-       * @throws ApiException if there is an API error.
-       */
-      @Override
-      public WatchI<Domain> initiateWatch(String resourceVersion) throws ApiException {
-        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
-      }
-
-      public WatchI<Domain> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-        return watchBuilder.createDomainWatch(ns);
-      }
-
-      @Override
-      public void eventCallback(Watch.Response<Domain> item) {
-        processEventCallback(item);
-      }
-
-      @Override
-      public boolean isStopping() {
-        return isStopping.get();
-      }
-    };
-  }
-  
-  public void processEventCallback(Watch.Response<Domain> item) {
-    destination.eventCallback(item);
-  }
 }

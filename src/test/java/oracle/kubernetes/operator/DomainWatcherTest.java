@@ -4,12 +4,12 @@ package oracle.kubernetes.operator;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.ThreadedWatcher;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -17,13 +17,13 @@ import static org.hamcrest.Matchers.hasEntry;
 /**
  * This test class verifies the behavior of the DomainWatcher.
  */
-public class DomainWatcherTest extends WatcherTestBase implements WatchingEventDestination<Domain> {
+public class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
 
 
   private static final int INITIAL_RESOURCE_VERSION = 456;
 
   @Override
-  public void eventCallback(Watch.Response<Domain> response) {
+  public void receivedResponse(Watch.Response<Domain> response) {
     recordCallBack(response);
   }
 
@@ -43,7 +43,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchingEventD
   }
 
   @Override
-  protected ThreadedWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
+  protected DomainWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
       return DomainWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
   }
 }
