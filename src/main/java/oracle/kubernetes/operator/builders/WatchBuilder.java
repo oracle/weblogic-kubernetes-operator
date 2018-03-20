@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.builders;
 
-import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
@@ -12,8 +11,10 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+
+import com.squareup.okhttp.Call;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -228,6 +229,15 @@ public class WatchBuilder {
     public WatchBuilder withLabelSelector(String labelSelector) {
         callParams.setLabelSelector(labelSelector);
         return this;
+    }
+
+    public WatchBuilder withLabelSelectors(String... labelSelectors) {
+        callParams.setLabelSelector(String.join(",", labelSelectors));
+        return this;
+    }
+
+    private String asList(String... selectors) {
+        return String.join(",", selectors);
     }
 
     public WatchBuilder withLimit(Integer limit) {

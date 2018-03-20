@@ -11,12 +11,12 @@ import io.kubernetes.client.util.Watch;
  * @param <T> The type of the object that is being watched.
  */
 @FunctionalInterface
-public interface WatchingEventDestination<T> {
+public interface WatchListener<T> {
   /**
    * Call back for any watch type. This can be used instead of the specific
    * call backs to handle any type of watch response.
    *
    * @param response Watch response consisting of type and object
    */
-  public void eventCallback(Watch.Response<T> response);
+  public void receivedResponse(Watch.Response<T> response);
 }
