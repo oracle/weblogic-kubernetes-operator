@@ -5,11 +5,11 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.ThreadedWatcher;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
-import org.junit.Test;
+import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.Test;
 
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
@@ -18,12 +18,12 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /**
  * This test class verifies the behavior of the ConfigMapWatcher.
  */
-public class ConfigMapWatcherTest extends WatcherTestBase implements WatchingEventDestination<V1ConfigMap> {
+public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListener<V1ConfigMap> {
 
   private static final int INITIAL_RESOURCE_VERSION = 456;
 
   @Override
-  public void eventCallback(Watch.Response<V1ConfigMap> response) {
+  public void receivedResponse(Watch.Response<V1ConfigMap> response) {
     recordCallBack(response);
   }
 
@@ -36,10 +36,6 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchingEve
                     .and(hasEntry("labelSelector", LabelConstants.CREATEDBYOPERATOR_LABEL)));
   }
 
-  private String asList(String... selectors) {
-    return String.join(",", selectors);
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   protected <T> T createObjectWithMetaData(V1ObjectMeta metaData) {
@@ -47,7 +43,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchingEve
   }
 
   @Override
-  protected ThreadedWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
+  protected ConfigMapWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
       return ConfigMapWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
   }
 }

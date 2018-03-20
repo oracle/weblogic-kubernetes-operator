@@ -1,33 +1,37 @@
 /* Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved. */
 package oracle.kubernetes.operator;
 
-import com.google.common.collect.ImmutableMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.ThreadedWatcher;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
-import org.junit.Test;
+import oracle.kubernetes.operator.watcher.WatchListener;
+
+import com.google.common.collect.ImmutableMap;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
  * This test class verifies the behavior of the ServiceWatcher.
  */
-public class ServiceWatcherTest extends WatcherTestBase implements WatchingEventDestination<V1Service> {
+public class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {
 
 
   private static final int INITIAL_RESOURCE_VERSION = 987;
 
   @Override
-  public void eventCallback(Watch.Response<V1Service> response) {
+  public void receivedResponse(Watch.Response<V1Service> response) {
     recordCallBack(response);
   }
 
@@ -52,7 +56,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchingEvent
   }
 
   @Override
-  protected ThreadedWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
+  protected ServiceWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
       return ServiceWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
   }
 

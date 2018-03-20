@@ -5,8 +5,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.ThreadedWatcher;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+import oracle.kubernetes.operator.watcher.WatchListener;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -25,12 +24,12 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /**
  * This test class verifies the behavior of the IngressWatcher.
  */
-public class IngressWatcherTest extends WatcherTestBase implements WatchingEventDestination<V1beta1Ingress> {
+public class IngressWatcherTest extends WatcherTestBase implements WatchListener<V1beta1Ingress> {
 
   private static final int INITIAL_RESOURCE_VERSION = 456;
 
   @Override
-  public void eventCallback(Watch.Response<V1beta1Ingress> response) {
+  public void receivedResponse(Watch.Response<V1beta1Ingress> response) {
     recordCallBack(response);
   }
 
@@ -82,7 +81,7 @@ public class IngressWatcherTest extends WatcherTestBase implements WatchingEvent
   }
 
   @Override
-  protected ThreadedWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
+  protected IngressWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
       return IngressWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
   }
 }

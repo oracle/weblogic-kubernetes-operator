@@ -11,15 +11,11 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.watcher.ThreadedWatcher;
-import oracle.kubernetes.operator.watcher.Watching;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -34,15 +30,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Watches for Pods to become Ready or leave Ready state
  * 
  */
-public class PodWatcher implements Runnable, ThreadedWatcher {
+public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   
   private final String ns;
-  private final String initialResourceVersion;
-  private final WatchingEventDestination<V1Pod> destination;
-  private final AtomicBoolean isStopping;
-  private Thread thread;
-  
+  private final WatchListener<V1Pod> listener;
+
   // Map of Pod name to OnReady
   private final ConcurrentMap<String, OnReady> readyCallbackRegistrations = new ConcurrentHashMap<>();
   
@@ -50,85 +43,31 @@ public class PodWatcher implements Runnable, ThreadedWatcher {
    * Factory for PodWatcher
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
-   * @param destination Callback for watch events
+   * @param listener Callback for watch events
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
-  public static PodWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<V1Pod> destination, AtomicBoolean isStopping) {
-    PodWatcher prw = new PodWatcher(ns, initialResourceVersion, destination, isStopping);
-    Thread thread = new Thread(prw);
-    thread.setName("Thread-PodWatcher-" + ns);
-    thread.setDaemon(true);
-    thread.start();
-    prw.thread = thread;
-    return prw;
+  public static PodWatcher create(String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
+    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, listener, isStopping);
+    watcher.start("Thread-PodWatcher-" + ns);
+    return watcher;
   }
 
-  private PodWatcher(String ns, String initialResourceVersion, WatchingEventDestination<V1Pod> destination, AtomicBoolean isStopping) {
+  private PodWatcher(String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
+    super(initialResourceVersion, isStopping);
+    setListener(this);
     this.ns = ns;
-    this.initialResourceVersion = initialResourceVersion;
-    this.destination = destination;
-    this.isStopping = isStopping;
+    this.listener = listener;
   }
 
-  public Thread getThread() {
-    return thread;
-  }
-
-  /**
-   * Polling loop. Get the next Pod object event and process it.
-   */
   @Override
-  public void run() {
-    ClientHelper helper = ClientHelper.getInstance();
-    ClientHolder client = helper.take();
-    try {
-      Watching<V1Pod> w = createWatching(client);
-      Watcher<V1Pod> watcher = new Watcher<>(w, initialResourceVersion);
-      
-      // invoke watch on current Thread.  Won't return until watch stops
-      watcher.doWatch();
-      
-    } finally {
-      helper.recycle(client);
-    }
+  public WatchI<V1Pod> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    return watchBuilder
+             .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+             .createPodWatch(ns);
   }
-  
-  private Watching<V1Pod> createWatching(ClientHolder client) {
-    return new Watching<V1Pod>() {
 
-      /**
-       * Watcher callback to issue the list Pod changes. It is driven by the
-       * Watcher wrapper to issue repeated watch requests.
-       * @param resourceVersion resource version to omit older events
-       * @return Watch object or null if the operation should end
-       * @throws ApiException if there is an API error.
-       */
-      @Override
-      public WatchI<V1Pod> initiateWatch(String resourceVersion) throws ApiException {
-        return initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion));
-      }
-
-      @Override
-      public WatchI<V1Pod> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-        return watchBuilder
-                    .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-                 .createPodWatch(ns);
-      }
-
-      @Override
-      public void eventCallback(Watch.Response<V1Pod> item) {
-        processEventCallback(item);
-      }
-
-      @Override
-      public boolean isStopping() {
-        return isStopping.get();
-      }
-    };
-  }
-  
-  private void processEventCallback(Watch.Response<V1Pod> item) {
+  public void receivedResponse(Watch.Response<V1Pod> item) {
     LOGGER.entering();
     
     switch(item.type) {
@@ -149,7 +88,7 @@ public class PodWatcher implements Runnable, ThreadedWatcher {
     default:
     }
     
-    destination.eventCallback(item);
+    listener.receivedResponse(item);
 
     LOGGER.exiting();
   }

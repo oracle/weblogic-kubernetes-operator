@@ -7,14 +7,17 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.helpers.ClientHelper;
+import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.watcher.Watching;
+import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
@@ -26,29 +29,84 @@ import static java.net.HttpURLConnection.HTTP_GONE;
  *
  * @param <T> The type of the object to be watched.
  */
-public class Watcher<T> {
+abstract class Watcher<T> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
-  private final Watching<T> watching;
+  private static final String IGNORED_RESOURCE_VERSION = "0";
+
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private String resourceVersion;
+  private AtomicBoolean stopping;
+  private WatchListener<T> listener;
+  private ClientHolder clientHolder;
+  private Thread thread;
 
-  public Watcher(Watching<T> watching, String resourceVersion) {
-    this.watching = watching;
+  /**
+   * Constructs a watcher without specifying a listener. Needed when the listener is the watch subclass itself.
+   * @param resourceVersion the oldest version to return for this watch
+   * @param stopping an atomic boolean to watch to determine when to stop the watcher
+   */
+  Watcher(String resourceVersion, AtomicBoolean stopping) {
     this.resourceVersion = resourceVersion;
+    this.stopping = stopping;
   }
-  
+
+  /**
+   * Constructs a watcher with a separate listener.
+   * @param resourceVersion the oldest version to return for this watch
+   * @param stopping an atomic boolean to watch to determine when to stop the watcher
+   * @param listener a listener to which to dispatch watch events
+   */
+  Watcher(String resourceVersion, AtomicBoolean stopping, WatchListener<T> listener) {
+    this(resourceVersion, stopping);
+    this.listener = listener;
+  }
+
+  /**
+   * Waits for this watcher's thread to exit. For unit testing only.
+   */
+  void waitForExit() {
+    try {
+          thread.join();
+      } catch (InterruptedException ignored) {
+      }
+  }
+
+  /**
+   * Sets the listener for watch events.
+   * @param listener the instance which should receive watch events
+   */
+  void setListener(WatchListener<T> listener) {
+    this.listener = listener;
+  }
+
   /**
    * Kick off the watcher processing that runs in a separate thread.
-   * @return Started thread
    */
-  public Thread start(String threadName) {
-    Thread thread = new Thread(this::doWatch);
+  void start(String threadName) {
+    assert clientHolder == null : "Watcher thread is already active";
+    thread = new Thread(this::doWatch);
     thread.setName(threadName);
     thread.setDaemon(true);
     thread.start();
-    return thread;
+  }
+
+  private void doWatch() {
+    ClientHelper helper = ClientHelper.getInstance();
+    clientHolder = helper.take();
+    try {
+      setIsDraining(false);
+
+      while (!isDraining()) {
+        if (isStopping())
+          setIsDraining(true);
+        else
+          watchForEvents();
+      }
+    } finally {
+      helper.recycle(clientHolder);
+      clientHolder = null;
+    }
   }
 
   // Are we draining?
@@ -61,26 +119,16 @@ public class Watcher<T> {
     this.isDraining.set(isDraining);
   }
 
-  /**
-   * Start the watching streaming operation in the current thread
-   */
-  public void doWatch() {
-    setIsDraining(false);
-
-    while (!isDraining()) {
-      if (watching.isStopping())
-        setIsDraining(true);
-      else
-        watchForEvents();
-    }
+  protected boolean isStopping() {
+    return stopping.get();
   }
 
   private void watchForEvents() {
-    try (WatchI<T> watch = watching.initiateWatch(resourceVersion)) {
+    try (WatchI<T> watch = initiateWatch(new WatchBuilder(clientHolder).withResourceVersion(resourceVersion))) {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 
-        if (watching.isStopping())
+        if (isStopping())
           setIsDraining(true);
         if (isDraining())
           continue;
@@ -94,6 +142,14 @@ public class Watcher<T> {
     }
   }
 
+  /**
+   * Initiates a watch by using the watch builder to request any updates for the specified watcher
+   * @param watchBuilder the watch builder, initialized with the current resource version.
+   * @return Watch object or null if the operation should end
+   * @throws ApiException if there is an API error.
+   */
+  public abstract WatchI<T> initiateWatch(WatchBuilder watchBuilder) throws ApiException;
+
   private boolean isError(Watch.Response<T> item) {
     return item.type.equalsIgnoreCase("ERROR");
   }
@@ -101,7 +157,8 @@ public class Watcher<T> {
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.type, item.object);
-    watching.eventCallback(item);
+    if (listener != null)
+      listener.receivedResponse(item);
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
@@ -128,31 +185,36 @@ public class Watcher<T> {
    * @param object the object that is returned
    */
   private void trackResourceVersion(String type, Object object) {
+    updateResourceVersion(getNewResourceVersion(type, object));
+  }
 
-    Class<?> cls = object.getClass();
-    // This gets tricky because the class might not have a direct getter
-    // for resourceVersion. So it is necessary to dig into the metadata
-    // object to pull out the resourceVersion.
-    V1ObjectMeta metadata;
+  private String getNewResourceVersion(String type, Object object) {
+    if (type.equalsIgnoreCase("DELETED"))
+      return Integer.toString(1 + Integer.parseInt(resourceVersion));
+    else
+      return getResourceVersionFromMetadata(object);
+  }
+
+  private String getResourceVersionFromMetadata(Object object) {
     try {
-      Field metadataField = cls.getDeclaredField("metadata");
-      metadataField.setAccessible(true);
-      metadata = (V1ObjectMeta) metadataField.get(object);
-    } catch (NoSuchFieldException | IllegalAccessException ex) {
-      LOGGER.warning(MessageKeys.EXCEPTION, ex);
-      return;
-    }
-    String rv = metadata.getResourceVersion();
-    if (type.equalsIgnoreCase("DELETED")) {
-      int rv1 = Integer.parseInt(resourceVersion);
-      rv = "" + (rv1 + 1);
-    }
-    if (resourceVersion == null || resourceVersion.length() < 1) {
-      resourceVersion = rv;
-    } else {
-      if ( rv.compareTo(resourceVersion) > 0 ) {  
-        resourceVersion = rv;
-      }
+      Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
+      V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
+      return metadata.getResourceVersion();
+    } catch (Exception e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+      return IGNORED_RESOURCE_VERSION;
     }
   }
+
+  private void updateResourceVersion(String newResourceVersion) {
+    if (isNullOrEmptyString(resourceVersion))
+      resourceVersion = newResourceVersion;
+    else if (newResourceVersion.compareTo(resourceVersion) > 0)
+      resourceVersion = newResourceVersion;
+  }
+
+  private static boolean isNullOrEmptyString(String s) {
+    return s == null || s.equals("");
+  }
+
 }

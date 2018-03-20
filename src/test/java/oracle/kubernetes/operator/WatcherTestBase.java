@@ -2,7 +2,6 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
-import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.TestUtils;
@@ -10,20 +9,24 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.watcher.ThreadedWatcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+
+import com.meterware.simplestub.Memento;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 
 /**
  * Tests behavior of the Watcher class.
@@ -139,6 +142,16 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     }
 
     @Test
+    public void afterDelete_nextRequestSendsIncrementedResourceVersion() throws Exception {
+        StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
+        StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+
+        createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+
+        assertThat(StubWatchFactory.getRecordedParameters().get(1), hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION+1)));
+    }
+
+    @Test
     public void afterExceptionDuringNext_closeWatchAndTryAgain() throws Exception {
         StubWatchFactory.throwExceptionOnNext(new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE));
         StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
@@ -158,15 +171,11 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     }
 
     private void createAndRunWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-        ThreadedWatcher watcher = createWatcher(nameSpace, stopping, initialResourceVersion);
-        Thread t = watcher.getThread();
-        try {
-            t.join();
-        } catch (InterruptedException ignored) {
-        }
+        Watcher watcher = createWatcher(nameSpace, stopping, initialResourceVersion);
+        watcher.waitForExit();
     }
 
-    protected abstract ThreadedWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion);
+    protected abstract Watcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion);
 
 
 }
