@@ -382,7 +382,7 @@ public class RestBackendImpl implements RestBackend {
     // Verify the current configured cluster size
     int clusterSize = wlsClusterConfig.getClusterSize();
     if (wlsClusterConfig.hasDynamicServers()) {
-      clusterSize += wlsClusterConfig.getDynamicClusterSize();
+      clusterSize += wlsClusterConfig.getMaxDynamicClusterSize();
     }
     if (managedServerCount > clusterSize) {
       throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED, managedServerCount, clusterSize, cluster, cluster);
