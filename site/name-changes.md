@@ -62,7 +62,7 @@ The create scripts support a -i option for specifying the location of the inputs
 
 If -i is not specified, kubernetes/create-weblogic-operator.sh uses kubernetes/create-weblogic-operator-inputs.yaml.
 
-Previously, kubernetes/create-domain-job.sh used kubernetes/create-domain-job-inputs.yaml as the input file if -i was not specified.  This behavior has been changed.  The customer must select a world wide unique id for the domain and set the domainUid property in the inputs file to that value.  This means that the customer must always modify the inputs file.
+Previously, kubernetes/create-domain-job.sh used kubernetes/create-domain-job-inputs.yaml as the input file if -i was not specified.  This behavior has been changed.  The customer must select a Kubernetes cluster wide unique id for the domain and set the domainUid property in the inputs file to that value.  This means that the customer must always modify the inputs file.
 
 Also, we do not want the customer to have to change files in the weblogic operator's install directory.  Because of this, the -i option MUST be specified when calling kubernetes/create-weblogic-operator.sh.  The basic flow is:
 
@@ -141,7 +141,7 @@ The following input properties, which used to have default values, now must be u
 
 | Previous Property Name | New Property Name | Previous Default Value | Notes |
 | --- | --- | --- | --- |
-| domainUid | domainUID | domain1 | Since the domain UID is supposed to be globally unique, the customer must choose one. |
+| domainUid | domainUID | domain1 | Since the domain UID is supposed to be unique across the Kubernetes cluster, the customer must choose one. |
 | persistencePath | weblogicDomainStoragePath | /scratch/k8s_dir/persistentVolume001 | The customer must select a directory for the domain's storage. |
 | nfsServer | weblogicDomainStorageNFSServer | nfsServer | If weblogicDomainStorageType is NFS, then the customer must specify the name or IP of the NFS server. |
 
@@ -152,5 +152,5 @@ The following input properties, which used to have default values, now must be u
 | loadBalancer | loadBalancer | none | NONE |
 | loadBalancer | loadBalancer | traefik | TRAEFIK |
 | persistenceType | weblogicDomainStorageType | hostPath | HOST_PATH |
-| persistenceType | weblogicDomainStorateType | nfs | NFS |
+| persistenceType | weblogicDomainStorageType | nfs | NFS |
 
