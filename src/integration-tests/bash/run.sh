@@ -346,6 +346,12 @@ function state_dump {
 
   mkdir -p ${DUMP_DIR}
 
+  # dump the generated operator and domain yaml files if there are any
+  if [ -d ${USER_PROJECTS} ]; then
+    trace Dumping the generated yaml files
+    cp -r ${USER_PROJECTS} ${DUMP_DIR}
+  fi
+
   # Test output is captured to ${TESTOUT} when run.sh is run stand-alone
   if [ -f ${TESTOUT:-NoSuchFile.out} ]; then
       trace Copying ${TESTOUT} to ${DUMP_DIR}/test_suite.out
@@ -2316,7 +2322,7 @@ function test_create_domain_on_exist_dir {
     fi
 
     trace "run the script to create the domain"
-    sh ${tmp_dir}/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR
     local exit_code=$?
     if [ ${exit_code} -eq 1 ] ; then
       trace "[SUCCESS] create domain job failed, this is the expected behavior"
