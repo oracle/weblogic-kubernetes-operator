@@ -108,7 +108,6 @@ public class Main {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-
     // print startup log message
     LOGGER.info(MessageKeys.OPERATOR_STARTED);
 

@@ -20,6 +20,7 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainCondition;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -125,13 +126,15 @@ public class DomainStatusUpdater {
       if (scan != null) {
         for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
           String serverName = entry.getKey();
-          ServerStatus ss = new ServerStatus().withServerName(serverName);
-          ss.setState(serverState.getOrDefault(serverName, "UNKNOWN"));
+          ServerHealth health = new ServerHealth().withState(serverState.getOrDefault(serverName, "UNKNOWN"));
+          ServerStatus ss = new ServerStatus()
+              .withServerName(serverName)
+              .withHealth(health);
           outer:
           for (Map.Entry<String, WlsClusterConfig> cluster : scan.getClusterConfigs().entrySet()) {
             for (WlsServerConfig sic : cluster.getValue().getServerConfigs()) {
               if (serverName.equals(sic.getName())) {
-                ss.setClusterName(cluster.getKey());
+                health.setClusterName(cluster.getKey());
                 break outer;
               }
             }
@@ -140,8 +143,8 @@ public class DomainStatusUpdater {
           if (sko != null) {
             V1Pod pod = sko.getPod().get();
             if (pod != null) {
-              ss.setNodeName(pod.getSpec().getNodeName());
-              ss.setStartTime(pod.getMetadata().getCreationTimestamp());
+              health.setNodeName(pod.getSpec().getNodeName());
+              health.setStartTime(pod.getMetadata().getCreationTimestamp());
             }
           }
           // TODO
@@ -156,11 +159,14 @@ public class DomainStatusUpdater {
         if (!serverStatuses.containsKey(serverName)) {
           V1Pod pod = entry.getValue().getPod().get();
           if (pod != null) {
-            ServerStatus ss = new ServerStatus().withServerName(serverName);
-            ss.setState(serverState.getOrDefault(serverName, "UNKNOWN"));
-            ss.setClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL));
-            ss.setNodeName(pod.getSpec().getNodeName());
-            ss.setStartTime(pod.getMetadata().getCreationTimestamp());
+            ServerHealth health = new ServerHealth()
+                .withState(serverState.getOrDefault(serverName, "UNKNOWN"))
+                .withClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL))
+                .withNodeName(pod.getSpec().getNodeName())
+                .withStartTime(pod.getMetadata().getCreationTimestamp());
+            ServerStatus ss = new ServerStatus()
+                .withServerName(serverName)
+                .withHealth(health);
             // TODO
             //ss.setHealth(health);
             //ss.setSubsystemName(subsystemName);
@@ -184,7 +190,7 @@ public class DomainStatusUpdater {
       // This will control if we need to re-check states soon or if we can slow down checks
       Boolean areServerStatesClean = Boolean.TRUE;
       for (ServerStatus ss : status.getStatus()) {
-        if (!"RUNNING".equals(ss.getState()) && !"SHUTDOWN".equals(ss.getState())) {
+        if (!"RUNNING".equals(ss.getHealth().getState()) && !"SHUTDOWN".equals(ss.getHealth().getState())) {
           areServerStatesClean = Boolean.FALSE;
           break;
         }
@@ -224,7 +230,7 @@ public class DomainStatusUpdater {
             String serverName = entry.getKey();
             if (serversIntendedToRunning.contains(serverName)) {
               ServerStatus ss = serverStatuses.get(serverName);
-              if (ss == null || !"RUNNING".equals(ss.getState())) {
+              if (ss == null || !"RUNNING".equals(ss.getHealth().getState())) {
                 allIntendedPodsToRunning = false;
               }
             }

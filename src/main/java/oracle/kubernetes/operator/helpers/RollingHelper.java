@@ -70,7 +70,7 @@ public class RollingHelper {
       List<ServerStatus> ss = status.getStatus();
       if (ss != null) {
         for (ServerStatus s : ss) {
-          if ("RUNNING".equals(s.getState())) {
+          if ("RUNNING".equals(s.getHealth().getState())) {
             availableServers.add(s.getServerName());
           }
         }
@@ -168,7 +168,7 @@ public class RollingHelper {
         List<ServerStatus> ss = status.getStatus();
         if (ss != null) {
           for (ServerStatus s : ss) {
-            if ("RUNNING".equals(s.getState())) {
+            if ("RUNNING".equals(s.getHealth().getState())) {
               availableServers.add(s.getServerName());
             }
           }
