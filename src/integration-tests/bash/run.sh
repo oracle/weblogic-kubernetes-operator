@@ -346,12 +346,6 @@ function state_dump {
 
   mkdir -p ${DUMP_DIR}
 
-  # dump the generated operator and domain yaml files if there are any
-  if [ -n "${USER_PROJECTS_DIR}" ] && [ -d "${USER_PROJECTS_DIR}" ]; then
-    trace Dumping the generated yaml files in $USER_PROJECTS_DIR to ${DUMP_DIR}
-    cp -r ${USER_PROJECTS_DIR} ${DUMP_DIR}
-  fi
-
   # Test output is captured to ${TESTOUT} when run.sh is run stand-alone
   if [ -f ${TESTOUT:-NoSuchFile.out} ]; then
       trace Copying ${TESTOUT} to ${DUMP_DIR}/test_suite.out
