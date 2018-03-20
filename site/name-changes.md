@@ -155,3 +155,12 @@ The following input properties, which used to have default values, now must be u
 | persistenceType | weblogicDomainStorageType | hostPath | HOST_PATH |
 | persistenceType | weblogicDomainStorageType | nfs | NFS |
 
+## Kubernetes Artifact Names
+The input properties for controlling the domain's persistent volume, persistent volume claim and storage class names have been removed.  These names are now derived from the domain uid.
+
+| Artifact Type | Previous Name | New Name |
+| --- | --- | --- |
+| persistent volume | ${domainUid}-${persistenceVolume} or ${persistenceVolume} | ${domainUID}-weblogic-domain-pv |
+| persistent volume claim | ${domainUid}-${persistenceVolumeClaim} or ${persistenceVolumeClaim} | ${domainUID}-weblogic-domain-pvc |
+| storage class name | ${domainUid} or ${persistenceStorageClass} | ${domainUID-weblogic-domain-storage-class |
+
