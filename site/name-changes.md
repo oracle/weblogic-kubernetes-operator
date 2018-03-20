@@ -16,9 +16,9 @@ This document lists the customer visible naming changes.  Also, the WebLogic Ser
 
 ## Customer Visible Files
 
-### Files for Creating Operators and Domains
+### Files for Creating and Deleting Operators and Domains
 
-The following files are used to create the operator and to create domains.
+The following files are used to create the operator and to create and delete domains.
 
 | Previous File Name | New File Name |
 | --- | --- |
@@ -26,6 +26,7 @@ The following files are used to create the operator and to create domains.
 | kubernetes/create-domain-job-inputs.yaml | kubernetes/create-weblogic-domain-inputs.yaml |
 | kubernetes/create-operator-inputs.yaml | kubernetes/create-weblogic-operator-inputs.yaml |
 | kubernetes/create-weblogic-operator.sh | same |
+| kubernetes/delete-domain.sh | kubernetes/delete-weblogic-operator-resources.sh |
 
 ### Generated YAML Files for Operators and Domains
 
