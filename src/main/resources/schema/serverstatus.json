@@ -4,44 +4,16 @@
     "description": "ServerStatus describes the current status of a specific WebLogic server.",
     "required": [
      "serverName",
-     "state"
+     "health"
     ],
     "properties": {
      "serverName": {
       "description": "WebLogic server name.",
       "type": "string"
      },
-     "startTime": {
-      "description": "RFC 3339 date and time at which the server started.",
-      "type": "date-time",
-      "javaType": "org.joda.time.DateTime"
-     },
-     "clusterName": {
-      "description": "WebLogic cluster name, if the server is part of a cluster",
-      "type": "string"
-     },
-     "nodeName": {
-      "description": "Name of node that is hosting the Pod containing this WebLogic server.",
-      "type": "string"
-     },
-     "state": {
-      "description": "Current state of this WebLogic server.",
-      "type": "string"
-     },
      "health": {
-      "description": "Server health of this WebLogic server.",
-      "type": "string"
-     },
-     "subsystemName": {
-      "description": "Name of subsystem providing symptom information.",
-      "type": "string"
-     },
-     "symptoms": {
-      "description": "Symptoms provided by the reporting subsystem.",
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
+      "description": "State and health of the server.",
+      "$ref": "serverhealth.json"
      }
     }
  }
