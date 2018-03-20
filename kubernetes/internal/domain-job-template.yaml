@@ -197,7 +197,6 @@ data:
         cd('Machine/%s' % machineName)
         create(machineName, 'NodeManager')
         cd('NodeManager/%s' % machineName)
-        set('ListenAddress', '%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%%s' % msIndex)
         set('NMType', 'Plain')
 
     # Create a cluster
