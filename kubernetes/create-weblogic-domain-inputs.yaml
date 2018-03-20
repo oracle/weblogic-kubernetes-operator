@@ -12,9 +12,7 @@ domainName: base_domain
 
 # Unique id identifying a domain.
 # This id must be lowercase and unique across all domains in a Kubernetes cluster.
-# Best practice is to use a globally unique name.
-# The following line must be uncomment and customized:
-#domainUID: domain1.development-stage.yourcompany.com
+#domainUID: domain1
 
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
