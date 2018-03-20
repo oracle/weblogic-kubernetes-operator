@@ -7,8 +7,6 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
 
 import com.meterware.simplestub.Memento;
 
@@ -35,9 +33,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     private static final int NEXT_RESOURCE_VERSION = 123456;
     private static final int INITIAL_RESOURCE_VERSION = 123;
     private static final String NAMESPACE = "testspace";
-    private final static ClientHelper clientHelper = ClientHelper.getInstance();
 
-    private static ClientHolder clientHolder;
     private List<Memento> mementos = new ArrayList<>();
     private List<Watch.Response<?>> callBacks = new ArrayList<>();
 
@@ -63,12 +59,10 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         mementos.add(TestUtils.silenceOperatorLogger());
         mementos.add(StubWatchFactory.install());
         StubWatchFactory.setListener(this);
-        clientHolder = clientHelper.take();
     }
 
     @After
     public void tearDown() throws Exception {
-        clientHelper.recycle(clientHolder);
         for (Memento memento : mementos) memento.revert();
     }
 
