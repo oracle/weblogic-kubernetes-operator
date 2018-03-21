@@ -54,7 +54,7 @@ Similarly, the per-domain directory name is:
   * kubectl delete -f weblogic-operator.yaml
   * kubectl delete -f weblogic-operator-security.yaml
 * Remove the resources that were created for the domain:
-  * kubernetes/delete-weblogic-domain-resources.sh <domainUID>
+  * kubernetes/delete-weblogic-domain-resources.sh yourDomainUID
 * either remove the directory that was generated for that operator / domain, or remove the generated YAML files and the copy of the input file from it
 * make whatever changes you need in your inputs file
 * re-run the create script
