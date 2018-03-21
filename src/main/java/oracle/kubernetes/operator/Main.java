@@ -96,7 +96,14 @@ public class Main {
   private static final int statusUpdateTimeoutSeconds = (int) readTuningParameter("statusUpdateTimeoutSeconds", 10);
   private static final int unchangedCountToDelayStatusRecheck = (int) readTuningParameter("unchangedCountToDelayStatusRecheck", 10); 
   private static final long initialShortDelay = readTuningParameter("initialShortDelay", 3); 
-  private static final long eventualLongDelay = readTuningParameter("eventualLongDelay", 30); 
+  private static final long eventualLongDelay = readTuningParameter("eventualLongDelay", 30);
+  
+  static {
+    int callRequestLimit = (int) readTuningParameter("callRequestLimit", 500);
+    int callMaxRetryCount = (int) readTuningParameter("callMaxRetryCount", 5);
+    int callTimeoutSeconds = (int) readTuningParameter("callTimeoutSeconds", 10);
+    CallBuilder.setTuningParameters(callRequestLimit, callMaxRetryCount, callTimeoutSeconds);
+  }
   
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
