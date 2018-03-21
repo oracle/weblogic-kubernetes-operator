@@ -65,13 +65,13 @@ spec:
               fieldPath: metadata.namespace
         - name: OPERATOR_VERBOSE
           value: "false"
+        - name: JAVA_LOGGING_LEVEL
+          value: "%JAVA_LOGGING_LEVEL%"
         #### If you wish to enable remote debugging, uncomment the following lines and set
         #### the value to the port number you want to use - note that you will also need to
         #### update the Service definition to expose this port
         %REMOTE_DEBUG_NODE_PORT_PREFIX%- name: REMOTE_DEBUG_PORT
         %REMOTE_DEBUG_NODE_PORT_PREFIX%  value: "%INTERNAL_DEBUG_HTTP_PORT%"
-        - name: JAVA_LOGGING_LEVEL
-          value: "%JAVA_LOGGING_LEVEL%"
         volumeMounts:
         - name: operator-config-volume
           mountPath: /operator/config

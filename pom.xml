@@ -140,7 +140,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.7.0</version>
                 <configuration>
-                    <!-- none yet -->
+                    <compilerArgs>
+                        <arg>-Xpkginfo:always</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
@@ -495,6 +497,7 @@
         </dependency>
         <!-- test dependencies -->
         <dependency>
+            <!-- note: need to include this before junit since junit includes an obsolete version of hamcrest -->
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-junit</artifactId>
             <version>2.0.0.0</version>
@@ -504,6 +507,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.19</version>
             <scope>test</scope>
         </dependency>
         <dependency>

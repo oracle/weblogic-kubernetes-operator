@@ -131,5 +131,5 @@ spec:
   - port: 8080
     name: dash
     targetPort: dash
-    nodePort: %LOAD_BALANCER_ADMIN_PORT%
+    nodePort: %LOAD_BALANCER_DASHBOARD_PORT%
   type: NodePort
