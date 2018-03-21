@@ -61,7 +61,7 @@ public class ConfigMapConsumer implements Map<String, String> {
     }
     return null;
   }
-
+  
   @Override
   public String put(String key, String value) {
     throw new UnsupportedOperationException();

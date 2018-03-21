@@ -20,6 +20,7 @@ import com.google.common.io.CharStreams;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
@@ -60,7 +61,8 @@ public class ServerStatusReader {
 
     @Override
     public NextAction apply(Packet packet) {
-      packet.put(ProcessingConstants.SERVER_STATE_MAP, new ConcurrentHashMap<String, String>());
+      ConcurrentMap<String, String> serverStateMap = new ConcurrentHashMap<>();
+      packet.put(ProcessingConstants.SERVER_STATE_MAP, serverStateMap);
       
       Domain domain = info.getDomain();
       V1ObjectMeta meta = domain.getMetadata();
@@ -73,10 +75,17 @@ public class ServerStatusReader {
       for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
         String serverName = entry.getKey();
         ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null && sko.getPod().get() != null) {
-          Packet p = packet.clone();
-          startDetails.add(new StepAndPacket(
-              createServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, null), p));
+        if (sko != null) {
+          V1Pod pod = sko.getPod().get();
+          if (pod != null) {
+            if (PodWatcher.isReady(pod, true)) {
+              serverStateMap.put(serverName, "RUNNING");
+            } else {
+              Packet p = packet.clone();
+              startDetails.add(new StepAndPacket(
+                  createServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, null), p));
+            }
+          }
         }
       }
 
@@ -130,6 +139,7 @@ public class ServerStatusReader {
         ClientHolder holder = helper.take();
         Exec exec = new Exec(holder.getApiClient());
         Process proc = null;
+        String state = null;
         try {
           proc = exec.exec(namespace, podName,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
@@ -137,18 +147,8 @@ public class ServerStatusReader {
 
           InputStream in = proc.getInputStream();
           if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-            String state = null;
             try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
                 state = CharStreams.toString(reader);
-            }
-
-            @SuppressWarnings("unchecked")
-            ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
-                .get(ProcessingConstants.SERVER_STATE_MAP);
-            if (state != null) {
-              serverStateMap.put(serverName, parseState(state));
-            } else {
-              serverStateMap.remove(serverName);
             }
           }
         } catch (IOException | ApiException | InterruptedException e) {
@@ -160,6 +160,10 @@ public class ServerStatusReader {
           }
         }
         
+        @SuppressWarnings("unchecked")
+        ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
+            .get(ProcessingConstants.SERVER_STATE_MAP);
+        serverStateMap.put(serverName, parseState(state));
         fiber.resume(packet);
       });
     }
