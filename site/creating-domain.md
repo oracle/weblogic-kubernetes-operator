@@ -118,7 +118,6 @@ The following parameters must be provided in the input file:
 | persistenceVolumeClaimName	| Name of the Kubernetes persistent volume claim for this domain.	| pv001-claim |
 | persistenceVolumeName	| Name of the Kubernetes persistent volume for this domain.	| pv001 |
 | productionModeEnabled	| Boolean indicating if production mode is enabled for the domain. | true |
-| replaceExistingDomain | If set to 'true' the script will remove any data it finds in the persistent volume before creating the new domain.  Use with caution. | false |
 | secretName	| Name of the Kubernetes secret for the Administration Server's username and password. |	domain1-weblogic-credentials |
 | secretsMountPath |	Path for mounting secrets.  This parameter should not be modified. |	/var/run/secrets-domain1 |
 | startupControl	| Determines which WebLogic servers will be started up. Legal values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', or 'AUTO' |      AUTO |
