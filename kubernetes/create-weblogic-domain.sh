@@ -2,22 +2,28 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+# Description
+#  This script automates the creation of a WebLogic domain within a Kubernetes cluster.
+#
+#  The domain creation inputs can be customized by editing create-weblogic-domain-inputs.yaml
+#
+#  The following pre-requisites must be handled prior to running this script:
+#    * The kubernetes namespace must already be created
+#    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
+#    * The host directory that will be used as the persistent volume must already exist
+#      and have the appropriate file permissions set.
+#
+
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 internalDir="${scriptDir}/internal"
 
-# This is the script that the customers use to create an operator.
+# This is the script that the customers use to create a domain.
 # It requires that the customer has a real environment that includes
-# keytool, openssl, kubectl and kubernetes.
+# kubernetes.
 
 # pass the name of this script to the internal create script
 createScript="${script}"
-
-# pass the location of the default operator inputs yaml file to the internal create script
-defaultOperatorInputsFile="${scriptDir}/create-weblogic-operator-inputs.yaml"
-
-# use the script that uses keytool and openssl to generate certificates and keys
-genOprCertScript="${internalDir}/generate-weblogic-operator-cert.sh"
 
 # try to execute kubectl to see whether kubectl is available
 function validateKubectlAvailable {
@@ -36,5 +42,5 @@ function validateThatSecretExists {
   fi
 }
 
-# call the internal script to create the operator
-source ${internalDir}/create-weblogic-operator.sh
+# call the internal script to create the domain
+source ${internalDir}/create-weblogic-domain.sh

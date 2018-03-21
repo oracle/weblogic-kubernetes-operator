@@ -112,7 +112,7 @@
 #
 #   IMAGE_PULL_POLICY_OPERATOR   Default 'Never'.
 #   IMAGE_PULL_SECRET_OPERATOR   Default ''.
-#   IMAGE_PULL_SECRET_WEBLOGIC   Default ''.
+#   WEBLOGIC_IMAGE_PULL_SECRET_NAME   Default ''.
 #
 # -------------------------------------
 # Directory configuration and structure
@@ -136,7 +136,7 @@
 #
 #      Local tmp files:      RESULT_ROOT/acceptance_test_tmp/...
 #
-#      PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid}/...
+#      PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/domain-${domain_uid}-storage/...
 #
 #      Archives of above:    PV_ROOT/acceptance_test_pv_archive/...
 #                            RESULT_ROOT/acceptance_test_tmp_archive/...
@@ -521,8 +521,8 @@ function op_define {
     eval export OP_${opkey}_TARGET_NAMESPACES="$3"
     eval export OP_${opkey}_EXTERNAL_REST_HTTPSPORT="$4"
 
-    # derived TMP_DIR for operator = $RESULT_DIR/$NAMESPACE :
-    eval export OP_${opkey}_TMP_DIR="$RESULT_DIR/$2"
+    # generated TMP_DIR for operator = $USER_PROJECTS_DIR/weblogic-operators/$NAMESPACE :
+    eval export OP_${opkey}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-operators/$2"
 
     #verbose tracing starts with a +
     op_echo_all $1 | sed 's/^/+/'
@@ -552,22 +552,18 @@ function deploy_operator {
     local TMP_DIR="`op_get $opkey TMP_DIR`"
 
     trace 'customize the yaml'
-    local inputs="$TMP_DIR/create-operator-inputs.yaml"
+    local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
     mkdir -p $TMP_DIR
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh $TMP_DIR/create-weblogic-operator.sh
-    # copy the template file and dependent scripts too
-    mkdir $TMP_DIR/internal
-    cp $PROJECT_ROOT/kubernetes/internal/* $TMP_DIR/internal/
-    cp $PROJECT_ROOT/kubernetes/create-operator-inputs.yaml $inputs
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
 
     trace 'customize the inputs yaml file to use our pre-built docker image'
-    sed -i -e "s|\(imagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-    sed -i -e "s|\(image:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
+    sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
+    sed -i -e "s|\(weblogicOperatorImage:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
     if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
+      sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
     fi
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
-    sed -i -e "s|\(externalRestOption:\).*|\1self-signed-cert|g" $inputs
+    sed -i -e "s|\(externalRestOption:\).*|\1SELF_SIGNED_CERT|g" $inputs
     sed -i -e "s|\(externalSans:\).*|\1DNS:${NODEPORT_HOST}|g" $inputs
     trace 'customize the inputs yaml file to set the java logging level to FINER'
     sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
@@ -579,7 +575,7 @@ function deploy_operator {
 
     local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
     trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-    sh $TMP_DIR/create-weblogic-operator.sh -i $inputs > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
        cat ${outfile} | sed 's/^/+/g'
@@ -635,7 +631,7 @@ function test_second_operator {
     declare_test_pass
 }
 
-# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
 #   Sets up a table of domain values:  all of the above, plus TMP_DIR which is derived.
 #
 # dom_get      DOM_KEY <value>
@@ -652,7 +648,7 @@ function test_second_operator {
 #
 function dom_define {
     if [ "$#" != 13 ] ; then
-      fail "requires 13 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT"
+      fail "requires 13 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT"
     fi
     local DOM_KEY="`echo \"${1}\" | sed 's/-/_/g'`"
     eval export DOM_${DOM_KEY}_OP_KEY="$2"
@@ -666,10 +662,10 @@ function dom_define {
     eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${10}"
     eval export DOM_${DOM_KEY}_MS_PORT="${11}"
     eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${12}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_ADMIN_PORT="${13}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_DASHBOARD_PORT="${13}"
 
-    # derive TMP_DIR $RESULT_DIR/$NAMESPACE-$DOMAIN_UID :
-    eval export DOM_${DOM_KEY}_TMP_DIR="$RESULT_DIR/$3-$4"
+    # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
+    eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
 
     #verbose tracing starts with a +
     dom_echo_all $1 | sed 's/^/+/'
@@ -702,34 +698,33 @@ function run_create_domain_job {
     local ADMIN_NODE_PORT="`dom_get $1 ADMIN_NODE_PORT`"
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
-    local LOAD_BALANCER_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_ADMIN_PORT`"
+    local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     local WLS_JAVA_OPTIONS="$JVM_ARGS"
 
     trace "WLS_JAVA_OPTIONS = \"$WLS_JAVA_OPTIONS\""
 
-    local PV="pv"
-    local PV_DIR="persistentVolume-${DOMAIN_UID}"
+    local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
     trace "Create $DOMAIN_UID in $NAMESPACE namespace "
 
     local tmp_dir="$TMP_DIR"
     mkdir -p $tmp_dir
 
-    local CREDENTIAL_NAME="$DOMAIN_UID-weblogic-credentials"
-    local CREDENTIAL_FILE="${tmp_dir}/weblogic-credentials.yaml"
+    local WEBLOGIC_CREDENTIALS_SECRET_NAME="$DOMAIN_UID-weblogic-credentials"
+    local WEBLOGIC_CREDENTIALS_FILE="${tmp_dir}/weblogic-credentials.yaml"
 
     trace 'Create the secret with weblogic admin credentials'
-    cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $CREDENTIAL_FILE
+    cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $WEBLOGIC_CREDENTIALS_FILE
 
-    sed -i -e "s|%NAMESPACE%|$NAMESPACE|g" $CREDENTIAL_FILE
-    sed -i -e "s|%DOMAIN_UID%|$DOMAIN_UID|g" $CREDENTIAL_FILE
+    sed -i -e "s|%NAMESPACE%|$NAMESPACE|g" $WEBLOGIC_CREDENTIALS_FILE
+    sed -i -e "s|%DOMAIN_UID%|$DOMAIN_UID|g" $WEBLOGIC_CREDENTIALS_FILE
 
-    kubectl apply -f $CREDENTIAL_FILE
+    kubectl apply -f $WEBLOGIC_CREDENTIALS_FILE
 
     trace 'Check secret'
-    local ADMINSECRET=`kubectl get secret $CREDENTIAL_NAME -n $NAMESPACE | grep $CREDENTIAL_NAME | wc -l `
+    local ADMINSECRET=`kubectl get secret $WEBLOGIC_CREDENTIALS_SECRET_NAME -n $NAMESPACE | grep $WEBLOGIC_CREDENTIALS_SECRET_NAME | wc -l `
     if [ "$ADMINSECRET" != "1" ]; then
         fail 'could not create the secret with weblogic admin credentials'
     fi
@@ -737,51 +732,48 @@ function run_create_domain_job {
     trace 'Prepare the job customization script'
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
-    cp $PROJECT_ROOT/kubernetes/create-domain-job.sh ${tmp_dir}/create-domain-job.sh
-    cp $PROJECT_ROOT/kubernetes/internal/* ${internal_dir}/
 
     # Common inputs file for creating a domain
-    cp $PROJECT_ROOT/kubernetes/create-domain-job-inputs.yaml ${tmp_dir}/create-domain-job-inputs.yaml
+    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
 
     # copy testwebapp.war for testing
     cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
 
     # Customize the create domain job inputs
-    sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
 
-    # Customize more configuraiton 
-    sed -i -e "s/^persistenceVolumeName:.*/persistenceVolumeName: ${PV}/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^persistenceVolumeClaimName:.*/persistenceVolumeClaimName: $PV-claim/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s;^persistencePath:.*;persistencePath: $PV_ROOT/acceptance_test_pv/$PV_DIR;" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^domainUid:.*/domainUid: $DOMAIN_UID/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^secretName:.*/secretName: $CREDENTIAL_NAME/" ${tmp_dir}/create-domain-job-inputs.yaml
-    if [ -n "${IMAGE_PULL_SECRET_WEBLOGIC}" ]; then
-      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_WEBLOGIC}|g" ${tmp_dir}/create-domain-job-inputs.yaml
+    # Customize more configuration 
+    sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
+    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
+    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
+    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
+    sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
+    sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
+    sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" $inputs
+    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputs
+    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputs
+    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputs
+    sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputs
+    if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
+      sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
     fi
-    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^loadBalancerAdminPort:.*/loadBalancerAdminPort: $LOAD_BALANCER_ADMIN_PORT/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" ${tmp_dir}/create-domain-job-inputs.yaml
-    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  ${tmp_dir}/create-domain-job-inputs.yaml
+    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
+    sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
+    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
+    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
 
     # we will test cluster scale up and down in domain1 and domain4 
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
-      sed -i -e "s/^managedServerCount:.*/managedServerCount: 3/"  ${tmp_dir}/create-domain-job-inputs.yaml
+      sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputs
     fi
 
     local outfile="${tmp_dir}/mkdir_physical_nfs.out"
-    trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$PV_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
+    trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
 
     # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
     # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
-    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$PV_DIR" > ${outfile} 2>&1
+    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" > ${outfile} 2>&1
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
        trace Job complete.  Directory created on k8s cluster.
@@ -790,10 +782,10 @@ function run_create_domain_job {
        fail Job failed.  Could not create k8s cluster NFS directory.   
     fi
 
-    local outfile="${tmp_dir}/create-domain-job.sh.out"
+    local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
     trace "Run the script to create the domain, see \"$outfile\" for tracing."
 
-    sh ${tmp_dir}/create-domain-job.sh -i ${tmp_dir}/create-domain-job-inputs.yaml > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -2314,15 +2306,17 @@ function test_create_domain_on_exist_dir {
 
     trace "check domain directory exists"
     local tmp_dir="$TMP_DIR"
-    local persistence_path=`egrep 'persistencePath' ${tmp_dir}/create-domain-job-inputs.yaml | awk '{print $2}'`
-    local domain_name=`egrep 'domainName' ${tmp_dir}/create-domain-job-inputs.yaml | awk '{print $2}'`
-    local domain_dir=${persistence_path}"/domain/"${domain_name}
+    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
+    local domain_storage_path=`egrep 'weblogicDomainStoragePath' $inputs | awk '{print $2}'`
+    local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
+
+    local domain_dir=${domain_storage_path}"/domain/"${domain_name}
     if [ ! -d ${domain_dir} ] ; then
       fail "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
     fi
 
     trace "run the script to create the domain"
-    sh ${tmp_dir}/create-domain-job.sh -i ${tmp_dir}/create-domain-job-inputs.yaml
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR
     local exit_code=$?
     if [ ${exit_code} -eq 1 ] ; then
       trace "[SUCCESS] create domain job failed, this is the expected behavior"
@@ -2359,7 +2353,7 @@ function test_suite_init {
                    IMAGE_NAME_OPERATOR \
                    IMAGE_PULL_POLICY_OPERATOR \
                    IMAGE_PULL_SECRET_OPERATOR \
-                   IMAGE_PULL_SECRET_WEBLOGIC \
+                   WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
                    JENKINS;
     do
@@ -2382,7 +2376,7 @@ function test_suite_init {
     export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
     export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
-    export IMAGE_PULL_SECRET_WEBLOGIC=${IMAGE_PULL_SECRET_WEBLOGIC}
+    export WEBLOGIC_IMAGE_PULL_SECRET_NAME=${WEBLOGIC_IMAGE_PULL_SECRET_NAME}
 
     # Show custom env vars after defaults were substituted as needed.
 
@@ -2398,7 +2392,7 @@ function test_suite_init {
                    IMAGE_NAME_OPERATOR \
                    IMAGE_PULL_POLICY_OPERATOR \
                    IMAGE_PULL_SECRET_OPERATOR \
-                   IMAGE_PULL_SECRET_WEBLOGIC \
+                   WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
                    JENKINS;
     do
@@ -2411,6 +2405,7 @@ function test_suite_init {
     export CUSTOM_YAML="$SCRIPTPATH/../kubernetes"
     export PROJECT_ROOT="$SCRIPTPATH/../../.."
     export RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
+    export USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 
     local varname
     for varname in SCRIPTPATH CUSTOM_YAML PROJECT_ROOT; do
@@ -2523,7 +2518,7 @@ function test_suite {
     op_define  oper1   weblogic-operator-1  "default,test1"    31001
     op_define  oper2   weblogic-operator-2  test2              32001
 
-    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_ADMIN_PORT
+    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
     dom_define domain1  oper1   default   domain1    AUTO            cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
     dom_define domain2  oper1   default   domain2    AUTO            cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
     dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
