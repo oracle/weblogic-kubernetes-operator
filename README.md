@@ -193,7 +193,7 @@ To remove more than one operator, repeat these steps for each operator namespace
 
 # Recent Changes
 
-See [Recent changes](site/recent-changes.md) for recent changes to the weblogic operator, including any backwards incompatible changes.
+See [Recent changes](site/recent-changes.md) for recent changes to the operator, including any backwards incompatible changes.
 
 
 # Developer guide

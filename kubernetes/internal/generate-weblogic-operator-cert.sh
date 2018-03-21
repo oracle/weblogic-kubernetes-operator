@@ -40,9 +40,6 @@ OP_KEY_PEM="${CERT_DIR}/${OP_PREFIX}.key.pem"
 rm -rf ${CERT_DIR}
 mkdir ${CERT_DIR}
 
-# TBD - validate that keytool and openssl are available
-# should we import utility.sh so that we can call its 'fail' function?
-
 # generate a keypair for the WebLogic Operator, putting it in a keystore
 keytool \
   -genkey \
