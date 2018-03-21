@@ -5,8 +5,8 @@ The initial version of the WebLogic Server Kubernetes Operator did not use consi
 We've recently addressed this by:
 * standardizing the names of scripts and input files for creating operators and domains
 * standardizing the input parameter names and values
-* standardizing the names of the generated yaml files
-* requiring that the custom create and specify a directory that the operators' and domains' generated yaml files will be stored in
+* standardizing the names of the generated YAML files
+* requiring that the customer create and specify a directory that the operators' and domains' generated YAML files will be stored in
 
 This changes how operators and domains are created, and also changes the generated artifacts for operators and domains.
 
@@ -30,8 +30,8 @@ The following files are used to create the operator and to create and delete dom
 
 ### Generated YAML Files for Operators and Domains
 
-The create scripts generate a number of yaml files that are used to configure the corresponding Kubernetes artifacts for the operator and the domains.
-Normally, customers do not use these yaml files.  However, customers can look at them.  They can also change the operator and domain configuration by editing these files and reapplying them.
+The create scripts generate a number of YAML files that are used to configure the corresponding Kubernetes artifacts for the operator and the domains.
+Normally, customers do not use these YAML files.  However, customers can look at them.  They can also change the operator and domain configuration by editing these files and reapplying them.
 
 #### Directory for the Generated YAML Files
 
@@ -43,15 +43,19 @@ The customer must create a directory that will parent the per-operator and per-d
 The pathname can either be a full path name, or a relative path name.  If it's a relative pathname, then it's relative to the directory of the shell invoking the create script.
 
 The per-operator directory name is:
-  <user project dir from -o>/weblogic-operators/<operator namespace from the input yaml file's namespace property>
+  <user project dir from -o>/weblogic-operators/<operator namespace from the input YAML file's namespace property>
 
 Similarly, the per-domain directory name is:
-  <user project dir from -o>/weblogic-domains/<domain uid from the input yaml file's domainUid property>
+  <user project dir from -o>/weblogic-domains/<domain uid from the input YAML file's domainUid property>
 
 #### What If I Mess Up Creating a Domain or Operator And Want To Do It Again?
 
-* TBD - destroy the operator / domain - I don't think we provide scripts for this yet, but will soon
-* either remove the directory that was generated for that operator / domain, or remove the generated yaml files and the copy of the input file from it
+* Remove the resources that were created for the operator:
+  * kubectl delete -f weblogic-operator.yaml
+  * kubectl delete -f weblogic-operator-security.yaml
+* Remove the resources that were created for the domain:
+  * kubernetes/delete-weblogic-domain-resources.sh <domainUID>
+* either remove the directory that was generated for that operator / domain, or remove the generated YAML files and the copy of the input file from it
 * make whatever changes you need in your inputs file
 * re-run the create script
 
@@ -65,7 +69,7 @@ If -i is not specified, kubernetes/create-weblogic-operator.sh uses kubernetes/c
 
 Previously, kubernetes/create-domain-job.sh used kubernetes/create-domain-job-inputs.yaml as the input file if -i was not specified.  This behavior has been changed.  The customer must select a Kubernetes cluster wide unique id for the domain and set the domainUid property in the inputs file to that value.  This means that the customer must always modify the inputs file.
 
-Also, we do not want the customer to have to change files in the weblogic operator's install directory.  Because of this, the -i option MUST be specified when calling kubernetes/create-weblogic-operator.sh.  The basic flow is:
+Also, we do not want the customer to have to change files in the operator's install directory.  Because of this, the -i option MUST be specified when calling kubernetes/create-weblogic-operator.sh.  The basic flow is:
 
 * pick a user projects directory, e.g. /scratch/my-user-projects
 * mkdir /scratch/my-user-projects

@@ -121,7 +121,7 @@ To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
 
 At this point, you've created a custom inputs file, or you've decided to use the default one.
 
-Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+Next, choose and create a directory that generated operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
 
 Finally, run the operator installation script to deploy the operator, pointing it at your inputs file and your output directory:
 

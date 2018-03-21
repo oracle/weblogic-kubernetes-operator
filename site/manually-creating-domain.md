@@ -15,7 +15,7 @@ The `create-weblogic-domain.sh` script described in the previous section can be 
 
 First, make a copy of `create-weblogic-domain-inputs.yaml` and customize it.
 
-Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
+Next, choose and create a directory that generated operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory
 
 Then, execute the script, pointing it at your inputs file and output directory:
 

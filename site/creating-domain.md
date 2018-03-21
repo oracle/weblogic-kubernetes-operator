@@ -119,10 +119,10 @@ The following parameters must be provided in the input file:
 | t3ChannelPort | Port for the T3Channel of the NetworkAccessPoint. | 30012 |
 | t3PublicAddress | Public address for the t3 channel. | kubernetes |
 | weblogicCredentialsSecretName | Name of the Kubernetes secret for the Administration Server's username and password. | domain1-weblogic-credentials |
-| weblogicDomainStoragePath | Physical path of the storage for the weblogic domain. | no default |
-| weblogicDomainStorageSize | Total storage allocated for weblogic domain. | 10Gi |
-| weblogicDomainStorageType | Type of storage for the weblogic domain. Legal values are 'NFS' and 'HOST_PATH". | HOST_PATH |
-| weblogicDomainStorageNFSServer| The name of ip address of the NFS server for the weblogic domain's storage. | no default |
+| weblogicDomainStoragePath | Physical path of the storage for the domain. | no default |
+| weblogicDomainStorageSize | Total storage allocated for the domain. | 10Gi |
+| weblogicDomainStorageType | Type of storage for the domain. Legal values are 'NFS' and 'HOST_PATH". | HOST_PATH |
+| weblogicDomainStorageNFSServer| The name of IP address of the NFS server for the domain's storage. | no default |
 | weblogicImagePullSecretName | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | docker-store-secret |
 
 You must uncomment and customize `domainUID` and `weblogicDomainStoratePath`.
@@ -140,7 +140,7 @@ Oracle intends to remove these limitations in a future release.
 
 At this point, you've created a customized copy of the inputs file.
 
-Next, choose and create a directory that generated weblogic operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+Next, choose and create a directory that generated operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
 
 Finally, run the create script, pointing it at your inputs file and output directory:
 
