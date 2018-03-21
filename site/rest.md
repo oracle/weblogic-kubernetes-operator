@@ -5,7 +5,7 @@ The operator provides a REST server which can be used to get a list of WebLogic 
 Most of the services access a `GET`, for example:
 
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`.
-* To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUid>/clusters`.
+* To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`.
 
 All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  The `X-Requested-By` header is not required.  Callers should pass in the `Accept:/application/json` header.
 
