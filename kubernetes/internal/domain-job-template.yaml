@@ -153,6 +153,7 @@ data:
     # Function to create script for starting a server
     # $1 - Domain UID
     # $2 - Server Name
+    # $3 - Flag (only passed for admin server)
     function createStartScript() {
 
       nmdir=${DOMAIN_HOME}/servers/$2/nodemgr_home
@@ -236,12 +237,8 @@ data:
     server_name=sys.argv[2]
     startup_file=sys.argv[3]
 
-    print("mem_args=" + mem_args)
-    print("java_opt=" + java_opt)
     adminUrl='t3://' + domain_UID + '-' + admin_server + ':' + admin_port
-    print("adminUrl=" + adminUrl)
     dirStr='Servers/managed-server1/ServerStart/' + server_name
-    print("dirStr=" + dirStr)
 
     # Connect to admin server to get startup arguments of this server
     connect(admin_username, admin_password, adminUrl)
