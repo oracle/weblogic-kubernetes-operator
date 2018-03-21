@@ -153,12 +153,14 @@ data:
     # Function to create script for starting a server
     # $1 - Domain UID
     # $2 - Server Name
+    # $3 - Flag (only passed for admin server)
     function createStartScript() {
 
       nmdir=${DOMAIN_HOME}/servers/$2/nodemgr_home
       stateFile=${DOMAIN_HOME}/servers/$2/data/nodemanager/$2.state
       scriptFile=${nmdir}/startServer.sh
       pyFile=${nmdir}/start-server.py
+      argsFile=${nmdir}/set-ms-args.py
 
       # Create a script that starts the node manager, then uses wlst to connect
       # to the nodemanager and start the server.
@@ -180,7 +182,14 @@ data:
     echo "Finished waiting for the nodemanager to start"
 
     echo "Update JVM arguments"
-    echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp} 
+    if [ $# -eq 3 ]
+    then
+      echo "Update JVM arguments for admin server"
+      echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
+    else
+      echo "Update JVM arguments for managed server"
+      wlst.sh ${argsFile} $1 $2 ${startProp}
+    fi
 
     echo "Start the server"
     wlst.sh -skipWLSModuleScanning ${pyFile}
@@ -207,6 +216,48 @@ data:
     EOF
 
       checkFileExists ${pyFile}
+
+      # Create a python script to set JVM arguments for managed server.
+      # The script and 'EOF' on the following lines must not be indented!
+      cat << EOF > ${argsFile}
+
+    import os
+    import sys
+    EOF
+
+      cat /u01/weblogic/read-domain-secret.py >> ${argsFile}
+      cat << EOF >> ${argsFile}
+
+    mem_args=os.environ['USER_MEM_ARGS']
+    java_opt=os.environ['JAVA_OPTIONS']
+    admin_server=os.environ['ADMIN_NAME']
+    admin_port=os.environ['ADMIN_PORT']
+
+    domain_UID=sys.argv[1]
+    server_name=sys.argv[2]
+    startup_file=sys.argv[3]
+
+    adminUrl='t3://' + domain_UID + '-' + admin_server + ':' + admin_port
+    dirStr='Servers/managed-server1/ServerStart/' + server_name
+
+    # Connect to admin server to get startup arguments of this server
+    connect(admin_username, admin_password, adminUrl)
+    cd(dirStr)
+    args=get('Arguments')
+    disconnect()
+
+    f = open(startup_file, 'a')
+    s=str("Arguments="+ mem_args + " -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap " + java_opt )
+    if not (args is None):
+      s=str(s + " " + args + "\n")
+    else:
+      s=str(s +  "\n")
+
+    f.write(s)
+    f.close()
+    EOF
+
+      checkFileExists ${argsFile}
 
     }
 
@@ -274,7 +325,7 @@ data:
 
     # Setup admin server
     createNodeMgrHome %DOMAIN_UID% %ADMIN_SERVER_NAME%
-    createStartScript %DOMAIN_UID% %ADMIN_SERVER_NAME%
+    createStartScript %DOMAIN_UID% %ADMIN_SERVER_NAME% 'admin'
     createStopScript  %DOMAIN_UID% %ADMIN_SERVER_NAME%
 
     # Create the managed servers
