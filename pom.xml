@@ -224,7 +224,7 @@
                       </goals>
                       <configuration>
                         <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
-                        <!-- urlGrafeas>http://35.197.6.236:8080</urlGrafeas -->
+                        <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
                       </configuration>
                     </execution>
                 </executions>
