@@ -39,6 +39,7 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
@@ -85,29 +86,30 @@ public class Main {
   private static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
   
   private static final Engine engine = new Engine("operator");
-
+  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   
   private static final ConfigMapConsumer config = new ConfigMapConsumer("/operator/config");
-
+  
   // tuning parameters
   private static final int statusUpdateTimeoutSeconds = (int) readTuningParameter("statusUpdateTimeoutSeconds", 10);
-  private static final int unchangedCountToDelayStatusRecheck = (int) readTuningParameter("unchangedCountToDelayStatusRecheck", 10); 
-  private static final long initialShortDelay = readTuningParameter("initialShortDelay", 3); 
-  private static final long eventualLongDelay = readTuningParameter("eventualLongDelay", 30);
-  
+  private static final int unchangedCountToDelayStatusRecheck = (int) readTuningParameter("statueUpdateUnchangedCountToDelayStatusRecheck", 10); 
+  private static final long initialShortDelay = readTuningParameter("statusUpdateInitialShortDelay", 3); 
+  private static final long eventualLongDelay = readTuningParameter("statusUpdateEventualLongDelay", 30);
   static {
     int callRequestLimit = (int) readTuningParameter("callRequestLimit", 500);
     int callMaxRetryCount = (int) readTuningParameter("callMaxRetryCount", 5);
     int callTimeoutSeconds = (int) readTuningParameter("callTimeoutSeconds", 10);
     CallBuilder.setTuningParameters(callRequestLimit, callMaxRetryCount, callTimeoutSeconds);
+    int watchLifetime = (int) readTuningParameter("watchLifetime", 45);
+    WatchBuilder.setTuningParameters(watchLifetime);
   }
   
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
-  
+
   private static String principal;
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
