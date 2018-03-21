@@ -125,8 +125,6 @@ The following parameters must be provided in the input file:
 | weblogicDomainStorageNFSServer| The name of IP address of the NFS server for the domain's storage. | no default |
 | weblogicImagePullSecretName | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | docker-store-secret |
 
-You must uncomment and customize `domainUID` and `weblogicDomainStoratePath`.
-
 ## Limitations of the create domain script
 
 This technology preview release has some limitations in the create domain script that users should be aware of.
