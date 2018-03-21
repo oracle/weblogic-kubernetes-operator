@@ -2,7 +2,6 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator.builders;
 
-import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.squareup.okhttp.Call;
@@ -13,6 +12,7 @@ import oracle.kubernetes.operator.helpers.ClientHolder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     @SuppressWarnings("unchecked")
     @Override
     public <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
-        getRecordedParameters().add(ImmutableMap.of("resourceVersion", callParams.getResourceVersion()));
+        getRecordedParameters().add(recordedParams(callParams));
 
         if (exceptionOnNext == null)
             return (WatchI<T>) new WatchStub(calls.remove(0));
@@ -71,6 +71,16 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         } finally {
             exceptionOnNext = null;
         }
+    }
+
+    private Map<String,String> recordedParams(CallParams callParams) {
+        Map<String,String> result = new HashMap<>();
+        if (callParams.getResourceVersion() != null)
+            result.put("resourceVersion", callParams.getResourceVersion());
+        if (callParams.getLabelSelector() != null)
+            result.put("labelSelector", callParams.getLabelSelector());
+
+        return result;
     }
 
     private StubWatchFactory() {

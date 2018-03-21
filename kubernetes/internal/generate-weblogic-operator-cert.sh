@@ -6,7 +6,7 @@ set -e
 
 if [ ! $# -eq 1 ]; then
   echo "Syntax: ${BASH_SOURCE[0]} <subject alternative names, e.g. DNS:localhost,DNS:mymachine,DNS:mymachine.us.oracle.com,IP:127.0.0.1>"
-  exit
+  exit 1
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -17,6 +17,7 @@ function cleanup {
   if [ $? -ne 0 ]; then
     echo "Failed to generate the weblogic operator certificate and private key."
     rm -rf ${CERT_DIR}
+    exit 1
   fi
 }
 
@@ -63,6 +64,8 @@ keytool \
   > ${OP_CERT_PEM}
 
 # convert the operator keystore to a pkcs12 file
+# since keytool prints an info message saying it imported the cert to stderr,
+# and since it isn't important that the customer see it, redirect it to /dev/null
 keytool \
   -importkeystore \
   -srckeystore ${OP_JKS} \
@@ -70,13 +73,18 @@ keytool \
   -destkeystore ${OP_PKCS12} \
   -srcstorepass ${TEMP_PW} \
   -deststorepass ${TEMP_PW} \
-  -deststoretype PKCS12
+  -deststoretype PKCS12 \
+  2> /dev/null
 
 # extract the operator's key from the pkcs12 file to a pem file
+# since openssl prints an info message saying that the MAC verified OK to stderr,
+# and since it isn't important that the customer see it, redirect it to /dev/null
 openssl \
   pkcs12 \
   -in ${OP_PKCS12} \
   -passin pass:${TEMP_PW} \
   -nodes \
   -nocerts \
-  -out ${OP_KEY_PEM}
+  -out ${OP_KEY_PEM} \
+  2> /dev/null
+
