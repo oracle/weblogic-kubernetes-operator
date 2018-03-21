@@ -27,15 +27,15 @@ In this URL format:
 *	`<domainUID>` is the unique identifier of the WebLogic domain.
 *	`<clusterName>` is the name of the WebLogic cluster to be scaled.
 
-The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `managedServerCount`; for example:
+The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `configuredManagedServerCount`; for example:
 
 ```
 {
-    "managedServerCount": 3
+    "configuredManagedServerCount": 3
 }
 ```
 
-The `managedServerCount` value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of `204 (“No Content”)` because the resource method’s return type is void and does not return a message body.
+The `configuredManagedServerCount` value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of `204 (“No Content”)` because the resource method’s return type is void and does not return a message body.
 
 ## What does the operator do in response to a scaling request?
 
