@@ -227,6 +227,20 @@
                         <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
                       </configuration>
                     </execution>
+                    <execution>
+                        <phase>verify</phase>
+                        <id>testAttestation</id>
+                        <goals>
+                            <goal>testAttestation</goal>
+                        </goals>
+                        <configuration>
+                            <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
+                            <projectId>${project.name}</projectId>
+                            <resourceUrl>${project.url}</resourceUrl>
+                            <pgpKeyID>EB49DA9A</pgpKeyID>
+                            <signature>LS0tLS1CRUdJ</signature>
+                        </configuration>
+                    </execution>
                 </executions>
                 <dependencies>
                   <dependency>
