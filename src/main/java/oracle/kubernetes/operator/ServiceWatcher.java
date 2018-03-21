@@ -6,14 +6,9 @@ package oracle.kubernetes.operator;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.watcher.Watcher;
-import oracle.kubernetes.operator.watcher.Watching;
-import oracle.kubernetes.operator.watcher.WatchingEventDestination;
+import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,78 +17,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class handles Service watching. It receives service change events and sends
  * them into the operator for processing.
  */
-public class ServiceWatcher implements Runnable {
+public class ServiceWatcher extends Watcher<V1Service> {
   private final String ns;
-  private final String initialResourceVersion;
-  private final WatchingEventDestination<V1Service> destination;
-  private final AtomicBoolean isStopping;
-  
-  public static ServiceWatcher create(String ns, String initialResourceVersion, WatchingEventDestination<V1Service> destination, AtomicBoolean isStopping) {
-    ServiceWatcher dlw = new ServiceWatcher(ns, initialResourceVersion, destination, isStopping);
-    Thread thread = new Thread(dlw);
-    thread.setName("Thread-ServiceWatcher-" + ns);
-    thread.setDaemon(true);
-    thread.start();
-    return dlw;
+
+  public static ServiceWatcher create(String ns, String initialResourceVersion, WatchListener<V1Service> listener, AtomicBoolean isStopping) {
+    ServiceWatcher watcher = new ServiceWatcher(ns, initialResourceVersion, listener, isStopping);
+    watcher.start("Thread-ServiceWatcher-" + ns);
+    return watcher;
   }
 
-  private ServiceWatcher(String ns, String initialResourceVersion, WatchingEventDestination<V1Service> destination, AtomicBoolean isStopping) {
+  private ServiceWatcher(String ns, String initialResourceVersion, WatchListener<V1Service> listener, AtomicBoolean isStopping) {
+    super(initialResourceVersion, isStopping, listener);
     this.ns = ns;
-    this.initialResourceVersion = initialResourceVersion;
-    this.destination = destination;
-    this.isStopping = isStopping;
   }
 
-  /**
-   * Polling loop. Get the next Service object event and process it.
-   */
   @Override
-  public void run() {
-    ClientHelper helper = ClientHelper.getInstance();
-    ClientHolder client = helper.take();
-    try {
-      Watching<V1Service> w = createWatching(client);
-      Watcher<V1Service> watcher = new Watcher<>(w, initialResourceVersion);
-      
-      // invoke watch on current Thread.  Won't return until watch stops
-      watcher.doWatch();
-      
-    } finally {
-      helper.recycle(client);
-    }
+  public WatchI<V1Service> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    return watchBuilder
+             .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+             .createServiceWatch(ns);
   }
-  
-  protected Watching<V1Service> createWatching(ClientHolder client) {
-    return new Watching<V1Service>() {
 
-      /**
-       * Watcher callback to issue the list Service changes. It is driven by the
-       * Watcher wrapper to issue repeated watch requests.
-       * @param resourceVersion resource version to omit older events
-       * @return Watch object or null if the operation should end
-       * @throws ApiException if there is an API error.
-       */
-      @Override
-      public WatchI<V1Service> initiateWatch(String resourceVersion) throws ApiException {
-        return new WatchBuilder(client)
-                  .withResourceVersion(resourceVersion)
-                  .withLabelSelector(LabelConstants.DOMAINUID_LABEL
-                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-                .createServiceWatch(ns);
-      }
-
-      @Override
-      public void eventCallback(Watch.Response<V1Service> item) {
-        processEventCallback(item);
-      }
-
-      @Override
-      public boolean isStopping() {
-        return isStopping.get();
-      }
-    };
-  }
-  
   static String getServiceDomainUID(V1Service service) {
     V1ObjectMeta meta = service.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -121,7 +65,4 @@ public class ServiceWatcher implements Runnable {
     return null;
   }
 
-  public void processEventCallback(Watch.Response<V1Service> item) {
-    destination.eventCallback(item);
-  }
 }
