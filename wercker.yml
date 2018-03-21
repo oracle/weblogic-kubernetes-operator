@@ -15,172 +15,110 @@
 #        -> quality
 #
 
-box:
-  id: store/oracle/serverjre
-  username: $DOCKER_USERNAME
-  password: $DOCKER_PASSWORD
-  tag: 8
+box: maven:3.5.2-jdk-8
 
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
   steps:
+  - install-packages:
+    packages: jq
+
+  - script:
+    name: Fetch SSCM Dependencies
+    code: |
+      echo "Fetching SSCM Dependencies ..."
+      echo "mkdir $SSCM_BUILD_DIR"
+      mkdir $SSCM_BUILD_DIR
+      echo "cd $SSCM_BUILD_DIR"
+      cd $SSCM_BUILD_DIR
+      echo "git clone https://github.com/wmhopkins/client-java.git"
+      git clone https://github.com/wmhopkins/client-java.git
+      echo "git clone https://github.com/wmhopkins/sscm-client.git"
+      git clone https://github.com/wmhopkins/sscm-client.git
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT"
+      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT
+      echo "chmod +x $GPG_SCRIPT"
+      chmod +x $GPG_SCRIPT
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT"
+      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT
+      echo "chmod +x $SBAS_SCRIPT"
+      chmod +x $SBAS_SCRIPT
+      echo "ls -ld $WERCKER_CACHE_DIR/*.sh"
+      ls -ld $WERCKER_CACHE_DIR/*.sh
+      echo "$GPG_SCRIPT --init-keyring"
+      $GPG_SCRIPT --init-keyring
+      echo "$GPG_SCRIPT --get-authority-names"
+      $GPG_SCRIPT --get-authority-names
+      echo "$GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)"
+      $GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)
+      echo "$GPG_SCRIPT --test"
+      $GPG_SCRIPT --test
+
+  - script:
+    name: Build Java Client
+    code: |
+      echo "Building Java Client ..."
+      echo "cd $SSCM_BUILD_DIR/client-java"
+      cd $SSCM_BUILD_DIR/client-java
+      echo "mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install"
+      mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install
+
+  - script:
+    name: Build SSCM Plugins
+    code: |
+      echo "Building SSCM Plugins ..."
+      echo "cd $SSCM_BUILD_DIR/sscm-client"
+      cd $SSCM_BUILD_DIR/sscm-client
+      echo "mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install"
+      mvn -Dmaven.repo.local=$WERCKER_CACHE_DIR/.m2 clean install
+
   - script:
     name: Hello
     code: |
       echo "Building Oracle WebLogic Server Kubernetes Operator..."
       echo "The branch and commit id are $WERCKER_GIT_BRANCH, $WERCKER_GIT_COMMIT"
-  - script:
-    name: Install pre-reqs
-    code: |
-      yum -y install tar gzip
+  - install-packages:
+      packages: tar gzip
   - java/maven:
-    goals: clean install
-    version: 3.5.2
-    cache_repo: true
+      goals: clean install
+      version: 3.5.2
+      cache_repo: true
   - script:
-    name: Copy built-artifacts into the image
-    code: |
-      mkdir /operator
-      cp -R src/main/scripts/* /operator/
-      cp target/weblogic-kubernetes-operator-0.1.0.jar /operator/weblogic-kubernetes-operator.jar
-      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR="latest"
-      fi
-  - script:
-    name: Remove things we do not want in the Docker image in order to reduce size of image
-    code: |
-      yum -y remove tar gzip
-      yum clean all
-  # push the image to quay.io using the GIT branch as the tag
-  # this image needs to be available to the integration-test pipeline for testing
-  - internal/docker-push:
-    username: $QUAY_USERNAME
-    password: $QUAY_PASSWORD
-    email: $QUAY_EMAIL
-    repository: quay.io/markxnelson/weblogic-kubernetes-operator
-    tag: $IMAGE_TAG_OPERATOR
-    working-dir: "/operator"
-    cmd: "operator.sh"
-    env: "PATH=$PATH:/operator"
+      name: Copy built-artifacts into the image
+      code: |
+        mkdir /operator
+        cp -R src/main/scripts/* /operator/
+        cp target/weblogic-kubernetes-operator-0.1.0.jar /operator/weblogic-kubernetes-operator.jar
+        export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
+        if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+          export IMAGE_TAG_OPERATOR="latest"
+        fi
 
-# This pipeline runs the integration tests against a k8s cluster on OCI.
-integration-test:
+test:
   steps:
   - script:
-    name: Run integration tests
+    name: Test
     code: |
-      # Copy Docker file to OCI host and load into local Docker registry
-      # yum install -y openssh-clients
-      # echo -e $OCI_K8S_SSHKEY > /tmp/ssh_key
-      # chmod 600 /tmp/ssh_key
-      # scp -o StrictHostKeyChecking=no -i /tmp/ssh_key $WERCKER_OUTPUT_DIR/build.tar opc@$OCI_K8S_WORKER0_IP:/scratch/build.tar
-      # ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_WORKER0_IP "tar -xvf /scratch/operator.tar”
-      # ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_WORKER0_IP "sudo docker build -t weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH --no-cache=true /scratch/”
-      # ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_WORKER0_IP "sudo docker save weblogic-kubernetes-operator:$WERCKER_GIT_BRANCH > /scratch/operator.tar”
-      # ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key opc@$OCI_K8S_WORKER1_IP "sudo docker load < /scratch/operator.tar”
+      echo "Test Step"
 
-      cp /etc/hosts $WERCKER_PIPELINE_DIR/hosts
-      sed -i "$ a ${OCI_K8S_WORKER0_IP} ${OCI_K8S_WORKER0_HOSTNAME}" $WERCKER_PIPELINE_DIR/hosts
-      cp $WERCKER_PIPELINE_DIR/hosts /etc/hosts
-
-      # Update KUBECONFIG for K8S cluster
-      export K8S_NODEPORT_HOST="${OCI_K8S_WORKER0_HOSTNAME}"
-      sed -i -e "s,%ADDRESS%,https://$OCI_K8S_MASTER_IP:443,g" $WERCKER_SOURCE_DIR/build/kube.config
-      sed -i -e "s,%CLIENT_CERT_DATA%,$OCI_K8S_CLIENT_CERT_DATA,g" $WERCKER_SOURCE_DIR/build/kube.config
-      sed -i -e "s,%CLIENT_KEY_DATA%,$OCI_K8S_CLIENT_KEY_DATA,g" $WERCKER_SOURCE_DIR/build/kube.config
-      export KUBECONFIG="$WERCKER_SOURCE_DIR/build/kube.config"
-
-      # running on Wercker
-      export WERCKER="true"
-
-      # install kubectl
-      curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-      chmod +x ./kubectl
-      mv ./kubectl /usr/local/bin/kubectl
-
-      # install maven, includes java as dependency
-      curl -LO http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
-      mv epel-apache-maven.repo /etc/yum.repos.d/
-      yum install -y apache-maven
-      export M2_HOME="/usr/share/apache-maven"
-      export PATH=$M2_HOME/bin:$PATH
-
-      # install opensll
-      yum install -y openssl
-
-      echo @@ "Calling 'kubectl version'"
-      kubectl version
-
-      # create pull secrets
-      echo @@ "Creating pull secrets"
-      kubectl delete secret docker-store --ignore-not-found=true
-      kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
-
-      export HOST_PATH="/scratch"
-      export PV_ROOT=$HOST_PATH
-      export RESULT_ROOT="$WERCKER_OUTPUT_DIR/k8s_dir"
-      mkdir -m 777 -p $RESULT_ROOT
-      export PROJECT_ROOT="${WERCKER_SOURCE_DIR}"
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh
-
-      # create pull secrets
-      echo @@ "Creating pull secrets"
-      kubectl delete secret docker-store --ignore-not-found=true
-      kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
-      
-      kubectl delete ns test1 --ignore-not-found=true
-      kubectl create ns test1
-      kubectl create secret docker-registry docker-store -n test1 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
-
-      kubectl delete ns test2 --ignore-not-found=true
-      kubectl create ns test2
-      kubectl create secret docker-registry docker-store -n test2 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
-      
-      kubectl delete ns weblogic-operator-1 --ignore-not-found=true
-      kubectl create ns weblogic-operator-1
-      kubectl create secret docker-registry quay-io -n weblogic-operator-1 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
-
-      kubectl delete ns weblogic-operator-2 --ignore-not-found=true
-      kubectl create ns weblogic-operator-2
-      kubectl create secret docker-registry quay-io -n weblogic-operator-2 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
-
-      export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
-      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR="latest"
-      fi
-      export IMAGE_PULL_POLICY_OPERATOR="Always"
-      export IMAGE_PULL_SECRET_OPERATOR="quay-io"
-      export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
-
-      echo "Integration test suite against the test image which is:"
-      echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
-
-      # integration tests
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
-
-      # clean up
-      yum clean all
-
-      # store the artifacts so we can download them easily 
-      tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
-
-# This pipeline runs quality checks 
-quality:
+security-scan:
   steps:
   - script:
-    name: Install pre-reqs
+    name: Security Scan
     code: |
-      yum -y install tar gzip
-  - java/maven: 
-    profiles: build-sonar 
-    maven_opts: -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASSWORD} -Dsonar.host.url=${SONAR_HOST} 
-    goals: clean install sonar:sonar
-    cache_repo: true
-    version: 3.5.2
+      echo "Security Scan Step"
 
+deploy-with-atz:
+  steps:
+  - install-packages:
+      packages: jq
+
+  - script:
+    name: Deploy with ATZ
+    code: |
+      echo "Deploy with ATZ"
 
 dev:
   steps:
   - internal/shell
+
