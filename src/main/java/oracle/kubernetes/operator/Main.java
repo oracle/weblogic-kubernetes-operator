@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.ApiException;
@@ -89,6 +90,14 @@ public class Main {
   private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   
+  private static final ConfigMapConsumer config = new ConfigMapConsumer("/operator/config");
+
+  // tuning parameters
+  private static final int statusUpdateTimeoutSeconds = (int) readTuningParameter("statusUpdateTimeoutSeconds", 10);
+  private static final int unchangedCountToDelayStatusRecheck = (int) readTuningParameter("unchangedCountToDelayStatusRecheck", 10); 
+  private static final long initialShortDelay = readTuningParameter("initialShortDelay", 3); 
+  private static final long eventualLongDelay = readTuningParameter("eventualLongDelay", 30); 
+  
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
   
@@ -122,8 +131,7 @@ public class Main {
 
     Collection<String> targetNamespaces = getTargetNamespaces(namespace);
 
-    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
-    String serviceAccountName = cmc.get("serviceaccount");
+    String serviceAccountName = config.get("serviceaccount");
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
@@ -409,6 +417,19 @@ public class Main {
     }
   }
 
+  private static long readTuningParameter(String parameter, long defaultValue) {
+    String val = config.get(parameter);
+    if (val != null) {
+      try {
+        return Long.parseLong(val);
+      } catch (NumberFormatException nfe) {
+        LOGGER.warning(MessageKeys.EXCEPTION, nfe);
+      }
+    }
+    
+    return defaultValue;
+  }
+  
   /**
    * Restarts the admin server, if already running
    * @param principal Service principal
@@ -458,43 +479,51 @@ public class Main {
     }
   }
   
-  private static void scheduleDomainStatusUpdating(DomainPresenceInfo info, long initialShortDelay, long eventualLongDelay, TimeUnit timeUnit) {
+  private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     String domainUID = info.getDomain().getSpec().getDomainUID();
+    AtomicInteger unchangedCount = new AtomicInteger(0);
     AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
     ScheduledFuture<?> existing = statusUpdater.get();
-    if (existing == null || !validateExisting(initialShortDelay, timeUnit, existing)) {
+    if (existing == null || !validateExisting(initialShortDelay, existing)) {
       Runnable command = new Runnable() {
         public void run() {
-          Runnable r = this; // resolve visibility later
+          Runnable r = this; // resolve visibility
           Packet packet = new Packet();
           packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-          Step strategy = DomainStatusUpdater.createStatusStep(10, null); // FIXME: configure
+          Step strategy = DomainStatusUpdater.createStatusStep(statusUpdateTimeoutSeconds, null);
           domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
             @Override
             public void onCompletion(Packet packet) {
-              Boolean isStatusClean = (Boolean) packet.get(ProcessingConstants.CLEAN_STATUS);
-              long delay = Boolean.TRUE.equals(isStatusClean) ? eventualLongDelay : initialShortDelay;
+              Boolean isStatusUnchanged = (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
+              long delay = initialShortDelay;
+              if (Boolean.TRUE.equals(isStatusUnchanged)) {
+                if (unchangedCount.incrementAndGet() > unchangedCountToDelayStatusRecheck) {
+                  delay = eventualLongDelay;
+                }
+              } else {
+                unchangedCount.set(0);
+              }
               // retry after delay
-              statusUpdater.set(engine.getExecutor().schedule(r, delay, timeUnit));
+              statusUpdater.set(engine.getExecutor().schedule(r, delay, TimeUnit.SECONDS));
             }
   
             @Override
             public void onThrowable(Packet packet, Throwable throwable) {
               LOGGER.severe(MessageKeys.EXCEPTION, throwable);
               // retry after delay
-              statusUpdater.set(engine.getExecutor().schedule(r, initialShortDelay, timeUnit));
+              statusUpdater.set(engine.getExecutor().schedule(r, initialShortDelay, TimeUnit.SECONDS));
             }
           });
         }
       };
-      statusUpdater.set(engine.getExecutor().schedule(command, initialShortDelay, timeUnit));
+      statusUpdater.set(engine.getExecutor().schedule(command, initialShortDelay, TimeUnit.SECONDS));
     }
   }
   
-  private static boolean validateExisting(long initialShortDelay, TimeUnit timeUnit, ScheduledFuture<?> existing) {
+  private static boolean validateExisting(long initialShortDelay, ScheduledFuture<?> existing) {
     if (existing.isCancelled())
       return false;
-    return existing.getDelay(timeUnit) <= initialShortDelay;
+    return existing.getDelay(TimeUnit.SECONDS) <= initialShortDelay;
   }
   
   private static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
@@ -542,7 +571,7 @@ public class Main {
       }
       info.setDomain(dom);
     }
-    scheduleDomainStatusUpdating(info, 3, 30, TimeUnit.SECONDS); // FIXME: configure
+    scheduleDomainStatusUpdating(info);
     
     LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
 

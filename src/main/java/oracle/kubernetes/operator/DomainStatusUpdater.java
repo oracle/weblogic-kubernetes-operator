@@ -126,7 +126,7 @@ public class DomainStatusUpdater {
       if (scan != null) {
         for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
           String serverName = entry.getKey();
-          ServerHealth health = new ServerHealth().withState(serverState.getOrDefault(serverName, "UNKNOWN"));
+          ServerHealth health = new ServerHealth().withState(serverState.getOrDefault(serverName, "SHUTDOWN"));
           ServerStatus ss = new ServerStatus()
               .withServerName(serverName)
               .withHealth(health);
@@ -160,7 +160,7 @@ public class DomainStatusUpdater {
           V1Pod pod = entry.getValue().getPod().get();
           if (pod != null) {
             ServerHealth health = new ServerHealth()
-                .withState(serverState.getOrDefault(serverName, "UNKNOWN"))
+                .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
                 .withClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL))
                 .withNodeName(pod.getSpec().getNodeName())
                 .withStartTime(pod.getMetadata().getCreationTimestamp());
@@ -186,16 +186,6 @@ public class DomainStatusUpdater {
         status.setStatus(new ArrayList<>(serverStatuses.values()));
         madeChange = true;
       }
-      
-      // This will control if we need to re-check states soon or if we can slow down checks
-      Boolean areServerStatesClean = Boolean.TRUE;
-      for (ServerStatus ss : status.getStatus()) {
-        if (!"RUNNING".equals(ss.getHealth().getState()) && !"SHUTDOWN".equals(ss.getHealth().getState())) {
-          areServerStatesClean = Boolean.FALSE;
-          break;
-        }
-      }
-      packet.put(ProcessingConstants.CLEAN_STATUS, areServerStatesClean);
       
       // Now, we'll build the conditions.
       // Possible condition types are Progressing, Available, and Failed
@@ -302,8 +292,13 @@ public class DomainStatusUpdater {
         conditions.add(dc);
         madeChange = true;
       }
+      
+      // This will control if we need to re-check states soon or if we can slow down checks
+      packet.put(ProcessingConstants.STATUS_UNCHANGED, Boolean.valueOf(!madeChange));
   
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, spec.getDomainUID(), status);
+      if (madeChange) {
+        LOGGER.info(MessageKeys.DOMAIN_STATUS, spec.getDomainUID(), status);
+      }
       LOGGER.exiting();
       
       return madeChange == true ? doDomainUpdate(dom, info, packet, StatusUpdateStep.this, next) : doNext(packet);

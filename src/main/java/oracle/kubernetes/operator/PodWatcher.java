@@ -144,8 +144,12 @@ public class PodWatcher implements Runnable {
 
     LOGGER.exiting();
   }
-  
+
   static boolean isReady(V1Pod pod) {
+    return isReady(pod, false);
+  }
+  
+  static boolean isReady(V1Pod pod, boolean isStatusCheck) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       if ("Running".equals(status.getPhase())) {
@@ -155,7 +159,9 @@ public class PodWatcher implements Runnable {
             if ("Ready".equals(cond.getType())) {
               if ("True".equals(cond.getStatus())) {
                 // Pod is Ready!
-                LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+                if (!isStatusCheck) {
+                  LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+                }
                 return true;
               }
             }
