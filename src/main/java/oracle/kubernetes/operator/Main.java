@@ -903,7 +903,7 @@ public class Main {
           info.setServerStartupInfo(ssic);
           LOGGER.exiting();
           return doNext(scaleDownIfNecessary(info, servers, 
-              checkServerServices(info, new ManagedServerUpIteratorStep(ssic, next))), 
+              new ClusterServicesStep(info, new ManagedServerUpIteratorStep(ssic, next))), 
               packet);
         case StartupControlConstants.ADMIN_STARTUPCONTROL:
         case StartupControlConstants.NONE_STARTUPCONTROL:
@@ -912,7 +912,7 @@ public class Main {
           info.setServerStartupInfo(null);
           LOGGER.exiting();
           return doNext(scaleDownIfNecessary(info, servers, 
-              checkServerServices(info, next)), 
+              new ClusterServicesStep(info, next)), 
               packet);
       }
     }
@@ -949,83 +949,17 @@ public class Main {
     return env;
   }
   
-  private static Step checkServerServices(DomainPresenceInfo info, Step next) {
-    Collection<String> allServers = new ArrayList<>();
-    Collection<ServerStartupInfo> ssic = new ArrayList<>();
-    
-    WlsDomainConfig scan = info.getScan();
-
-    // Iterate all servers
-    for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
-      for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
-        String serverName = wlsServerConfig.getListenAddress();
-        if (!allServers.contains(serverName)) {
-          allServers.add(serverName);
-          ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, null, null));
-        }
-      }
-    }
-    for (Map.Entry<String, WlsServerConfig> wlsServerConfig : scan.getServerConfigs().entrySet()) {
-      String serverName = wlsServerConfig.getKey();
-      if (!allServers.contains(serverName)) {
-        allServers.add(serverName);
-        ssic.add(new ServerStartupInfo(wlsServerConfig.getValue(), null, null, null));
-      }
-    }
-
-    return new ManagedServerServicesStep(info, ssic, next);
-  }
-  
-  private static class ManagedServerServicesStep extends Step {
+  private static class ClusterServicesStep extends Step {
     private final DomainPresenceInfo info;
-    private final Collection<ServerStartupInfo> ssic;
 
-    public ManagedServerServicesStep(DomainPresenceInfo info, Collection<ServerStartupInfo> ssic, Step next) {
+    public ClusterServicesStep(DomainPresenceInfo info, Step next) {
       super(next);
       this.info = info;
-      this.ssic = ssic;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       Collection<StepAndPacket> startDetails = new ArrayList<>();
-      
-      for (ServerStartupInfo ssi : ssic) {
-        Packet p = packet.clone();
-        WlsServerConfig serverConfig = ssi.serverConfig;
-        ServerStartup serverStartup = ssi.serverStartup;
-        String serverName = serverConfig.getName();
-        p.put(ProcessingConstants.SERVER_SCAN, serverConfig);
-        p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
-        p.put(ProcessingConstants.ENVVARS, ssi.envVars);
-        
-        DomainSpec spec = info.getDomain().getSpec();
-        Integer nodePort = null;
-        if (serverStartup == null) {
-          List<ServerStartup> ssl = spec.getServerStartup();
-          if (ssl != null) {
-            for (ServerStartup ss : ssl) {
-              if (serverName.equals(ss.getServerName())) {
-                serverStartup = ss;
-                break;
-              }
-            }
-          }
-        }
-
-        if (serverStartup != null) {
-          nodePort = serverStartup.getNodePort();
-        }
-        
-        p.put(ProcessingConstants.SERVER_NAME, serverName);
-        if (ssi.clusterConfig != null) {
-          p.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
-        }
-        p.put(ProcessingConstants.PORT, serverConfig.getListenPort());
-        p.put(ProcessingConstants.NODE_PORT, nodePort);
-
-        startDetails.add(new StepAndPacket(ServiceHelper.createForServerStep(null), p));
-      }
       
       // Add cluster services
       WlsDomainConfig scan = info.getScan();
@@ -1099,6 +1033,13 @@ public class Main {
         p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
         p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
         p.put(ProcessingConstants.ENVVARS, ssi.envVars);
+        
+        p.put(ProcessingConstants.SERVER_NAME, ssi.serverConfig.getName());
+        p.put(ProcessingConstants.PORT, ssi.serverConfig.getListenPort());
+        ServerStartup ss = ssi.serverStartup;
+        if (ss != null) {
+          p.put(ProcessingConstants.NODE_PORT, ss.getNodePort());
+        }
         
         startDetails.add(new StepAndPacket(bringManagedServerUp(ssi, null), p));
       }
@@ -1202,7 +1143,9 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(PodHelper.deletePodStep(sko, new ServerDownFinalizeStep(serverName, next)), packet);
+      return doNext(PodHelper.deletePodStep(sko, 
+          ServiceHelper.deleteServiceStep(sko,
+              new ServerDownFinalizeStep(serverName, next))), packet);
     }
   }
   
@@ -1228,7 +1171,8 @@ public class Main {
   //                 "clusterScan"
   //                 "envVars"
   private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
-    return PodHelper.createManagedPodStep(next);
+    return PodHelper.createManagedPodStep(
+        ServiceHelper.createForServerStep(next));
   }
 
   private static void deleteDomainPresence(Domain dom) {
