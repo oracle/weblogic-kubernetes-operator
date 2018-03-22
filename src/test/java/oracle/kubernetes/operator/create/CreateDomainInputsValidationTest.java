@@ -217,7 +217,7 @@ public class CreateDomainInputsValidationTest {
 
   @Test
   public void createDomain_with_weblogicDomainStorageTypeNfsAndMissingWeblogicDomainStorageNFSServer_failsAndReturnsError() throws Exception {
-     assertThat(
+    assertThat(
       execCreateDomain(newInputs().weblogicDomainStorageType(STORAGE_TYPE_NFS).weblogicDomainStorageNFSServer("")),
       failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER)));
   }
