@@ -125,6 +125,29 @@ function validateClusterName {
 }
 
 #
+# Function to validate the weblogic domain storage reclaim policy
+#
+function validateWeblogicDomainStorageReclaimPolicy {
+  validateInputParamsSpecified weblogicDomainStorageReclaimPolicy
+  if [ ! -z "${weblogicDomainStorageReclaimPolicy}" ]; then
+    case ${weblogicDomainStorageReclaimPolicy} in
+      "Retain")
+      ;;
+      "Delete")
+        if [ "${weblogicDomainStoragePath:0:5}" != "/tmp/" ]; then
+          validationError "Invalid value for weblogicDomainStorageReclaimPolicy: ${weblogicDomainStorageReclaimPolicy} when weblogicDomainStoragePath is not /tmp/."
+        fi
+      ;;
+      "Recycle")
+      ;;
+      *)
+        validationError "Invalid value for weblogicDomainStorageReclaimPolicy: ${weblogicDomainStorageReclaimPolicy}. Valid values are Retain, Delete and Recycle."
+      ;;
+    esac
+  fi
+}
+
+#
 # Function to validate the weblogic domain storage type
 #
 function validateWeblogicDomainStorageType {
@@ -134,7 +157,7 @@ function validateWeblogicDomainStorageType {
       "HOST_PATH")
       ;;
       "NFS")
-        validateInputParamsSpecified weblogicDomainStorageNFSServer
+        validateInputParamsSpecified weblogicDomainStorageNFSServer        
       ;;
       *)
         validationError "Invalid value for weblogicDomainStorageType: ${weblogicDomainStorageType}. Valid values are HOST_PATH and NFS."
@@ -333,6 +356,7 @@ function initialize {
   validateNamespace
   validateClusterName
   validateWeblogicDomainStorageType
+  validateWeblogicDomainStorageReclaimPolicy
   validateWeblogicCredentialsSecretName
   validateWeblogicImagePullSecretName
   validateLoadBalancer
@@ -383,6 +407,7 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
+  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVOutput}
   sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${domainPVOutput}
   sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${domainPVOutput}
