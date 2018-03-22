@@ -20,6 +20,7 @@ fi
 
 script_dir="$( cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 ; pwd -P)"
 
+
 CERT_DIR="${script_dir}/weblogic-operator-cert"
 OP_PREFIX="weblogic-operator"
 OP_CERT_PEM="${CERT_DIR}/${OP_PREFIX}.cert.pem"
