@@ -189,7 +189,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                     .secretName(getInputs().getWeblogicCredentialsSecretName()))))));
   }
 
-  //@Test TODO- INVESTIGATE!
+  @Test
   public void generatesCorrect_createWeblogicDomainConfigMap() throws Exception {
     // The config map contains several properties that contain shell and wlst scripts
     // that we don't want to duplicate in the test.  However, part of their text
@@ -261,27 +261,24 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   protected void assertThatActualCreateDomainScriptShIsCorrect(String actualCreateDomainScriptSh) {
     /*
       create-domain-script.sh: |-
+        #!/bin/bash
+        #
+
+        # Include common utility functions
+        source /u01/weblogic/utility.sh
+
         export DOMAIN_HOME=${SHARED_PATH}/domain/%DOMAIN_NAME%
-            echo "AdminURL=http\://$3\:%ADMIN_PORT%" >> ${startProp}
-        nmConnect(admin_username, admin_password, '$1-$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
-          nmConnect(admin_username, admin_password, '$1-$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
-        createNodeMgrHome %DOMAIN_UID% %ADMIN_SERVER_NAME%
-        createStartScript %DOMAIN_UID% %ADMIN_SERVER_NAME%
-        createStopScript  %DOMAIN_UID% %ADMIN_SERVER_NAME%
-        while [ $index -lt %NUMBER_OF_MS% ]
-          createNodeMgrHome %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index} %DOMAIN_UID%-%ADMIN_SERVER_NAME%
-          createStartScript %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index}
-          createStopScript  %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index}
+
+        # Create the domain
+        wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py
+
+        echo "Successfully Completed"
     */
     assertThat(
       actualCreateDomainScriptSh,
       containsRegexps(
-        getInputs().getDomainUID(),
         getInputs().getDomainName(),
-        getInputs().getAdminServerName(),
-        getInputs().getManagedServerNameBase(),
-        getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
-        "index -lt " + getInputs().getConfiguredManagedServerCount()));
+        "wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py"));
   }
 
   protected void assertThatActualCreateDomainPyIsCorrect(String actualCreateDomainPy) {
@@ -324,6 +321,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
       containsRegexps(
         getInputs().getDomainName(),
         getInputs().getClusterName(),
+        getInputs().getClusterType(),
         getInputs().getAdminServerName(),
         getInputs().getManagedServerNameBase(),
         getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),

@@ -414,6 +414,7 @@ function createYamlFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
+  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${jobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
@@ -440,6 +441,7 @@ function createYamlFiles {
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
+  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
