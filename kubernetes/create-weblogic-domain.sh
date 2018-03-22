@@ -15,7 +15,7 @@
 #
 
 script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
+scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 internalDir="${scriptDir}/internal"
 
 # This is the script that the customers use to create a domain.

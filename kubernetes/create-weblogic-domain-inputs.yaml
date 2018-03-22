@@ -46,6 +46,9 @@ weblogicDomainStorageType: HOST_PATH
 # The following line must be uncomment and customized:
 #weblogicDomainStoragePath: /scratch/k8s_dir/domain1
 
+# Reclaim policy of the domain's persistent storage
+weblogicDomainStorageReclaimPolicy: Retain
+
 # Total storage allocated to the domain's persistent storage.
 weblogicDomainStorageSize: 10Gi
 

@@ -13,7 +13,8 @@ spec:
     storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
   accessModes:
     - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
+  # Valid values are Retain, Delete or Recycle
+  persistentVolumeReclaimPolicy: %WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%
   %HOST_PATH_PREFIX%hostPath:
   %NFS_PREFIX%nfs:
     %NFS_PREFIX%server: %WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%

@@ -383,7 +383,7 @@ function state_dump {
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
   trace "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" > ${outfile} 2>&1
+  $SCRIPTPATH/job.sh "/scripts/archive.sh $PV_ROOT/acceptance_test_pv $PV_ROOT/acceptance_test_pv_archive" > ${outfile} 2>&1
   if [ "$?" = "0" ]; then
      trace Job complete.
   else
@@ -773,7 +773,7 @@ function run_create_domain_job {
 
     # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
     # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
-    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" > ${outfile} 2>&1
+    $SCRIPTPATH/job.sh "mkdir -p $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR" > ${outfile} 2>&1
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
        trace Job complete.  Directory created on k8s cluster.
@@ -2453,10 +2453,10 @@ function test_suite_init {
       # 777 is needed because this script, k8s pods, and/or jobs may need access.
 
       /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp"
-      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_tmp"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULTPV_ROOT/acceptance_test_tmp"
 
       /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp_archive"
-      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_tmp_archive"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp_archive"
 
       /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv"
       /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv"
