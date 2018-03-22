@@ -135,7 +135,7 @@ function validateWeblogicDomainStorageReclaimPolicy {
       ;;
       "Delete")
         if [ "${weblogicDomainStoragePath:0:5}" != "/tmp/" ]; then
-          validationError "Invalid value for weblogicDomainStorageReclaimPolicy: ${weblogicDomainStorageReclaimPolicy} when weblogicDomainStoragePath is not /tmp/."
+          validationError "ERROR - Invalid value for weblogicDomainStorageReclaimPolicy ${weblogicDomainStorageReclaimPolicy} with weblogicDomainStoragePath ${weblogicDomainStoragePath} that is not /tmp/"
         fi
       ;;
       "Recycle")
