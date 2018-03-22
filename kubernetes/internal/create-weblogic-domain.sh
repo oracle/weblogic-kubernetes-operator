@@ -157,7 +157,7 @@ function validateWeblogicDomainStorageType {
       "HOST_PATH")
       ;;
       "NFS")
-        validateInputParamsSpecified weblogicDomainStorageNFSServer        
+        validateInputParamsSpecified weblogicDomainStorageNFSServer
       ;;
       *)
         validationError "Invalid value for weblogicDomainStorageType: ${weblogicDomainStorageType}. Valid values are HOST_PATH and NFS."

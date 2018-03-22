@@ -216,37 +216,11 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createDomain_with_invalidWeblogicDomainStorageReclaimPolicy_failsAndReturnsError() throws Exception {
-    String val = "invalid-storage-reclaim-policy";
-    assertThat(
-      execCreateDomain(newInputs().weblogicDomainStorageReclaimPolicy(val)),
-      failsAndPrints(invalidEnumParamValueError(PARAM_WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY, val)));
-  }
-
-  @Test
-  public void createDomain_with_weblogicDomainStorageReclaimPolicyDeleteAndNonTmoWeblogicDomainStoragePath_failsAndReturnsError() throws Exception {
-    assertThat(
-      execCreateDomain(newInputs().weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE).weblogicDomainStoragePath("/scratch")),
-      failsAndPrints(invalidRelatedParamValueError(PARAM_WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY, STORAGE_RECLAIM_POLICY_DELETE, 
-                                              PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH, "/scratch")));
-  }
-
-  @Test
-  public void createDomain_with_weblogicDomainStorageReclaimPolicyDelete_and_tmpWeblogicDomainStoragePath_succeeds() throws Exception {
-    GeneratedDomainYamlFiles
-      .generateDomainYamlFiles(
-        newInputs()
-          .weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE)
-          .weblogicDomainStoragePath("/tmp/"))
-      .remove();
-  }
-
-  @Test
   public void createDomain_with_weblogicDomainStorageTypeNfsAndMissingWeblogicDomainStorageNFSServer_failsAndReturnsError() throws Exception {
      assertThat(
       execCreateDomain(newInputs().weblogicDomainStorageType(STORAGE_TYPE_NFS).weblogicDomainStorageNFSServer("")),
       failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER)));
-   }
+  }
 
   @Test
   public void createDomain_with_invalidWeblogicDomainStorageType_failsAndReturnsError() throws Exception {
@@ -271,6 +245,32 @@ public class CreateDomainInputsValidationTest {
     assertThat(
       execCreateDomain(newInputs().weblogicDomainStoragePath("")),
       failsAndPrints(paramMissingError(PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH)));
+  }
+
+  @Test
+  public void createDomain_with_invalidWeblogicDomainStorageReclaimPolicy_failsAndReturnsError() throws Exception {
+    String val = "invalid-storage-reclaim-policy";
+    assertThat(
+      execCreateDomain(newInputs().weblogicDomainStorageReclaimPolicy(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY, val)));
+  }
+
+  @Test
+  public void createDomain_with_weblogicDomainStorageReclaimPolicyDeleteAndNonTmoWeblogicDomainStoragePath_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(newInputs().weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE).weblogicDomainStoragePath("/scratch")),
+      failsAndPrints(invalidRelatedParamValueError(PARAM_WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY, STORAGE_RECLAIM_POLICY_DELETE, 
+                                              PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH, "/scratch")));
+  }
+
+  @Test
+  public void createDomain_with_weblogicDomainStorageReclaimPolicyDelete_and_tmpWeblogicDomainStoragePath_succeeds() throws Exception {
+    GeneratedDomainYamlFiles
+      .generateDomainYamlFiles(
+        newInputs()
+          .weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE)
+          .weblogicDomainStoragePath("/tmp/"))
+      .remove();
   }
 
   @Test
