@@ -18,7 +18,8 @@ if [ ! $# -eq 1 ]; then
   exit 1
 fi
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+script_dir="$( cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 ; pwd -P)"
+
 
 CERT_DIR="${script_dir}/weblogic-operator-cert"
 OP_PREFIX="weblogic-operator"
