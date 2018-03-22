@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
+scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 internalDir="${scriptDir}/internal"
 
 # This is the script that the customers use to create an operator.
