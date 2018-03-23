@@ -21,9 +21,7 @@ import com.google.common.io.CharStreams;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
-import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -35,8 +33,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
 
 /**
@@ -71,13 +67,6 @@ public class ServerStatusReader {
       ConcurrentMap<String, ServerHealth> serverHealthMap = new ConcurrentHashMap<>();
       packet.put(ProcessingConstants.SERVER_HEALTH_MAP, serverHealthMap);
 
-      Domain domain = info.getDomain();
-      V1ObjectMeta meta = domain.getMetadata();
-      DomainSpec spec = domain.getSpec();
-      
-      String namespace = meta.getNamespace();
-      String domainUID = spec.getDomainUID();
-      
       Collection<StepAndPacket> startDetails = new ArrayList<>();
       for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
         String serverName = entry.getKey();
@@ -85,13 +74,9 @@ public class ServerStatusReader {
         if (sko != null) {
           V1Pod pod = sko.getPod().get();
           if (pod != null) {
-            if (PodWatcher.isReady(pod, true)) {
-              serverStateMap.put(serverName, "RUNNING");
-            } else {
-              Packet p = packet.clone();
-              startDetails.add(new StepAndPacket(
-                  createServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, null), p));
-            }
+            Packet p = packet.clone();
+            startDetails.add(new StepAndPacket(
+                createServerStatusReaderStep(pod, serverName, timeoutSeconds, null), p));
           }
         }
       }
@@ -105,38 +90,41 @@ public class ServerStatusReader {
   
   /**
    * Creates asynchronous step to read WebLogic server state from a particular pod
-   * @param namespace Namespace
-   * @param domainUID Domain UID
+   * @param pod The pod
    * @param serverName Server name
    * @param timeoutSeconds Timeout in seconds
    * @param next Next step
    * @return Created step
    */
-  public static Step createServerStatusReaderStep(String namespace, String domainUID,
-      String serverName, long timeoutSeconds, Step next) {
-    return new ServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, 
+  public static Step createServerStatusReaderStep(V1Pod pod, String serverName, long timeoutSeconds, Step next) {
+    return new ServerStatusReaderStep(pod, serverName, timeoutSeconds, 
         new ServerHealthStep(serverName, timeoutSeconds, next));
   }
 
   private static class ServerStatusReaderStep extends Step {
-    private final String namespace;
-    private final String domainUID;
+    private final V1Pod pod;
     private final String serverName;
     private final long timeoutSeconds;
 
-    public ServerStatusReaderStep(String namespace, String domainUID, String serverName, 
+    public ServerStatusReaderStep(V1Pod pod, String serverName, 
         long timeoutSeconds, Step next) {
       super(next);
-      this.namespace = namespace;
-      this.domainUID = domainUID;
+      this.pod = pod;
       this.serverName = serverName;
       this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      String podName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
-
+      @SuppressWarnings("unchecked")
+      ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
+          .get(ProcessingConstants.SERVER_STATE_MAP);
+      
+      if (PodWatcher.isReady(pod, true)) {
+        serverStateMap.put(serverName, "RUNNING");
+        return doNext(packet);
+      }
+      
       // Even though we don't need input data for this call, the API server is 
       // returning 400 Bad Request any time we set these to false.  There is likely some bug in the client
       final boolean stdin = true;
@@ -149,7 +137,7 @@ public class ServerStatusReader {
         Process proc = null;
         String state = null;
         try {
-          proc = exec.exec(namespace, podName,
+          proc = exec.exec(pod,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
               KubernetesConstants.CONTAINER_NAME, stdin, tty);
 
@@ -168,9 +156,6 @@ public class ServerStatusReader {
           }
         }
         
-        @SuppressWarnings("unchecked")
-        ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
-            .get(ProcessingConstants.SERVER_STATE_MAP);
         serverStateMap.put(serverName, parseState(state));
         fiber.resume(packet);
       });
@@ -216,6 +201,7 @@ public class ServerStatusReader {
       ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
           .get(ProcessingConstants.SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
+      
       if (statesSupportingREST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
         return doNext(WlsRetriever.readHealthStep(next), packet);
