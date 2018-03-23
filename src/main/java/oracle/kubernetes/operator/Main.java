@@ -1037,9 +1037,7 @@ public class Main {
         p.put(ProcessingConstants.SERVER_NAME, ssi.serverConfig.getName());
         p.put(ProcessingConstants.PORT, ssi.serverConfig.getListenPort());
         ServerStartup ss = ssi.serverStartup;
-        if (ss != null) {
-          p.put(ProcessingConstants.NODE_PORT, ss.getNodePort());
-        }
+        p.put(ProcessingConstants.NODE_PORT, ss != null ? ss.getNodePort() : null);
         
         startDetails.add(new StepAndPacket(bringManagedServerUp(ssi, null), p));
       }
