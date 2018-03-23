@@ -261,7 +261,7 @@ function makeLocalLease {
 #This file is created by script $0
 timestamp=0
 date=`date '+%m-%d-%YT%H:%M:%S'`
-host=`hostname`
+host=$HOST
 pid=$LOCAL_PID
 user=$USER
 EOF
@@ -270,7 +270,7 @@ EOF
 #This file is created by script $0
 timestamp=`date +%s`
 date=`date '+%m-%d-%YT%H:%M:%S'`
-host=`hostname`
+host=$HOST
 pid=$LOCAL_PID
 user=$USER
 EOF
