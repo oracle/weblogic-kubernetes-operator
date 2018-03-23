@@ -771,6 +771,11 @@ function run_create_domain_job {
       sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputs
     fi
 
+    # we will test pv reclaim policy in domain6. We choose to do this way to void adding too many parameters in dom_define
+    if [ "$DOMAIN_UID" == "domain6" ] ; then
+      sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputs
+    fi
+
     local outfile="${tmp_dir}/mkdir_physical_nfs.out"
     trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
 
@@ -2253,6 +2258,32 @@ function test_create_domain_startup_control_admin {
     declare_test_pass
 }
 
+
+function test_create_domain_pv_reclaim_policy_recycle {
+    declare_new_test 1 "$@"
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameters: domainKey"
+    fi
+
+    local DOM_KEY=${1}
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+
+    run_create_domain_job $DOMAIN_UID
+    verify_domain_created $DOMAIN_UID
+    shutdown_domain $DOM_KEY
+
+    kubectl delete pvc ${DOMAIN_UID}-weblogic-domain-pvc -n $NAMESPACE
+
+    local count=`kubectl get pv $DOMAIN_UID-weblogic-domain-pv -n $NAMESPACE |grep "^$DOMAIN_UID " | wc -l `
+    if [ ${count:=Error} != 0 ] ; then
+      fail "ERROR: pv for $DOMAIN_UID still exists after the pvc is deleted, exiting!"
+    fi
+
+    declare_test_pass
+}
+
 # scale domain $1 up and down, and optionally verify the scaling had no effect on domain $2
 function test_cluster_scale {
     declare_new_test 1 "$@"
@@ -2456,10 +2487,10 @@ function test_suite_init {
       # 777 is needed because this script, k8s pods, and/or jobs may need access.
 
       /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp"
-      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_tmp"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp"
 
       /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp_archive"
-      /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_tmp_archive"
+      /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp_archive"
 
       /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv"
       /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv"
@@ -2527,6 +2558,7 @@ function test_suite {
     dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       dynamic          managed-server 7021       30041           30703           8031    30307                  30317
     dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       configured       managed-server 7041       30051           30704           8041    30308                  30318
     dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       dynamic          managed-server 7051       30061           30705           8051    30309                  30319
+    dom_define domain6  oper1   default   domain6    AUTO            cluster-1       dynamic          managed-server 7061       30071           30706           8061    30310                  30320
 
     # create namespaces for domains (the operator job creates a namespace if needed)
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
@@ -2591,8 +2623,11 @@ function test_suite {
       # cycle domain1 down and back up, plus verify no impact on domain4
       test_domain_lifecycle domain1 domain4 
 
-      # create another domain in the default namespace with startupControl="ADMIN", and verify that only admin server is created
+      # create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created
       test_create_domain_startup_control_admin domain5
+
+      # create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
+      test_create_domain_pv_reclaim_policy_recycle domain6
 
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1
