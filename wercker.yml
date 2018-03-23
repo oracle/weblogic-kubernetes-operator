@@ -118,7 +118,7 @@ integration-test:
       #   - finally, run.sh will periodically try renew the lease as it runs (using $LEASE_ID)
       #   - if run.sh fails when it tries to renew the lease (as something else took it, etc), it will exit early
       #   - when run.sh exits, it will try release the lease if it's still the owner...
-      export LEASE_ID="`uuidgen`-pid$$"
+      export LEASE_ID="${WERCKER_STEP_ID}-pid$$"
       echo @@
       echo @@ "Obtaining lease!"
       echo @@
