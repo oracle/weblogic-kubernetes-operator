@@ -1,5 +1,5 @@
-//Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-//Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v1;
 
@@ -46,10 +46,10 @@ public class DomainStatus {
      * Status of WebLogic servers in this domain.
      * 
      */
-    @SerializedName("status")
+    @SerializedName("servers")
     @Expose
     @Valid
-    private List<ServerStatus> status = new ArrayList<ServerStatus>();
+    private List<ServerStatus> servers = new ArrayList<ServerStatus>();
     /**
      * RFC 3339 date and time at which the operator started the domain.  This will be when the operator begins processing and will precede when the various servers or clusters are available.
      * 
@@ -60,7 +60,7 @@ public class DomainStatus {
 
     /**
      * Current service state of domain.
-     * @return domain conditions
+     * @return conditions
      */
     public List<DomainCondition> getConditions() {
         return conditions;
@@ -68,7 +68,7 @@ public class DomainStatus {
 
     /**
      * Current service state of domain.
-     * @param conditions domain conditions
+     * @param conditions conditions
      */
     public void setConditions(List<DomainCondition> conditions) {
         this.conditions = conditions;
@@ -76,7 +76,7 @@ public class DomainStatus {
 
     /**
      * Current service state of domain.
-     * @param conditions domain conditions
+     * @param conditions conditions
      * @return this
      */
     public DomainStatus withConditions(List<DomainCondition> conditions) {
@@ -138,27 +138,27 @@ public class DomainStatus {
 
     /**
      * Status of WebLogic servers in this domain.
-     * @return server status
+     * @return servers
      */
-    public List<ServerStatus> getStatus() {
-        return status;
+    public List<ServerStatus> getServers() {
+        return servers;
     }
 
     /**
      * Status of WebLogic servers in this domain.
-     * @param status server status
+     * @param servers servers
      */
-    public void setStatus(List<ServerStatus> status) {
-        this.status = status;
+    public void setServers(List<ServerStatus> servers) {
+        this.servers = servers;
     }
 
     /**
      * Status of WebLogic servers in this domain.
-     * @param status server status
+     * @param servers servers
      * @return this
      */
-    public DomainStatus withStatus(List<ServerStatus> status) {
-        this.status = status;
+    public DomainStatus withServers(List<ServerStatus> servers) {
+        this.servers = servers;
         return this;
     }
 
@@ -190,12 +190,12 @@ public class DomainStatus {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("conditions", conditions).append("message", message).append("reason", reason).append("status", status).append("startTime", startTime).toString();
+        return new ToStringBuilder(this).append("conditions", conditions).append("message", message).append("reason", reason).append("servers", servers).append("startTime", startTime).toString();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(reason).append(startTime).append(conditions).append(message).append(status).toHashCode();
+        return new HashCodeBuilder().append(reason).append(startTime).append(servers).append(conditions).append(message).toHashCode();
     }
 
     @Override
@@ -207,7 +207,7 @@ public class DomainStatus {
             return false;
         }
         DomainStatus rhs = ((DomainStatus) other);
-        return new EqualsBuilder().append(reason, rhs.reason).append(startTime, rhs.startTime).append(conditions, rhs.conditions).append(message, rhs.message).append(status, rhs.status).isEquals();
+        return new EqualsBuilder().append(reason, rhs.reason).append(startTime, rhs.startTime).append(servers, rhs.servers).append(conditions, rhs.conditions).append(message, rhs.message).isEquals();
     }
 
 }

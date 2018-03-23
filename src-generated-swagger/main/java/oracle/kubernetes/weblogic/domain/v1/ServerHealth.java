@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.v1;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -28,29 +27,6 @@ public class ServerHealth {
     @SerializedName("startTime")
     @Expose
     private DateTime startTime;
-    /**
-     * WebLogic cluster name, if the server is part of a cluster
-     * 
-     */
-    @SerializedName("clusterName")
-    @Expose
-    private String clusterName;
-    /**
-     * Name of node that is hosting the Pod containing this WebLogic server.
-     * 
-     */
-    @SerializedName("nodeName")
-    @Expose
-    private String nodeName;
-    /**
-     * Current state of this WebLogic server.
-     * (Required)
-     * 
-     */
-    @SerializedName("state")
-    @Expose
-    @NotNull
-    private String state;
     /**
      * Server health of this WebLogic server.
      * 
@@ -97,87 +73,6 @@ public class ServerHealth {
      */
     public ServerHealth withStartTime(DateTime startTime) {
         this.startTime = startTime;
-        return this;
-    }
-
-    /**
-     * WebLogic cluster name, if the server is part of a cluster
-     * @return cluster name
-     */
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    /**
-     * WebLogic cluster name, if the server is part of a cluster
-     * @param clusterName cluster name
-     */
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    /**
-     * WebLogic cluster name, if the server is part of a cluster
-     * @param clusterName cluster name
-     * @return this
-     */
-    public ServerHealth withClusterName(String clusterName) {
-        this.clusterName = clusterName;
-        return this;
-    }
-
-    /**
-     * Name of node that is hosting the Pod containing this WebLogic server.
-     * @return node name
-     */
-    public String getNodeName() {
-        return nodeName;
-    }
-
-    /**
-     * Name of node that is hosting the Pod containing this WebLogic server.
-     * @param nodeName node name
-     */
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
-    }
-
-    /**
-     * Name of node that is hosting the Pod containing this WebLogic server.
-     * @param nodeName node name
-     * @return this
-     */
-    public ServerHealth withNodeName(String nodeName) {
-        this.nodeName = nodeName;
-        return this;
-    }
-
-    /**
-     * Current state of this WebLogic server.
-     * (Required)
-     * @return state
-     */
-    public String getState() {
-        return state;
-    }
-
-    /**
-     * Current state of this WebLogic server.
-     * (Required)
-     * @param state state
-     */
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    /**
-     * Current state of this WebLogic server.
-     * (Required)
-     * @param state state
-     * @return this
-     */
-    public ServerHealth withState(String state) {
-        this.state = state;
         return this;
     }
 
@@ -261,12 +156,12 @@ public class ServerHealth {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("startTime", startTime).append("clusterName", clusterName).append("nodeName", nodeName).append("state", state).append("health", health).append("subsystemName", subsystemName).append("symptoms", symptoms).toString();
+        return new ToStringBuilder(this).append("startTime", startTime).append("health", health).append("subsystemName", subsystemName).append("symptoms", symptoms).toString();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(nodeName).append(symptoms).append(clusterName).append(health).append(startTime).append(state).append(subsystemName).toHashCode();
+        return new HashCodeBuilder().append(symptoms).append(health).append(startTime).append(subsystemName).toHashCode();
     }
 
     @Override
@@ -278,7 +173,7 @@ public class ServerHealth {
             return false;
         }
         ServerHealth rhs = ((ServerHealth) other);
-        return new EqualsBuilder().append(nodeName, rhs.nodeName).append(symptoms, rhs.symptoms).append(clusterName, rhs.clusterName).append(health, rhs.health).append(startTime, rhs.startTime).append(state, rhs.state).append(subsystemName, rhs.subsystemName).isEquals();
+        return new EqualsBuilder().append(symptoms, rhs.symptoms).append(health, rhs.health).append(startTime, rhs.startTime).append(subsystemName, rhs.subsystemName).isEquals();
     }
 
 }

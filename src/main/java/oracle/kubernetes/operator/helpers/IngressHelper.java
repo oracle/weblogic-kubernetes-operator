@@ -96,7 +96,7 @@ public class IngressHelper {
         v1beta1HTTPIngressPath.setPath("/");
         V1beta1IngressBackend v1beta1IngressBackend = new V1beta1IngressBackend();
         v1beta1IngressBackend.setServiceName(serviceName);
-        v1beta1IngressBackend.setServicePort(String.valueOf(port) /*new IntOrString(port)*/);
+        v1beta1IngressBackend.setServicePort(new IntOrString(port));
         v1beta1HTTPIngressPath.setBackend(v1beta1IngressBackend);
         paths.add(v1beta1HTTPIngressPath);
         v1beta1HTTPIngressRuleValue.setPaths(paths);

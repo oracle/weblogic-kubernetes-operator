@@ -20,7 +20,7 @@
       "description": "A brief CamelCase message indicating details about why the domain is in this state.",
       "type": "string"
      },
-     "status": {
+     "servers": {
       "description": "Status of WebLogic servers in this domain.",
       "type": "array",
       "items": {

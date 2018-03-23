@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec;
 import io.kubernetes.client.models.V1beta1ClusterRole;
@@ -290,6 +291,10 @@ public class KubernetesArtifactUtils {
 
   public static IntOrString newIntOrString(int val) {
     return new IntOrString(val);
+  }
+  
+  public static Quantity newQuantity(String val) {
+    return Quantity.fromString(val);
   }
 
   public static V1SecretReference newSecretReference() {

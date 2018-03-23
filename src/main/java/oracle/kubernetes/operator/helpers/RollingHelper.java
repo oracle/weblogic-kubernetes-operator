@@ -67,10 +67,10 @@ public class RollingHelper {
       DomainStatus status = dom.getStatus();
       // These are presently Ready servers
       List<String> availableServers = new ArrayList<>();
-      List<ServerStatus> ss = status.getStatus();
+      List<ServerStatus> ss = status.getServers();
       if (ss != null) {
         for (ServerStatus s : ss) {
-          if ("RUNNING".equals(s.getHealth().getState())) {
+          if ("RUNNING".equals(s.getState())) {
             availableServers.add(s.getServerName());
           }
         }
@@ -165,10 +165,10 @@ public class RollingHelper {
         DomainStatus status = dom.getStatus();
         // These are presently Ready servers
         List<String> availableServers = new ArrayList<>();
-        List<ServerStatus> ss = status.getStatus();
+        List<ServerStatus> ss = status.getServers();
         if (ss != null) {
           for (ServerStatus s : ss) {
-            if ("RUNNING".equals(s.getHealth().getState())) {
+            if ("RUNNING".equals(s.getState())) {
               availableServers.add(s.getServerName());
             }
           }
