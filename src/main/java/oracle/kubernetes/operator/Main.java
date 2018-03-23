@@ -490,6 +490,7 @@ public class Main {
   
   private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     String domainUID = info.getDomain().getSpec().getDomainUID();
+    
     AtomicInteger unchangedCount = new AtomicInteger(0);
     AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
     ScheduledFuture<?> existing = statusUpdater.get();

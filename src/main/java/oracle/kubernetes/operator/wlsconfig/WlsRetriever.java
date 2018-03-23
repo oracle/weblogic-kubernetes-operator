@@ -210,6 +210,7 @@ public class WlsRetriever {
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
               getRetrieveHealthSearchUrl(), serviceURL, namespace, 
               getRetrieveHealthSearchPayload());
+          
           ObjectMapper mapper = new ObjectMapper();
           JsonNode root = mapper.readTree(jsonResult);
           
@@ -267,7 +268,7 @@ public class WlsRetriever {
   // overallHealthState, healthState
   
   public static String getRetrieveHealthSearchPayload() {
-    return "{ fields: [ 'overallHealthState', 'activationTime' ] }";
+    return "{ fields: [ 'overallHealthState', 'activationTime' ], links: [] }";
   }
 
   /**
