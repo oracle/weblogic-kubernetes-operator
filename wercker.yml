@@ -113,22 +113,26 @@ integration-test:
       kubectl version
 
       # obtain an exclusive k8s cluster lease using the 'lease.sh' helper script
-      #   - first set LEASE_PID to a PID
+      #   - first set LEASE_ID to a unique value
       #   - then try obtain the lease, block up to 100 minutes (wercker pipeline should timeout before then)
-      #   - finally, run.sh will periodically try renew the lease as it runs (using $LEASE_PID)
+      #   - finally, run.sh will periodically try renew the lease as it runs (using $LEASE_ID)
       #   - if run.sh fails when it tries to renew the lease (as something else took it, etc), it will exit early
       #   - when run.sh exits, it will try release the lease if it's still the owner...
-      export LEASE_PID=$$
+      export LEASE_ID="`uuidgen`-pid$$"
+      echo @@
+      echo @@ "Obtaining lease!"
       echo @@
       echo @@ "About to block up to the 100 minutes trying to get exclusive access to the kubernetes cluster."
       echo @@ "If this blocks unexpectedly and you are sure that the kubernetes cluster isn't in use by "
       echo @@ "another Wercker pipeline, you can force the lease to free up via 'kubectl delete cm acceptance-test-lease'."
-      echo @@ "See LEASE_PID in run.sh for details about this heuristic."
-      echo @@ "PID=$LEASE_PID host=$HOST date=`date` user=$USER."
+      echo @@ "See LEASE_ID in run.sh for details about this heuristic."
+      echo @@ "LEASE_ID=$LEASE_ID host=$HOST date=`date` user=$USER."
+      echo @@
       echo @@ "Current lease owner (if any):"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
+      echo @@
       echo @@ "About to try obtain lease:"
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o $LEASE_PID -t $((100 * 60))
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
       echo @@
 
       # create pull secrets
@@ -182,7 +186,7 @@ integration-test:
       # release lease in case run.sh failed to release it
       # (the following command only releases the release after confirming this pipeline still owns it)
       # TBD Calling this somehow seems to fail the wercker run
-      # $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -d $LEASE_PID > /tmp/junk 2>&1
+      # $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -d "$LEASE_ID" > /tmp/junk 2>&1
 
       # clean up
       yum clean all
