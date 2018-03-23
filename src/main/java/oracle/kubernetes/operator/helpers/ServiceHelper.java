@@ -169,6 +169,56 @@ public class ServiceHelper {
   }
   
   /**
+   * Factory for {@link Step} that deletes per-managed server service
+   * @param sko Server Kubernetes Objects
+   * @param next Next processing step
+   * @return Step for deleting per-managed server service
+   */
+  public static Step deleteServiceStep(ServerKubernetesObjects sko, Step next) {
+    return new DeleteServiceStep(sko, next);
+  }
+
+  private static class DeleteServiceStep extends Step {
+    private final ServerKubernetesObjects sko;
+
+    public DeleteServiceStep(ServerKubernetesObjects sko, Step next) {
+      super(next);
+      this.sko = sko;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      
+      Domain dom = info.getDomain();
+      V1ObjectMeta meta = dom.getMetadata();
+      String namespace = meta.getNamespace();
+      
+      // Set service to null so that watcher doesn't try to recreate service
+      V1Service oldService = sko.getService().getAndSet(null);
+      if (oldService != null) {
+        return doNext(CallBuilder.create().deleteServiceAsync(oldService.getMetadata().getName(), namespace, new ResponseStep<V1Status>(next) {
+          @Override
+          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            if (statusCode == CallBuilder.NOT_FOUND) {
+              return onSuccess(packet, null, statusCode, responseHeaders);
+            }
+            return super.onFailure(packet, e, statusCode, responseHeaders);
+          }
+  
+          @Override
+          public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
+              Map<String, List<String>> responseHeaders) {
+            return doNext(next, packet);
+          }
+        }), packet);
+      }
+      return doNext(packet);
+    }
+  }
+
+  /**
    * Create asynchronous step for internal cluster service
    * @param next Next processing step
    * @return Step for internal service creation
