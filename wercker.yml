@@ -124,7 +124,7 @@ integration-test:
       echo @@ "If this blocks unexpectedly and you are sure that the kubernetes cluster isn't in use by "
       echo @@ "another Wercker pipeline, you can force the lease to free up via 'kubectl delete cm acceptance-test-lease'."
       echo @@ "See LEASE_PID in run.sh for details about this heuristic."
-      echo @@ "PID=$LEASE_PID host=`hostname` date=`date`."
+      echo @@ "PID=$LEASE_PID host=$HOST date=`date` user=$USER."
       echo @@ "Current lease owner (if any):"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
       echo @@ "About to try obtain lease:"
