@@ -256,11 +256,20 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void createDomain_with_weblogicDomainStorageReclaimPolicyDeleteAndNonTmoWeblogicDomainStoragePath_failsAndReturnsError() throws Exception {
+  public void createDomain_with_weblogicDomainStorageReclaimPolicyDeleteAndNonTmpWeblogicDomainStoragePath_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateDomain(newInputs().weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE).weblogicDomainStoragePath("/scratch")),
       failsAndPrints(invalidRelatedParamValueError(PARAM_WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY, STORAGE_RECLAIM_POLICY_DELETE, 
                                               PARAM_WEBLOGIC_DOMAIN_STORAGE_PATH, "/scratch")));
+  }
+
+  @Test
+  public void createDomain_with_weblogicDomainStorageReclaimPolicyRecycle_succeeds() throws Exception {
+    GeneratedDomainYamlFiles
+      .generateDomainYamlFiles(
+        newInputs()
+          .weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_RECYCLE))
+      .remove();
   }
 
   @Test
