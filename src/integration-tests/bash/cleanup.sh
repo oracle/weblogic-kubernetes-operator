@@ -51,6 +51,7 @@ OCOUNT=${#OPER_NAMESPACES[@]}
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 PROJECT_ROOT="$SCRIPTPATH/../../.."
 RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
+PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
 USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
