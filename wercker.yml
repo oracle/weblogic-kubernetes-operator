@@ -181,7 +181,8 @@ integration-test:
 
       # release lease in case run.sh failed to release it
       # (the following command only releases the release after confirming this pipeline still owns it)
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -d $LEASE_PID > /tmp/junk 2>&1
+      # TBD Calling this somehow seems to fail the wercker run
+      # $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -d $LEASE_PID > /tmp/junk 2>&1
 
       # clean up
       yum clean all
