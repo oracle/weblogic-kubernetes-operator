@@ -172,7 +172,7 @@ public class IngressHelperTest {
     V1beta1IngressBackend v1beta1IngressBackend = v1beta1HTTPIngressPath.getBackend();
     Assert.assertNotNull("IngressBackend Object should not be null", v1beta1IngressBackend);
     Assert.assertEquals("Service name should be " + clusterServiceName, clusterServiceName, v1beta1IngressBackend.getServiceName());
-    Assert.assertEquals("Service port should be " + server1Port, server1Port, Integer.valueOf(v1beta1IngressBackend.getServicePort()));
+    Assert.assertEquals("Service port should be " + server1Port, server1Port, v1beta1IngressBackend.getServicePort().getIntValue());
 
   }
 

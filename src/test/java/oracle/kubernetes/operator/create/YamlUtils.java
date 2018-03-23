@@ -18,14 +18,19 @@ import org.yaml.snakeyaml.representer.Representer;
  * Yaml utilities for the create script tests
  */
 public class YamlUtils {
+
   public static Yaml newYaml() {
+    return newYaml(new Constructor());
+  }
+
+  public static Yaml newYaml(Constructor constructor) {
     // always make a new yaml object since it appears to be stateful
     // so there are problems if you try to use the same one to
     // parse different yamls at the same time
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     options.setPrettyFlow(true);
-    return new Yaml(new Constructor(), new SortedRepresenter(), options);
+    return new Yaml(constructor, new SortedRepresenter(), options);
   }
 
   // We want to be able to test that yamls are identical by doing string compares

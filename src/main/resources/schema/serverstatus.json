@@ -4,11 +4,23 @@
     "description": "ServerStatus describes the current status of a specific WebLogic server.",
     "required": [
      "serverName",
-     "health"
+     "state"
     ],
     "properties": {
      "serverName": {
       "description": "WebLogic server name.",
+      "type": "string"
+     },
+     "state": {
+      "description": "Current state of this WebLogic server.",
+      "type": "string"
+     },
+     "clusterName": {
+      "description": "WebLogic cluster name, if the server is part of a cluster",
+      "type": "string"
+     },
+     "nodeName": {
+      "description": "Name of node that is hosting the Pod containing this WebLogic server.",
       "type": "string"
      },
      "health": {

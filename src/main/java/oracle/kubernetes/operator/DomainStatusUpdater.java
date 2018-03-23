@@ -114,7 +114,7 @@ public class DomainStatusUpdater {
         dom.setStatus(status);
         madeChange = true;
       } else {
-        existingServerStatuses = status.getStatus();
+        existingServerStatuses = status.getServers();
       }
       
       // Acquire current state
@@ -126,15 +126,16 @@ public class DomainStatusUpdater {
       if (scan != null) {
         for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
           String serverName = entry.getKey();
-          ServerHealth health = new ServerHealth().withState(serverState.getOrDefault(serverName, "SHUTDOWN"));
+          ServerHealth health = new ServerHealth();
           ServerStatus ss = new ServerStatus()
+              .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
               .withServerName(serverName)
               .withHealth(health);
           outer:
           for (Map.Entry<String, WlsClusterConfig> cluster : scan.getClusterConfigs().entrySet()) {
             for (WlsServerConfig sic : cluster.getValue().getServerConfigs()) {
               if (serverName.equals(sic.getName())) {
-                health.setClusterName(cluster.getKey());
+                ss.setClusterName(cluster.getKey());
                 break outer;
               }
             }
@@ -143,12 +144,11 @@ public class DomainStatusUpdater {
           if (sko != null) {
             V1Pod pod = sko.getPod().get();
             if (pod != null) {
-              health.setNodeName(pod.getSpec().getNodeName());
+              ss.setNodeName(pod.getSpec().getNodeName());
               health.setStartTime(pod.getMetadata().getCreationTimestamp());
             }
           }
           // TODO
-          //ss.setHealth(health);
           //ss.setSubsystemName(subsystemName);
           //ss.setSymptoms(symptoms);
           serverStatuses.put(serverName, ss);
@@ -160,15 +160,14 @@ public class DomainStatusUpdater {
           V1Pod pod = entry.getValue().getPod().get();
           if (pod != null) {
             ServerHealth health = new ServerHealth()
+                .withStartTime(pod.getMetadata().getCreationTimestamp());
+            ServerStatus ss = new ServerStatus()
                 .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
                 .withClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL))
                 .withNodeName(pod.getSpec().getNodeName())
-                .withStartTime(pod.getMetadata().getCreationTimestamp());
-            ServerStatus ss = new ServerStatus()
                 .withServerName(serverName)
                 .withHealth(health);
             // TODO
-            //ss.setHealth(health);
             //ss.setSubsystemName(subsystemName);
             //ss.setSymptoms(symptoms);
             serverStatuses.put(serverName, ss);
@@ -179,11 +178,11 @@ public class DomainStatusUpdater {
       if (existingServerStatuses != null) {
         List<ServerStatus> currentServerStatuses = new ArrayList<>(serverStatuses.values());
         if (!existingServerStatuses.equals(currentServerStatuses)) {
-          status.setStatus(currentServerStatuses);
+          status.setServers(currentServerStatuses);
           madeChange = true;
         }
       } else {
-        status.setStatus(new ArrayList<>(serverStatuses.values()));
+        status.setServers(new ArrayList<>(serverStatuses.values()));
         madeChange = true;
       }
       
@@ -220,7 +219,7 @@ public class DomainStatusUpdater {
             String serverName = entry.getKey();
             if (serversIntendedToRunning.contains(serverName)) {
               ServerStatus ss = serverStatuses.get(serverName);
-              if (ss == null || !"RUNNING".equals(ss.getHealth().getState())) {
+              if (ss == null || !"RUNNING".equals(ss.getState())) {
                 allIntendedPodsToRunning = false;
               }
             }

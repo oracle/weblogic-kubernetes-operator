@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
@@ -22,11 +24,15 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
-
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.apache.commons.codec.binary.Base64;
+import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeId;
+import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.nodes.Tag;
 
 /**
  * Holds the results of a kubernetes yaml file that has been converted to k8s typed java objects
@@ -208,7 +214,7 @@ public class ParsedKubernetesYaml {
       // convert the map to a yaml string then convert the yaml string to the
       // corresponding k8s class
       String yaml = newYaml().dump(objectAsMap);
-      T instance = (T)newYaml().loadAs(yaml, k8sClass);
+      T instance = (T)newYaml(new WorkAroundConstructor()).loadAs(yaml, k8sClass);
       instances.add(instance);
     }
 
@@ -314,5 +320,35 @@ public class ParsedKubernetesYaml {
   private static class ServiceAccountHandler extends TypeHandler<V1ServiceAccount> {
     private ServiceAccountHandler() { super(V1ServiceAccount.class); }
     @Override protected V1ObjectMeta getMetadata(V1ServiceAccount instance) { return instance.getMetadata(); }
+  }
+
+  // Some kubernetes client classes aren't snakeyaml friendly.
+  // This class works around these issues.
+  private static class WorkAroundConstructor extends Constructor {
+    public WorkAroundConstructor() {
+      super();
+      yamlClassConstructors.put(NodeId.scalar, new WorkAroundConstructScalar());
+    }
+
+    private class WorkAroundConstructScalar extends Constructor.ConstructScalar {
+      public Object construct(Node node) {
+        Class<?> type = node.getType();
+        if (IntOrString.class.equals(type)) {
+          ScalarNode sn = (ScalarNode)node;
+          Tag tag = sn.getTag();
+          String value = sn.getValue();
+          if (Tag.STR.equals(tag)) {
+            return KubernetesArtifactUtils.newIntOrString(value);
+          } else if (Tag.INT.equals(tag)) {
+            return KubernetesArtifactUtils.newIntOrString(Integer.parseInt(value));
+          }
+        } else if (Quantity.class.equals(type)) {
+          ScalarNode sn = (ScalarNode)node;
+          String value = sn.getValue();
+          return KubernetesArtifactUtils.newQuantity(value);
+        }
+        return super.construct(node);
+      }
+    }
   }
 }

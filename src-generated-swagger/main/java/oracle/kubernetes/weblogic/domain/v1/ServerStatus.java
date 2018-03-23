@@ -28,20 +28,41 @@ public class ServerStatus {
     @NotNull
     private String serverName;
     /**
-     * State and health of the server.
+     * Current state of this WebLogic server.
      * (Required)
+     * 
+     */
+    @SerializedName("state")
+    @Expose
+    @NotNull
+    private String state;
+    /**
+     * WebLogic cluster name, if the server is part of a cluster
+     * 
+     */
+    @SerializedName("clusterName")
+    @Expose
+    private String clusterName;
+    /**
+     * Name of node that is hosting the Pod containing this WebLogic server.
+     * 
+     */
+    @SerializedName("nodeName")
+    @Expose
+    private String nodeName;
+    /**
+     * ServerHealth describes the current status and health of a specific WebLogic server.
      * 
      */
     @SerializedName("health")
     @Expose
     @Valid
-    @NotNull
     private ServerHealth health;
 
     /**
      * WebLogic server name.
      * (Required)
-     * @return Server name
+     * @return server name
      */
     public String getServerName() {
         return serverName;
@@ -50,7 +71,7 @@ public class ServerStatus {
     /**
      * WebLogic server name.
      * (Required)
-     * @param serverName Server name
+     * @param serverName server name
      */
     public void setServerName(String serverName) {
         this.serverName = serverName;
@@ -59,7 +80,7 @@ public class ServerStatus {
     /**
      * WebLogic server name.
      * (Required)
-     * @param serverName Server name
+     * @param serverName server name
      * @return this
      */
     public ServerStatus withServerName(String serverName) {
@@ -68,27 +89,105 @@ public class ServerStatus {
     }
 
     /**
-     * State and health of the server.
+     * Current state of this WebLogic server.
      * (Required)
-     * @return Health of the server
+     * @return state
+     */
+    public String getState() {
+        return state;
+    }
+
+    /**
+     * Current state of this WebLogic server.
+     * (Required)
+     * @param state state
+     */
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    /**
+     * Current state of this WebLogic server.
+     * (Required)
+     * @param state state
+     * @return this
+     */
+    public ServerStatus withState(String state) {
+        this.state = state;
+        return this;
+    }
+
+    /**
+     * WebLogic cluster name, if the server is part of a cluster
+     * @return cluster name
+     */
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    /**
+     * WebLogic cluster name, if the server is part of a cluster
+     * @param clusterName cluster name
+     */
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    /**
+     * WebLogic cluster name, if the server is part of a cluster
+     * @param clusterName cluster name
+     * @return this
+     */
+    public ServerStatus withClusterName(String clusterName) {
+        this.clusterName = clusterName;
+        return this;
+    }
+
+    /**
+     * Name of node that is hosting the Pod containing this WebLogic server.
+     * @return node name
+     */
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    /**
+     * Name of node that is hosting the Pod containing this WebLogic server.
+     * @param nodeName node name
+     */
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
+    }
+
+    /**
+     * Name of node that is hosting the Pod containing this WebLogic server.
+     * @param nodeName node name
+     * @return this
+     */
+    public ServerStatus withNodeName(String nodeName) {
+        this.nodeName = nodeName;
+        return this;
+    }
+
+    /**
+     * ServerHealth describes the current status and health of a specific WebLogic server.
+     * @return health
      */
     public ServerHealth getHealth() {
         return health;
     }
 
     /**
-     * State and health of the server.
-     * (Required)
-     * @param health Health of the server
+     * ServerHealth describes the current status and health of a specific WebLogic server.
+     * @param health health
      */
     public void setHealth(ServerHealth health) {
         this.health = health;
     }
 
     /**
-     * State and health of the server.
-     * (Required)
-     * @param health Health of the server
+     * ServerHealth describes the current status and health of a specific WebLogic server.
+     * @param health health
      * @return this
      */
     public ServerStatus withHealth(ServerHealth health) {
@@ -98,12 +197,12 @@ public class ServerStatus {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("serverName", serverName).append("health", health).toString();
+        return new ToStringBuilder(this).append("serverName", serverName).append("state", state).append("clusterName", clusterName).append("nodeName", nodeName).append("health", health).toString();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(serverName).append(health).toHashCode();
+        return new HashCodeBuilder().append(nodeName).append(serverName).append(health).append(state).append(clusterName).toHashCode();
     }
 
     @Override
@@ -115,7 +214,7 @@ public class ServerStatus {
             return false;
         }
         ServerStatus rhs = ((ServerStatus) other);
-        return new EqualsBuilder().append(serverName, rhs.serverName).append(health, rhs.health).isEquals();
+        return new EqualsBuilder().append(nodeName, rhs.nodeName).append(serverName, rhs.serverName).append(health, rhs.health).append(state, rhs.state).append(clusterName, rhs.clusterName).isEquals();
     }
 
 }
