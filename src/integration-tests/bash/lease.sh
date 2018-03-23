@@ -29,9 +29,9 @@ cat << EOF
 
   Usage:
  
-    Obtain       : lease.sh -o pid [-t timeout]
-    Renew        : lease.sh -r pid  
-    Delete       : lease.sh -d pid 
+    Obtain       : lease.sh -o id [-t timeout]
+    Renew        : lease.sh -r id  
+    Delete       : lease.sh -d id 
     Force Delete : lease.sh -f 
     Show         : lease.sh -s
     Help         : lease.sh -h
@@ -39,23 +39,25 @@ cat << EOF
     The user is expected to call this script multiple times throughout
     the ownership of a lease:
  
-    1) First, call 'lease.sh -o pid' to try obtain a lease.  If 
+    1) First, call 'lease.sh -o id' to try obtain a lease.  If 
        this fails, fail your script, since failure may mean some other
        owner has ownership.  This call will block up to 30 minutes
        while trying to get the lease (tunable via -t), and will grab
        the lease if no other process owns it or no other process has touched
-       it for a period of 10 minutes.
+       it for a period of 10 minutes.  'id' should be some unique
+       string suitable for use as a filename - a pid is sufficient
+       or a `uuidgen` value.
  
-    2) While running, call 'lease.sh -r pid' every few minutes
+    2) While running, call 'lease.sh -r id' every few minutes
        to renew the lease and retain ownership.   Fail if this fails,
        since that means you may have lost the lease.  Be careful to call
        this within 10 minutes of last obtaining or renewing the lease, 
        otherwise the lease expires and another process is free to obtain
-       ownership.  Use the same value of 'pid' as was specified in step (1).
+       ownership.  Use the same value of 'id' as was specified in step (1).
   
-    3) Finally, call 'lease.sh -d pid' to delete and give up your
+    3) Finally, call 'lease.sh -d id' to delete and give up your
        lease.  This will fail if you are not the current owner.  Use the same
-       value of 'pid' as was specified in step (1).  If you forget to 
+       value of 'id' as was specified in step (1).  If you forget to 
        call it, no one else will be able to get the lease for up to 10
        minutes.
  
@@ -120,8 +122,8 @@ function main {
   # Save command line for error messages...
   COMMAND_LINE="$0 $*"
 
-  # Local PID that owns the K8S lease.  This is passed in on the command line.
-  LOCAL_PID=""
+  # Local ID that owns the K8S lease.  This is passed in on the command line.
+  LOCAL_ID=""
 
   local mode=""
 
@@ -137,7 +139,7 @@ function main {
         ;;
     -o) if [ "$mode" = "" ] && [ ! "$2" = "" ]; then
           mode="obtainLease"
-          LOCAL_PID="${2}"
+          LOCAL_ID="${2}"
           shift
         else
           mode="commandLineError"
@@ -145,7 +147,7 @@ function main {
         ;;
     -r) if [ "$mode" = "" ] && [ ! "$2" = "" ]; then
           mode="renewLease"
-          LOCAL_PID="${2}"
+          LOCAL_ID="${2}"
           shift
         else
           mode="commandLineError"
@@ -153,7 +155,7 @@ function main {
         ;;
     -d) if [ "$mode" = "" ] && [ ! "$2" = "" ]; then
           mode="deleteRemoteLeaseSafe"
-          LOCAL_PID="${2}"
+          LOCAL_ID="${2}"
           shift
         else
           mode="commandLineError"
@@ -191,7 +193,7 @@ function main {
     shift
   done
 
-  LOCAL_ROOT="${LOCAL_ROOT}/lease/pid-${LOCAL_PID}"
+  LOCAL_ROOT="${LOCAL_ROOT}/lease/id-${LOCAL_ID}"
 
   # Execute command line
 
@@ -240,7 +242,7 @@ function getLocalLease {
 function makeLocalLease {
 #
 # Make a candidate lease file in ${LOCAL_ROOT}/[expired/]${LOCAL_FILE} 
-# Embed pid, hostname, timestamp, etc to make it easy to identify the owner.
+# Embed id, hostname, timestamp, etc to make it easy to identify the owner.
 # returns non-zero if fails
 # Usage: Pass "expired" as $1 to create a lease that immediately expires
 #        (its timestamp value will be 0)  This file will be located
@@ -262,7 +264,7 @@ function makeLocalLease {
 timestamp=0
 date=`date '+%m-%d-%YT%H:%M:%S'`
 host=$HOST
-pid=$LOCAL_PID
+id=$LOCAL_ID
 user=$USER
 EOF
   else
@@ -271,7 +273,7 @@ EOF
 timestamp=`date +%s`
 date=`date '+%m-%d-%YT%H:%M:%S'`
 host=$HOST
-pid=$LOCAL_PID
+id=$LOCAL_ID
 user=$USER
 EOF
   fi
