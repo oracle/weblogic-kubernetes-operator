@@ -174,7 +174,23 @@
 		            <doctitle>Oracle WebLogic Server Kubernetes Operator v 0.1 Technology Preview API</doctitle>
 		        </configuration>
 		    </plugin>
-
+            <plugin>
+              <groupId>org.owasp</groupId>
+              <artifactId>dependency-check-maven</artifactId>
+              <version>3.1.1</version>
+              <configuration>
+                 <format>JSON</format>
+              </configuration>
+              <executions>
+                  <execution>
+                      <id>dependency_check</id> 
+                      <goals>
+                          <goal>check</goal>
+                      </goals>
+                      <phase>verify</phase>
+                  </execution>
+              </executions>
+            </plugin>
             <plugin>
                 <groupId>oracle.sscm</groupId>
                 <artifactId>sscm-client</artifactId>
@@ -182,6 +198,7 @@
                 <executions>
                     <execution>
                         <phase>package</phase>
+                        <id>buildAttestation</id>
                         <goals>
                             <goal>buildDetails</goal>
                         </goals>
@@ -193,12 +210,57 @@
                             <resourceUrl>${project.url}</resourceUrl>
                             <builderVersion>${project.version}</builderVersion>
                             <buildArtifacts>
-                		        <buildArtifact>target/${project.artifactId}-${project.version}.${project.packaging}</buildArtifact>
-                            	<buildArtifact>target/${project.artifactId}-${project.version}-tests.${project.packaging}</buildArtifact>
+                                <buildArtifact>target/${project.artifactId}-${project.version}.${project.packaging}</buildArtifact>
+                                <buildArtifact>target/${project.artifactId}-${project.version}-tests.${project.packaging}</buildArtifact>
                             </buildArtifacts>
-			            </configuration>
+                        </configuration>
+                    </execution>
+                    <execution>
+                      <phase>verify</phase>
+                      <id>generateOccurrences</id> 
+                      <goals>
+                         <goal>generateOccurrences</goal>
+                      </goals>
+                      <configuration>
+                        <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
+                        <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
+                      </configuration>
+                    </execution>
+                    <execution>
+                        <phase>verify</phase>
+                        <id>testAttestation</id>
+                        <goals>
+                            <goal>testAttestation</goal>
+                        </goals>
+                        <configuration>
+                            <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
+                            <projectId>${project.name}</projectId>
+                            <resourceUrl>${project.url}</resourceUrl>
+                            <pgpKeyID>EB49DA9A</pgpKeyID>
+                            <signature>LS0tLS1CRUdJ</signature>
+                        </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                  <dependency>
+                    <groupId>com.nimbusds</groupId>
+                    <artifactId>oauth2-oidc-sdk</artifactId>
+                    <version>5.20</version>
+                    <scope>runtime</scope>
+                    </dependency>
+                  <dependency>
+                    <groupId>net.minidev</groupId>
+                    <artifactId>json-smart</artifactId>
+                    <version>1.2</version>
+                    <scope>runtime</scope>
+                  </dependency>
+                  <dependency>
+                    <groupId>com.sun.mail</groupId>
+                    <artifactId>javax.mail</artifactId>
+                    <version>1.5.6</version>
+                    <scope>runtime</scope>
+                  </dependency>
+                </dependencies>
             </plugin>
 
         </plugins>
@@ -393,7 +455,6 @@
                 <env.GRAFEAS_SERVER_PORT>8080</env.GRAFEAS_SERVER_PORT>
             </properties>
         </profile>
-
     </profiles>
 
     <dependencies>
