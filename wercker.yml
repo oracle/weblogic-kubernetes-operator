@@ -49,8 +49,6 @@ build:
       $GPG_SCRIPT --init-keyring
       echo "$GPG_SCRIPT --get-authority-names"
       $GPG_SCRIPT --get-authority-names
-      echo "$GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)"
-      $GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)
       echo "$GPG_SCRIPT --test"
       $GPG_SCRIPT --test
 
