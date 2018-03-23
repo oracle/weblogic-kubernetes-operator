@@ -29,6 +29,9 @@ public class CreateDomainInputs {
   public static final String LOAD_BALANCER_TRAEFIK = "TRAEFIK";
   public static final String STORAGE_TYPE_HOST_PATH = "HOST_PATH";
   public static final String STORAGE_TYPE_NFS = "NFS";
+  public static final String STORAGE_RECLAIM_POLICY_RETAIN = "Retain";
+  public static final String STORAGE_RECLAIM_POLICY_DELETE = "Delete";
+  public static final String STORAGE_RECLAIM_POLICY_RECYCLE = "Recycle";
   public static final String STARTUP_CONTROL_NONE = "NONE";
   public static final String STARTUP_CONTROL_ALL = "ALL";
   public static final String STARTUP_CONTROL_ADMIN = "ADMIN";
@@ -47,6 +50,7 @@ public class CreateDomainInputs {
   private String initialManagedServerReplicas = "";
   private String managedServerNameBase = "";
   private String managedServerPort = "";
+  private String weblogicDomainStorageReclaimPolicy = "";
   private String weblogicDomainStorageNFSServer = "";
   private String weblogicDomainStoragePath = "";
   private String weblogicDomainStorageSize = "";
@@ -283,6 +287,19 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs weblogicDomainStorageSize(String weblogicDomainStorageSize) {
     setWeblogicDomainStorageSize(weblogicDomainStorageSize);
+    return this;
+  }
+
+  public String getWeblogicDomainStorageReclaimPolicy() {
+    return weblogicDomainStorageReclaimPolicy;
+  }
+
+  public void setWeblogicDomainStorageReclaimPolicy(String weblogicDomainStorageReclaimPolicy) {
+    this.weblogicDomainStorageReclaimPolicy = convertNullToEmptyString(weblogicDomainStorageReclaimPolicy);
+  }
+
+  public CreateDomainInputs weblogicDomainStorageReclaimPolicy(String weblogicDomainStorageReclaimPolicy) {
+    setWeblogicDomainStorageReclaimPolicy(weblogicDomainStorageReclaimPolicy);
     return this;
   }
 

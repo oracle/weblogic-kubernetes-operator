@@ -120,6 +120,7 @@ The following parameters must be provided in the input file:
 | t3PublicAddress | Public address for the t3 channel. | kubernetes |
 | weblogicCredentialsSecretName | Name of the Kubernetes secret for the Administration Server's username and password. | domain1-weblogic-credentials |
 | weblogicDomainStoragePath | Physical path of the storage for the domain. | no default |
+| weblogicDomainStorageReclaimPolicy | Kubernetes persistent volume reclaim policy for the domain persistent storage | Retain |
 | weblogicDomainStorageSize | Total storage allocated for the domain. | 10Gi |
 | weblogicDomainStorageType | Type of storage for the domain. Legal values are 'NFS' and 'HOST_PATH". | HOST_PATH |
 | weblogicDomainStorageNFSServer| The name of IP address of the NFS server for the domain's storage. | no default |
