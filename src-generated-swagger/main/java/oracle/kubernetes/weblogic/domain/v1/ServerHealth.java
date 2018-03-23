@@ -24,9 +24,9 @@ public class ServerHealth {
      * RFC 3339 date and time at which the server started.
      * 
      */
-    @SerializedName("startTime")
+    @SerializedName("activationTime")
     @Expose
-    private DateTime startTime;
+    private DateTime activationTime;
     /**
      * Server health of this WebLogic server.
      * 
@@ -54,16 +54,16 @@ public class ServerHealth {
      * RFC 3339 date and time at which the server started.
      * @return start time
      */
-    public DateTime getStartTime() {
-        return startTime;
+    public DateTime getActivationTime() {
+        return activationTime;
     }
 
     /**
      * RFC 3339 date and time at which the server started.
-     * @param startTime start time
+     * @param activationTime start time
      */
-    public void setStartTime(DateTime startTime) {
-        this.startTime = startTime;
+    public void setActivationTime(DateTime activationTime) {
+        this.activationTime = activationTime;
     }
 
     /**
@@ -71,8 +71,8 @@ public class ServerHealth {
      * @param startTime start time
      * @return this
      */
-    public ServerHealth withStartTime(DateTime startTime) {
-        this.startTime = startTime;
+    public ServerHealth withActivationTime(DateTime activationTime) {
+        this.activationTime = activationTime;
         return this;
     }
 
@@ -156,12 +156,12 @@ public class ServerHealth {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("startTime", startTime).append("health", health).append("subsystemName", subsystemName).append("symptoms", symptoms).toString();
+        return new ToStringBuilder(this).append("activationTime", activationTime).append("health", health).append("subsystemName", subsystemName).append("symptoms", symptoms).toString();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(symptoms).append(health).append(startTime).append(subsystemName).toHashCode();
+        return new HashCodeBuilder().append(symptoms).append(health).append(activationTime).append(subsystemName).toHashCode();
     }
 
     @Override
@@ -173,7 +173,7 @@ public class ServerHealth {
             return false;
         }
         ServerHealth rhs = ((ServerHealth) other);
-        return new EqualsBuilder().append(symptoms, rhs.symptoms).append(health, rhs.health).append(startTime, rhs.startTime).append(subsystemName, rhs.subsystemName).isEquals();
+        return new EqualsBuilder().append(symptoms, rhs.symptoms).append(health, rhs.health).append(activationTime, rhs.activationTime).append(subsystemName, rhs.subsystemName).isEquals();
     }
 
 }

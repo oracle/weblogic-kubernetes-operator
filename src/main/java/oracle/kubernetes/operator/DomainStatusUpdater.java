@@ -120,17 +120,19 @@ public class DomainStatusUpdater {
       // Acquire current state
       @SuppressWarnings("unchecked")
       ConcurrentMap<String, String> serverState = (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
-      
+
+      @SuppressWarnings("unchecked")
+      ConcurrentMap<String, ServerHealth> serverHealth = (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
+
       Map<String, ServerStatus> serverStatuses = new LinkedHashMap<>();
       WlsDomainConfig scan = info.getScan();
       if (scan != null) {
         for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
           String serverName = entry.getKey();
-          ServerHealth health = new ServerHealth();
           ServerStatus ss = new ServerStatus()
               .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
               .withServerName(serverName)
-              .withHealth(health);
+              .withHealth(serverHealth.get(serverName));
           outer:
           for (Map.Entry<String, WlsClusterConfig> cluster : scan.getClusterConfigs().entrySet()) {
             for (WlsServerConfig sic : cluster.getValue().getServerConfigs()) {
@@ -145,12 +147,8 @@ public class DomainStatusUpdater {
             V1Pod pod = sko.getPod().get();
             if (pod != null) {
               ss.setNodeName(pod.getSpec().getNodeName());
-              health.setStartTime(pod.getMetadata().getCreationTimestamp());
             }
           }
-          // TODO
-          //ss.setSubsystemName(subsystemName);
-          //ss.setSymptoms(symptoms);
           serverStatuses.put(serverName, ss);
         }
       }
@@ -159,17 +157,12 @@ public class DomainStatusUpdater {
         if (!serverStatuses.containsKey(serverName)) {
           V1Pod pod = entry.getValue().getPod().get();
           if (pod != null) {
-            ServerHealth health = new ServerHealth()
-                .withStartTime(pod.getMetadata().getCreationTimestamp());
             ServerStatus ss = new ServerStatus()
                 .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
                 .withClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL))
                 .withNodeName(pod.getSpec().getNodeName())
                 .withServerName(serverName)
-                .withHealth(health);
-            // TODO
-            //ss.setSubsystemName(subsystemName);
-            //ss.setSymptoms(symptoms);
+                .withHealth(serverHealth.get(serverName));
             serverStatuses.put(serverName, ss);
           }
         }

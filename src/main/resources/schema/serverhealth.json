@@ -3,7 +3,7 @@
     "javaType": "oracle.kubernetes.weblogic.domain.v1.ServerHealth",
     "description": "ServerHealth describes the current status and health of a specific WebLogic server.",
     "properties": {
-     "startTime": {
+     "activationTime": {
       "description": "RFC 3339 date and time at which the server started.",
       "type": "date-time",
       "javaType": "org.joda.time.DateTime"

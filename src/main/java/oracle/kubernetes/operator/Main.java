@@ -63,7 +63,7 @@ import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsConfigRetriever;
+import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
@@ -763,7 +763,7 @@ public class Main {
   }
   
   private static Step connectToAdminAndInspectDomain(Step next) {
-    return new WatchPodReadyAdminStep(WlsConfigRetriever.readConfigStep(
+    return new WatchPodReadyAdminStep(WlsRetriever.readConfigStep(
         new ExternalAdminChannelsStep(next)));
   }
   

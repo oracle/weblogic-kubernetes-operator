@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Contains configuration for a WebLogid Domain
  */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
