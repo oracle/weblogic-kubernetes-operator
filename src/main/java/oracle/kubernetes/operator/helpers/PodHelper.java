@@ -544,8 +544,6 @@ public class PodHelper {
       exec.addCommandItem(weblogicDomainUID);
       exec.addCommandItem(weblogicServerName);
       exec.addCommandItem(weblogicDomainName);
-      exec.addCommandItem(spec.getAsName());
-      exec.addCommandItem(String.valueOf(spec.getAsPort()));
       preStop.setExec(exec);
       lifecycle.setPreStop(preStop);
       container.setLifecycle(lifecycle);

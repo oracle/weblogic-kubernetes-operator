@@ -215,7 +215,7 @@ public class ConfigMapHelper {
           "    print 'Updating listen address of machine %s' % machineName\n" +
           "    try:\n" +
           "      edit()\n" +
-          "      startEdit(60000, 120000, 'true')\n" +
+          "      startEdit(120000, 120000, 'true')\n" +
           "      cd('/')\n" +
           "      machine=cmo.lookupMachine(machineName)\n" +
           "      print 'Machine is %s' % machine\n" +
@@ -227,6 +227,7 @@ public class ConfigMapHelper {
           "      print 'Updated listen address of machine %s to %s' % (machineName, service_name)\n" +
           "    except:\n" +
           "      cancelEdit('y')\n" +
+          "  disconnect()\n" +
           "\n" +
           "# Connect to nodemanager and start server\n" +
           "try:\n" +
@@ -244,12 +245,7 @@ public class ConfigMapHelper {
           "\n" +
           "echo \"Stop the server\"\n" +
           "\n" +
-          "admin_server_t3_url=\n" +
-          "if [ -n \"$4\" ]; then\n" +
-          "  admin_server_t3_url=t3://$1-$4:$5\n" +
-          "fi\n" +
-          "\n" +
-          "wlst.sh -skipWLSModuleScanning /weblogic-operator/scripts/stop-server.py $1 $2 $3 $admin_server_t3_url\n" +
+          "wlst.sh -skipWLSModuleScanning /weblogic-operator/scripts/stop-server.py $1 $2 $3\n" +
           "\n" +
           "# Return status of 2 means failed to stop a server through the NodeManager.\n" +
           "# Look to see if there is a server process that can be killed.\n" +
@@ -280,36 +276,6 @@ public class ConfigMapHelper {
           "domain_uid = sys.argv[1]\n" +
           "server_name = sys.argv[2]\n" +
           "domain_name = sys.argv[3]\n" +
-          "if (len(sys.argv) == 5):\n" +
-          "  admin_server_url = sys.argv[4]\n" +
-          "else:\n" +
-          "  admin_server_url = None\n" +
-          "\n" +
-          "print 'admin_server_url is %s' % admin_server_url\n" +
-          "\n" +
-          "# Update node manager listen address to None\n" +
-          "if admin_server_url is not None:\n" +
-          "  connect(admin_username, admin_password, admin_server_url)\n" +
-          "  serverConfig()\n" +
-          "  server=cmo.lookupServer(server_name)\n" +
-          "  machineName=server.getMachine().getName()\n" +
-          "  print 'Name of machine assigned to server %s is %s' % (server_name, machineName)\n" +
-          "\n" +
-          "  if machineName is not None:\n" +
-          "    print 'Updating listen address of machine %s' % machineName\n" +
-          "    try:\n" +
-          "      edit()\n" +
-          "      startEdit(60000, 120000, 'true')\n" +
-          "      cd('/')\n" +
-          "      machine=cmo.lookupMachine(machineName)\n" +
-          "      print 'Machine is %s' % machine\n" +
-          "      nm=machine.getNodeManager()\n" +
-          "      nm.setListenAddress(None)\n" +
-          "      save()\n" +
-          "      activate()\n" +
-          "      print 'Updated listen address of machine %s to None' % machineName\n" +
-          "    except:\n" +
-          "      cancelEdit('y')\n" +
           "\n" +
           "service_name = domain_uid + \"-\" + server_name\n" +
           "domain_path='/shared/domain/%s' % domain_name\n" +
@@ -323,7 +289,7 @@ public class ConfigMapHelper {
           "\n" +
           "# Kill the server\n" +
           "try:\n" +
-          "  nmKill('$2')\n" +
+          "  nmKill(server_name)\n" +
           "except:\n" +
           "  print('Connected to the NodeManager, but failed to stop the server')\n" +
           "  exit(exitcode=2)\n" +
