@@ -16,17 +16,6 @@ cat << EOF
     force the delete of the lease, or view the current lease.
     It exits with a non-zero value on a failure.
 
-  Warnings:
- 
-    This is a 'best effort' script -- it still has potential race
-    conditions.  They should be pretty rare, but don't bet the farm on 
-    them not happening!
-
-    This script requires cooperation among all users of the k8s cluster that
-    need exclusive access - they all must use the script.  The script
-    doesn't directly grant exclusive access, it just can be used to make sure
-    that no other callers of the same script have the lease.
-
   Usage:
  
     Obtain       : lease.sh -o id [-t timeout]
@@ -45,8 +34,8 @@ cat << EOF
        while trying to get the lease (tunable via -t), and will grab
        the lease if no other process owns it or no other process has touched
        it for a period of 10 minutes.  'id' should be some unique
-       string suitable for use as a filename - a pid is sufficient
-       or a `uuidgen` value.
+       string suitable for use as a filename - a uuid is preferred but a 
+       pid is usually sufficient.
  
     2) While running, call 'lease.sh -r id' every few minutes
        to renew the lease and retain ownership.   Fail if this fails,
@@ -68,6 +57,18 @@ cat << EOF
     'lease.sh -f' or 'kubectl delete cm acceptance-test-lease -n default'.  
     This should only be done if you're sure there's
     no current processe that owns the lease.
+
+  Warnings:
+ 
+    This is a 'best effort' script -- it still has potential race
+    conditions.  They should be pretty rare, but don't bet the farm on 
+    them not happening!
+
+    This script requires cooperation among all users of the k8s cluster that
+    need exclusive access - they all must use the script.  The script
+    doesn't directly grant exclusive access, it just can be used to make sure
+    that no other callers of the same script have the lease.
+
  
   Internals:
  
