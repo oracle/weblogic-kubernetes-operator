@@ -101,6 +101,17 @@
 #   BRANCH_NAME    Git branch name.
 #                  Default is determined by calling 'git branch'.
 #
+#   LEASE_PID      Set to a PID to (A) periodically renew a lease on
+#                  the k8s cluster that indicates that no other
+#                  run.sh should attempt to use the cluster, and (B)
+#                  delete this lease when run.sh completes.
+#                  If "true" the caller must previously
+#                  obtain the lease external to the run.sh
+#                  using "lease.sh -o $LEASE_PID", where PID corresponds
+#                  to a process that's expected to continue
+#                  throughout the run (typically the parent 
+#                  process).
+#
 # The following additional overrides are currently only used when
 # WERCKER=true:
 #
@@ -193,6 +204,42 @@ $1
 "
 }
 
+
+# Attempt to renew the k8s lease if $LEASE_PID is set.  This should be called
+# every few minutes throughout the run, and is currently called at the start
+# of each test.   See LEASE_PID instructions above for instructions about
+# how to obtain the lease prior to calling run.sh.
+function renewLease {
+  if [ ! "$LEASE_PID" = "" ]; then
+    # RESULT_DIR may not have been created yet, so use /tmp
+    local outfile=/tmp/acc_test_renew_lease.out
+    $SCRIPTPATH/lease.sh -r $LEASE_PID > $outfile 2>&1
+    if [ $? -ne 0 ]; then
+      trace "Lease renew error:"
+      echo "" >> $outfile
+      echo "ERROR: Could not renew lease on k8s cluster for LEASE_PID=$LEASE_PID." >> $outfile
+      echo "Used '$SCRIPTPATH/lease.sh -r $LEASE_PID' to try renew the lease." >> $outfile
+      echo "Some of the potential reasons for this failure are that another run" >> $outfile
+      echo "may have obtained the lease, the lease may have been externally " >> $outfile
+      echo "deleted, or the caller of run.sh may have forgotten to obtain the" >> $outfile
+      echo "lease before calling run.sh (using 'lease.sh -o $LEASE_PID'). " >> $outfile
+      echo "To force delete a lease no matter who owns the lease," >> $outfile
+      echo "call 'lease.sh -f' or 'kubernetes delete cm acceptance-test-lease'" >> $outfile
+      echo "(this should only be done when sure there's no current run.sh " >> $outfile
+      echo "that owns the lease).  To view the current lease holder," >> $outfile
+      echo "use 'lease.sh -s'.  To disable this lease check, do not set" >> $outfile
+      echo "the LEASE_PID environment variable.  For more information, see" >> $outfile
+      echo "LEASE_PID in the instructions embedded at the top of run.sh." >> $outfile
+      echo "" >> $outfile
+      cat $outfile
+      fail "Could not renew lease on k8s cluster"
+    fi
+    rm -f $outfile
+    trace "Renewed lease."
+  fi
+}
+
+
 # Test tracing and failure handling
 #
 #   declare_new_test             - call this at beginning of each test fn
@@ -269,6 +316,7 @@ function declare_new_test {
   done
 
   declare_test_trace START
+  renewLease
 }
 
 # 
@@ -335,6 +383,7 @@ function state_dump {
      local PV_ROOT="`cat /tmp/test_suite.pv_root`"
      local PROJECT_ROOT="`cat /tmp/test_suite.project_root`"
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
+     local LEASE_PID="`cat /tmp/test_suite.lease_pid`"
 
      if [ ! -d "$RESULT_DIR" ]; then
         trace State dump exiting early.  RESULT_DIR \"$RESULT_DIR\" does not exist or is not a directory.
@@ -388,6 +437,17 @@ function state_dump {
      trace Job complete.
   else
      trace Job failed.  See ${outfile}.
+  fi
+
+  if [ ! "$LEASE_PID" = "" ]; then
+    # release the lease if we own it
+    ${SCRIPTPATH}/lease.sh -d $LEASE_PID > ${RESULT_DIR}/release_lease.out 2>&1
+    if [ "$?" = "0" ]; then
+      trace Lease released.
+    else
+      trace Lease could not be released:
+      cat /tmp/release_lease.out 
+    fi
   fi
 
   # now archive all the local test files
@@ -2337,7 +2397,8 @@ function test_elk_integration {
 
 # define globals, re-install docker & k8s if needed, pull images if needed, etc.
 function test_suite_init {
-    declare_new_test 1 "$@"
+    # we defer declaring this a test until the env vars are all setup
+    # see 'declare_new_test 1 "$@"' later on
 
     # The following exports can be customized by the caller of this script.
 
@@ -2355,7 +2416,8 @@ function test_suite_init {
                    IMAGE_PULL_SECRET_OPERATOR \
                    WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
-                   JENKINS;
+                   JENKINS \
+                   LEASE_PID;
     do
       trace "Customizable env var before: $varname=${!varname}"
     done
@@ -2370,6 +2432,8 @@ function test_suite_init {
       export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
       [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
     fi
+
+    export LEASE_PID=${LEASE_PID}
 
     # The following customizable exports are currently only customized by WERCKER
     export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
@@ -2394,7 +2458,8 @@ function test_suite_init {
                    IMAGE_PULL_SECRET_OPERATOR \
                    WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
-                   JENKINS;
+                   JENKINS \
+                   LEASE_PID;
     do
       trace "Customizable env var after: $varname=${!varname}"
     done
@@ -2417,6 +2482,12 @@ function test_suite_init {
     echo "${RESULT_ROOT}" > /tmp/test_suite.result_root
     echo "${PV_ROOT}" > /tmp/test_suite.pv_root
     echo "${PROJECT_ROOT}" > /tmp/test_suite.project_root
+    echo "${LEASE_PID}" > /tmp/test_suite.lease_pid
+
+    # Declare we're in a test.  We did not declare at the start
+    # of the function to ensure that any env vars that might
+    # be needed by declare_new_test are setup.
+    declare_new_test 1 "$@"
 
     cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
    
