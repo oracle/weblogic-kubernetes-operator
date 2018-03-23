@@ -43,7 +43,7 @@ public class SecretHelper {
   private final String namespace;
 
   public enum SecretType {
-    AdminServerCredentials
+    AdminCredentials
   }
 
   // Admin Server Credentials Type Secret
@@ -75,7 +75,7 @@ public class SecretHelper {
     LOGGER.entering();
 
     try {
-      if (secretType != SecretType.AdminServerCredentials) {
+      if (secretType != SecretType.AdminCredentials) {
         throw new IllegalArgumentException("Invalid secret type");
       } else if (secretName == null) {
         throw new IllegalArgumentException("Invalid secret name");
@@ -125,7 +125,7 @@ public class SecretHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (secretType != SecretType.AdminServerCredentials) {
+      if (secretType != SecretType.AdminCredentials) {
         throw new IllegalArgumentException("Invalid secret type");
       } else if (secretName == null) {
         throw new IllegalArgumentException("Invalid secret name");

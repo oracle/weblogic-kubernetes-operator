@@ -9,7 +9,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -29,11 +31,13 @@ import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
 
 /**
  * Creates an asynchronous step to read the WebLogic server state from a particular pod
@@ -63,7 +67,10 @@ public class ServerStatusReader {
     public NextAction apply(Packet packet) {
       ConcurrentMap<String, String> serverStateMap = new ConcurrentHashMap<>();
       packet.put(ProcessingConstants.SERVER_STATE_MAP, serverStateMap);
-      
+
+      ConcurrentMap<String, ServerHealth> serverHealthMap = new ConcurrentHashMap<>();
+      packet.put(ProcessingConstants.SERVER_HEALTH_MAP, serverHealthMap);
+
       Domain domain = info.getDomain();
       V1ObjectMeta meta = domain.getMetadata();
       DomainSpec spec = domain.getSpec();
@@ -107,7 +114,8 @@ public class ServerStatusReader {
    */
   public static Step createServerStatusReaderStep(String namespace, String domainUID,
       String serverName, long timeoutSeconds, Step next) {
-    return new ServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, next);
+    return new ServerStatusReaderStep(namespace, domainUID, serverName, timeoutSeconds, 
+        new ServerHealthStep(serverName, timeoutSeconds, next));
   }
 
   private static class ServerStatusReaderStep extends Step {
@@ -180,5 +188,41 @@ public class ServerStatusReader {
     }
     
     return s;
+  }
+  
+  private static final Set<String> statesSupportingREST = new HashSet<>();
+  static {
+    statesSupportingREST.add("STANDBY");
+    statesSupportingREST.add("ADMIN");
+    statesSupportingREST.add("RESUMING");
+    statesSupportingREST.add("RUNNING");
+    statesSupportingREST.add("SUSPENDING");
+    statesSupportingREST.add("FORCE_SUSPENDING");
+  }
+  
+  private static class ServerHealthStep extends Step {
+    private final String serverName;
+    private final long timeoutSeconds; // FIXME
+    
+    public ServerHealthStep(String serverName, long timeoutSeconds, Step next) {
+      super(next);
+      this.serverName = serverName;
+      this.timeoutSeconds = timeoutSeconds;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      @SuppressWarnings("unchecked")
+      ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
+          .get(ProcessingConstants.SERVER_STATE_MAP);
+      String state = serverStateMap.get(serverName);
+      if (statesSupportingREST.contains(state)) {
+        packet.put(ProcessingConstants.SERVER_NAME, serverName);
+        return doNext(WlsRetriever.readHealthStep(next), packet);
+      }
+      
+      return doNext(packet);
+    }
+    
   }
 }
