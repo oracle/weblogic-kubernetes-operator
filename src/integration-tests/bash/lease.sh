@@ -421,7 +421,8 @@ function obtainLease {
       return 1
       break
     fi
-    traceInfo "Retrying after $((mnow - mstart)) seconds.  About to sleep ${SLEEP_SECONDS} seconds.   Max wait is ${OBTAIN_LEASE_TIMEOUT_SECONDS} seconds."
+    traceInfo "Retrying after $((mnow - mstart)) seconds.  About to sleep ${SLEEP_SECONDS} seconds.   Max wait is ${OBTAIN_LEASE_TIMEOUT_SECONDS} seconds.  Current lease owner:"
+    showRemoteLease
     sleep $SLEEP_SECONDS
   done
 }
