@@ -159,8 +159,8 @@ integration-test:
 
       # integration tests
       set -x
-      local exit_code=$($WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh)
-      set +x
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
+      local exit_code=$?
     
       # clean up
       yum clean all
@@ -168,6 +168,7 @@ integration-test:
       # store the artifacts so we can download them easily 
       tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
       
+      set +x
       exit ${exit_code}
 
 
