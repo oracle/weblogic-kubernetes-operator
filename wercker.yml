@@ -70,6 +70,15 @@ integration-test:
   - script:
     name: Run integration tests
     code: |
+      function finish {
+        # clean up
+        yum clean all
+
+        # store the artifacts so we can download them easily 
+        tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
+      }
+      trap finish EXIT
+
       # Copy Docker file to OCI host and load into local Docker registry
       # yum install -y openssh-clients
       # echo -e $OCI_K8S_SSHKEY > /tmp/ssh_key
@@ -158,19 +167,8 @@ integration-test:
       echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
 
       # integration tests
-      set -x
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
-      local exit_code=$?
     
-      # clean up
-      yum clean all
-
-      # store the artifacts so we can download them easily 
-      tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
-      
-      set +x
-      exit ${exit_code}
-
 
 # This pipeline runs quality checks 
 quality:
