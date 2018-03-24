@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -91,19 +92,34 @@ public class Main {
   private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   
-  private static final ConfigMapConsumer config = new ConfigMapConsumer("/operator/config");
+  private static final ConfigMapConsumer config;
+  static {
+    try {
+      config = new ConfigMapConsumer(engine.getExecutor(), "/operator/config", () -> {
+        LOGGER.info(MessageKeys.TUNING_PARAMETERS);
+        setTuningParameters();
+      });
+    } catch (IOException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+      throw new RuntimeException(e);
+    }
+  }
   
   // tuning parameters
-  private static final int statusUpdateTimeoutSeconds = (int) readTuningParameter("statusUpdateTimeoutSeconds", 10);
-  private static final int unchangedCountToDelayStatusRecheck = (int) readTuningParameter("statueUpdateUnchangedCountToDelayStatusRecheck", 10); 
-  private static final long initialShortDelay = readTuningParameter("statusUpdateInitialShortDelay", 3); 
-  private static final long eventualLongDelay = readTuningParameter("statusUpdateEventualLongDelay", 30);
-  static {
-    int callRequestLimit = (int) readTuningParameter("callRequestLimit", 500);
-    int callMaxRetryCount = (int) readTuningParameter("callMaxRetryCount", 5);
-    int callTimeoutSeconds = (int) readTuningParameter("callTimeoutSeconds", 10);
+  private static int statusUpdateTimeoutSeconds;
+  private static int unchangedCountToDelayStatusRecheck; 
+  private static long initialShortDelay; 
+  private static long eventualLongDelay;
+  private static void setTuningParameters() {
+    statusUpdateTimeoutSeconds = (int) config.readTuningParameter("statusUpdateTimeoutSeconds", 10);
+    unchangedCountToDelayStatusRecheck = (int) config.readTuningParameter("statueUpdateUnchangedCountToDelayStatusRecheck", 10); 
+    initialShortDelay = config.readTuningParameter("statusUpdateInitialShortDelay", 3); 
+    eventualLongDelay = config.readTuningParameter("statusUpdateEventualLongDelay", 30);
+    int callRequestLimit = (int) config.readTuningParameter("callRequestLimit", 500);
+    int callMaxRetryCount = (int) config.readTuningParameter("callMaxRetryCount", 5);
+    int callTimeoutSeconds = (int) config.readTuningParameter("callTimeoutSeconds", 10);
     CallBuilder.setTuningParameters(callRequestLimit, callMaxRetryCount, callTimeoutSeconds);
-    int watchLifetime = (int) readTuningParameter("watchLifetime", 45);
+    int watchLifetime = (int) config.readTuningParameter("watchLifetime", 45);
     WatchBuilder.setTuningParameters(watchLifetime);
   }
   
@@ -426,19 +442,6 @@ public class Main {
     }
   }
 
-  private static long readTuningParameter(String parameter, long defaultValue) {
-    String val = config.get(parameter);
-    if (val != null) {
-      try {
-        return Long.parseLong(val);
-      } catch (NumberFormatException nfe) {
-        LOGGER.warning(MessageKeys.EXCEPTION, nfe);
-      }
-    }
-    
-    return defaultValue;
-  }
-  
   /**
    * Restarts the admin server, if already running
    * @param principal Service principal
@@ -499,7 +502,7 @@ public class Main {
         public void run() {
           Runnable r = this; // resolve visibility
           Packet packet = new Packet();
-          packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
+          packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, config));
           Step strategy = DomainStatusUpdater.createStatusStep(statusUpdateTimeoutSeconds, null);
           domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
             @Override
@@ -601,7 +604,7 @@ public class Main {
     String ns = dom.getMetadata().getNamespace();
     if (initialized.getOrDefault(ns, Boolean.FALSE)) {
       PodWatcher pw = podWatchers.get(ns);
-      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
+      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw, config));
       p.put(ProcessingConstants.PRINCIPAL, principal);
       
       if (explicitRestartAdmin) {
@@ -1514,8 +1517,7 @@ public class Main {
   private static Collection<String> getTargetNamespaces(String namespace) {
     Collection<String> targetNamespaces = new ArrayList<String>();
 
-    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
-    String tnValue = cmc.get("targetNamespaces");
+    String tnValue = config.get("targetNamespaces");
     if (tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {

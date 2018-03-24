@@ -8,10 +8,7 @@ package oracle.kubernetes.operator.logging;
  * message keys makes the code more readable.
  */
 public class MessageKeys {
-
-  private MessageKeys() {
-    // hide implicit public constructor
-  }
+  private MessageKeys() {}
 
   public static final String OPERATOR_STARTED = "WLSKO-0000";
   public static final String CREATING_API_CLIENT = "WLSKO-0001";
@@ -139,5 +136,6 @@ public class MessageKeys {
   public static final String SERVER_SERVICE_DELETED = "WLSKO-0123";
   public static final String CLUSTER_SERVICE_DELETED = "WLSKO-0124";
   public static final String INGRESS_DELETED = "WLSKO-0125";
+  public static final String TUNING_PARAMETERS = "WLSKO-0126";
 
 }
