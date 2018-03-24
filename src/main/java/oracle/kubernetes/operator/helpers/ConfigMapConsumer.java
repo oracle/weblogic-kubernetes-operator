@@ -9,11 +9,22 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.WatchEvent;
+
+import static java.nio.file.StandardWatchEventKinds.*;
+import java.nio.file.WatchService;
+import java.nio.file.WatchKey;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Kubernetes mounts ConfigMaps in the Pod's file-system as directories where the contained
@@ -24,11 +35,59 @@ public class ConfigMapConsumer implements Map<String, String> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final File mountPointDir;
+  private final WatchService watcher;
+  private final ScheduledExecutorService threadPool;
+  private final AtomicReference<ScheduledFuture<?>> future = new AtomicReference<>(null);
+  private final Runnable onUpdate;
 
-  public ConfigMapConsumer(String mountPoint) {
+  public ConfigMapConsumer(ScheduledExecutorService threadPool, String mountPoint, Runnable onUpdate) throws IOException {
+    this.threadPool = threadPool;
     this.mountPointDir = new File(mountPoint);
+    this.watcher = FileSystems.getDefault().newWatchService();
+    this.onUpdate = onUpdate;
+    if (mountPointDir.exists()) {
+      mountPointDir.toPath().register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+      schedule();
+    }
+  }
+  
+  private void schedule() {
+    long initialDelay = readTuningParameter("configMapUpdateInitialDelay", 3); 
+    long delay = readTuningParameter("configMapUpdateDelay", 30);
+    ScheduledFuture<?> old = future.getAndSet(threadPool.scheduleWithFixedDelay(() -> {
+      // wait for key to be signaled
+      WatchKey key;
+      try {
+          key = watcher.take();
+      } catch (InterruptedException x) {
+          return;
+      }
+      List<WatchEvent<?>> events = key.pollEvents();
+      if (events != null && !events.isEmpty()) {
+        onUpdate.run();
+        schedule();
+        return;
+      }
+      key.reset();
+    }, initialDelay, delay, TimeUnit.SECONDS));
+    if (old != null) {
+      old.cancel(true);
+    }
   }
 
+  public long readTuningParameter(String parameter, long defaultValue) {
+    String val = get(parameter);
+    if (val != null) {
+      try {
+        return Long.parseLong(val);
+      } catch (NumberFormatException nfe) {
+        LOGGER.warning(MessageKeys.EXCEPTION, nfe);
+      }
+    }
+    
+    return defaultValue;
+  }
+  
   @Override
   public int size() {
     String[] list = mountPointDir.list();
