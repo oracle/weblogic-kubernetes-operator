@@ -21,9 +21,9 @@ import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
@@ -289,9 +289,7 @@ public class RestServer {
     if (data != null && data.length() > 0) {
       return Base64.decodeBase64(data);
     } 
-    try (FileInputStream fis = new FileInputStream(file)) {
-      return fis.readAllBytes();
-    }
+    return Files.readAllBytes(new File(file).toPath());
   }
   
   private boolean isExternalSSLConfigured() {
