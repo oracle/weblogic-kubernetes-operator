@@ -12,7 +12,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -146,7 +145,7 @@ public class WlsDomainConfig {
   private List<Map<String, Object>> parseJson(String jsonString) {
     ObjectMapper mapper = new ObjectMapper();
     try {
-      Map result = mapper.readValue(jsonString, LinkedHashMap.class);
+      Map result = mapper.readValue(jsonString, Map.class);
       Map servers = (Map) result.get("servers");
       if (servers != null) {
         return (List<Map<String, Object>>) servers.get("items");
