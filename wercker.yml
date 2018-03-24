@@ -158,8 +158,9 @@ integration-test:
       echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
 
       # integration tests
-      sh $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
-      local exit_code=$?
+      set -x
+      local exit_code=$($WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh)
+      set +x
     
       # clean up
       yum clean all
@@ -167,9 +168,8 @@ integration-test:
       # store the artifacts so we can download them easily 
       tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
       
-      if [ ${exit_code} -ne 0 ] ; then
-        exit ${exit_code}
-      fi
+      exit ${exit_code}
+
 
 # This pipeline runs quality checks 
 quality:
