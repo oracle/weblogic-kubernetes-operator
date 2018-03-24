@@ -71,11 +71,14 @@ integration-test:
     name: Run integration tests
     code: |
       function finish {
+        export {$WERCKER_DEPLOYTARGET_NAME}-result=$?
+        
         # clean up
         yum clean all
 
         # store the artifacts so we can download them easily 
         tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
+        exit 0
       }
       trap finish EXIT
 
@@ -169,6 +172,17 @@ integration-test:
       # integration tests
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
     
+
+# This pipeline reports results of integration test.  It is separated so that integration test
+# pipeline succeeds and stores results even if tests actually failed
+after-test:
+  steps:
+  - script:
+    name: Report integration test results
+    code: |
+      varname=${INTEGRATION_TEST_RESULT}
+      exit ${!varname}
+
 
 # This pipeline runs quality checks 
 quality:
