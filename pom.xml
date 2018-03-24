@@ -26,9 +26,11 @@
             <id>oss-sonatype</id>
             <name>oss-sonatype</name>
             <url>https://oss.sonatype.org/content/repositories/releases/</url>
+            <!-- For if we need to work with kubernetes-client/java snapshot releases
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+            -->
         </repository>
     </repositories>
 

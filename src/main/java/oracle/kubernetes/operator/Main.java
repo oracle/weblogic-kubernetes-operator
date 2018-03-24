@@ -121,6 +121,15 @@ public class Main {
     CallBuilder.setTuningParameters(callRequestLimit, callMaxRetryCount, callTimeoutSeconds);
     int watchLifetime = (int) config.readTuningParameter("watchLifetime", 45);
     WatchBuilder.setTuningParameters(watchLifetime);
+    int readinessProbeInitialDelaySeconds = (int) config.readTuningParameter("readinessProbeInitialDelaySeconds", 2);
+    int readinessProbeTimeoutSeconds = (int) config.readTuningParameter("readinessProbeTimeoutSeconds", 5);
+    int readinessProbePeriodSeconds = (int) config.readTuningParameter("readinessProbePeriodSeconds", 10);
+    int livenessProbeInitialDelaySeconds = (int) config.readTuningParameter("livenessProbeInitialDelaySeconds", 10);
+    int livenessProbeTimeoutSeconds = (int) config.readTuningParameter("livenessProbeTimeoutSeconds", 5);
+    int livenessProbePeriodSeconds = (int) config.readTuningParameter("livenessProbePeriodSeconds", 10);
+    PodHelper.setTuningParameters(readinessProbeInitialDelaySeconds, readinessProbeTimeoutSeconds, 
+        readinessProbePeriodSeconds, livenessProbeInitialDelaySeconds, livenessProbeTimeoutSeconds, 
+        livenessProbePeriodSeconds);
   }
   
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();

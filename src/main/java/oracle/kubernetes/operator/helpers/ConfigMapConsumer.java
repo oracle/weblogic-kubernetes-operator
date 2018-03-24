@@ -53,7 +53,7 @@ public class ConfigMapConsumer implements Map<String, String> {
   
   private void schedule() {
     long initialDelay = readTuningParameter("configMapUpdateInitialDelay", 3); 
-    long delay = readTuningParameter("configMapUpdateDelay", 30);
+    long delay = readTuningParameter("configMapUpdateDelay", 10);
     ScheduledFuture<?> old = future.getAndSet(threadPool.scheduleWithFixedDelay(() -> {
       // wait for key to be signaled
       WatchKey key;
