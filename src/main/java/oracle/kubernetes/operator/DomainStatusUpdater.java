@@ -5,10 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.joda.time.DateTime;
@@ -124,7 +124,7 @@ public class DomainStatusUpdater {
       @SuppressWarnings("unchecked")
       ConcurrentMap<String, ServerHealth> serverHealth = (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
 
-      Map<String, ServerStatus> serverStatuses = new LinkedHashMap<>();
+      Map<String, ServerStatus> serverStatuses = new TreeMap<>();
       WlsDomainConfig scan = info.getScan();
       if (scan != null) {
         for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
@@ -169,12 +169,11 @@ public class DomainStatusUpdater {
       }
       
       if (existingServerStatuses != null) {
-        List<ServerStatus> currentServerStatuses = new ArrayList<>(serverStatuses.values());
-        if (!existingServerStatuses.equals(currentServerStatuses)) {
-          status.setServers(currentServerStatuses);
+        if (!compare(existingServerStatuses, serverStatuses)) {
+          status.setServers(new ArrayList<>(serverStatuses.values()));
           madeChange = true;
         }
-      } else {
+      } else if (!serverStatuses.isEmpty()){
         status.setServers(new ArrayList<>(serverStatuses.values()));
         madeChange = true;
       }
@@ -295,6 +294,21 @@ public class DomainStatusUpdater {
       
       return madeChange == true ? doDomainUpdate(dom, info, packet, StatusUpdateStep.this, next) : doNext(packet);
     }
+  }
+  
+  private static boolean compare(List<ServerStatus> currentServerStatuses, Map<String, ServerStatus> serverStatuses) {
+    if (currentServerStatuses.size() == serverStatuses.size()) {
+      for (ServerStatus c : currentServerStatuses) {
+        String serverName = c.getServerName();
+        ServerStatus u = serverStatuses.get(serverName);
+        if (u == null || !c.equals(u)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    
+    return false;
   }
 
   /**

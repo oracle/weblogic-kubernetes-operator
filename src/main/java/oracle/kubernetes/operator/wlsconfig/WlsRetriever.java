@@ -233,11 +233,19 @@ public class WlsRetriever {
             }
           }
           
+          String subName = null;
+          if (subsystemName != null) {
+            String s = subsystemName.asText();
+            if (s != null && !"null".equals(s)) {
+              subName = s;
+            }
+          }
+          
           ServerHealth health = new ServerHealth()
               .withHealth(state != null ? state.asText() : null)
-              .withSubsystemName(subsystemName != null ? subsystemName.asText() : null)
+              .withSubsystemName(subName)
               .withActivationTime(activationTime != null ? new DateTime(activationTime.asLong()) : null)
-              .withSymptoms(!sym.isEmpty() ? sym : null);
+              .withSymptoms(sym);
           
           @SuppressWarnings("unchecked")
           ConcurrentMap<String, ServerHealth> serverHealthMap = (ConcurrentMap<String, ServerHealth>) packet
