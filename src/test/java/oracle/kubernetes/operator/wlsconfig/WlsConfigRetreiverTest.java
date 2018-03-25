@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -31,7 +31,7 @@ public class WlsConfigRetreiverTest {
     ClientHolder client = null;
 
     try {
-      WlsDomainConfig wlsDomainConfig = new WlsConfigRetriever(clientHelper, namespace, "wls-admin-service", SECRET_NAME).readConfig(principal);
+      WlsDomainConfig wlsDomainConfig = new WlsRetriever(clientHelper, namespace, "wls-admin-service", SECRET_NAME).readConfig(principal);
 
       LOGGER.finer("Read config " + wlsDomainConfig);
 
@@ -41,13 +41,13 @@ public class WlsConfigRetreiverTest {
       client = clientHelper.take();
 
       LOGGER.finer("--- trying update REST call ---");
-      HttpClient httpClient = HttpClient.createAuthenticatedClientForAdminServer(client, principal, namespace, SECRET_NAME);
+      HttpClient httpClient = HttpClient.createAuthenticatedClientForServer(client, principal, namespace, SECRET_NAME);
       String url = "/management/weblogic/latest/edit/servers/ms-3";
       String payload = "{listenAddress: 'ms-3.wls-subdomain.default.svc.cluster.local'}";
       String result = httpClient.executePostUrlOnServiceClusterIP(url, client, "wls-admin-service", "default", payload);
       LOGGER.finer("REST call returns: " + result);
 
-      LOGGER.finer("Read config again: " + new WlsConfigRetriever(clientHelper, "default", "wls-admin-service", SECRET_NAME).readConfig(principal));
+      LOGGER.finer("Read config again: " + new WlsRetriever(clientHelper, "default", "wls-admin-service", SECRET_NAME).readConfig(principal));
     } catch (Exception e) {
       LOGGER.finer("namespace query failed: " + e);
       e.printStackTrace();

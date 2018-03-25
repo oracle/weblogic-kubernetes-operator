@@ -40,6 +40,11 @@ public class Engine {
    * @return executor
    */
   public ScheduledExecutorService getExecutor() {
+    if (threadPool == null) {
+      synchronized (this) {
+        threadPool = wrap(Executors.newScheduledThreadPool(DEFAULT_THREAD_COUNT, new DaemonThreadFactory()));
+      }
+    }
     return threadPool;
   }
 
@@ -90,12 +95,7 @@ public class Engine {
   }
 
   void addRunnable(Fiber fiber) {
-    if (threadPool == null) {
-      synchronized (this) {
-        threadPool = wrap(Executors.newScheduledThreadPool(DEFAULT_THREAD_COUNT, new DaemonThreadFactory()));
-      }
-    }
-    threadPool.execute(fiber);
+    getExecutor().execute(fiber);
   }
 
   private ScheduledExecutorService wrap(ScheduledExecutorService ex) {

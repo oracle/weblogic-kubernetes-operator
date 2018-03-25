@@ -1,4 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.models.*;
@@ -474,6 +476,14 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
           .addApiGroupsItem("")
           .resources(asList("services", "configmaps", "pods", "jobs", "events"))
           .verbs(asList("get", "list", "watch", "create", "update", "patch", "delete", "deletecollection")))
+        .addRulesItem(newPolicyRule()
+            .addApiGroupsItem("")
+            .resources(asList("pods/logs"))
+            .verbs(asList("get", "list")))
+        .addRulesItem(newPolicyRule()
+            .addApiGroupsItem("")
+            .resources(asList("pods/exec"))
+            .verbs(asList("create")))
         .addRulesItem(newPolicyRule()
           .addApiGroupsItem("settings.k8s.io")
           .addResourcesItem("podpresets")

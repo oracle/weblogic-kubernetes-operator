@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Contains configuration for a WebLogid Domain
  */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -141,7 +141,7 @@ public class WlsDomainConfig {
    * @return a list containing configuration attributes of each WLS server, each consist of a map of
    * (server attribute name, attribute value)
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private List<Map<String, Object>> parseJson(String jsonString) {
     ObjectMapper mapper = new ObjectMapper();
     try {

@@ -1,4 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.create;
 
 import java.util.ArrayList;
@@ -6,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec;
 import io.kubernetes.client.models.V1beta1ClusterRole;
@@ -290,6 +293,10 @@ public class KubernetesArtifactUtils {
 
   public static IntOrString newIntOrString(int val) {
     return new IntOrString(val);
+  }
+  
+  public static Quantity newQuantity(String val) {
+    return Quantity.fromString(val);
   }
 
   public static V1SecretReference newSecretReference() {

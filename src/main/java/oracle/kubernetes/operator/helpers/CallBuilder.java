@@ -48,10 +48,20 @@ import oracle.kubernetes.operator.work.Packet;
  * 
  */
 public class CallBuilder {
-  static final String RESPONSE_COMPONENT_NAME = "response";
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  static final String RESPONSE_COMPONENT_NAME = "response";
+
+  private static int callRequestLimit = 500;
+  private static int callMaxRetryCount = 5;
+  private static int callTimeoutSeconds = 10;
+  
+  public static void setTuningParameters(int callRequestLimit, int callMaxRetryCount, int callTimeoutSeconds) {
+    CallBuilder.callRequestLimit = callRequestLimit;
+    CallBuilder.callMaxRetryCount = callMaxRetryCount;
+    CallBuilder.callTimeoutSeconds = callTimeoutSeconds;
+  }
+  
   /**
    * HTTP status code for "Not Found"
    */
@@ -65,9 +75,10 @@ public class CallBuilder {
   public String fieldSelector = "";
   public Boolean includeUninitialized = Boolean.FALSE;
   public String labelSelector = "";
-  public Integer limit = 500;
+  public Integer limit = callRequestLimit;
   public String resourceVersion = "";
-  public Integer timeoutSeconds = 30;
+  public Integer timeoutSeconds = callTimeoutSeconds;
+  public Integer maxRetryCount = callMaxRetryCount;
   public Boolean watch = Boolean.FALSE;
   public Boolean exact = Boolean.FALSE;
   public Boolean export = Boolean.FALSE;
@@ -1446,7 +1457,7 @@ public class CallBuilder {
         }
         
         NextAction na = new NextAction();
-        if (statusCode == 0 && retryCount <= 2) {
+        if (statusCode == 0 && retryCount <= maxRetryCount) {
           na.invoke(retryStep, packet);
         } else {
           LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));

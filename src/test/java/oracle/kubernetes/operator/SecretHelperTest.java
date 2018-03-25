@@ -1,4 +1,5 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -76,7 +77,7 @@ public class SecretHelperTest {
     String secretName = SECRET_NAME;
 
     Map<String, byte[]> secretData =
-        defaultSecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, secretName);
+        defaultSecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, secretName);
 
     Assert.assertNotNull(
         "Expected secret data not returned for " + secretName + "in default namespace",
@@ -93,7 +94,7 @@ public class SecretHelperTest {
 
     secretName = NOT_EXIST_SECRET_NAME;
     secretData =
-        defaultSecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, secretName);
+        defaultSecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, secretName);
     Assert.assertNull(
         "Secret data not expected for " + secretName + " in default namespace",
         secretData);
@@ -108,7 +109,7 @@ public class SecretHelperTest {
     // Normal secret
 
     Map<String, byte[]> secretData =
-        unitSecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, secretName);
+        unitSecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, secretName);
 
     Assert.assertNotNull(
         "Expected secret data not returned for " + secretName + " in unit namespace",
@@ -127,7 +128,7 @@ public class SecretHelperTest {
 
     secretName = INVALID_SECRET_NAME;
     secretData =
-        unitSecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, secretName);
+        unitSecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, secretName);
 
     Assert.assertNull(
         "Unexpected secret data returned for " + secretName + " in unit namespace",
@@ -138,7 +139,7 @@ public class SecretHelperTest {
 
     secretName = NOT_EXIST_SECRET_NAME;
     secretData =
-        unitSecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, secretName);
+        unitSecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, secretName);
     Assert.assertNull(
         "Secret data not expected for " + secretName + "in unit namespace",
         secretData);

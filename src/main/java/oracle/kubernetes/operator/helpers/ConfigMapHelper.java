@@ -67,9 +67,9 @@ public class ConfigMapHelper {
           "# Kubernetes periodically calls this liveness probe script to determine whether\n" + 
           "# the pod should be restarted. The script checks a WebLogic Server state file which\n" + 
           "# is updated by the node manager.\n" + 
-          "DOMAIN_NAME=$1\n" +
-          "SERVER_NAME=$2\n" +
-          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
+          "DN=${DOMAIN_NAME:-$1}\n" +
+          "SN=${SERVER_NAME:-$2}\n" +
+          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
           "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
           "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
           "  exit 1\n" + 
@@ -87,9 +87,9 @@ public class ConfigMapHelper {
           "# the pod should be included in load balancing. The script checks a WebLogic Server state\n" + 
           "# file which is updated by the node manager.\n" + 
           "\n" + 
-          "DOMAIN_NAME=$1\n" +
-          "SERVER_NAME=$2\n" +
-          "STATEFILE=/shared/domain/${DOMAIN_NAME}/servers/${SERVER_NAME}/data/nodemanager/${SERVER_NAME}.state\n" + 
+          "DN=${DOMAIN_NAME:-$1}\n" +
+          "SN=${SERVER_NAME:-$2}\n" +
+          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
           "\n" + 
           "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
           "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
@@ -101,7 +101,30 @@ public class ConfigMapHelper {
           "fi\n" + 
           "\n" + 
           "exit 0");
-      
+
+      data.put("readState.sh", 
+          "#!/bin/bash\n" + 
+          "\n" + 
+          "# Reads the current state of a server. The script checks a WebLogic Server state\n" + 
+          "# file which is updated by the node manager.\n" + 
+          "\n" + 
+          "DN=${DOMAIN_NAME:-$1}\n" +
+          "SN=${SERVER_NAME:-$2}\n" +
+          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
+          "\n" + 
+          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
+          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
+          "  exit 1\n" + 
+          "fi\n" + 
+          "\n" + 
+          "if [ ! -f ${STATEFILE} ]; then\n" + 
+          "  echo \"Error: Server state file not found.\"\n" +
+          "  exit 1\n" + 
+          "fi\n" + 
+          "\n" + 
+          "cat ${STATEFILE}\n" +
+          "exit 0");
+
       cm.setData(data);
       
       Step read = CallBuilder.create().readConfigMapAsync(name, namespace, new ResponseStep<V1ConfigMap>(next) {
