@@ -505,47 +505,56 @@ public class Main {
     
     AtomicInteger unchangedCount = new AtomicInteger(0);
     AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
-    ScheduledFuture<?> existing = statusUpdater.get();
-    if (existing == null || !validateExisting(initialShortDelay, existing)) {
-      Runnable command = new Runnable() {
-        public void run() {
-          Runnable r = this; // resolve visibility
-          Packet packet = new Packet();
-          packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, config));
-          Step strategy = DomainStatusUpdater.createStatusStep(statusUpdateTimeoutSeconds, null);
-          domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {
-              Boolean isStatusUnchanged = (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-              long delay = initialShortDelay;
-              if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                if (unchangedCount.incrementAndGet() > unchangedCountToDelayStatusRecheck) {
-                  delay = eventualLongDelay;
-                }
-              } else {
-                unchangedCount.set(0);
+    Runnable command = new Runnable() {
+      public void run() {
+        Runnable r = this; // resolve visibility
+        Packet packet = new Packet();
+        packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, config));
+        Step strategy = DomainStatusUpdater.createStatusStep(statusUpdateTimeoutSeconds, null);
+        domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
+          @Override
+          public void onCompletion(Packet packet) {
+            Boolean isStatusUnchanged = (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
+            ScheduledFuture<?> existing = null;
+            if (Boolean.TRUE.equals(isStatusUnchanged)) {
+              if (unchangedCount.incrementAndGet() == unchangedCountToDelayStatusRecheck) {
+                // slow down retries because of sufficient unchanged statuses
+                existing  = statusUpdater.getAndSet(
+                  engine.getExecutor().scheduleWithFixedDelay(r, eventualLongDelay, eventualLongDelay, TimeUnit.SECONDS));
               }
-              // retry after delay
-              statusUpdater.set(engine.getExecutor().schedule(r, delay, TimeUnit.SECONDS));
+            } else {
+              // reset to trying after shorter delay because of changed status
+              unchangedCount.set(0);
+              existing  = statusUpdater.getAndSet(
+                  engine.getExecutor().scheduleWithFixedDelay(r, initialShortDelay, initialShortDelay, TimeUnit.SECONDS));
+              if (existing != null) {
+                existing.cancel(false);
+              }
             }
-  
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-              // retry after delay
-              statusUpdater.set(engine.getExecutor().schedule(r, initialShortDelay, TimeUnit.SECONDS));
+            if (existing != null) {
+              existing.cancel(false);
             }
-          });
-        }
-      };
-      statusUpdater.set(engine.getExecutor().schedule(command, initialShortDelay, TimeUnit.SECONDS));
+          }
+
+          @Override
+          public void onThrowable(Packet packet, Throwable throwable) {
+            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            // retry to trying after shorter delay because of exception
+            unchangedCount.set(0);
+            ScheduledFuture<?> existing  = statusUpdater.getAndSet(
+                engine.getExecutor().scheduleWithFixedDelay(r, initialShortDelay, initialShortDelay, TimeUnit.SECONDS));
+            if (existing != null) {
+              existing.cancel(false);
+            }
+          }
+        });
+      }
+    };
+    ScheduledFuture<?> existing  = statusUpdater.getAndSet(
+        engine.getExecutor().scheduleWithFixedDelay(command, initialShortDelay, initialShortDelay, TimeUnit.SECONDS));
+    if (existing != null) {
+      existing.cancel(false);
     }
-  }
-  
-  private static boolean validateExisting(long initialShortDelay, ScheduledFuture<?> existing) {
-    if (existing.isCancelled())
-      return false;
-    return existing.getDelay(TimeUnit.SECONDS) <= initialShortDelay;
   }
   
   private static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
