@@ -593,7 +593,6 @@ public class Main {
       }
       info.setDomain(dom);
     }
-    scheduleDomainStatusUpdating(info);
     
     LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
 
@@ -666,6 +665,8 @@ public class Main {
             // TODO: consider retrying domain update after a delay
           }
         });
+        
+        scheduleDomainStatusUpdating(info);
       }
     }
     LOGGER.exiting();
