@@ -71,7 +71,7 @@ integration-test:
     name: Run integration tests
     code: |
       function finish {
-        export {$WERCKER_DEPLOYTARGET_NAME}-result=$?
+        export $WERCKER_DEPLOYTARGET_NAME-result=$?
         
         # clean up
         yum clean all
