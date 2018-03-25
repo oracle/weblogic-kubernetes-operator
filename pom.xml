@@ -208,12 +208,11 @@
                             <projectNumber>1253</projectNumber>
                             <builderName>BuildDetails</builderName>
                             <resourceUrl>${project.url}</resourceUrl>
-                            <authorityName>BuildAuthority</authorityName>
-                            <buildKeyId>Key:123456</buildKeyId>
                             <builderVersion>${project.version}</builderVersion>
-                            <builderDescription>${project.description}</builderDescription>
-                            <buildArtifacts>target/${project.artifactId}-${project.version}.${project.packaging}</buildArtifacts>
-                            <buildArtifacts>target/${project.artifactId}-${project.version}-tests.${project.packaging}</buildArtifacts>
+                            <buildArtifacts>
+                                <buildArtifact>target/${project.artifactId}-${project.version}.${project.packaging}</buildArtifact>
+                                <buildArtifact>target/${project.artifactId}-${project.version}-tests.${project.packaging}</buildArtifact>
+                            </buildArtifacts>
                         </configuration>
                     </execution>
                     <execution>
@@ -237,8 +236,6 @@
                             <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
                             <projectId>${project.name}</projectId>
                             <resourceUrl>${project.url}</resourceUrl>
-                            <pgpKeyID>EB49DA9A</pgpKeyID>
-                            <signature>LS0tLS1CRUdJ</signature>
                         </configuration>
                     </execution>
                 </executions>
