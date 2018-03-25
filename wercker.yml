@@ -35,24 +35,8 @@ build:
       git clone https://github.com/wmhopkins/client-java.git
       echo "git clone https://github.com/wmhopkins/sscm-client.git"
       git clone https://github.com/wmhopkins/sscm-client.git
-      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT"
-      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/pgp/gpg-script.sh $GPG_SCRIPT
-      echo "chmod +x $GPG_SCRIPT"
-      chmod +x $GPG_SCRIPT
-      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT"
-      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/sbas/sbas-check.sh $SBAS_SCRIPT
-      echo "chmod +x $SBAS_SCRIPT"
-      chmod +x $SBAS_SCRIPT
-      echo "ls -ld $WERCKER_CACHE_DIR/*.sh"
-      ls -ld $WERCKER_CACHE_DIR/*.sh
-      echo "$GPG_SCRIPT --init-keyring"
-      $GPG_SCRIPT --init-keyring
-      echo "$GPG_SCRIPT --get-authority-names"
-      $GPG_SCRIPT --get-authority-names
-      echo "$GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)"
-      $GPG_SCRIPT --get-authority-keyid $($GPG_SCRIPT --get-authority-names)
-      echo "$GPG_SCRIPT --test"
-      $GPG_SCRIPT --test
+      echo "Execute: $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh"
+      $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh
 
   - script:
     name: Build Java Client
