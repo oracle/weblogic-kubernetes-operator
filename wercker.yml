@@ -36,7 +36,7 @@ build:
       echo "git clone https://github.com/wmhopkins/sscm-client.git"
       git clone https://github.com/wmhopkins/sscm-client.git
       echo "Execute: $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh"
-      $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh
+      /bin/bash $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh
 
   - script:
     name: Build Java Client
