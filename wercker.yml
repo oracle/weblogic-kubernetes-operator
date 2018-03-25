@@ -35,8 +35,12 @@ build:
       git clone https://github.com/wmhopkins/client-java.git
       echo "git clone https://github.com/wmhopkins/sscm-client.git"
       git clone https://github.com/wmhopkins/sscm-client.git
-      echo "Execute: $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh"
-      /bin/bash $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh
+      echo "cp -f $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh $SCRIPTS_DIR"
+      cp -f $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh $SCRIPTS_DIR
+      echo "chmod +x $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh"
+      chmod +x $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh
+      echo "$SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh"
+      $SSCM_BUILD_DIR/sscm-client/scripts/setup-script.sh
 
   - script:
     name: Build Java Client
