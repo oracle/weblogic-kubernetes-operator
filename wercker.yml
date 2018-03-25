@@ -71,7 +71,9 @@ integration-test:
     name: Run integration tests
     code: |
       function finish {
-        export $WERCKER_DEPLOYTARGET_NAME-result=$?
+        exit_code=$?
+        varname=${WERCKER_DEPLOYTARGET_NAME}
+        export ${!varname}-result=$exit_code
         
         # clean up
         yum clean all
@@ -181,7 +183,9 @@ after-test:
     name: Report integration test results
     code: |
       varname=${INTEGRATION_TEST_RESULT}
-      exit ${!varname}
+      if [ -n "$varname" ]; then
+        exit ${!varname}
+      fi
 
 
 # This pipeline runs quality checks 
