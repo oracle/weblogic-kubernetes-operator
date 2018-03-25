@@ -63,6 +63,7 @@ public class CreateDomainInputsFileTest {
         .namespace("default")
         .weblogicDomainStorageNFSServer("")
         .weblogicDomainStoragePath("")
+        .weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_RETAIN)
         .weblogicDomainStorageSize("10Gi")
         .weblogicDomainStorageType(STORAGE_TYPE_HOST_PATH)
         .productionModeEnabled("true")
