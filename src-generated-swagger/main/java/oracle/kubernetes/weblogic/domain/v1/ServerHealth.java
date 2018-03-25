@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v1;
@@ -31,28 +31,21 @@ public class ServerHealth {
      * Server health of this WebLogic server.
      * 
      */
-    @SerializedName("health")
+    @SerializedName("overallHealth")
     @Expose
-    private String health;
+    private String overallHealth;
     /**
-     * Name of subsystem providing symptom information.
+     * Status of unhealthy subsystems, if any.
      * 
      */
-    @SerializedName("subsystemName")
-    @Expose
-    private String subsystemName;
-    /**
-     * Symptoms provided by the reporting subsystem.
-     * 
-     */
-    @SerializedName("symptoms")
+    @SerializedName("subsystems")
     @Expose
     @Valid
-    private List<String> symptoms = new ArrayList<String>();
+    private List<SubsystemHealth> subsystems = new ArrayList<SubsystemHealth>();
 
     /**
      * RFC 3339 date and time at which the server started.
-     * @return start time
+     * @return activation time
      */
     public DateTime getActivationTime() {
         return activationTime;
@@ -60,7 +53,7 @@ public class ServerHealth {
 
     /**
      * RFC 3339 date and time at which the server started.
-     * @param activationTime start time
+     * @param activationTime activation time
      */
     public void setActivationTime(DateTime activationTime) {
         this.activationTime = activationTime;
@@ -68,7 +61,7 @@ public class ServerHealth {
 
     /**
      * RFC 3339 date and time at which the server started.
-     * @param startTime start time
+     * @param activationTime activation time
      * @return this
      */
     public ServerHealth withActivationTime(DateTime activationTime) {
@@ -78,90 +71,64 @@ public class ServerHealth {
 
     /**
      * Server health of this WebLogic server.
-     * @return health
+     * @return overall health
      */
-    public String getHealth() {
-        return health;
+    public String getOverallHealth() {
+        return overallHealth;
     }
 
     /**
      * Server health of this WebLogic server.
-     * @param health health
+     * @param overallHealth overall health
      */
-    public void setHealth(String health) {
-        this.health = health;
+    public void setOverallHealth(String overallHealth) {
+        this.overallHealth = overallHealth;
     }
 
     /**
      * Server health of this WebLogic server.
-     * @param health health
+     * @param overallHealth overall health
      * @return this
      */
-    public ServerHealth withHealth(String health) {
-        this.health = health;
+    public ServerHealth withOverallHealth(String overallHealth) {
+        this.overallHealth = overallHealth;
         return this;
     }
 
     /**
-     * Name of subsystem providing symptom information.
-     * @return subsystem name
+     * Status of unhealthy subsystems, if any.
+     * @return subsystems
      */
-    public String getSubsystemName() {
-        return subsystemName;
+    public List<SubsystemHealth> getSubsystems() {
+        return subsystems;
     }
 
     /**
-     * Name of subsystem providing symptom information.
-     * @param subsystemName subsystem name
+     * Status of unhealthy subsystems, if any.
+     * @param subsystems subsystems
      */
-    public void setSubsystemName(String subsystemName) {
-        this.subsystemName = subsystemName;
+    public void setSubsystems(List<SubsystemHealth> subsystems) {
+        this.subsystems = subsystems;
     }
 
     /**
-     * Name of subsystem providing symptom information.
-     * @param subsystemName subsystem name
+     * Status of unhealthy subsystems, if any.
+     * @param subsystems subsystems
      * @return this
      */
-    public ServerHealth withSubsystemName(String subsystemName) {
-        this.subsystemName = subsystemName;
-        return this;
-    }
-
-    /**
-     * Symptoms provided by the reporting subsystem.
-     * @return symptoms
-     */
-    public List<String> getSymptoms() {
-        return symptoms;
-    }
-
-    /**
-     * Symptoms provided by the reporting subsystem.
-     * @param symptoms symptoms
-     */
-    public void setSymptoms(List<String> symptoms) {
-        this.symptoms = symptoms;
-    }
-
-    /**
-     * Symptoms provided by the reporting subsystem.
-     * @param symptoms symptoms
-     * @return this
-     */
-    public ServerHealth withSymptoms(List<String> symptoms) {
-        this.symptoms = symptoms;
+    public ServerHealth withSubsystems(List<SubsystemHealth> subsystems) {
+        this.subsystems = subsystems;
         return this;
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("activationTime", activationTime).append("health", health).append("subsystemName", subsystemName).append("symptoms", symptoms).toString();
+        return new ToStringBuilder(this).append("activationTime", activationTime).append("overallHealth", overallHealth).append("subsystems", subsystems).toString();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(symptoms).append(health).append(activationTime).append(subsystemName).toHashCode();
+        return new HashCodeBuilder().append(overallHealth).append(activationTime).append(subsystems).toHashCode();
     }
 
     @Override
@@ -173,7 +140,7 @@ public class ServerHealth {
             return false;
         }
         ServerHealth rhs = ((ServerHealth) other);
-        return new EqualsBuilder().append(symptoms, rhs.symptoms).append(health, rhs.health).append(activationTime, rhs.activationTime).append(subsystemName, rhs.subsystemName).isEquals();
+        return new EqualsBuilder().append(overallHealth, rhs.overallHealth).append(activationTime, rhs.activationTime).append(subsystems, rhs.subsystems).isEquals();
     }
 
 }
