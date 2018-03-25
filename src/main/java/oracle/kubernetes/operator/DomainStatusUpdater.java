@@ -67,6 +67,7 @@ public class DomainStatusUpdater {
     
   /**
    * Asynchronous step to set Domain status to indicate WebLogic server status
+   * @param timeoutSeconds Timeout in seconds
    * @param next Next step
    * @return Step
    */

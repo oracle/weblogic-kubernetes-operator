@@ -7,6 +7,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
+import oracle.kubernetes.weblogic.domain.v1.SubsystemHealth;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -242,10 +243,13 @@ public class WlsRetriever {
           }
           
           ServerHealth health = new ServerHealth()
-              .withHealth(state != null ? state.asText() : null)
-              .withSubsystemName(subName)
-              .withActivationTime(activationTime != null ? new DateTime(activationTime.asLong()) : null)
-              .withSymptoms(sym);
+              .withOverallHealth(state != null ? state.asText() : null)
+              .withActivationTime(activationTime != null ? new DateTime(activationTime.asLong()) : null);
+          if (subName != null) {
+            health.getSubsystems().add(new SubsystemHealth()
+                .withSubsystemName(subName)
+                .withSymptoms(sym));
+          }
           
           @SuppressWarnings("unchecked")
           ConcurrentMap<String, ServerHealth> serverHealthMap = (ConcurrentMap<String, ServerHealth>) packet

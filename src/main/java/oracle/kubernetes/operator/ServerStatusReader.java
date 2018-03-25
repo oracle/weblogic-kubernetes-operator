@@ -98,7 +98,7 @@ public class ServerStatusReader {
    */
   public static Step createServerStatusReaderStep(V1Pod pod, String serverName, long timeoutSeconds, Step next) {
     return new ServerStatusReaderStep(pod, serverName, timeoutSeconds, 
-        new ServerHealthStep(serverName, timeoutSeconds, next));
+        new ServerHealthStep(serverName, next));
   }
 
   private static class ServerStatusReaderStep extends Step {
@@ -187,12 +187,10 @@ public class ServerStatusReader {
   
   private static class ServerHealthStep extends Step {
     private final String serverName;
-    private final long timeoutSeconds; // FIXME
     
-    public ServerHealthStep(String serverName, long timeoutSeconds, Step next) {
+    public ServerHealthStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
-      this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override

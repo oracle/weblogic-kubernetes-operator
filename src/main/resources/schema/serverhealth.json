@@ -8,19 +8,15 @@
       "type": "date-time",
       "javaType": "org.joda.time.DateTime"
      },
-     "health": {
+     "overallHealth": {
       "description": "Server health of this WebLogic server.",
       "type": "string"
      },
-     "subsystemName": {
-      "description": "Name of subsystem providing symptom information.",
-      "type": "string"
-     },
-     "symptoms": {
-      "description": "Symptoms provided by the reporting subsystem.",
+     "subsystems": {
+      "description": "Status of unhealthy subsystems, if any.",
       "type": "array",
       "items": {
-       "type": "string"
+       "$ref": "subsystemhealth.json"
       }
      }
     }
