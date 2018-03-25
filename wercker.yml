@@ -175,19 +175,6 @@ integration-test:
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
     
 
-# This pipeline reports results of integration test.  It is separated so that integration test
-# pipeline succeeds and stores results even if tests actually failed
-after-test:
-  steps:
-  - script:
-    name: Report integration test results
-    code: |
-      varname=${INTEGRATION_TEST_RESULT}
-      if [ -n "$varname" ]; then
-        exit ${!varname}
-      fi
-
-
 # This pipeline runs quality checks 
 quality:
   steps:
