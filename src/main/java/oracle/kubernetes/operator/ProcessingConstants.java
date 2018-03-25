@@ -29,5 +29,9 @@ public interface ProcessingConstants {
   public static final String EXPLICIT_RESTART_CLUSTERS = "explicitRestartClusters";
   
   public static final String SCRIPT_CONFIG_MAP = "scriptConfigMap";
+  public static final String SERVER_STATE_MAP = "serverStateMap";
+  public static final String SERVER_HEALTH_MAP = "serverHealthMap";
+  
+  public static final String STATUS_UNCHANGED = "statusUnchanged";
   
 }

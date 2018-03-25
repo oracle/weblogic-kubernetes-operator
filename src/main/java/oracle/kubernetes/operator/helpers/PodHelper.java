@@ -49,6 +49,24 @@ public class PodHelper {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  private static int readinessProbeInitialDelaySeconds = 2;
+  private static int readinessProbeTimeoutSeconds = 5;
+  private static int readinessProbePeriodSeconds = 10;
+  private static int livenessProbeInitialDelaySeconds = 10;
+  private static int livenessProbeTimeoutSeconds = 5;
+  private static int livenessProbePeriodSeconds = 10;
+  
+  public static void setTuningParameters(
+      int readinessProbeInitialDelaySeconds, int readinessProbeTimeoutSeconds, int readinessProbePeriodSeconds,
+      int livenessProbeInitialDelaySeconds, int livenessProbeTimeoutSeconds, int livenessProbePeriodSeconds) {
+    PodHelper.readinessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
+    PodHelper.readinessProbeTimeoutSeconds = readinessProbeTimeoutSeconds;
+    PodHelper.readinessProbePeriodSeconds = readinessProbePeriodSeconds;
+    PodHelper.livenessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
+    PodHelper.livenessProbeTimeoutSeconds = livenessProbeTimeoutSeconds;
+    PodHelper.livenessProbePeriodSeconds = livenessProbePeriodSeconds;
+  }
+  
   private PodHelper() {}
   
   /**
@@ -121,7 +139,7 @@ public class PodHelper {
 
       List<V1Container> containers = new ArrayList<>();
       V1Container container = new V1Container();
-      container.setName("weblogic-server");
+      container.setName(KubernetesConstants.CONTAINER_NAME);
       containers.add(container);
       podSpec.setContainers(containers);
 
@@ -166,10 +184,10 @@ public class PodHelper {
       readinessAction.addCommandItem(weblogicDomainName);
       readinessAction.addCommandItem(spec.getAsName());
       readinessProbe.exec(readinessAction);
-      readinessProbe.setInitialDelaySeconds(5);
-      readinessProbe.setTimeoutSeconds(5);
-      readinessProbe.setPeriodSeconds(5);
-      readinessProbe.setFailureThreshold(1);
+      readinessProbe.setInitialDelaySeconds(readinessProbeInitialDelaySeconds);
+      readinessProbe.setTimeoutSeconds(readinessProbeTimeoutSeconds);
+      readinessProbe.setPeriodSeconds(readinessProbePeriodSeconds);
+      readinessProbe.setFailureThreshold(1); // must be 1
       container.readinessProbe(readinessProbe);
 
       V1Probe livenessProbe = new V1Probe();
@@ -178,10 +196,10 @@ public class PodHelper {
       livenessAction.addCommandItem(weblogicDomainName);
       livenessAction.addCommandItem(spec.getAsName());
       livenessProbe.exec(livenessAction);
-      livenessProbe.setInitialDelaySeconds(10);
-      livenessProbe.setTimeoutSeconds(5);
-      livenessProbe.setPeriodSeconds(5);
-      livenessProbe.setFailureThreshold(1);
+      livenessProbe.setInitialDelaySeconds(livenessProbeInitialDelaySeconds);
+      livenessProbe.setTimeoutSeconds(livenessProbeTimeoutSeconds);
+      livenessProbe.setPeriodSeconds(livenessProbePeriodSeconds);
+      livenessProbe.setFailureThreshold(1); // must be 1
       container.livenessProbe(livenessProbe);
 
       if (spec.getServerStartup() != null) {
@@ -195,7 +213,7 @@ public class PodHelper {
       }
 
       // Add internal-weblogic-operator-service certificate to Admin Server pod
-      ConfigMapConsumer configMapHelper = new ConfigMapConsumer("/operator/config");
+      ConfigMapConsumer configMapHelper = packet.getSPI(ConfigMapConsumer.class);
       String internalOperatorCert = configMapHelper.get(INTERNAL_OPERATOR_CERT_FILE);
       addEnvVar(container, INTERNAL_OPERATOR_CERT_ENV, internalOperatorCert);
 
@@ -505,7 +523,7 @@ public class PodHelper {
 
       List<V1Container> containers = new ArrayList<>();
       V1Container container = new V1Container();
-      container.setName("weblogic-server");
+      container.setName(KubernetesConstants.CONTAINER_NAME);
       containers.add(container);
       podSpec.setContainers(containers);
 
@@ -550,10 +568,10 @@ public class PodHelper {
       readinessAction.addCommandItem(weblogicDomainName);
       readinessAction.addCommandItem(weblogicServerName);
       readinessProbe.exec(readinessAction);
-      readinessProbe.setInitialDelaySeconds(2);
-      readinessProbe.setTimeoutSeconds(5);
-      readinessProbe.setPeriodSeconds(10);
-      readinessProbe.setFailureThreshold(1);
+      readinessProbe.setInitialDelaySeconds(readinessProbeInitialDelaySeconds);
+      readinessProbe.setTimeoutSeconds(readinessProbeTimeoutSeconds);
+      readinessProbe.setPeriodSeconds(readinessProbePeriodSeconds);
+      readinessProbe.setFailureThreshold(1); // must be 1
       container.readinessProbe(readinessProbe);
 
       V1Probe livenessProbe = new V1Probe();
@@ -562,10 +580,10 @@ public class PodHelper {
       livenessAction.addCommandItem(weblogicDomainName);
       livenessAction.addCommandItem(weblogicServerName);
       livenessProbe.exec(livenessAction);
-      livenessProbe.setInitialDelaySeconds(10);
-      livenessProbe.setTimeoutSeconds(5);
-      livenessProbe.setPeriodSeconds(10);
-      livenessProbe.setFailureThreshold(1);
+      livenessProbe.setInitialDelaySeconds(livenessProbeInitialDelaySeconds);
+      livenessProbe.setTimeoutSeconds(livenessProbeTimeoutSeconds);
+      livenessProbe.setPeriodSeconds(livenessProbePeriodSeconds);
+      livenessProbe.setFailureThreshold(1); // must be 1
       container.livenessProbe(livenessProbe);
 
       if (!info.getClaims().getItems().isEmpty()) {

@@ -1,4 +1,5 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
@@ -6,6 +7,8 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import io.kubernetes.client.util.SSLUtils;
+import org.apache.commons.codec.binary.Base64;
+
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ClusterModel;
 import oracle.kubernetes.operator.rest.model.CollectionModel;
@@ -29,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -451,7 +455,9 @@ public class RestTest {
   }
 
   private KeyStore createTrustStore() throws Exception {
-    InputStream sslCaCert = SSLUtils.getInputStreamFromDataOrFile(CA_CERT_DATA, null);
+    byte[] bytes = Base64.decodeBase64(CA_CERT_DATA);
+    InputStream sslCaCert = new ByteArrayInputStream(bytes);
+
     KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
     ks.load(null, null);
     CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");

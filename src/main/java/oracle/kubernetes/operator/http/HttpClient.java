@@ -66,10 +66,10 @@ public class HttpClient {
 
   public String executePostUrlOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace, String payload) {
     String serviceURL = SERVICE_URL == null ? getServiceURL(client, principal, serviceName, namespace) : SERVICE_URL;
-    return executePostUrlOnServiceClusterIP(requestUrl, serviceURL, serviceName, namespace, payload);
+    return executePostUrlOnServiceClusterIP(requestUrl, serviceURL, namespace, payload);
   }
   
-  public String executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String serviceName, String namespace, String payload) {
+  public String executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String namespace, String payload) {
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json")
@@ -88,22 +88,22 @@ public class HttpClient {
   }
 
   /**
-   * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at an admin server
+   * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at a server instance
    * @param principal Principal
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @param next Next processing step
    * @return step to create client
    */
-  public static Step createAuthenticatedClientForAdminServer(String principal, String namespace, String adminSecretName, Step next) {
-    return new AuthenticatedClientForAdminServerStep(namespace, adminSecretName, new WithSecretDataStep(principal, next));
+  public static Step createAuthenticatedClientForServer(String principal, String namespace, String adminSecretName, Step next) {
+    return new AuthenticatedClientForServerStep(namespace, adminSecretName, new WithSecretDataStep(principal, next));
   }
   
-  private static class AuthenticatedClientForAdminServerStep extends Step {
+  private static class AuthenticatedClientForServerStep extends Step {
     private final String namespace;
     private final String adminSecretName;
     
-    public AuthenticatedClientForAdminServerStep(String namespace, String adminSecretName, Step next) {
+    public AuthenticatedClientForServerStep(String namespace, String adminSecretName, Step next) {
       super(next);
       this.namespace = namespace;
       this.adminSecretName = adminSecretName;
@@ -111,7 +111,7 @@ public class HttpClient {
 
     @Override
     public NextAction apply(Packet packet) {
-      Step readSecret = SecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, adminSecretName, namespace, next);
+      Step readSecret = SecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, next);
       return doNext(readSecret, packet);
     }
   }
@@ -150,10 +150,10 @@ public class HttpClient {
    * @param adminSecretName Admin secret name
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClientForAdminServer(ClientHolder client, String principal, String namespace, String adminSecretName) {
+  public static HttpClient createAuthenticatedClientForServer(ClientHolder client, String principal, String namespace, String adminSecretName) {
     SecretHelper secretHelper = new SecretHelper(client, namespace);
     Map<String, byte[]> secretData =
-        secretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, adminSecretName);
+        secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
 
     byte[] username = null;
     byte[] password = null;

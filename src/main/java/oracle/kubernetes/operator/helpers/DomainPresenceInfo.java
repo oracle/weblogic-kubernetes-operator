@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.joda.time.DateTime;
@@ -30,6 +31,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 public class DomainPresenceInfo {
   private final String namespace;
   private final AtomicReference<Domain> domain;
+  private final AtomicReference<ScheduledFuture<?>> statusUpdater;
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
@@ -49,6 +51,7 @@ public class DomainPresenceInfo {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.serverStartupInfo = new AtomicReference<>(null);
+    this.statusUpdater = new AtomicReference<>(null);
   }
 
   /**
@@ -59,6 +62,7 @@ public class DomainPresenceInfo {
     this.domain = new AtomicReference<>(null);
     this.namespace = namespace;
     this.serverStartupInfo = new AtomicReference<>(null);
+    this.statusUpdater = new AtomicReference<>(null);
   }
 
   /**
@@ -207,4 +211,11 @@ public class DomainPresenceInfo {
     }
   }
   
+  /**
+   * Domain status updater
+   * @return Domain status updater
+   */
+  public AtomicReference<ScheduledFuture<?>> getStatusUpdater() {
+    return statusUpdater;
+  }
 }
