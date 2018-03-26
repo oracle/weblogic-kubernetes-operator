@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.rest;
 
+import org.apache.commons.codec.binary.Base64;
+
 import io.kubernetes.client.util.SSLUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -19,7 +21,9 @@ import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
@@ -270,11 +274,9 @@ public class RestServer {
     LOGGER.entering(certificateData, certificateFile);
     KeyManager[] result =
       SSLUtils.keyManagers(
-        certificateData,
-        certificateFile,
-        keyData,
-        keyFile,
-        "RSA", // key algorithm
+        readFromDataOrFile(certificateData, certificateFile),
+        readFromDataOrFile(keyData, keyFile),
+        "", // Let utility figure it out, "RSA", // key algorithm
         "", // operator key passphrase in the temp keystore that gets created to hold the keypair
         null, // file name of the temp keystore
         null // pass phrase of the temp keystore
@@ -283,6 +285,13 @@ public class RestServer {
     return result;
   }
 
+  private static byte[] readFromDataOrFile(String data, String file) throws IOException {
+    if (data != null && data.length() > 0) {
+      return Base64.decodeBase64(data);
+    } 
+    return Files.readAllBytes(new File(file).toPath());
+  }
+  
   private boolean isExternalSSLConfigured() {
     return
       isSSLConfigured(

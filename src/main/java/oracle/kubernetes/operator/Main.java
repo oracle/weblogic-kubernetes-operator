@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,7 +14,11 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -35,6 +40,7 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientHelper;
@@ -58,7 +64,7 @@ import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsConfigRetriever;
+import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
@@ -81,14 +87,54 @@ public class Main {
   private static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
   
   private static final Engine engine = new Engine("operator");
-
+  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   
+  private static final ConfigMapConsumer config;
+  static {
+    try {
+      config = new ConfigMapConsumer(engine.getExecutor(), "/operator/config", () -> {
+        LOGGER.info(MessageKeys.TUNING_PARAMETERS);
+        setTuningParameters();
+      });
+    } catch (IOException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+      throw new RuntimeException(e);
+    }
+  }
+  
+  // tuning parameters
+  private static int statusUpdateTimeoutSeconds;
+  private static int unchangedCountToDelayStatusRecheck; 
+  private static long initialShortDelay; 
+  private static long eventualLongDelay;
+  private static void setTuningParameters() {
+    statusUpdateTimeoutSeconds = (int) config.readTuningParameter("statusUpdateTimeoutSeconds", 10);
+    unchangedCountToDelayStatusRecheck = (int) config.readTuningParameter("statueUpdateUnchangedCountToDelayStatusRecheck", 10); 
+    initialShortDelay = config.readTuningParameter("statusUpdateInitialShortDelay", 3); 
+    eventualLongDelay = config.readTuningParameter("statusUpdateEventualLongDelay", 30);
+    int callRequestLimit = (int) config.readTuningParameter("callRequestLimit", 500);
+    int callMaxRetryCount = (int) config.readTuningParameter("callMaxRetryCount", 5);
+    int callTimeoutSeconds = (int) config.readTuningParameter("callTimeoutSeconds", 10);
+    CallBuilder.setTuningParameters(callRequestLimit, callMaxRetryCount, callTimeoutSeconds);
+    int watchLifetime = (int) config.readTuningParameter("watchLifetime", 45);
+    WatchBuilder.setTuningParameters(watchLifetime);
+    int readinessProbeInitialDelaySeconds = (int) config.readTuningParameter("readinessProbeInitialDelaySeconds", 2);
+    int readinessProbeTimeoutSeconds = (int) config.readTuningParameter("readinessProbeTimeoutSeconds", 5);
+    int readinessProbePeriodSeconds = (int) config.readTuningParameter("readinessProbePeriodSeconds", 10);
+    int livenessProbeInitialDelaySeconds = (int) config.readTuningParameter("livenessProbeInitialDelaySeconds", 10);
+    int livenessProbeTimeoutSeconds = (int) config.readTuningParameter("livenessProbeTimeoutSeconds", 5);
+    int livenessProbePeriodSeconds = (int) config.readTuningParameter("livenessProbePeriodSeconds", 10);
+    PodHelper.setTuningParameters(readinessProbeInitialDelaySeconds, readinessProbeTimeoutSeconds, 
+        readinessProbePeriodSeconds, livenessProbeInitialDelaySeconds, livenessProbeTimeoutSeconds, 
+        livenessProbePeriodSeconds);
+  }
+  
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
-  
+
   private static String principal;
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
@@ -105,7 +151,6 @@ public class Main {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-
     // print startup log message
     LOGGER.info(MessageKeys.OPERATOR_STARTED);
 
@@ -120,8 +165,7 @@ public class Main {
 
     Collection<String> targetNamespaces = getTargetNamespaces(namespace);
 
-    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
-    String serviceAccountName = cmc.get("serviceaccount");
+    String serviceAccountName = config.get("serviceaccount");
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
@@ -455,6 +499,61 @@ public class Main {
       }
     }
   }
+  
+  private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+    String domainUID = info.getDomain().getSpec().getDomainUID();
+    
+    AtomicInteger unchangedCount = new AtomicInteger(0);
+    AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
+    ScheduledFuture<?> existing = statusUpdater.get();
+    if (existing == null || !validateExisting(initialShortDelay, existing)) {
+      Runnable command = new Runnable() {
+        public void run() {
+          Runnable r = this; // resolve visibility
+          Packet packet = new Packet();
+          packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, config));
+          Step strategy = DomainStatusUpdater.createStatusStep(statusUpdateTimeoutSeconds, null);
+          domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
+            @Override
+            public void onCompletion(Packet packet) {
+              Boolean isStatusUnchanged = (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
+              long delay = initialShortDelay;
+              if (Boolean.TRUE.equals(isStatusUnchanged)) {
+                if (unchangedCount.incrementAndGet() > unchangedCountToDelayStatusRecheck) {
+                  delay = eventualLongDelay;
+                }
+              } else {
+                unchangedCount.set(0);
+              }
+              // retry after delay
+              statusUpdater.set(engine.getExecutor().schedule(r, delay, TimeUnit.SECONDS));
+            }
+  
+            @Override
+            public void onThrowable(Packet packet, Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+              // retry after delay
+              statusUpdater.set(engine.getExecutor().schedule(r, initialShortDelay, TimeUnit.SECONDS));
+            }
+          });
+        }
+      };
+      statusUpdater.set(engine.getExecutor().schedule(command, initialShortDelay, TimeUnit.SECONDS));
+    }
+  }
+  
+  private static boolean validateExisting(long initialShortDelay, ScheduledFuture<?> existing) {
+    if (existing.isCancelled())
+      return false;
+    return existing.getDelay(TimeUnit.SECONDS) <= initialShortDelay;
+  }
+  
+  private static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
+    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
+    if (statusUpdater != null) {
+      statusUpdater.cancel(true);
+    }
+  }
 
   private static void doCheckAndCreateDomainPresence(Domain dom) {
     doCheckAndCreateDomainPresence(dom, false, false, null, null);
@@ -513,7 +612,7 @@ public class Main {
     String ns = dom.getMetadata().getNamespace();
     if (initialized.getOrDefault(ns, Boolean.FALSE)) {
       PodWatcher pw = podWatchers.get(ns);
-      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
+      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw, config));
       p.put(ProcessingConstants.PRINCIPAL, principal);
       
       if (explicitRestartAdmin) {
@@ -566,6 +665,8 @@ public class Main {
             // TODO: consider retrying domain update after a delay
           }
         });
+        
+        scheduleDomainStatusUpdating(info);
       }
     }
     LOGGER.exiting();
@@ -676,7 +777,7 @@ public class Main {
   }
   
   private static Step connectToAdminAndInspectDomain(Step next) {
-    return new WatchPodReadyAdminStep(WlsConfigRetriever.readConfigStep(
+    return new WatchPodReadyAdminStep(WlsRetriever.readConfigStep(
         new ExternalAdminChannelsStep(next)));
   }
   
@@ -1186,8 +1287,10 @@ public class Main {
   private static void deleteDomainPresence(String namespace, String domainUID) {
     LOGGER.entering();
 
-    domains.remove(domainUID);
-
+    DomainPresenceInfo info = domains.remove(domainUID);
+    if (info != null) {
+      cancelDomainStatusUpdating(info);
+    }
     domainUpdaters.startFiber(domainUID, new DeleteDomainStep(namespace, domainUID), new Packet(), new CompletionCallback() {
       @Override
       public void onCompletion(Packet packet) {
@@ -1366,8 +1469,7 @@ public class Main {
   private static Collection<String> getTargetNamespaces(String namespace) {
     Collection<String> targetNamespaces = new ArrayList<String>();
 
-    ConfigMapConsumer cmc = new ConfigMapConsumer("/operator/config");
-    String tnValue = cmc.get("targetNamespaces");
+    String tnValue = config.get("targetNamespaces");
     if (tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {
@@ -1440,15 +1542,9 @@ public class Main {
           ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
           ServerKubernetesObjects sko = current != null ? current : created;
           if (sko != null) {
-            Fiber f;
-            Packet packet;
             switch (item.type) {
               case "ADDED":
                 sko.getPod().set(p);
-                f = engine.createFiber();
-                packet = new Packet();
-                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "MODIFIED":
                 V1Pod skoPod = sko.getPod().get();
@@ -1457,17 +1553,9 @@ public class Main {
                   // and modifications are to the terminating pod
                   sko.getPod().compareAndSet(skoPod, p);
                 }
-                f = engine.createFiber();
-                packet = new Packet();
-                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-                f.start(DomainStatusUpdater.createStatusStep(p, false, null), packet, null);
                 break;
               case "DELETED":
                 V1Pod oldPod = sko.getPod().getAndSet(null);
-                f = engine.createFiber();
-                packet = new Packet();
-                packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version));
-                f.start(DomainStatusUpdater.createStatusStep(p, true, null), packet, null);
                 if (oldPod != null) {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);

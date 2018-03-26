@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Contains a snapshot of WebLogic domain configuration
+ * Contains a snapsot of configuration for a WebLogic Domain
  */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -247,10 +247,8 @@ public class WlsDomainConfig {
    * attribute name, attribute value).
    *
    * @param jsonString JSON string containing WLS configuration to be parsed
-   * @return a list containing configuration attributes of each WLS server, each consist of a map of
-   * (server attribute name, attribute value)
+   * @return a ParsedJson object containing WebLogic domain configuration by parsing the given JSON string
    */
-  @SuppressWarnings("unchecked")
   private static ParsedJson parseJson(String jsonString) {
     ObjectMapper mapper = new ObjectMapper();
     try {

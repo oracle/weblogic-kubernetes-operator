@@ -1,8 +1,11 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.create;
 
 import static java.util.Arrays.asList;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
@@ -445,10 +448,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .name(getTraefikScope())
                 .image("traefik:1.4.5")
                 .resources(newResourceRequirements()
-                  .putRequestsItem("cpu", "100m")
-                  .putRequestsItem("memory", "20Mi")
-                  .putLimitsItem("cpu", "100m")
-                  .putLimitsItem("memory", "30Mi"))
+                  .putRequestsItem("cpu", Quantity.fromString("100m"))
+                  .putRequestsItem("memory", Quantity.fromString("20Mi"))
+                  .putLimitsItem("cpu", Quantity.fromString("100m"))
+                  .putLimitsItem("memory", Quantity.fromString("30Mi")))
                 .readinessProbe(newProbe()
                   .tcpSocket(newTCPSocketAction()
                     .port(newIntOrString(80)))
@@ -654,7 +657,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
             .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
           .spec(newPersistentVolumeSpec()
             .storageClassName(getInputs().getWeblogicDomainStorageClass())
-            .putCapacityItem("storage", getInputs().getWeblogicDomainStorageSize())
+            .putCapacityItem("storage", Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))
             .addAccessModesItem("ReadWriteMany")
             .persistentVolumeReclaimPolicy("Retain"));
   }
@@ -681,7 +684,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
           .storageClassName(getInputs().getWeblogicDomainStorageClass())
           .addAccessModesItem("ReadWriteMany")
           .resources(newResourceRequirements()
-            .putRequestsItem("storage", getInputs().getWeblogicDomainStorageSize())));
+            .putRequestsItem("storage", Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))));
   }
 
   protected String getTraefikScope() {

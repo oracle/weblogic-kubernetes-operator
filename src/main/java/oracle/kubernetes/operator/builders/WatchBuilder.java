@@ -22,6 +22,11 @@ import java.util.function.BiFunction;
 
 @SuppressWarnings("WeakerAccess")
 public class WatchBuilder {
+    private static int watchLifetime = 30;
+    
+    public static void setTuningParameters(int watchLifetime) {
+      WatchBuilder.watchLifetime = watchLifetime;
+    }
 
     /** Always true for watches. */
     private static final boolean WATCH = true;
@@ -40,6 +45,7 @@ public class WatchBuilder {
 
     public WatchBuilder(ClientHolder clientHolder) {
         this.clientHolder = clientHolder;
+        callParams.setTimeoutSeconds(watchLifetime);
     }
 
     private static Type getType(Class<?> responseBodyType) {

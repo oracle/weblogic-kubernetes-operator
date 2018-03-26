@@ -3,12 +3,15 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
+import oracle.kubernetes.weblogic.domain.v1.SubsystemHealth;
 import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.http.HTTPException;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -18,8 +21,10 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,13 +34,17 @@ import java.util.concurrent.TimeoutException;
 
 import org.joda.time.DateTime;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
 
 /**
- * A helper class to retrieve configuration information from WebLogic.
+ * A helper class to retrieve configuration or health information from WebLogic servers.
  * It also contains method to perform configuration updates to a WebLogic domain.
  */
-public class WlsConfigRetriever {
+public class WlsRetriever {
   public static final String KEY = "wlsDomainConfig";
 
   private ClientHelper clientHelper;
@@ -71,10 +80,10 @@ public class WlsConfigRetriever {
    * @param namespace       The Namespace in which the target Domain is located.
    * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
-   * @return The WlsConfigRetriever object for the specified inputs.
+   * @return The WlsRetriever object for the specified inputs.
    */
-  public static WlsConfigRetriever create(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
-    return new WlsConfigRetriever(clientHelper, namespace, asServiceName, adminSecretName);
+  public static WlsRetriever create(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
+    return new WlsRetriever(clientHelper, namespace, asServiceName, adminSecretName);
   }
 
   /**
@@ -85,13 +94,27 @@ public class WlsConfigRetriever {
    * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    */
-  public WlsConfigRetriever(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
+  public WlsRetriever(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
     this.clientHelper = clientHelper;
     this.namespace = namespace;
     this.asServiceName = asServiceName;
     this.adminSecretName = adminSecretName;
   }
 
+  
+  private static final String START_TIME = "WlsRetriever-startTime";
+  private static final String RETRY_COUNT = "WlsRetriever-retryCount";
+  private static final Random R = new Random();
+  private static final int HIGH = 50;
+  private static final int LOW = 10;
+  private static final int SCALE = 100;
+  private static final int MAX = 10000;
+
+  private enum RequestType {
+    CONFIG,
+    HEALTH
+  }
+  
   /**
    * Creates asynchronous {@link Step} to read configuration from an admin server
    *
@@ -99,20 +122,24 @@ public class WlsConfigRetriever {
    * @return asynchronous step
    */
   public static Step readConfigStep(Step next) {
-    return new ReadConfigStep(next);
+    return new ReadStep(RequestType.CONFIG, next);
   }
-
-  private static final String START_TIME = "WlsConfigRetriever-startTime";
-  private static final String RETRY_COUNT = "WlsConfigRetriever-retryCount";
-  private static final Random R = new Random();
-  private static final int HIGH = 50;
-  private static final int LOW = 10;
-  private static final int SCALE = 100;
-  private static final int MAX = 10000;
-
-  private static final class ReadConfigStep extends Step {
-    public ReadConfigStep(Step next) {
+  
+  /**
+   * Creates asynchronous {@link Step} to read health from a server instance.
+   * @param next Next processing step
+   * @return asynchronous step
+   */
+  public static Step readHealthStep(Step next) {
+    return new ReadStep(RequestType.HEALTH, next);
+  }
+  
+  private static final class ReadStep extends Step {
+    private final RequestType requestType;
+    
+    public ReadStep(RequestType requestType, Step next) {
       super(next);
+      this.requestType = requestType;
     }
 
     @Override
@@ -126,19 +153,24 @@ public class WlsConfigRetriever {
         V1ObjectMeta meta = dom.getMetadata();
         DomainSpec spec = dom.getSpec();
         String namespace = meta.getNamespace();
-
+        
+        String serverName;
+        if (RequestType.CONFIG.equals(requestType)) {
+          serverName = spec.getAsName();
+        } else {
+          serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
+        }
+  
+        ServerKubernetesObjects sko = info.getServers().get(serverName);
         String adminSecretName = spec.getAdminSecret() == null ? null : spec.getAdminSecret().getName();
-
-        Step getClient = HttpClient.createAuthenticatedClientForAdminServer(
-                namespace, adminSecretName, new WithHttpClientStep(next));
+        
+        Step getClient = HttpClient.createAuthenticatedClientForServer(
+            namespace, adminSecretName, 
+            new WithHttpClientStep(requestType, sko.getService().get(), next));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
       } catch (Throwable t) {
         LOGGER.info(MessageKeys.EXCEPTION, t);
-
-        // Not clear why we should have a maximum time to read the domain configuration.  We already know that the 
-        // admin server Pod is READY and failing to read the config just means failure, so might as well keep trying.
-
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
@@ -214,13 +246,13 @@ public class WlsConfigRetriever {
   }
 
   private static final class WithHttpClientStep extends Step {
+    private final RequestType requestType;
+    private final V1Service service;
 
-    /**
-     * Constructor
-     * @param next The next Step
-     */
-    public WithHttpClientStep(Step next) {
+    public WithHttpClientStep(RequestType requestType, V1Service service, Step next) {
       super(next);
+      this.requestType = requestType;
+      this.service = service;
     }
 
     /**
@@ -233,36 +265,87 @@ public class WlsConfigRetriever {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
         Domain dom = info.getDomain();
   
-        String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
-        
-        WlsDomainConfig wlsDomainConfig = null;
-        String jsonResult =
-                httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(),
-                        serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
-        if (jsonResult != null) {
-          wlsDomainConfig = WlsDomainConfig.create(jsonResult);
-        }
+        String serviceURL = HttpClient.getServiceURL(service);
 
-        // validate domain spec against WLS configuration.
-        // This logs warning messages as well as returning a list of suggested
-        // WebLogic configuration updates, but it does not update the DomainSpec.
-        List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-        wlsDomainConfig.validate(dom.getSpec(), suggestedConfigUpdates);
-
-        info.setScan(wlsDomainConfig);
-        info.setLastScanTime(new DateTime());
-
-        LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
-
-        // If there are suggested WebLogic configuration update, perform them as the
-        // next Step, then read the updated WebLogic configuration again after the
-        // update(s) are performed.
-        if (!suggestedConfigUpdates.isEmpty()) {
-          Step nextStep = new WithHttpClientStep(next); // read WebLogic config again after config updates
-          for(ConfigUpdate suggestedConfigUpdate: suggestedConfigUpdates) {
-            nextStep = suggestedConfigUpdate.createStep(nextStep);
+        if (RequestType.CONFIG.equals(requestType)) {
+          WlsDomainConfig wlsDomainConfig = null;
+          String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
+              WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL,
+              WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
+          if (jsonResult != null) {
+            wlsDomainConfig = WlsDomainConfig.create(jsonResult);
           }
-          return doNext(nextStep, packet);
+
+          List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+
+          // This logs warning messages as well as returning a list of suggested
+          // WebLogic configuration updates, but it does not update the DomainSpec.
+          wlsDomainConfig.validate(dom.getSpec(), suggestedConfigUpdates);
+
+          info.setScan(wlsDomainConfig);
+          info.setLastScanTime(new DateTime());
+    
+          LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
+
+          // If there are suggested WebLogic configuration update, perform them as the
+          // next Step, then read the updated WebLogic configuration again after the
+          // update(s) are performed.
+          if (!suggestedConfigUpdates.isEmpty()) {
+            Step nextStep = new WithHttpClientStep(requestType, service, next); // read WebLogic config again after config updates
+            for(ConfigUpdate suggestedConfigUpdate: suggestedConfigUpdates) {
+              nextStep = suggestedConfigUpdate.createStep(nextStep);
+            }
+            return doNext(nextStep, packet);
+          }
+
+        } else { // RequestType.HEALTH
+          String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
+              getRetrieveHealthSearchUrl(), serviceURL,
+              getRetrieveHealthSearchPayload()).getResponse();
+          
+          ObjectMapper mapper = new ObjectMapper();
+          JsonNode root = mapper.readTree(jsonResult);
+          
+          JsonNode state = null;
+          JsonNode subsystemName = null;
+          JsonNode symptoms = null;
+          JsonNode overallHealthState = root.path("overallHealthState");
+          if (overallHealthState != null) {
+            state = overallHealthState.path("state");
+            subsystemName = overallHealthState.path("subsystemName");
+            symptoms = overallHealthState.path("symptoms");
+          }
+          JsonNode activationTime = root.path("activationTime");
+          
+          List<String> sym = new ArrayList<>();
+          if (symptoms != null) {
+            Iterator<JsonNode> it = symptoms.elements();
+            while (it.hasNext()) {
+              sym.add(it.next().asText());
+            }
+          }
+          
+          String subName = null;
+          if (subsystemName != null) {
+            String s = subsystemName.asText();
+            if (s != null && !"null".equals(s)) {
+              subName = s;
+            }
+          }
+          
+          ServerHealth health = new ServerHealth()
+              .withOverallHealth(state != null ? state.asText() : null)
+              .withActivationTime(activationTime != null ? new DateTime(activationTime.asLong()) : null);
+          if (subName != null) {
+            health.getSubsystems().add(new SubsystemHealth()
+                .withSubsystemName(subName)
+                .withSymptoms(sym));
+          }
+          
+          @SuppressWarnings("unchecked")
+          ConcurrentMap<String, ServerHealth> serverHealthMap = (ConcurrentMap<String, ServerHealth>) packet
+              .get(ProcessingConstants.SERVER_HEALTH_MAP);
+          serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
         }
 
         return doNext(packet);
@@ -279,6 +362,16 @@ public class WlsConfigRetriever {
         return doRetry(packet, waitTime, TimeUnit.MILLISECONDS);
       }
     }
+  }
+
+  public static String getRetrieveHealthSearchUrl() {
+    return "/management/weblogic/latest/serverRuntime/search";
+  }
+
+  // overallHealthState, healthState
+  
+  public static String getRetrieveHealthSearchPayload() {
+    return "{ fields: [ 'overallHealthState', 'activationTime' ], links: [] }";
   }
 
   /**
@@ -441,7 +534,6 @@ public class WlsConfigRetriever {
    *
    * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
    *                         caller should make sure that the cluster is a dynamic cluster.
-   * @param wlsDomainConfig The WlsDomainConfig object for the WLS domain that contains the dynamic cluster to be updated
    * @param machineNamePrefix Prefix of names of new machines to be created
    * @param targetClusterSize The target dynamic cluster size
    * @return true if the request to update the cluster size is successful, false if it was not successful
@@ -512,7 +604,7 @@ public class WlsConfigRetriever {
       clientHolder = clientHelper.take();
 
       if (httpClient == null) {
-        httpClient = HttpClient.createAuthenticatedClientForAdminServer(clientHolder, namespace, adminSecretName);
+        httpClient = HttpClient.createAuthenticatedClientForServer(clientHolder, namespace, adminSecretName);
       }
 
       return HttpClient.getServiceURL(clientHolder, asServiceName, namespace);
@@ -520,6 +612,7 @@ public class WlsConfigRetriever {
     } finally {
       if (clientHolder != null)
         clientHelper.recycle(clientHolder);
+
     }
   }
 

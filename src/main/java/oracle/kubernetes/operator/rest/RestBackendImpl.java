@@ -23,7 +23,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsConfigRetriever;
+import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 
 import javax.ws.rs.WebApplicationException;
@@ -405,19 +405,14 @@ public class RestBackendImpl implements RestBackend {
     return null;
   }
 
-  private int getWLSConfiguredClusterSize(ClientHolder client, String namespace, String cluster, String adminServerServiceName, String adminSecretName) {
-    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(client, namespace, cluster, adminServerServiceName, adminSecretName);
-    return wlsClusterConfig.getClusterSize();
-  }
-
   private WlsClusterConfig getWlsClusterConfig(ClientHolder client, String namespace, String cluster, String adminServerServiceName, String adminSecretName) {
-    WlsConfigRetriever wlsConfigRetriever = WlsConfigRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
+    WlsRetriever wlsConfigRetriever = WlsRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
     WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     return wlsDomainConfig.getClusterConfig(cluster);
   }
 
   private Map<String, WlsClusterConfig> getWLSConfiguredClusters(ClientHolder client, String namespace, String adminServerServiceName,  String adminSecretName) {
-    WlsConfigRetriever wlsConfigRetriever = WlsConfigRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
+    WlsRetriever wlsConfigRetriever = WlsRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
     WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     return wlsDomainConfig.getClusterConfigs();
   }
