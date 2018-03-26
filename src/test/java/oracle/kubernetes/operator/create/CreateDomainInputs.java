@@ -39,6 +39,8 @@ public class CreateDomainInputs {
   public static final String STARTUP_CONTROL_ADMIN = "ADMIN";
   public static final String STARTUP_CONTROL_SPECIFIED = "SPECIFIED";
   public static final String STARTUP_CONTROL_AUTO = "AUTO";
+  public static final String CLUSTER_TYPE_CONFIGURED = "CONFIGURED";
+  public static final String CLUSTER_TYPE_DYNAMIC = "DYNAMIC";
 
   private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-domain-inputs.yaml";
 
@@ -79,6 +81,7 @@ public class CreateDomainInputs {
         .adminPort("7002")
         .adminServerName("TestAdminServer")
         .clusterName("TestCluster")
+        .clusterType(CLUSTER_TYPE_DYNAMIC)
         .domainName("TestDomain")
         .domainUID("test-domain-uid")
         .javaOptions("TestJavaOptions")

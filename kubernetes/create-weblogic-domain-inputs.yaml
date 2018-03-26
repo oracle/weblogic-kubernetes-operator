@@ -14,8 +14,9 @@ domainName: base_domain
 # This id must be lowercase and unique across all domains in a Kubernetes cluster.
 #domainUID: domain1
 
-# Type of WebLogic Cluster (configured or dynamic)
-clusterType: dynamic
+# Type of WebLogic Cluster
+# Legal values are "CONFIGURED" or "DYNAMIC" 
+clusterType: DYNAMIC
 
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
