@@ -70,7 +70,7 @@ build:
   - install-packages:
       packages: tar gzip
   - java/maven:
-      goals: clean install
+      goals: clean package
       version: 3.5.2
       cache_repo: true
   - script:
@@ -87,16 +87,26 @@ build:
 test:
   steps:
   - script:
-    name: Test
+    name: Hello
     code: |
-      echo "Test Step"
+      echo "Running Maven integration-test:testAttestation goal ..."
+
+  - java/maven:
+      goals: integration-test:testAttestation
+      version: 3.5.2
+      cache_repo: true
 
 security-scan:
   steps:
   - script:
-    name: Security Scan
+    name: Hello
     code: |
-      echo "Security Scan Step"
+      echo "Running Maven verify:security-scan goal ..."
+
+  - java/maven:
+      goals: verify:security-scan
+      version: 3.5.2
+      cache_repo: true
 
 deploy-with-atz:
   steps:

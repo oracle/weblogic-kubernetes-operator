@@ -185,7 +185,7 @@
                   <execution>
                       <id>dependency_check</id> 
                       <goals>
-                          <goal>check</goal>
+                          <goal>security-scan</goal>
                       </goals>
                       <phase>verify</phase>
                   </execution>
@@ -216,18 +216,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                      <phase>verify</phase>
-                      <id>generateOccurrences</id> 
-                      <goals>
-                         <goal>generateOccurrences</goal>
-                      </goals>
-                      <configuration>
-                        <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
-                        <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
-                      </configuration>
-                    </execution>
-                    <execution>
-                        <phase>verify</phase>
+                        <phase>integration-test</phase>
                         <id>testAttestation</id>
                         <goals>
                             <goal>testAttestation</goal>
@@ -237,6 +226,17 @@
                             <projectId>${project.name}</projectId>
                             <resourceUrl>${project.url}</resourceUrl>
                         </configuration>
+                    </execution>
+                    <execution>
+                      <phase>verify</phase>
+                      <id>generateOccurrences</id>
+                      <goals>
+                         <goal>security-scan</goal>
+                      </goals>
+                      <configuration>
+                        <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
+                        <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
+                      </configuration>
                     </execution>
                 </executions>
                 <dependencies>
