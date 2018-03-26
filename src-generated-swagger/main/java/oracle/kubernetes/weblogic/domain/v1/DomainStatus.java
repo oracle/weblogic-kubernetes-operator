@@ -43,37 +43,13 @@ public class DomainStatus {
     @Expose
     private String reason;
     /**
-     * List of specific server instances that are available.
+     * Status of WebLogic servers in this domain.
      * 
      */
-    @SerializedName("availableServers")
+    @SerializedName("servers")
     @Expose
     @Valid
-    private List<String> availableServers = new ArrayList<String>();
-    /**
-     * List of specific server instances that are configured to be available but that are either not yet available or have failed.
-     * 
-     */
-    @SerializedName("unavailableServers")
-    @Expose
-    @Valid
-    private List<String> unavailableServers = new ArrayList<String>();
-    /**
-     * List of specific cluster instances where the configured number of replicas are now available.
-     * 
-     */
-    @SerializedName("availableClusters")
-    @Expose
-    @Valid
-    private List<String> availableClusters = new ArrayList<String>();
-    /**
-     * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
-     * 
-     */
-    @SerializedName("unavailableClusters")
-    @Expose
-    @Valid
-    private List<String> unavailableClusters = new ArrayList<String>();
+    private List<ServerStatus> servers = new ArrayList<ServerStatus>();
     /**
      * RFC 3339 date and time at which the operator started the domain.  This will be when the operator begins processing and will precede when the various servers or clusters are available.
      * 
@@ -161,106 +137,28 @@ public class DomainStatus {
     }
 
     /**
-     * List of specific server instances that are available.
-     * @return available servers
+     * Status of WebLogic servers in this domain.
+     * @return servers
      */
-    public List<String> getAvailableServers() {
-        return availableServers;
+    public List<ServerStatus> getServers() {
+        return servers;
     }
 
     /**
-     * List of specific server instances that are available.
-     * @param availableServers available servers
+     * Status of WebLogic servers in this domain.
+     * @param servers servers
      */
-    public void setAvailableServers(List<String> availableServers) {
-        this.availableServers = availableServers;
+    public void setServers(List<ServerStatus> servers) {
+        this.servers = servers;
     }
 
     /**
-     * List of specific server instances that are available.
-     * @param availableServers available servers
+     * Status of WebLogic servers in this domain.
+     * @param servers servers
      * @return this
      */
-    public DomainStatus withAvailableServers(List<String> availableServers) {
-        this.availableServers = availableServers;
-        return this;
-    }
-
-    /**
-     * List of specific server instances that are configured to be available but that are either not yet available or have failed.
-     * @return unavailable servers
-     */
-    public List<String> getUnavailableServers() {
-        return unavailableServers;
-    }
-
-    /**
-     * List of specific server instances that are configured to be available but that are either not yet available or have failed.
-     * @param unavailableServers unavailable servers
-     */
-    public void setUnavailableServers(List<String> unavailableServers) {
-        this.unavailableServers = unavailableServers;
-    }
-
-    /**
-     * List of specific server instances that are configured to be available but that are either not yet available or have failed.
-     * @param unavailableServers unavailable servers
-     * @return this
-     */
-    public DomainStatus withUnavailableServers(List<String> unavailableServers) {
-        this.unavailableServers = unavailableServers;
-        return this;
-    }
-
-    /**
-     * List of specific cluster instances where the configured number of replicas are now available.
-     * @return available clusters
-     */
-    public List<String> getAvailableClusters() {
-        return availableClusters;
-    }
-
-    /**
-     * List of specific cluster instances where the configured number of replicas are now available.
-     * @param availableClusters available clusters
-     */
-    public void setAvailableClusters(List<String> availableClusters) {
-        this.availableClusters = availableClusters;
-    }
-
-    /**
-     * List of specific cluster instances where the configured number of replicas are now available.
-     * @param availableClusters available clusters
-     * @return this
-     */
-    public DomainStatus withAvailableClusters(List<String> availableClusters) {
-        this.availableClusters = availableClusters;
-        return this;
-    }
-
-    /**
-     * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
-     * @return unavailable clusters
-     */
-    public List<String> getUnavailableClusters() {
-        return unavailableClusters;
-    }
-
-    /**
-     * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
-     * @param unavailableClusters unavailable clusters
-     */
-    public void setUnavailableClusters(List<String> unavailableClusters) {
-        this.unavailableClusters = unavailableClusters;
-    }
-
-    /**
-     * List of specific cluster instances to configured to be available but for which one or more of the necessary replicas are either not yet available or have failed.
-     * @param unavailableClusters unavailable clusters
-     * @return this
-     */
-    public DomainStatus withUnavailableClusters(List<String> unavailableClusters) {
-        this.unavailableClusters = unavailableClusters;
+    public DomainStatus withServers(List<ServerStatus> servers) {
+        this.servers = servers;
         return this;
     }
 
@@ -292,12 +190,12 @@ public class DomainStatus {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("conditions", conditions).append("message", message).append("reason", reason).append("availableServers", availableServers).append("unavailableServers", unavailableServers).append("availableClusters", availableClusters).append("unavailableClusters", unavailableClusters).append("startTime", startTime).toString();
+        return new ToStringBuilder(this).append("conditions", conditions).append("message", message).append("reason", reason).append("servers", servers).append("startTime", startTime).toString();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(availableServers).append(reason).append(unavailableServers).append(availableClusters).append(startTime).append(unavailableClusters).append(conditions).append(message).toHashCode();
+        return new HashCodeBuilder().append(reason).append(startTime).append(servers).append(conditions).append(message).toHashCode();
     }
 
     @Override
@@ -309,7 +207,7 @@ public class DomainStatus {
             return false;
         }
         DomainStatus rhs = ((DomainStatus) other);
-        return new EqualsBuilder().append(availableServers, rhs.availableServers).append(reason, rhs.reason).append(unavailableServers, rhs.unavailableServers).append(availableClusters, rhs.availableClusters).append(startTime, rhs.startTime).append(unavailableClusters, rhs.unavailableClusters).append(conditions, rhs.conditions).append(message, rhs.message).isEquals();
+        return new EqualsBuilder().append(reason, rhs.reason).append(startTime, rhs.startTime).append(servers, rhs.servers).append(conditions, rhs.conditions).append(message, rhs.message).isEquals();
     }
 
 }

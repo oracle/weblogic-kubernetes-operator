@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import io.kubernetes.client.ApiException;
@@ -92,8 +93,12 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
 
     LOGGER.exiting();
   }
-  
+
   static boolean isReady(V1Pod pod) {
+    return isReady(pod, false);
+  }
+  
+  static boolean isReady(V1Pod pod, boolean isStatusCheck) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       if ("Running".equals(status.getPhase())) {
@@ -103,7 +108,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
             if ("Ready".equals(cond.getType())) {
               if ("True".equals(cond.getStatus())) {
                 // Pod is Ready!
-                LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+                if (!isStatusCheck) {
+                  LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+                }
                 return true;
               }
             }

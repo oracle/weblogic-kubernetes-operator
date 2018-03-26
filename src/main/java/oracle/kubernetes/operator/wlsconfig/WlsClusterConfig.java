@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -15,8 +15,6 @@ import java.util.Map;
 
 /**
  * Contains configuration of a WLS cluster
- * <p>
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 public class WlsClusterConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -388,7 +386,7 @@ public class WlsClusterConfig {
 
     @Override
     public Step createStep(Step next) {
-      return new WlsConfigRetriever.UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
+      return new WlsRetriever.UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
     }
   }
 }

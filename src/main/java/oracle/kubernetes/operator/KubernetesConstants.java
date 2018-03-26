@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 /**
@@ -21,6 +22,8 @@ public interface KubernetesConstants {
   public static final String DOMAIN_PLURAL = "domains";
   public static final String DOMAIN_SINGULAR = "domain";
   public static final String DOMAIN_SHORT = "dom";
+  
+  public static final String CONTAINER_NAME = "weblogic-server";
   
   public static final String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-config-map";
 

@@ -343,8 +343,8 @@ public class WlsClusterConfigTest {
     WlsClusterConfig.DynamicClusterSizeConfigUpdate dynamicClusterSizeConfigUpdate =
       new WlsClusterConfig.DynamicClusterSizeConfigUpdate(wlsClusterConfig, clusterSize);
 
-    WlsConfigRetriever.UpdateDynamicClusterStep updateStep =
-      (WlsConfigRetriever.UpdateDynamicClusterStep) dynamicClusterSizeConfigUpdate.createStep(nextStep);
+    WlsRetriever.UpdateDynamicClusterStep updateStep =
+      (WlsRetriever.UpdateDynamicClusterStep) dynamicClusterSizeConfigUpdate.createStep(nextStep);
     assertSame(wlsClusterConfig, updateStep.wlsClusterConfig);
     assertEquals(clusterSize, updateStep.targetClusterSize);
     assertSame(nextStep, getNext(updateStep));

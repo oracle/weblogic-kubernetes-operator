@@ -43,7 +43,7 @@ public class SecretHelper {
   private final String namespace;
 
   public enum SecretType {
-    AdminServerCredentials
+    AdminCredentials
   }
 
   // Admin Server Credentials Type Secret
@@ -75,24 +75,24 @@ public class SecretHelper {
     LOGGER.entering();
 
     try {
-      if (secretType != SecretType.AdminServerCredentials) {
+      if (secretType != SecretType.AdminCredentials) {
         throw new IllegalArgumentException("Invalid secret type");
       } else if (secretName == null) {
         throw new IllegalArgumentException("Invalid secret name");
       }
 
-      LOGGER.info(MessageKeys.RETRIEVING_SECRET, secretName);
+      LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
 
       V1Secret secret = client.callBuilder().readSecret(secretName, namespace);
       if (secret == null || secret.getData() == null) {
-        LOGGER.info(MessageKeys.SECRET_NOT_FOUND, secretName);
+        LOGGER.warning(MessageKeys.SECRET_NOT_FOUND, secretName);
         LOGGER.exiting(null);
         return null;
       }
 
       return harvestAdminSecretData(secret);
     } catch (Throwable e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
+      LOGGER.severe(MessageKeys.EXCEPTION, e);
       return null;
     } finally {
       LOGGER.exiting();
@@ -125,23 +125,22 @@ public class SecretHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (secretType != SecretType.AdminServerCredentials) {
+      if (secretType != SecretType.AdminCredentials) {
         throw new IllegalArgumentException("Invalid secret type");
       } else if (secretName == null) {
         throw new IllegalArgumentException("Invalid secret name");
       }
 
-      LOGGER.info(MessageKeys.RETRIEVING_SECRET, secretName);
+      LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
       Step read = CallBuilder.create().readSecretAsync(secretName, namespace, new ResponseStep<V1Secret>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
-          NextAction nextAction = super.onFailure(packet, e, statusCode, responseHeaders);
-          if (nextAction.getNext() == null) {
-            // no further retries
-            LOGGER.info(MessageKeys.SECRET_NOT_FOUND, secretName);
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            LOGGER.warning(MessageKeys.SECRET_NOT_FOUND, secretName);
+            return doNext(packet);
           }
-          return nextAction;
+          return super.onFailure(packet, e, statusCode, responseHeaders);
         }
 
         @Override
@@ -164,13 +163,13 @@ public class SecretHelper {
     if (usernameBytes != null) {
       secretData.put(ADMIN_SERVER_CREDENTIALS_USERNAME, usernameBytes);
     } else {
-      LOGGER.info(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_USERNAME);
+      LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_USERNAME);
     }
 
     if (passwordBytes != null) {
       secretData.put(ADMIN_SERVER_CREDENTIALS_PASSWORD, passwordBytes);
     } else {
-      LOGGER.info(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_PASSWORD);
+      LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_PASSWORD);
     }
     return secretData;
   }

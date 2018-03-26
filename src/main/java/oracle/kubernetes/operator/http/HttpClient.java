@@ -125,21 +125,21 @@ public class HttpClient {
   }
 
   /**
-   * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at an admin server
+   * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at a server instance
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @param next Next processing step
    * @return step to create client
    */
-  public static Step createAuthenticatedClientForAdminServer(String namespace, String adminSecretName, Step next) {
-    return new AuthenticatedClientForAdminServerStep(namespace, adminSecretName, new WithSecretDataStep(next));
+  public static Step createAuthenticatedClientForServer(String namespace, String adminSecretName, Step next) {
+    return new AuthenticatedClientForServerStep(namespace, adminSecretName, new WithSecretDataStep(next));
   }
   
-  private static class AuthenticatedClientForAdminServerStep extends Step {
+  private static class AuthenticatedClientForServerStep extends Step {
     private final String namespace;
     private final String adminSecretName;
     
-    public AuthenticatedClientForAdminServerStep(String namespace, String adminSecretName, Step next) {
+    public AuthenticatedClientForServerStep(String namespace, String adminSecretName, Step next) {
       super(next);
       this.namespace = namespace;
       this.adminSecretName = adminSecretName;
@@ -147,7 +147,7 @@ public class HttpClient {
 
     @Override
     public NextAction apply(Packet packet) {
-      Step readSecret = SecretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, adminSecretName, namespace, next);
+      Step readSecret = SecretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, next);
       return doNext(readSecret, packet);
     }
   }
@@ -183,10 +183,10 @@ public class HttpClient {
    * @param adminSecretName Admin secret name
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClientForAdminServer(ClientHolder client, String namespace, String adminSecretName) {
+  public static HttpClient createAuthenticatedClientForServer(ClientHolder client, String namespace, String adminSecretName) {
     SecretHelper secretHelper = new SecretHelper(client, namespace);
     Map<String, byte[]> secretData =
-        secretHelper.getSecretData(SecretHelper.SecretType.AdminServerCredentials, adminSecretName);
+        secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
 
     byte[] username = null;
     byte[] password = null;
