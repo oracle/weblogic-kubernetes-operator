@@ -216,7 +216,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <phase>integration-test</phase>
+                        <phase>verify</phase>
                         <id>testAttestation</id>
                         <goals>
                             <goal>testAttestation</goal>
