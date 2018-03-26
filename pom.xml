@@ -185,7 +185,7 @@
                   <execution>
                       <id>dependency_check</id> 
                       <goals>
-                          <goal>security-scan</goal>
+                          <goal>check</goal>
                       </goals>
                       <phase>verify</phase>
                   </execution>
@@ -231,7 +231,7 @@
                       <phase>verify</phase>
                       <id>generateOccurrences</id>
                       <goals>
-                         <goal>security-scan</goal>
+                         <goal>generateOccurrences</goal>
                       </goals>
                       <configuration>
                         <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
