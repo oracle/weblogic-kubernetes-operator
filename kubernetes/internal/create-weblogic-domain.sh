@@ -258,7 +258,25 @@ function validateStartupControl {
       "AUTO")
       ;;
       *)
-        validationError "Invalid valid for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+        validationError "Invalid value for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+      ;;
+    esac
+  fi
+}
+
+#
+# Function to validate the cluster type value
+#
+function validateClusterType {
+  validateInputParamsSpecified clusterType
+  if [ ! -z "${clusterType}" ]; then
+    case ${clusterType} in
+      "CONFIGURED")
+      ;;
+      "DYNAMIC")
+      ;;
+      *)
+        validationError "Invalid value for clusterType: ${clusterType}. Valid values are 'CONFIGURED' and 'DYNAMIC'."
       ;;
     esac
   fi
@@ -362,6 +380,7 @@ function initialize {
   validateLoadBalancer
   initAndValidateOutputDir
   validateStartupControl
+  validateClusterType
   failIfValidationErrors
 }
 
@@ -466,7 +485,6 @@ function createYamlFiles {
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
-  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}

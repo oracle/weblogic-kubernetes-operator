@@ -290,6 +290,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         server_port        = %MANAGED_SERVER_PORT%
         cluster_name       = "%CLUSTER_NAME%"
         number_of_ms       = %NUMBER_OF_MS%
+        cluster_type       = "%CLUSTER_TYPE%"
         print('domain_name        : [%DOMAIN_NAME%]');
         print('admin_port         : [%ADMIN_PORT%]');
         set('Name', '%DOMAIN_NAME%')
