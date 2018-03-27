@@ -111,7 +111,7 @@ fi
 cat > cmds.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["spec"]["ports"]:
-  if i["name"] == "rest-https":
+  if i["name"] == "rest":
     print(i["port"])
 INPUT
 port=`echo ${STATUS} | python cmds.py`

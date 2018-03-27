@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: domain-%DOMAIN_UID%-scripts
+  name: %DOMAIN_UID%-create-weblogic-domain-job-config-map
   namespace: %NAMESPACE%
   labels:
     weblogic.domainUID: %DOMAIN_UID%
@@ -508,13 +508,13 @@ data:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: domain-%DOMAIN_UID%-job
+  name: %DOMAIN_UID%-create-weblogic-domain-job
   namespace: %NAMESPACE%
 spec:
   template:
     metadata:
       labels:
-        app: domain-%DOMAIN_UID%-job
+        app: %DOMAIN_UID%-create-weblogic-domain-job
         weblogic.domainUID: %DOMAIN_UID%
     spec:
       restartPolicy: Never
@@ -539,7 +539,7 @@ spec:
       volumes:
         - name: config-map-scripts
           configMap:
-            name: domain-%DOMAIN_UID%-scripts
+            name: %DOMAIN_UID%-create-weblogic-domain-job-config-map
         - name: pv-storage
           persistentVolumeClaim:
             claimName: %DOMAIN_UID%-weblogic-domain-pvc

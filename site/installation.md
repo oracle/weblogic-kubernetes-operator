@@ -216,10 +216,10 @@ The spec section provides details for the container that the operator will execu
       volumes:
       - name: operator-config-volume
         configMap:
-          name: operator-config-map
+          name: weblogic-operator-config-map
       - name: operator-secrets-volume
         secret:
-          weblogicCredentialsSecretName: operator-secrets
+          weblogicCredentialsSecretName: weblogic-operator-secrets
       # Uncomment this volume if using ELK integration:
       # - name: log-dir
       #   emptyDir:
@@ -248,7 +248,7 @@ spec:
   ports:
     - port: 8081
       nodePort: 31001
-      name: rest-https
+      name: rest
     # - port: 30999
     #   nodePort: 30999
     #   name: debug
@@ -269,7 +269,7 @@ spec:
     app: weblogic-operator
   ports:
     - port: 8082
-      name: rest-https
+      name: rest
 ```
 
 This section creates a ConfigMap that passes configuration information to the operator including the list of namespaces in which the operator will manage domains, the service account that the operator will use to authenticate to the Kubernetes API server, and the certificates that the operator’s REST server will use.
@@ -279,7 +279,7 @@ This section creates a ConfigMap that passes configuration information to the op
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: operator-config-map
+  name: weblogic-operator-config-map
   namespace: weblogic-operator
 data:
   serviceaccount: weblogic-operator
@@ -295,7 +295,7 @@ This section defines a secret that contains the keys needed by the operator for 
 apiVersion: v1
 kind: Secret
 metadata:
-  name: operator-secrets
+  name: weblogic-operator-secrets
   namespace: weblogic-operator
 type: Opaque
 data:
