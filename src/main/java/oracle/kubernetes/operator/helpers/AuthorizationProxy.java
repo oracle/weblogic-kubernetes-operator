@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 
 /**
  * Delegate authorization decisions to Kubernetes ABAC and/or RBAC.
@@ -60,7 +61,6 @@ public class AuthorizationProxy {
    * specified resource in the specified scope.  Call this version of the method when you
    * know that the principal is not a member of any groups.
    *
-   * @param client        The Kubernetes client api.
    * @param principal     The user, group or service account.
    * @param operation     The operation to be authorized.
    * @param resource      The kind of resource on which the operation is to be authorized.
@@ -69,15 +69,14 @@ public class AuthorizationProxy {
    * @param namespaceName name of the namespace if scope is namespace else null.
    * @return true if the operation is allowed, or false if not.
    */
-  public boolean check(ClientHolder client, String principal, Operation operation, Resource resource, String resourceName, Scope scope, String namespaceName) {
-    return check(client, principal, null, operation, resource, resourceName, scope, namespaceName);
+  public boolean check(String principal, Operation operation, Resource resource, String resourceName, Scope scope, String namespaceName) {
+    return check(principal, null, operation, resource, resourceName, scope, namespaceName);
   }
 
   /**
    * Check if the specified principal is allowed to perform the specified operation on the
    * specified resource in the specified scope.
    *
-   * @param client        The Kubernetes client api.
    * @param principal     The user, group or service account.
    * @param groups        The groups that principal is a member of.
    * @param operation     The operation to be authorized.
@@ -87,11 +86,12 @@ public class AuthorizationProxy {
    * @param namespaceName name of the namespace if scope is namespace else null.
    * @return true if the operation is allowed, or false if not.
    */
-  public boolean check(ClientHolder client, String principal, final List<String> groups, Operation operation, Resource resource, String resourceName, Scope scope, String namespaceName) {
+  public boolean check(String principal, final List<String> groups, Operation operation, Resource resource, String resourceName, Scope scope, String namespaceName) {
     LOGGER.entering();
     V1SubjectAccessReview subjectAccessReview = prepareSubjectAccessReview(principal, groups, operation, resource, resourceName, scope, namespaceName);
     try {
-      subjectAccessReview = client.callBuilder().createSubjectAccessReview(subjectAccessReview);
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      subjectAccessReview = factory.create().createSubjectAccessReview(subjectAccessReview);
     } catch (ApiException e) {
       LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
       LOGGER.exiting(Boolean.FALSE);

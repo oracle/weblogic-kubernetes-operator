@@ -26,6 +26,8 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.TuningParameters.PodTuning;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
@@ -34,6 +36,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -49,24 +52,6 @@ public class PodHelper {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static int readinessProbeInitialDelaySeconds = 2;
-  private static int readinessProbeTimeoutSeconds = 5;
-  private static int readinessProbePeriodSeconds = 10;
-  private static int livenessProbeInitialDelaySeconds = 10;
-  private static int livenessProbeTimeoutSeconds = 5;
-  private static int livenessProbePeriodSeconds = 10;
-  
-  public static void setTuningParameters(
-      int readinessProbeInitialDelaySeconds, int readinessProbeTimeoutSeconds, int readinessProbePeriodSeconds,
-      int livenessProbeInitialDelaySeconds, int livenessProbeTimeoutSeconds, int livenessProbePeriodSeconds) {
-    PodHelper.readinessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
-    PodHelper.readinessProbeTimeoutSeconds = readinessProbeTimeoutSeconds;
-    PodHelper.readinessProbePeriodSeconds = readinessProbePeriodSeconds;
-    PodHelper.livenessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
-    PodHelper.livenessProbeTimeoutSeconds = livenessProbeTimeoutSeconds;
-    PodHelper.livenessProbePeriodSeconds = livenessProbePeriodSeconds;
-  }
-  
   private PodHelper() {}
   
   /**
@@ -86,7 +71,8 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      
+      TuningParameters configMapHelper = packet.getSPI(TuningParameters.class);
+
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
       DomainSpec spec = dom.getSpec();
@@ -178,15 +164,17 @@ public class PodHelper {
 
       container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/startServer.sh");
 
+      PodTuning tuning = configMapHelper.getPodTuning();
+      
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
       readinessAction.addCommandItem("/weblogic-operator/scripts/readinessProbe.sh");
       readinessAction.addCommandItem(weblogicDomainName);
       readinessAction.addCommandItem(spec.getAsName());
       readinessProbe.exec(readinessAction);
-      readinessProbe.setInitialDelaySeconds(readinessProbeInitialDelaySeconds);
-      readinessProbe.setTimeoutSeconds(readinessProbeTimeoutSeconds);
-      readinessProbe.setPeriodSeconds(readinessProbePeriodSeconds);
+      readinessProbe.setInitialDelaySeconds(tuning.readinessProbeInitialDelaySeconds);
+      readinessProbe.setTimeoutSeconds(tuning.readinessProbeTimeoutSeconds);
+      readinessProbe.setPeriodSeconds(tuning.readinessProbePeriodSeconds);
       readinessProbe.setFailureThreshold(1); // must be 1
       container.readinessProbe(readinessProbe);
 
@@ -196,9 +184,9 @@ public class PodHelper {
       livenessAction.addCommandItem(weblogicDomainName);
       livenessAction.addCommandItem(spec.getAsName());
       livenessProbe.exec(livenessAction);
-      livenessProbe.setInitialDelaySeconds(livenessProbeInitialDelaySeconds);
-      livenessProbe.setTimeoutSeconds(livenessProbeTimeoutSeconds);
-      livenessProbe.setPeriodSeconds(livenessProbePeriodSeconds);
+      livenessProbe.setInitialDelaySeconds(tuning.livenessProbeInitialDelaySeconds);
+      livenessProbe.setTimeoutSeconds(tuning.livenessProbeTimeoutSeconds);
+      livenessProbe.setPeriodSeconds(tuning.livenessProbePeriodSeconds);
       livenessProbe.setFailureThreshold(1); // must be 1
       container.livenessProbe(livenessProbe);
 
@@ -213,7 +201,6 @@ public class PodHelper {
       }
 
       // Add internal-weblogic-operator-service certificate to Admin Server pod
-      ConfigMapConsumer configMapHelper = packet.getSPI(ConfigMapConsumer.class);
       String internalOperatorCert = configMapHelper.get(INTERNAL_OPERATOR_CERT_FILE);
       addEnvVar(container, INTERNAL_OPERATOR_CERT_ENV, internalOperatorCert);
 
@@ -252,7 +239,8 @@ public class PodHelper {
       ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Pod
-      Step read = CallBuilder.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -266,7 +254,7 @@ public class PodHelper {
         public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = CallBuilder.create().createPodAsync(namespace, adminPod, new ResponseStep<V1Pod>(next) {
+            Step create = factory.create().createPodAsync(namespace, adminPod, new ResponseStep<V1Pod>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -332,7 +320,8 @@ public class PodHelper {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       // Set to null so that watcher doesn't recreate pod with old spec
       sko.getPod().set(null);
-      Step delete = CallBuilder.create().deletePodAsync(podName, namespace, deleteOptions, new ResponseStep<V1Status>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step delete = factory.create().deletePodAsync(podName, namespace, deleteOptions, new ResponseStep<V1Status>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -345,7 +334,7 @@ public class PodHelper {
         @Override
         public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
             Map<String, List<String>> responseHeaders) {
-          Step create = CallBuilder.create().createPodAsync(namespace, newPod, new ResponseStep<V1Pod>(next) {
+          Step create = factory.create().createPodAsync(namespace, newPod, new ResponseStep<V1Pod>(next) {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                 Map<String, List<String>> responseHeaders) {
@@ -458,7 +447,8 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      
+      TuningParameters configMapHelper = packet.getSPI(TuningParameters.class);
+
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
       DomainSpec spec = dom.getSpec();
@@ -562,15 +552,17 @@ public class PodHelper {
 
       container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/startServer.sh");
 
+      PodTuning tuning = configMapHelper.getPodTuning();
+      
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
       readinessAction.addCommandItem("/weblogic-operator/scripts/readinessProbe.sh");
       readinessAction.addCommandItem(weblogicDomainName);
       readinessAction.addCommandItem(weblogicServerName);
       readinessProbe.exec(readinessAction);
-      readinessProbe.setInitialDelaySeconds(readinessProbeInitialDelaySeconds);
-      readinessProbe.setTimeoutSeconds(readinessProbeTimeoutSeconds);
-      readinessProbe.setPeriodSeconds(readinessProbePeriodSeconds);
+      readinessProbe.setInitialDelaySeconds(tuning.readinessProbeInitialDelaySeconds);
+      readinessProbe.setTimeoutSeconds(tuning.readinessProbeTimeoutSeconds);
+      readinessProbe.setPeriodSeconds(tuning.readinessProbePeriodSeconds);
       readinessProbe.setFailureThreshold(1); // must be 1
       container.readinessProbe(readinessProbe);
 
@@ -580,9 +572,9 @@ public class PodHelper {
       livenessAction.addCommandItem(weblogicDomainName);
       livenessAction.addCommandItem(weblogicServerName);
       livenessProbe.exec(livenessAction);
-      livenessProbe.setInitialDelaySeconds(livenessProbeInitialDelaySeconds);
-      livenessProbe.setTimeoutSeconds(livenessProbeTimeoutSeconds);
-      livenessProbe.setPeriodSeconds(livenessProbePeriodSeconds);
+      livenessProbe.setInitialDelaySeconds(tuning.livenessProbeInitialDelaySeconds);
+      livenessProbe.setTimeoutSeconds(tuning.livenessProbeTimeoutSeconds);
+      livenessProbe.setPeriodSeconds(tuning.livenessProbePeriodSeconds);
       livenessProbe.setFailureThreshold(1); // must be 1
       container.livenessProbe(livenessProbe);
 
@@ -627,7 +619,8 @@ public class PodHelper {
       ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify there existing Pod
-      Step read = CallBuilder.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -641,7 +634,7 @@ public class PodHelper {
         public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = CallBuilder.create().createPodAsync(namespace, pod, new ResponseStep<V1Pod>(next) {
+            Step create = factory.create().createPodAsync(namespace, pod, new ResponseStep<V1Pod>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -747,7 +740,8 @@ public class PodHelper {
       // Set pod to null so that watcher doesn't try to recreate pod
       V1Pod oldPod = sko.getPod().getAndSet(null);
       if (oldPod != null) {
-        return doNext(CallBuilder.create().deletePodAsync(oldPod.getMetadata().getName(), namespace, deleteOptions, new ResponseStep<V1Status>(next) {
+        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        return doNext(factory.create().deletePodAsync(oldPod.getMetadata().getName(), namespace, deleteOptions, new ResponseStep<V1Status>(next) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode,
               Map<String, List<String>> responseHeaders) {

@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -20,9 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IngressWatcher extends Watcher<V1beta1Ingress> {
   private final String ns;
 
-  public static IngressWatcher create(String ns, String initialResourceVersion, WatchListener<V1beta1Ingress> listener, AtomicBoolean isStopping) {
+  public static IngressWatcher create(ScheduledExecutorService threadPool, String ns, String initialResourceVersion, WatchListener<V1beta1Ingress> listener, AtomicBoolean isStopping) {
     IngressWatcher watcher = new IngressWatcher(ns, initialResourceVersion, listener, isStopping);
-    watcher.start("Thread-IngressWatcher-" + ns);
+    watcher.start(threadPool);
     return watcher;
   }
 

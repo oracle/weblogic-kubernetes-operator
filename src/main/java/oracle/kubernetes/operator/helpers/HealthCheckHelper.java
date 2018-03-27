@@ -12,6 +12,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,7 +25,6 @@ import java.util.Map;
 public class HealthCheckHelper {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private ClientHolder client;
   private final String operatorNamespace;
   private final Collection<String> targetNamespaces;
 
@@ -129,13 +129,11 @@ public class HealthCheckHelper {
 
   /**
    * Constructor.
-   * @param client Object to access APIs
    * @param operatorNamespace Scope for object names and authorization
    * @param targetNamespaces If 'true', any output is pretty printed
    */
-  public HealthCheckHelper(ClientHolder client, String operatorNamespace, Collection<String> targetNamespaces) {
+  public HealthCheckHelper(String operatorNamespace, Collection<String> targetNamespaces) {
 
-    this.client = client;
     this.operatorNamespace = operatorNamespace;
     this.targetNamespaces = targetNamespaces;
 
@@ -203,7 +201,7 @@ public class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         for (String ns : targetNamespaces) {
-          if (!ap.check(client, fullName, op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
+          if (!ap.check(fullName, op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
             logHealthCheckEvent(MessageKeys.VERIFY_ACCESS_DENIED, fullName, op, r);
           }
         }
@@ -213,7 +211,7 @@ public class HealthCheckHelper {
     for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
-        if (!ap.check(client, fullName, op, r, null, AuthorizationProxy.Scope.cluster, null)) {
+        if (!ap.check(fullName, op, r, null, AuthorizationProxy.Scope.cluster, null)) {
           logHealthCheckEvent(MessageKeys.VERIFY_ACCESS_DENIED, fullName, op, r);
         }
       }
@@ -250,7 +248,8 @@ public class HealthCheckHelper {
     int major = 0;
     int minor = 0;
     try {
-      info = client.getVersionApiClient().getCode();
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      info = factory.create().readVersionCode();
 
       String gitVersion = info.getGitVersion();
       major = Integer.parseInt(info.getMajor());
@@ -298,10 +297,11 @@ public class HealthCheckHelper {
    * @throws ApiException exception for k8s API
    */
   private HashMap<String, Domain> verifyDomainUidUniqueness() throws ApiException {
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
 
     HashMap<String, Domain> domainUIDMap = new HashMap<>();
     for (String namespace : targetNamespaces) {
-      DomainList domainList = client.callBuilder().listDomain(namespace);
+      DomainList domainList = factory.create().listDomain(namespace);
 
       LOGGER.info(MessageKeys.NUMBER_OF_DOMAINS_IN_NAMESPACE, domainList.getItems().size(), namespace);
 
@@ -325,8 +325,9 @@ public class HealthCheckHelper {
    * @throws ApiException exception for k8s API
    */
   private void verifyPersistentVolume(HashMap<String, Domain> domainUIDMap) throws ApiException {
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
 
-    V1PersistentVolumeList pvList = client.callBuilder().listPersistentVolume();
+    V1PersistentVolumeList pvList = factory.create().listPersistentVolume();
 
     for (Domain domain : domainUIDMap.values()) {
       LOGGER.finest(MessageKeys.WEBLOGIC_DOMAIN, domain.toString());

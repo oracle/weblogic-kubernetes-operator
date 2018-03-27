@@ -10,9 +10,12 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.VersionInfo;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.SecretHelper;
+import oracle.kubernetes.operator.work.ContainerResolver;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,36 +41,27 @@ public class SecretHelperTest {
 
   @Before
   public void setUp() throws Exception {
-    ClientHolder client = ClientHelper.getInstance().take();
-    try {
-      // Determine if 1.8 since some bugs with kubernetes-client / java and secrets
-      VersionInfo verInfo = client.getVersionApiClient().getCode();
-      if ("1".equals(verInfo.getMajor()) && "8".equals(verInfo.getMinor())) {
-        isVersion18 = true;
-      }
-
-      createNamespace(client, UNIT_NAMESPACE);
-      createSecret(client, SECRET_NAME, UNIT_NAMESPACE);
-      createInvalidSecret(client, INVALID_SECRET_NAME, UNIT_NAMESPACE);
-      createSecret(client, SECRET_NAME, "default");
-
-      defaultSecretHelper = new SecretHelper(client, "default");
-      unitSecretHelper = new SecretHelper(client, UNIT_NAMESPACE);
-    } finally {
-      ClientHelper.getInstance().recycle(client);
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    // Determine if 1.8 since some bugs with kubernetes-client / java and secrets
+    VersionInfo verInfo = factory.create().readVersionCode();
+    if ("1".equals(verInfo.getMajor()) && "8".equals(verInfo.getMinor())) {
+      isVersion18 = true;
     }
+
+    createNamespace(UNIT_NAMESPACE);
+    createSecret(SECRET_NAME, UNIT_NAMESPACE);
+    createInvalidSecret(INVALID_SECRET_NAME, UNIT_NAMESPACE);
+    createSecret(SECRET_NAME, "default");
+
+    defaultSecretHelper = new SecretHelper("default");
+    unitSecretHelper = new SecretHelper(UNIT_NAMESPACE);
   }
 
   @After
   public void tearDown() throws Exception {
-    ClientHolder client = ClientHelper.getInstance().take();
-    try {
-      // Delete the secret if we created one.
-      deleteSecret(client, SECRET_NAME, UNIT_NAMESPACE);
-      deleteSecret(client, INVALID_SECRET_NAME, UNIT_NAMESPACE);
-    } finally {
-      ClientHelper.getInstance().recycle(client);
-    }
+    // Delete the secret if we created one.
+    deleteSecret(SECRET_NAME, UNIT_NAMESPACE);
+    deleteSecret(INVALID_SECRET_NAME, UNIT_NAMESPACE);
   }
 
   @Test
@@ -134,7 +128,6 @@ public class SecretHelperTest {
         "Unexpected secret data returned for " + secretName + " in unit namespace",
         secretData);
 
-
     // Non-existent secret
 
     secretName = NOT_EXIST_SECRET_NAME;
@@ -143,16 +136,14 @@ public class SecretHelperTest {
     Assert.assertNull(
         "Secret data not expected for " + secretName + "in unit namespace",
         secretData);
-
-
   }
 
-
   // Create a named secret with username / password in specified name
-  private V1Secret createSecret(ClientHolder client, String name, String namespace) throws Exception {
+  private V1Secret createSecret(String name, String namespace) throws Exception {
 
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     try {
-      V1Secret existing = client.getCoreApiClient().readNamespacedSecret(name, namespace, PRETTY, true, true);
+      V1Secret existing = factory.create().readSecret(name, namespace);
       if (existing != null)
         return existing;
     } catch (ApiException ignore) {
@@ -179,7 +170,7 @@ public class SecretHelperTest {
     data.put(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD, PASSWORD.getBytes());
     body.setData(data);
     try {
-      return client.getCoreApiClient().createNamespacedSecret(namespace, body, PRETTY);
+      return factory.create().createSecret(namespace, body);
     } catch (Exception e) {
       e.printStackTrace(System.out);
       throw e;
@@ -188,10 +179,11 @@ public class SecretHelperTest {
 
 
   // Create a named secret with no username / password in specified namespace
-  private V1Secret createInvalidSecret(ClientHolder client, String name, String namespace) throws Exception {
+  private V1Secret createInvalidSecret(String name, String namespace) throws Exception {
 
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     try {
-      V1Secret existing = client.getCoreApiClient().readNamespacedSecret(name, namespace, PRETTY, true, true);
+      V1Secret existing = factory.create().readSecret(name, namespace);
       if (existing != null)
         return existing;
     } catch (ApiException ignore) {
@@ -213,24 +205,25 @@ public class SecretHelperTest {
     meta.setNamespace(namespace);
     body.setMetadata(meta);
 
-    return client.getCoreApiClient().createNamespacedSecret(namespace, body, PRETTY);
+    return factory.create().createSecret(namespace, body);
   }
 
 
   // Delete a named secret from the specified namespace
-  private V1Status deleteSecret(ClientHolder client, String name, String namespace) throws Exception {
+  private V1Status deleteSecret(String name, String namespace) throws Exception {
     if (isVersion18)
       return null;
 
-    return client.getCoreApiClient().deleteNamespacedSecret(name, namespace, new V1DeleteOptions(), PRETTY,
-        30, true, null);
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    return factory.create().deleteSecret(name, namespace, new V1DeleteOptions());
   }
 
   // Create a named namespace
-  private V1Namespace createNamespace(ClientHolder client, String name) throws Exception {
+  private V1Namespace createNamespace(String name) throws Exception {
 
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     try {
-      V1Namespace existing = client.getCoreApiClient().readNamespace(name, PRETTY, true, true);
+      V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)
         return existing;
     } catch (ApiException ignore) {
@@ -248,7 +241,7 @@ public class SecretHelperTest {
     meta.setName(name);
     body.setMetadata(meta);
 
-    return client.getCoreApiClient().createNamespace(body, PRETTY);
+    return factory.create().createNamespace(body);
   }
 
 }

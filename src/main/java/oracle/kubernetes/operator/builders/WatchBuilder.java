@@ -3,16 +3,21 @@
 
 package oracle.kubernetes.operator.builders;
 
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
+import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
 
 import com.squareup.okhttp.Call;
 
@@ -22,12 +27,6 @@ import java.util.function.BiFunction;
 
 @SuppressWarnings("WeakerAccess")
 public class WatchBuilder {
-    private static int watchLifetime = 30;
-    
-    public static void setTuningParameters(int watchLifetime) {
-      WatchBuilder.watchLifetime = watchLifetime;
-    }
-
     /** Always true for watches. */
     private static final boolean WATCH = true;
 
@@ -36,16 +35,19 @@ public class WatchBuilder {
 
     private static WatchFactory FACTORY = new WatchFactoryImpl();
 
-    private ClientHolder clientHolder;
+    private ApiClient client;
     private CallParamsImpl callParams = new CallParamsImpl();
 
     public interface WatchFactory {
-        <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException;
+        <T> WatchI<T> createWatch(ApiClient client, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException;
     }
 
-    public WatchBuilder(ClientHolder clientHolder) {
-        this.clientHolder = clientHolder;
-        callParams.setTimeoutSeconds(watchLifetime);
+    public WatchBuilder(ApiClient client) {
+        this.client = client;
+        TuningParameters tuning = ContainerResolver.getInstance().getContainer().getSPI(TuningParameters.class);
+        if (tuning != null) {
+          callParams.setTimeoutSeconds(tuning.getWatchTuning().watchLifetime);
+        }
     }
 
     private static Type getType(Class<?> responseBodyType) {
@@ -74,10 +76,10 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1Service> createServiceWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
+        return FACTORY.createWatch(client, callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
     }
 
-    private class ListNamespacedServiceCall implements BiFunction<ClientHolder, CallParams, Call> {
+    private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
         private String namespace;
 
         ListNamespacedServiceCall(String namespace) {
@@ -85,9 +87,9 @@ public class WatchBuilder {
         }
 
         @Override
-        public Call apply(ClientHolder clientHolder, CallParams callParams) {
+        public Call apply(ApiClient client, CallParams callParams) {
             try {
-                return clientHolder.getCoreApiClient().listNamespacedServiceCall(namespace,
+                return new CoreV1Api(client).listNamespacedServiceCall(namespace,
                               callParams.getPretty(), START_LIST,
                               callParams.getFieldSelector(), callParams.getIncludeUninitialized(), callParams.getLabelSelector(),
                               callParams.getLimit(), callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
@@ -104,10 +106,10 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1Pod> createPodWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, V1Pod.class, new ListPodCall(namespace));
+        return FACTORY.createWatch(client, callParams, V1Pod.class, new ListPodCall(namespace));
     }
 
-    private class ListPodCall implements BiFunction<ClientHolder, CallParams, Call> {
+    private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
         private String namespace;
 
         ListPodCall(String namespace) {
@@ -115,9 +117,9 @@ public class WatchBuilder {
         }
 
         @Override
-        public Call apply(ClientHolder clientHolder, CallParams callParams) {
+        public Call apply(ApiClient client, CallParams callParams) {
             try {
-                return clientHolder.getCoreApiClient().listNamespacedPodCall(namespace, callParams.getPretty(),
+                return new CoreV1Api(client).listNamespacedPodCall(namespace, callParams.getPretty(),
                             START_LIST, callParams.getFieldSelector(), callParams.getIncludeUninitialized(),
                             callParams.getLabelSelector(), callParams.getLimit(), callParams.getResourceVersion(),
                             callParams.getTimeoutSeconds(), WATCH, null, null);
@@ -134,10 +136,10 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1beta1Ingress> createIngressWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, V1beta1Ingress.class, new ListIngressCall(namespace));
+        return FACTORY.createWatch(client, callParams, V1beta1Ingress.class, new ListIngressCall(namespace));
     }
 
-    private class ListIngressCall implements BiFunction<ClientHolder, CallParams, Call> {
+    private class ListIngressCall implements BiFunction<ApiClient, CallParams, Call> {
         private String namespace;
 
         ListIngressCall(String namespace) {
@@ -145,9 +147,9 @@ public class WatchBuilder {
         }
 
         @Override
-        public Call apply(ClientHolder clientHolder, CallParams callParams) {
+        public Call apply(ApiClient client, CallParams callParams) {
             try {
-                return clientHolder.getExtensionsV1beta1ApiClient().listNamespacedIngressCall(namespace,
+                return new ExtensionsV1beta1Api(client).listNamespacedIngressCall(namespace,
                             callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
                             callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
                             callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
@@ -164,10 +166,10 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<Domain> createDomainWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, Domain.class, new ListDomainsCall(namespace));
+        return FACTORY.createWatch(client, callParams, Domain.class, new ListDomainsCall(namespace));
     }
 
-    private class ListDomainsCall implements BiFunction<ClientHolder, CallParams, Call> {
+    private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
         private String namespace;
 
         ListDomainsCall(String namespace) {
@@ -175,9 +177,9 @@ public class WatchBuilder {
         }
 
         @Override
-        public Call apply(ClientHolder clientHolder, CallParams callParams) {
+        public Call apply(ApiClient client, CallParams callParams) {
             try {
-                return clientHolder.getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainCall(namespace,
+                return new WeblogicApi(client).listWebLogicOracleV1NamespacedDomainCall(namespace,
                             callParams.getPretty(), START_LIST, callParams.getFieldSelector(),
                             callParams.getIncludeUninitialized(), callParams.getLabelSelector(), callParams.getLimit(),
                             callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
@@ -194,10 +196,10 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(clientHolder, callParams, V1ConfigMap.class, new ListNamespacedConfigMapCall(namespace));
+        return FACTORY.createWatch(client, callParams, V1ConfigMap.class, new ListNamespacedConfigMapCall(namespace));
     }
 
-    private class ListNamespacedConfigMapCall implements BiFunction<ClientHolder, CallParams, Call> {
+    private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
         private String namespace;
 
         ListNamespacedConfigMapCall(String namespace) {
@@ -205,9 +207,9 @@ public class WatchBuilder {
         }
 
         @Override
-        public Call apply(ClientHolder clientHolder, CallParams callParams) {
+        public Call apply(ApiClient client, CallParams callParams) {
             try {
-                return clientHolder.getCoreApiClient().listNamespacedConfigMapCall(namespace,
+                return new CoreV1Api(client).listNamespacedConfigMapCall(namespace,
                               callParams.getPretty(), START_LIST,
                               callParams.getFieldSelector(), callParams.getIncludeUninitialized(), callParams.getLabelSelector(),
                               callParams.getLimit(), callParams.getResourceVersion(), callParams.getTimeoutSeconds(), WATCH, null, null);
@@ -266,13 +268,11 @@ public class WatchBuilder {
         return this;
     }
 
-    @SuppressWarnings("unused")
     public WatchBuilder withProgressListener(ProgressResponseBody.ProgressListener progressListener) {
         callParams.setProgressListener(progressListener);
         return this;
     }
 
-    @SuppressWarnings("unused")
     public WatchBuilder withProgressRequestListener(ProgressRequestBody.ProgressRequestListener progressRequestListener) {
         callParams.setProgressRequestListener(progressRequestListener);
         return this;
@@ -280,9 +280,9 @@ public class WatchBuilder {
 
     static class WatchFactoryImpl implements WatchFactory {
         @Override
-        public <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
+        public <T> WatchI<T> createWatch(ApiClient client, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
             try {
-                return new WatchImpl<T>(Watch.createWatch(clientHolder.getApiClient(), function.apply(clientHolder, callParams), getType(responseBodyType)));
+                return new WatchImpl<T>(Watch.createWatch(client, function.apply(client, callParams), getType(responseBodyType)));
             } catch (UncheckedApiException e) {
                 throw e.getCause();
             }

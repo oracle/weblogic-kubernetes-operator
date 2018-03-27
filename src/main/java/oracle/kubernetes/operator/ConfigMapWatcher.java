@@ -9,6 +9,7 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -18,9 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
   private final String ns;
 
-  public static ConfigMapWatcher create(String ns, String initialResourceVersion, WatchListener<V1ConfigMap> listener, AtomicBoolean isStopping) {
+  public static ConfigMapWatcher create(ScheduledExecutorService threadPool, String ns, String initialResourceVersion, WatchListener<V1ConfigMap> listener, AtomicBoolean isStopping) {
     ConfigMapWatcher watcher = new ConfigMapWatcher(ns, initialResourceVersion, listener, isStopping);
-    watcher.start("Thread-ConfigMapWatcher-" + ns);
+    watcher.start(threadPool);
     return watcher;
   }
 

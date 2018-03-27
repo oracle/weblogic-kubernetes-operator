@@ -12,11 +12,13 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -42,15 +45,16 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   
   /**
    * Factory for PodWatcher
+   * @param theradPool executor
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
    * @param listener Callback for watch events
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
-  public static PodWatcher create(String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
+  public static PodWatcher create(ScheduledExecutorService threadPool, String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
     PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, listener, isStopping);
-    watcher.start("Thread-PodWatcher-" + ns);
+    watcher.start(threadPool);
     return watcher;
   }
 
@@ -188,7 +192,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         readyCallbackRegistrations.put(metadata.getName(), ready);
 
         // Timing window -- pod may have come ready before registration for callback
-        fiber.createChildFiber().start(CallBuilder.create().readPodAsync(
+        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        fiber.createChildFiber().start(factory.create().readPodAsync(
             metadata.getName(), metadata.getNamespace(), new ResponseStep<V1Pod>(null) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,

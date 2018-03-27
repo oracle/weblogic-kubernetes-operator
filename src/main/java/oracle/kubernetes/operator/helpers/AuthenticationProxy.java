@@ -10,6 +10,7 @@ import io.kubernetes.client.models.V1TokenReviewStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 
 /**
  * Delegate authentication decisions to Kubernetes.
@@ -22,26 +23,26 @@ public class AuthenticationProxy {
   /**
    * Check if the specified access token can be authenticated
    *
-   * @param client The Kubernetes client api.
    * @param principal The user, group or service account.
    * @param token  The access token that identifies the user.
    * @return V1TokenReviewStatus containing either info about the authenticated user or
    * an error explaining why the user couldn't be authenticated
    */
-  public V1TokenReviewStatus check(ClientHolder client, String principal, String token) {
+  public V1TokenReviewStatus check(String principal, String token) {
 
     LOGGER.entering(principal); // Don't expose the token since it's a credential
 
     V1TokenReview result = null;
     try {
-      boolean allowed = authorizationProxy.check(client, principal,
+      boolean allowed = authorizationProxy.check(principal,
           AuthorizationProxy.Operation.create,
           AuthorizationProxy.Resource.tokenreviews,
           null,
           AuthorizationProxy.Scope.cluster,
           null);
       if (allowed) {
-        result = client.callBuilder().createTokenReview(prepareTokenReview(token));
+        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        result = factory.create().createTokenReview(prepareTokenReview(token));
       } else {
         LOGGER.info(MessageKeys.CANNOT_CREATE_TOKEN_REVIEW);
       }

@@ -3,14 +3,14 @@
 
 package oracle.kubernetes.operator;
 
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -18,6 +18,9 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
@@ -38,8 +41,7 @@ abstract class Watcher<T> {
   private String resourceVersion;
   private AtomicBoolean stopping;
   private WatchListener<T> listener;
-  private ClientHolder clientHolder;
-  private Thread thread;
+  private Future<?> future;
 
   /**
    * Constructs a watcher without specifying a listener. Needed when the listener is the watch subclass itself.
@@ -67,9 +69,10 @@ abstract class Watcher<T> {
    */
   void waitForExit() {
     try {
-          thread.join();
-      } catch (InterruptedException ignored) {
-      }
+      future.get();
+    } catch (InterruptedException ignored) {
+    } catch (ExecutionException e) {
+    }
   }
 
   /**
@@ -83,17 +86,13 @@ abstract class Watcher<T> {
   /**
    * Kick off the watcher processing that runs in a separate thread.
    */
-  void start(String threadName) {
-    assert clientHolder == null : "Watcher thread is already active";
-    thread = new Thread(this::doWatch);
-    thread.setName(threadName);
-    thread.setDaemon(true);
-    thread.start();
+  void start(ExecutorService threadPool) {
+    future = threadPool.submit(this::doWatch);
   }
 
   private void doWatch() {
-    ClientHelper helper = ClientHelper.getInstance();
-    clientHolder = helper.take();
+    ClientPool helper = ClientPool.getInstance();
+    ApiClient client = helper.take();
     try {
       setIsDraining(false);
 
@@ -101,11 +100,10 @@ abstract class Watcher<T> {
         if (isStopping())
           setIsDraining(true);
         else
-          watchForEvents();
+          watchForEvents(client);
       }
     } finally {
-      helper.recycle(clientHolder);
-      clientHolder = null;
+      helper.recycle(client);
     }
   }
 
@@ -123,8 +121,8 @@ abstract class Watcher<T> {
     return stopping.get();
   }
 
-  private void watchForEvents() {
-    try (WatchI<T> watch = initiateWatch(new WatchBuilder(clientHolder).withResourceVersion(resourceVersion))) {
+  private void watchForEvents(ApiClient client) {
+    try (WatchI<T> watch = initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion))) {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 
