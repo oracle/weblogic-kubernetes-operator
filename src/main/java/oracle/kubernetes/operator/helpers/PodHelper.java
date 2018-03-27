@@ -722,6 +722,10 @@ public class PodHelper {
         }
       }
 
+      // Override the weblogic domain and admin server related environment variables that
+      // come for free with the WLS docker container with the correct values.
+      overrideContainerWeblogicEnvVars(spec, weblogicServerName, container);
+
       return pod;
     }
   }
