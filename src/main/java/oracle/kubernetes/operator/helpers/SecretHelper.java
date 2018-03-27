@@ -19,6 +19,7 @@ import io.kubernetes.client.models.V1Secret;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -39,7 +40,6 @@ public class SecretHelper {
   public static final String SECRET_DATA_KEY = "secretData";
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private final ClientHolder client;
   private final String namespace;
 
   public enum SecretType {
@@ -54,12 +54,10 @@ public class SecretHelper {
   /**
    * Constructor.
    *
-   * @param client Client object to access Kubernetes APIs.
    * @param namespace Scope for object names and authorization.
    */
-  public SecretHelper(ClientHolder client, String namespace) {
+  public SecretHelper(String namespace) {
 
-    this.client = client;
     this.namespace = namespace;
   }
 
@@ -73,6 +71,7 @@ public class SecretHelper {
   public Map<String, byte[]> getSecretData(SecretType secretType, String secretName) {
 
     LOGGER.entering();
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
 
     try {
       if (secretType != SecretType.AdminCredentials) {
@@ -83,7 +82,7 @@ public class SecretHelper {
 
       LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
 
-      V1Secret secret = client.callBuilder().readSecret(secretName, namespace);
+      V1Secret secret = factory.create().readSecret(secretName, namespace);
       if (secret == null || secret.getData() == null) {
         LOGGER.warning(MessageKeys.SECRET_NOT_FOUND, secretName);
         LOGGER.exiting(null);
@@ -132,7 +131,8 @@ public class SecretHelper {
       }
 
       LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-      Step read = CallBuilder.create().readSecretAsync(secretName, namespace, new ResponseStep<V1Secret>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readSecretAsync(secretName, namespace, new ResponseStep<V1Secret>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {

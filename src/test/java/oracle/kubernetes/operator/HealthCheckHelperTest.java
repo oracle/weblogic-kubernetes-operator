@@ -7,11 +7,12 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.work.ContainerResolver;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -32,8 +33,6 @@ public class HealthCheckHelperTest {
 
   private final static String UNIT_NAMESPACE = "unit-test-namespace";
 
-  private final static String PRETTY = "true";
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static ByteArrayOutputStream bos = new ByteArrayOutputStream();
   private static Handler hdlr = new StreamHandler(bos, new SimpleFormatter());
@@ -46,16 +45,10 @@ public class HealthCheckHelperTest {
 
     if (!TestUtils.isKubernetesAvailable()) return;
 
-    ClientHolder client = ClientHelper.getInstance().take();
-    try {
-      createNamespace(client, UNIT_NAMESPACE);
+    createNamespace(UNIT_NAMESPACE);
 
-      defaultHealthCheckHelper = new HealthCheckHelper(client, "default", Collections.singleton("default"));
-      unitHealthCheckHelper = new HealthCheckHelper(client, UNIT_NAMESPACE, Collections.singleton(UNIT_NAMESPACE));
-
-    } finally {
-      ClientHelper.getInstance().recycle(client);
-    }
+    defaultHealthCheckHelper = new HealthCheckHelper("default", Collections.singleton("default"));
+    unitHealthCheckHelper = new HealthCheckHelper(UNIT_NAMESPACE, Collections.singleton(UNIT_NAMESPACE));
   }
 
   @After
@@ -112,10 +105,10 @@ public class HealthCheckHelperTest {
   }
 
   // Create a named namespace
-  private V1Namespace createNamespace(ClientHolder client, String name) throws Exception {
-
+  private V1Namespace createNamespace(String name) throws Exception {
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     try {
-      V1Namespace existing = client.getCoreApiClient().readNamespace(name, PRETTY, true, true);
+      V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)
         return existing;
     } catch (ApiException ignore) {
@@ -133,7 +126,6 @@ public class HealthCheckHelperTest {
     meta.setName(name);
     body.setMetadata(meta);
 
-    return client.getCoreApiClient().createNamespace(body, PRETTY);
+    return factory.create().createNamespace(body);
   }
-
 }

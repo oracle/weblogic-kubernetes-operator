@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -127,8 +128,9 @@ public class IngressHelperTest {
   
   @After
   public void tearDown() throws ApiException {
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     try {
-      CallBuilder.create().deleteIngress(ingressName, namespace, new V1DeleteOptions());
+      factory.create().deleteIngress(ingressName, namespace, new V1DeleteOptions());
     } catch (ApiException api) {
       if (api.getCode() != CallBuilder.NOT_FOUND) {
         throw api;
@@ -164,7 +166,8 @@ public class IngressHelperTest {
     }
     
     // Now check
-    V1beta1Ingress v1beta1Ingress = CallBuilder.create().readIngress(ingressName, namespace);
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    V1beta1Ingress v1beta1Ingress = factory.create().readIngress(ingressName, namespace);
     
     List<V1beta1HTTPIngressPath> v1beta1HTTPIngressPaths = getPathArray(v1beta1Ingress);
     Assert.assertEquals("IngressPaths should have one instance of IngressPath", 1, v1beta1HTTPIngressPaths.size());

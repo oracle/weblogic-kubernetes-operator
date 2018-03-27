@@ -9,6 +9,7 @@ package oracle.kubernetes.operator;
  */
 public interface ProcessingConstants {
 
+  public static final String MAIN_COMPONENT_NAME = "main";
   public static final String DOMAIN_COMPONENT_NAME = "domain";
   public static final String FIBER_COMPONENT_NAME = "fiber";
   

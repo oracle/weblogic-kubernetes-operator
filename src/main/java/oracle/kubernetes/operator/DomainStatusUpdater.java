@@ -24,6 +24,7 @@ import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -34,6 +35,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
@@ -610,7 +612,8 @@ public class DomainStatusUpdater {
   private static NextAction doDomainUpdate(Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
     V1ObjectMeta meta = dom.getMetadata();
     NextAction na = new NextAction();
-    na.invoke(CallBuilder.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    na.invoke(factory.create().replaceDomainAsync(meta.getName(), meta.getNamespace(), dom, new ResponseStep<Domain>(next) {
       @Override
       public NextAction onFailure(Packet packet, ApiException e, int statusCode,
           Map<String, List<String>> responseHeaders) {

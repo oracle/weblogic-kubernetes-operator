@@ -15,11 +15,20 @@ import java.util.function.Consumer;
 import com.squareup.okhttp.Call;
 
 import io.kubernetes.client.ApiCallback;
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.apis.AuthenticationV1Api;
+import io.kubernetes.client.apis.AuthorizationV1Api;
+import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.apis.VersionApi;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ListMeta;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
@@ -33,8 +42,11 @@ import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
+import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
+import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -52,16 +64,6 @@ public class CallBuilder {
 
   static final String RESPONSE_COMPONENT_NAME = "response";
 
-  private static int callRequestLimit = 500;
-  private static int callMaxRetryCount = 5;
-  private static int callTimeoutSeconds = 10;
-  
-  public static void setTuningParameters(int callRequestLimit, int callMaxRetryCount, int callTimeoutSeconds) {
-    CallBuilder.callRequestLimit = callRequestLimit;
-    CallBuilder.callMaxRetryCount = callMaxRetryCount;
-    CallBuilder.callTimeoutSeconds = callTimeoutSeconds;
-  }
-  
   /**
    * HTTP status code for "Not Found"
    */
@@ -75,10 +77,10 @@ public class CallBuilder {
   public String fieldSelector = "";
   public Boolean includeUninitialized = Boolean.FALSE;
   public String labelSelector = "";
-  public Integer limit = callRequestLimit;
+  public Integer limit = 500;
   public String resourceVersion = "";
-  public Integer timeoutSeconds = callTimeoutSeconds;
-  public Integer maxRetryCount = callMaxRetryCount;
+  public Integer timeoutSeconds = 5;
+  public Integer maxRetryCount = 10;
   public Boolean watch = Boolean.FALSE;
   public Boolean exact = Boolean.FALSE;
   public Boolean export = Boolean.FALSE;
@@ -88,26 +90,28 @@ public class CallBuilder {
   public Boolean orphanDependents = null;
   public String propagationPolicy = null;
 
-  private final ClientHelper helper;
-  private final ClientHolder client;
+  private final ClientPool helper;
 
-  CallBuilder(ClientHolder client) {
-    this.client = client;
-    this.helper = client.getHelper();
-  }
-  
-  CallBuilder(ClientHelper helper) {
-    this.client = null;
+  CallBuilder(CallBuilderTuning tuning, ClientPool helper) {
+    if (tuning != null) {
+      tuning(tuning.callRequestLimit, tuning.callTimeoutSeconds, tuning.callMaxRetryCount);
+    }
     this.helper = helper;
   }
   
+  private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
+    this.limit = limit;
+    this.timeoutSeconds = timeoutSeconds;
+    this.maxRetryCount = maxRetryCount;
+  }
+  
   /**
-   * Creates instance not associated with a specific {@link ClientHolder}, but that will
-   * instead acquire instances as needed from the {@link ClientHelper} instance.
+   * Creates instance that will acquire clients as needed from the {@link ClientPool} instance.
+   * @param tuning Tuning parameters
    * @return Call builder
    */
-  public static CallBuilder create() {
-    return new CallBuilder(ClientHelper.getInstance());
+  static CallBuilder create(CallBuilderTuning tuning) {
+    return new CallBuilder(tuning, ClientPool.getInstance());
   }
   
   /**
@@ -136,34 +140,160 @@ public class CallBuilder {
     return value;
   }
   
-  // Intentionally not using java.lang.Closeable as these throw
-  private interface ClientUsage {
-    public void recycle();
-    public ClientHolder client();
+  /* Version */
+  
+  /**
+   * Read Kubernetes version code
+   * @return Version code
+   * @throws ApiException API Exception
+   */
+  public VersionInfo readVersionCode() throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new VersionApi(client).getCode();
+    } finally {
+      helper.recycle(client);
+    }
   }
   
-  private ClientUsage useClient() {
-    return new ClientUsage() {
-      private ClientHolder myClient = null;
-      
-      @Override
-      public void recycle() {
-        if (myClient != null) {
-          helper.recycle(myClient);
-        }
-      }
-      @Override
-      public ClientHolder client() {
-        if (client != null)
-          return client;
-        if (myClient == null) {
-          myClient = helper.take();
-        }
-        return myClient;
-      }
-    };
+  /* Namespaces */
+  
+  /**
+   * List namespaces
+   * @return List of namespaces
+   * @throws ApiException API Exception
+   */
+  public V1NamespaceList listNamespace(String namespace) throws ApiException {
+    String _continue = "";
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).listNamespace(pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+    } finally {
+      helper.recycle(client);
+    }
   }
 
+  private com.squareup.okhttp.Call listNamespaceAsync(ApiClient client, String _continue, ApiCallback<V1NamespaceList> callback) throws ApiException {
+    return new CoreV1Api(client).listNamespaceAsync(pretty, _continue,
+      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
+  }
+
+  private final CallFactory<V1NamespaceList> LIST_NAMESPACE = (requestParams, usage, cont, callback) -> {
+    return listNamespaceAsync(usage, cont, callback);
+  };
+  
+  /**
+   * Asynchronous step for listing namespaces
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listNamespaceAsync(ResponseStep<V1NamespaceList> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("listNamespace", null, null, null), LIST_NAMESPACE);
+  }
+  
+  /**
+   * Read namespace
+   * @param name Name
+   * @return Read service
+   * @throws ApiException API Exception
+   */
+  public V1Namespace readNamespace(String name) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).readNamespace(name, pretty, exact, export);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call readNamespaceAsync(ApiClient client, String name, ApiCallback<V1Namespace> callback) throws ApiException {
+    return new CoreV1Api(client).readNamespaceAsync(name, pretty, exact, export, callback);
+  }
+
+  private final CallFactory<V1Namespace> READ_NAMESPACE = (requestParams, usage, cont, callback) -> {
+    return readNamespaceAsync(usage, requestParams.name, callback);
+  };
+  
+  /**
+   * Asynchronous step for reading namespace
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readNamespaceAsync(String name, ResponseStep<V1Namespace> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("readNamespace", null, name, null), READ_NAMESPACE);
+  }
+  
+  /**
+   * Create namespace
+   * @param body Body
+   * @return Created service
+   * @throws ApiException API Exception
+   */
+  public V1Namespace createNamespace(V1Namespace body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).createNamespace(body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call createNamespaceAsync(ApiClient client, V1Namespace body, ApiCallback<V1Namespace> callback) throws ApiException {
+    return new CoreV1Api(client).createNamespaceAsync(body, pretty, callback);
+  }
+
+  private final CallFactory<V1Namespace> CREATE_NAMESPACE = (requestParams, usage, cont, callback) -> {
+    return createNamespaceAsync(usage, (V1Namespace) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for creating namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createNamespaceAsync(V1Namespace body, ResponseStep<V1Namespace> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("createNamespace", null, null, body), CREATE_NAMESPACE);
+  }
+  
+  /**
+   * Delete namespace
+   * @param name Name
+   * @return Status of deletion
+   * @throws ApiException API Exception
+   */
+  public V1Status deleteNamespace(String name, V1DeleteOptions deleteOptions) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).deleteNamespace(name, deleteOptions, pretty, gracePeriodSeconds,
+          orphanDependents, propagationPolicy);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call deleteNamespaceAsync(ApiClient client, String name, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deleteNamespaceAsync(name, deleteOptions, pretty, gracePeriodSeconds,
+        orphanDependents, propagationPolicy, callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_NAMESPACE = (requestParams, usage, cont, callback) -> {
+    return deleteNamespaceAsync(usage, requestParams.name, (V1DeleteOptions) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for deleting service
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteNamespaceAsync(String name, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("deleteNamespace", null, name, null), DELETE_NAMESPACE);
+  }
+  
   /* Domains */
   
   /**
@@ -174,34 +304,17 @@ public class CallBuilder {
    */
   public DomainList listDomain(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getWeblogicApiClient().listWebLogicOracleV1NamespacedDomain(namespace, pretty, _continue,
+      return new WeblogicApi(client).listWebLogicOracleV1NamespacedDomain(namespace, pretty, _continue,
         fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      
     }
   }
 
-  /**
-   * Unexecuted list domains call for use with watches
-   * @param namespace Namespace
-   * @return Call
-   * @throws ApiException API exception
-   */
-  public com.squareup.okhttp.Call listDomainCall(String namespace) throws ApiException {
-    String _continue = "";
-    if (client == null) {
-      throw new IllegalStateException();
-    }
-    
-    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listDomain", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
-    return client.getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainCall(namespace, pretty, _continue,
-        fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
-  }
-
-  private com.squareup.okhttp.Call listDomainAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<DomainList> callback) throws ApiException {
-    return usage.client().getWeblogicApiClient().listWebLogicOracleV1NamespacedDomainAsync(namespace, pretty, _continue,
+  private com.squareup.okhttp.Call listDomainAsync(ApiClient client, String namespace, String _continue, ApiCallback<DomainList> callback) throws ApiException {
+    return new WeblogicApi(client).listWebLogicOracleV1NamespacedDomainAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -228,16 +341,16 @@ public class CallBuilder {
    * @throws ApiException APIException
    */
   public Domain replaceDomain(String name, String namespace, Domain body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomain(name, namespace, body, pretty);
+      return new WeblogicApi(client).replaceWebLogicOracleV1NamespacedDomain(name, namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
   
-  private com.squareup.okhttp.Call replaceDomainAsync(ClientUsage usage, String name, String namespace, Domain body, ApiCallback<Domain> callback) throws ApiException {
-    return usage.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomainAsync(name, namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call replaceDomainAsync(ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback) throws ApiException {
+    return new WeblogicApi(client).replaceWebLogicOracleV1NamespacedDomainAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN = (requestParams, usage, cont, callback) -> {
@@ -265,16 +378,16 @@ public class CallBuilder {
    * @throws ApiException APIException
    */
   public Domain replaceDomainStatus(String name, String namespace, Domain body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomainStatus(name, namespace, body, pretty);
+      return new WeblogicApi(client).replaceWebLogicOracleV1NamespacedDomainStatus(name, namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
   
-  private com.squareup.okhttp.Call replaceDomainStatusAsync(ClientUsage usage, String name, String namespace, Domain body, ApiCallback<Domain> callback) throws ApiException {
-    return usage.client().getWeblogicApiClient().replaceWebLogicOracleV1NamespacedDomainStatusAsync(name, namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call replaceDomainStatusAsync(ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback) throws ApiException {
+    return new WeblogicApi(client).replaceWebLogicOracleV1NamespacedDomainStatusAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<Domain> REPLACE_STATUS_DOMAIN = (requestParams, usage, cont, callback) -> {
@@ -302,16 +415,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1beta1CustomResourceDefinition readCustomResourceDefinition(String name) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getApiExtensionClient().readCustomResourceDefinition(name, pretty, exact, export);
+      return new ApiextensionsV1beta1Api(client).readCustomResourceDefinition(name, pretty, exact, export);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call readCustomResourceDefinitionAsync(ClientUsage usage, String name, ApiCallback<V1beta1CustomResourceDefinition> callback) throws ApiException {
-    return usage.client().getApiExtensionClient().readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
+  private com.squareup.okhttp.Call readCustomResourceDefinitionAsync(ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback) throws ApiException {
+    return new ApiextensionsV1beta1Api(client).readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
   }
 
   private final CallFactory<V1beta1CustomResourceDefinition> READ_CUSTOMRESOURCEDEFINITION = (requestParams, usage, cont, callback) -> {
@@ -336,16 +449,16 @@ public class CallBuilder {
    */
   public V1beta1CustomResourceDefinition createCustomResourceDefinition(V1beta1CustomResourceDefinition body)
       throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getApiExtensionClient().createCustomResourceDefinition(body, pretty);
+      return new ApiextensionsV1beta1Api(client).createCustomResourceDefinition(body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createCustomResourceDefinitionAsync(ClientUsage usage, V1beta1CustomResourceDefinition body, ApiCallback<V1beta1CustomResourceDefinition> callback) throws ApiException {
-    return usage.client().getApiExtensionClient().createCustomResourceDefinitionAsync(body, pretty, callback);
+  private com.squareup.okhttp.Call createCustomResourceDefinitionAsync(ApiClient client, V1beta1CustomResourceDefinition body, ApiCallback<V1beta1CustomResourceDefinition> callback) throws ApiException {
+    return new ApiextensionsV1beta1Api(client).createCustomResourceDefinitionAsync(body, pretty, callback);
   }
 
   private final CallFactory<V1beta1CustomResourceDefinition> CREATE_CUSTOMRESOURCEDEFINITION = (requestParams, usage, cont, callback) -> {
@@ -373,17 +486,17 @@ public class CallBuilder {
    */
   public V1ConfigMapList listConfigMap(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().listNamespacedConfigMap(namespace, pretty, _continue, fieldSelector,
+      return new CoreV1Api(client).listNamespacedConfigMap(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call listConfigMapAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1ConfigMapList> callback) throws ApiException {
-    return usage.client().getCoreApiClient().listNamespacedConfigMapAsync(namespace, pretty, _continue,
+  private com.squareup.okhttp.Call listConfigMapAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1ConfigMapList> callback) throws ApiException {
+    return new CoreV1Api(client).listNamespacedConfigMapAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -409,16 +522,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1ConfigMap readConfigMap(String name, String namespace) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().readNamespacedConfigMap(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client).readNamespacedConfigMap(name, namespace, pretty, exact, export);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call readConfigMapAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1ConfigMap> callback) throws ApiException {
-    return usage.client().getCoreApiClient().readNamespacedConfigMapAsync(name, namespace, pretty, exact, export, callback);
+  private com.squareup.okhttp.Call readConfigMapAsync(ApiClient client, String name, String namespace, ApiCallback<V1ConfigMap> callback) throws ApiException {
+    return new CoreV1Api(client).readNamespacedConfigMapAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<V1ConfigMap> READ_CONFIGMAP = (requestParams, usage, cont, callback) -> {
@@ -444,16 +557,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1ConfigMap createConfigMap(String namespace, V1ConfigMap body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().createNamespacedConfigMap(namespace, body, pretty);
+      return new CoreV1Api(client).createNamespacedConfigMap(namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createConfigMapAsync(ClientUsage usage, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback) throws ApiException {
-    return usage.client().getCoreApiClient().createNamespacedConfigMapAsync(namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call createConfigMapAsync(ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback) throws ApiException {
+    return new CoreV1Api(client).createNamespacedConfigMapAsync(namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1ConfigMap> CREATE_CONFIGMAP = (requestParams, usage, cont, callback) -> {
@@ -480,16 +593,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1ConfigMap replaceConfigMap(String name, String namespace, V1ConfigMap body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().replaceNamespacedConfigMap(name, namespace, body, pretty);
+      return new CoreV1Api(client).replaceNamespacedConfigMap(name, namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call replaceConfigMapAsync(ClientUsage usage, String name, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback) throws ApiException {
-    return usage.client().getCoreApiClient().replaceNamespacedConfigMapAsync(name, namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call replaceConfigMapAsync(ApiClient client, String name, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback) throws ApiException {
+    return new CoreV1Api(client).replaceNamespacedConfigMapAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1ConfigMap> REPLACE_CONFIGMAP = (requestParams, usage, cont, callback) -> {
@@ -517,17 +630,17 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Status deleteConfigMap(String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().deleteNamespacedConfigMap(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
+      return new CoreV1Api(client).deleteNamespacedConfigMap(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
         orphanDependents, propagationPolicy);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call deleteConfigMapAsync(ClientUsage usage, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
-    return usage.client().getCoreApiClient().deleteNamespacedConfigMapAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  private com.squareup.okhttp.Call deleteConfigMapAsync(ApiClient client, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deleteNamespacedConfigMapAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
   }
 
   private final CallFactory<V1Status> DELETE_CONFIGMAP = (requestParams, usage, cont, callback) -> {
@@ -555,30 +668,17 @@ public class CallBuilder {
    */
   public V1PodList listPod(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().listNamespacedPod(namespace, pretty, _continue, fieldSelector,
+      return new CoreV1Api(client).listNamespacedPod(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  /**
-   * Unexecuted call to list pods for use with watches
-   * @param namespace Namespace
-   * @return Call
-   * @throws ApiException API Exception
-   */
-  public com.squareup.okhttp.Call listPodCall(String namespace) throws ApiException {
-    String _continue = "";
-    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listPod", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
-    return client.getCoreApiClient().listNamespacedPodCall(namespace, pretty, _continue, fieldSelector,
-        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
-  }
-
-  private com.squareup.okhttp.Call listPodAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1PodList> callback) throws ApiException {
-    return usage.client().getCoreApiClient().listNamespacedPodAsync(namespace, pretty, _continue,
+  private com.squareup.okhttp.Call listPodAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1PodList> callback) throws ApiException {
+    return new CoreV1Api(client).listNamespacedPodAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -604,16 +704,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Pod readPod(String name, String namespace) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().readNamespacedPod(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client).readNamespacedPod(name, namespace, pretty, exact, export);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call readPodAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1Pod> callback) throws ApiException {
-    return usage.client().getCoreApiClient().readNamespacedPodAsync(name, namespace, pretty, exact, export, callback);
+  private com.squareup.okhttp.Call readPodAsync(ApiClient client, String name, String namespace, ApiCallback<V1Pod> callback) throws ApiException {
+    return new CoreV1Api(client).readNamespacedPodAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<V1Pod> READ_POD = (requestParams, usage, cont, callback) -> {
@@ -639,16 +739,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Pod createPod(String namespace, V1Pod body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().createNamespacedPod(namespace, body, pretty);
+      return new CoreV1Api(client).createNamespacedPod(namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createPodAsync(ClientUsage usage, String namespace, V1Pod body, ApiCallback<V1Pod> callback) throws ApiException {
-    return usage.client().getCoreApiClient().createNamespacedPodAsync(namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call createPodAsync(ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback) throws ApiException {
+    return new CoreV1Api(client).createNamespacedPodAsync(namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1Pod> CREATE_POD = (requestParams, usage, cont, callback) -> {
@@ -675,16 +775,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Pod replacePod(String name, String namespace, V1Pod body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().replaceNamespacedPod(name, namespace, body, pretty);
+      return new CoreV1Api(client).replaceNamespacedPod(name, namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call replacePodAsync(ClientUsage usage, String name, String namespace, V1Pod body, ApiCallback<V1Pod> callback) throws ApiException {
-    return usage.client().getCoreApiClient().replaceNamespacedPodAsync(name, namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call replacePodAsync(ApiClient client, String name, String namespace, V1Pod body, ApiCallback<V1Pod> callback) throws ApiException {
+    return new CoreV1Api(client).replaceNamespacedPodAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1Pod> REPLACE_POD = (requestParams, usage, cont, callback) -> {
@@ -712,17 +812,17 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Status deletePod(String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().deleteNamespacedPod(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
+      return new CoreV1Api(client).deleteNamespacedPod(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
         orphanDependents, propagationPolicy);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call deletePodAsync(ClientUsage usage, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
-    return usage.client().getCoreApiClient().deleteNamespacedPodAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  private com.squareup.okhttp.Call deletePodAsync(ApiClient client, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deleteNamespacedPodAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
   }
 
   private final CallFactory<V1Status> DELETE_POD = (requestParams, usage, cont, callback) -> {
@@ -749,17 +849,17 @@ public class CallBuilder {
    */
   public V1Status deleteCollectionPod(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().deleteCollectionNamespacedPod(namespace, pretty, _continue, fieldSelector,
+      return new CoreV1Api(client).deleteCollectionNamespacedPod(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call deleteCollectionPodAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1Status> callback) throws ApiException {
-    return usage.client().getCoreApiClient().deleteCollectionNamespacedPodAsync(namespace, pretty, _continue, fieldSelector,
+  private com.squareup.okhttp.Call deleteCollectionPodAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deleteCollectionNamespacedPodAsync(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -787,30 +887,17 @@ public class CallBuilder {
    */
   public V1ServiceList listService(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().listNamespacedService(namespace, pretty, _continue, fieldSelector,
+      return new CoreV1Api(client).listNamespacedService(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  /**
-   * Unexecuted call to list services for use with watches
-   * @param namespace Namespace
-   * @return Call
-   * @throws ApiException API Exception
-   */
-  public com.squareup.okhttp.Call listServiceCall(String namespace) throws ApiException {
-    String _continue = "";
-    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listService", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
-    return client.getCoreApiClient().listNamespacedServiceCall(namespace, pretty, _continue, fieldSelector,
-        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
-  }
-
-  private com.squareup.okhttp.Call listServiceAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1ServiceList> callback) throws ApiException {
-    return usage.client().getCoreApiClient().listNamespacedServiceAsync(namespace, pretty, _continue,
+  private com.squareup.okhttp.Call listServiceAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1ServiceList> callback) throws ApiException {
+    return new CoreV1Api(client).listNamespacedServiceAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -836,16 +923,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Service readService(String name, String namespace) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().readNamespacedService(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client).readNamespacedService(name, namespace, pretty, exact, export);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call readServiceAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1Service> callback) throws ApiException {
-    return usage.client().getCoreApiClient().readNamespacedServiceAsync(name, namespace, pretty, exact, export, callback);
+  private com.squareup.okhttp.Call readServiceAsync(ApiClient client, String name, String namespace, ApiCallback<V1Service> callback) throws ApiException {
+    return new CoreV1Api(client).readNamespacedServiceAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<V1Service> READ_SERVICE = (requestParams, usage, cont, callback) -> {
@@ -871,16 +958,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Service createService(String namespace, V1Service body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().createNamespacedService(namespace, body, pretty);
+      return new CoreV1Api(client).createNamespacedService(namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createServiceAsync(ClientUsage usage, String namespace, V1Service body, ApiCallback<V1Service> callback) throws ApiException {
-    return usage.client().getCoreApiClient().createNamespacedServiceAsync(namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call createServiceAsync(ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback) throws ApiException {
+    return new CoreV1Api(client).createNamespacedServiceAsync(namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1Service> CREATE_SERVICE = (requestParams, usage, cont, callback) -> {
@@ -907,16 +994,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Service replaceService(String name, String namespace, V1Service body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().replaceNamespacedService(name, namespace, body, pretty);
+      return new CoreV1Api(client).replaceNamespacedService(name, namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call replaceServiceAsync(ClientUsage usage, String name, String namespace, V1Service body, ApiCallback<V1Service> callback) throws ApiException {
-    return usage.client().getCoreApiClient().replaceNamespacedServiceAsync(name, namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call replaceServiceAsync(ApiClient client, String name, String namespace, V1Service body, ApiCallback<V1Service> callback) throws ApiException {
+    return new CoreV1Api(client).replaceNamespacedServiceAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1Service> REPLACE_SERVICE = (requestParams, usage, cont, callback) -> {
@@ -943,16 +1030,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Status deleteService(String name, String namespace) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().deleteNamespacedService(name, namespace, pretty);
+      return new CoreV1Api(client).deleteNamespacedService(name, namespace, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call deleteServiceAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1Status> callback) throws ApiException {
-    return usage.client().getCoreApiClient().deleteNamespacedServiceAsync(name, namespace, pretty, callback);
+  private com.squareup.okhttp.Call deleteServiceAsync(ApiClient client, String name, String namespace, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deleteNamespacedServiceAsync(name, namespace, pretty, callback);
   }
 
   private final CallFactory<V1Status> DELETE_SERVICE = (requestParams, usage, cont, callback) -> {
@@ -980,17 +1067,17 @@ public class CallBuilder {
    */
   public V1PersistentVolumeClaimList listPersistentVolumeClaim(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().listNamespacedPersistentVolumeClaim(namespace, pretty, _continue, fieldSelector,
+      return new CoreV1Api(client).listNamespacedPersistentVolumeClaim(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call listPersistentVolumeClaimAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1PersistentVolumeClaimList> callback) throws ApiException {
-    return usage.client().getCoreApiClient().listNamespacedPersistentVolumeClaimAsync(namespace, pretty, _continue,
+  private com.squareup.okhttp.Call listPersistentVolumeClaimAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1PersistentVolumeClaimList> callback) throws ApiException {
+    return new CoreV1Api(client).listNamespacedPersistentVolumeClaimAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -1017,17 +1104,17 @@ public class CallBuilder {
    */
   public V1PersistentVolumeList listPersistentVolume() throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().listPersistentVolume(pretty, _continue, fieldSelector, includeUninitialized,
+      return new CoreV1Api(client).listPersistentVolume(pretty, _continue, fieldSelector, includeUninitialized,
         labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call listPersistentVolumeAsync(ClientUsage usage, String _continue, ApiCallback<V1PersistentVolumeList> callback) throws ApiException {
-    return usage.client().getCoreApiClient().listPersistentVolumeAsync(pretty, _continue,
+  private com.squareup.okhttp.Call listPersistentVolumeAsync(ApiClient client, String _continue, ApiCallback<V1PersistentVolumeList> callback) throws ApiException {
+    return new CoreV1Api(client).listPersistentVolumeAsync(pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -1054,22 +1141,56 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Secret readSecret(String name, String namespace) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getCoreApiClient().readNamespacedSecret(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client).readNamespacedSecret(name, namespace, pretty, exact, export);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call readSecretAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1Secret> callback) throws ApiException {
-    return usage.client().getCoreApiClient().readNamespacedSecretAsync(name, namespace, pretty, exact, export, callback);
+  private com.squareup.okhttp.Call readSecretAsync(ApiClient client, String name, String namespace, ApiCallback<V1Secret> callback) throws ApiException {
+    return new CoreV1Api(client).readNamespacedSecretAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<V1Secret> READ_SECRET = (requestParams, usage, cont, callback) -> {
     return readSecretAsync(usage, requestParams.name, requestParams.namespace, callback);
   };
   
+  /**
+   * Create secret
+   * @param namespace Namespace
+   * @param body Body
+   * @return Created secret
+   * @throws ApiException API Exception
+   */
+  public V1Secret createSecret(String namespace, V1Secret body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).createNamespacedSecret(namespace, body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  /**
+   * Delete secret
+   * @param name Name
+   * @param namespace Namespace
+   * @param deleteOptions Delete options
+   * @return Status of deletion
+   * @throws ApiException API Exception
+   */
+  public V1Status deleteSecret(String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).deleteNamespacedSecret(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
+        orphanDependents, propagationPolicy);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
   /**
    * Asynchronous step for reading secret
    * @param name Name
@@ -1090,16 +1211,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1SubjectAccessReview createSubjectAccessReview(V1SubjectAccessReview body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getAuthorizationApiClient().createSubjectAccessReview(body, pretty);
+      return new AuthorizationV1Api(client).createSubjectAccessReview(body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createSubjectAccessReviewAsync(ClientUsage usage, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback) throws ApiException {
-    return usage.client().getAuthorizationApiClient().createSubjectAccessReviewAsync(body, pretty, callback);
+  private com.squareup.okhttp.Call createSubjectAccessReviewAsync(ApiClient client, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback) throws ApiException {
+    return new AuthorizationV1Api(client).createSubjectAccessReviewAsync(body, pretty, callback);
   }
 
   private final CallFactory<V1SubjectAccessReview> CREATE_SUBJECTACCESSREVIEW = (requestParams, usage, cont, callback) -> {
@@ -1125,16 +1246,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1TokenReview createTokenReview(V1TokenReview body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getAuthenticationApiClient().createTokenReview(body, pretty);
+      return new AuthenticationV1Api(client).createTokenReview(body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createTokenReviewAsync(ClientUsage usage, V1TokenReview body, ApiCallback<V1TokenReview> callback) throws ApiException {
-    return usage.client().getAuthenticationApiClient().createTokenReviewAsync(body, pretty, callback);
+  private com.squareup.okhttp.Call createTokenReviewAsync(ApiClient client, V1TokenReview body, ApiCallback<V1TokenReview> callback) throws ApiException {
+    return new AuthenticationV1Api(client).createTokenReviewAsync(body, pretty, callback);
   }
 
   private final CallFactory<V1TokenReview> CREATE_TOKENREVIEW = (requestParams, usage, cont, callback) -> {
@@ -1161,30 +1282,17 @@ public class CallBuilder {
    */
   public V1beta1IngressList listIngress(String namespace) throws ApiException {
     String _continue = "";
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getExtensionsV1beta1ApiClient().listNamespacedIngress(namespace, pretty, _continue, fieldSelector,
+      return new ExtensionsV1beta1Api(client).listNamespacedIngress(namespace, pretty, _continue, fieldSelector,
         includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  /**
-   * Unexecuted call to list Ingress for use with watches
-   * @param namespace Namespace
-   * @return Call
-   * @throws ApiException API Exception
-   */
-  public com.squareup.okhttp.Call listIngressCall(String namespace) throws ApiException {
-    String _continue = "";
-    LOGGER.fine(MessageKeys.WATCH_REQUEST, "listIngress", namespace, fieldSelector, labelSelector, resourceVersion, limit, timeoutSeconds);
-    return client.getExtensionsV1beta1ApiClient().listNamespacedIngressCall(namespace, pretty, _continue, fieldSelector,
-        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, null, null);
-  }
-
-  private com.squareup.okhttp.Call listIngressAsync(ClientUsage usage, String namespace, String _continue, ApiCallback<V1beta1IngressList> callback) throws ApiException {
-    return usage.client().getExtensionsV1beta1ApiClient().listNamespacedIngressAsync(namespace, pretty, _continue,
+  private com.squareup.okhttp.Call listIngressAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1beta1IngressList> callback) throws ApiException {
+    return new ExtensionsV1beta1Api(client).listNamespacedIngressAsync(namespace, pretty, _continue,
       fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
   }
 
@@ -1210,16 +1318,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1beta1Ingress readIngress(String name, String namespace) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getExtensionsV1beta1ApiClient().readNamespacedIngress(name, namespace, pretty, exact, export);
+      return new ExtensionsV1beta1Api(client).readNamespacedIngress(name, namespace, pretty, exact, export);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call readIngressAsync(ClientUsage usage, String name, String namespace, ApiCallback<V1beta1Ingress> callback) throws ApiException {
-    return usage.client().getExtensionsV1beta1ApiClient().readNamespacedIngressAsync(name, namespace, pretty, exact, export, callback);
+  private com.squareup.okhttp.Call readIngressAsync(ApiClient client, String name, String namespace, ApiCallback<V1beta1Ingress> callback) throws ApiException {
+    return new ExtensionsV1beta1Api(client).readNamespacedIngressAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<V1beta1Ingress> READ_INGRESS = (requestParams, usage, cont, callback) -> {
@@ -1245,16 +1353,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1beta1Ingress createIngress(String namespace, V1beta1Ingress body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getExtensionsV1beta1ApiClient().createNamespacedIngress(namespace, body, pretty);
+      return new ExtensionsV1beta1Api(client).createNamespacedIngress(namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call createIngressAsync(ClientUsage usage, String namespace, V1beta1Ingress body, ApiCallback<V1beta1Ingress> callback) throws ApiException {
-    return usage.client().getExtensionsV1beta1ApiClient().createNamespacedIngressAsync(namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call createIngressAsync(ApiClient client, String namespace, V1beta1Ingress body, ApiCallback<V1beta1Ingress> callback) throws ApiException {
+    return new ExtensionsV1beta1Api(client).createNamespacedIngressAsync(namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1beta1Ingress> CREATE_INGRESS = (requestParams, usage, cont, callback) -> {
@@ -1281,16 +1389,16 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1beta1Ingress replaceIngress(String name, String namespace, V1beta1Ingress body) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getExtensionsV1beta1ApiClient().replaceNamespacedIngress(name, namespace, body, pretty);
+      return new ExtensionsV1beta1Api(client).replaceNamespacedIngress(name, namespace, body, pretty);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call replaceIngressAsync(ClientUsage usage, String name, String namespace, V1beta1Ingress body, ApiCallback<V1beta1Ingress> callback) throws ApiException {
-    return usage.client().getExtensionsV1beta1ApiClient().replaceNamespacedIngressAsync(name, namespace, body, pretty, callback);
+  private com.squareup.okhttp.Call replaceIngressAsync(ApiClient client, String name, String namespace, V1beta1Ingress body, ApiCallback<V1beta1Ingress> callback) throws ApiException {
+    return new ExtensionsV1beta1Api(client).replaceNamespacedIngressAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<V1beta1Ingress> REPLACE_INGRESS = (requestParams, usage, cont, callback) -> {
@@ -1318,17 +1426,17 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Status deleteIngress(String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
-    ClientUsage cu = useClient();
+    ApiClient client = helper.take();
     try {
-      return cu.client().getExtensionsV1beta1ApiClient().deleteNamespacedIngress(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
+      return new ExtensionsV1beta1Api(client).deleteNamespacedIngress(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
         orphanDependents, propagationPolicy);
     } finally {
-      cu.recycle();
+      helper.recycle(client);
     }
   }
 
-  private com.squareup.okhttp.Call deleteIngressAsync(ClientUsage usage, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
-    return usage.client().getExtensionsV1beta1ApiClient().deleteNamespacedIngressAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  private com.squareup.okhttp.Call deleteIngressAsync(ApiClient client, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return new ExtensionsV1beta1Api(client).deleteNamespacedIngressAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
   }
 
   private final CallFactory<V1Status> DELETE_INGRESS = (requestParams, usage, cont, callback) -> {
@@ -1361,7 +1469,7 @@ public class CallBuilder {
 
   @FunctionalInterface
   interface CallFactory<T> {
-    public Call generate(RequestParams requestParams, ClientUsage usage, String cont, ApiCallback<T> callback) throws ApiException;
+    public Call generate(RequestParams requestParams, ApiClient client, String cont, ApiCallback<T> callback) throws ApiException;
   }
   
   static final class RequestParams {
@@ -1526,7 +1634,7 @@ public class CallBuilder {
 
       AtomicBoolean didResume = new AtomicBoolean(false);
       AtomicBoolean didRecycle = new AtomicBoolean(false);
-      ClientUsage usage = useClient();
+      ApiClient client = helper.take();
       return doSuspend((fiber) -> {
         ApiCallback<T> callback = new BaseApiCallback<T>() {
           @Override
@@ -1535,7 +1643,7 @@ public class CallBuilder {
               LOGGER.info(MessageKeys.ASYNC_FAILURE, e, statusCode, responseHeaders, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
             }
             if (didRecycle.compareAndSet(false, true)) {
-              usage.recycle();
+              
             }
             if (didResume.compareAndSet(false, true)) {
               packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry, new CallResponse<Void>(null, e, statusCode, responseHeaders)));
@@ -1548,7 +1656,7 @@ public class CallBuilder {
             LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
 
             if (didRecycle.compareAndSet(false, true)) {
-              usage.recycle();
+              
             }
             if (didResume.compareAndSet(false, true)) {
               packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(new CallResponse<T>(result, null, statusCode, responseHeaders)));
@@ -1558,7 +1666,7 @@ public class CallBuilder {
         };
         
         try {
-          Call c = factory.generate(requestParams, usage, _continue, callback);
+          Call c = factory.generate(requestParams, client, _continue, callback);
           
           // timeout handling
           fiber.owner.getExecutor().schedule(() -> {

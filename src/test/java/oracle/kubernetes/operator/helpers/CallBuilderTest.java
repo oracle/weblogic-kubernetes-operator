@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import io.kubernetes.client.ApiException;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -80,8 +81,8 @@ public class CallBuilderTest {
     public NextAction apply(Packet packet) {
       String namespace = "default";
       
-      CallBuilder builder = CallBuilder.create();
-      Step list = builder.listDomainAsync(namespace, new ResponseStep<DomainList>(null) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step list = factory.create().listDomainAsync(namespace, new ResponseStep<DomainList>(null) {
 
         @SuppressWarnings("unchecked")
         @Override

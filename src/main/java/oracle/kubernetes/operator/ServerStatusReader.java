@@ -19,11 +19,11 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1Pod;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -131,13 +131,12 @@ public class ServerStatusReader {
       final boolean tty = true;
 
       return doSuspend(fiber -> {
-        ClientHelper helper = ClientHelper.getInstance();
-        ClientHolder holder = helper.take();
-        Exec exec = new Exec(holder.getApiClient());
         Process proc = null;
         String state = null;
+        ClientPool helper = ClientPool.getInstance();
+        ApiClient client = helper.take();
         try {
-          proc = exec.exec(pod,
+          proc = new Exec(client).exec(pod,
               new String[] { "/weblogic-operator/scripts/readState.sh" },
               KubernetesConstants.CONTAINER_NAME, stdin, tty);
 
@@ -150,7 +149,7 @@ public class ServerStatusReader {
         } catch (IOException | ApiException | InterruptedException e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         } finally {
-          helper.recycle(holder);
+          helper.recycle(client);
           if (proc != null) {
             proc.destroy();
           }
