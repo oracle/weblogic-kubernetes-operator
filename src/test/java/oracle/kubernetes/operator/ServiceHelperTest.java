@@ -15,7 +15,6 @@ import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
@@ -39,7 +38,7 @@ public class ServiceHelperTest {
 
   @Before
   public void startClean() throws Exception {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     
     // Delete the service if left around.
     System.out.println("Deleting service pre-test");
@@ -55,7 +54,7 @@ public class ServiceHelperTest {
 
   @After
   public void tearDown() throws Exception {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
 
     // Delete the service if we created one.
     if (serviceCreated) {
@@ -67,7 +66,7 @@ public class ServiceHelperTest {
 
   @Test
   public void createReadListUpdate() throws Exception {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
 
     // Domain
     Domain dom = new Domain();

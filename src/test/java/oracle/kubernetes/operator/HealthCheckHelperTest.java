@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
 
 import org.junit.After;
@@ -62,7 +63,10 @@ public class HealthCheckHelperTest {
   @Test
   @Ignore
   public void testDefaultNamespace() throws Exception {
-
+    ContainerResolver.getInstance().getContainer().getComponents().put(
+        ProcessingConstants.MAIN_COMPONENT_NAME,
+        Component.createFor(new CallBuilderFactory(null)));
+    
     defaultHealthCheckHelper.performSecurityChecks("default");
     hdlr.flush();
     String logOutput = bos.toString();
@@ -79,6 +83,10 @@ public class HealthCheckHelperTest {
   @Ignore
   // TODO work out why this test is failing - it is a rbac issue, need to trace where it is coming from
   public void testUnitTestNamespace() throws Exception {
+    ContainerResolver.getInstance().getContainer().getComponents().put(
+        ProcessingConstants.MAIN_COMPONENT_NAME,
+        Component.createFor(new CallBuilderFactory(null)));
+    
     unitHealthCheckHelper.performSecurityChecks("weblogic-operator-account");
     hdlr.flush();
     String logOutput = bos.toString();
@@ -95,6 +103,11 @@ public class HealthCheckHelperTest {
   @Test
   public void testAccountNoPrivs() throws Exception {
     Assume.assumeTrue(TestUtils.isKubernetesAvailable());
+    
+    ContainerResolver.getInstance().getContainer().getComponents().put(
+        ProcessingConstants.MAIN_COMPONENT_NAME,
+        Component.createFor(new CallBuilderFactory(null)));
+    
     unitHealthCheckHelper.performSecurityChecks("unit-test-svc-account-no-privs");
     hdlr.flush();
     String logOutput = bos.toString();
@@ -106,7 +119,7 @@ public class HealthCheckHelperTest {
 
   // Create a named namespace
   private V1Namespace createNamespace(String name) throws Exception {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     try {
       V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)

@@ -10,11 +10,8 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.VersionInfo;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
-import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.work.ContainerResolver;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -41,7 +38,7 @@ public class SecretHelperTest {
 
   @Before
   public void setUp() throws Exception {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     // Determine if 1.8 since some bugs with kubernetes-client / java and secrets
     VersionInfo verInfo = factory.create().readVersionCode();
     if ("1".equals(verInfo.getMajor()) && "8".equals(verInfo.getMinor())) {
@@ -141,7 +138,7 @@ public class SecretHelperTest {
   // Create a named secret with username / password in specified name
   private V1Secret createSecret(String name, String namespace) throws Exception {
 
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     try {
       V1Secret existing = factory.create().readSecret(name, namespace);
       if (existing != null)
@@ -181,7 +178,7 @@ public class SecretHelperTest {
   // Create a named secret with no username / password in specified namespace
   private V1Secret createInvalidSecret(String name, String namespace) throws Exception {
 
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     try {
       V1Secret existing = factory.create().readSecret(name, namespace);
       if (existing != null)
@@ -214,14 +211,14 @@ public class SecretHelperTest {
     if (isVersion18)
       return null;
 
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     return factory.create().deleteSecret(name, namespace, new V1DeleteOptions());
   }
 
   // Create a named namespace
   private V1Namespace createNamespace(String name) throws Exception {
 
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     try {
       V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)
