@@ -13,6 +13,6 @@ public class CallBuilderFactory {
   }
   
   public CallBuilder create() {
-    return CallBuilder.create(tuning.getCallBuilderTuning());
+    return CallBuilder.create(tuning != null ? tuning.getCallBuilderTuning() : null);
   }
 }
