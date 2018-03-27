@@ -109,11 +109,17 @@ function genericDelete {
       resfile_yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
 
       # leftover namespaced artifacts
-      kubectl get $1 --show-labels=true --all-namespaces=true 2>&1 | egrep -e "($3)" | awk '{ print $1 " " $2 }' | sort > $resfile_yes 2>&1
+      kubectl get $1 \
+          -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
+          --all-namespaces=true 2>&1 \
+          | egrep -e "($3)" | sort > $resfile_yes 2>&1
       artcount_yes="`cat $resfile_yes | wc -l`"
 
       # leftover non-namespaced artifacts
-      kubectl get $2 --show-labels=true --all-namespaces=true 2>&1 | egrep -e "($3)" | awk '{ print $1 }' | sort > $resfile_no 2>&1
+      kubectl get $2 \
+          -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
+          --all-namespaces=true 2>&1 \
+          | egrep -e "($3)" | sort > $resfile_no 2>&1
       artcount_no="`cat $resfile_no | wc -l`"
 
       artcount_total=$((artcount_yes + artcount_no))
