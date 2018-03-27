@@ -6,6 +6,8 @@
 # Main:   See 'function main' below.
 #
 
+set -x
+
 function usage {
 cat << EOF
  

@@ -141,6 +141,7 @@ integration-test:
       #   - finally, run.sh will periodically try renew the lease as it runs (using $LEASE_ID)
       #   - if run.sh fails when it tries to renew the lease (as something else took it, etc), it will exit early
       #   - when run.sh exits, it will try release the lease if it's still the owner...
+      set -x
       export LEASE_ID="${WERCKER_STEP_ID}-pid$$"
       echo @@
       echo @@ "Obtaining lease!"
@@ -154,10 +155,10 @@ integration-test:
       echo @@ "Current lease owner (if any):"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
       echo @@
-      set -x
       echo @@ "About to try obtain lease:"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
       echo @@
+      set +x
 
       # create pull secrets
       echo @@ "Creating pull secrets"
