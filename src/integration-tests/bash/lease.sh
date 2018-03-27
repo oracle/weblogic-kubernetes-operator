@@ -289,7 +289,7 @@ EOF
 
 function makeLocalLeaseAndReplaceRemote {
 # TODO remote set +x/-x
-  set +x
+  set -x
   makeLocalLease
   if [ $? -ne 0 ]; then
     traceError "failed - could not generate a new local lease"
@@ -319,7 +319,7 @@ function makeLocalLeaseAndReplaceRemote {
     traceError "failed - replaced remote lease, but we somehow lost a race or can no longer communicate with kubernetes"
     return 1
   fi
-  set -x
+  set +x
 }
 
 function getRemoteLease {
