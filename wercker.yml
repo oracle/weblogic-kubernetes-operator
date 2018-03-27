@@ -135,6 +135,9 @@ integration-test:
       echo @@ "Calling 'kubectl version'"
       kubectl version
 
+      # disable leasing while we try debug why it stopped working
+      if [ "true" = "false ]; then
+
       # obtain an exclusive k8s cluster lease using the 'lease.sh' helper script
       #   - first set LEASE_ID to a unique value
       #   - then try obtain the lease, block up to 100 minutes (wercker pipeline should timeout before then)
@@ -157,6 +160,8 @@ integration-test:
       echo @@ "About to try obtain lease:"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
       echo @@
+
+      fi
 
       # create pull secrets
       echo @@ "Creating pull secrets"
