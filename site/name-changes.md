@@ -160,11 +160,44 @@ The following input properties, which used to have default values, now must be u
 | persistenceType | weblogicDomainStorageType | nfs | NFS |
 
 ## Kubernetes Artifact Names
-The input properties for controlling the domain's persistent volume, persistent volume claim and storage class names have been removed.  These names are now derived from the domain uid.
 
 | Artifact Type | Previous Name | New Name |
 | --- | --- | --- |
 | persistent volume | ${domainUid}-${persistenceVolume} or ${persistenceVolume} | ${domainUID}-weblogic-domain-pv |
 | persistent volume claim | ${domainUid}-${persistenceVolumeClaim} or ${persistenceVolumeClaim} | ${domainUID}-weblogic-domain-pvc |
 | storage class name | ${domainUid} or ${persistenceStorageClass} | ${domainUID-weblogic-domain-storage-class |
+| job | domain-${domainUid}-job | ${domainUID}-create-weblogic-domain-job |
+| container | ${d.domainUID}-${d.clusterName, lower case}-traefik | traefik |
+| config map | operator-config-map | weblogic-operator-config-map |
+| config map | ${domainUid}-${clusterName, lower case}-traefik | ${domainUID}-${clusterName, lower case}-traefik-config-map |
+| config map |  domain-${domainUid}-scripts | ${domainUID}-create-weblogic-domain-job-config-map |
+| secret | operator-secrets | weblogic-operator-secrets |
+| port | rest-https | rest |
+| n volume | operator-config-volume | weblogic-operator-config-map-volume |
+| n volume | operator-secrets-volume | weblogic-operator-secrets-volume |
+| n volume | config-map-scripts | create-weblogic-domain-job-config-map-volume |
+| n volume | pv-storage | weblogic-domain-storage-volume |
+| n volume | secrets | weblogic-credentials-volume |
+| n volume | scripts | weblogic-domain-config-map-volume |
+
+Temp note: weblogic-domain-config-map is created on the fly by ConfigMapHelper.java.  It's referenced by weblogic-domain-config-map-volume.
+
+TBD - we're appending type to:
+  - config maps
+  - secrets
+  - pvs (global)
+  - pvcs
+  - storage classes
+  - jobs
+but not to:
+  - namespaces (global)
+  - deployments
+  - pods
+  - services
+  - service accounts
+  - ports
+  - maybe volumes
+  - maybe volume mounts
+
+Note: The input properties for controlling the domain's persistent volume, persistent volume claim and storage class names have been removed.  These names are now derived from the domain uid.
 

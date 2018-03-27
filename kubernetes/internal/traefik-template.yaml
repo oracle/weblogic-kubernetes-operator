@@ -33,7 +33,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
       - image: traefik:1.4.5
-        name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
+        name: traefik
         resources:
           requests:
             cpu: "100m"
@@ -72,12 +72,12 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
+          name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik-config-map
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
+  name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik-config-map
   namespace: %NAMESPACE%
   labels:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik

@@ -192,13 +192,13 @@ Here is the first part of that YAML file:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: domain-domain1-job
+  name: domain1-create-weblogic-domain-job
   namespace: domain1
 spec:
   template:
     metadata:
       labels:
-        app: domain-domain1-job
+        app: domain1-create-weblogic-domain-job
         weblogic.domainUID: domain1
     spec:
       restartPolicy: Never
@@ -223,7 +223,7 @@ spec:
       volumes:
         - name: config-map-scripts
           configMap:
-            name: domain-domain1-scripts
+            name: domain1-create-weblogic-domain-job-config-map
         - name: pv-storage
           persistentVolumeClaim:
             claimName: domain1-pv001-claim

@@ -89,7 +89,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name("operator-config-map")
+          .name("weblogic-operator-config-map")
           .namespace(getInputs().getNamespace()))
         .putDataItem("serviceaccount", getInputs().getServiceAccount())
         .putDataItem("targetNamespaces", getInputs().getTargetNamespaces())
@@ -114,7 +114,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newSecret()
         .metadata(newObjectMeta()
-          .name("operator-secrets")
+          .name("weblogic-operator-secrets")
           .namespace(getInputs().getNamespace()))
         .type("Opaque")
         .putDataItem("externalOperatorKey", getExpectedExternalWeblogicOperatorKey().getBytes())
@@ -180,11 +180,11 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
               .addVolumesItem(newVolume()
                 .name("operator-config-volume")
                   .configMap(newConfigMapVolumeSource()
-                    .name("operator-config-map")))
+                    .name("weblogic-operator-config-map")))
               .addVolumesItem(newVolume()
                 .name("operator-secrets-volume")
                   .secret(newSecretVolumeSource()
-                    .secretName("operator-secrets"))))));
+                    .secretName("weblogic-operator-secrets"))))));
   }
 
   @Test
@@ -214,7 +214,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .putSelectorItem("app", "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(newServicePort()
-        .name("rest-https")
+        .name("rest")
         .port(8081)
         .nodePort(Integer.parseInt(getInputs().getExternalRestHttpsPort())));
     }
@@ -252,7 +252,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
           .type("ClusterIP")
           .putSelectorItem("app", "weblogic-operator")
           .addPortsItem(newServicePort()
-            .name("rest-https")
+            .name("rest")
             .port(8082)));
   }
 
@@ -531,7 +531,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .putSelectorItem("app", "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(newServicePort()
-        .name("rest-https")
+        .name("rest")
         .port(8081)
         .nodePort(Integer.parseInt(inputs.getExternalRestHttpsPort())));
     }
