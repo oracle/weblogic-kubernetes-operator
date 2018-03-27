@@ -299,7 +299,7 @@ function makeLocalLeaseAndReplaceRemote {
   local tempcf=${LOCAL_ROOT}/tempcf.yaml
 
   # next, try replace remote lease with the candidate lease
-  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -o yaml -n default --dry-run > tempcf.yaml
+  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -o yaml -n default --dry-run > $tempcf
   if [ $? -ne 0 ]; then
     traceError "failed - could not generate config map yaml"
     return 1
