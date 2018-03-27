@@ -11,7 +11,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: weblogic-operator-config-map
+  name: weblogic-operator-cm
   namespace: %NAMESPACE%
 data:
   serviceaccount: %ACCOUNT_NAME%
@@ -104,7 +104,7 @@ spec:
       volumes:
       - name: operator-config-volume
         configMap:
-          name: weblogic-operator-config-map
+          name: weblogic-operator-cm
       - name: operator-secrets-volume
         secret:
           secretName: weblogic-operator-secrets

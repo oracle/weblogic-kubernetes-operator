@@ -21,7 +21,7 @@ public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getCreateWeblogicDomainConfigMap() {
-    return getConfigMaps().find(inputs.getDomainUID() + "-create-weblogic-domain-job-config-map");
+    return getConfigMaps().find(inputs.getDomainUID() + "-create-weblogic-domain-job-cm");
   }
 
   public V1Job getCreateWeblogicDomainJob() {

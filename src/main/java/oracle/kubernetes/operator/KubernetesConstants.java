@@ -25,6 +25,6 @@ public interface KubernetesConstants {
   
   public static final String CONTAINER_NAME = "weblogic-server";
   
-  public static final String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-config-map";
+  public static final String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-cm";
 
 }

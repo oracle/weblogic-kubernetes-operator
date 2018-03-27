@@ -159,7 +159,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
             .spec(newPodSpec()
               .restartPolicy("Never")
               .addContainersItem(newContainer()
-                .name("domain-job")
+                .name("create-weblogic-domain-job")
                 .image("store/oracle/weblogic:12.2.1.3")
                 .imagePullPolicy("IfNotPresent")
                 .addCommandItem("/bin/sh")
@@ -181,7 +181,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
               .addVolumesItem(newVolume()
                 .name("config-map-scripts")
                   .configMap(newConfigMapVolumeSource()
-                    .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-config-map")))
+                    .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")))
               .addVolumesItem(newVolume()
                 .name("pv-storage")
                 .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
@@ -231,7 +231,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-config-map")
+          .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")
           .namespace(getInputs().getNamespace())
           .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
         .putDataItem(PROPERTY_UTILITY_SH, "")
@@ -485,7 +485,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
               .addVolumesItem(newVolume()
                 .name("config")
                   .configMap(newConfigMapVolumeSource()
-                    .name(getTraefikScope() + "-config-map"))))));
+                    .name(getTraefikScope() + "-cm"))))));
   }
 
   @Test
@@ -513,7 +513,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name(getTraefikScope() + "-config-map")
+          .name(getTraefikScope() + "-cm")
           .namespace(getInputs().getNamespace())
           .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
           .putLabelsItem("weblogic.clusterName", getClusterNameLC())

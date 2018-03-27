@@ -460,7 +460,7 @@ public class PodHelperConfigTest {
           .addVolumesItem(newVolume()
             .name("scripts")
               .configMap(newConfigMapVolumeSource()
-                .name("weblogic-domain-config-map")
+                .name("weblogic-domain-cm")
                 .defaultMode(365))));
   }
 }

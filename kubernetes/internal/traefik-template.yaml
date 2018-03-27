@@ -72,12 +72,12 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik-config-map
+          name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik-cm
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik-config-map
+  name: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik-cm
   namespace: %NAMESPACE%
   labels:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik

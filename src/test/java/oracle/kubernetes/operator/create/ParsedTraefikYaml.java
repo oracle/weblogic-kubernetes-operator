@@ -31,7 +31,7 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getTraefikConfigMap() {
-    return getConfigMaps().find(getTraefikScope() + "-config-map");
+    return getConfigMaps().find(getTraefikScope() + "-cm");
   }
 
   public V1Service getTraefikService() {
