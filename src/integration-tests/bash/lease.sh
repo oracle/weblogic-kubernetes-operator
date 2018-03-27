@@ -287,6 +287,41 @@ EOF
   fi
 }
 
+function makeLocalLeaseAndReplaceRemote {
+# TODO remote set +x/-x
+  set +x
+  makeLocalLease
+  if [ $? -ne 0 ]; then
+    traceError "failed - could not generate a new local lease"
+    return 1
+  fi
+
+  local tempcf=${LOCAL_ROOT}/tempcf.yaml
+
+  # next, try replace remote lease with the candidate lease
+  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -o yaml -n default --dry-run > tempcf.yaml
+  if [ $? -ne 0 ]; then
+    traceError "failed - could not generate config map yaml"
+    return 1
+  fi
+
+  kubectl replace -f $tempcf
+  if [ $? -ne 0 ]; then
+    traceError "failed - could not get replace remote lease"
+    return 1
+  fi
+
+  # finally, check if we now actually own the lease (someone could have been replacing at the same time)
+  checkLease 
+  if [ $? -eq 0 ]; then
+    return 0
+  else
+    traceError "failed - replaced remote lease, but we somehow lost a race or can no longer communicate with kubernetes"
+    return 1
+  fi
+  set -x
+}
+
 function getRemoteLease {
   #
   #  first, if the remote lease configmap doesn't exist
@@ -397,25 +432,11 @@ function obtainLease {
       # so assume it can be replaced and we can try takeover the lease 
 
       # first make a local candidate lease
-      makeLocalLease
-      if [ $? -ne 0 ]; then
-        traceError "failed - could not generate a new local lease"
-        return 1
-      fi
-
-      # next, try replace remote lease with the candidate lease
-      kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -o yaml -n default --dry-run | kubectl replace -f -
-      if [ $? -ne 0 ]; then
-        traceError "failed - could not replace remote lease"
-        return 1
-      fi
-
-      # finally, check if we now actually own the lease (someone could have been replacing at the same time)
-      checkLease 
+      makeLocalLeaseAndReplaceRemote
       if [ $? -eq 0 ]; then
         return 0
       else
-        traceError "failed - replaced remote lease, but kubernetes is not responding or we lost a race and another potential owner replaced it too, will keep retrying up to the timeout"
+        traceError "failed to replace remote lease, will keep retrying up to the timeout"
       fi
     fi
     local mnow=`date +%s`
@@ -449,26 +470,12 @@ function renewLease {
   fi
 
   # now make a new local candidate lease
-  makeLocalLease
+  makeLocalLeaseAndReplaceRemote
   if [ $? -ne 0 ]; then
-    traceError "failed - could not generate a new local lease"
+    traceError "failed to replace remote lease"
     return 1
-  fi
-
-  # next, try replace remote lease with the candidate lease
-  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -o yaml -n default --dry-run | kubectl replace -f -
-  if [ $? -ne 0 ]; then
-    traceError "failed - could not get replace remote lease"
-    return 1
-  fi
-
-  # finally, check if we now actually own the lease (someone could have been replacing at the same time)
-  checkLease 
-  if [ $? -eq 0 ]; then
-    return 0
   else
-    traceError "failed - replaced remote lease, but we somehow lost a race or can no longer communicate with kubernetes"
-    return 1
+    return 0
   fi
 }
 
