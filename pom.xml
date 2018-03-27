@@ -222,7 +222,8 @@
                             <goal>testAttestation</goal>
                         </goals>
                         <configuration>
-                            <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
+                            <!-- <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl> -->
+                            <grafeasUrl>${project.grafeasUrl}</grafeasUrl>
                             <projectId>${project.name}</projectId>
                             <resourceUrl>${project.url}</resourceUrl>
                         </configuration>
@@ -431,6 +432,7 @@
                 <failsafeArgLine></failsafeArgLine>
             </properties>
         </profile>
+<!--
         <profile>
             <id>grafeas_server_address_default</id>
             <activation>
@@ -453,6 +455,7 @@
                 <env.GRAFEAS_SERVER_PORT>8080</env.GRAFEAS_SERVER_PORT>
             </properties>
         </profile>
+-->
     </profiles>
 
     <dependencies>
@@ -640,6 +643,7 @@
     </dependencies>
 
     <properties>
+        <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
