@@ -216,7 +216,7 @@ The spec section provides details for the container that the operator will execu
       volumes:
       - name: operator-config-volume
         configMap:
-          name: weblogic-operator-config-map
+          name: weblogic-operator-cm
       - name: operator-secrets-volume
         secret:
           weblogicCredentialsSecretName: weblogic-operator-secrets
@@ -279,7 +279,7 @@ This section creates a ConfigMap that passes configuration information to the op
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: weblogic-operator-config-map
+  name: weblogic-operator-cm
   namespace: weblogic-operator
 data:
   serviceaccount: weblogic-operator

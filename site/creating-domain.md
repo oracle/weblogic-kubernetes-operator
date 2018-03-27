@@ -203,7 +203,7 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-        - name: domain-job
+        - name: create-weblogic-domain-job
           image: store/oracle/weblogic:12.2.1.3
           imagePullPolicy: IfNotPresent
           ports:
@@ -223,7 +223,7 @@ spec:
       volumes:
         - name: config-map-scripts
           configMap:
-            name: domain1-create-weblogic-domain-job-config-map
+            name: domain1-create-weblogic-domain-job-cm
         - name: pv-storage
           persistentVolumeClaim:
             claimName: domain1-pv001-claim

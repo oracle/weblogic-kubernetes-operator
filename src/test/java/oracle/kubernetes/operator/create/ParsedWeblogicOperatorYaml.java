@@ -24,7 +24,7 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getOperatorConfigMap() {
-    return getConfigMaps().find("weblogic-operator-config-map");
+    return getConfigMaps().find("weblogic-operator-cm");
   }
 
   public V1Secret getOperatorSecrets() {

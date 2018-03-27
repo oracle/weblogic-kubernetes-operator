@@ -89,7 +89,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name("weblogic-operator-config-map")
+          .name("weblogic-operator-cm")
           .namespace(getInputs().getNamespace()))
         .putDataItem("serviceaccount", getInputs().getServiceAccount())
         .putDataItem("targetNamespaces", getInputs().getTargetNamespaces())
@@ -180,7 +180,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
               .addVolumesItem(newVolume()
                 .name("operator-config-volume")
                   .configMap(newConfigMapVolumeSource()
-                    .name("weblogic-operator-config-map")))
+                    .name("weblogic-operator-cm")))
               .addVolumesItem(newVolume()
                 .name("operator-secrets-volume")
                   .secret(newSecretVolumeSource()
