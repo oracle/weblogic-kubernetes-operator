@@ -6,8 +6,6 @@
 # Main:   See 'function main' below.
 #
 
-set -x
-
 function usage {
 cat << EOF
  
@@ -305,7 +303,7 @@ function makeLocalLeaseAndReplaceRemote {
     return 1
   fi
 
-  kubectl replace -f $tempcf
+  kubectl replace -f $tempcf --validate=false
   if [ $? -ne 0 ]; then
     traceError "failed - could not get replace remote lease"
     return 1
