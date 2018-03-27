@@ -286,38 +286,45 @@ EOF
 }
 
 function makeLocalLeaseAndReplaceRemote {
-# TODO remote set +x/-x
-  set -x
+  # Replace the remote lease with a new lease that we own
+  # It's assumed that it's already determined it's safe to try and get the lease
+  # (either the lease is unowned, expired, or owned by us).
+  #
+  # TBD: There's a small race where this call temporarily deletes the lease before
+  # it replaces it with a new one,
+  # which means someone else could come in and snipe it even if we already
+  # own an older version of the lease and the older version hasn't expired.
+  # If this happens, this call will fail when it tries to 'checkLease'
+  # and the caller therefore is forced to give up their lease.   In theory,
+  # this race could be resolved by using a 'replace -f' pattern - but this
+  # failed with unexpected errors on some kubectl setups but not others.
+  #
+
   makeLocalLease
   if [ $? -ne 0 ]; then
     traceError "failed - could not generate a new local lease"
     return 1
   fi
 
-  local tempcf=${LOCAL_ROOT}/tempcf.yaml
-
-  # next, try replace remote lease with the candidate lease
-  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -o yaml -n default --dry-run > $tempcf
+  deleteRemoteLeaseUnsafe
   if [ $? -ne 0 ]; then
-    traceError "failed - could not generate config map yaml"
+    traceError "failed - could not delete remote lease" 
     return 1
   fi
 
-  kubectl replace -f $tempcf --validate=false
+  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -n default
   if [ $? -ne 0 ]; then
-    traceError "failed - could not get replace remote lease"
+    traceError "failed - could not replace" 
     return 1
   fi
 
   # finally, check if we now actually own the lease (someone could have been replacing at the same time)
   checkLease 
-  if [ $? -eq 0 ]; then
-    return 0
-  else
+  if [ $? -ne 0 ]; then
     traceError "failed - replaced remote lease, but we somehow lost a race or can no longer communicate with kubernetes"
     return 1
   fi
-  set +x
+  return 0
 }
 
 function getRemoteLease {
