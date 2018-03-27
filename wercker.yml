@@ -154,6 +154,7 @@ integration-test:
       echo @@ "Current lease owner (if any):"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
       echo @@
+      set -x
       echo @@ "About to try obtain lease:"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
       echo @@
