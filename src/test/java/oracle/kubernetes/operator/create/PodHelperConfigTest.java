@@ -372,7 +372,7 @@ public class PodHelperConfigTest {
   private void setDesiredPersistentVolumeClaim(V1Pod pod) {
     pod.getSpec()
       .getVolumes().add(0, newVolume() // needs to be first in the list
-        .name("pv-storage")
+        .name("weblogic-domain-storage-volume")
         .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
           .claimName(WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_NAME)));
   }
@@ -445,20 +445,20 @@ public class PodHelperConfigTest {
               .name("ADMIN_PASSWORD")
               .value(null))
             .addVolumeMountsItem(newVolumeMount() // TBD - why is the mount created if the volume doesn't exist?
-              .name("pv-storage")
+              .name("weblogic-domain-storage-volume")
               .mountPath("/shared"))
             .addVolumeMountsItem(newVolumeMount()
-              .name("secrets")
+              .name("weblogic-credentials-volume")
               .mountPath("/weblogic-operator/secrets"))
             .addVolumeMountsItem(newVolumeMount()
-              .name("scripts")
+              .name("weblogic-domain-cm-volume")
               .mountPath("/weblogic-operator/scripts")))
           .addVolumesItem(newVolume()
-            .name("secrets")
+            .name("weblogic-credentials-volume")
               .secret(newSecretVolumeSource()
                 .secretName(WEBLOGIC_CREDENTIALS_SECRET_NAME)))
           .addVolumesItem(newVolume()
-            .name("scripts")
+            .name("weblogic-domain-cm-volume")
               .configMap(newConfigMapVolumeSource()
                 .name("weblogic-domain-cm")
                 .defaultMode(365))));

@@ -528,9 +528,9 @@ spec:
           - mountPath: /u01/weblogic
             name: create-weblogic-domain-job-cm-volume
           - mountPath: /shared
-            name: pv-storage
+            name: weblogic-domain-storage-volume
           - mountPath: /weblogic-operator/secrets
-            name: secrets
+            name: weblogic-credentials-volume
           command: ["/bin/sh"]
           args: ["/u01/weblogic/create-domain-job.sh"]
           env:
@@ -540,10 +540,10 @@ spec:
         - name: create-weblogic-domain-job-cm-volume
           configMap:
             name: %DOMAIN_UID%-create-weblogic-domain-job-cm
-        - name: pv-storage
+        - name: weblogic-domain-storage-volume
           persistentVolumeClaim:
             claimName: %DOMAIN_UID%-weblogic-domain-pvc
-        - name: secrets
+        - name: weblogic-credentials-volume
           secret:
             secretName: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
       %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
