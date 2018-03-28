@@ -114,7 +114,7 @@ public class Main {
   static {
     container.getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(tuningAndConfig, TuningParameters.class, callBuilderFactory));
+        Component.createFor(TuningParameters.class, tuningAndConfig, callBuilderFactory));
   }
 
   private static final Engine engine = new Engine("operator", container);

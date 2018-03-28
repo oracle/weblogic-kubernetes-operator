@@ -234,7 +234,6 @@ public class RestServer {
           Thread n = tf.newThread(() -> {
             ContainerResolver.getDefault().enterContainer(container);
             r.run();
-            
           });
           if (!n.isDaemon()) {
             n.setDaemon(true);
