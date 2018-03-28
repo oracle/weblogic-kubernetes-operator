@@ -98,9 +98,10 @@ function initAndValidateOutputDir {
     create-weblogic-domain-inputs.yaml \
     weblogic-domain-persistent-volume.yaml \
     weblogic-domain-persistent-volume-claim.yaml \
+    weblogic-domain-traefik-${clusterName}.yaml \
+    weblogic-domain-traefik-security-${clusterName}.yaml \
     create-weblogic-domain-job.yaml \
-    domain-custom-resource.yaml \
-    traefik.yaml
+    domain-custom-resource.yaml
 }
 
 #
@@ -310,12 +311,12 @@ function initialize {
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
 
-  traefikSecurityInput="${scriptDir}/traefik-security-template.yaml"
+  traefikSecurityInput="${scriptDir}/weblogic-domain-traefik-security-template.yaml"
   if [ ! -f ${traefikSecurityInput} ]; then
     validationError "The file ${traefikSecurityInput} for generating the traefik RBAC was not found"
   fi
 
-  traefikInput="${scriptDir}/traefik-template.yaml"
+  traefikInput="${scriptDir}/weblogic-domain-traefik-template.yaml"
   if [ ! -f ${traefikInput} ]; then
     validationError "The template file ${traefikInput} for generating the traefik deployment was not found"
   fi
@@ -385,8 +386,8 @@ function createYamlFiles {
   domainPVCOutput="${domainOutputDir}/weblogic-domain-persistent-volume-claim.yaml"
   jobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
-  traefikSecurityOutput="${domainOutputDir}/traefik-security.yaml"
-  traefikOutput="${domainOutputDir}/traefik.yaml"
+  traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterName}.yaml"
+  traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterName}.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
