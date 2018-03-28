@@ -9,7 +9,7 @@ import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 
 /**
- * Parses a generated traefik-security.yaml file into a set of typed k8s java objects
+ * Parses a generated weblogic-domain-traefik-security-inputs.getClusterName().yaml file into a set of typed k8s java objects
  */
 public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
 
