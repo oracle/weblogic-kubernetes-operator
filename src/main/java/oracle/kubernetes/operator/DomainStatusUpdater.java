@@ -109,6 +109,12 @@ public class DomainStatusUpdater {
       Domain dom = info.getDomain();
       DomainSpec spec = dom.getSpec();
       DomainStatus status = dom.getStatus();
+      
+      
+      // TEST
+      System.out.println("**** 6 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
+
+      
       List<ServerStatus> existingServerStatuses = null;
       if (status == null) {
         // If this is the first time, create status
