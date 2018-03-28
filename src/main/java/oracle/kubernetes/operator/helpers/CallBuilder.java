@@ -163,7 +163,7 @@ public class CallBuilder {
    * @return List of namespaces
    * @throws ApiException API Exception
    */
-  public V1NamespaceList listNamespace(String namespace) throws ApiException {
+  public V1NamespaceList listNamespace() throws ApiException {
     String _continue = "";
     ApiClient client = helper.take();
     try {
@@ -185,7 +185,6 @@ public class CallBuilder {
   
   /**
    * Asynchronous step for listing namespaces
-   * @param namespace Namespace
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
@@ -262,6 +261,7 @@ public class CallBuilder {
   /**
    * Delete namespace
    * @param name Name
+   * @param deleteOptions Delete options
    * @return Status of deletion
    * @throws ApiException API Exception
    */
