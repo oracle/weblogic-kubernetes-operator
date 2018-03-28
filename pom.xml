@@ -187,7 +187,6 @@
                       <goals>
                           <goal>check</goal>
                       </goals>
-                      <!--<phase>verify</phase>-->
                   </execution>
               </executions>
             </plugin>
@@ -195,15 +194,18 @@
                 <groupId>oracle.sscm</groupId>
                 <artifactId>sscm-client</artifactId>
                 <version>0.1.0</version>
+                <configuration>
+                    <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
+                    <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <id>buildAttestation</id>
+                        <id>build-attestation</id>
                         <goals>
                             <goal>buildDetails</goal>
                         </goals>
                         <configuration>
-                            <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
                             <projectName>${project.name}</projectName>
                             <projectNumber>1253</projectNumber>
                             <builderName>BuildDetails</builderName>
@@ -216,24 +218,17 @@
                         </configuration>
                     </execution>
                     <execution>
-                      <!--<phase>verify</phase>-->
-                      <id>default-cli</id>
+                      <id>security-scan</id>
                       <goals>
-                        <goal>generateOccurrences</goal>
+                        <goal>securityScan</goal>
                       </goals>
-                      <configuration>
-                        <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
-                        <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
-                      </configuration>
                     </execution>
                     <execution>
-                        <!--<phase>verify</phase>-->
-                        <id>testAttestation</id>
+                        <id>default-cli</id>
                         <goals>
                             <goal>testAttestation</goal>
                         </goals>
                         <configuration>
-                            <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
                             <projectId>${project.name}</projectId>
                             <resourceUrl>${project.url}</resourceUrl>
                         </configuration>

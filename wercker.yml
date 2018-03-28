@@ -91,20 +91,20 @@ test:
     code: |
       echo "Running sscm-client:testAttestation goal ..."
 
-#  - java/maven:
-#      goals: sscm-client:testAttestation
-#      version: 3.5.2
-#      cache_repo: true
+  - java/maven:
+      goals: sscm-client:testAttestation
+      version: 3.5.2
+      cache_repo: true
 
 security-scan:
   steps:
   - script:
     name: Hello
     code: |
-      echo "Running sscm-client:generateOccurrences goal (verify phase) ..."
+      echo "Running sscm-client:securityScan goal ..."
 
   - java/maven:
-      goals: org.owasp:dependency-check-maven:3.1.1:check sscm-client:generateOccurrences
+      goals: org.owasp:dependency-check-maven:3.1.1:check sscm-client:securityScan
       version: 3.5.2
       cache_repo: true
 
