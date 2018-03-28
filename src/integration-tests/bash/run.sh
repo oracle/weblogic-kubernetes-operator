@@ -1318,7 +1318,7 @@ function call_operator_rest {
     fi
 
     set +x
-    local REST_PORT="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-svc")].spec.ports[?(@.name == "rest-https")].nodePort}'`"
+    local REST_PORT="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-svc")].spec.ports[?(@.name == "rest")].nodePort}'`"
     set -x
     local REST_ADDR="https://${NODEPORT_HOST}:${REST_PORT}"
     local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
