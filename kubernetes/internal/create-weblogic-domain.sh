@@ -540,8 +540,8 @@ function createDomain {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print $3; } '`
-    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print "pod", $1, "status is", $3; } '`
+    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $3; } '`
+    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
     echo "$JOB_INFO"
 
@@ -559,7 +559,7 @@ function createDomain {
   done
 
   # Confirm the job pod is status completed
-  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print $1; } '`
+  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   if [ "$JOB_STATUS" != "Completed" ]; then
     echo The create domain job is not showing status completed after waiting 300 seconds
     echo Check the log output for errors
