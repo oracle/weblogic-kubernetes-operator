@@ -309,7 +309,7 @@ public class CallBuilder {
       return new WeblogicApi(client).listWebLogicOracleV1NamespacedDomain(namespace, pretty, _continue,
         fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
-      
+      helper.recycle(client);
     }
   }
 
