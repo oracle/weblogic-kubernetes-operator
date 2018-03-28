@@ -195,6 +195,7 @@ public class Main {
       // this would happen when the Domain was running BEFORE the Operator starts up
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
+        initialized.put(ns, Boolean.TRUE);
         Step domainList = callBuilderFactory.create().listDomainAsync(ns, new ResponseStep<DomainList>(null) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -208,22 +209,9 @@ public class Main {
           @Override
           public NextAction onSuccess(Packet packet, DomainList result, int statusCode,
               Map<String, List<String>> responseHeaders) {
-            initialized.put(ns, Boolean.TRUE);
             if (result != null) {
               for (Domain dom : result.getItems()) {
                 doCheckAndCreateDomainPresence(dom);
-              }
-            }
-            
-            // delete stranded resources
-            for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
-              String domainUID = entry.getKey();
-              DomainPresenceInfo info = entry.getValue();
-              if (info != null) {
-                if (info.getDomain() == null) {
-                  // no domain resource
-                  deleteDomainPresence(info.getNamespace(), domainUID);
-                }
               }
             }
             
@@ -360,6 +348,18 @@ public class Main {
             LOGGER.severe(MessageKeys.EXCEPTION, throwable);
           }
         }); 
+      }
+      
+      // delete stranded resources
+      for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
+        String domainUID = entry.getKey();
+        DomainPresenceInfo info = entry.getValue();
+        if (info != null) {
+          if (info.getDomain() == null) {
+            // no domain resource
+            deleteDomainPresence(info.getNamespace(), domainUID);
+          }
+        }
       }
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -576,6 +576,9 @@ public class Main {
     DomainSpec spec = dom.getSpec();
     normalizeDomainSpec(spec);
     String domainUID = spec.getDomainUID();
+
+    // TEST
+    System.out.println("**** -1 **** domainUID: " + domainUID);
 
     DomainPresenceInfo created = new DomainPresenceInfo(dom);
     DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
