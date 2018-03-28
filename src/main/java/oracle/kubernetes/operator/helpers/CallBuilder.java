@@ -1639,13 +1639,14 @@ public class CallBuilder {
         ApiCallback<T> callback = new BaseApiCallback<T>() {
           @Override
           public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-            if (statusCode != NOT_FOUND) {
-              LOGGER.info(MessageKeys.ASYNC_FAILURE, e, statusCode, responseHeaders, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-            }
-            if (didRecycle.compareAndSet(false, true)) {
-              
-            }
             if (didResume.compareAndSet(false, true)) {
+              if (statusCode != NOT_FOUND) {
+                LOGGER.info(MessageKeys.ASYNC_FAILURE, e, statusCode, responseHeaders, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
+              }
+              
+              if (didRecycle.compareAndSet(false, true)) {
+                helper.recycle(client);
+              }
               packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry, new CallResponse<Void>(null, e, statusCode, responseHeaders)));
               fiber.resume(packet);
             }
@@ -1653,12 +1654,12 @@ public class CallBuilder {
 
           @Override
           public void onSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-            LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
-
-            if (didRecycle.compareAndSet(false, true)) {
-              
-            }
             if (didResume.compareAndSet(false, true)) {
+              LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
+
+              if (didRecycle.compareAndSet(false, true)) {
+                helper.recycle(client);
+              }
               packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(new CallResponse<T>(result, null, statusCode, responseHeaders)));
               fiber.resume(packet);
             }
