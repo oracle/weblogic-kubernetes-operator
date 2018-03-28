@@ -119,7 +119,7 @@ spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%apiVersion: v1
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%kind: Service
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%metadata:
-%EXTERNAL_OPERATOR_SERVICE_PREFIX%  name: external-weblogic-operator-service
+%EXTERNAL_OPERATOR_SERVICE_PREFIX%  name: external-weblogic-operator-svc
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  namespace: %NAMESPACE%
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  type: NodePort
@@ -139,7 +139,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: internal-weblogic-operator-service
+  name: internal-weblogic-operator-svc
   namespace: %NAMESPACE%
 spec:
   type: ClusterIP

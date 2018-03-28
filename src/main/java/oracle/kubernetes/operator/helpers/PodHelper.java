@@ -286,7 +286,7 @@ public class PodHelper {
         }
       }
 
-      // Add internal-weblogic-operator-service certificate to Admin Server pod
+      // Add internal-weblogic-operator-svc certificate to Admin Server pod
       String internalOperatorCert = getInternalOperatorCertFile(packet);
       addEnvVar(container, INTERNAL_OPERATOR_CERT_ENV, internalOperatorCert);
 

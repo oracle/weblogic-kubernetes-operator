@@ -239,7 +239,7 @@ This section defines the external service that provides access to the operator t
 apiVersion: v1
 kind: Service
 metadata:
-  name: external-weblogic-operator-service
+  name: external-weblogic-operator-svc
   namespace: weblogic-operator
 spec:
   type: NodePort
@@ -261,7 +261,7 @@ This section defines a service that provides access to the operator’s REST ser
 apiVersion: v1
 kind: Service
 metadata:
-  name: internal-weblogic-operator-service
+  name: internal-weblogic-operator-svc
   namespace: weblogic-operator
 spec:
   type: ClusterIP

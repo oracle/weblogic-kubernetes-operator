@@ -36,11 +36,11 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   }
 
   public V1Service getExternalOperatorService() {
-    return getServices().find("external-weblogic-operator-service");
+    return getServices().find("external-weblogic-operator-svc");
   }
 
   public V1Service getInternalOperatorService() {
-    return getServices().find("internal-weblogic-operator-service");
+    return getServices().find("internal-weblogic-operator-svc");
   }
 
   public int getExpectedObjectCount() {

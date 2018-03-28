@@ -175,6 +175,8 @@ The following input properties, which used to have default values, now must be u
 | config map | weblogic-domain-config-map | weblogic-domain-cm |
 | secret | operator-secrets | weblogic-operator-secrets |
 | port | rest-https | rest |
+| service | external-weblogic-operator-service | external-weblogic-operator-srv |
+| service | internal-weblogic-operator-service | internal-weblogic-operator-srv |
 | n volume & mount | operator-config-volume | weblogic-operator-cm-volume |
 | n volume & mount | operator-secrets-volume | weblogic-operator-secrets-volume |
 | n volume & mount | config-map-scripts | create-weblogic-domain-job-cm-volume |

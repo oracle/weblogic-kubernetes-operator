@@ -18,7 +18,7 @@ Here is a small BASH script that may help to prepare the necessary token, certif
 KUBERNETES_SERVER=$1
 URL_TAIL=$2
 
-REST_PORT=`kubectl get services -n weblogic-operator -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")].spec.ports[?(@.name == "rest")].nodePort}'`
+REST_PORT=`kubectl get services -n weblogic-operator -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-svc")].spec.ports[?(@.name == "rest")].nodePort}'`
 REST_ADDR="https://${KUBERNETES_SERVER}:${REST_PORT}"
 SECRET=`kubectl get serviceaccount weblogic-operator -n weblogic-operator -o jsonpath='{.secrets[0].name}'`
 ENCODED_TOKEN=`kubectl get secret ${SECRET} -n weblogic-operator -o jsonpath='{.data.token}'`

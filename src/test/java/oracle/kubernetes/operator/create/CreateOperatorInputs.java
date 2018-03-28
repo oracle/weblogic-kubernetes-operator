@@ -134,7 +134,7 @@ public class CreateOperatorInputs {
 
   private String internalSans() {
     // Must match internal sans computation in kubernetes/internal/create-weblogic-operator.sh
-    String host = "internal-weblogic-operator-service";
+    String host = "internal-weblogic-operator-svc";
     String ns = getNamespace();
     StringBuilder sb  = new StringBuilder();
     sb
