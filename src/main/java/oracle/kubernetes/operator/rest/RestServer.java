@@ -230,10 +230,15 @@ public class RestServer {
         ThreadFactory x = t.getThreadFactory();
         ThreadFactory tf = x != null ? x : Executors.defaultThreadFactory();
         t.setThreadFactory((r) -> {
-          return tf.newThread(() -> {
+          Thread n = tf.newThread(() -> {
             ContainerResolver.getDefault().enterContainer(container);
             r.run();
+            
           });
+          if (!n.isDaemon()) {
+            n.setDaemon(true);
+          }
+          return n;
         });
         
         t = transport.getKernelThreadPoolConfig();
@@ -245,10 +250,14 @@ public class RestServer {
         x = t.getThreadFactory();
         ThreadFactory tf2 = x != null ? x : Executors.defaultThreadFactory();
         t.setThreadFactory((r) -> {
-          return tf2.newThread(() -> {
+          Thread n = tf2.newThread(() -> {
             ContainerResolver.getDefault().enterContainer(container);
             r.run();
           });
+          if (!n.isDaemon()) {
+            n.setDaemon(true);
+          }
+          return n;
         });
         transport.setSelectorRunnersCount(CORE_POOL_SIZE);
       }
