@@ -91,10 +91,10 @@ test:
     code: |
       echo "Running sscm-client:testAttestation goal ..."
 
-  - java/maven:
-      goals: sscm-client:testAttestation
-      version: 3.5.2
-      cache_repo: true
+#  - java/maven:
+#      goals: sscm-client:testAttestation
+#      version: 3.5.2
+#      cache_repo: true
 
 security-scan:
   steps:

@@ -218,13 +218,13 @@
                         </configuration>
                     </execution>
                     <execution>
-                      <id>security-scan</id>
+                      <id>default-cli</id>
                       <goals>
                         <goal>securityScan</goal>
                       </goals>
                     </execution>
                     <execution>
-                        <id>default-cli</id>
+                        <id>test-attestation</id>
                         <goals>
                             <goal>testAttestation</goal>
                         </goals>
