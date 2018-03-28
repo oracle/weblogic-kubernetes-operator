@@ -42,11 +42,11 @@ public class DomainFiles {
   }
 
   public Path getTraefikYamlPath() {
-    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-" + inputs.getClusterName() + ".yaml");
+    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
 
   public Path getTraefikSecurityYamlPath() {
-    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-security-" + inputs.getClusterName() + ".yaml");
+    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-security-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
 
   public Path getWeblogicDomainPersistentVolumeYamlPath() {

@@ -98,8 +98,8 @@ function initAndValidateOutputDir {
     create-weblogic-domain-inputs.yaml \
     weblogic-domain-persistent-volume.yaml \
     weblogic-domain-persistent-volume-claim.yaml \
-    weblogic-domain-traefik-${clusterName}.yaml \
-    weblogic-domain-traefik-security-${clusterName}.yaml \
+    weblogic-domain-traefik-${clusterNameLC}.yaml \
+    weblogic-domain-traefik-security-${clusterNameLC}.yaml \
     create-weblogic-domain-job.yaml \
     domain-custom-resource.yaml
 }
@@ -386,8 +386,8 @@ function createYamlFiles {
   domainPVCOutput="${domainOutputDir}/weblogic-domain-persistent-volume-claim.yaml"
   jobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
-  traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterName}.yaml"
-  traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterName}.yaml"
+  traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"
+  traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature

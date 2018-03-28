@@ -11,7 +11,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 
 /**
- * Parses a generated weblogic-domain-traefik-inputs.getClusterName().yaml file into a set of typed k8s java objects
+ * Parses a generated weblogic-domain-traefik-inputs.getClusterName().toLowerCase().yaml file into a set of typed k8s java objects
  */
 public class ParsedTraefikYaml extends ParsedKubernetesYaml {
 
