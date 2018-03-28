@@ -4,7 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -79,16 +79,16 @@ public class TuningParameters extends ConfigMapConsumer {
   }
 
   public synchronized static TuningParameters initializeInstance(
-      ScheduledExecutorService threadPool, String mountPoint) throws IOException {
+      ThreadFactory factory, String mountPoint) throws IOException {
     if (INSTANCE == null) {
-      INSTANCE = new TuningParameters(threadPool, mountPoint);
+      INSTANCE = new TuningParameters(factory, mountPoint);
       return INSTANCE;
     }
     throw new IllegalStateException();
   }
   
-  private TuningParameters(ScheduledExecutorService threadPool, String mountPoint) throws IOException {
-    super(threadPool, mountPoint, () -> {
+  private TuningParameters(ThreadFactory factory, String mountPoint) throws IOException {
+    super(factory, mountPoint, () -> {
       updateTuningParameters();
     });
     update();

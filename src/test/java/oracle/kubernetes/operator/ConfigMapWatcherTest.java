@@ -47,7 +47,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
 
   @Override
   protected ConfigMapWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return ConfigMapWatcher.create(Executors.newSingleThreadScheduledExecutor(), nameSpace, 
+      return ConfigMapWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
           Integer.toString(initialResourceVersion), this, stopping);
   }
 }

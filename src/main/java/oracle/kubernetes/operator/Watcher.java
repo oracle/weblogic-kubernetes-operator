@@ -18,9 +18,7 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
@@ -41,7 +39,7 @@ abstract class Watcher<T> {
   private String resourceVersion;
   private AtomicBoolean stopping;
   private WatchListener<T> listener;
-  private Future<?> future;
+  private Thread thread = null;
 
   /**
    * Constructs a watcher without specifying a listener. Needed when the listener is the watch subclass itself.
@@ -69,9 +67,10 @@ abstract class Watcher<T> {
    */
   void waitForExit() {
     try {
-      future.get();
+      if (thread != null) {
+        thread.join();
+      }
     } catch (InterruptedException ignored) {
-    } catch (ExecutionException e) {
     }
   }
 
@@ -86,8 +85,9 @@ abstract class Watcher<T> {
   /**
    * Kick off the watcher processing that runs in a separate thread.
    */
-  void start(ExecutorService threadPool) {
-    future = threadPool.submit(this::doWatch);
+  void start(ThreadFactory factory) {
+    thread = factory.newThread(this::doWatch);
+    thread.run();
   }
 
   private void doWatch() {

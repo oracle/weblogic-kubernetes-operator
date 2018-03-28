@@ -85,7 +85,7 @@ public class IngressWatcherTest extends WatcherTestBase implements WatchListener
 
   @Override
   protected IngressWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return IngressWatcher.create(Executors.newSingleThreadScheduledExecutor(), nameSpace, 
+      return IngressWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
           Integer.toString(initialResourceVersion), this, stopping);
   }
 }
