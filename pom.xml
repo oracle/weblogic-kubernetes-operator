@@ -223,7 +223,7 @@
                         </goals>
                         <configuration>
                             <!-- <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl> -->
-                            <grafeas-url-from-env>${project.grafeasUrl}</grafeas-url-from-env>
+                            <grafeasUrl>${grafeas-url-from-env}</grafeasUrl>
                             <projectId>${project.name}</projectId>
                             <resourceUrl>${project.url}</resourceUrl>
                         </configuration>
