@@ -180,9 +180,9 @@ The following input properties, which used to have default values, now must be u
 | volume & mount | operator-config-volume | weblogic-operator-cm-volume |
 | volume & mount | operator-secrets-volume | weblogic-operator-secrets-volume |
 | volume & mount | config-map-scripts | create-weblogic-domain-job-cm-volume |
-| n volume & mount | pv-storage | weblogic-domain-storage-volume |
-| n volume & mount | secrets | weblogic-credentials-volume |
-| n volume & mount | scripts | weblogic-domain-cm-volume |
+| volume & mount | pv-storage | weblogic-domain-storage-volume |
+| volume & mount | secrets | weblogic-credentials-volume |
+| volume & mount | scripts | weblogic-domain-cm-volume |
 
 Note: The input properties for controlling the domain's persistent volume, persistent volume claim and storage class names have been removed.  These names are now derived from the domain uid.
 
