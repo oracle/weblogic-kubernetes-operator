@@ -195,9 +195,6 @@
                 <groupId>oracle.sscm</groupId>
                 <artifactId>sscm-client</artifactId>
                 <version>0.1.0</version>
-                <configuration>
-                    <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
-                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -219,8 +216,8 @@
                         </configuration>
                     </execution>
                     <execution>
-                      <phase>verify</phase>
-                      <id>generateOccurrences</id>
+                      <!--<phase>verify</phase>-->
+                      <id>default-cli</id>
                       <goals>
                         <goal>generateOccurrences</goal>
                       </goals>
@@ -231,11 +228,12 @@
                     </execution>
                     <execution>
                         <!--<phase>verify</phase>-->
-                        <id>default-cli</id>
+                        <id>testAttestation</id>
                         <goals>
                             <goal>testAttestation</goal>
                         </goals>
                         <configuration>
+                            <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
                             <projectId>${project.name}</projectId>
                             <resourceUrl>${project.url}</resourceUrl>
                         </configuration>

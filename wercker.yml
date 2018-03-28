@@ -91,10 +91,10 @@ test:
     code: |
       echo "Running sscm-client:testAttestation goal ..."
 
-  - java/maven:
-      goals: sscm-client:testAttestation
-      version: 3.5.2
-      cache_repo: true
+#  - java/maven:
+#      goals: sscm-client:testAttestation
+#      version: 3.5.2
+#      cache_repo: true
 
 security-scan:
   steps:
@@ -104,7 +104,7 @@ security-scan:
       echo "Running sscm-client:generateOccurrences goal (verify phase) ..."
 
   - java/maven:
-      goals: verify
+      goals: dependency-check-maven:check sscm-client:generateOccurrences
       version: 3.5.2
       cache_repo: true
 
