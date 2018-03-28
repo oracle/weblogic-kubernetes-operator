@@ -84,8 +84,6 @@ public class Main {
   private static final String RUNNING_STATE = "RUNNING";
   private static final String ADMIN_STATE = "ADMIN";
 
-  private static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
-  
   private static final Container container = new Container();
   private static final Engine engine = new Engine("operator", container);
   
@@ -481,6 +479,10 @@ public class Main {
     AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
     Runnable command = new Runnable() {
       public void run() {
+        
+        // TEST
+        System.out.println("**** 2 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
+
         Runnable r = this; // resolve visibility
         Packet packet = new Packet();
         packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, 
@@ -526,10 +528,22 @@ public class Main {
         });
       }
     };
+    
+    // TEST
+    System.out.println("**** 3 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
+
     MainTuning main = tuningAndConfig.getMainTuning();
     ScheduledFuture<?> existing  = statusUpdater.getAndSet(
         engine.getExecutor().scheduleWithFixedDelay(command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+    
+    // TEST
+    System.out.println("**** 4 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
+
     if (existing != null) {
+      
+      // TEST
+      System.out.println("**** 5 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
+
       existing.cancel(false);
     }
   }
@@ -580,23 +594,26 @@ public class Main {
       info.setDomain(dom);
     }
     
-    LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
-
-    Step managedServerStrategy = bringManagedServersUp(
-        DomainStatusUpdater.createEndProgressingStep(null));
-    Step adminServerStrategy = bringAdminServerUp(
-        connectToAdminAndInspectDomain(
-            managedServerStrategy));
-    
-    Step strategy = DomainStatusUpdater.createProgressingStep(
-        DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON, 
-        true, 
-        new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
-    
-    Packet p = new Packet();
-    
     String ns = dom.getMetadata().getNamespace();
-    if (initialized.getOrDefault(ns, Boolean.FALSE)) {
+    if (initialized.getOrDefault(ns, Boolean.FALSE) && !stopping.get()) {
+      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
+      
+      // TEST
+      System.out.println("**** 0 **** domainUID: " + domainUID);
+
+      Step managedServerStrategy = bringManagedServersUp(
+          DomainStatusUpdater.createEndProgressingStep(null));
+      Step adminServerStrategy = bringAdminServerUp(
+          connectToAdminAndInspectDomain(
+              managedServerStrategy));
+      
+      Step strategy = DomainStatusUpdater.createProgressingStep(
+          DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON, 
+          true, 
+          new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
+      
+      Packet p = new Packet();
+      
       PodWatcher pw = podWatchers.get(ns);
       p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, 
           Component.createFor(info, version, pw));
@@ -618,43 +635,45 @@ public class Main {
         LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
       }
   
-      if (!stopping.get()) {
-        domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
-          @Override
-          public void onCompletion(Packet packet) {
-            if (explicitRestartAdmin) {
-              LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
-            }
-            if (explicitRestartServers != null) {
-              LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
-            }
-            if (explicitRestartClusters != null) {
-              LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
-            }
+      domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
+        @Override
+        public void onCompletion(Packet packet) {
+          if (explicitRestartAdmin) {
+            LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
           }
-  
-          @Override
-          public void onThrowable(Packet packet, Throwable throwable) {
-            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            
-            domainUpdaters.startFiberIfLastFiberMatches(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
-              @Override
-              public void onCompletion(Packet packet) {
-                // no-op
-              }
-  
-              @Override
-              public void onThrowable(Packet packet, Throwable throwable) {
-                LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-              }
-            });
-            
-            // TODO: consider retrying domain update after a delay
+          if (explicitRestartServers != null) {
+            LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
           }
-        });
-        
-        scheduleDomainStatusUpdating(info);
-      }
+          if (explicitRestartClusters != null) {
+            LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
+          }
+        }
+
+        @Override
+        public void onThrowable(Packet packet, Throwable throwable) {
+          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+          
+          domainUpdaters.startFiberIfLastFiberMatches(domainUID, Fiber.getCurrentIfSet(), 
+              DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
+            @Override
+            public void onCompletion(Packet packet) {
+              // no-op
+            }
+
+            @Override
+            public void onThrowable(Packet packet, Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            }
+          });
+          
+          // TODO: consider retrying domain update after a delay
+        }
+      });
+      
+      // TEST
+      System.out.println("**** 1 **** domainUID: " + domainUID);
+
+      scheduleDomainStatusUpdating(info);
     }
     LOGGER.exiting();
   }
@@ -779,7 +798,7 @@ public class Main {
       V1Pod adminPod = info.getAdmin().getPod().get();
       
       PodWatcher pw = podWatchers.get(adminPod.getMetadata().getNamespace());
-      packet.getComponents().put(PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
+      packet.getComponents().put(ProcessingConstants.PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
       
       return doNext(pw.waitForReady(adminPod, next), packet);
     }

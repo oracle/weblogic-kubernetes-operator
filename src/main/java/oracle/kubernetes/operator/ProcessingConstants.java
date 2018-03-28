@@ -12,6 +12,7 @@ public interface ProcessingConstants {
   public static final String MAIN_COMPONENT_NAME = "main";
   public static final String DOMAIN_COMPONENT_NAME = "domain";
   public static final String FIBER_COMPONENT_NAME = "fiber";
+  public static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
   
   public static final String PRINCIPAL = "principal";
   public static final String SERVER_SCAN = "serverScan";
