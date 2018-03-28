@@ -92,7 +92,7 @@ test:
       echo "Running Maven integration-test:testAttestation goal ..."
 
   - java/maven:
-      goals: verify
+      goals: sscm-client:testAttestation
       version: 3.5.2
       cache_repo: true
 
