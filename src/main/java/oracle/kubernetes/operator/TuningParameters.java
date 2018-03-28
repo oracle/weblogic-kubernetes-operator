@@ -91,6 +91,7 @@ public class TuningParameters extends ConfigMapConsumer {
     super(threadPool, mountPoint, () -> {
       updateTuningParameters();
     });
+    update();
   }
 
   public static void updateTuningParameters() {
