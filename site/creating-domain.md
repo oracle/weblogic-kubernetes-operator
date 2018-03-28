@@ -210,7 +210,7 @@ spec:
             - containerPort: 7001
           volumeMounts:
           - mountPath: /u01/weblogic
-            name: config-map-scripts
+            name: create-weblogic-domain-job-cm-volume
           - mountPath: /shared
             name: pv-storage
           - mountPath: /var/run/secrets-domain1
@@ -221,7 +221,7 @@ spec:
             - name: SHARED_PATH
               value: "/shared"
       volumes:
-        - name: config-map-scripts
+        - name: create-weblogic-domain-job-cm-volume
           configMap:
             name: domain1-create-weblogic-domain-job-cm
         - name: pv-storage

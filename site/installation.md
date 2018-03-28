@@ -198,9 +198,9 @@ The spec section provides details for the container that the operator will execu
         - name: JAVA_LOGGING_LEVEL
           value: "INFO"
         volumeMounts:
-        - name: operator-config-volume
+        - name: weblogic-operator-cm-volume
           mountPath: /operator/config
-        - name: operator-secrets-volume
+        - name: weblogic-operator-secrets-volume
           mountPath: /operator/secrets
           readOnly: true
         # uncomment this mount if using the ELK integration:
@@ -214,10 +214,10 @@ The spec section provides details for the container that the operator will execu
           initialDelaySeconds: 120
           periodSeconds: 5
       volumes:
-      - name: operator-config-volume
+      - name: weblogic-operator-cm-volume
         configMap:
           name: weblogic-operator-cm
-      - name: operator-secrets-volume
+      - name: weblogic-operator-secrets-volume
         secret:
           weblogicCredentialsSecretName: weblogic-operator-secrets
       # Uncomment this volume if using ELK integration:
