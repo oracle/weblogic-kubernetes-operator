@@ -87,7 +87,7 @@ abstract class Watcher<T> {
    */
   void start(ThreadFactory factory) {
     thread = factory.newThread(this::doWatch);
-    thread.run();
+    thread.start();
   }
 
   private void doWatch() {
@@ -136,7 +136,8 @@ abstract class Watcher<T> {
         else
           handleRegularUpdate(item);
       }
-    } catch (RuntimeException | ApiException | IOException ignored) {
+    } catch (Throwable ex) {
+      LOGGER.warning(MessageKeys.EXCEPTION, ex);
     }
   }
 
