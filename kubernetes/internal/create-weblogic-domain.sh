@@ -527,7 +527,7 @@ function createDomainPVC {
 function createDomain {
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  JOB_NAME="domain-${domainUID}-job"
+  JOB_NAME="${domainUID}-create-weblogic-domain-job"
   deleteK8sObj job $JOB_NAME ${jobOutput}
 
   echo Creating the domain by creating the job ${jobOutput}
