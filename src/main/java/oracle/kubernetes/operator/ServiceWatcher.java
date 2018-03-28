@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ServiceWatcher extends Watcher<V1Service> {
   private final String ns;
 
-  public static ServiceWatcher create(ScheduledExecutorService threadPool, String ns, String initialResourceVersion, WatchListener<V1Service> listener, AtomicBoolean isStopping) {
+  public static ServiceWatcher create(ThreadFactory factory, String ns, String initialResourceVersion, WatchListener<V1Service> listener, AtomicBoolean isStopping) {
     ServiceWatcher watcher = new ServiceWatcher(ns, initialResourceVersion, listener, isStopping);
-    watcher.start(threadPool);
+    watcher.start(factory);
     return watcher;
   }
 

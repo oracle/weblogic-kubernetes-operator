@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -52,9 +52,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
-  public static PodWatcher create(ScheduledExecutorService threadPool, String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
+  public static PodWatcher create(ThreadFactory factory, String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
     PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, listener, isStopping);
-    watcher.start(threadPool);
+    watcher.start(factory);
     return watcher;
   }
 

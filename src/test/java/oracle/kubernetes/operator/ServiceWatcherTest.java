@@ -60,7 +60,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
   @Override
   protected ServiceWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return ServiceWatcher.create(Executors.newSingleThreadScheduledExecutor(), nameSpace, 
+      return ServiceWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
           Integer.toString(initialResourceVersion), this, stopping);
   }
 

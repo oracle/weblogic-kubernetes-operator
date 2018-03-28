@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -86,6 +88,14 @@ public class Main {
 
   private static final Container container = new Container();
   private static final Engine engine = new Engine("operator", container);
+  private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+  private static final ThreadFactory factory = (r) -> {
+    Thread t = defaultFactory.newThread(r);
+    if (!t.isDaemon()) {
+      t.setDaemon(true);
+    }
+    return t;
+  };
   
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final FiberGate domainUpdaters = new FiberGate(engine);
@@ -94,7 +104,7 @@ public class Main {
   private static final TuningParameters tuningAndConfig;
   static {
     try {
-      tuningAndConfig = TuningParameters.initializeInstance(engine.getExecutor(), "/operator/config");
+      tuningAndConfig = TuningParameters.initializeInstance(factory, "/operator/config");
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
@@ -1531,12 +1541,12 @@ public class Main {
   }
   
   private static DomainWatcher createDomainWatcher(String namespace, String initialResourceVersion) {
-    return DomainWatcher.create(engine.getExecutor(), namespace, 
+    return DomainWatcher.create(factory, namespace, 
         initialResourceVersion, Main::dispatchDomainWatch, stopping);
   }
   
   private static PodWatcher createPodWatcher(String namespace, String initialResourceVersion)  {
-    return PodWatcher.create(engine.getExecutor(), namespace, 
+    return PodWatcher.create(factory, namespace, 
         initialResourceVersion, Main::dispatchPodWatch, stopping);
   }
 
@@ -1585,7 +1595,7 @@ public class Main {
   
 
   private static ServiceWatcher createServiceWatcher(String namespace, String initialResourceVersion)  {
-    return ServiceWatcher.create(engine.getExecutor(), namespace, 
+    return ServiceWatcher.create(factory, namespace, 
         initialResourceVersion, Main::dispatchServiceWatch, stopping);
   }
 
@@ -1674,7 +1684,7 @@ public class Main {
   }
   
   private static IngressWatcher createIngressWatcher(String namespace, String initialResourceVersion)  {
-    return IngressWatcher.create(engine.getExecutor(), namespace, 
+    return IngressWatcher.create(factory, namespace, 
         initialResourceVersion, Main::dispatchIngressWatch, stopping);
   }
 
@@ -1731,7 +1741,7 @@ public class Main {
   }
   
   private static ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion)  {
-    return ConfigMapWatcher.create(engine.getExecutor(), namespace, 
+    return ConfigMapWatcher.create(factory, namespace, 
         initialResourceVersion, Main::dispatchConfigMapWatch, stopping);
   }
 

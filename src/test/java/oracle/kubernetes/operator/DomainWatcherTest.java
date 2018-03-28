@@ -47,7 +47,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
 
   @Override
   protected DomainWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return DomainWatcher.create(Executors.newSingleThreadScheduledExecutor(), nameSpace, 
+      return DomainWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
           Integer.toString(initialResourceVersion), this, stopping);
   }
 }
