@@ -195,6 +195,10 @@
                 <groupId>oracle.sscm</groupId>
                 <artifactId>sscm-client</artifactId>
                 <version>0.1.0</version>
+                <configuration>
+                    <!-- <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl> -->
+                    <grafeasUrl>${grafeas-url-from-env}</grafeasUrl>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>
