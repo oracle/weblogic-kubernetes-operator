@@ -70,6 +70,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -86,8 +87,6 @@ public class Main {
   private static final String RUNNING_STATE = "RUNNING";
   private static final String ADMIN_STATE = "ADMIN";
 
-  private static final Container container = new Container();
-  private static final Engine engine = new Engine("operator", container);
   private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
   private static final ThreadFactory factory = (r) -> {
     Thread t = defaultFactory.newThread(r);
@@ -98,7 +97,6 @@ public class Main {
   };
   
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   
   private static final TuningParameters tuningAndConfig;
@@ -112,12 +110,16 @@ public class Main {
   }
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory(tuningAndConfig);
   
+  private static final Container container = new Container();
   static {
     container.getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
         Component.createFor(tuningAndConfig, TuningParameters.class, callBuilderFactory));
   }
-  
+
+  private static final Engine engine = new Engine("operator", container);
+  private static final FiberGate domainUpdaters = new FiberGate(engine);
+
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
 
