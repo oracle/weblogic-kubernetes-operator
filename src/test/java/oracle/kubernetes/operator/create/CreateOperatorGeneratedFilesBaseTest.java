@@ -226,7 +226,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     }
     return newService()
       .metadata(newObjectMeta()
-        .name("external-weblogic-operator-service")
+        .name("external-weblogic-operator-svc")
         .namespace(getInputs().getNamespace()))
       .spec(spec);
   }
@@ -246,7 +246,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newService()
         .metadata(newObjectMeta()
-          .name("internal-weblogic-operator-service")
+          .name("internal-weblogic-operator-svc")
           .namespace(getInputs().getNamespace()))
         .spec(newServiceSpec()
           .type("ClusterIP")
@@ -543,7 +543,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     }
     return newService()
       .metadata(newObjectMeta()
-        .name("external-weblogic-operator-service")
+        .name("external-weblogic-operator-svc")
         .namespace(inputs.getNamespace()))
       .spec(spec);
   }
