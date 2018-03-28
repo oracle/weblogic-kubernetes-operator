@@ -64,15 +64,6 @@ public class WlsRetriever {
   // wait time before retrying to read server configured for the cluster from admin server - default is 1s
   private static final int READ_CONFIG_RETRY_MILLIS = Integer.getInteger("read.config.retry.ms", 1000);
 
-  // REST URL for starting a WebLogic edit session
-  private static final String START_EDIT_SESSION_URL = "/management/weblogic/latest/edit/changeManager/startEdit";
-
-  // REST URL for activating a WebLogic edit session
-  private static final String ACTIVATE_EDIT_SESSION_URL = "/management/weblogic/latest/edit/changeManager/activate";
-
-  // REST URL for canceling a WebLogic edit session
-  private static final String CANCEL_EDIT_SESSION_URL =  "/management/weblogic/latest/edit/changeManager/cancelEdit";
-
   /**
    * Constructor.
    *
@@ -615,6 +606,5 @@ public class WlsRetriever {
 
     }
   }
-
-
+  
 }
