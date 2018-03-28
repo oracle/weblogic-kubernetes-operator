@@ -10,6 +10,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientPool extends Pool<ApiClient> {
@@ -49,6 +50,9 @@ public class ClientPool extends Pool<ApiClient> {
     // TODO:
     SecretHelper.addCustomGsonToClient(client);
 
+    // TEST
+    client.getHttpClient().setReadTimeout(5, TimeUnit.MINUTES);
+    
     LOGGER.exiting(client);
     return client;
   }
