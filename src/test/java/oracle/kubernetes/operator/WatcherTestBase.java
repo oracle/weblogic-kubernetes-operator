@@ -128,7 +128,6 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
 
     @Test
     public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() throws Exception {
-      // TEST
       try {
         StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
         StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));

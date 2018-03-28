@@ -489,10 +489,6 @@ public class Main {
     AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
     Runnable command = new Runnable() {
       public void run() {
-        
-        // TEST
-        System.out.println("**** 2 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
-
         Runnable r = this; // resolve visibility
         Packet packet = new Packet();
         packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, 
@@ -539,21 +535,11 @@ public class Main {
       }
     };
     
-    // TEST
-    System.out.println("**** 3 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
-
     MainTuning main = tuningAndConfig.getMainTuning();
     ScheduledFuture<?> existing  = statusUpdater.getAndSet(
         engine.getExecutor().scheduleWithFixedDelay(command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
     
-    // TEST
-    System.out.println("**** 4 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
-
     if (existing != null) {
-      
-      // TEST
-      System.out.println("**** 5 **** domainUID: " + info.getDomain().getSpec().getDomainUID());
-
       existing.cancel(false);
     }
   }
@@ -587,9 +573,6 @@ public class Main {
     normalizeDomainSpec(spec);
     String domainUID = spec.getDomainUID();
 
-    // TEST
-    System.out.println("**** -1 **** domainUID: " + domainUID);
-
     DomainPresenceInfo created = new DomainPresenceInfo(dom);
     DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
     if (info == null) {
@@ -610,10 +593,6 @@ public class Main {
     String ns = dom.getMetadata().getNamespace();
     if (initialized.getOrDefault(ns, Boolean.FALSE) && !stopping.get()) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
-      
-      // TEST
-      System.out.println("**** 0 **** domainUID: " + domainUID);
-
       Step managedServerStrategy = bringManagedServersUp(
           DomainStatusUpdater.createEndProgressingStep(null));
       Step adminServerStrategy = bringAdminServerUp(
@@ -683,9 +662,6 @@ public class Main {
         }
       });
       
-      // TEST
-      System.out.println("**** 1 **** domainUID: " + domainUID);
-
       scheduleDomainStatusUpdating(info);
     }
     LOGGER.exiting();
