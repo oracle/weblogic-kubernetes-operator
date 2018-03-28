@@ -71,7 +71,7 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      TuningParameters configMapHelper = packet.getSPI(TuningParameters.class);
+      TuningParameters configMapHelper = ContainerResolver.getInstance().getContainer().getSPI(TuningParameters.class);
 
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
@@ -447,7 +447,7 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      TuningParameters configMapHelper = packet.getSPI(TuningParameters.class);
+      TuningParameters configMapHelper = ContainerResolver.getInstance().getContainer().getSPI(TuningParameters.class);
 
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
