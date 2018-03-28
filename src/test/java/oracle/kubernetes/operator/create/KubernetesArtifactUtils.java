@@ -25,20 +25,24 @@ import io.kubernetes.client.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1EnvVarSource;
 import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1LabelSelector;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NFSVolumeSource;
 import io.kubernetes.client.models.V1ObjectFieldSelector;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1Probe;
@@ -142,6 +146,10 @@ public class KubernetesArtifactUtils {
         .kind(KIND_PERSISTENT_VOLUME_CLAIM);
   }
 
+  public static V1PersistentVolumeClaimList newPersistentVolumeClaimList() {
+    return new V1PersistentVolumeClaimList();
+  }
+
   public static V1ServicePort newServicePort() {
     return new V1ServicePort();
   }
@@ -205,6 +213,10 @@ public class KubernetesArtifactUtils {
 
   public static V1PodTemplateSpec newPodTemplateSpec() {
     return new V1PodTemplateSpec();
+  }
+
+  public static V1Pod newPod() {
+    return new V1Pod();
   }
 
   public static V1PodSpec newPodSpec() {
@@ -339,6 +351,14 @@ public class KubernetesArtifactUtils {
     return new V1TCPSocketAction();
   }
 
+  public static V1Handler newHandler() {
+    return new V1Handler();
+  }
+
+  public static V1Lifecycle newLifecycle() {
+    return new V1Lifecycle();
+  }
+
   public static FluentArrayList<String> newStringList() {
     return newFluentArrayList(String.class);
   }
@@ -368,7 +388,7 @@ public class KubernetesArtifactUtils {
   // 1) extract the values from the actual k8s artifacts
   // 2) empty the values in the actual k8s artifacts
   // 3) create a desired k8s artifact, with empty values
-  // 4) use yamlIsEqual to compare the desired k8s artifact with the actual k8s
+  // 4) use yamlEqualTo to compare the desired k8s artifact with the actual k8s
   //    artifact whose values have been extracted and emptied
   //    (i.e. make sure the rest of the fields of the actual k8s artifact are as expected
   // 5) if (4) passes, THEN make sure that the extracted value contains the
