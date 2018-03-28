@@ -91,8 +91,8 @@ The names of several of the generated YAML files have changed.
 | persistent-volume.yaml | weblogic-domain-persistent-volume.yaml |
 | persistent-volume-claim.yaml | weblogic-domain-persistent-volume-claim.yaml |
 | rbac.yaml | weblogic-operator-security.yaml |
-| traefik-deployment.yaml | weblogic-domain-traefik-${clusterName}.yaml |
-| traefik-rbac.yaml | weblogic-domain-traefik-security-${clusterName}.yaml |
+| traefik-deployment.yaml | weblogic-domain-traefik-${clusterName, lower case}.yaml |
+| traefik-rbac.yaml | weblogic-domain-traefik-security-${clusterName, lower case}.yaml |
 | weblogic-operator.yaml | same |
 
 ## Input File Contents
