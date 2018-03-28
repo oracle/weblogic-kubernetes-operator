@@ -196,8 +196,7 @@
                 <artifactId>sscm-client</artifactId>
                 <version>0.1.0</version>
                 <configuration>
-                    <!-- <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl> -->
-                    <grafeasUrl>${grafeas-url-from-env}</grafeasUrl>
+                    <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl>
                 </configuration>
                 <executions>
                     <execution>
@@ -220,28 +219,26 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <!--<phase>verify</phase>-->
-                        <id>testAttestation</id>
-                        <goals>
-                            <goal>testAttestation</goal>
-                        </goals>
-                        <configuration>
-                            <!-- <grafeasUrl>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeasUrl> -->
-                            <grafeasUrl>${grafeas-url-from-env}</grafeasUrl>
-                            <projectId>${project.name}</projectId>
-                            <resourceUrl>${project.url}</resourceUrl>
-                        </configuration>
-                    </execution>
-                    <execution>
                       <phase>verify</phase>
                       <id>generateOccurrences</id>
                       <goals>
-                         <goal>generateOccurrences</goal>
+                        <goal>generateOccurrences</goal>
                       </goals>
                       <configuration>
                         <dependencyReportJSON>target/dependency-check-report.json</dependencyReportJSON>
                         <urlGrafeas>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</urlGrafeas>
                       </configuration>
+                    </execution>
+                    <execution>
+                        <!--<phase>verify</phase>-->
+                        <id>default-cli</id>
+                        <goals>
+                            <goal>testAttestation</goal>
+                        </goals>
+                        <configuration>
+                            <projectId>${project.name}</projectId>
+                            <resourceUrl>${project.url}</resourceUrl>
+                        </configuration>
                     </execution>
                 </executions>
                 <dependencies>
@@ -645,7 +642,6 @@
     </dependencies>
 
     <properties>
-        <grafeas-url-from-env>http://${env.GRAFEAS_SERVER_ADDRESS}:${env.GRAFEAS_SERVER_PORT}</grafeas-url-from-env>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>

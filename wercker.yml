@@ -89,10 +89,10 @@ test:
   - script:
     name: Hello
     code: |
-      echo "Running Maven integration-test:testAttestation goal ..."
+      echo "Running sscm-client:testAttestation goal ..."
 
   - java/maven:
-      goals: initialize sscm-client:testAttestation
+      goals: sscm-client:testAttestation
       version: 3.5.2
       cache_repo: true
 
@@ -101,10 +101,10 @@ security-scan:
   - script:
     name: Hello
     code: |
-      echo "Running Maven verify:security-scan goal ..."
+      echo "Running sscm-client:generateOccurrences goal (verify phase) ..."
 
   - java/maven:
-      goals: sscm-client:generateOccurrences
+      goals: verify
       version: 3.5.2
       cache_repo: true
 
