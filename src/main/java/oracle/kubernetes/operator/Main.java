@@ -115,7 +115,7 @@ public class Main {
   static {
     container.getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(tuningAndConfig, callBuilderFactory));
+        Component.createFor(tuningAndConfig, TuningParameters.class, callBuilderFactory));
   }
   
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
