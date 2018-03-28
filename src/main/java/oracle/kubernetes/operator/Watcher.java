@@ -3,20 +3,17 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
-import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -91,19 +88,13 @@ abstract class Watcher<T> {
   }
 
   private void doWatch() {
-    ClientPool helper = ClientPool.getInstance();
-    ApiClient client = helper.take();
-    try {
-      setIsDraining(false);
+    setIsDraining(false);
 
-      while (!isDraining()) {
-        if (isStopping())
-          setIsDraining(true);
-        else
-          watchForEvents(client);
-      }
-    } finally {
-      helper.recycle(client);
+    while (!isDraining()) {
+      if (isStopping())
+        setIsDraining(true);
+      else
+        watchForEvents();
     }
   }
 
@@ -121,8 +112,8 @@ abstract class Watcher<T> {
     return stopping.get();
   }
 
-  private void watchForEvents(ApiClient client) {
-    try (WatchI<T> watch = initiateWatch(new WatchBuilder(client).withResourceVersion(resourceVersion))) {
+  private void watchForEvents() {
+    try (WatchI<T> watch = initiateWatch(new WatchBuilder().withResourceVersion(resourceVersion))) {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 

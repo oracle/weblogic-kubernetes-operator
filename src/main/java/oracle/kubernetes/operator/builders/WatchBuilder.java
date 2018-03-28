@@ -15,6 +15,8 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
@@ -35,15 +37,13 @@ public class WatchBuilder {
 
     private static WatchFactory FACTORY = new WatchFactoryImpl();
 
-    private ApiClient client;
     private CallParamsImpl callParams = new CallParamsImpl();
 
     public interface WatchFactory {
-        <T> WatchI<T> createWatch(ApiClient client, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException;
+        <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException;
     }
 
-    public WatchBuilder(ApiClient client) {
-        this.client = client;
+    public WatchBuilder() {
         TuningParameters tuning = ContainerResolver.getInstance().getContainer().getSPI(TuningParameters.class);
         if (tuning != null) {
           callParams.setTimeoutSeconds(tuning.getWatchTuning().watchLifetime);
@@ -76,7 +76,7 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1Service> createServiceWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(client, callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
+        return FACTORY.createWatch(ClientPool.getInstance(), callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
     }
 
     private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
@@ -106,7 +106,7 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1Pod> createPodWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(client, callParams, V1Pod.class, new ListPodCall(namespace));
+        return FACTORY.createWatch(ClientPool.getInstance(), callParams, V1Pod.class, new ListPodCall(namespace));
     }
 
     private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
@@ -136,7 +136,7 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1beta1Ingress> createIngressWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(client, callParams, V1beta1Ingress.class, new ListIngressCall(namespace));
+        return FACTORY.createWatch(ClientPool.getInstance(), callParams, V1beta1Ingress.class, new ListIngressCall(namespace));
     }
 
     private class ListIngressCall implements BiFunction<ApiClient, CallParams, Call> {
@@ -166,7 +166,7 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<Domain> createDomainWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(client, callParams, Domain.class, new ListDomainsCall(namespace));
+        return FACTORY.createWatch(ClientPool.getInstance(), callParams, Domain.class, new ListDomainsCall(namespace));
     }
 
     private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
@@ -196,7 +196,7 @@ public class WatchBuilder {
      * @throws ApiException if there is an error on the call that sets up the web hook.
      */
     public WatchI<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
-        return FACTORY.createWatch(client, callParams, V1ConfigMap.class, new ListNamespacedConfigMapCall(namespace));
+        return FACTORY.createWatch(ClientPool.getInstance(), callParams, V1ConfigMap.class, new ListNamespacedConfigMapCall(namespace));
     }
 
     private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
@@ -280,9 +280,10 @@ public class WatchBuilder {
 
     static class WatchFactoryImpl implements WatchFactory {
         @Override
-        public <T> WatchI<T> createWatch(ApiClient client, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
+        public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
+          ApiClient client = pool.take();
             try {
-                return new WatchImpl<T>(Watch.createWatch(client, function.apply(client, callParams), getType(responseBodyType)));
+                return new WatchImpl<T>(pool, client, Watch.createWatch(client, function.apply(client, callParams), getType(responseBodyType)));
             } catch (UncheckedApiException e) {
                 throw e.getCause();
             }
