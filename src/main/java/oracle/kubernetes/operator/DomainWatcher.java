@@ -9,6 +9,7 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -18,9 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DomainWatcher extends Watcher<Domain> {
   private final String ns;
 
-  public static DomainWatcher create(String ns, String initialResourceVersion, WatchListener<Domain> listener, AtomicBoolean isStopping) {
+  public static DomainWatcher create(ThreadFactory factory, String ns, String initialResourceVersion, WatchListener<Domain> listener, AtomicBoolean isStopping) {
     DomainWatcher watcher = new DomainWatcher(ns, initialResourceVersion, listener, isStopping);
-    watcher.start("Thread-DomainWatcher-" + ns);
+    watcher.start(factory);
     return watcher;
   }
 

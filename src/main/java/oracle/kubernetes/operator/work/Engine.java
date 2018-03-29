@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Collection of {@link Fiber}s. Owns an {@link Executor} to run them.
  */
 public class Engine {
-  private final int DEFAULT_THREAD_COUNT = 5;
+  private final int DEFAULT_THREAD_COUNT = 10;
 
   private volatile ScheduledExecutorService threadPool;
   public final String id;

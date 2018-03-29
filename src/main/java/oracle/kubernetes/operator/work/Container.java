@@ -11,14 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Root of the SPI implemented by the container.
  *
  */
-public abstract class Container implements ComponentRegistry, ComponentEx {
+public class Container implements ComponentRegistry, ComponentEx {
   private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
-
-  /**
-   * For derived classes.
-   */
-  protected Container() {
-  }
 
   /**
    * Constant that represents a "no {@link Container}", which always returns null

@@ -14,6 +14,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 
 /**
  * Helper class to ensure Domain CRD is created
@@ -27,9 +28,8 @@ public class CRDHelper {
   /**
    * Validates and, if necessary, created domains.weblogic.oracle CRD.  No need
    * to be async as operator can not begin processing until CRD exists
-   * @param client Client holder
    */
-  public static void checkAndCreateCustomResourceDefinition(ClientHolder client) {
+  public static void checkAndCreateCustomResourceDefinition() {
     LOGGER.entering();
 
     V1beta1CustomResourceDefinition crd = new V1beta1CustomResourceDefinition();
@@ -50,10 +50,10 @@ public class CRDHelper {
     crds.setNames(crdn);
     crd.setSpec(crds);
 
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     V1beta1CustomResourceDefinition existingCRD = null;
     try {
-
-      existingCRD = client.callBuilder().readCustomResourceDefinition(
+      existingCRD = factory.create().readCustomResourceDefinition(
           crd.getMetadata().getName());
 
     } catch (ApiException e) {
@@ -65,7 +65,7 @@ public class CRDHelper {
     try {
       if (existingCRD == null) {
         LOGGER.info(MessageKeys.CREATING_CRD, crd.toString());
-        client.callBuilder().createCustomResourceDefinition(crd);
+        factory.create().createCustomResourceDefinition(crd);
       }
     } catch (ApiException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);

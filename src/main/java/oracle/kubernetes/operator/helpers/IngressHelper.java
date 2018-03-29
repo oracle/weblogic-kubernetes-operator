@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -106,7 +107,8 @@ public class IngressHelper {
         v1beta1IngressSpec.setRules(rules);
         v1beta1Ingress.setSpec(v1beta1IngressSpec);
 
-        return doNext(CallBuilder.create().readIngressAsync(ingressName, meta.getNamespace(),
+        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        return doNext(factory.create().readIngressAsync(ingressName, meta.getNamespace(),
             new ResponseStep<V1beta1Ingress>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -121,7 +123,7 @@ public class IngressHelper {
               public NextAction onSuccess(Packet packet, V1beta1Ingress result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 if (result == null) {
-                  return doNext(CallBuilder.create().createIngressAsync(meta.getNamespace(), v1beta1Ingress,
+                  return doNext(factory.create().createIngressAsync(meta.getNamespace(), v1beta1Ingress,
                       new ResponseStep<V1beta1Ingress>(next) {
                         @Override
                         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -142,7 +144,7 @@ public class IngressHelper {
                   if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && v1beta1Ingress.getSpec().equals(result.getSpec())) {
                     return doNext(packet);
                   }
-                  return doNext(CallBuilder.create().replaceIngressAsync(ingressName, meta.getNamespace(),
+                  return doNext(factory.create().replaceIngressAsync(ingressName, meta.getNamespace(),
                       v1beta1Ingress, new ResponseStep<V1beta1Ingress>(next) {
                         @Override
                         public NextAction onFailure(Packet packet, ApiException e, int statusCode,

@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -410,7 +411,8 @@ public class ConfigMapHelper {
 
       cm.setData(data);
       
-      Step read = CallBuilder.create().readConfigMapAsync(name, namespace, new ResponseStep<V1ConfigMap>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readConfigMapAsync(name, namespace, new ResponseStep<V1ConfigMap>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -424,7 +426,7 @@ public class ConfigMapHelper {
         public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = CallBuilder.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+            Step create = factory.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -451,7 +453,7 @@ public class ConfigMapHelper {
             Map<String, String> updated = result.getData();
             updated.putAll(data);
             cm.setData(updated);
-            Step replace = CallBuilder.create().replaceConfigMapAsync(name, namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+            Step replace = factory.create().replaceConfigMapAsync(name, namespace, cm, new ResponseStep<V1ConfigMap>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
