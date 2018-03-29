@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import oracle.kubernetes.operator.helpers.ClientHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
@@ -20,21 +19,17 @@ public class RestConfigImpl implements RestConfig {
 
   private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final ClientHelper clientHelper;
   private final String principal;
   private final Collection<String> targetNamespaces;
 
   /**
    * Constructs a RestConfigImpl.
-   * @param clientHelper is used to help obtain the Kubernetes HTTP client
-   * for calling the Kubernetes REST API.
    * @param principal is the name of the Kubernetes User or Service Account to use when calling
    * the Kubernetes REST API.
    * @param targetNamespaces is a list of the Kubernetes Namespaces covered by this Operator.
    */
-  public RestConfigImpl(ClientHelper clientHelper, String principal, Collection<String> targetNamespaces) {
+  public RestConfigImpl(String principal, Collection<String> targetNamespaces) {
     LOGGER.entering(principal, targetNamespaces);
-    this.clientHelper = clientHelper;
     this.principal = principal;
     this.targetNamespaces = targetNamespaces;
     LOGGER.exiting();
@@ -134,7 +129,7 @@ public class RestConfigImpl implements RestConfig {
   @Override
   public RestBackend getBackend(String accessToken) {
     LOGGER.entering();
-    RestBackend result = new RestBackendImpl(clientHelper, principal, accessToken, targetNamespaces);
+    RestBackend result = new RestBackendImpl(principal, accessToken, targetNamespaces);
     LOGGER.exiting();
     return result;
   }

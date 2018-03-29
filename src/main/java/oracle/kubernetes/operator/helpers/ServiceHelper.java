@@ -14,6 +14,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -107,7 +108,8 @@ public class ServiceHelper {
       ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Service
-      Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -121,7 +123,7 @@ public class ServiceHelper {
         public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+            Step create = factory.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -190,7 +192,8 @@ public class ServiceHelper {
       // Set service to null so that watcher doesn't try to recreate service
       V1Service oldService = sko.getService().getAndSet(null);
       if (oldService != null) {
-        return doNext(CallBuilder.create().deleteServiceAsync(oldService.getMetadata().getName(), namespace, new ResponseStep<V1Status>(next) {
+        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        return doNext(factory.create().deleteServiceAsync(oldService.getMetadata().getName(), namespace, new ResponseStep<V1Status>(next) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode,
               Map<String, List<String>> responseHeaders) {
@@ -274,7 +277,8 @@ public class ServiceHelper {
       service.setSpec(serviceSpec);
 
       // First, verify existing Service
-      Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -288,7 +292,7 @@ public class ServiceHelper {
         public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+            Step create = factory.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -315,7 +319,7 @@ public class ServiceHelper {
           } else {
             // we need to cycle the Service
             info.getClusters().remove(clusterName);
-            Step delete = CallBuilder.create().deleteServiceAsync(name, namespace, new ResponseStep<V1Status>(next) {
+            Step delete = factory.create().deleteServiceAsync(name, namespace, new ResponseStep<V1Status>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -328,7 +332,7 @@ public class ServiceHelper {
               @Override
               public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
-                Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+                Step create = factory.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                       Map<String, List<String>> responseHeaders) {
@@ -431,7 +435,8 @@ public class ServiceHelper {
       } else {
         sko.getService().set(null);
       }
-      Step delete = CallBuilder.create().deleteServiceAsync(serviceName, namespace, new ResponseStep<V1Status>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step delete = factory.create().deleteServiceAsync(serviceName, namespace, new ResponseStep<V1Status>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -444,7 +449,7 @@ public class ServiceHelper {
         @Override
         public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
             Map<String, List<String>> responseHeaders) {
-          Step create = CallBuilder.create().createServiceAsync(namespace, newService, new ResponseStep<V1Service>(next) {
+          Step create = factory.create().createServiceAsync(namespace, newService, new ResponseStep<V1Service>(next) {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                 Map<String, List<String>> responseHeaders) {
@@ -543,7 +548,8 @@ public class ServiceHelper {
       ServerKubernetesObjects sko = current != null ? current : created;
 
       // First, verify existing Service
-      Step read = CallBuilder.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -557,7 +563,7 @@ public class ServiceHelper {
         public NextAction onSuccess(Packet packet, V1Service result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = CallBuilder.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
+            Step create = factory.create().createServiceAsync(namespace, service, new ResponseStep<V1Service>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {

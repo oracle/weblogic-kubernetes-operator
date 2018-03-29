@@ -16,6 +16,9 @@
 #   PV_ROOT      The root directory on the kubernetes cluster
 #                used for persistent volumes.
 #
+#   LEASE_ID     Set this if you want cleanup to release the 
+#                given lease on a failure.
+#
 # See 'run.sh' for a detailed description of RESULT_ROOT and PV_ROOT.
 #
 # --------------------
@@ -39,6 +42,9 @@
 #             on the kubernetes cluster.
 #
 #   Phase 4:  Delete the local test output directory.
+#
+#   Phase 5:  If we own a lease, then release it on a failure
+#             see LEASE_ID above.
 #
 
 DOMAINS=(domain1 domain2 domain3 domain4 domain5)
@@ -103,11 +109,17 @@ function genericDelete {
       resfile_yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
 
       # leftover namespaced artifacts
-      kubectl get $1 --show-labels=true --all-namespaces=true 2>&1 | egrep -e "($3)" | awk '{ print $1 " " $2 }' | sort > $resfile_yes 2>&1
+      kubectl get $1 \
+          -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
+          --all-namespaces=true 2>&1 \
+          | egrep -e "($3)" | sort > $resfile_yes 2>&1
       artcount_yes="`cat $resfile_yes | wc -l`"
 
       # leftover non-namespaced artifacts
-      kubectl get $2 --show-labels=true --all-namespaces=true 2>&1 | egrep -e "($3)" | awk '{ print $1 }' | sort > $resfile_no 2>&1
+      kubectl get $2 \
+          -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
+          --all-namespaces=true 2>&1 \
+          | egrep -e "($3)" | sort > $resfile_no 2>&1
       artcount_no="`cat $resfile_no | wc -l`"
 
       artcount_total=$((artcount_yes + artcount_no))
@@ -333,6 +345,18 @@ echo @@ Deleting /tmp/test_suite.\* files.
 rm -f /tmp/test_suite.*
 
 # Bye
+
+if [ ! "$LEASE_ID" = "" ] && [ ! "$SUCCESS" = "0" ]; then
+  # release the lease if we own it
+  ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" > /tmp/release_lease.out 2>&1
+  if [ "$?" = "0" ]; then
+    echo @@ Lease released.
+  else
+    echo @@ Lease could not be released:
+    cat /tmp/release_lease.out
+  fi
+  rm -f /tmp/release_lease.out
+fi
 
 echo @@ Exiting with status $SUCCESS
 exit $SUCCESS

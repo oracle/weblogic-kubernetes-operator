@@ -21,8 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -40,8 +42,8 @@ public class ConfigMapConsumer implements Map<String, String> {
   private final AtomicReference<ScheduledFuture<?>> future = new AtomicReference<>(null);
   private final Runnable onUpdate;
 
-  public ConfigMapConsumer(ScheduledExecutorService threadPool, String mountPoint, Runnable onUpdate) throws IOException {
-    this.threadPool = threadPool;
+  public ConfigMapConsumer(ThreadFactory factory, String mountPoint, Runnable onUpdate) throws IOException {
+    this.threadPool = Executors.newScheduledThreadPool(2, factory);
     this.mountPointDir = new File(mountPoint);
     this.watcher = FileSystems.getDefault().newWatchService();
     this.onUpdate = onUpdate;

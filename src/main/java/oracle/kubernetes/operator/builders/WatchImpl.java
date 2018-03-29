@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator.builders;
 
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.helpers.Pool;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -13,15 +15,20 @@ import java.util.Iterator;
  * interface.
  */
 public class WatchImpl<T> implements WatchI<T> {
+    private final Pool<ApiClient> pool;
+    private final ApiClient client;
     private Watch<T> impl;
 
-    WatchImpl(Watch<T> impl) {
+    WatchImpl(Pool<ApiClient> pool, ApiClient client, Watch<T> impl) {
+        this.pool = pool;
+        this.client = client;
         this.impl = impl;
     }
 
     @Override
     public void close() throws IOException {
         impl.close();
+        pool.recycle(client);
     }
 
     @Override

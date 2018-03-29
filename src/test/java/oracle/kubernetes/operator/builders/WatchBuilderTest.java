@@ -9,6 +9,8 @@ import com.meterware.pseudoserver.WebResource;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.squareup.okhttp.Call;
+
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
@@ -16,8 +18,8 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.Pool;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,18 +58,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     private static List<AssertionError> validationErrors;
 
     private int resourceVersion = INITIAL_RESOURCE_VERSION;
-    private final static ClientHolder clientHolder = createTestClient();
     private List<Memento> mementos = new ArrayList<>();
-
-    // create a client to manipulate during this test to avoid recycling it and breaking other tests
-    private static ClientHolder createTestClient() {
-        Memento memento = TestUtils.silenceOperatorLogger();
-        try {
-            return ClientHelper.getInstance().take();
-        } finally {
-            memento.revert();
-        }
-    }
 
     @Before
     public void setUp() throws Exception {
@@ -87,7 +78,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         Domain domain = new Domain().withApiVersion(API_VERSION).withKind("Domain").withMetadata(createMetaData("domain1", NAMESPACE));
         defineHttpResponse(DOMAIN_RESOURCE, withResponses(createAddedResponse(domain)));
 
-        WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
+        WatchI<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
         assertThat(domainWatch, contains(addEvent(domain)));
     }
@@ -98,7 +89,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         Domain domain2 = new Domain().withApiVersion(API_VERSION).withKind("Domain").withMetadata(createMetaData("domain2", NAMESPACE));
         defineHttpResponse(DOMAIN_RESOURCE, withResponses(createModifiedResponse(domain1), createDeletedResponse(domain2)));
 
-        WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
+        WatchI<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
         assertThat(domainWatch, contains(modifyEvent(domain1), deleteEvent(domain2)));
     }
@@ -107,7 +98,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     public void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
         defineHttpResponse(DOMAIN_RESOURCE, withResponses(createErrorResponse(HTTP_ENTITY_TOO_LARGE)));
 
-        WatchI<Domain> domainWatch = new WatchBuilder(clientHolder).createDomainWatch(NAMESPACE);
+        WatchI<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
         assertThat(domainWatch, contains(errorEvent(HTTP_ENTITY_TOO_LARGE)));
     }
@@ -123,7 +114,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                                                                                          + "," + CREATEDBYOPERATOR_LABEL),
                                                     parameter("watch").withValue("true")));
 
-        WatchI<V1Service> serviceWatch = new WatchBuilder(clientHolder)
+        WatchI<V1Service> serviceWatch = new WatchBuilder()
                                             .withResourceVersion(startResourceVersion)
                                             .withLabelSelector(DOMAINUID_LABEL
                                                                + "," + CREATEDBYOPERATOR_LABEL)
@@ -141,7 +132,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                                                 parameter("includeUninitialized").withValue("false"),
                                                 parameter("limit").withValue("25")));
 
-        WatchI<V1Pod> podWatch = new WatchBuilder(clientHolder)
+        WatchI<V1Pod> podWatch = new WatchBuilder()
                                             .withFieldSelector("thisValue")
                                             .withIncludeUninitialized(false)
                                             .withLimit(25)
@@ -154,7 +145,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     public void whenPodWatchFindsNoData_hasNextReturnsFalse() throws Exception {
         defineHttpResponse(POD_RESOURCE, NO_RESPONSES);
 
-        WatchI<V1Pod> podWatch = new WatchBuilder(clientHolder).createPodWatch(NAMESPACE);
+        WatchI<V1Pod> podWatch = new WatchBuilder().createPodWatch(NAMESPACE);
 
         assertThat(podWatch.hasNext(), is(false));
     }
@@ -168,9 +159,9 @@ public class WatchBuilderTest extends HttpUserAgentTest {
                                                 parameter("timeoutSeconds").withValue("15"),
                                                 parameter("limit").withValue("500")));
 
-        WatchI<V1beta1Ingress> ingressWatch = new WatchBuilder(clientHolder)
-                                                .withPrettyPrinting()
+        WatchI<V1beta1Ingress> ingressWatch = new WatchBuilder()
                                                 .withTimeoutSeconds(15)
+                                                .withPrettyPrinting()
                                               .createIngressWatch(NAMESPACE);
 
         assertThat(ingressWatch, contains(deleteEvent(ingress)));
@@ -291,9 +282,23 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         }
 
         @Override
-        public <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
-            clientHolder.getApiClient().setBasePath(basePath);
-            return super.createWatch(clientHolder, callParams, responseBodyType, function);
+        public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
+            Pool<ApiClient> testPool = new Pool<ApiClient>() {
+
+              @Override
+              protected ApiClient create() {
+                Memento memento = TestUtils.silenceOperatorLogger();
+                try {
+                    ApiClient client = pool.take();
+                    client.setBasePath(basePath);
+                    return client;
+                } finally {
+                    memento.revert();
+                }
+              }
+              
+            };
+            return super.createWatch(testPool, callParams, responseBodyType, function);
         }
     }
 }
