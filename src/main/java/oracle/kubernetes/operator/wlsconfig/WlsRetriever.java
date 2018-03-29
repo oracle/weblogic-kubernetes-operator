@@ -64,14 +64,8 @@ public class WlsRetriever {
   /**
    * Constructor.
    *
-<<<<<<< HEAD
-   * @param clientHelper    The ClientHelper to be used to obtain the Kubernetes API Client.
    * @param namespace       The Namespace in which the target Domain is located.
    * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
-=======
-   * @param namespace The Namespace in which the target Domain is located.
-   * @param asServiceName The name of the Kubernetes Service which provides access to the Admin Server.
->>>>>>> master
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    * @return The WlsRetriever object for the specified inputs.
    */
