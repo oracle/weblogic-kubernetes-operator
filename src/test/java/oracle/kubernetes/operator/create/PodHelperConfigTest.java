@@ -43,7 +43,7 @@ public class PodHelperConfigTest {
   private static final String WEBLOGIC_CREDENTIALS_SECRET_NAME = "test-weblogic-credentials-secret-name";
   private static final int ADMIN_SERVER_PORT = 7654;
   private static final int MANAGED_SERVER_PORT = 4567;
-  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_NAME = "test-weblogic-domain-persistent-volume-claim-name";
+  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_NAME = "test-weblogic-domain-pvc-name";
   private static final String INTERNAL_OPERATOR_CERT_FILE = "test-internal-operator-cert-file";
   private static final String CUSTOM_LATEST_IMAGE = "custom-image:latest";
   private static final String ADMIN_OPTION1_NAME = "AdminOption1Name";
