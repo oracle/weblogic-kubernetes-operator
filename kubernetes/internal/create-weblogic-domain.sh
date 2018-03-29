@@ -96,8 +96,8 @@ function initAndValidateOutputDir {
     ${domainOutputDir} \
     ${valuesInputFile} \
     create-weblogic-domain-inputs.yaml \
-    weblogic-domain-persistent-volume.yaml \
-    weblogic-domain-persistent-volume-claim.yaml \
+    weblogic-domain-pv.yaml \
+    weblogic-domain-pvc.yaml \
     weblogic-domain-traefik-${clusterNameLC}.yaml \
     weblogic-domain-traefik-security-${clusterNameLC}.yaml \
     create-weblogic-domain-job.yaml \
@@ -291,12 +291,12 @@ function initialize {
     fi
   fi
 
-  domainPVInput="${scriptDir}/weblogic-domain-persistent-volume-template.yaml"
+  domainPVInput="${scriptDir}/weblogic-domain-pv-template.yaml"
   if [ ! -f ${domainPVInput} ]; then
     validationError "The template file ${domainPVInput} for generating a persistent volume was not found"
   fi
 
-  domainPVCInput="${scriptDir}/weblogic-domain-persistent-volume-claim-template.yaml"
+  domainPVCInput="${scriptDir}/weblogic-domain-pvc-template.yaml"
   if [ ! -f ${domainPVCInput} ]; then
     validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
@@ -382,8 +382,8 @@ function createYamlFiles {
   # (if needed) and copy the inputs file there.
   copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-weblogic-domain-inputs.yaml"
 
-  domainPVOutput="${domainOutputDir}/weblogic-domain-persistent-volume.yaml"
-  domainPVCOutput="${domainOutputDir}/weblogic-domain-persistent-volume-claim.yaml"
+  domainPVOutput="${domainOutputDir}/weblogic-domain-pv.yaml"
+  domainPVCOutput="${domainOutputDir}/weblogic-domain-pvc.yaml"
   jobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
   traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"

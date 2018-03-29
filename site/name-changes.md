@@ -88,8 +88,8 @@ The names of several of the generated YAML files have changed.
 | --- | --- |
 | domain-custom-resource.yaml | same |
 | domain-job.yaml | create-weblogic-domain-job.yaml |
-| persistent-volume.yaml | weblogic-domain-persistent-volume.yaml |
-| persistent-volume-claim.yaml | weblogic-domain-persistent-volume-claim.yaml |
+| persistent-volume.yaml | weblogic-domain-pv.yaml |
+| persistent-volume-claim.yaml | weblogic-domain-pvc.yaml |
 | rbac.yaml | weblogic-operator-security.yaml |
 | traefik-deployment.yaml | weblogic-domain-traefik-${clusterName, lower case}.yaml |
 | traefik-rbac.yaml | weblogic-domain-traefik-security-${clusterName, lower case}.yaml |

@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import io.kubernetes.client.models.V1PersistentVolume;
 
 /**
- * Parses a generated weblogic-domain-persistent-volume.yaml file into a set of typed k8s java objects
+ * Parses a generated weblogic-domain-pv.yaml file into a set of typed k8s java objects
  */
 public class ParsedWeblogicDomainPersistentVolumeYaml extends ParsedKubernetesYaml {
 
