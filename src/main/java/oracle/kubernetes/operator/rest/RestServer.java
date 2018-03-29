@@ -8,6 +8,9 @@ import org.apache.commons.codec.binary.Base64;
 import io.kubernetes.client.util.SSLUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.ContainerResolver;
+
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -28,6 +31,8 @@ import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * <p>The RestServer runs the WebLogic operator's REST api.</p>
@@ -107,8 +112,9 @@ public class RestServer {
    * a port was not configured.  When an exception is thrown, then none of the
    * ports will be leftrunning, however it is still OK to call stop
    * (which will be a no-op).
+   * @param container Container
    */
-  public void start() throws Exception {
+  public void start(Container container) throws Exception {
     LOGGER.entering();
     if (externalHttpsServer != null || internalHttpsServer != null) {
       throw new AssertionError("Already started");
@@ -116,14 +122,14 @@ public class RestServer {
     boolean fullyStarted = false;
     try {
       if (isExternalSSLConfigured()) {
-        externalHttpsServer = createExternalHttpsServer();
+        externalHttpsServer = createExternalHttpsServer(container);
         LOGGER.info("Started the external ssl REST server on " + getExternalHttpsUri() + "/operator"); // TBD .fine ?
       } else {
         LOGGER.info("Did not start the external ssl REST server because external ssl has not been configured.");
       }
 
       if (isInternalSSLConfigured()) {
-        internalHttpsServer = createInternalHttpsServer();
+        internalHttpsServer = createInternalHttpsServer(container);
         LOGGER.info("Started the internal ssl REST server on " + getInternalHttpsUri() + "/operator"); // TBD .fine ?
       } else {
         LOGGER.info("Did not start the internal ssl REST server because internal ssl has not been configured.");
@@ -161,10 +167,11 @@ public class RestServer {
     LOGGER.exiting();
   }
 
-  private HttpServer createExternalHttpsServer() throws Exception {
+  private HttpServer createExternalHttpsServer(Container container) throws Exception {
     LOGGER.entering();
     HttpServer result =
       createHttpsServer(
+        container,
         createSSLContext(
           createKeyManagers(
             config.getOperatorExternalCertificateData(),
@@ -179,10 +186,11 @@ public class RestServer {
     return result;
   }
 
-  private HttpServer createInternalHttpsServer() throws Exception {
+  private HttpServer createInternalHttpsServer(Container container) throws Exception {
     LOGGER.entering();
     HttpServer result =
       createHttpsServer(
+        container,
         createSSLContext(
           createKeyManagers(
             config.getOperatorInternalCertificateData(),
@@ -197,7 +205,7 @@ public class RestServer {
     return result;
   }
 
-  private HttpServer createHttpsServer(SSLContext ssl, String uri) throws Exception {
+  private HttpServer createHttpsServer(Container container, SSLContext ssl, String uri) throws Exception {
     HttpServer h =
         GrizzlyHttpServerFactory.createHttpServer(
             URI.create(uri),
@@ -220,12 +228,37 @@ public class RestServer {
           transport.setWorkerThreadPoolConfig(t);
         }
         t.setCorePoolSize(CORE_POOL_SIZE);
+        ThreadFactory x = t.getThreadFactory();
+        ThreadFactory tf = x != null ? x : Executors.defaultThreadFactory();
+        t.setThreadFactory((r) -> {
+          Thread n = tf.newThread(() -> {
+            ContainerResolver.getDefault().enterContainer(container);
+            r.run();
+          });
+          if (!n.isDaemon()) {
+            n.setDaemon(true);
+          }
+          return n;
+        });
+        
         t = transport.getKernelThreadPoolConfig();
         if (t == null) {
           t = ThreadPoolConfig.defaultConfig();
           transport.setKernelThreadPoolConfig(t);
         }
         t.setCorePoolSize(CORE_POOL_SIZE);
+        x = t.getThreadFactory();
+        ThreadFactory tf2 = x != null ? x : Executors.defaultThreadFactory();
+        t.setThreadFactory((r) -> {
+          Thread n = tf2.newThread(() -> {
+            ContainerResolver.getDefault().enterContainer(container);
+            r.run();
+          });
+          if (!n.isDaemon()) {
+            n.setDaemon(true);
+          }
+          return n;
+        });
         transport.setSelectorRunnersCount(CORE_POOL_SIZE);
       }
     }

@@ -6,11 +6,12 @@ package oracle.kubernetes.operator.http;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceSpec;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -58,7 +59,8 @@ public class HttpClient {
   public Result executeGetOnServiceClusterIP(String requestUrl, String serviceURL) {
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
-    Invocation.Builder invocationBuilder = target.request().accept("application/json").header("Authorization", "Basic " + encodedCredentials);
+    Invocation.Builder invocationBuilder = target.request().accept("application/json")
+        .header("Authorization", "Basic " + encodedCredentials);
     Response response = invocationBuilder.get();
     String responseString = null;
     int status = response.getStatus();
@@ -178,13 +180,12 @@ public class HttpClient {
   
   /**
    * Create authenticated client specifically targeted at an admin server
-   * @param client Client holder
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClientForServer(ClientHolder client, String namespace, String adminSecretName) {
-    SecretHelper secretHelper = new SecretHelper(client, namespace);
+  public static HttpClient createAuthenticatedClientForServer(String namespace, String adminSecretName) {
+    SecretHelper secretHelper = new SecretHelper(namespace);
     Map<String, byte[]> secretData =
         secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
 
@@ -221,17 +222,17 @@ public class HttpClient {
   /**
    * Returns the URL to access the service; using the service clusterIP and port.
    *
-   * @param client The ClientHolder that will be used to obtain the Kubernetes API client.
    * @param name The name of the Service that you want the URL for.
    * @param namespace The Namespace in which the Service you want the URL for is defined.
    * @return The URL of the Service, or null if it is not found or principal does not have sufficient permissions.
    */
-  public static String getServiceURL(ClientHolder client, String name, String namespace) {
+  public static String getServiceURL(String name, String namespace) {
     if (SERVICE_URL != null) {
       return SERVICE_URL;
     }
     try {
-      return getServiceURL(client.callBuilder().readService(name, namespace));
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      return getServiceURL(factory.create().readService(name, namespace));
     } catch (ApiException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }

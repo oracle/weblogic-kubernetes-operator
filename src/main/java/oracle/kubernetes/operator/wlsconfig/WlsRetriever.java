@@ -8,8 +8,6 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
 import oracle.kubernetes.weblogic.domain.v1.SubsystemHealth;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.http.HttpClient;
@@ -46,8 +44,7 @@ import io.kubernetes.client.models.V1Service;
  */
 public class WlsRetriever {
   public static final String KEY = "wlsDomainConfig";
-
-  private ClientHelper clientHelper;
+  
   private String namespace;
   private HttpClient httpClient;
   private String asServiceName;
@@ -67,26 +64,29 @@ public class WlsRetriever {
   /**
    * Constructor.
    *
+<<<<<<< HEAD
    * @param clientHelper    The ClientHelper to be used to obtain the Kubernetes API Client.
    * @param namespace       The Namespace in which the target Domain is located.
    * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
+=======
+   * @param namespace The Namespace in which the target Domain is located.
+   * @param asServiceName The name of the Kubernetes Service which provides access to the Admin Server.
+>>>>>>> master
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    * @return The WlsRetriever object for the specified inputs.
    */
-  public static WlsRetriever create(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
-    return new WlsRetriever(clientHelper, namespace, asServiceName, adminSecretName);
+  public static WlsRetriever create(String namespace, String asServiceName, String adminSecretName) {
+    return new WlsRetriever(namespace, asServiceName, adminSecretName);
   }
 
   /**
    * Constructor.
    *
-   * @param clientHelper    The ClientHelper to be used to obtain the Kubernetes API Client.
    * @param namespace       The Namespace in which the target Domain is located.
    * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    */
-  public WlsRetriever(ClientHelper clientHelper, String namespace, String asServiceName, String adminSecretName) {
-    this.clientHelper = clientHelper;
+  public WlsRetriever(String namespace, String asServiceName, String adminSecretName) {
     this.namespace = namespace;
     this.asServiceName = asServiceName;
     this.adminSecretName = adminSecretName;
@@ -590,21 +590,11 @@ public class WlsRetriever {
    * @return serviceURL for issuing HTTP requests to the admin server
    */
   String connectAndGetServiceURL() {
-    ClientHolder clientHolder = null;
-    try {
-      clientHolder = clientHelper.take();
-
-      if (httpClient == null) {
-        httpClient = HttpClient.createAuthenticatedClientForServer(clientHolder, namespace, adminSecretName);
-      }
-
-      return HttpClient.getServiceURL(clientHolder, asServiceName, namespace);
-
-    } finally {
-      if (clientHolder != null)
-        clientHelper.recycle(clientHolder);
-
+    if (httpClient == null) {
+      httpClient = HttpClient.createAuthenticatedClientForServer(namespace, adminSecretName);
     }
+
+    return HttpClient.getServiceURL(asServiceName, namespace);
   }
   
 }

@@ -15,6 +15,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+
 /**
  * ContainerResolver based on {@link ThreadLocal}.
  * <p>
@@ -34,6 +38,8 @@ import java.util.stream.Collectors;
  * </pre>
  */
 public class ThreadLocalContainerResolver extends ContainerResolver {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private ThreadLocal<Container> containerThreadLocal = new ThreadLocal<Container>() {
     @Override
     protected Container initialValue() {
@@ -78,6 +84,15 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
         Container old = enterContainer(container);
         try {
           x.run();
+        } catch (RuntimeException runtime) {
+          LOGGER.severe(MessageKeys.EXCEPTION, runtime);
+          throw runtime;
+        } catch (Error error) {
+          LOGGER.severe(MessageKeys.EXCEPTION, error);
+          throw error;
+        } catch (Throwable throwable) {
+          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+          throw new RuntimeException(throwable);
         } finally {
           exitContainer(old);
         }
@@ -89,6 +104,15 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
         Container old = enterContainer(container);
         try {
           return x.call();
+        } catch (RuntimeException runtime) {
+          LOGGER.severe(MessageKeys.EXCEPTION, runtime);
+          throw runtime;
+        } catch (Error error) {
+          LOGGER.severe(MessageKeys.EXCEPTION, error);
+          throw error;
+        } catch (Throwable throwable) {
+          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+          throw new RuntimeException(throwable);
         } finally {
           exitContainer(old);
         }
