@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 
 import com.google.common.collect.ImmutableMap;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
@@ -59,7 +60,8 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
   @Override
   protected ServiceWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return ServiceWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
+      return ServiceWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
+          Integer.toString(initialResourceVersion), this, stopping);
   }
 
   @Test

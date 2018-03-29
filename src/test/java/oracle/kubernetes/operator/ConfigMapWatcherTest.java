@@ -9,6 +9,7 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
@@ -46,6 +47,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
 
   @Override
   protected ConfigMapWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return ConfigMapWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
+      return ConfigMapWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
+          Integer.toString(initialResourceVersion), this, stopping);
   }
 }

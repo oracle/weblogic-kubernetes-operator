@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hamcrest.Matchers;
@@ -73,7 +74,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
   @Override
   protected PodWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return PodWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
+    return PodWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
+        Integer.toString(initialResourceVersion), this, stopping);
   }
 
   @Test
@@ -169,7 +171,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Test
   public void waitForReady_returnsAStep() throws Exception {
     AtomicBoolean stopping = new AtomicBoolean(true);
-    PodWatcher watcher = PodWatcher.create("ns", Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
+    PodWatcher watcher = PodWatcher.create(Executors.defaultThreadFactory(), "ns", 
+        Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
 
     assertThat(watcher.waitForReady(pod, null), Matchers.instanceOf(Step.class));
   }
@@ -177,7 +180,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Test
   public void WhenWaitForReadyAppliedToReadyPod_performNextStep() throws Exception {
     AtomicBoolean stopping = new AtomicBoolean(false);
-    PodWatcher watcher = PodWatcher.create("ns", Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
+    PodWatcher watcher = PodWatcher.create(Executors.defaultThreadFactory(), "ns", 
+        Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
 
     makePodReady(pod);
 

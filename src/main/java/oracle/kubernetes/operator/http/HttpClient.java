@@ -6,11 +6,13 @@ package oracle.kubernetes.operator.http;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceSpec;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -48,11 +50,12 @@ public class HttpClient {
     this.encodedCredentials = encodedCredentials;
   }
 
-  public String executeGetOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace) {
-    String serviceURL = SERVICE_URL == null ? getServiceURL(client, principal, serviceName, namespace) : SERVICE_URL;
+  public String executeGetOnServiceClusterIP(String requestUrl, String serviceName, String namespace) {
+    String serviceURL = SERVICE_URL == null ? getServiceURL(principal, serviceName, namespace) : SERVICE_URL;
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
-    Invocation.Builder invocationBuilder = target.request().accept("application/json").header("Authorization", "Basic " + encodedCredentials);
+    Invocation.Builder invocationBuilder = target.request().accept("application/json")
+        .header("Authorization", "Basic " + encodedCredentials);
     Response response = invocationBuilder.get();
     if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
       if (response.hasEntity()) {
@@ -64,17 +67,12 @@ public class HttpClient {
     return null;
   }
 
-  public String executePostUrlOnServiceClusterIP(String requestUrl, ClientHolder client, String serviceName, String namespace, String payload) {
-    String serviceURL = SERVICE_URL == null ? getServiceURL(client, principal, serviceName, namespace) : SERVICE_URL;
-    return executePostUrlOnServiceClusterIP(requestUrl, serviceURL, namespace, payload);
-  }
-  
   public String executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String namespace, String payload) {
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json")
         .header("Authorization", "Basic " + encodedCredentials)
-        .header("X-Requested-By", "MyClient");
+        .header("X-Requested-By", "WebLogicOperator");
     Response response = invocationBuilder.post(Entity.json(payload));
     LOGGER.finer("Response is  " + response.getStatusInfo());
     if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
@@ -144,14 +142,13 @@ public class HttpClient {
   
   /**
    * Create authenticated client specifically targeted at an admin server
-   * @param client Client holder
    * @param principal Principal
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClientForServer(ClientHolder client, String principal, String namespace, String adminSecretName) {
-    SecretHelper secretHelper = new SecretHelper(client, namespace);
+  public static HttpClient createAuthenticatedClientForServer(String principal, String namespace, String adminSecretName) {
+    SecretHelper secretHelper = new SecretHelper(namespace);
     Map<String, byte[]> secretData =
         secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
 
@@ -190,15 +187,15 @@ public class HttpClient {
   /**
    * Returns the URL to access the service; using the service clusterIP and port.
    *
-   * @param client The ClientHolder that will be used to obtain the Kubernetes API client.
    * @param principal The principal that will be used to call the Kubernetes API.
    * @param name The name of the Service that you want the URL for.
    * @param namespace The Namespace in which the Service you want the URL for is defined.
    * @return The URL of the Service, or null if it is not found or principal does not have sufficient permissions.
    */
-  public static String getServiceURL(ClientHolder client, String principal, String name, String namespace) {
+  public static String getServiceURL(String principal, String name, String namespace) {
     try {
-      return getServiceURL(client.callBuilder().readService(name, namespace));
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      return getServiceURL(factory.create().readService(name, namespace));
     } catch (ApiException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }

@@ -14,13 +14,16 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.JSON;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
@@ -40,12 +43,10 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
-import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
-import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -68,6 +69,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -84,54 +87,39 @@ public class Main {
   private static final String RUNNING_STATE = "RUNNING";
   private static final String ADMIN_STATE = "ADMIN";
 
-  private static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
-  
-  private static final Engine engine = new Engine("operator");
+  private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+  private static final ThreadFactory factory = (r) -> {
+    Thread t = defaultFactory.newThread(r);
+    if (!t.isDaemon()) {
+      t.setDaemon(true);
+    }
+    return t;
+  };
   
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final FiberGate domainUpdaters = new FiberGate(engine);
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
   
-  private static final ConfigMapConsumer config;
+  private static final TuningParameters tuningAndConfig;
   static {
     try {
-      config = new ConfigMapConsumer(engine.getExecutor(), "/operator/config", () -> {
-        LOGGER.info(MessageKeys.TUNING_PARAMETERS);
-        setTuningParameters();
-      });
+      tuningAndConfig = TuningParameters.initializeInstance(factory, "/operator/config");
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
   }
+  private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory(tuningAndConfig);
   
-  // tuning parameters
-  private static int statusUpdateTimeoutSeconds;
-  private static int unchangedCountToDelayStatusRecheck; 
-  private static long initialShortDelay; 
-  private static long eventualLongDelay;
-  private static void setTuningParameters() {
-    statusUpdateTimeoutSeconds = (int) config.readTuningParameter("statusUpdateTimeoutSeconds", 10);
-    unchangedCountToDelayStatusRecheck = (int) config.readTuningParameter("statueUpdateUnchangedCountToDelayStatusRecheck", 10); 
-    initialShortDelay = config.readTuningParameter("statusUpdateInitialShortDelay", 3); 
-    eventualLongDelay = config.readTuningParameter("statusUpdateEventualLongDelay", 30);
-    int callRequestLimit = (int) config.readTuningParameter("callRequestLimit", 500);
-    int callMaxRetryCount = (int) config.readTuningParameter("callMaxRetryCount", 5);
-    int callTimeoutSeconds = (int) config.readTuningParameter("callTimeoutSeconds", 10);
-    CallBuilder.setTuningParameters(callRequestLimit, callMaxRetryCount, callTimeoutSeconds);
-    int watchLifetime = (int) config.readTuningParameter("watchLifetime", 45);
-    WatchBuilder.setTuningParameters(watchLifetime);
-    int readinessProbeInitialDelaySeconds = (int) config.readTuningParameter("readinessProbeInitialDelaySeconds", 2);
-    int readinessProbeTimeoutSeconds = (int) config.readTuningParameter("readinessProbeTimeoutSeconds", 5);
-    int readinessProbePeriodSeconds = (int) config.readTuningParameter("readinessProbePeriodSeconds", 10);
-    int livenessProbeInitialDelaySeconds = (int) config.readTuningParameter("livenessProbeInitialDelaySeconds", 10);
-    int livenessProbeTimeoutSeconds = (int) config.readTuningParameter("livenessProbeTimeoutSeconds", 5);
-    int livenessProbePeriodSeconds = (int) config.readTuningParameter("livenessProbePeriodSeconds", 10);
-    PodHelper.setTuningParameters(readinessProbeInitialDelaySeconds, readinessProbeTimeoutSeconds, 
-        readinessProbePeriodSeconds, livenessProbeInitialDelaySeconds, livenessProbeTimeoutSeconds, 
-        livenessProbePeriodSeconds);
+  private static final Container container = new Container();
+  static {
+    container.getComponents().put(
+        ProcessingConstants.MAIN_COMPONENT_NAME,
+        Component.createFor(TuningParameters.class, tuningAndConfig, callBuilderFactory));
   }
-  
+
+  private static final Engine engine = new Engine("operator", container);
+  private static final FiberGate domainUpdaters = new FiberGate(engine);
+
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
 
@@ -153,10 +141,22 @@ public class Main {
   public static void main(String[] args) {
     // print startup log message
     LOGGER.info(MessageKeys.OPERATOR_STARTED);
-
+    
     // start liveness thread
     startLivenessThread();
 
+    engine.getExecutor().execute(() -> {
+      begin();
+    });
+
+    // now we just wait until the pod is terminated
+    waitForDeath();
+
+    // stop the REST server
+    stopRestServer();
+  }
+  
+  private static void begin() {
     // read the operator configuration
     String namespace = System.getenv("OPERATOR_NAMESPACE");
     if (namespace == null) {
@@ -165,7 +165,7 @@ public class Main {
 
     Collection<String> targetNamespaces = getTargetNamespaces(namespace);
 
-    String serviceAccountName = config.get("serviceaccount");
+    String serviceAccountName = tuningAndConfig.get("serviceaccount");
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
@@ -183,38 +183,32 @@ public class Main {
     LOGGER.info(MessageKeys.OP_CONFIG_TARGET_NAMESPACES, tns.toString());
     LOGGER.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
 
-    ClientHelper helper = ClientHelper.getInstance();
     try {
-      // Client pool
-      ClientHolder client = helper.take();
-      try {
-        // Initialize logging factory with JSON serializer for later logging 
-        // that includes k8s objects
-        LoggingFactory.setJSON(client.getApiClient().getJSON());
+      // Initialize logging factory with JSON serializer for later logging 
+      // that includes k8s objects
+      LoggingFactory.setJSON(new JSON());
 
-        // start the REST server
-        startRestServer(principal, targetNamespaces);
-  
-        // create the Custom Resource Definitions if they are not already there
-        CRDHelper.checkAndCreateCustomResourceDefinition(client);
-  
-        try {
-          HealthCheckHelper healthCheck = new HealthCheckHelper(client, namespace, targetNamespaces);
-          version = healthCheck.performK8sVersionCheck();
-          healthCheck.performNonSecurityChecks();
-          healthCheck.performSecurityChecks(serviceAccountName);
-        } catch (ApiException e) {
-          LOGGER.warning(MessageKeys.EXCEPTION, e);
-        }
-      } finally {
-        helper.recycle(client);
+      // start the REST server
+      startRestServer(principal, targetNamespaces);
+
+      // create the Custom Resource Definitions if they are not already there
+      CRDHelper.checkAndCreateCustomResourceDefinition();
+
+      try {
+        HealthCheckHelper healthCheck = new HealthCheckHelper(namespace, targetNamespaces);
+        version = healthCheck.performK8sVersionCheck();
+        healthCheck.performNonSecurityChecks();
+        healthCheck.performSecurityChecks(serviceAccountName);
+      } catch (ApiException e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
       }
 
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
-        Step domainList = CallBuilder.create().listDomainAsync(ns, new ResponseStep<DomainList>(null) {
+        initialized.put(ns, Boolean.TRUE);
+        Step domainList = callBuilderFactory.create().listDomainAsync(ns, new ResponseStep<DomainList>(null) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode,
               Map<String, List<String>> responseHeaders) {
@@ -227,22 +221,9 @@ public class Main {
           @Override
           public NextAction onSuccess(Packet packet, DomainList result, int statusCode,
               Map<String, List<String>> responseHeaders) {
-            initialized.put(ns, Boolean.TRUE);
             if (result != null) {
               for (Domain dom : result.getItems()) {
                 doCheckAndCreateDomainPresence(dom);
-              }
-            }
-            
-            // delete stranded resources
-            for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
-              String domainUID = entry.getKey();
-              DomainPresenceInfo info = entry.getValue();
-              if (info != null) {
-                if (info.getDomain() == null) {
-                  // no domain resource
-                  deleteDomainPresence(info.getNamespace(), domainUID);
-                }
               }
             }
             
@@ -254,15 +235,15 @@ public class Main {
         
         Step initialize = ConfigMapHelper.createScriptConfigMapStep(ns,
             new ConfigMapAfterStep(ns,
-            CallBuilder.create().with($ -> {
+                callBuilderFactory.create().with($ -> {
           $.labelSelector = LabelConstants.DOMAINUID_LABEL
                             + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
         }).listPodAsync(ns, new ResponseStep<V1PodList>(
-            CallBuilder.create().with($ -> {
+            callBuilderFactory.create().with($ -> {
               $.labelSelector = LabelConstants.DOMAINUID_LABEL
                                 + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
             }).listServiceAsync(ns, new ResponseStep<V1ServiceList>(
-                CallBuilder.create().with($ -> {
+                callBuilderFactory.create().with($ -> {
                   $.labelSelector = LabelConstants.DOMAINUID_LABEL
                                     + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
                 }).listIngressAsync(ns, new ResponseStep<V1beta1IngressList>(domainList) {
@@ -380,13 +361,18 @@ public class Main {
           }
         }); 
       }
-
-      // now we just wait until the pod is terminated
-      waitForDeath();
-
-      // stop the REST server
-      stopRestServer();
-
+      
+      // delete stranded resources
+      for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
+        String domainUID = entry.getKey();
+        DomainPresenceInfo info = entry.getValue();
+        if (info != null) {
+          if (info.getDomain() == null) {
+            // no domain resource
+            deleteDomainPresence(info.getNamespace(), domainUID);
+          }
+        }
+      }
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     } finally {
@@ -501,51 +487,63 @@ public class Main {
   }
   
   private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-    String domainUID = info.getDomain().getSpec().getDomainUID();
-    
     AtomicInteger unchangedCount = new AtomicInteger(0);
     AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
-    ScheduledFuture<?> existing = statusUpdater.get();
-    if (existing == null || !validateExisting(initialShortDelay, existing)) {
-      Runnable command = new Runnable() {
-        public void run() {
-          Runnable r = this; // resolve visibility
-          Packet packet = new Packet();
-          packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, config));
-          Step strategy = DomainStatusUpdater.createStatusStep(statusUpdateTimeoutSeconds, null);
-          domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, packet, new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {
-              Boolean isStatusUnchanged = (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-              long delay = initialShortDelay;
-              if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                if (unchangedCount.incrementAndGet() > unchangedCountToDelayStatusRecheck) {
-                  delay = eventualLongDelay;
-                }
-              } else {
-                unchangedCount.set(0);
+    Runnable command = new Runnable() {
+      public void run() {
+        Runnable r = this; // resolve visibility
+        Packet packet = new Packet();
+        packet.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, 
+            Component.createFor(info, version));
+        MainTuning main = tuningAndConfig.getMainTuning();
+        Step strategy = DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
+        engine.createFiber().start(strategy, packet, new CompletionCallback() {
+          @Override
+          public void onCompletion(Packet packet) {
+            Boolean isStatusUnchanged = (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
+            ScheduledFuture<?> existing = null;
+            if (Boolean.TRUE.equals(isStatusUnchanged)) {
+              if (unchangedCount.incrementAndGet() == main.unchangedCountToDelayStatusRecheck) {
+                // slow down retries because of sufficient unchanged statuses
+                existing  = statusUpdater.getAndSet(
+                  engine.getExecutor().scheduleWithFixedDelay(r, main.eventualLongDelay, main.eventualLongDelay, TimeUnit.SECONDS));
               }
-              // retry after delay
-              statusUpdater.set(engine.getExecutor().schedule(r, delay, TimeUnit.SECONDS));
+            } else {
+              // reset to trying after shorter delay because of changed status
+              unchangedCount.set(0);
+              existing  = statusUpdater.getAndSet(
+                  engine.getExecutor().scheduleWithFixedDelay(r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+              if (existing != null) {
+                existing.cancel(false);
+              }
             }
-  
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-              // retry after delay
-              statusUpdater.set(engine.getExecutor().schedule(r, initialShortDelay, TimeUnit.SECONDS));
+            if (existing != null) {
+              existing.cancel(false);
             }
-          });
-        }
-      };
-      statusUpdater.set(engine.getExecutor().schedule(command, initialShortDelay, TimeUnit.SECONDS));
+          }
+
+          @Override
+          public void onThrowable(Packet packet, Throwable throwable) {
+            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            // retry to trying after shorter delay because of exception
+            unchangedCount.set(0);
+            ScheduledFuture<?> existing  = statusUpdater.getAndSet(
+                engine.getExecutor().scheduleWithFixedDelay(r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+            if (existing != null) {
+              existing.cancel(false);
+            }
+          }
+        });
+      }
+    };
+    
+    MainTuning main = tuningAndConfig.getMainTuning();
+    ScheduledFuture<?> existing  = statusUpdater.getAndSet(
+        engine.getExecutor().scheduleWithFixedDelay(command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+    
+    if (existing != null) {
+      existing.cancel(false);
     }
-  }
-  
-  private static boolean validateExisting(long initialShortDelay, ScheduledFuture<?> existing) {
-    if (existing.isCancelled())
-      return false;
-    return existing.getDelay(TimeUnit.SECONDS) <= initialShortDelay;
   }
   
   private static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
@@ -594,25 +592,25 @@ public class Main {
       info.setDomain(dom);
     }
     
-    LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
-
-    Step managedServerStrategy = bringManagedServersUp(
-        DomainStatusUpdater.createEndProgressingStep(null));
-    Step adminServerStrategy = bringAdminServerUp(
-        connectToAdminAndInspectDomain(
-            managedServerStrategy));
-    
-    Step strategy = DomainStatusUpdater.createProgressingStep(
-        DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON, 
-        true, 
-        new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
-    
-    Packet p = new Packet();
-    
     String ns = dom.getMetadata().getNamespace();
-    if (initialized.getOrDefault(ns, Boolean.FALSE)) {
+    if (initialized.getOrDefault(ns, Boolean.FALSE) && !stopping.get()) {
+      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
+      Step managedServerStrategy = bringManagedServersUp(
+          DomainStatusUpdater.createEndProgressingStep(null));
+      Step adminServerStrategy = bringAdminServerUp(
+          connectToAdminAndInspectDomain(
+              managedServerStrategy));
+      
+      Step strategy = DomainStatusUpdater.createProgressingStep(
+          DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON, 
+          true, 
+          new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
+      
+      Packet p = new Packet();
+      
       PodWatcher pw = podWatchers.get(ns);
-      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw, config));
+      p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, 
+          Component.createFor(info, version, pw));
       p.put(ProcessingConstants.PRINCIPAL, principal);
       
       if (explicitRestartAdmin) {
@@ -631,43 +629,42 @@ public class Main {
         LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
       }
   
-      if (!stopping.get()) {
-        domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
-          @Override
-          public void onCompletion(Packet packet) {
-            if (explicitRestartAdmin) {
-              LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
-            }
-            if (explicitRestartServers != null) {
-              LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
-            }
-            if (explicitRestartClusters != null) {
-              LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
-            }
+      domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
+        @Override
+        public void onCompletion(Packet packet) {
+          if (explicitRestartAdmin) {
+            LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
           }
-  
-          @Override
-          public void onThrowable(Packet packet, Throwable throwable) {
-            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            
-            domainUpdaters.startFiberIfLastFiberMatches(domainUID, Fiber.getCurrentIfSet(), DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
-              @Override
-              public void onCompletion(Packet packet) {
-                // no-op
-              }
-  
-              @Override
-              public void onThrowable(Packet packet, Throwable throwable) {
-                LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-              }
-            });
-            
-            // TODO: consider retrying domain update after a delay
+          if (explicitRestartServers != null) {
+            LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
           }
-        });
-        
-        scheduleDomainStatusUpdating(info);
-      }
+          if (explicitRestartClusters != null) {
+            LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
+          }
+        }
+
+        @Override
+        public void onThrowable(Packet packet, Throwable throwable) {
+          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+          
+          domainUpdaters.startFiberIfLastFiberMatches(domainUID, Fiber.getCurrentIfSet(), 
+              DomainStatusUpdater.createFailedStep(throwable, null), p, new CompletionCallback() {
+            @Override
+            public void onCompletion(Packet packet) {
+              // no-op
+            }
+
+            @Override
+            public void onThrowable(Packet packet, Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            }
+          });
+          
+          // TODO: consider retrying domain update after a delay
+        }
+      });
+      
+      scheduleDomainStatusUpdating(info);
     }
     LOGGER.exiting();
   }
@@ -725,7 +722,7 @@ public class Main {
 
       String domainUID = spec.getDomainUID();
 
-      Step list = CallBuilder.create().with($ -> {
+      Step list = callBuilderFactory.create().with($ -> {
         $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID;
       }).listPersistentVolumeClaimAsync(namespace, new ResponseStep<V1PersistentVolumeClaimList>(next) {
         @Override
@@ -792,7 +789,7 @@ public class Main {
       V1Pod adminPod = info.getAdmin().getPod().get();
       
       PodWatcher pw = podWatchers.get(adminPod.getMetadata().getNamespace());
-      packet.getComponents().put(PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
+      packet.getComponents().put(ProcessingConstants.PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
       
       return doNext(pw.waitForReady(adminPod, next), packet);
     }
@@ -1318,7 +1315,7 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      Step deletePods = CallBuilder.create().with($ -> {
+      Step deletePods = callBuilderFactory.create().with($ -> {
         $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID
                           + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
       }).deleteCollectionPodAsync(namespace, new ResponseStep<V1Status>(next) {
@@ -1338,7 +1335,7 @@ public class Main {
         }
       });
       
-      Step serviceList = CallBuilder.create().with($ -> {
+      Step serviceList = callBuilderFactory.create().with($ -> {
         $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID
                           + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
       }).listServiceAsync(namespace, new ResponseStep<V1ServiceList>(deletePods) {
@@ -1362,7 +1359,7 @@ public class Main {
       });
 
       LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, domainUID, namespace);
-      Step deleteIngress = CallBuilder.create().with($ -> {
+      Step deleteIngress = callBuilderFactory.create().with($ -> {
         $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID
                           + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
       }).listIngressAsync(namespace, new ResponseStep<V1beta1IngressList>(serviceList) {
@@ -1403,7 +1400,7 @@ public class Main {
       if (it.hasNext()) {
         V1Service service = it.next();
         V1ObjectMeta meta = service.getMetadata();
-        Step delete = CallBuilder.create().deleteServiceAsync(meta.getName(), meta.getNamespace(), new ResponseStep<V1Status>(this) {
+        Step delete = callBuilderFactory.create().deleteServiceAsync(meta.getName(), meta.getNamespace(), new ResponseStep<V1Status>(this) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode,
               Map<String, List<String>> responseHeaders) {
@@ -1442,7 +1439,7 @@ public class Main {
         String ingressName = meta.getName();
         String namespace = meta.getNamespace();
         LOGGER.finer(MessageKeys.REMOVING_INGRESS, ingressName, namespace);
-        Step delete = CallBuilder.create().deleteIngressAsync(ingressName, meta.getNamespace(), new V1DeleteOptions(), new ResponseStep<V1Status>(this) {
+        Step delete = callBuilderFactory.create().deleteIngressAsync(ingressName, meta.getNamespace(), new V1DeleteOptions(), new ResponseStep<V1Status>(this) {
           @Override
           public NextAction onFailure(Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
             if (statusCode == CallBuilder.NOT_FOUND) {
@@ -1469,7 +1466,7 @@ public class Main {
   private static Collection<String> getTargetNamespaces(String namespace) {
     Collection<String> targetNamespaces = new ArrayList<String>();
 
-    String tnValue = config.get("targetNamespaces");
+    String tnValue = tuningAndConfig.get("targetNamespaces");
     if (tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {
@@ -1486,8 +1483,8 @@ public class Main {
   }
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces) throws Exception {
-    restServer = new RestServer(new RestConfigImpl(ClientHelper.getInstance(), principal, targetNamespaces));
-    restServer.start();
+    restServer = new RestServer(new RestConfigImpl(principal, targetNamespaces));
+    restServer.start(container);
   }
 
   private static void stopRestServer() {
@@ -1522,11 +1519,13 @@ public class Main {
   }
   
   private static DomainWatcher createDomainWatcher(String namespace, String initialResourceVersion) {
-    return DomainWatcher.create(namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
+    return DomainWatcher.create(factory, namespace, 
+        initialResourceVersion, Main::dispatchDomainWatch, stopping);
   }
   
   private static PodWatcher createPodWatcher(String namespace, String initialResourceVersion)  {
-    return PodWatcher.create(namespace, initialResourceVersion, Main::dispatchPodWatch, stopping);
+    return PodWatcher.create(factory, namespace, 
+        initialResourceVersion, Main::dispatchPodWatch, stopping);
   }
 
   private static void dispatchPodWatch(Watch.Response<V1Pod> item) {
@@ -1574,7 +1573,8 @@ public class Main {
   
 
   private static ServiceWatcher createServiceWatcher(String namespace, String initialResourceVersion)  {
-    return ServiceWatcher.create(namespace, initialResourceVersion, Main::dispatchServiceWatch, stopping);
+    return ServiceWatcher.create(factory, namespace, 
+        initialResourceVersion, Main::dispatchServiceWatch, stopping);
   }
 
   private static void dispatchServiceWatch(Watch.Response<V1Service> item) {
@@ -1662,7 +1662,8 @@ public class Main {
   }
   
   private static IngressWatcher createIngressWatcher(String namespace, String initialResourceVersion)  {
-    return IngressWatcher.create(namespace, initialResourceVersion, Main::dispatchIngressWatch, stopping);
+    return IngressWatcher.create(factory, namespace, 
+        initialResourceVersion, Main::dispatchIngressWatch, stopping);
   }
 
   private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
@@ -1718,7 +1719,8 @@ public class Main {
   }
   
   private static ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion)  {
-    return ConfigMapWatcher.create(namespace, initialResourceVersion, Main::dispatchConfigMapWatch, stopping);
+    return ConfigMapWatcher.create(factory, namespace, 
+        initialResourceVersion, Main::dispatchConfigMapWatch, stopping);
   }
 
   private static void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {

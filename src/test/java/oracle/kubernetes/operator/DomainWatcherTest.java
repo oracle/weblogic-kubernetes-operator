@@ -9,6 +9,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
@@ -46,6 +47,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
 
   @Override
   protected DomainWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return DomainWatcher.create(nameSpace, Integer.toString(initialResourceVersion), this, stopping);
+      return DomainWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
+          Integer.toString(initialResourceVersion), this, stopping);
   }
 }
