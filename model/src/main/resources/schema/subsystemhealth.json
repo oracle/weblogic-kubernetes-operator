@@ -1,0 +1,26 @@
+{
+    "type": "object",
+    "javaType": "oracle.kubernetes.weblogic.domain.v1.SubsystemHealth",
+    "description": "SubsystemHealth describes the current health of a specific subsystem.",
+    "required": [
+     "health",
+     "subsystemName"
+    ],
+    "properties": {
+     "health": {
+      "description": "Server health of this WebLogic server.",
+      "type": "string"
+     },
+     "subsystemName": {
+      "description": "Name of subsystem providing symptom information.",
+      "type": "string"
+     },
+     "symptoms": {
+      "description": "Symptoms provided by the reporting subsystem.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+ }

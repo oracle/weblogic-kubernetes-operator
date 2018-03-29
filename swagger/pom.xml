@@ -1,0 +1,71 @@
+<!-- Copyright 2017, Oracle Corporation. All Rights Reserved. -->
+<!-- This is unreleased proprietary source code of Oracle Corporation -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+  
+    <prerequisites>
+      <maven>2.2.0</maven>
+    </prerequisites>
+
+  <parent>
+    <groupId>oracle.kubernetes</groupId>
+    <artifactId>weblogic-kubernetes-operator</artifactId>
+    <version>0.1.0</version>
+  </parent>
+
+    <groupId>oracle.kubernetes</groupId>
+    <artifactId>operator-swagger</artifactId>
+    <version>0.1.0</version>
+
+    <description>Oracle Weblogic Server Kubernetes Operator</description>
+    <name>operator-swagger</name>
+    <packaging>jar</packaging>
+
+    <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
+    <inceptionYear>2017</inceptionYear>
+    <licenses>
+      <license>
+        <name>The Universal Permissive License (UPL), Version 1.0</name>
+        <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
+      </license>
+    </licenses>
+
+    <build>
+       <plugins>
+            <!-- update the swagger html documentation for the REST server -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>oracle.kubernetes.operator.SwaggerBuildHelper</mainClass>
+                </configuration>
+            </plugin>
+      
+        </plugins>
+    </build>
+
+    <profiles>
+
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <surefireArgLine></surefireArgLine>
+                <failsafeArgLine></failsafeArgLine>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>
