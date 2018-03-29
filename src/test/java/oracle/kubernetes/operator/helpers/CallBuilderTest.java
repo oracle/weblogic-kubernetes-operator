@@ -80,8 +80,8 @@ public class CallBuilderTest {
     public NextAction apply(Packet packet) {
       String namespace = "default";
       
-      CallBuilder builder = CallBuilder.create();
-      Step list = builder.listDomainAsync(namespace, new ResponseStep<DomainList>(null) {
+      CallBuilderFactory factory = new CallBuilderFactory(null);
+      Step list = factory.create().listDomainAsync(namespace, new ResponseStep<DomainList>(null) {
 
         @SuppressWarnings("unchecked")
         @Override

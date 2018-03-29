@@ -3,14 +3,20 @@
 
 package oracle.kubernetes.operator.create;
 
+import java.util.HashMap;
 import java.util.List;
 
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.TuningParameters.PodTuning;
+
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
+
+import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -237,6 +243,37 @@ public class PodHelperConfigTest {
   private V1Pod getActualManagedServerPodConfig(Domain domain, V1PersistentVolumeClaimList claims) throws Exception {
     return (new TestManagedPodStep()).computeManagedPodConfig(domain, claims);
   }
+  
+  private static class TestTuningParameters extends HashMap<String, String> implements TuningParameters {
+
+    @Override
+    public MainTuning getMainTuning() {
+      return null;
+    }
+
+    @Override
+    public CallBuilderTuning getCallBuilderTuning() {
+      return null;
+    }
+
+    @Override
+    public WatchTuning getWatchTuning() {
+      return null;
+    }
+
+    @Override
+    public PodTuning getPodTuning() {
+      PodTuning pod = new PodTuning(
+          /* "readinessProbeInitialDelaySeconds" */ 2,
+          /* "readinessProbeTimeoutSeconds" */ 5,
+          /* "readinessProbePeriodSeconds" */ 10,
+          /* "livenessProbeInitialDelaySeconds" */ 10,
+          /* "livenessProbeTimeoutSeconds" */ 5,
+          /* "livenessProbePeriodSeconds" */ 10);
+      return pod;
+    }
+    
+  }
 
   private static class TestAdminPodStep extends PodHelper.AdminPodStep {
     public TestAdminPodStep() {
@@ -246,9 +283,9 @@ public class PodHelperConfigTest {
       Packet packet = newPacket(domain, claims);
       packet.put(ProcessingConstants.SERVER_NAME, domain.getSpec().getAsName());
       packet.put(ProcessingConstants.PORT, domain.getSpec().getAsPort());
-      return super.computeAdminPodConfig(packet);
+      return super.computeAdminPodConfig(new TestTuningParameters(), packet);
     }
-    @Override protected String getInternalOperatorCertFile(Packet packet) {
+    @Override protected String getInternalOperatorCertFile(TuningParameters configMapHelper, Packet packet) {
       // Normally, this would open the files for the config map in the operator.
       return INTERNAL_OPERATOR_CERT_FILE;
     }
@@ -278,7 +315,7 @@ public class PodHelperConfigTest {
           .addElement(newEnvVar()
             .name(MANAGED_OPTION2_NAME)
             .value(MANAGED_OPTION2_VALUE)));
-      return super.computeManagedPodConfig(packet);
+      return super.computeManagedPodConfig(new TestTuningParameters(), packet);
     }
   }
 
