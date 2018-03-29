@@ -13,8 +13,6 @@ public class MessageKeys {
   public static final String OPERATOR_STARTED = "WLSKO-0000";
   public static final String CREATING_API_CLIENT = "WLSKO-0001";
   public static final String K8S_MASTER_URL = "WLSKO-0002";
-  public static final String CREATING_API_EXTENSION_CLIENT = "WLSKO-0003";
-  public static final String CREATING_COREAPI_CLIENT = "WLSKO-0004";
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
   public static final String CREATED_SERVICE = "WLSKO-0007";
@@ -23,7 +21,6 @@ public class MessageKeys {
   public static final String SERVICE_DETAILS = "WLSKO-0010";
   public static final String CREATING_SERVICE = "WLSKO-0011";
   public static final String CREATING_CRD = "WLSKO-0012";
-  public static final String CREATING_WEBLOGIC_API_CLIENT = "WLSKO-0013";
   public static final String LISTING_DOMAINS = "WLSKO-0014";
   public static final String WEBLOGIC_DOMAIN = "WLSKO-0015";
   public static final String NUMBER_OF_DOMAINS_IN_NAMESPACE = "WLSKO-0016";

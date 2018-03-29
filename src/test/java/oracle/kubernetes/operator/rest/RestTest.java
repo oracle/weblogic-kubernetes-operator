@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.rest;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
-import io.kubernetes.client.util.SSLUtils;
 import org.apache.commons.codec.binary.Base64;
 
 import oracle.kubernetes.operator.rest.backend.RestBackend;
@@ -16,6 +15,8 @@ import oracle.kubernetes.operator.rest.model.DomainModel;
 import oracle.kubernetes.operator.rest.model.ErrorModel;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
 import oracle.kubernetes.operator.rest.model.VersionModel;
+import oracle.kubernetes.operator.work.Container;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,11 +84,13 @@ public class RestTest {
 
   @Before
   public void setUp() throws Exception {
+    Container container = new Container();
+    
     savedhandlers = TestUtils.removeConsoleHandlers(logger);
 
     // Start the REST server
     rs = new RestServer(new TestRestConfigImpl());
-    rs.start();
+    rs.start(container);
 
     // create the client
     Client c =

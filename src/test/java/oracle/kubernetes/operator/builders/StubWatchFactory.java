@@ -6,9 +6,11 @@ package oracle.kubernetes.operator.builders;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.squareup.okhttp.Call;
+
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.Pool;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,7 +64,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> WatchI<T> createWatch(ClientHolder clientHolder, CallParams callParams, Class<?> responseBodyType, BiFunction<ClientHolder, CallParams, Call> function) throws ApiException {
+    public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
         getRecordedParameters().add(recordedParams(callParams));
 
         if (exceptionOnNext == null)

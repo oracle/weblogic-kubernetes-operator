@@ -16,14 +16,14 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ClientHelper;
-import oracle.kubernetes.operator.helpers.ClientHolder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 
 import javax.ws.rs.WebApplicationException;
@@ -55,14 +55,11 @@ public class RestBackendImpl implements RestBackend {
   private final AuthorizationProxy atz = new AuthorizationProxy();
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final ClientHelper clientHelper;
   private final String principal;
   private final Collection<String> targetNamespaces;
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
-   * @param clientHelper is used to help obtain the Kubernetes http client
-   * for calling the Kubernetes REST api
    * @param principal is the name of the Kubernetes user to use when calling
    * the Kubernetes REST api.
    * @param accessToken is the access token of the Kubernetes service account of the client
@@ -70,33 +67,25 @@ public class RestBackendImpl implements RestBackend {
    * @param targetNamespaces a list of Kubernetes namepaces that contain domains that
    * the WebLogic operator manages.
    */
-  public RestBackendImpl(ClientHelper clientHelper, String principal, String accessToken, Collection<String> targetNamespaces) {
+  public RestBackendImpl(String principal, String accessToken, Collection<String> targetNamespaces) {
     LOGGER.entering(principal, targetNamespaces);
-    ClientHolder client = null;
-    try {
-      client = clientHelper.take();
-      this.principal = principal;
-      userInfo = authenticate(client, accessToken);
-    } finally {
-      recycleClient(clientHelper, client);
-    }
-    this.clientHelper = clientHelper;
+    this.principal = principal;
+    userInfo = authenticate(accessToken);
     this.targetNamespaces = targetNamespaces;
     LOGGER.exiting();
   }
 
-  private void authorize(ClientHolder client, String domainUID, String cluster, Operation operation) {
+  private void authorize(String domainUID, String cluster, Operation operation) {
     // TBD - should cluster atz be different than domain atz?
-    authorize(client, domainUID, operation);
+    authorize(domainUID, operation);
   }
 
-  private void authorize(ClientHolder client, String domainUID, Operation operation) {
+  private void authorize(String domainUID, Operation operation) {
     LOGGER.entering(domainUID, operation);
     boolean authorized = false;
     if (domainUID == null)  {
       authorized =
         atz.check(
-          client,
           userInfo.getUsername(),
           userInfo.getGroups(),
           operation,
@@ -108,14 +97,13 @@ public class RestBackendImpl implements RestBackend {
     } else {
       authorized =
         atz.check(
-          client,
           userInfo.getUsername(),
           userInfo.getGroups(),
           operation,
           Resource.domains,
           domainUID,
           Scope.namespace,
-          getNamespace(client, domainUID)
+          getNamespace(domainUID)
         );
     }
     if (authorized) {
@@ -129,12 +117,12 @@ public class RestBackendImpl implements RestBackend {
     throw e;
   }
 
-  private String getNamespace(ClientHolder client, String domainUID) {
+  private String getNamespace(String domainUID) {
     if (domainUID == null) {
       throw new AssertionError(formatMessage(MessageKeys.NULL_DOMAIN_UID));
     }
 
-    return getNamespace(domainUID, getDomainsList(client));
+    return getNamespace(domainUID, getDomainsList());
   }
 
   private String getNamespace(String domainUID, List<Domain> domains) {
@@ -145,9 +133,9 @@ public class RestBackendImpl implements RestBackend {
     return domain.getMetadata().getNamespace();
   }
 
-  private V1UserInfo authenticate(ClientHolder client, String accessToken) {
+  private V1UserInfo authenticate(String accessToken) {
     LOGGER.entering();
-    V1TokenReviewStatus status = atn.check(client, principal, accessToken);
+    V1TokenReviewStatus status = atn.check(principal, accessToken);
     if (status == null) {
       throw new AssertionError(formatMessage(MessageKeys.NULL_TOKEN_REVIEW_STATUS));
     }
@@ -179,33 +167,22 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public Set<String> getDomainUIDs() {
     LOGGER.entering();
-    Set<String> result = null;
-    ClientHolder client = null;
-    try {
-      client = clientHelper.take();
-      result = getDomainUIDs(client);
-    } finally {
-      recycleClient(clientHelper, client);
+    authorize(null, Operation.list);
+    Set<String> result = new TreeSet<>();
+    List<Domain> domains = getDomainsList();
+    for (Domain domain : domains) {
+      result.add(domain.getSpec().getDomainUID());
     }
     LOGGER.exiting(result);
     return result;
   }
 
-  private Set<String> getDomainUIDs(ClientHolder client) {
-    authorize(client, null, Operation.list);
-    Set<String> result = new TreeSet<>();
-    List<Domain> domains = getDomainsList(client);
-    for (Domain domain : domains) {
-      result.add(domain.getSpec().getDomainUID());
-    }
-    return result;
-  }
-
-  private List<Domain> getDomainsList(ClientHolder client) {
+  private List<Domain> getDomainsList() {
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
     Collection<List<Domain>> c = new ArrayList<List<Domain>>();
     try {
       for (String ns : targetNamespaces) {
-        DomainList dl = client.callBuilder().listDomain(ns);
+        DomainList dl = factory.create().listDomain(ns);
         
         if (dl != null) {
           c.add(dl.getItems());
@@ -223,21 +200,11 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
-    ClientHolder client = null;
     boolean result = false;
-    try {
-      client = clientHelper.take();
-      result = isDomainUID(client, domainUID);
-    } finally {
-      recycleClient(clientHelper, client);
-    }
+    authorize(null, Operation.list);
+    result = getDomainUIDs().contains(domainUID);
     LOGGER.exiting(result);
     return result;
-  }
-
-  private boolean isDomainUID(ClientHolder client, String domainUID) {
-    authorize(client, null, Operation.list);
-    return getDomainUIDs(client).contains(domainUID);
   }
 
   /**
@@ -246,31 +213,20 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public Set<String> getClusters(String domainUID) {
     LOGGER.entering(domainUID);
-    ClientHolder client = null;
-    Set<String> result = null;
-    try {
-      client = clientHelper.take();
-      result = getClusters(client, domainUID);
-    } finally {
-      recycleClient(clientHelper, client);
-    }
-    LOGGER.exiting(result);
-    return result;
-  }
-
-  private Set<String> getClusters(ClientHolder client, String domainUID) {
-    if (!isDomainUID(client, domainUID)) {
+    if (!isDomainUID(domainUID)) {
       throw new AssertionError(formatMessage(MessageKeys.INVALID_DOMAIN_UID, domainUID));
     }
-    authorize(client, domainUID, Operation.get);
+    authorize(domainUID, Operation.get);
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by Domain UID
-    Domain domain = findDomain(client, domainUID);
-    String namespace = getNamespace(client, domainUID);
+    Domain domain = findDomain(domainUID);
+    String namespace = getNamespace(domainUID);
     String adminServerServiceName = getAdminServerServiceName(domain);
     String adminSecretName = getAdminServiceSecretName(domain);
-    Map<String, WlsClusterConfig> wlsClusterConfigs = getWLSConfiguredClusters(client, namespace, adminServerServiceName, adminSecretName);
-    return wlsClusterConfigs.keySet();
+    Map<String, WlsClusterConfig> wlsClusterConfigs = getWLSConfiguredClusters(namespace, adminServerServiceName, adminSecretName);
+    Set<String> result = wlsClusterConfigs.keySet();
+    LOGGER.exiting(result);
+    return result;
   }
 
   private static String getAdminServerServiceName(Domain domain) {
@@ -284,21 +240,10 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isCluster(String domainUID, String cluster) {
     LOGGER.entering(domainUID, cluster);
-    ClientHolder client = null;
-    boolean result = false;
-    try {
-      client = clientHelper.take();
-      result = isCluster(client, domainUID, cluster);
-    } finally {
-      recycleClient(clientHelper, client);
-    }
+    authorize(domainUID, cluster, Operation.list);
+    boolean result = getClusters(domainUID).contains(cluster);
     LOGGER.exiting(result);
     return result;
-  }
-
-  private boolean isCluster(ClientHolder client, String domainUID, String cluster) {
-    authorize(client, domainUID, cluster, Operation.list);
-    return getClusters(client, domainUID).contains(cluster);
   }
 
   /**
@@ -312,30 +257,20 @@ public class RestBackendImpl implements RestBackend {
       throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
-    ClientHolder client = null;
-    try {
-      client = clientHelper.take();
-      scaleCluster(client, domainUID, cluster, managedServerCount);
-    } finally {
-      recycleClient(clientHelper, client);
-    }
-    LOGGER.exiting();
-  }
+    authorize(domainUID, cluster, Operation.update);
 
-  private void scaleCluster(ClientHolder client, String domainUID, String cluster, int managedServerCount) {
-    authorize(client, domainUID, cluster, Operation.update);
-
-    List<Domain> domains = getDomainsList(client);
+    List<Domain> domains = getDomainsList();
     Domain domain = findDomain(domainUID, domains);
 
     String namespace = getNamespace(domainUID, domains);
 
-    verifyWLSConfiguredClusterCapacity(client, namespace, domain, cluster, managedServerCount);
+    verifyWLSConfiguredClusterCapacity(namespace, domain, cluster, managedServerCount);
 
-    updateReplicasForDomain(client, namespace, domain, cluster, managedServerCount);
+    updateReplicasForDomain(namespace, domain, cluster, managedServerCount);
+    LOGGER.exiting();
   }
 
-  private void updateReplicasForDomain(ClientHolder client, String namespace, Domain domain, String cluster, int managedServerCount) {
+  private void updateReplicasForDomain(String namespace, Domain domain, String cluster, int managedServerCount) {
     // Capacity of configured cluster is valid for scaling
     // Set replicas value on corresponding ClusterStartup (if defined)
     // or on the Domain level replicas value for cluster not defined in a ClusterStartup
@@ -362,9 +297,10 @@ public class RestBackendImpl implements RestBackend {
 
     if (domainModified) {
       try {
+        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
         // Write out the Domain with updated replica values
         // TODO: Can we patch instead of replace?
-        client.callBuilder().replaceDomain(domainUID, namespace, domain);
+        factory.create().replaceDomain(domainUID, namespace, domain);
       } catch (ApiException e) {
         LOGGER.finer("Unexpected exception when updating Domain " + domainUID + " in namespace " + namespace, e);
         throw new WebApplicationException(e.getMessage());
@@ -372,12 +308,12 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  private void verifyWLSConfiguredClusterCapacity(ClientHolder client, String namespace, Domain domain, String cluster, int managedServerCount) {
+  private void verifyWLSConfiguredClusterCapacity(String namespace, Domain domain, String cluster, int managedServerCount) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
     String adminServerServiceName = getAdminServerServiceName(domain);
     String adminSecretName = getAdminServiceSecretName(domain);
-    int clusterSize = getWLSConfiguredClusterSize(client, adminServerServiceName, cluster, namespace, adminSecretName);
+    int clusterSize = getWLSConfiguredClusterSize(adminServerServiceName, cluster, namespace, adminSecretName);
     if (managedServerCount > clusterSize) {
       throw createWebApplicationException(Status.BAD_REQUEST, MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED, managedServerCount, clusterSize, cluster, cluster);
     }
@@ -399,21 +335,21 @@ public class RestBackendImpl implements RestBackend {
     return null;
   }
 
-  private int getWLSConfiguredClusterSize(ClientHolder client, String adminServerServiceName, String cluster, String namespace, String adminSecretName) {
-    WlsRetriever wlsConfigRetriever = WlsRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
+  private int getWLSConfiguredClusterSize(String adminServerServiceName, String cluster, String namespace, String adminSecretName) {
+    WlsRetriever wlsConfigRetriever = WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
     WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig(principal);
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig(cluster);
     return wlsClusterConfig.getClusterSize();
   }
 
-  private Map<String, WlsClusterConfig> getWLSConfiguredClusters(ClientHolder client, String namespace, String adminServerServiceName,  String adminSecretName) {
-    WlsRetriever wlsConfigRetriever = WlsRetriever.create(client.getHelper(), namespace, adminServerServiceName, adminSecretName);
+  private Map<String, WlsClusterConfig> getWLSConfiguredClusters(String namespace, String adminServerServiceName,  String adminSecretName) {
+    WlsRetriever wlsConfigRetriever = WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
     WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig(principal);
     return wlsDomainConfig.getClusterConfigs();
   }
 
-  private Domain findDomain(ClientHolder client, String domainUID) {
-    List<Domain> domains = getDomainsList(client);
+  private Domain findDomain(String domainUID) {
+    List<Domain> domains = getDomainsList();
     return findDomain(domainUID, domains);
   }
 
@@ -447,12 +383,6 @@ public class RestBackendImpl implements RestBackend {
       rb.entity(msg);
     }
     return new WebApplicationException(rb.build());
-  }
-
-  private void recycleClient(ClientHelper clientHelper, ClientHolder client) {
-    if (client != null) {
-      clientHelper.recycle(client);
-    }
   }
 
   private String formatMessage(String msgId, Object... params) {

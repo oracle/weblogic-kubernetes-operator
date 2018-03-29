@@ -11,6 +11,7 @@ import io.kubernetes.client.models.V1ServicePort;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Component;
@@ -37,11 +38,12 @@ public class ServiceHelperTest {
 
   @Before
   public void startClean() throws Exception {
+    CallBuilderFactory factory = new CallBuilderFactory(null);
     
     // Delete the service if left around.
     System.out.println("Deleting service pre-test");
     try {
-      CallBuilder.create().deleteService("domain-uid-admin", "tests");
+      factory.create().deleteService("domain-uid-admin", "tests");
     } catch (ApiException e) {
       if (e.getCode() != CallBuilder.NOT_FOUND) {
         throw e;
@@ -52,18 +54,20 @@ public class ServiceHelperTest {
 
   @After
   public void tearDown() throws Exception {
+    CallBuilderFactory factory = new CallBuilderFactory(null);
 
     // Delete the service if we created one.
     if (serviceCreated) {
       System.out.println("Deleting service post-test");
-      CallBuilder.create().deleteService("domain-uid-admin", "tests");
+      factory.create().deleteService("domain-uid-admin", "tests");
       serviceCreated = false;
     }
   }
 
   @Test
   public void createReadListUpdate() throws Exception {
-    
+    CallBuilderFactory factory = new CallBuilderFactory(null);
+
     // Domain
     Domain dom = new Domain();
     V1ObjectMeta metadata = new V1ObjectMeta();
@@ -94,12 +98,12 @@ public class ServiceHelperTest {
     
     // Read the service we just created.
     System.out.println("Reading service");
-    V1Service service = CallBuilder.create().readService("domain-uid-admin", "tests");
+    V1Service service = factory.create().readService("domain-uid-admin", "tests");
     checkService(service, false);
 
     // Get a list of services.
     System.out.println("Listing services");
-    V1ServiceList serviceList = CallBuilder.create().listService("tests");
+    V1ServiceList serviceList = factory.create().listService("tests");
     boolean serviceFound = false;
     for (V1Service item : serviceList.getItems()) {
       if (item.getMetadata().getName().equals("domain-uid-admin")) {

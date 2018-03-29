@@ -10,24 +10,25 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClientHelper extends Pool<ClientHolder> {
+public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ClientHelper SINGLETON = new ClientHelper();
+  private static final ClientPool SINGLETON = new ClientPool();
 
   private final AtomicBoolean first = new AtomicBoolean(true);
 
-  public static ClientHelper getInstance() {
+  public static ClientPool getInstance() {
     return SINGLETON;
   }
 
-  private ClientHelper() {
+  private ClientPool() {
   }
 
   @Override
-  protected ClientHolder create() {
-    return new ClientHolder(this, getApiClient());
+  protected ApiClient create() {
+    return getApiClient();
   }
 
   private ApiClient getApiClient() {
@@ -49,6 +50,9 @@ public class ClientHelper extends Pool<ClientHolder> {
     // TODO:
     SecretHelper.addCustomGsonToClient(client);
 
+    // TEST
+    client.getHttpClient().setReadTimeout(5, TimeUnit.MINUTES);
+    
     LOGGER.exiting(client);
     return client;
   }
