@@ -10,7 +10,7 @@
 
   <parent>
     <groupId>oracle.kubernetes</groupId>
-    <artifactId>weblogic-kubernetes-operator</artifactId>
+    <artifactId>operator-parent</artifactId>
     <version>0.1.0</version>
   </parent>
 
