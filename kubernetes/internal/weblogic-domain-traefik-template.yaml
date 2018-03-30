@@ -18,19 +18,18 @@ metadata:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     weblogic.clusterName: %CLUSTER_NAME%
-    app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
+      weblogic.domainUID: %DOMAIN_UID%
+      weblogic.clusterName: %CLUSTER_NAME%
   template:
     metadata:
       labels:
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         weblogic.clusterName: %CLUSTER_NAME%
-        app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
     spec:
       serviceAccountName: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
       terminationGracePeriodSeconds: 60
@@ -86,7 +85,6 @@ metadata:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     weblogic.clusterName: %CLUSTER_NAME%
-    app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
 data:
   traefik.toml: |
     # traefik.toml
@@ -112,7 +110,8 @@ metadata:
     weblogic.clusterName: %CLUSTER_NAME%
 spec:
   selector:
-    app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME%
   ports:
   - port: 80
     name: http
@@ -129,10 +128,10 @@ metadata:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     weblogic.clusterName: %CLUSTER_NAME%
-    app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
 spec:
   selector:
-    app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.clusterName: %CLUSTER_NAME%
   ports:
   - port: 8080
     name: dash
