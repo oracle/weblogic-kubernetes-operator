@@ -188,23 +188,24 @@ public class WlsRetriever {
         if (RequestType.CONFIG.equals(requestType)) {
           WlsDomainConfig wlsDomainConfig = null;
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
-              WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, namespace, 
-              WlsDomainConfig.getRetrieveServersSearchPayload());
-          if (jsonResult != null) {
-            wlsDomainConfig = WlsDomainConfig.create().load(jsonResult);
-          }
-    
+              WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL,
+              WlsDomainConfig.getRetrieveServersSearchPayload(),
+              true).getResponse();
+
+          wlsDomainConfig = WlsDomainConfig.create().load(jsonResult);
+
           // validate domain spec against WLS configuration. Currently this only logs warning messages.
           wlsDomainConfig.updateDomainSpecAsNeeded(dom.getSpec());
-    
+
           info.setScan(wlsDomainConfig);
           info.setLastScanTime(new DateTime());
-    
+
           LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
+
         } else { // RequestType.HEALTH
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
-              getRetrieveHealthSearchUrl(), serviceURL, namespace, 
-              getRetrieveHealthSearchPayload());
+              getRetrieveHealthSearchUrl(), serviceURL,
+              getRetrieveHealthSearchPayload(), true).getResponse();
           
           ObjectMapper mapper = new ObjectMapper();
           JsonNode root = mapper.readTree(jsonResult);
@@ -253,7 +254,11 @@ public class WlsRetriever {
 
         return doNext(packet);
       } catch (Throwable t) {
-        LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
+        if (RequestType.CONFIG.equals(requestType)) {
+          LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
+        } else {
+          LOGGER.warning(MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
+        }
         
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
@@ -339,7 +344,8 @@ public class WlsRetriever {
       try {
         connectAdminServer(principal);
         String serviceURL = HttpClient.getServiceURL(principal, asServiceName, namespace);
-        String jsonResult = httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, namespace, WlsDomainConfig.getRetrieveServersSearchPayload());
+        String jsonResult =
+          httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
         if (jsonResult != null) {
           result = WlsDomainConfig.create().load(jsonResult);
         }
