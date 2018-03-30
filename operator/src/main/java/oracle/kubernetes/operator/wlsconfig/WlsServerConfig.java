@@ -38,14 +38,16 @@ public class WlsServerConfig {
     return new ArrayList<>(networkAccessPoints.values());
   }
 
+  @SuppressWarnings("unchecked")
   WlsServerConfig(Map<String, Object> serverConfigMap) {
     this((String) serverConfigMap.get("name"),
             (Integer) serverConfigMap.get("listenPort"),
             (String) serverConfigMap.get("listenAddress"),
-            (Map) serverConfigMap.get("networkAccessPoints"));
+            (Map<String, Object>) serverConfigMap.get("networkAccessPoints"));
   }
 
-  public WlsServerConfig(String name, Integer listenPort, String listenAddress, Map networkAccessPointsMap) {
+  @SuppressWarnings("unchecked")
+  public WlsServerConfig(String name, Integer listenPort, String listenAddress, Map<String, Object> networkAccessPointsMap) {
     this.name = name;
     this.listenPort = listenPort;
     this.listenAddress = listenAddress;

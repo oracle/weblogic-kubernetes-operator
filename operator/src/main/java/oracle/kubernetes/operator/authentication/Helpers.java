@@ -24,6 +24,7 @@ import java.util.Map.Entry;
  */
 public class Helpers {
 
+  @SuppressWarnings("unused")
   private final Authenticator authenticator;
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;

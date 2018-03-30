@@ -52,7 +52,7 @@ public class YamlUtils {
 
     @Override
     protected Node representMapping(Tag tag, Map<?, ?> mapping, Boolean flowStyle) {
-      Map<?,?> sortedMapping = new TreeMap(mapping);
+      Map<?,?> sortedMapping = new TreeMap<>(mapping);
       return super.representMapping(tag, sortedMapping, flowStyle);
     }
 
@@ -78,7 +78,7 @@ public class YamlUtils {
 
     private class WorkAroundConstructScalar extends Constructor.ConstructScalar {
       public Object construct(Node node) {
-        Class type = node.getType();
+        Class<?> type = node.getType();
         if (IntOrString.class.equals(type)) {
           ScalarNode sn = (ScalarNode)node;
           Tag tag = sn.getTag();
