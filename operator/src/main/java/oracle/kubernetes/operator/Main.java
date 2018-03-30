@@ -15,6 +15,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +71,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -111,13 +111,17 @@ public class Main {
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory(tuningAndConfig);
   
   private static final Container container = new Container();
+  private static final ScheduledExecutorService wrappedExecutorService = 
+      Engine.wrappedExecutorService("operator", container);
+  
   static {
     container.getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(TuningParameters.class, tuningAndConfig, callBuilderFactory));
+        Component.createFor(ScheduledExecutorService.class, wrappedExecutorService,
+            TuningParameters.class, tuningAndConfig, callBuilderFactory));
   }
 
-  private static final Engine engine = new Engine("operator", container);
+  private static final Engine engine = new Engine(wrappedExecutorService);
   private static final FiberGate domainUpdaters = new FiberGate(engine);
 
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();

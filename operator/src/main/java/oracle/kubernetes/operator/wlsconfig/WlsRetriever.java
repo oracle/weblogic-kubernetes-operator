@@ -14,6 +14,7 @@ import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -24,9 +25,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -373,7 +373,7 @@ public class WlsRetriever {
     LOGGER.entering();
 
     final long timeout = READ_CONFIG_TIMEOUT_MILLIS;
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
     long startTime = System.currentTimeMillis();
     Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(timeout));
     executorService.shutdown();
@@ -492,7 +492,7 @@ public class WlsRetriever {
       return false;
     }
 
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
     long startTime = System.currentTimeMillis();
     Future<Boolean> future = executorService.submit(() -> doUpdateDynamicClusterSize(wlsClusterConfig, machineNamePrefix, targetClusterSize));
     executorService.shutdown();
