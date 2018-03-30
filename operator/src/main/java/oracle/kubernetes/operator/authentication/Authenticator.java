@@ -46,7 +46,6 @@ public class Authenticator {
   public Authenticator() throws IOException {
     this.apiClient = Config.defaultClient();
     this.helper = new Helpers(this);
-    SecretHelper.addCustomGsonToClient(this.apiClient);
   }
 
   /**
@@ -167,7 +166,6 @@ public class Authenticator {
     newClient.setBasePath(serviceUrl);
     newClient.setApiKey("Bearer " + token);
     newClient.setSslCaCert(new ByteArrayInputStream(caCert));
-    SecretHelper.addCustomGsonToClient(newClient);
 
     LOGGER.exiting(newClient);
     return newClient;
