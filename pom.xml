@@ -21,10 +21,6 @@
     <tag>HEAD</tag>
   </scm>
 
-  <prerequisites>
-    <maven>2.2.0</maven>
-  </prerequisites>
-
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>weblogic-kubernetes-operator</name>
     <packaging>pom</packaging>

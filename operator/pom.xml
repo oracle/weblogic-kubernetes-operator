@@ -4,10 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
   
-    <prerequisites>
-      <maven>2.2.0</maven>
-    </prerequisites>
-
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
@@ -47,9 +43,12 @@
                 </executions>
                 <configuration>
                     <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>oracle.kubernetes.operator.Main</mainClass>
+                        </manifest>
                         <manifestEntries>
-                            <Main-Class>oracle.kubernetes.operator.Main</Main-Class>
-                            <Class-Path>lib/</Class-Path>
                             <Implementation-Title>${project.artifactId}</Implementation-Title>
                             <Implementation-Version>${project.version}</Implementation-Version>
                             <Implementation-Build>${git.branch}.${git.shortRevision}</Implementation-Build>
@@ -82,49 +81,12 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <includeScope>runtime</includeScope>
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
-<!-- RJE FIXME
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>oracle.kubernetes.operator.Main</mainClass>
-                                </transformer>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-
-                            <artifactSet>
-                                <excludes>
-                                </excludes>
-                            </artifactSet>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
--->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
