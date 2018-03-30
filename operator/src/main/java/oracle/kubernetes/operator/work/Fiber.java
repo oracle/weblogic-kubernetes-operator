@@ -479,14 +479,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       
       final Fiber oldFiber = CURRENT_FIBER.get();
       CURRENT_FIBER.set(this);
-      Container oldContainer = ContainerResolver.getDefault().enterContainer(owner.getContainer());
       try {
         // doRun returns true to indicate an early exit from fiber processing
         if (!doRun(next)) {
             completionCheck();
         }
       } finally {
-        ContainerResolver.getDefault().exitContainer(oldContainer);
         CURRENT_FIBER.set(oldFiber);
       }
     }
@@ -660,9 +658,13 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       sb.append(parent.getName());
       sb.append("-child-");
     } else {
-      sb.append("engine-");
-      sb.append(owner.id);
-      sb.append("-fiber-");
+      synchronized (this) {
+        if (currentThread != null) {
+          sb.append(currentThread.getName());
+          sb.append("-");
+    	  }
+      }
+      sb.append("fiber-");
     }
     sb.append(id);
     return sb.toString();
