@@ -245,7 +245,7 @@ public class RestTest {
 
   @Test
   public void testScaleCluster() {
-    Entity entity = Entity.entity(createScaleClusterParams(), MediaType.APPLICATION_JSON);
+    Entity<ScaleClusterParamsModel> entity = Entity.entity(createScaleClusterParams(), MediaType.APPLICATION_JSON);
     verifyStatusCode(
       request(DOMAIN1_CLUSTER1_SCALE_HREF)
         .header("X-Requested-By", "TestClient")
@@ -256,7 +256,7 @@ public class RestTest {
 
   @Test
   public void testScaleClusterMissingRequestedByHeader() {
-    Entity entity = Entity.entity(createScaleClusterParams(), MediaType.APPLICATION_JSON);
+    Entity<ScaleClusterParamsModel> entity = Entity.entity(createScaleClusterParams(), MediaType.APPLICATION_JSON);
     verifyStatusCode(
       request(DOMAIN1_CLUSTER1_SCALE_HREF)
         .post(entity),

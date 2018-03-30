@@ -34,9 +34,10 @@ import org.apache.commons.codec.binary.Base64;
  */
 public class ParsedKubernetesYaml {
 
-  private Map<String,TypeHandler> kindToHandler = new HashMap();
+  private Map<String,TypeHandler<?>> kindToHandler = new HashMap<>();
   private int objectCount = 0;
 
+  @SuppressWarnings("rawtypes")
   protected ParsedKubernetesYaml(Path path) throws Exception {
     // create handlers for all the supported k8s types
     kindToHandler.put(KIND_CONFIG_MAP, new ConfigMapHandler());
@@ -65,6 +66,7 @@ public class ParsedKubernetesYaml {
     return objectCount;
   }
 
+  @SuppressWarnings("rawtypes")
   private void add(Map objectAsMap) {
     if (objectAsMap == null) {
       // there is no object.  e.g. the yaml has:
@@ -107,60 +109,73 @@ public class ParsedKubernetesYaml {
   }
 */
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1ConfigMap> getConfigMaps() {
     return (TypeHandler<V1ConfigMap>)getHandler(KIND_CONFIG_MAP);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1beta1ClusterRole> getClusterRoles() {
     return (TypeHandler<V1beta1ClusterRole>)getHandler(KIND_CLUSTER_ROLE);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1beta1ClusterRoleBinding> getClusterRoleBindings() {
     return (TypeHandler<V1beta1ClusterRoleBinding>)getHandler(KIND_CLUSTER_ROLE_BINDING);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
     return (TypeHandler<ExtensionsV1beta1Deployment>)getHandler(KIND_DEPLOYMENT);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<Domain> getDomains() {
     return (TypeHandler<Domain>)getHandler(KIND_DOMAIN);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1Job> getJobs() {
     return (TypeHandler<V1Job>)getHandler(KIND_JOB);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1Namespace> getNamespaces() {
     return (TypeHandler<V1Namespace>)getHandler(KIND_NAMESPACE);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1PersistentVolume> getPersistentVolumes() {
     return (TypeHandler<V1PersistentVolume>)getHandler(KIND_PERSISTENT_VOLUME);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1PersistentVolumeClaim> getPersistentVolumeClaims() {
     return (TypeHandler<V1PersistentVolumeClaim>)getHandler(KIND_PERSISTENT_VOLUME_CLAIM);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1beta1RoleBinding> getRoleBindings() {
     return (TypeHandler<V1beta1RoleBinding>)getHandler(KIND_ROLE_BINDING);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1Secret> getSecrets() {
     return (TypeHandler<V1Secret>)getHandler(KIND_SECRET);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1Service> getServices() {
     return (TypeHandler<V1Service>)getHandler(KIND_SERVICE);
   }
 
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1ServiceAccount> getServiceAccounts() {
     return (TypeHandler<V1ServiceAccount>)getHandler(KIND_SERVICE_ACCOUNT);
   }
 
-  private TypeHandler getHandler(String kind) {
-    TypeHandler handler = kindToHandler.get(kind);
+  private TypeHandler<?> getHandler(String kind) {
+    TypeHandler<?> handler = kindToHandler.get(kind);
     if (handler == null) {
       throw new AssertionError("Unsupported kubernetes artifact kind : " + kind);
     }
@@ -169,10 +184,10 @@ public class ParsedKubernetesYaml {
 
   public static abstract class TypeHandler<T extends Object> {
 
-    private Class k8sClass;
-    private List<T> instances = new ArrayList();
+    private Class<?> k8sClass;
+    private List<T> instances = new ArrayList<>();
 
-    protected TypeHandler(Class k8sClass) {
+    protected TypeHandler(Class<?> k8sClass) {
       this.k8sClass = k8sClass;
     }
 
@@ -193,7 +208,7 @@ public class ParsedKubernetesYaml {
     protected T find(String name, String namespace) {
       T result = null;
       for (T instance : instances) {
-        V1ObjectMeta md = getMetadata(instance);
+        //V1ObjectMeta md = getMetadata(instance);
         if (name.equals(getName(instance)) && namespace.equals(getNamespace(instance))) {
           if (result == null) {
             result = instance;
@@ -205,6 +220,7 @@ public class ParsedKubernetesYaml {
       return result;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void add(Map objectAsMap) {
       // convert the map to a yaml string then convert the yaml string to the
       // corresponding k8s class
@@ -278,6 +294,7 @@ public class ParsedKubernetesYaml {
     private SecretHandler() { super(V1Secret.class); }
     @Override protected V1ObjectMeta getMetadata(V1Secret instance) { return instance.getMetadata(); }
 
+    @SuppressWarnings("rawtypes")
     @Override public void add(Map objectAsMap) {
       convertSecretsFromBase64EncodedStringsToByteArrays(objectAsMap);
       super.add(objectAsMap);
@@ -291,6 +308,7 @@ public class ParsedKubernetesYaml {
      * I'm assuming that at some point in the future, the kubernetes secrets class will catch
      * up and expect base64 encoded strings too.
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static void convertSecretsFromBase64EncodedStringsToByteArrays(Map objectAsMap) {
       Map origData = (Map)objectAsMap.get("data");
       if (origData == null || origData.size() == 0) {

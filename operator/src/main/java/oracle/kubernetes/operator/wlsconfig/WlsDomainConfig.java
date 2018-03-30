@@ -97,14 +97,15 @@ public class WlsDomainConfig {
     return this;
   }
 
-  private String getClusterNameForServer(Map serverMap) {
+  private String getClusterNameForServer(Map<String, Object> serverMap) {
     // serverMap contains a "cluster" entry from the REST call which is in the form: "cluster": ["clusters", "DockerCluster"]
-    List clusterList = (List) serverMap.get("cluster");
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    List<String> clusterList = (List) serverMap.get("cluster");
     if (clusterList != null) {
-      for (Object value : clusterList) {
+      for (String value : clusterList) {
         // the first entry that is not "clusters" is assumed to be the cluster name
         if (!"clusters".equals(value)) {
-          return (String) value;
+          return value;
         }
       }
     }
