@@ -47,7 +47,7 @@ abstract public class BaseDebugLoggingFilter {
 
     // Make a copy of all of the request headers
     MultivaluedHashMap<String,String> loggableHeaders =
-      new MultivaluedHashMap<>(req.getHeaders());
+      new MultivaluedHashMap<String, String>(req.getHeaders());
 
     // Authorization headers contain credentials.  These credentials should not be
     // debug logged since they contain sensitive data.
