@@ -11,12 +11,10 @@ import io.kubernetes.client.models.V1Pod;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.PodTuning;
 
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 
-import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -244,6 +242,7 @@ public class PodHelperConfigTest {
     return (new TestManagedPodStep()).computeManagedPodConfig(domain, claims);
   }
   
+  @SuppressWarnings("serial")
   private static class TestTuningParameters extends HashMap<String, String> implements TuningParameters {
 
     @Override

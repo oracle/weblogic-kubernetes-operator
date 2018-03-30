@@ -15,7 +15,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * BaseDebugLoggingFilter provides utilities shared by RequestDebugLoggingFilter and
@@ -48,7 +47,7 @@ abstract public class BaseDebugLoggingFilter {
 
     // Make a copy of all of the request headers
     MultivaluedHashMap<String,String> loggableHeaders =
-      new MultivaluedHashMap(req.getHeaders());
+      new MultivaluedHashMap<String, String>(req.getHeaders());
 
     // Authorization headers contain credentials.  These credentials should not be
     // debug logged since they contain sensitive data.
@@ -58,7 +57,7 @@ abstract public class BaseDebugLoggingFilter {
     for (String key : loggableHeaders.keySet()) {
       if (atz.equals(key.toLowerCase())) {
         // make a copy of all the atz header values
-        List<String> vals = new ArrayList(loggableHeaders.get(key));
+        List<String> vals = new ArrayList<>(loggableHeaders.get(key));
         // hide the sensitive data in the atz header values
         for (int i = 0; i < vals.size(); i++) {
           // By definition, the value of an Authorization header should be in the form

@@ -16,7 +16,6 @@ import java.lang.reflect.InvocationTargetException;
  * It may be converted to JSON to test HTTP response handler, or to a Watch.Response object in order
  * to simulate the Watch behavior without HTTP.
  */
-@SuppressWarnings({"unused", "WeakerAccess"}) // fields are only used by Gson
 public class WatchEvent<T> {
     @SerializedName("type")
     private String type;
@@ -79,6 +78,7 @@ public class WatchEvent<T> {
 
     @SuppressWarnings("unchecked")
     private Watch.Response<T> toErrorWatchResponse() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        @SuppressWarnings("rawtypes")
         Constructor<Watch.Response> constructor = Watch.Response.class.getDeclaredConstructor(String.class, V1Status.class);
         constructor.setAccessible(true);
         return (Watch.Response<T>) constructor.newInstance(type, status);
@@ -86,6 +86,7 @@ public class WatchEvent<T> {
 
     @SuppressWarnings("unchecked")
     private Watch.Response<T> toUpdateWatchResponse() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        @SuppressWarnings("rawtypes")
         Constructor<Watch.Response> constructor = Watch.Response.class.getDeclaredConstructor(String.class, Object.class);
         constructor.setAccessible(true);
         return (Watch.Response<T>) constructor.newInstance(type, object);

@@ -83,6 +83,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         assertThat(domainWatch, contains(addEvent(domain)));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator() throws Exception {
         Domain domain1 = new Domain().withApiVersion(API_VERSION).withKind("Domain").withMetadata(createMetaData("domain1", NAMESPACE));
