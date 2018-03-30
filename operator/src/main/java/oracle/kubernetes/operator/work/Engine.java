@@ -13,59 +13,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Collection of {@link Fiber}s. Owns an {@link Executor} to run them.
  */
 public class Engine {
-  private final int DEFAULT_THREAD_COUNT = 10;
+  private static final int DEFAULT_THREAD_COUNT = 10;
+  
+  public static ScheduledExecutorService wrappedExecutorService(String id, Container container) {
+	  return wrap(container, Executors.newScheduledThreadPool(DEFAULT_THREAD_COUNT, 
+			  new DaemonThreadFactory(id)));
+  }
 
   private volatile ScheduledExecutorService threadPool;
-  public final String id;
-  private final Container container;
-
-  /**
-   * Returns identifier for this Engine
-   * @return identifier
-   */
-  String getId() {
-    return id;
-  }
-
-  /**
-   * Returns the container
-   * @return container
-   */
-  Container getContainer() {
-    return container;
-  }
 
   /**
    * Returns the executor
    * @return executor
    */
   public ScheduledExecutorService getExecutor() {
-    if (threadPool == null) {
-      synchronized (this) {
-        threadPool = wrap(Executors.newScheduledThreadPool(DEFAULT_THREAD_COUNT, new DaemonThreadFactory()));
-      }
-    }
     return threadPool;
   }
 
   /**
-   * Creates engine with the specified id, default container and specified executor
-   * @param id Engine id
+   * Creates engine with the specified executor
    * @param threadPool Executor
    */
-  public Engine(String id, ScheduledExecutorService threadPool) {
-    this(id, ContainerResolver.getDefault().getContainer(), threadPool);
-  }
-
-  /**
-   * Creates engine with the specified id, container and executor
-   * @param id Engine id
-   * @param container Container
-   * @param threadPool Executor
-   */
-  public Engine(String id, Container container, ScheduledExecutorService threadPool) {
-    this(id, container);
-    this.threadPool = threadPool != null ? wrap(threadPool) : null;
+  public Engine(ScheduledExecutorService threadPool) {
+    this.threadPool = threadPool;
   }
 
   /**
@@ -73,33 +43,15 @@ public class Engine {
    * @param id Engine id
    */
   public Engine(String id) {
-    this(id, ContainerResolver.getDefault().getContainer());
-  }
-
-  /**
-   * Creates engine with the specified id, container and default executor
-   * @param id Engine id
-   * @param container Container
-   */
-  public Engine(String id, Container container) {
-    this.id = id;
-    this.container = container;
-  }
-
-  /**
-   * Sets the executor
-   * @param threadPool Executor
-   */
-  public void setExecutor(ScheduledExecutorService threadPool) {
-    this.threadPool = threadPool != null ? wrap(threadPool) : null;
+    this(wrappedExecutorService(id, ContainerResolver.getDefault().getContainer()));
   }
 
   void addRunnable(Fiber fiber) {
     getExecutor().execute(fiber);
   }
 
-  private ScheduledExecutorService wrap(ScheduledExecutorService ex) {
-    return ContainerResolver.getDefault().wrapExecutor(container, ex);
+  private static ScheduledExecutorService wrap(Container container, ScheduledExecutorService ex) {
+    return container != null ? ContainerResolver.getDefault().wrapExecutor(container, ex) : ex;
   }
 
   /**
@@ -120,11 +72,11 @@ public class Engine {
     return new Fiber(this, parent);
   }
 
-  private class DaemonThreadFactory implements ThreadFactory {
+  private static class DaemonThreadFactory implements ThreadFactory {
     final AtomicInteger threadNumber = new AtomicInteger(1);
     final String namePrefix;
 
-    DaemonThreadFactory() {
+    DaemonThreadFactory(String id) {
       namePrefix = "engine-" + id  + "-thread-";
     }
 
