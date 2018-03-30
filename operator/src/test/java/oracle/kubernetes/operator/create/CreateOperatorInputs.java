@@ -29,7 +29,7 @@ import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
  */
 public class CreateOperatorInputs {
 
-  private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-operator-inputs.yaml";
+  private static final String DEFAULT_INPUTS = "../kubernetes/create-weblogic-operator-inputs.yaml";
 
   public static final String EXTERNAL_REST_OPTION_NONE = "NONE";
   public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";

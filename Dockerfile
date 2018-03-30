@@ -4,14 +4,16 @@
 FROM store/oracle/serverjre:8
 
 RUN mkdir /operator
+RUN mkdir /operator/lib
 ENV PATH=$PATH:/operator
 
 COPY src/main/scripts/* /operator/
-COPY target/weblogic-kubernetes-operator-0.1.0.jar /operator/weblogic-kubernetes-operator.jar
+COPY operator/target/weblogic-kubernetes-operator-0.1.0.jar /operator/weblogic-kubernetes-operator.jar
+COPY operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /operator/livenessProbe.sh
 
 WORKDIR /operator/
 
-CMD ["operator.sh"]
+CMD ["/operator/operator.sh"]
