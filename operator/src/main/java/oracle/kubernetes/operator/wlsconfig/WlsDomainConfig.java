@@ -249,25 +249,26 @@ public class WlsDomainConfig {
    * @param jsonString JSON string containing WLS configuration to be parsed
    * @return a ParsedJson object containing WebLogic domain configuration by parsing the given JSON string
    */
+  @SuppressWarnings("unchecked")
   private static ParsedJson parseJson(String jsonString) {
     ObjectMapper mapper = new ObjectMapper();
     try {
       ParsedJson parsedJson = new ParsedJson();
       Map result = mapper.readValue(jsonString, Map.class);
       parsedJson.domainName = (String) result.get("name");
-      Map servers = (Map) result.get("servers");
+      Map servers = (Map<String, Object>) result.get("servers");
       if (servers != null) {
         parsedJson.servers = (List<Map<String, Object>>) servers.get("items");
       }
-      Map serverTemplates = (Map) result.get("serverTemplates");
+      Map serverTemplates = (Map<String, Object>) result.get("serverTemplates");
       if (serverTemplates != null) {
         parsedJson.serverTemplates = (List<Map<String, Object>>) serverTemplates.get("items");
       }
-      Map clusters = (Map) result.get("clusters");
+      Map clusters = (Map<String, Object>) result.get("clusters");
       if (clusters != null) {
         parsedJson.clusters = (List<Map<String, Object>>) clusters.get("items");
       }
-      Map machines = (Map) result.get("machines");
+      Map machines = (Map<String, Object>) result.get("machines");
       if (machines != null) {
         parsedJson.machines = (List<Map<String, Object>>) machines.get("items");
       }

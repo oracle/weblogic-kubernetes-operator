@@ -58,7 +58,7 @@ public class WlsDomainConfigTest {
     for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
       if (!wlsServerConfig.isDynamicServer()) {
         assertEquals(wlsServerConfig.getName() + ".wls-subdomain.default.svc.cluster.local", wlsServerConfig.getListenAddress());
-        assertEquals(new Integer(8011), wlsServerConfig.getListenPort());
+        assertEquals(Integer.valueOf(8011), wlsServerConfig.getListenPort());
       }
     }
     assertEquals(6, wlsDomainConfig.getServerConfigs().size());

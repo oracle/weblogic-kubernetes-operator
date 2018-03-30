@@ -55,10 +55,11 @@ public class WlsClusterConfig {
    *
    * @return A new WlsClusterConfig object created based on the JSON result
    */
+  @SuppressWarnings("unchecked")
   static WlsClusterConfig create(Map<String, Object> clusterConfigMap, Map<String, WlsServerConfig> serverTemplates, String domainName) {
     String clusterName = (String) clusterConfigMap.get("name");
     WlsDynamicServersConfig dynamicServersConfig =
-            WlsDynamicServersConfig.create((Map) clusterConfigMap.get("dynamicServers"), serverTemplates, clusterName, domainName);
+            WlsDynamicServersConfig.create((Map<String, Object>) clusterConfigMap.get("dynamicServers"), serverTemplates, clusterName, domainName);
     // set dynamicServersConfig only if the cluster contains dynamic servers, i.e., its dynamic servers configuration
     // contains non-null server template name
     if (dynamicServersConfig.getServerTemplate() == null) {

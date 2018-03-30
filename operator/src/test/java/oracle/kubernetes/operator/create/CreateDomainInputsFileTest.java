@@ -119,8 +119,4 @@ public class CreateDomainInputsFileTest {
       assertThat("Expect that " + path + " is a regular file", Files.isRegularFile(path), is(true));
     }
   }
-
-  private String paramMissingError(String param) {
-    return errorRegexp(param + ".*missing");
-  }
 }
