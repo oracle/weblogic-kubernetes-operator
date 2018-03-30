@@ -337,14 +337,14 @@ public class RestBackendImpl implements RestBackend {
 
   private int getWLSConfiguredClusterSize(String adminServerServiceName, String cluster, String namespace, String adminSecretName) {
     WlsRetriever wlsConfigRetriever = WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
-    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig(principal);
+    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig(cluster);
     return wlsClusterConfig.getClusterSize();
   }
 
   private Map<String, WlsClusterConfig> getWLSConfiguredClusters(String namespace, String adminServerServiceName,  String adminSecretName) {
     WlsRetriever wlsConfigRetriever = WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
-    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig(principal);
+    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     return wlsDomainConfig.getClusterConfigs();
   }
 

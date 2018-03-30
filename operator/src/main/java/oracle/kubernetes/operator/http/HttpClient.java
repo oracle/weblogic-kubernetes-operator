@@ -35,7 +35,6 @@ public class HttpClient {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private Client httpClient;
-  private String principal;
   private String encodedCredentials;
 
   private static final String HTTP_PROTOCOL = "http://";
@@ -43,9 +42,8 @@ public class HttpClient {
   // for debugging
   private static final String SERVICE_URL = System.getProperty("oracle.kubernetes.operator.http.HttpClient.SERVICE_URL");
 
-  private HttpClient(Client httpClient, String principal, String encodedCredentials) {
+  private HttpClient(Client httpClient, String encodedCredentials) {
     this.httpClient = httpClient;
-    this.principal = principal;
     this.encodedCredentials = encodedCredentials;
   }
 
@@ -144,14 +142,13 @@ public class HttpClient {
 
   /**
    * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at a server instance
-   * @param principal Principal
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @param next Next processing step
    * @return step to create client
    */
-  public static Step createAuthenticatedClientForServer(String principal, String namespace, String adminSecretName, Step next) {
-    return new AuthenticatedClientForServerStep(namespace, adminSecretName, new WithSecretDataStep(principal, next));
+  public static Step createAuthenticatedClientForServer(String namespace, String adminSecretName, Step next) {
+    return new AuthenticatedClientForServerStep(namespace, adminSecretName, new WithSecretDataStep(next));
   }
   
   private static class AuthenticatedClientForServerStep extends Step {
@@ -172,11 +169,9 @@ public class HttpClient {
   }
   
   private static class WithSecretDataStep extends Step {
-    private final String principal;
 
-    public WithSecretDataStep(String principal, Step next) {
+    public WithSecretDataStep(Step next) {
       super(next);
-      this.principal = principal;
     }
 
     @Override
@@ -189,7 +184,7 @@ public class HttpClient {
         username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
         password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
       }
-      packet.put(KEY, createAuthenticatedClient(principal, username, password));
+      packet.put(KEY, createAuthenticatedClient(username, password));
       
       Arrays.fill(username, (byte) 0); 
       Arrays.fill(password, (byte) 0); 
@@ -199,12 +194,11 @@ public class HttpClient {
   
   /**
    * Create authenticated client specifically targeted at an admin server
-   * @param principal Principal
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClientForServer(String principal, String namespace, String adminSecretName) {
+  public static HttpClient createAuthenticatedClientForServer(String namespace, String adminSecretName) {
     SecretHelper secretHelper = new SecretHelper(namespace);
     Map<String, byte[]> secretData =
         secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
@@ -215,18 +209,16 @@ public class HttpClient {
       username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
       password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
     }
-    return createAuthenticatedClient(principal, username, password);
+    return createAuthenticatedClient(username, password);
   }
 
   /**
    * Create authenticated HTTP client
-   * @param principal Principal
    * @param username Username
    * @param password Password
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClient(String principal,
-                                                     final byte[] username,
+  public static HttpClient createAuthenticatedClient(final byte[] username,
                                                      final byte[] password) {
     // build client with authentication information.
     Client client = ClientBuilder.newClient();
@@ -238,18 +230,17 @@ public class HttpClient {
       System.arraycopy(password, 0, usernameAndPassword, username.length + 1, password.length);
       encodedCredentials = java.util.Base64.getEncoder().encodeToString(usernameAndPassword);
     }
-    return new HttpClient(client, principal, encodedCredentials);
+    return new HttpClient(client, encodedCredentials);
   }
 
   /**
    * Returns the URL to access the service; using the service clusterIP and port.
    *
-   * @param principal The principal that will be used to call the Kubernetes API.
    * @param name The name of the Service that you want the URL for.
    * @param namespace The Namespace in which the Service you want the URL for is defined.
-   * @return The URL of the Service, or null if it is not found or principal does not have sufficient permissions.
+   * @return The URL of the Service, or null if it is not found
    */
-  public static String getServiceURL(String principal, String name, String namespace) {
+  public static String getServiceURL(String name, String namespace) {
     try {
       CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       return getServiceURL(factory.create().readService(name, namespace));
