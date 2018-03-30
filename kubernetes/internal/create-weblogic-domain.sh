@@ -406,6 +406,7 @@ function createYamlFiles {
   fi
 
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${domainPVOutput}
@@ -419,6 +420,7 @@ function createYamlFiles {
   cp ${domainPVCInput} ${domainPVCOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVCOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVCOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
@@ -476,8 +478,9 @@ function createYamlFiles {
   echo Generating ${traefikOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikOutput}
-  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
+  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
   sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
   sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${traefikOutput}
 
@@ -486,6 +489,8 @@ function createYamlFiles {
   echo Generating ${traefikSecurityOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikSecurityOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikSecurityOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikSecurityOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikSecurityOutput}
   sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
 
   # Remove any "...yaml-e" files left over from running sed

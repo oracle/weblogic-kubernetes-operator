@@ -7,6 +7,7 @@ metadata:
   namespace: %NAMESPACE%
   labels:
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
 data:
   utility.sh: |-
     #!/bin/bash
@@ -514,8 +515,9 @@ spec:
   template:
     metadata:
       labels:
-        app: %DOMAIN_UID%-create-weblogic-domain-job
         weblogic.domainUID: %DOMAIN_UID%
+        weblogic.domainName: %DOMAIN_NAME%
+        app: %DOMAIN_UID%-create-weblogic-domain-job
     spec:
       restartPolicy: Never
       containers:

@@ -616,6 +616,7 @@ public class PodHelper {
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       if (weblogicClusterName != null)
         labels.put(LabelConstants.CLUSTERNAME_LABEL, weblogicClusterName);
+        labels.put(LabelConstants.CLUSTERNAMELC_LABEL, weblogicClusterName.toLowerCase());
       metadata.setLabels(labels);
 
       V1PodSpec podSpec = new V1PodSpec();

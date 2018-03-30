@@ -776,11 +776,19 @@ function run_create_domain_job {
     local WEBLOGIC_CREDENTIALS_SECRET_NAME="$DOMAIN_UID-weblogic-credentials"
     local WEBLOGIC_CREDENTIALS_FILE="${tmp_dir}/weblogic-credentials.yaml"
 
+    # Common inputs file for creating a domain
+    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
+
+    # accept the default domain name (i.e. don't customize it)
+    local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
+
     trace 'Create the secret with weblogic admin credentials'
     cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $WEBLOGIC_CREDENTIALS_FILE
 
     sed -i -e "s|%NAMESPACE%|$NAMESPACE|g" $WEBLOGIC_CREDENTIALS_FILE
     sed -i -e "s|%DOMAIN_UID%|$DOMAIN_UID|g" $WEBLOGIC_CREDENTIALS_FILE
+    sed -i -e "s|%DOMAIN_NAME%|$domain_name|g" $WEBLOGIC_CREDENTIALS_FILE
 
     kubectl apply -f $WEBLOGIC_CREDENTIALS_FILE
 
@@ -793,10 +801,6 @@ function run_create_domain_job {
     trace 'Prepare the job customization script'
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
-
-    # Common inputs file for creating a domain
-    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
 
     # copy testwebapp.war for testing
     cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
