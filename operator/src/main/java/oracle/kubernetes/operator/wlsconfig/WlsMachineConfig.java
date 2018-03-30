@@ -31,9 +31,10 @@ public class WlsMachineConfig {
    *
    * @return A new WlsMachineConfig object created based on the JSON result
    */
+  @SuppressWarnings("unchecked")
   static WlsMachineConfig create(Map<String, Object> machineConfigMap) {
     String machineName = (String) machineConfigMap.get("name");
-    Map nodeManager = (Map) machineConfigMap.get("nodeManager");
+    Map nodeManager = (Map<String, Object>) machineConfigMap.get("nodeManager");
     Integer nodeManagerListenPort = null;
     String nodeManagerListenAddress = null;
     String nodeManagerType = null;

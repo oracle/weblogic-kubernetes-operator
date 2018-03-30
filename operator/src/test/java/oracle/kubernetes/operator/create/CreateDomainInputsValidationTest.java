@@ -10,7 +10,6 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 /**
  * Tests that create-weblogic-domain.sh properly validates the parameters

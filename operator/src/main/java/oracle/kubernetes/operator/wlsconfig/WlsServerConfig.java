@@ -84,9 +84,10 @@ public class WlsServerConfig {
    *                        a WLS server or WLS server template.
    * @return A new WlsServerConfig object using the provided configuration from the configuration map
    */
+  @SuppressWarnings("unchecked")
   static WlsServerConfig create(Map<String, Object> serverConfigMap) {
     // parse the configured network access points or channels
-    Map networkAccessPointsMap = (Map) serverConfigMap.get("networkAccessPoints");
+    Map networkAccessPointsMap = (Map<String, Object>) serverConfigMap.get("networkAccessPoints");
     List<NetworkAccessPoint> networkAccessPoints = new ArrayList<>();
     if (networkAccessPointsMap != null) {
       List<Map<String, Object>> networkAccessPointItems =  (List<Map<String, Object>>) networkAccessPointsMap.get("items");
@@ -98,7 +99,7 @@ public class WlsServerConfig {
       }
     }
     // parse the SSL configuration
-    Map sslMap = (Map) serverConfigMap.get("SSL");
+    Map<String, Object> sslMap = (Map<String, Object>) serverConfigMap.get("SSL");
     Integer sslListenPort = (sslMap == null)? null: (Integer) sslMap.get("listenPort");
     boolean sslPortEnabled = (sslMap == null)? false: (boolean) sslMap.get("enabled");
 
@@ -140,14 +141,15 @@ public class WlsServerConfig {
    * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
    * @return Cluster name contained in the Json element
    */
-  static String getClusterNameFromJsonMap(Map serverMap) {
+  static String getClusterNameFromJsonMap(Map<String, Object> serverMap) {
     // serverMap contains a "cluster" entry from the REST call which is in the form: "cluster": ["clusters", "DockerCluster"]
-    List clusterList = (List) serverMap.get("cluster");
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    List<String> clusterList = (List) serverMap.get("cluster");
     if (clusterList != null) {
-      for (Object value : clusterList) {
+      for (String value : clusterList) {
         // the first entry that is not "clusters" is assumed to be the cluster name
         if (!"clusters".equals(value)) {
-          return (String) value;
+          return value;
         }
       }
     }
@@ -159,14 +161,15 @@ public class WlsServerConfig {
    * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
    * @return Machine name contained in the Json element
    */
-  static String getMachineNameFromJsonMap(Map serverMap) {
+  static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
     // serverMap contains a "machine" entry from the REST call which is in the form: "machine": ["machines", "domain1-machine1"]
-    List clusterList = (List) serverMap.get("machine");
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    List<String> clusterList = (List) serverMap.get("machine");
     if (clusterList != null) {
-      for (Object value : clusterList) {
+      for (String value : clusterList) {
         // the first entry that is not "machines" is assumed to be the machine name
         if (!"machines".equals(value)) {
-          return (String) value;
+          return value;
         }
       }
     }

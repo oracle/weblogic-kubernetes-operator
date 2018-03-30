@@ -7,7 +7,6 @@ import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1PersistentVolume;
 import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.*;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.junit.BeforeClass;
 

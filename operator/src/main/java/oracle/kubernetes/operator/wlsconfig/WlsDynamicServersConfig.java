@@ -38,7 +38,8 @@ public class WlsDynamicServersConfig {
    *
    * @return A new WlsDynamicServersConfig object created based on the JSON result
    */
-  static WlsDynamicServersConfig create(Map dynamicServerConfig, Map<String, WlsServerConfig> serverTemplates,
+  @SuppressWarnings("unchecked")
+  static WlsDynamicServersConfig create(Map<String, Object> dynamicServerConfig, Map<String, WlsServerConfig> serverTemplates,
                           String clusterName, String domainName) {
     Integer dynamicClusterSize = null;
     Integer maxDynamicClusterSize = null;

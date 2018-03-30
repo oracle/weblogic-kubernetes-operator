@@ -9,6 +9,7 @@ import io.kubernetes.client.ApiException;
  * An exception used to bypass functional programming incompatability with checked exceptions. This is thrown
  * by a function object and the underlying ApiException is then rethrown by the caller of the function object.
  */
+@SuppressWarnings("serial")
 class UncheckedApiException extends RuntimeException {
     UncheckedApiException(ApiException e) {
         super(e);

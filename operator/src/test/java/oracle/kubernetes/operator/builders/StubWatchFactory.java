@@ -10,6 +10,7 @@ import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.Pool;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     private static RuntimeException exceptionOnNext;
     private static AllWatchesClosedListener listener;
 
-    private List<List<Watch.Response>> calls = new ArrayList<>();
+    private List<List<Watch.Response<Object>>> calls = new ArrayList<>();
     private int numCloseCalls;
 
     public static Memento install() throws NoSuchFieldException {
@@ -46,7 +47,8 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
      * Adds the events to be returned from a single call to Watch.next()
      * @param events the events; will be converted to Watch.Response objects
      */
-    public static void addCallResponses(Watch.Response... events) {
+    @SuppressWarnings("unchecked")
+    public static void addCallResponses(Watch.Response<Object>... events) {
         factory.calls.add(Arrays.asList(events));
     }
 
@@ -62,15 +64,15 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         return recordedParameters;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
         getRecordedParameters().add(recordedParams(callParams));
 
         if (exceptionOnNext == null)
-            return (WatchI<T>) new WatchStub(calls.remove(0));
+            return (WatchI<T>) new WatchStub<T>((List)calls.remove(0));
         else try {
-            return new ExceptionThrowingWatchStub(exceptionOnNext);
+            return new ExceptionThrowingWatchStub<T>(exceptionOnNext);
         } finally {
             exceptionOnNext = null;
         }
@@ -97,11 +99,11 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         void allWatchesClosed();
     }
 
-    class WatchStub implements WatchI {
-        private List<Watch.Response> responses;
-        private Iterator<Watch.Response> iterator;
+    class WatchStub<T> implements WatchI<T> {
+        private List<Watch.Response<T>> responses;
+        private Iterator<Watch.Response<T>> iterator;
 
-        private WatchStub(List<Watch.Response> responses) {
+        private WatchStub(List<Watch.Response<T>> responses) {
             this.responses = responses;
             iterator = responses.iterator();
         }
@@ -114,7 +116,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         }
 
         @Override
-        public Iterator<Watch.Response> iterator() {
+        public Iterator<Watch.Response<T>> iterator() {
             return responses.iterator();
         }
 
@@ -124,12 +126,12 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         }
 
         @Override
-        public Object next() {
+        public Watch.Response<T> next() {
             return iterator.next();
         }
     }
 
-    class ExceptionThrowingWatchStub extends WatchStub {
+    class ExceptionThrowingWatchStub<T> extends WatchStub<T> {
         private RuntimeException exception;
 
         private ExceptionThrowingWatchStub(RuntimeException exception) {
@@ -143,7 +145,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         }
 
         @Override
-        public Object next() {
+        public Response<T> next() {
             throw exception;
         }
     }

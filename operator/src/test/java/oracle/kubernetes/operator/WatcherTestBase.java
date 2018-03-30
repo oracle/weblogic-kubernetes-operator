@@ -51,7 +51,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         stopping.set(true);
     }
 
-    void recordCallBack(Watch.Response response) {
+    void recordCallBack(Watch.Response<?> response) {
         callBacks.add(response);
     }
 
@@ -67,6 +67,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         for (Memento memento : mementos) memento.revert();
     }
 
+    @SuppressWarnings("unchecked")
     void sendInitialRequest(int initialResourceVersion) {
         StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
 
@@ -86,32 +87,34 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(1));
     }
 
-    private <T> Watch.Response createAddResponse(T object) {
+    private <T> Watch.Response<T> createAddResponse(T object) {
         return WatchEvent.createAddedEvent(object).toWatchResponse();
     }
 
-    private <T> Watch.Response createModifyResponse(T object) {
+    private <T> Watch.Response<?> createModifyResponse(T object) {
         return WatchEvent.createModifiedEvent(object).toWatchResponse();
     }
 
-    private <T> Watch.Response createDeleteResponse(T object) {
+    private <T> Watch.Response<?> createDeleteResponse(T object) {
         return WatchEvent.createDeleteEvent(object).toWatchResponse();
     }
 
-    private Watch.Response createHttpGoneErrorResponse(int nextResourceVersion) {
+    private Watch.Response<?> createHttpGoneErrorResponse(int nextResourceVersion) {
         return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void receivedEvents_areSentToListeners() throws Exception {
         Object object = createObjectWithMetaData();
-        StubWatchFactory.addCallResponses(createAddResponse(object), createModifyResponse(object));
+        StubWatchFactory.addCallResponses((Watch.Response) createAddResponse(object), (Watch.Response) createModifyResponse(object));
 
         createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
         assertThat(callBacks, contains(addEvent(object), modifyEvent(object)));
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
     public void afterFirstSetOfEvents_nextRequestSendsLastResourceVersion() throws Exception {
         Object object1 = createObjectWithMetaData();
@@ -126,11 +129,12 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         assertThat(StubWatchFactory.getRecordedParameters().get(1), hasEntry("resourceVersion", Integer.toString(resourceAfterFirstSet)));
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() throws Exception {
       try {
-        StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
-        StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
+        StubWatchFactory.addCallResponses((Watch.Response) createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
+        StubWatchFactory.addCallResponses((Watch.Response) createDeleteResponse(createObjectWithMetaData()));
 
         createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -140,9 +144,10 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
       }
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void afterDelete_nextRequestSendsIncrementedResourceVersion() throws Exception {
-        StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
+        StubWatchFactory.addCallResponses((Watch.Response) createDeleteResponse(createObjectWithMetaData()));
         StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
 
         createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
@@ -150,6 +155,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         assertThat(StubWatchFactory.getRecordedParameters().get(1), hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION+1)));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void afterExceptionDuringNext_closeWatchAndTryAgain() throws Exception {
         StubWatchFactory.throwExceptionOnNext(new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE));
@@ -160,7 +166,6 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(2));
     }
 
-    @SuppressWarnings("SameParameterValue")
     private V1ObjectMeta createMetaData(String name, String namespace) {
         return new V1ObjectMeta().name(name).namespace(namespace).resourceVersion(getNextResourceVersion());
     }
@@ -170,11 +175,11 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     }
 
     private void createAndRunWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-        Watcher watcher = createWatcher(nameSpace, stopping, initialResourceVersion);
+        Watcher<?> watcher = createWatcher(nameSpace, stopping, initialResourceVersion);
         watcher.waitForExit();
     }
 
-    protected abstract Watcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion);
+    protected abstract Watcher<?> createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion);
 
 
 }
