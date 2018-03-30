@@ -7,7 +7,7 @@ RUN mkdir /operator
 RUN mkdir /operator/lib
 ENV PATH=$PATH:/operator
 
-COPY src/main/scripts/* /operator/
+COPY src/scripts/* /operator/
 COPY operator/target/weblogic-kubernetes-operator-0.1.0.jar /operator/weblogic-kubernetes-operator.jar
 COPY operator/target/lib/*.jar /operator/lib/
 
