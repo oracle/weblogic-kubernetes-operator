@@ -223,6 +223,8 @@ public class WlsClusterConfig {
     // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
     // the current dynamic cluster size, or if some of the machines to be used for the dynamic
     // servers are not yet configured.
+    //
+    // Note: Never reduce the value of dynamicClusterSize even during scale down
     if (suggestedConfigUpdates != null) {
       if (hasDynamicServers()) {
         if (replicas > getDynamicClusterSize() || !verifyMachinesConfigured(machineNamePrefix, replicas)) {
