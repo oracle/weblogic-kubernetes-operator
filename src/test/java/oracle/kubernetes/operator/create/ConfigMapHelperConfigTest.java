@@ -43,8 +43,6 @@ public class ConfigMapHelperConfigTest {
   private V1ConfigMap getDesiredDomainConfigMap() {
     return
       newConfigMap()
-        .apiVersion(null) // TBD - v.s. v1 - should we change it?
-        .kind(null) // TBD - v.s. ConfigMap - should we change it?
         .metadata(newObjectMeta()
           .name(DOMAIN_CONFIG_MAP_NAME)
           .namespace(NAMESPACE)

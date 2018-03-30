@@ -401,8 +401,7 @@ public class PodHelperConfigTest {
         .name(MANAGED_OPTION2_NAME)
         .value(MANAGED_OPTION2_VALUE));
     pod.getMetadata()
-      .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER_NAME)
-      .putLabelsItem(CLUSTERNAMELC_LABEL, CLUSTER_NAME.toLowerCase());
+      .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER_NAME);
     return pod;
   }
 
