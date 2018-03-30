@@ -9,13 +9,12 @@ import java.util.List;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
+import static oracle.kubernetes.operator.LabelConstants.*;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
-
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
-
 import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -402,7 +401,8 @@ public class PodHelperConfigTest {
         .name(MANAGED_OPTION2_NAME)
         .value(MANAGED_OPTION2_VALUE));
     pod.getMetadata()
-      .putLabelsItem("weblogic.clusterName", CLUSTER_NAME);
+      .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER_NAME)
+      .putLabelsItem(CLUSTERNAMELC_LABEL, CLUSTER_NAME.toLowerCase());
     return pod;
   }
 
@@ -425,10 +425,10 @@ public class PodHelperConfigTest {
           .putAnnotationsItem("prometheus.io/port", "" + port)
           .putAnnotationsItem("prometheus.io/scrape", "true")
           .putAnnotationsItem("weblogic.oracle/operator-formatVersion", "1")
-          .putLabelsItem("weblogic.createdByOperator", "true")
-          .putLabelsItem("weblogic.domainName", DOMAIN_NAME)
-          .putLabelsItem("weblogic.domainUID", DOMAIN_UID)
-          .putLabelsItem("weblogic.serverName", serverName))
+          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+          .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
+          .putLabelsItem(DOMAINUID_LABEL, DOMAIN_UID)
+          .putLabelsItem(SERVERNAME_LABEL, serverName))
         .spec(newPodSpec()
           .addContainersItem(newContainer()
             .name("weblogic-server")

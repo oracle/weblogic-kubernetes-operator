@@ -570,8 +570,8 @@ function deployOperator {
   fi
 
   echo Checking the operator labels
-  LABEL=`kubectl describe deploy weblogic-operator -n ${namespace} | grep "^Labels:" | awk ' { print $2; } '`
-  if [ "$LABEL" != "app=weblogic-operator" ]; then
+  LABEL=`kubectl get deploy weblogic-operator -n ${namespace} -o jsonpath='{.spec.template.metadata.labels.app}'`
+  if [ "$LABEL" != "weblogic-operator" ]; then
     fail "The weblogic-operator deployment should have the label app=weblogic-operator"
   fi
 
