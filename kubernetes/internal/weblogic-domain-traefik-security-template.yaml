@@ -6,8 +6,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
 rules:
   - apiGroups:
       - ""
@@ -36,8 +35,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

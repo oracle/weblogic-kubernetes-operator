@@ -10,7 +10,6 @@ public interface LabelConstants {
   public static final String SERVERNAME_LABEL = "weblogic.serverName";
   public static final String CHANNELNAME_LABEL = "weblogic.channelName";
   public static final String CLUSTERNAME_LABEL = "weblogic.clusterName";
-  public static final String CLUSTERNAMELC_LABEL = "weblogic.clusterNameLC";
   public static final String CREATEDBYOPERATOR_LABEL = "weblogic.createdByOperator";
   public static final String OPERATORNAME_LABEL = "weblogic.operatorName";
   public static final String APP_LABEL = "app";

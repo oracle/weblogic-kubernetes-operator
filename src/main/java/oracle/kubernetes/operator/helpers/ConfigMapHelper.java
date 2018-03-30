@@ -117,7 +117,9 @@ public class ConfigMapHelper {
     protected V1ConfigMap computeDomainConfigMap() {
       String name = KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
       V1ConfigMap cm = new V1ConfigMap();
-      
+      cm.setApiVersion("v1");
+      cm.setKind("ConfigMap");
+
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);

@@ -7,8 +7,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -18,8 +17,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
 spec:
   replicas: 1
@@ -31,8 +29,7 @@ spec:
       labels:
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
-        weblogic.clusterName: %CLUSTER_NAME_LC%
-        weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+        weblogic.clusterName: %CLUSTER_NAME%
         app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
     spec:
       serviceAccountName: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
@@ -88,8 +85,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
 data:
   traefik.toml: |
@@ -113,8 +109,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
 spec:
   selector:
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
@@ -133,8 +128,7 @@ metadata:
   labels:
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
-    weblogic.clusterName: %CLUSTER_NAME_LC%
-    weblogic.clusterNameLC: %CLUSTER_NAME_LC%
+    weblogic.clusterName: %CLUSTER_NAME%
     app: %DOMAIN_UID%-%CLUSTER_NAME_LC%-traefik
 spec:
   selector:
