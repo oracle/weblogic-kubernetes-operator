@@ -40,7 +40,7 @@ public class CreateDomainInputs {
   public static final String STARTUP_CONTROL_SPECIFIED = "SPECIFIED";
   public static final String STARTUP_CONTROL_AUTO = "AUTO";
 
-  private static final String DEFAULT_INPUTS = "kubernetes/create-weblogic-domain-inputs.yaml";
+  private static final String DEFAULT_INPUTS = "../kubernetes/create-weblogic-domain-inputs.yaml";
 
   private String adminPort = "";
   private String adminServerName = "";
