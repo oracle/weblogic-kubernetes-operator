@@ -11,6 +11,11 @@ public class HTTPException extends Exception {
   final int statusCode;
 
   public HTTPException(int statusCode) {
+    super("status code: " + statusCode);
     this.statusCode = statusCode;
+  }
+
+  public int getStatusCode() {
+    return statusCode;
   }
 }

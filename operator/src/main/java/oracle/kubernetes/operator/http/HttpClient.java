@@ -76,6 +76,20 @@ public class HttpClient {
     return new Result(responseString, status, successful);
   }
 
+  /**
+   * Constructs a URL using the provided service URL and request URL, and use the resulting URL and the
+   * payload provided to issue a HTTP POST request.
+   * This method does not throw HTTPException if the HTTP request returns failure status code
+   *
+   * @param requestUrl The request URL containing the request of the REST call
+   * @param serviceURL The service URL containing the host and port of the server where the HTTP
+   *                   request is to be sent to
+   * @param payload The payload to be used in the HTTP POST request
+   *
+   * @return A Result object containing the respond from the REST call
+   * @throws HTTPException if throwOnFailure is true and the status of the HTTP response indicates the request was not
+   *                       successful
+   */
   public Result executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload) {
     Result result = null;
     try {

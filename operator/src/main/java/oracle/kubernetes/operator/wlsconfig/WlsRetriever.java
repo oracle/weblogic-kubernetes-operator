@@ -256,10 +256,10 @@ public class WlsRetriever {
           WlsDomainConfig wlsDomainConfig = null;
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
               WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL,
-              WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
-          if (jsonResult != null) {
-            wlsDomainConfig = WlsDomainConfig.create(jsonResult);
-          }
+              WlsDomainConfig.getRetrieveServersSearchPayload(),
+          true).getResponse();
+
+          wlsDomainConfig = WlsDomainConfig.create(jsonResult);
 
           List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -269,7 +269,7 @@ public class WlsRetriever {
 
           info.setScan(wlsDomainConfig);
           info.setLastScanTime(new DateTime());
-    
+
           LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
 
           // If there are suggested WebLogic configuration update, perform them as the
@@ -286,8 +286,8 @@ public class WlsRetriever {
         } else { // RequestType.HEALTH
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
               getRetrieveHealthSearchUrl(), serviceURL,
-              getRetrieveHealthSearchPayload()).getResponse();
-          
+              getRetrieveHealthSearchPayload(), true).getResponse();
+
           ObjectMapper mapper = new ObjectMapper();
           JsonNode root = mapper.readTree(jsonResult);
           
@@ -335,8 +335,12 @@ public class WlsRetriever {
 
         return doNext(packet);
       } catch (Throwable t) {
-        LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
-
+        if (RequestType.CONFIG.equals(requestType)) {
+          LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
+        } else {
+          LOGGER.warning(MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
+        }
+        
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
