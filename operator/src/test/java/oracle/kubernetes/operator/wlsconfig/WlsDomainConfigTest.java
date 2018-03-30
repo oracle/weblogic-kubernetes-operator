@@ -51,7 +51,7 @@ public class WlsDomainConfigTest {
     assertEquals(5, wlsClusterConfig.getClusterSize());
     for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
       assertEquals(wlsServerConfig.getName() + ".wls-subdomain.default.svc.cluster.local", wlsServerConfig.getListenAddress());
-      assertEquals(new Integer(8011), wlsServerConfig.getListenPort());
+      assertEquals(Integer.valueOf(8011), wlsServerConfig.getListenPort());
     }
     assertEquals(6, wlsDomainConfig.getServerConfigs().size());
     assertEquals("AdminServer", wlsDomainConfig.getServerConfig("AdminServer").getName());

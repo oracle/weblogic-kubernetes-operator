@@ -60,7 +60,7 @@ public class RestServer {
 
   private RestConfig config;
 
-  private String baseHttpUri;
+  //private String baseHttpUri;
   private String baseExternalHttpsUri;
   private String baseInternalHttpsUri;
 
@@ -155,12 +155,12 @@ public class RestServer {
   public void stop() {
     LOGGER.entering();
     if (externalHttpsServer != null) {
-      externalHttpsServer.stop();
+      externalHttpsServer.shutdownNow();
       externalHttpsServer = null;
       LOGGER.info("Stopped the external ssl REST server"); // TBD .fine ?
     }
     if (internalHttpsServer != null) {
-      internalHttpsServer.stop();
+      internalHttpsServer.shutdownNow();
       internalHttpsServer = null;
       LOGGER.info("Stopped the internal ssl REST server"); // TBD .fine ?
     }
@@ -281,7 +281,7 @@ public class RestServer {
             .register(ResponseDebugLoggingFilter.class)
             .register(ExceptionMapper.class)
             .packages("oracle.kubernetes.operator.rest.resource");
-    Map<String, Object> extraProps = new HashMap();
+    Map<String, Object> extraProps = new HashMap<>();
 
     // attach the rest backend impl to the resource config
     // so that the resource impls can find it

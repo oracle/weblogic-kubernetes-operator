@@ -31,7 +31,6 @@ public class SecretHelperTest {
   private final static String UNIT_NAMESPACE = "unit-test";
   private final static String USERNAME = "weblogic";
   private final static String PASSWORD = "welcome1";
-  private final static String PRETTY = "true";
   private SecretHelper defaultSecretHelper;
   private SecretHelper unitSecretHelper;
   private boolean isVersion18 = false;

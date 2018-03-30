@@ -44,7 +44,7 @@ public class OperatorFiles {
   }
 
   public List<Path> getExpectedContents(boolean includeDirectory) {
-    List<Path> rtn = new ArrayList();
+    List<Path> rtn = new ArrayList<>();
     rtn.add(getCreateWeblogicOperatorInputsYamlPath());
     rtn.add(getWeblogicOperatorYamlPath());
     rtn.add(getWeblogicOperatorSecurityYamlPath());
