@@ -13,7 +13,7 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
-kubernetesDir="${scriptDir}/../../../kubernetes"
+kubernetesDir="${scriptDir}/../../../../kubernetes"
 internalDir="${kubernetesDir}/internal"
 
 # pass the name of this script to the internal create script
