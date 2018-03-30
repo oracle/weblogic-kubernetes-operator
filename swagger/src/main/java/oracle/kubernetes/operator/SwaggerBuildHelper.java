@@ -26,7 +26,7 @@ public class SwaggerBuildHelper {
 
     try {
       // Open the source file
-      File sourceFile = new File("src/main/resources/Operator.swagger");
+      File sourceFile = new File("swagger/src/main/resources/Operator.swagger");
       String newContent = new String(Files.readAllBytes(Paths.get(sourceFile.getAbsolutePath())));
 
       // Open the target file
