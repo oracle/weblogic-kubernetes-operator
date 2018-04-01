@@ -76,7 +76,7 @@ public class ConfigMapHelper {
           "  exit 1\n" + 
           "fi\n" + 
           "if [ -f ${STATEFILE} ] && [ `grep -c \"FAILED_NOT_RESTARTABLE\" ${STATEFILE}` -eq 1 ]; then\n" + 
-          "  echo \"Error: WebLogic Server FAILED_NOT_RESTARTABLE.\"\n" +
+          "  echo \"Error: WebLogic Server state is FAILED_NOT_RESTARTABLE.\"\n" +
           "  exit 1\n" + 
           "fi\n" + 
           "exit 0");
@@ -97,10 +97,16 @@ public class ConfigMapHelper {
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
-          "if [ ! -f ${STATEFILE} ] || [ `grep -c \"RUNNING\" ${STATEFILE}` -ne 1 ]; then\n" + 
-          "  exit 1\n" + 
+          "if [ ! -f ${STATEFILE} ]; then\n" + 
+          "  echo \"Error: WebLogic Server state file not found.\"\n" +
+          "  exit 2\n" + 
           "fi\n" + 
           "\n" + 
+          "state=$(cat ${STATEFILE} | cut -f 1 -d ':')\n" +
+          "if [ \"$state\" != \"RUNNING\" ]; then\n" +
+          "  echo \"Not ready: WebLogic Server state: ${state}\"\n" +
+          "  exit 3\n" + 
+          "fi\n" + 
           "exit 0");
 
       data.put("readState.sh", 
@@ -119,11 +125,11 @@ public class ConfigMapHelper {
           "fi\n" + 
           "\n" + 
           "if [ ! -f ${STATEFILE} ]; then\n" + 
-          "  echo \"Error: Server state file not found.\"\n" +
-          "  exit 1\n" + 
+          "  echo \"Error: WebLogic Server state file not found.\"\n" +
+          "  exit 2\n" + 
           "fi\n" + 
           "\n" + 
-          "cat ${STATEFILE}\n" +
+          "cat ${STATEFILE} | cut -f 1 -d ':'\n" +
           "exit 0");
 
       cm.setData(data);

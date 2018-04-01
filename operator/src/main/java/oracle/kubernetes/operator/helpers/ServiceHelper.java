@@ -14,6 +14,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -45,6 +46,10 @@ public class ServiceHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      Container c = ContainerResolver.getInstance().getContainer();
+      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
+      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
+      
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       KubernetesVersion version = packet.getSPI(KubernetesVersion.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
@@ -103,12 +108,9 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects created = new ServerKubernetesObjects();
-      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
-      ServerKubernetesObjects sko = current != null ? current : created;
+      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
 
       // First, verify existing Service
-      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       Step read = factory.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -494,6 +496,10 @@ public class ServiceHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      Container c = ContainerResolver.getInstance().getContainer();
+      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
+      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
+      
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       NetworkAccessPoint networkAccessPoint = (NetworkAccessPoint) packet.get(ProcessingConstants.NETWORK_ACCESS_POINT);
@@ -543,12 +549,9 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects created = new ServerKubernetesObjects();
-      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
-      ServerKubernetesObjects sko = current != null ? current : created;
+      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
 
       // First, verify existing Service
-      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       Step read = factory.create().readServiceAsync(name, namespace, new ResponseStep<V1Service>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,

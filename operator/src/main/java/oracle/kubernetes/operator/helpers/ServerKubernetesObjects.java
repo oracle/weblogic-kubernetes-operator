@@ -16,8 +16,11 @@ import io.kubernetes.client.models.V1Service;
  */
 public class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
+  private final AtomicReference<String> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private ConcurrentMap<String, V1Service> channels = null;
+  
+  ServerKubernetesObjects() {}
   
   /**
    * The Pod
@@ -25,6 +28,14 @@ public class ServerKubernetesObjects {
    */
   public AtomicReference<V1Pod> getPod() {
     return pod;
+  }
+  
+  /**
+   * Managed server status
+   * @return Status
+   */
+  public AtomicReference<String> getLastKnownStatus() {
+    return lastKnownStatus;
   }
   
   /**
