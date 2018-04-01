@@ -88,9 +88,6 @@ import oracle.kubernetes.operator.work.Step;
  */
 public class Main {
 
-  private static final String RUNNING_STATE = "RUNNING";
-  private static final String ADMIN_STATE = "ADMIN";
-
   private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
   private static final ThreadFactory factory = (r) -> {
     Thread t = defaultFactory.newThread(r);
@@ -420,7 +417,7 @@ public class Main {
     } else {
       for (ServerStartup ss : spec.getServerStartup()) {
         if (ss.getDesiredState() == null) {
-          ss.setDesiredState(RUNNING_STATE);
+          ss.setDesiredState(WebLogicConstants.RUNNING_STATE);
         }
         if (ss.getEnv() == null) {
           ss.setEnv(new ArrayList<V1EnvVar>());
@@ -432,7 +429,7 @@ public class Main {
     } else {
       for (ClusterStartup cs : spec.getClusterStartup()) {
         if (cs.getDesiredState() == null) {
-          cs.setDesiredState(RUNNING_STATE);
+          cs.setDesiredState(WebLogicConstants.RUNNING_STATE);
         }
         if (cs.getEnv() == null) {
           cs.setEnv(new ArrayList<V1EnvVar>());
@@ -916,7 +913,7 @@ public class Main {
                   }
                 }
                 List<V1EnvVar> env = ss.getEnv();
-                if (ADMIN_STATE.equals(ss.getDesiredState())) {
+                if (WebLogicConstants.ADMIN_STATE.equals(ss.getDesiredState())) {
                   env = startInAdminMode(env);
                 }
                 ssic.add(new ServerStartupInfo(wlsServerConfig, cc, env, ss));
@@ -955,7 +952,7 @@ public class Main {
                     }
                     // start server
                     servers.add(serverName);
-                    if (ADMIN_STATE.equals(cs.getDesiredState())) {
+                    if (WebLogicConstants.ADMIN_STATE.equals(cs.getDesiredState())) {
                       env = startInAdminMode(env);
                     }
                     ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, env, ssi));
@@ -1550,11 +1547,11 @@ public class Main {
           String name = ref.getName();
           String message = e.getMessage();
           if (message != null) {
-            int idx = message.indexOf("Not ready: Server state=");
+            int idx = message.indexOf(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE);
             if (idx > 0) {
               ServerKubernetesObjects sko = servers.get(name);
               if (sko != null) {
-                sko.getLastKnownStatus().set(message.substring(idx + 24));
+                sko.getLastKnownStatus().set(message.substring(idx + WebLogicConstants.READINESS_PROBE_NOT_READY_STATE.length()));
               }
             }
           }

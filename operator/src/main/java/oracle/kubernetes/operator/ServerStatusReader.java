@@ -9,9 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -128,7 +126,7 @@ public class ServerStatusReader {
         serverStateMap.put(serverName, lastKnownState);
         return doNext(packet);
       } else if (PodWatcher.isReady(pod, true)) {
-        serverStateMap.put(serverName, "RUNNING");
+        serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
         return doNext(packet);
       }
       
@@ -162,20 +160,10 @@ public class ServerStatusReader {
           }
         }
         
-        serverStateMap.put(serverName, state != null ? state : "UNKNOWN");
+        serverStateMap.put(serverName, state != null ? state : WebLogicConstants.UNKNOWN_STATE);
         fiber.resume(packet);
       });
     }
-  }
-  
-  private static final Set<String> statesSupportingREST = new HashSet<>();
-  static {
-    statesSupportingREST.add("STANDBY");
-    statesSupportingREST.add("ADMIN");
-    statesSupportingREST.add("RESUMING");
-    statesSupportingREST.add("RUNNING");
-    statesSupportingREST.add("SUSPENDING");
-    statesSupportingREST.add("FORCE_SUSPENDING");
   }
   
   private static class ServerHealthStep extends Step {
@@ -193,7 +181,7 @@ public class ServerStatusReader {
           .get(ProcessingConstants.SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
       
-      if (statesSupportingREST.contains(state)) {
+      if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
         return doNext(WlsRetriever.readHealthStep(next), packet);
       }

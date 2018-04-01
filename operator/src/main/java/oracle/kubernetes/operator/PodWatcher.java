@@ -89,7 +89,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
         ServerKubernetesObjects sko = skoFactory.lookup(podName);
         if (sko != null) {
-          sko.getLastKnownStatus().set("RUNNING");
+          sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
         }
 
         OnReady ready = readyCallbackRegistrations.remove(podName);
