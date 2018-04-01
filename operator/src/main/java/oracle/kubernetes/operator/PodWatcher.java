@@ -14,10 +14,13 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -82,6 +85,13 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
       Boolean isReady = isReady(pod);
       String podName = pod.getMetadata().getName();
       if (isReady) {
+        Container c = ContainerResolver.getInstance().getContainer();
+        ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
+        ServerKubernetesObjects sko = skoFactory.lookup(podName);
+        if (sko != null) {
+          sko.getLastKnownStatus().set("RUNNING");
+        }
+
         OnReady ready = readyCallbackRegistrations.remove(podName);
         if (ready != null) {
           ready.onReady();

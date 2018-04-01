@@ -76,7 +76,7 @@ public class ServerStatusReader {
           if (pod != null) {
             Packet p = packet.clone();
             startDetails.add(new StepAndPacket(
-                createServerStatusReaderStep(pod, serverName, timeoutSeconds, null), p));
+                createServerStatusReaderStep(sko, pod, serverName, timeoutSeconds, null), p));
           }
         }
       }
@@ -90,25 +90,28 @@ public class ServerStatusReader {
   
   /**
    * Creates asynchronous step to read WebLogic server state from a particular pod
+   * @param sko Server objects
    * @param pod The pod
    * @param serverName Server name
    * @param timeoutSeconds Timeout in seconds
    * @param next Next step
    * @return Created step
    */
-  public static Step createServerStatusReaderStep(V1Pod pod, String serverName, long timeoutSeconds, Step next) {
-    return new ServerStatusReaderStep(pod, serverName, timeoutSeconds, 
+  public static Step createServerStatusReaderStep(ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
+    return new ServerStatusReaderStep(sko, pod, serverName, timeoutSeconds, 
         new ServerHealthStep(serverName, next));
   }
 
   private static class ServerStatusReaderStep extends Step {
+    private final ServerKubernetesObjects sko;
     private final V1Pod pod;
     private final String serverName;
     private final long timeoutSeconds;
 
-    public ServerStatusReaderStep(V1Pod pod, String serverName, 
+    public ServerStatusReaderStep(ServerKubernetesObjects sko, V1Pod pod, String serverName, 
         long timeoutSeconds, Step next) {
       super(next);
+      this.sko = sko;
       this.pod = pod;
       this.serverName = serverName;
       this.timeoutSeconds = timeoutSeconds;
@@ -120,7 +123,11 @@ public class ServerStatusReader {
       ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
           .get(ProcessingConstants.SERVER_STATE_MAP);
       
-      if (PodWatcher.isReady(pod, true)) {
+      String lastKnownState = sko.getLastKnownStatus().get();
+      if (lastKnownState != null) {
+        serverStateMap.put(serverName, lastKnownState);
+        return doNext(packet);
+      } else if (PodWatcher.isReady(pod, true)) {
         serverStateMap.put(serverName, "RUNNING");
         return doNext(packet);
       }
@@ -155,23 +162,10 @@ public class ServerStatusReader {
           }
         }
         
-        serverStateMap.put(serverName, parseState(state));
+        serverStateMap.put(serverName, state != null ? state : "UNKNOWN");
         fiber.resume(packet);
       });
     }
-  }
-  
-  private static String parseState(String state) {
-    // Format of state is "<serverState>:<Y or N, if server started>:<Y or N, if server failed>
-    String s = "UNKNOWN";
-    if (state != null) {
-      int ind = state.indexOf(':');
-      if (ind > 0) {
-        s = state.substring(0, ind);
-      }
-    }
-    
-    return s;
   }
   
   private static final Set<String> statesSupportingREST = new HashSet<>();

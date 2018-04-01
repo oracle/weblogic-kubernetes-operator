@@ -28,7 +28,9 @@ import io.kubernetes.client.JSON;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
@@ -58,12 +60,14 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.RollingHelper;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsFactory;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
+import oracle.kubernetes.operator.utils.ConcurrentWeakHashMap;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
@@ -98,6 +102,8 @@ public class Main {
   
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
+  private static final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentWeakHashMap<String, ServerKubernetesObjects>();
+  private static final ServerKubernetesObjectsFactory skoFactory = new ServerKubernetesObjectsFactory(servers);
   
   private static final TuningParameters tuningAndConfig;
   static {
@@ -117,8 +123,10 @@ public class Main {
   static {
     container.getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(ScheduledExecutorService.class, wrappedExecutorService,
-            TuningParameters.class, tuningAndConfig, callBuilderFactory));
+        Component.createFor(
+            ScheduledExecutorService.class, wrappedExecutorService,
+            TuningParameters.class, tuningAndConfig, 
+            callBuilderFactory, skoFactory));
   }
 
   private static final Engine engine = new Engine(wrappedExecutorService);
@@ -133,6 +141,7 @@ public class Main {
   private static Map<String, ConfigMapWatcher> configMapWatchers = new HashMap<>();
   private static Map<String, DomainWatcher> domainWatchers = new HashMap<>();
   private static Map<String, PodWatcher> podWatchers = new HashMap<>();
+  private static Map<String, EventWatcher> eventWatchers = new HashMap<>();
   private static Map<String, ServiceWatcher> serviceWatchers = new HashMap<>();
   private static Map<String, IngressWatcher> ingressWatchers = new HashMap<>();
   private static KubernetesVersion version = null;
@@ -304,9 +313,7 @@ public class Main {
                       if (info == null) {
                         info = created;
                       }
-                      ServerKubernetesObjects csko = new ServerKubernetesObjects();
-                      ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, csko);
-                      ServerKubernetesObjects sko = current != null ? current : csko;
+                      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
                       if (channelName != null) {
                         sko.getChannels().put(channelName, service);
                       } else {
@@ -341,14 +348,13 @@ public class Main {
                   if (info == null) {
                     info = created;
                   }
-                  ServerKubernetesObjects csko = new ServerKubernetesObjects();
-                  ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, csko);
-                  ServerKubernetesObjects sko = current != null ? current : csko;
+                  ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
                   sko.getPod().set(pod);
                 }
               }
             }
             podWatchers.put(ns, createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+            eventWatchers.put(ns, createEventWatcher(ns, ""));
             return doNext(packet);
           }
         })));
@@ -1527,6 +1533,40 @@ public class Main {
         initialResourceVersion, Main::dispatchDomainWatch, stopping);
   }
   
+  private static EventWatcher createEventWatcher(String namespace, String initialResourceVersion) {
+    return EventWatcher.create(factory, namespace, 
+        "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}",
+        initialResourceVersion, Main::dispatchEventWatch, stopping);
+  }
+
+  private static void dispatchEventWatch(Watch.Response<V1Event> item) {
+    V1Event e = item.object;
+    if (e != null) {
+      switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        V1ObjectReference ref = e.getInvolvedObject();
+        if (ref != null) {
+          String name = ref.getName();
+          String message = e.getMessage();
+          if (message != null) {
+            int idx = message.indexOf("Not ready: Server state=");
+            if (idx > 0) {
+              ServerKubernetesObjects sko = servers.get(name);
+              if (sko != null) {
+                sko.getLastKnownStatus().set(message.substring(idx + 24));
+              }
+            }
+          }
+        }
+        break;
+      case "DELETED":
+      case "ERROR":
+      default:
+      }
+    }
+  }
+  
   private static PodWatcher createPodWatcher(String namespace, String initialResourceVersion)  {
     return PodWatcher.create(factory, namespace, 
         initialResourceVersion, Main::dispatchPodWatch, stopping);
@@ -1541,9 +1581,7 @@ public class Main {
       if (domainUID != null) {
         DomainPresenceInfo info = domains.get(domainUID);
         if (info != null && serverName != null) {
-          ServerKubernetesObjects created = new ServerKubernetesObjects();
-          ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
-          ServerKubernetesObjects sko = current != null ? current : created;
+          ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
           if (sko != null) {
             switch (item.type) {
               case "ADDED":
@@ -1594,9 +1632,7 @@ public class Main {
         ServerKubernetesObjects sko = null;
         if (info != null) {
           if (serverName != null) {
-            ServerKubernetesObjects created = new ServerKubernetesObjects();
-            ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
-            sko = current != null ? current : created;
+            sko = skoFactory.getOrCreate(info, serverName);
           }
           switch (item.type) {
             case "ADDED":
