@@ -125,8 +125,7 @@ public class WlsRetriever {
     public NextAction apply(Packet packet) {
       try {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        String principal = (String) packet.get(ProcessingConstants.PRINCIPAL);
-        
+
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
         
         Domain dom = info.getDomain();
@@ -145,7 +144,7 @@ public class WlsRetriever {
         String adminSecretName = spec.getAdminSecret() == null ? null : spec.getAdminSecret().getName();
         
         Step getClient = HttpClient.createAuthenticatedClientForServer(
-            principal, namespace, adminSecretName, 
+            namespace, adminSecretName,
             new WithHttpClientStep(requestType, namespace, sko.getService().get(), next));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
@@ -287,20 +286,18 @@ public class WlsRetriever {
    * would repeatedly try to connect to the admin server to retrieve the configuration until the configured timeout
    * occurs.
    *
-   * @param principal The principal that should be used to retrieve the configuration.
-   *
    * @return A WlsClusterConfig object containing selected server configurations of all WLS servers configured in the
    * domain that belongs to a cluster. This method returns an empty configuration object even if it fails to retrieve
    * WLS configuration from the admin server.
    */
-  public WlsDomainConfig readConfig(String principal) {
+  public WlsDomainConfig readConfig() {
 
     LOGGER.entering();
 
     long timeout = READ_CONFIG_TIMEOUT_MILLIS;
     ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
     long startTime = System.currentTimeMillis();
-    Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(principal, timeout));
+    Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(timeout));
     executorService.shutdown();
     WlsDomainConfig wlsConfig = null;
     try {
@@ -323,14 +320,13 @@ public class WlsRetriever {
    * Method called by the Callable that is submitted from the readConfig method for reading the WLS server
    * configurations
    *
-   * @param principal The Service Account or User to use when accessing WebLogic.
    * @param timeout Maximum amount of time in millis to try to read configuration from the admin server before giving up
    * @return A WlsClusterConfig object containing selected server configurations of all WLS servers configured in the
    * cluster. Method returns empty configuration object if timeout occurs before the configuration could be read from
    * the admin server.
    * @throws Exception if an exception occurs in the attempt just prior to the timeout
    */
-  private WlsDomainConfig getWlsDomainConfig(String principal, long timeout) throws Exception {
+  private WlsDomainConfig getWlsDomainConfig(long timeout) throws Exception {
     LOGGER.entering();
 
     long stopTime = System.currentTimeMillis() + timeout;
@@ -342,8 +338,7 @@ public class WlsRetriever {
       LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_TRYING, timeRemaining);
       exception = null;
       try {
-        connectAdminServer(principal);
-        String serviceURL = HttpClient.getServiceURL(principal, asServiceName, namespace);
+        String serviceURL = connectAndGetServiceURL();
         String jsonResult =
           httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
         if (jsonResult != null) {
@@ -370,14 +365,17 @@ public class WlsRetriever {
   }
 
   /**
-   * Connect to the WebLogic Administration Server.
+   * Connect to the WebLogic Administration Server and returns the service URL
    *
-   * @param principal The principal that should be used to connect to the Admin Server.
+   * @return serviceURL for issuing HTTP requests to the admin server
    */
-  public void connectAdminServer(String principal) {
+  String connectAndGetServiceURL() {
     if (httpClient == null) {
-      httpClient = HttpClient.createAuthenticatedClientForServer(principal, namespace, adminSecretName);
+      httpClient = HttpClient.createAuthenticatedClientForServer(namespace, adminSecretName);
     }
+
+    return HttpClient.getServiceURL(asServiceName, namespace);
   }
+
 
 }
