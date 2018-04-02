@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
 import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
@@ -70,7 +71,7 @@ public class RollingHelper {
       List<ServerStatus> ss = status.getServers();
       if (ss != null) {
         for (ServerStatus s : ss) {
-          if ("RUNNING".equals(s.getState())) {
+          if (WebLogicConstants.RUNNING_STATE.equals(s.getState())) {
             availableServers.add(s.getServerName());
           }
         }
@@ -168,7 +169,7 @@ public class RollingHelper {
         List<ServerStatus> ss = status.getServers();
         if (ss != null) {
           for (ServerStatus s : ss) {
-            if ("RUNNING".equals(s.getState())) {
+            if (WebLogicConstants.RUNNING_STATE.equals(s.getState())) {
               availableServers.add(s.getServerName());
             }
           }
