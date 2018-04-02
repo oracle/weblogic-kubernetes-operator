@@ -14,10 +14,13 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -81,10 +84,23 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
       V1Pod pod = item.object;
       Boolean isReady = isReady(pod);
       String podName = pod.getMetadata().getName();
+      Container c = ContainerResolver.getInstance().getContainer();
+      ServerKubernetesObjectsFactory skoFactory = c != null ? c.getSPI(ServerKubernetesObjectsFactory.class) : null;
+      ServerKubernetesObjects sko = skoFactory != null ? skoFactory.lookup(podName) : null;
+      if (sko != null) {
+        sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
+      }
       if (isReady) {
+        if (sko != null) {
+          sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+        }
         OnReady ready = readyCallbackRegistrations.remove(podName);
         if (ready != null) {
           ready.onReady();
+        }
+      } else {
+        if (sko != null) {
+          sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
         }
       }
       break;

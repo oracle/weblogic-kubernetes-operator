@@ -9,9 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +74,7 @@ public class ServerStatusReader {
           if (pod != null) {
             Packet p = packet.clone();
             startDetails.add(new StepAndPacket(
-                createServerStatusReaderStep(pod, serverName, timeoutSeconds, null), p));
+                createServerStatusReaderStep(sko, pod, serverName, timeoutSeconds, null), p));
           }
         }
       }
@@ -90,25 +88,28 @@ public class ServerStatusReader {
   
   /**
    * Creates asynchronous step to read WebLogic server state from a particular pod
+   * @param sko Server objects
    * @param pod The pod
    * @param serverName Server name
    * @param timeoutSeconds Timeout in seconds
    * @param next Next step
    * @return Created step
    */
-  public static Step createServerStatusReaderStep(V1Pod pod, String serverName, long timeoutSeconds, Step next) {
-    return new ServerStatusReaderStep(pod, serverName, timeoutSeconds, 
+  public static Step createServerStatusReaderStep(ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
+    return new ServerStatusReaderStep(sko, pod, serverName, timeoutSeconds, 
         new ServerHealthStep(serverName, next));
   }
 
   private static class ServerStatusReaderStep extends Step {
+    private final ServerKubernetesObjects sko;
     private final V1Pod pod;
     private final String serverName;
     private final long timeoutSeconds;
 
-    public ServerStatusReaderStep(V1Pod pod, String serverName, 
+    public ServerStatusReaderStep(ServerKubernetesObjects sko, V1Pod pod, String serverName, 
         long timeoutSeconds, Step next) {
       super(next);
+      this.sko = sko;
       this.pod = pod;
       this.serverName = serverName;
       this.timeoutSeconds = timeoutSeconds;
@@ -121,8 +122,15 @@ public class ServerStatusReader {
           .get(ProcessingConstants.SERVER_STATE_MAP);
       
       if (PodWatcher.isReady(pod, true)) {
-        serverStateMap.put(serverName, "RUNNING");
+        sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+        serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
         return doNext(packet);
+      } else {
+        String lastKnownState = sko.getLastKnownStatus().get();
+        if (lastKnownState != null) {
+          serverStateMap.put(serverName, lastKnownState);
+          return doNext(packet);
+        }        
       }
       
       // Even though we don't need input data for this call, the API server is 
@@ -155,33 +163,10 @@ public class ServerStatusReader {
           }
         }
         
-        serverStateMap.put(serverName, parseState(state));
+        serverStateMap.put(serverName, state != null ? state.trim() : WebLogicConstants.UNKNOWN_STATE);
         fiber.resume(packet);
       });
     }
-  }
-  
-  private static String parseState(String state) {
-    // Format of state is "<serverState>:<Y or N, if server started>:<Y or N, if server failed>
-    String s = "UNKNOWN";
-    if (state != null) {
-      int ind = state.indexOf(':');
-      if (ind > 0) {
-        s = state.substring(0, ind);
-      }
-    }
-    
-    return s;
-  }
-  
-  private static final Set<String> statesSupportingREST = new HashSet<>();
-  static {
-    statesSupportingREST.add("STANDBY");
-    statesSupportingREST.add("ADMIN");
-    statesSupportingREST.add("RESUMING");
-    statesSupportingREST.add("RUNNING");
-    statesSupportingREST.add("SUSPENDING");
-    statesSupportingREST.add("FORCE_SUSPENDING");
   }
   
   private static class ServerHealthStep extends Step {
@@ -199,7 +184,7 @@ public class ServerStatusReader {
           .get(ProcessingConstants.SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
       
-      if (statesSupportingREST.contains(state)) {
+      if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
         return doNext(WlsRetriever.readHealthStep(next), packet);
       }
