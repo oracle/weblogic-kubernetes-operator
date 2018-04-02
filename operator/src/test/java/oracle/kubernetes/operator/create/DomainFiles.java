@@ -62,7 +62,7 @@ public class DomainFiles {
   }
 
   public List<Path> getExpectedContents(boolean includeDirectory) {
-    List<Path> rtn = new ArrayList();
+    List<Path> rtn = new ArrayList<>();
     rtn.add(getCreateWeblogicDomainInputsYamlPath());
     rtn.add(getCreateWeblogicDomainJobYamlPath());
     rtn.add(getDomainCustomResourceYamlPath());

@@ -27,7 +27,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.function.BiFunction;
 
-@SuppressWarnings("WeakerAccess")
 public class WatchBuilder {
     /** Always true for watches. */
     private static final boolean WATCH = true;
@@ -242,10 +241,6 @@ public class WatchBuilder {
     public WatchBuilder withLabelSelectors(String... labelSelectors) {
         callParams.setLabelSelector(String.join(",", labelSelectors));
         return this;
-    }
-
-    private String asList(String... selectors) {
-        return String.join(",", selectors);
     }
 
     public WatchBuilder withLimit(Integer limit) {

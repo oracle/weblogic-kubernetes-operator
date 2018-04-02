@@ -373,6 +373,7 @@ public class KubernetesArtifactUtils {
 
   // The weblogic k8s artificats are missing fluent methods for adding items.
   // Add fluent classes to help with this.
+  @SuppressWarnings("serial")
   public static class FluentArrayList<E> extends ArrayList<E> {
     public FluentArrayList<E> addElement(E e) {
       add(e);

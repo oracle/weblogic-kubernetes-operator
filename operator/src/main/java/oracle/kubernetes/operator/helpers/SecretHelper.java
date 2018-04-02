@@ -3,18 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
 import io.kubernetes.client.models.V1Secret;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -24,11 +13,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import org.joda.time.DateTime;
-
-import java.lang.reflect.Type;
-import java.util.Base64;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,45 +156,6 @@ public class SecretHelper {
       LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_PASSWORD);
     }
     return secretData;
-  }
-
-  // Due to issue with kubernetes-client/java (com.google.gson.JsonSyntaxException when deserialize V1Secret)
-  // Issue #131
-  // Add a custom Gson to the client so secrets can be decoded.
-
-  /**
-   * Add custom Gson to client
-   * @param apiClient API client
-   */
-  public static void addCustomGsonToClient(ApiClient apiClient) {
-
-    LOGGER.entering();
-
-    JSON.DateTypeAdapter dateTypeAdapter = new JSON.DateTypeAdapter();
-    JSON.SqlDateTypeAdapter sqlDateTypeAdapter = new JSON.SqlDateTypeAdapter();
-    JSON.DateTimeTypeAdapter dateTimeTypeAdapter = new JSON.DateTimeTypeAdapter();
-
-    Gson customGson =
-        (new GsonBuilder()).registerTypeAdapter(
-            Date.class, dateTypeAdapter).registerTypeAdapter(
-            java.sql.Date.class, sqlDateTypeAdapter).registerTypeAdapter(
-            DateTime.class, dateTimeTypeAdapter).registerTypeAdapter(
-            byte[].class, new ByteArrayBase64StringTypeAdapter()).create();
-
-    apiClient.getJSON().setGson(customGson);
-
-    LOGGER.exiting();
-  }
-
-  private static class ByteArrayBase64StringTypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
-
-    public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-      return Base64.getUrlDecoder().decode(json.getAsString());
-    }
-
-    public JsonElement serialize(byte[] src, Type typeOfSrc, JsonSerializationContext context) {
-      return new JsonPrimitive(Base64.getUrlEncoder().encodeToString(src));
-    }
   }
 
 }

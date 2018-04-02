@@ -32,8 +32,8 @@ public class Authenticator {
 
   private final String _SERVICE_HOST = "KUBERNETES_SERVICE_HOST";
   private final String _SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
-  private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-  private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+  //private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+  //private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
@@ -46,7 +46,6 @@ public class Authenticator {
   public Authenticator() throws IOException {
     this.apiClient = Config.defaultClient();
     this.helper = new Helpers(this);
-    SecretHelper.addCustomGsonToClient(this.apiClient);
   }
 
   /**
@@ -167,7 +166,6 @@ public class Authenticator {
     newClient.setBasePath(serviceUrl);
     newClient.setApiKey("Bearer " + token);
     newClient.setSslCaCert(new ByteArrayInputStream(caCert));
-    SecretHelper.addCustomGsonToClient(newClient);
 
     LOGGER.exiting(newClient);
     return newClient;
