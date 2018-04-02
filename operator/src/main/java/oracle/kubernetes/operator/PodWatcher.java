@@ -91,9 +91,16 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
       }
       if (isReady) {
+        if (sko != null) {
+          sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+        }
         OnReady ready = readyCallbackRegistrations.remove(podName);
         if (ready != null) {
           ready.onReady();
+        }
+      } else {
+        if (sko != null) {
+          sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
         }
       }
       break;
