@@ -46,11 +46,7 @@ public class ClientPool extends Pool<ApiClient> {
     }
     LOGGER.info(MessageKeys.K8S_MASTER_URL, client != null ? client.getBasePath() : null);
 
-    // Temporarily set a custom Gson for secret support
-    // TODO:
-    SecretHelper.addCustomGsonToClient(client);
-
-    // TEST
+    // Ensure that client doesn't time out before call or watch
     client.getHttpClient().setReadTimeout(5, TimeUnit.MINUTES);
     
     LOGGER.exiting(client);

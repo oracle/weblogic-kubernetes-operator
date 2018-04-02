@@ -134,5 +134,6 @@ public class MessageKeys {
   public static final String CLUSTER_SERVICE_DELETED = "WLSKO-0124";
   public static final String INGRESS_DELETED = "WLSKO-0125";
   public static final String TUNING_PARAMETERS = "WLSKO-0126";
+  public static final String WLS_HEALTH_READ_FAILED = "WLSKO-0127";
 
 }
