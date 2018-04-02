@@ -498,7 +498,6 @@ public class WlsRetriever {
     ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
     long startTime = System.currentTimeMillis();
     Future<Boolean> future = executorService.submit(() -> doUpdateDynamicClusterSize(wlsClusterConfig, machineNamePrefix, targetClusterSize));
-    executorService.shutdown();
     boolean result = false;
     try {
       result = future.get(timeout, TimeUnit.MILLISECONDS);
