@@ -238,7 +238,7 @@ public class HttpClient {
    *
    * @param name The name of the Service that you want the URL for.
    * @param namespace The Namespace in which the Service you want the URL for is defined.
-   * @return The URL of the Service, or null if it is not found or principal does not have sufficient permissions.
+   * @return The URL of the Service, or null if it is not found
    */
   public static String getServiceURL(String name, String namespace) {
     if (SERVICE_URL != null) {

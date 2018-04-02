@@ -13,6 +13,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -350,8 +351,8 @@ public class ConfigMapHelper {
           "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
           "  exit 1\n" + 
           "fi\n" + 
-          "if [ -f ${STATEFILE} ] && [ `grep -c \"FAILED_NOT_RESTARTABLE\" ${STATEFILE}` -eq 1 ]; then\n" + 
-          "  echo \"Error: WebLogic Server FAILED_NOT_RESTARTABLE.\"\n" +
+          "if [ -f ${STATEFILE} ] && [ `grep -c \"" + WebLogicConstants.FAILED_NOT_RESTARTABLE_STATE + "\" ${STATEFILE}` -eq 1 ]; then\n" + 
+          "  echo \"Error: WebLogic Server state is " + WebLogicConstants.FAILED_NOT_RESTARTABLE_STATE + ".\"\n" +
           "  exit 1\n" + 
           "fi\n" + 
           "exit 0");
@@ -372,10 +373,16 @@ public class ConfigMapHelper {
           "  exit 1\n" + 
           "fi\n" + 
           "\n" + 
-          "if [ ! -f ${STATEFILE} ] || [ `grep -c \"RUNNING\" ${STATEFILE}` -ne 1 ]; then\n" + 
-          "  exit 1\n" + 
+          "if [ ! -f ${STATEFILE} ]; then\n" + 
+          "  echo \"Error: WebLogic Server state file not found.\"\n" +
+          "  exit 2\n" + 
           "fi\n" + 
           "\n" + 
+          "state=$(cat ${STATEFILE} | cut -f 1 -d ':')\n" +
+          "if [ \"$state\" != \"" + WebLogicConstants.RUNNING_STATE + "\" ]; then\n" +
+          "  echo \"" + WebLogicConstants.READINESS_PROBE_NOT_READY_STATE + "${state}\"\n" +
+          "  exit 3\n" + 
+          "fi\n" + 
           "exit 0");
 
       data.put("startServer.sh", START_SERVER_SHELL_SCRIPT);
@@ -402,11 +409,11 @@ public class ConfigMapHelper {
           "fi\n" + 
           "\n" + 
           "if [ ! -f ${STATEFILE} ]; then\n" + 
-          "  echo \"Error: Server state file not found.\"\n" +
-          "  exit 1\n" + 
+          "  echo \"Error: WebLogic Server state file not found.\"\n" +
+          "  exit 2\n" + 
           "fi\n" + 
           "\n" + 
-          "cat ${STATEFILE}\n" +
+          "cat ${STATEFILE} | cut -f 1 -d ':'\n" +
           "exit 0");
 
       cm.setData(data);
