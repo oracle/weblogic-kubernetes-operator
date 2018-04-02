@@ -147,6 +147,9 @@ data:
       sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nmdir}:g" ${prop}
       sed -i -e "s:ListenAddress=.*:ListenAddress=$1-$2:g" ${prop}
       sed -i -e "s:LogFile=.*:LogFile=/shared/logs/nodemanager-$2.log:g" ${prop}
+      
+      # Edit the nodemanager properties file to make the listener impl pluggable
+      echo "RestEnabled=true" >> ${prop}
 
     }
 
