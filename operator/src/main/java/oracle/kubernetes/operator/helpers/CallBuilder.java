@@ -26,6 +26,8 @@ import io.kubernetes.client.apis.VersionApi;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
@@ -1055,6 +1057,150 @@ public class CallBuilder {
    */
   public Step deleteServiceAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("deleteService", namespace, name, null), DELETE_SERVICE);
+  }
+  
+  /* Events */
+  
+  /**
+   * List events
+   * @param namespace Namespace
+   * @return List of events
+   * @throws ApiException API Exception
+   */
+  public V1EventList listEent(String namespace) throws ApiException {
+    String _continue = "";
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).listNamespacedEvent(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call listEventAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1EventList> callback) throws ApiException {
+    return new CoreV1Api(client).listNamespacedEventAsync(namespace, pretty, _continue,
+      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
+  }
+
+  private final CallFactory<V1EventList> LIST_EVENT = (requestParams, usage, cont, callback) -> {
+    return listEventAsync(usage, requestParams.namespace, cont, callback);
+  };
+  
+  /**
+   * Asynchronous step for listing events
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listEventAsync(String namespace, ResponseStep<V1EventList> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("listEvent", namespace, null, null), LIST_EVENT);
+  }
+  
+  /**
+   * Read event
+   * @param name Name
+   * @param namespace Namespace
+   * @return Read event
+   * @throws ApiException API Exception
+   */
+  public V1Event readEvent(String name, String namespace) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).readNamespacedEvent(name, namespace, pretty, exact, export);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call readEventAsync(ApiClient client, String name, String namespace, ApiCallback<V1Event> callback) throws ApiException {
+    return new CoreV1Api(client).readNamespacedEventAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  private final CallFactory<V1Event> READ_EVENT = (requestParams, usage, cont, callback) -> {
+    return readEventAsync(usage, requestParams.name, requestParams.namespace, callback);
+  };
+  
+  /**
+   * Asynchronous step for reading event
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readEventAsync(String name, String namespace, ResponseStep<V1Event> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("readEvent", namespace, name, null), READ_EVENT);
+  }
+  
+  /**
+   * Create event
+   * @param namespace Namespace
+   * @param body Body
+   * @return Created service
+   * @throws ApiException API Exception
+   */
+  public V1Event createEvent(String namespace, V1Event body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).createNamespacedEvent(namespace, body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call createEventAsync(ApiClient client, String namespace, V1Event body, ApiCallback<V1Event> callback) throws ApiException {
+    return new CoreV1Api(client).createNamespacedEventAsync(namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<V1Event> CREATE_EVENT = (requestParams, usage, cont, callback) -> {
+    return createEventAsync(usage, requestParams.namespace, (V1Event) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for creating event
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createEventAsync(String namespace, V1Service body, ResponseStep<V1Event> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("createEvent", namespace, null, body), CREATE_EVENT);
+  }
+  
+  /**
+   * Delete event
+   * @param name Name
+   * @param namespace Namespace
+   * @return Status of deletion
+   * @throws ApiException API Exception
+   */
+  public V1Status deleteEvent(String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).deleteNamespacedEvent(name, namespace, deleteOptions, pretty, gracePeriodSeconds,
+        orphanDependents, propagationPolicy);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call deleteEventAsync(ApiClient client, String name, String namespace, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deleteNamespacedEventAsync(name, namespace, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_EVENT = (requestParams, usage, cont, callback) -> {
+    return deleteEventAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for deleting event
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteEventAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("deleteEvent", namespace, name, null), DELETE_EVENT);
   }
   
   /* Persistent Volume Claims */
