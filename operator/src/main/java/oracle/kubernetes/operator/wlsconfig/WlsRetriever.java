@@ -380,7 +380,6 @@ public class WlsRetriever {
     ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
     long startTime = System.currentTimeMillis();
     Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(timeout));
-    executorService.shutdown();
     WlsDomainConfig wlsConfig = null;
     try {
       wlsConfig = future.get(timeout, TimeUnit.MILLISECONDS);
