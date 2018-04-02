@@ -84,14 +84,13 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
       V1Pod pod = item.object;
       Boolean isReady = isReady(pod);
       String podName = pod.getMetadata().getName();
+      Container c = ContainerResolver.getInstance().getContainer();
+      ServerKubernetesObjectsFactory skoFactory = c != null ? c.getSPI(ServerKubernetesObjectsFactory.class) : null;
+      ServerKubernetesObjects sko = skoFactory != null ? skoFactory.lookup(podName) : null;
+      if (sko != null) {
+        sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
+      }
       if (isReady) {
-        Container c = ContainerResolver.getInstance().getContainer();
-        ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
-        ServerKubernetesObjects sko = skoFactory.lookup(podName);
-        if (sko != null) {
-          sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-        }
-
         OnReady ready = readyCallbackRegistrations.remove(podName);
         if (ready != null) {
           ready.onReady();
