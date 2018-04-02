@@ -153,7 +153,7 @@ abstract class Watcher<T> {
 
   private void handleErrorResponse(Watch.Response<T> item) {
     V1Status status = item.status;
-    if (status.getCode() == HTTP_GONE) {
+    if (status != null && status.getCode() == HTTP_GONE) {
         String message = status.getMessage();
         int index1 = message.indexOf('(');
         if (index1 > 0) {

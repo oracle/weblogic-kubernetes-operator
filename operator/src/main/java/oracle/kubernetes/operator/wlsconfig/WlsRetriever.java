@@ -150,7 +150,7 @@ public class WlsRetriever {
         String adminSecretName = spec.getAdminSecret() == null ? null : spec.getAdminSecret().getName();
         
         Step getClient = HttpClient.createAuthenticatedClientForServer(
-            namespace, adminSecretName, 
+            namespace, adminSecretName,
             new WithHttpClientStep(requestType, sko.getService().get(), next));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
@@ -594,5 +594,4 @@ public class WlsRetriever {
 
     return HttpClient.getServiceURL(asServiceName, namespace);
   }
-  
 }
