@@ -121,13 +121,16 @@ public class ServerStatusReader {
       ConcurrentMap<String, String> serverStateMap = (ConcurrentMap<String, String>) packet
           .get(ProcessingConstants.SERVER_STATE_MAP);
       
-      String lastKnownState = sko.getLastKnownStatus().get();
-      if (lastKnownState != null) {
-        serverStateMap.put(serverName, lastKnownState);
-        return doNext(packet);
-      } else if (PodWatcher.isReady(pod, true)) {
+      if (PodWatcher.isReady(pod, true)) {
+        sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
         serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
         return doNext(packet);
+      } else {
+        String lastKnownState = sko.getLastKnownStatus().get();
+        if (lastKnownState != null) {
+          serverStateMap.put(serverName, lastKnownState);
+          return doNext(packet);
+        }        
       }
       
       // Even though we don't need input data for this call, the API server is 
@@ -160,7 +163,7 @@ public class ServerStatusReader {
           }
         }
         
-        serverStateMap.put(serverName, state != null ? state : WebLogicConstants.UNKNOWN_STATE);
+        serverStateMap.put(serverName, state != null ? state.trim() : WebLogicConstants.UNKNOWN_STATE);
         fiber.resume(packet);
       });
     }

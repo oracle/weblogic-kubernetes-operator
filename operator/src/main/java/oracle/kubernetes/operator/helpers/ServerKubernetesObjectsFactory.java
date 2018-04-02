@@ -13,11 +13,15 @@ public class ServerKubernetesObjectsFactory {
   }
   
   public ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
+    return getOrCreate(info, info.getDomain().getSpec().getDomainUID(), serverName);
+  }
+  
+  public ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String domainUID, String serverName) {
     ServerKubernetesObjects created = new ServerKubernetesObjects();
     ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
     if (current == null) {
       String podName = CallBuilder.toDNS1123LegalName(
-          info.getDomain().getSpec().getDomainUID() + "-" + serverName);
+          domainUID + "-" + serverName);
       serverMap.put(podName, created);
       return created;
     }
