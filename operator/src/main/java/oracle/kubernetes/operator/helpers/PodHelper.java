@@ -74,6 +74,7 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
+      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
       TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
 
       // Compute the desired pod configuration for the admin server
@@ -97,9 +98,7 @@ public class PodHelper {
           (Boolean.TRUE.equals(explicitRestartAdmin)) ||
           (explicitRestartServers != null && explicitRestartServers.contains(asName));
 
-      ServerKubernetesObjects created = new ServerKubernetesObjects();
-      ServerKubernetesObjects current = info.getServers().putIfAbsent(asName, created);
-      ServerKubernetesObjects sko = current != null ? current : created;
+      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, asName);
 
       // First, verify existing Pod
       Step read = factory.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
@@ -472,8 +471,11 @@ public class PodHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      TuningParameters configMapHelper = ContainerResolver.getInstance().getContainer().getSPI(TuningParameters.class);
-      
+      Container c = ContainerResolver.getInstance().getContainer();
+      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
+      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
+      TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
+
       // Compute the desired pod configuration for the managed server
       V1Pod pod = computeManagedPodConfig(configMapHelper, packet);
 
@@ -497,12 +499,9 @@ public class PodHelper {
           (explicitRestartServers != null && explicitRestartServers.contains(weblogicServerName)) ||
           (explicitRestartClusters != null && weblogicClusterName != null && explicitRestartClusters.contains(weblogicClusterName));
 
-      ServerKubernetesObjects created = new ServerKubernetesObjects();
-      ServerKubernetesObjects current = info.getServers().putIfAbsent(weblogicServerName, created);
-      ServerKubernetesObjects sko = current != null ? current : created;
+      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, weblogicServerName);
 
       // First, verify there existing Pod
-      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       Step read = factory.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,

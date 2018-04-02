@@ -10,6 +10,7 @@ import io.kubernetes.client.ProgressResponseBody;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
@@ -119,6 +120,36 @@ public class WatchBuilder {
         public Call apply(ApiClient client, CallParams callParams) {
             try {
                 return new CoreV1Api(client).listNamespacedPodCall(namespace, callParams.getPretty(),
+                            START_LIST, callParams.getFieldSelector(), callParams.getIncludeUninitialized(),
+                            callParams.getLabelSelector(), callParams.getLimit(), callParams.getResourceVersion(),
+                            callParams.getTimeoutSeconds(), WATCH, null, null);
+            } catch (ApiException e) {
+                throw new UncheckedApiException(e);
+            }
+        }
+    }
+
+    /**
+     * Creates a web hook object to track events
+     * @param namespace the namespace
+     * @return the active web hook
+     * @throws ApiException if there is an error on the call that sets up the web hook.
+     */
+    public WatchI<V1Event> createEventWatch(String namespace) throws ApiException {
+        return FACTORY.createWatch(ClientPool.getInstance(), callParams, V1Event.class, new ListEventCall(namespace));
+    }
+
+    private class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
+        private String namespace;
+
+        ListEventCall(String namespace) {
+            this.namespace = namespace;
+        }
+
+        @Override
+        public Call apply(ApiClient client, CallParams callParams) {
+            try {
+                return new CoreV1Api(client).listNamespacedEventCall(namespace, callParams.getPretty(),
                             START_LIST, callParams.getFieldSelector(), callParams.getIncludeUninitialized(),
                             callParams.getLabelSelector(), callParams.getLimit(), callParams.getResourceVersion(),
                             callParams.getTimeoutSeconds(), WATCH, null, null);

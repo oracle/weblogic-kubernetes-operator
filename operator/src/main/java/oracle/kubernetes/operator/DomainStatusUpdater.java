@@ -134,7 +134,7 @@ public class DomainStatusUpdater {
         for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
           String serverName = entry.getKey();
           ServerStatus ss = new ServerStatus()
-              .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
+              .withState(serverState.getOrDefault(serverName, WebLogicConstants.SHUTDOWN_STATE))
               .withServerName(serverName)
               .withHealth(serverHealth.get(serverName));
           outer:
@@ -162,7 +162,7 @@ public class DomainStatusUpdater {
           V1Pod pod = entry.getValue().getPod().get();
           if (pod != null) {
             ServerStatus ss = new ServerStatus()
-                .withState(serverState.getOrDefault(serverName, "SHUTDOWN"))
+                .withState(serverState.getOrDefault(serverName, WebLogicConstants.SHUTDOWN_STATE))
                 .withClusterName(pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL))
                 .withNodeName(pod.getSpec().getNodeName())
                 .withServerName(serverName)
@@ -215,7 +215,7 @@ public class DomainStatusUpdater {
             String serverName = entry.getKey();
             if (serversIntendedToRunning.contains(serverName)) {
               ServerStatus ss = serverStatuses.get(serverName);
-              if (ss == null || !"RUNNING".equals(ss.getState())) {
+              if (ss == null || !WebLogicConstants.RUNNING_STATE.equals(ss.getState())) {
                 allIntendedPodsToRunning = false;
               }
             }
