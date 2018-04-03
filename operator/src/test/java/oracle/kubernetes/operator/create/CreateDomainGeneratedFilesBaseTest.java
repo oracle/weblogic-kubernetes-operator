@@ -15,6 +15,7 @@ import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
+import static oracle.kubernetes.operator.LabelConstants.*;
 import static oracle.kubernetes.operator.create.CreateDomainInputs.readInputsYamlFile;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
@@ -149,17 +150,18 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
       newJob()
         .metadata(newObjectMeta()
-          .name("domain-" + getInputs().getDomainUID() + "-job")
+          .name(getInputs().getDomainUID() + "-create-weblogic-domain-job")
           .namespace(getInputs().getNamespace()))
         .spec(newJobSpec()
           .template(newPodTemplateSpec()
             .metadata(newObjectMeta()
-              .putLabelsItem("app", "domain-" + getInputs().getDomainUID() + "-job")
-              .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
+              .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+              .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+              .putLabelsItem(APP_LABEL, getInputs().getDomainUID() + "-create-weblogic-domain-job"))
             .spec(newPodSpec()
               .restartPolicy("Never")
               .addContainersItem(newContainer()
-                .name("domain-job")
+                .name("create-weblogic-domain-job")
                 .image("store/oracle/weblogic:12.2.1.3")
                 .imagePullPolicy("IfNotPresent")
                 .addCommandItem("/bin/sh")
@@ -170,24 +172,24 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .addPortsItem(newContainerPort()
                   .containerPort(7001))
                 .addVolumeMountsItem(newVolumeMount()
-                  .name("config-map-scripts")
+                  .name("create-weblogic-domain-job-cm-volume")
                   .mountPath("/u01/weblogic"))
                 .addVolumeMountsItem(newVolumeMount()
-                  .name("pv-storage")
+                  .name("weblogic-domain-storage-volume")
                   .mountPath("/shared"))
                 .addVolumeMountsItem(newVolumeMount()
-                  .name("secrets")
+                  .name("weblogic-credentials-volume")
                   .mountPath("/weblogic-operator/secrets")))
               .addVolumesItem(newVolume()
-                .name("config-map-scripts")
+                .name("create-weblogic-domain-job-cm-volume")
                   .configMap(newConfigMapVolumeSource()
-                    .name("domain-" + getInputs().getDomainUID() + "-scripts")))
+                    .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")))
               .addVolumesItem(newVolume()
-                .name("pv-storage")
+                .name("weblogic-domain-storage-volume")
                 .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
                   .claimName(getInputs().getWeblogicDomainPersistentVolumeClaimName())))
               .addVolumesItem(newVolume()
-                .name("secrets")
+                .name("weblogic-credentials-volume")
                   .secret(newSecretVolumeSource()
                     .secretName(getInputs().getWeblogicCredentialsSecretName()))))));
   }
@@ -231,9 +233,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name("domain-" + getInputs().getDomainUID() + "-scripts")
+          .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
         .putDataItem(PROPERTY_UTILITY_SH, "")
         .putDataItem(PROPERTY_CREATE_DOMAIN_JOB_SH, "")
         .putDataItem(PROPERTY_READ_DOMAIN_SECRET_PY, "")
@@ -355,7 +358,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
           newObjectMeta()
             .name(getInputs().getDomainUID())
             .namespace(getInputs().getNamespace())
-            .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
+            .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+            .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
         .withSpec(newDomainSpec()
           .withDomainUID(getInputs().getDomainUID())
           .withDomainName(getInputs().getDomainName())
@@ -408,8 +412,9 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         .metadata(newObjectMeta()
           .name(getTraefikScope())
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-          .putLabelsItem("weblogic.clusterName", getClusterNameLC()));
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()));
   }
 
   @Test
@@ -430,23 +435,24 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         .metadata(newObjectMeta()
           .name(getTraefikScope())
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("app", getTraefikScope())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-          .putLabelsItem("weblogic.clusterName", getClusterNameLC()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .spec(newDeploymentSpec()
           .replicas(1)
           .selector(newLabelSelector()
-            .putMatchLabelsItem("app", getTraefikScope()))
+            .putMatchLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+            .putMatchLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
           .template(newPodTemplateSpec()
             .metadata(newObjectMeta()
-              .putLabelsItem("app", getTraefikScope())
-              .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-              .putLabelsItem("weblogic.clusterName", getClusterNameLC()))
+              .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+              .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+              .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
             .spec(newPodSpec()
               .serviceAccountName(getTraefikScope())
               .terminationGracePeriodSeconds(60L)
               .addContainersItem(newContainer()
-                .name(getTraefikScope())
+                .name("traefik")
                 .image("traefik:1.4.5")
                 .resources(newResourceRequirements()
                   .putRequestsItem("cpu", Quantity.fromString("100m"))
@@ -484,7 +490,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
               .addVolumesItem(newVolume()
                 .name("config")
                   .configMap(newConfigMapVolumeSource()
-                    .name(getTraefikScope()))))));
+                    .name(getTraefikScope() + "-cm"))))));
   }
 
   @Test
@@ -512,18 +518,18 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name(getTraefikScope())
+          .name(getTraefikScope() + "-cm")
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-          .putLabelsItem("weblogic.clusterName", getClusterNameLC())
-          .putLabelsItem("app", getTraefikScope()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .putDataItem(PROPERTY_TRAEFIK_TOML, "");
   }
 
   protected void assertThatActualTraefikTomlIsCorrect(String actualTraefikToml) {
     assertThat(
       actualTraefikToml,
-      containsString("labelselector = \"weblogic.domainUID=" + getInputs().getDomainUID() + ",weblogic.clusterName=" + getInputs().getClusterName() + "\""));
+      containsString("labelselector = \"" + DOMAINUID_LABEL + "=" + getInputs().getDomainUID() + "," + CLUSTERNAME_LABEL + "=" + getInputs().getClusterName() + "\""));
   }
 
   @Test
@@ -543,11 +549,13 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         .metadata(newObjectMeta()
           .name(getTraefikScope())
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-          .putLabelsItem("weblogic.clusterName", getClusterNameLC()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .spec(newServiceSpec()
           .type("NodePort")
-          .putSelectorItem("app", getTraefikScope())
+          .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putSelectorItem(CLUSTERNAME_LABEL, getInputs().getClusterName())
           .addPortsItem(newServicePort()
             .name("http")
             .targetPort(newIntOrString("http"))
@@ -572,12 +580,13 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         .metadata(newObjectMeta()
           .name(getTraefikScope() + "-dashboard")
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-          .putLabelsItem("weblogic.clusterName", getClusterNameLC())
-          .putLabelsItem("app", getTraefikScope()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .spec(newServiceSpec()
           .type("NodePort")
-          .putSelectorItem("app", getTraefikScope())
+          .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putSelectorItem(CLUSTERNAME_LABEL, getInputs().getClusterName())
           .addPortsItem(newServicePort()
             .name("dash")
             .targetPort(newIntOrString("dash"))
@@ -601,7 +610,9 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
       newClusterRole()
         .metadata(newObjectMeta()
           .name(getTraefikScope())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .addRulesItem(newPolicyRule()
           .addApiGroupsItem("")
           .resources(asList("pods", "services", "endpoints", "secrets"))
@@ -628,8 +639,9 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
       newClusterRoleBinding()
         .metadata(newObjectMeta()
           .name(getTraefikScope())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID())
-          .putLabelsItem("weblogic.clusterName", getClusterNameLC()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .addSubjectsItem(newSubject()
           .kind("ServiceAccount")
           .name(getTraefikScope())
@@ -655,7 +667,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         newPersistentVolume()
           .metadata(newObjectMeta()
             .name(getInputs().getWeblogicDomainPersistentVolumeName())
-            .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
+            .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+            .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
           .spec(newPersistentVolumeSpec()
             .storageClassName(getInputs().getWeblogicDomainStorageClass())
             .putCapacityItem("storage", Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))
@@ -680,7 +693,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         .metadata(newObjectMeta()
           .name(getInputs().getWeblogicDomainPersistentVolumeClaimName())
           .namespace(getInputs().getNamespace())
-          .putLabelsItem("weblogic.domainUID", getInputs().getDomainUID()))
+          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
         .spec(newPersistentVolumeClaimSpec()
           .storageClassName(getInputs().getWeblogicDomainStorageClass())
           .addAccessModesItem("ReadWriteMany")

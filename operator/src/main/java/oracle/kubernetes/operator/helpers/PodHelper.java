@@ -225,18 +225,18 @@ public class PodHelper {
       container.setLifecycle(lifecycle);
 
       V1VolumeMount volumeMount = new V1VolumeMount();
-      volumeMount.setName("pv-storage");
+      volumeMount.setName("weblogic-domain-storage-volume");
       volumeMount.setMountPath("/shared");
       container.addVolumeMountsItem(volumeMount);
 
       V1VolumeMount volumeMountSecret = new V1VolumeMount();
-      volumeMountSecret.setName("secrets");
+      volumeMountSecret.setName("weblogic-credentials-volume");
       volumeMountSecret.setMountPath("/weblogic-operator/secrets");
       volumeMountSecret.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountSecret);
 
       V1VolumeMount volumeMountScripts = new V1VolumeMount();
-      volumeMountScripts.setName("scripts");
+      volumeMountScripts.setName("weblogic-domain-cm-volume");
       volumeMountScripts.setMountPath("/weblogic-operator/scripts");
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
@@ -292,7 +292,7 @@ public class PodHelper {
 
       if (!info.getClaims().getItems().isEmpty()) {
         V1Volume volume = new V1Volume();
-        volume.setName("pv-storage");
+        volume.setName("weblogic-domain-storage-volume");
         V1PersistentVolumeClaimVolumeSource pvClaimSource = new V1PersistentVolumeClaimVolumeSource();
         pvClaimSource.setClaimName(info.getClaims().getItems().iterator().next().getMetadata().getName());
         volume.setPersistentVolumeClaim(pvClaimSource);
@@ -300,14 +300,14 @@ public class PodHelper {
       }
       
       V1Volume volumeSecret = new V1Volume();
-      volumeSecret.setName("secrets");
+      volumeSecret.setName("weblogic-credentials-volume");
       V1SecretVolumeSource secret = new V1SecretVolumeSource();
       secret.setSecretName(spec.getAdminSecret().getName());
       volumeSecret.setSecret(secret);
       podSpec.addVolumesItem(volumeSecret);
       
       V1Volume volumeDomainConfigMap = new V1Volume();
-      volumeDomainConfigMap.setName("scripts");
+      volumeDomainConfigMap.setName("weblogic-domain-cm-volume");
       V1ConfigMapVolumeSource cm = new V1ConfigMapVolumeSource();
       cm.setName(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME);
       cm.setDefaultMode(0555); // read and execute
@@ -619,8 +619,9 @@ public class PodHelper {
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, weblogicServerName);
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      if (weblogicClusterName != null)
+      if (weblogicClusterName != null) {
         labels.put(LabelConstants.CLUSTERNAME_LABEL, weblogicClusterName);
+      }
       metadata.setLabels(labels);
 
       V1PodSpec podSpec = new V1PodSpec();
@@ -659,18 +660,18 @@ public class PodHelper {
       container.setLifecycle(lifecycle);
 
       V1VolumeMount volumeMount = new V1VolumeMount();
-      volumeMount.setName("pv-storage");
+      volumeMount.setName("weblogic-domain-storage-volume");
       volumeMount.setMountPath("/shared");
       container.addVolumeMountsItem(volumeMount);
 
       V1VolumeMount volumeMountSecret = new V1VolumeMount();
-      volumeMountSecret.setName("secrets");
+      volumeMountSecret.setName("weblogic-credentials-volume");
       volumeMountSecret.setMountPath("/weblogic-operator/secrets");
       volumeMountSecret.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountSecret);
 
       V1VolumeMount volumeMountScripts = new V1VolumeMount();
-      volumeMountScripts.setName("scripts");
+      volumeMountScripts.setName("weblogic-domain-cm-volume");
       volumeMountScripts.setMountPath("/weblogic-operator/scripts");
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
@@ -710,7 +711,7 @@ public class PodHelper {
 
       if (!info.getClaims().getItems().isEmpty()) {
         V1Volume volume = new V1Volume();
-        volume.setName("pv-storage");
+        volume.setName("weblogic-domain-storage-volume");
         V1PersistentVolumeClaimVolumeSource pvClaimSource = new V1PersistentVolumeClaimVolumeSource();
         pvClaimSource.setClaimName(info.getClaims().getItems().iterator().next().getMetadata().getName());
         volume.setPersistentVolumeClaim(pvClaimSource);
@@ -718,14 +719,14 @@ public class PodHelper {
       }
 
       V1Volume volumeSecret = new V1Volume();
-      volumeSecret.setName("secrets");
+      volumeSecret.setName("weblogic-credentials-volume");
       V1SecretVolumeSource secret = new V1SecretVolumeSource();
       secret.setSecretName(spec.getAdminSecret().getName());
       volumeSecret.setSecret(secret);
       podSpec.addVolumesItem(volumeSecret);
       
       V1Volume volumeDomainConfigMap = new V1Volume();
-      volumeDomainConfigMap.setName("scripts");
+      volumeDomainConfigMap.setName("weblogic-domain-cm-volume");
       V1ConfigMapVolumeSource cm = new V1ConfigMapVolumeSource();
       cm.setName(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME);
       cm.setDefaultMode(0555); // read and execute

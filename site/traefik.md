@@ -23,6 +23,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
   labels:
     weblogic.clusterName: cluster-1
+    webloigc.clusterNameLC: cluster-1
     weblogic.domainName: base_domain
     weblogic.domainUID: domain1
   name: domain1-cluster-1

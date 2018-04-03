@@ -27,8 +27,8 @@ Then, execute the script, pointing it at your inputs file and output directory:
 
 The following YAML files will be generated in the /path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID> directory:
 
-*	`weblogic-domain-persistent-volume.yaml` can be customized and used to create the persistent volume for this domain.
-*	`weblogic-domain-persistent-volume-claim.yaml` can be customized and used to create the persistent volume claim for this domain.
+*	`weblogic-domain-pv.yaml` can be customized and used to create the persistent volume for this domain.
+*	`weblogic-domain-pvc.yaml` can be customized and used to create the persistent volume claim for this domain.
 *	`create-weblogic-domain-job.yaml` can be ignored when creating the domain manually.
 *	`domain-custom-resource.yaml` can be customized and used to create the domain custom resource.
 
@@ -43,7 +43,7 @@ The persistent volume will be mounted as `/shared` within every container that i
 *	`/shared/logs` contains log directories
 *	`/shared/stores` contains persistent stores
 
-The file `weblogic-domain-persistent-volume.yaml` contains a template to create a persistent volume. The customizable items are listed below:
+The file `weblogic-domain-pv.yaml` contains a template to create a persistent volume. The customizable items are listed below:
 
 *	Persistent volume name
 *	Storage class name
@@ -57,7 +57,7 @@ The file `weblogic-domain-persistent-volume.yaml` contains a template to create 
 To create the persistent volume issue the following command:
 
 ```
-kubectl create –f weblogic-domain-persistent-volume.yaml
+kubectl create –f weblogic-domain-pv.yaml
 ```
 
 To verify the persistent volume was created, use this command:
@@ -70,7 +70,7 @@ Replace `PV_NAME` with the name of the persistent volume.
 
 ## Preparing to create the persistent volume claim
 
-The file `weblogic-domain-persistent-volume-claim.yaml` contains a template to claim a portion of the persistent volume storage. The customizable items are listed below:
+The file `weblogic-domain-pvc.yaml` contains a template to claim a portion of the persistent volume storage. The customizable items are listed below:
 
 *	Persistent volume claim name
 *	Namespace name
@@ -83,7 +83,7 @@ The file `weblogic-domain-persistent-volume-claim.yaml` contains a template to c
 To create the persistent volume claim issue the following command:
 
 ```
-kubectl create –f weblogic-domain-persistent-volume-claim.yaml
+kubectl create –f weblogic-domain-pvc.yaml
 ```
 
 To verify the persistent volume was created, use this command:

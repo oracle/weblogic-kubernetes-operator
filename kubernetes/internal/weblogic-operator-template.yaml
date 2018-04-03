@@ -11,8 +11,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: operator-config-map
+  name: weblogic-operator-cm
   namespace: %NAMESPACE%
+  labels:
+    weblogic.operatorName: %NAMESPACE%
 data:
   serviceaccount: %ACCOUNT_NAME%
   targetNamespaces: "%TARGET_NAMESPACES%"
@@ -23,8 +25,10 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: operator-secrets
+  name: weblogic-operator-secrets
   namespace: %NAMESPACE%
+  labels:
+    weblogic.operatorName: %NAMESPACE%
 type: Opaque
 data:
   externalOperatorKey: %EXTERNAL_KEY_DATA%
@@ -37,11 +41,14 @@ metadata:
   name: weblogic-operator
   # set the namespace that you want the operator deployed in here
   namespace: %NAMESPACE%
+  labels:
+    weblogic.operatorName: %NAMESPACE%
 spec:
   replicas: 1
   template:
     metadata:
-      labels:
+     labels:
+        weblogic.operatorName: %NAMESPACE%
         app: weblogic-operator
     spec:
       serviceAccountName: %ACCOUNT_NAME%
@@ -73,9 +80,9 @@ spec:
         %REMOTE_DEBUG_NODE_PORT_PREFIX%- name: REMOTE_DEBUG_PORT
         %REMOTE_DEBUG_NODE_PORT_PREFIX%  value: "%INTERNAL_DEBUG_HTTP_PORT%"
         volumeMounts:
-        - name: operator-config-volume
+        - name: weblogic-operator-cm-volume
           mountPath: /operator/config
-        - name: operator-secrets-volume
+        - name: weblogic-operator-secrets-volume
           mountPath: /operator/secrets
           readOnly: true
         # uncomment this mount if using the ELK integration:
@@ -102,12 +109,12 @@ spec:
       %ELK_INTEGRATION_PREFIX%  - name: ELASTICSEARCH_PORT
       %ELK_INTEGRATION_PREFIX%    value: "9200"
       volumes:
-      - name: operator-config-volume
+      - name: weblogic-operator-cm-volume
         configMap:
-          name: operator-config-map
-      - name: operator-secrets-volume
+          name: weblogic-operator-cm
+      - name: weblogic-operator-secrets-volume
         secret:
-          secretName: operator-secrets
+          secretName: weblogic-operator-secrets
       # Uncomment this volume if using ELK integration:
       %ELK_INTEGRATION_PREFIX%- name: log-dir
       %ELK_INTEGRATION_PREFIX%  emptyDir:
@@ -119,8 +126,10 @@ spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%apiVersion: v1
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%kind: Service
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%metadata:
-%EXTERNAL_OPERATOR_SERVICE_PREFIX%  name: external-weblogic-operator-service
+%EXTERNAL_OPERATOR_SERVICE_PREFIX%  name: external-weblogic-operator-svc
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  namespace: %NAMESPACE%
+%EXTERNAL_OPERATOR_SERVICE_PREFIX%  labels:
+%EXTERNAL_OPERATOR_SERVICE_PREFIX%    weblogic.operatorName: %NAMESPACE%
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  type: NodePort
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  selector:
@@ -128,7 +137,7 @@ spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  ports:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%    %EXTERNAL_REST_NODE_PORT_PREFIX%- port: 8081
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%    %EXTERNAL_REST_NODE_PORT_PREFIX%  nodePort: %EXTERNAL_REST_HTTPS_PORT%
-%EXTERNAL_OPERATOR_SERVICE_PREFIX%    %EXTERNAL_REST_NODE_PORT_PREFIX%  name: rest-https
+%EXTERNAL_OPERATOR_SERVICE_PREFIX%    %EXTERNAL_REST_NODE_PORT_PREFIX%  name: rest
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%    #### uncomment this port if you enable remote debugging, and make sure the value matches
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%    #### the one you defined above
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%    %REMOTE_DEBUG_NODE_PORT_PREFIX%- port: %INTERNAL_DEBUG_HTTP_PORT%
@@ -139,13 +148,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: internal-weblogic-operator-service
+  name: internal-weblogic-operator-svc
   namespace: %NAMESPACE%
+  labels:
+    weblogic.operatorName: %NAMESPACE%
 spec:
   type: ClusterIP
   selector:
     app: weblogic-operator
   ports:
     - port: 8082
-      name: rest-https
+      name: rest
 

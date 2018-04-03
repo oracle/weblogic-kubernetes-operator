@@ -16,10 +16,8 @@ public class DomainFiles {
   private static final String CREATE_WEBLOGIC_DOMAIN_INPUTS_YAML = "create-weblogic-domain-inputs.yaml";
   private static final String DOMAIN_CUSTOM_RESOURCE_YAML = "domain-custom-resource.yaml";
   private static final String CREATE_WEBLOGIC_DOMAIN_JOB_YAML = "create-weblogic-domain-job.yaml";
-  private static final String TRAEFIK_YAML = "traefik.yaml";
-  private static final String TRAEFIK_SECURITY_YAML = "traefik-security.yaml";
-  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_YAML = "weblogic-domain-persistent-volume.yaml";
-  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_YAML = "weblogic-domain-persistent-volume-claim.yaml";
+  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_YAML = "weblogic-domain-pv.yaml";
+  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_YAML = "weblogic-domain-pvc.yaml";
 
   private Path userProjectsPath;
   private CreateDomainInputs inputs;
@@ -44,11 +42,11 @@ public class DomainFiles {
   }
 
   public Path getTraefikYamlPath() {
-    return getWeblogicDomainPath().resolve(TRAEFIK_YAML);
+    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
 
   public Path getTraefikSecurityYamlPath() {
-    return getWeblogicDomainPath().resolve(TRAEFIK_SECURITY_YAML);
+    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-security-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
 
   public Path getWeblogicDomainPersistentVolumeYamlPath() {

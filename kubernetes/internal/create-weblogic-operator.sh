@@ -306,7 +306,7 @@ dirname "${script}"
   generatedKeyFile="${generatedCertDir}/weblogic-operator.key.pem"
 
   # Always generate a self-signed cert for the internal operator REST port
-  internal_host="internal-weblogic-operator-service"
+  internal_host="internal-weblogic-operator-svc"
   internal_sans="DNS:${internal_host},DNS:${internal_host}.${namespace},DNS:${internal_host}.${namespace}.svc,DNS:${internal_host}.${namespace}.svc.cluster.local"
   echo "Generating a self-signed certificate for the operator's internal https port with the subject alternative names ${internal_sans}"
   ${genOprCertScript} ${internal_sans}
@@ -570,8 +570,8 @@ function deployOperator {
   fi
 
   echo Checking the operator labels
-  LABEL=`kubectl describe deploy weblogic-operator -n ${namespace} | grep "^Labels:" | awk ' { print $2; } '`
-  if [ "$LABEL" != "app=weblogic-operator" ]; then
+  LABEL=`kubectl get deploy weblogic-operator -n ${namespace} -o jsonpath='{.spec.template.metadata.labels.app}'`
+  if [ "$LABEL" != "weblogic-operator" ]; then
     fail "The weblogic-operator deployment should have the label app=weblogic-operator"
   fi
 
