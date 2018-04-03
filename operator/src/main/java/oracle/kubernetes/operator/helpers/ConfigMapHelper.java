@@ -312,7 +312,8 @@ public class ConfigMapHelper {
     return new ScriptConfigMapStep(namespace, next);
   }
 
-  private static class ScriptConfigMapStep extends Step {
+  // Make this public so that it can be unit tested
+  public static class ScriptConfigMapStep extends Step {
     private final String namespace;
     
     public ScriptConfigMapStep(String namespace, Step next) {
@@ -322,9 +323,79 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      V1ConfigMap cm = computeDomainConfigMap();
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step read = factory.create().readConfigMapAsync(cm.getMetadata().getName(), namespace, new ResponseStep<V1ConfigMap>(next) {
+        @Override
+        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (statusCode == CallBuilder.NOT_FOUND) {
+            return onSuccess(packet, null, statusCode, responseHeaders);
+          }
+          return super.onFailure(packet, e, statusCode, responseHeaders);
+        }
+
+        @Override
+        public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
+            Map<String, List<String>> responseHeaders) {
+          if (result == null) {
+            Step create = factory.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
+              public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                
+                LOGGER.info(MessageKeys.CM_CREATED, namespace);
+                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
+                return doNext(packet);
+              }
+            });
+            return doNext(create, packet);
+          } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(cm.getData().entrySet())) {
+            // existing config map has correct data
+            LOGGER.fine(MessageKeys.CM_EXISTS, namespace);
+            packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
+            return doNext(packet);
+          } else {
+            // we need to update the config map
+            Map<String, String> updated = result.getData();
+            updated.putAll(cm.getData());
+            cm.setData(updated);
+            Step replace = factory.create().replaceConfigMapAsync(cm.getMetadata().getName(), namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+              @Override
+              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
+              }
+              
+              @Override
+              public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                LOGGER.info(MessageKeys.CM_REPLACED, namespace);
+                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
+                return doNext(packet);
+              }
+            });
+            return doNext(replace, packet);
+          }
+        }
+      });
+      
+      return doNext(read, packet);
+    }
+
+    // Make this protected so that it can be unit tested
+    protected V1ConfigMap computeDomainConfigMap() {
       String name = KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
       V1ConfigMap cm = new V1ConfigMap();
-      
+      cm.setApiVersion("v1");
+      cm.setKind("ConfigMap");
+
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
@@ -332,6 +403,12 @@ public class ConfigMapHelper {
       AnnotationHelper.annotateWithFormat(metadata);
       
       Map<String, String> labels = new HashMap<>();
+      // This config map is a singleton that is shared by all the domains
+      // We need to add a domain uid label so that it can be located as
+      // related to the operator.  However, we don't have a specific domain uid
+      // to set as the value.  So, just set it to an empty string.  That way,
+      // someone seleting on just the weblogic.domainUID label will find it.
+      labels.put(LabelConstants.DOMAINUID_LABEL, "");
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
 
@@ -417,70 +494,8 @@ public class ConfigMapHelper {
           "exit 0");
 
       cm.setData(data);
-      
-      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      Step read = factory.create().readConfigMapAsync(name, namespace, new ResponseStep<V1ConfigMap>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return onSuccess(packet, null, statusCode, responseHeaders);
-          }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
-        }
 
-        @Override
-        public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (result == null) {
-            Step create = factory.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
-              }
-              
-              @Override
-              public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                
-                LOGGER.info(MessageKeys.CM_CREATED, namespace);
-                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
-                return doNext(packet);
-              }
-            });
-            return doNext(create, packet);
-          } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(data.entrySet())) {
-            // existing config map has correct data
-            LOGGER.fine(MessageKeys.CM_EXISTS, namespace);
-            packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
-            return doNext(packet);
-          } else {
-            // we need to update the config map
-            Map<String, String> updated = result.getData();
-            updated.putAll(data);
-            cm.setData(updated);
-            Step replace = factory.create().replaceConfigMapAsync(name, namespace, cm, new ResponseStep<V1ConfigMap>(next) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                return super.onFailure(ScriptConfigMapStep.this, packet, e, statusCode, responseHeaders);
-              }
-              
-              @Override
-              public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                LOGGER.info(MessageKeys.CM_REPLACED, namespace);
-                packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
-                return doNext(packet);
-              }
-            });
-            return doNext(replace, packet);
-          }
-        }
-      });
-      
-      return doNext(read, packet);
+      return cm;
     }
   }
 

@@ -12,9 +12,9 @@ import io.kubernetes.client.models.V1ObjectMeta;
  * 
  */
 public class AnnotationHelper {
-  
-  private static final String FORMAT_ANNOTATION = "weblogic.oracle/operator-formatVersion";
-  private static final String FORMAT_VERSION = "1";
+  // Make these public so that the tests can use them:
+  public static final String FORMAT_ANNOTATION = "weblogic.oracle/operator-formatVersion";
+  public static final String FORMAT_VERSION = "1";
   
   /**
    * Marks metadata object with an annotation saying that it was created for this format version

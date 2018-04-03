@@ -778,11 +778,19 @@ function run_create_domain_job {
     local WEBLOGIC_CREDENTIALS_SECRET_NAME="$DOMAIN_UID-weblogic-credentials"
     local WEBLOGIC_CREDENTIALS_FILE="${tmp_dir}/weblogic-credentials.yaml"
 
+    # Common inputs file for creating a domain
+    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
+    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
+
+    # accept the default domain name (i.e. don't customize it)
+    local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
+
     trace 'Create the secret with weblogic admin credentials'
     cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $WEBLOGIC_CREDENTIALS_FILE
 
     sed -i -e "s|%NAMESPACE%|$NAMESPACE|g" $WEBLOGIC_CREDENTIALS_FILE
     sed -i -e "s|%DOMAIN_UID%|$DOMAIN_UID|g" $WEBLOGIC_CREDENTIALS_FILE
+    sed -i -e "s|%DOMAIN_NAME%|$domain_name|g" $WEBLOGIC_CREDENTIALS_FILE
 
     kubectl apply -f $WEBLOGIC_CREDENTIALS_FILE
 
@@ -795,10 +803,6 @@ function run_create_domain_job {
     trace 'Prepare the job customization script'
     local internal_dir="$tmp_dir/internal"
     mkdir $tmp_dir/internal
-
-    # Common inputs file for creating a domain
-    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
 
     # copy testwebapp.war for testing
     cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
@@ -1314,14 +1318,14 @@ function call_operator_rest {
 
     trace "Checking REST service is running"
     set +x
-    local REST_SERVICE="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")]}'`"
+    local REST_SERVICE="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-svc")]}'`"
     set -x
     if [ -z "$REST_SERVICE" ]; then
         fail 'operator rest service was not created'
     fi
 
     set +x
-    local REST_PORT="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")].spec.ports[?(@.name == "rest-https")].nodePort}'`"
+    local REST_PORT="`kubectl get services -n $OPERATOR_NS -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-svc")].spec.ports[?(@.name == "rest")].nodePort}'`"
     set -x
     local REST_ADDR="https://${NODEPORT_HOST}:${REST_PORT}"
     local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
@@ -2181,7 +2185,7 @@ function shutdown_operator {
     kubectl delete -f $TMP_DIR/weblogic-operator.yaml
     trace "Checking REST service is deleted"
     set +x
-    local servicenum=`kubectl get services -n $OPERATOR_NS | egrep weblogic-operator-service | wc -l`
+    local servicenum=`kubectl get services -n $OPERATOR_NS | egrep weblogic-operator-svc | wc -l`
     set -x
     trace "servicenum=$servicenum"
     if [ "$servicenum" != "0" ]; then
@@ -2236,7 +2240,7 @@ function startup_operator {
 
     trace "Checking REST service is running"
     set +x
-    local REST_SERVICE=`kubectl get services -n ${namespace} -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-service")]}'`
+    local REST_SERVICE=`kubectl get services -n ${namespace} -o jsonpath='{.items[?(@.metadata.name == "external-weblogic-operator-svc")]}'`
     set -x
     if [ -z "$REST_SERVICE" ]; then
         fail 'operator rest service was not created'

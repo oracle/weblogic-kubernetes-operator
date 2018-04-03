@@ -192,42 +192,42 @@ Here is the first part of that YAML file:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: domain-domain1-job
+  name: domain1-create-weblogic-domain-job
   namespace: domain1
 spec:
   template:
     metadata:
       labels:
-        app: domain-domain1-job
+        app: domain1-create-weblogic-domain-job
         weblogic.domainUID: domain1
     spec:
       restartPolicy: Never
       containers:
-        - name: domain-job
+        - name: create-weblogic-domain-job
           image: store/oracle/weblogic:12.2.1.3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7001
           volumeMounts:
           - mountPath: /u01/weblogic
-            name: config-map-scripts
+            name: create-weblogic-domain-job-cm-volume
           - mountPath: /shared
-            name: pv-storage
+            name: weblogic-domain-storage-volume
           - mountPath: /var/run/secrets-domain1
-            name: secrets
+            name: weblogic-credentials-volume
           command: ["/bin/sh"]
           args: ["/u01/weblogic/create-domain-job.sh"]
           env:
             - name: SHARED_PATH
               value: "/shared"
       volumes:
-        - name: config-map-scripts
+        - name: create-weblogic-domain-job-cm-volume
           configMap:
-            name: domain-domain1-scripts
-        - name: pv-storage
+            name: domain1-create-weblogic-domain-job-cm
+        - name: weblogic-domain-storage-volume
           persistentVolumeClaim:
             claimName: domain1-pv001-claim
-        - name: secrets
+        - name: weblogic-credentials-volume
           secret:
             weblogicCredentialsSecretName: domain1-weblogic-credentials
 

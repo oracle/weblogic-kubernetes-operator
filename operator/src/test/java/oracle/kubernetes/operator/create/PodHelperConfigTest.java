@@ -10,12 +10,12 @@ import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
+import static oracle.kubernetes.operator.LabelConstants.*;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-
+import oracle.kubernetes.operator.TuningParameters.PodTuning;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
-
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -42,7 +42,7 @@ public class PodHelperConfigTest {
   private static final String WEBLOGIC_CREDENTIALS_SECRET_NAME = "test-weblogic-credentials-secret-name";
   private static final int ADMIN_SERVER_PORT = 7654;
   private static final int MANAGED_SERVER_PORT = 4567;
-  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_NAME = "test-weblogic-domain-persistent-volume-claim-name";
+  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_NAME = "test-weblogic-domain-pvc-name";
   private static final String INTERNAL_OPERATOR_CERT_FILE = "test-internal-operator-cert-file";
   private static final String CUSTOM_LATEST_IMAGE = "custom-image:latest";
   private static final String ADMIN_OPTION1_NAME = "AdminOption1Name";
@@ -402,7 +402,7 @@ public class PodHelperConfigTest {
         .name(MANAGED_OPTION2_NAME)
         .value(MANAGED_OPTION2_VALUE));
     pod.getMetadata()
-      .putLabelsItem("weblogic.clusterName", CLUSTER_NAME);
+      .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER_NAME);
     pod.getSpec().getContainers().get(0).addCommandItem(ADMIN_SERVER_NAME).addCommandItem(String.valueOf(ADMIN_SERVER_PORT));
     pod.getSpec().getContainers().get(0).getPorts().get(0).setName("weblogic");
     pod.getSpec().getContainers().get(0).addPortsItem(new V1ContainerPort().protocol("TCP").containerPort(5556).name("node-manager"));
@@ -412,7 +412,7 @@ public class PodHelperConfigTest {
   private void setDesiredPersistentVolumeClaim(V1Pod pod) {
     pod.getSpec()
       .getVolumes().add(0, newVolume() // needs to be first in the list
-        .name("pv-storage")
+        .name("weblogic-domain-storage-volume")
         .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
           .claimName(WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_NAME)));
   }
@@ -428,10 +428,10 @@ public class PodHelperConfigTest {
           .putAnnotationsItem("prometheus.io/port", "" + port)
           .putAnnotationsItem("prometheus.io/scrape", "true")
           .putAnnotationsItem("weblogic.oracle/operator-formatVersion", "1")
-          .putLabelsItem("weblogic.createdByOperator", "true")
-          .putLabelsItem("weblogic.domainName", DOMAIN_NAME)
-          .putLabelsItem("weblogic.domainUID", DOMAIN_UID)
-          .putLabelsItem("weblogic.serverName", serverName))
+          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+          .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
+          .putLabelsItem(DOMAINUID_LABEL, DOMAIN_UID)
+          .putLabelsItem(SERVERNAME_LABEL, serverName))
         .spec(newPodSpec()
           .addContainersItem(newContainer()
             .name("weblogic-server")
@@ -492,22 +492,22 @@ public class PodHelperConfigTest {
               .name("ADMIN_PASSWORD")
               .value(null))
             .addVolumeMountsItem(newVolumeMount() // TBD - why is the mount created if the volume doesn't exist?
-              .name("pv-storage")
+              .name("weblogic-domain-storage-volume")
               .mountPath("/shared"))
             .addVolumeMountsItem(newVolumeMount()
-              .name("secrets")
+              .name("weblogic-credentials-volume")
               .mountPath("/weblogic-operator/secrets"))
             .addVolumeMountsItem(newVolumeMount()
-              .name("scripts")
+              .name("weblogic-domain-cm-volume")
               .mountPath("/weblogic-operator/scripts")))
           .addVolumesItem(newVolume()
-            .name("secrets")
+            .name("weblogic-credentials-volume")
               .secret(newSecretVolumeSource()
                 .secretName(WEBLOGIC_CREDENTIALS_SECRET_NAME)))
           .addVolumesItem(newVolume()
-            .name("scripts")
+            .name("weblogic-domain-cm-volume")
               .configMap(newConfigMapVolumeSource()
-                .name("weblogic-domain-config-map")
+                .name("weblogic-domain-cm")
                 .defaultMode(365))));
   }
 }

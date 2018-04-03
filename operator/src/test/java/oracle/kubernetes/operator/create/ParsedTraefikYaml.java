@@ -11,7 +11,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 
 /**
- * Parses a generated traefik.yaml file into a set of typed k8s java objects
+ * Parses a generated weblogic-domain-traefik-inputs.getClusterName().toLowerCase().yaml file into a set of typed k8s java objects
  */
 public class ParsedTraefikYaml extends ParsedKubernetesYaml {
 
@@ -31,7 +31,7 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getTraefikConfigMap() {
-    return getConfigMaps().find(getTraefikScope());
+    return getConfigMaps().find(getTraefikScope() + "-cm");
   }
 
   public V1Service getTraefikService() {
