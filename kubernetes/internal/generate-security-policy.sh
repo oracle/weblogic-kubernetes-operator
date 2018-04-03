@@ -66,6 +66,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: ${NAMESPACE}
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 ---
 #
 # Service Account for WebLogic Operator
@@ -75,6 +77,8 @@ kind: ServiceAccount
 metadata:
   namespace: ${NAMESPACE}
   name: ${ACCOUNT_NAME}
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 ---
 EOF
 
@@ -86,6 +90,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-cluster-role
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 rules:
 - apiGroups: [""]
   resources: ["namespaces", "persistentvolumes"]
@@ -107,6 +113,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-cluster-role-nonresource
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 rules:
 - nonResourceURLs: ["/version/*"]
   verbs: ["get"]
@@ -118,6 +126,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: ${ACCOUNT_NAME}
@@ -132,6 +142,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding-nonresource
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: ${ACCOUNT_NAME}
@@ -146,6 +158,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding-discovery
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: ${ACCOUNT_NAME}
@@ -160,6 +174,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding-auth-delegator
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: ${ACCOUNT_NAME}
@@ -177,6 +193,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-namespace-role
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 rules:
 - apiGroups: [""]
   resources: ["secrets", "persistentvolumeclaims"]
@@ -214,6 +232,8 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-rolebinding
   namespace: ${i}
+  labels:
+    weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
   name: ${ACCOUNT_NAME}

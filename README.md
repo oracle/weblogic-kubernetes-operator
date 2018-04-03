@@ -182,8 +182,8 @@ To remove the operator from a Kubernetes cluster, issue the following commands:
 
 ```
 kubectl delete deploy weblogic-operator –n NAMESPACE
-kubectl delete service external-weblogic-operator-service –n NAMESPACE
-kubectl delete service internal-weblogic-operator-service –n NAMESPACE
+kubectl delete service external-weblogic-operator-svc –n NAMESPACE
+kubectl delete service internal-weblogic-operator-svc –n NAMESPACE
 ```
 
 Replace `NAMESPACE` with the namespace that the operator is running in.

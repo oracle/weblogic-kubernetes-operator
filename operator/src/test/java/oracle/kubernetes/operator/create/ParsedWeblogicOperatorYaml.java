@@ -24,11 +24,11 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getOperatorConfigMap() {
-    return getConfigMaps().find("operator-config-map");
+    return getConfigMaps().find("weblogic-operator-cm");
   }
 
   public V1Secret getOperatorSecrets() {
-    return getSecrets().find("operator-secrets");
+    return getSecrets().find("weblogic-operator-secrets");
   }
 
   public ExtensionsV1beta1Deployment getOperatorDeployment() {
@@ -36,11 +36,11 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   }
 
   public V1Service getExternalOperatorService() {
-    return getServices().find("external-weblogic-operator-service");
+    return getServices().find("external-weblogic-operator-svc");
   }
 
   public V1Service getInternalOperatorService() {
-    return getServices().find("internal-weblogic-operator-service");
+    return getServices().find("internal-weblogic-operator-svc");
   }
 
   public int getExpectedObjectCount() {
