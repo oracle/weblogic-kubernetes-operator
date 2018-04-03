@@ -185,8 +185,8 @@ data:
     fi
 
     if [ -f /tmp/weblogic-operator/bin/headless-nodemanager.jar ]; then
-      echo "Start the nodemanager"
-      PRE_CLASSPATH=/tmp/weblogic-operator/bin/headless-nodemanager.jar
+      echo "Start the headless nodemanager and server instance"
+      export PRE_CLASSPATH=/tmp/weblogic-operator/bin/headless-nodemanager.jar
       . ${nmdir}/startNodeManager.sh &
 
     else
