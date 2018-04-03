@@ -175,7 +175,7 @@ data:
     mkdir -p /tmp/weblogic-operator/bin
     shopt -s nullglob
     for f in /weblogic-operator/scripts/*.base64; do
-      cat "$f" | base64 > "/tmp/weblogic-operator/bin/$(basename "$f" .base64)"
+      cat "$f" | base64 --decode > /tmp/weblogic-operator/bin/$(basename "$f" .base64)
     done
 
     # Check for stale state file and remove if found"
