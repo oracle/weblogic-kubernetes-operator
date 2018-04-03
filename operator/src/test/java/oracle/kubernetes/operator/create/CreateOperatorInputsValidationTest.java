@@ -165,7 +165,7 @@ public class CreateOperatorInputsValidationTest {
 
   @Test
   public void createOperator_with_externalRestCustomCert_invalidExternalRestHttpsPort_failsAndReturnsError() throws Exception {
-    String val = "invalid-external-rest-https-port";
+    String val = "invalid-external-rest-port";
     assertThat(
       execCreateOperator(
         newInputs().setupExternalRestCustomCert().externalRestHttpsPort(val)),

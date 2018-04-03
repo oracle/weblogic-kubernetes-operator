@@ -9,6 +9,7 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
+import static oracle.kubernetes.operator.LabelConstants.*;
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.readInputsYamlFile;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
@@ -89,8 +90,9 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newConfigMap()
         .metadata(newObjectMeta()
-          .name("operator-config-map")
-          .namespace(getInputs().getNamespace()))
+          .name("weblogic-operator-cm")
+          .namespace(getInputs().getNamespace())
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .putDataItem("serviceaccount", getInputs().getServiceAccount())
         .putDataItem("targetNamespaces", getInputs().getTargetNamespaces())
         .putDataItem("externalOperatorCert", Base64.encodeBase64String(getExpectedExternalWeblogicOperatorCert().getBytes()))
@@ -114,8 +116,9 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newSecret()
         .metadata(newObjectMeta()
-          .name("operator-secrets")
-          .namespace(getInputs().getNamespace()))
+          .name("weblogic-operator-secrets")
+          .namespace(getInputs().getNamespace())
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .type("Opaque")
         .putDataItem("externalOperatorKey", getExpectedExternalWeblogicOperatorKey().getBytes())
         .putDataItem("internalOperatorKey", getInputs().internalOperatorSelfSignedKeyPem().getBytes());
@@ -139,12 +142,14 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
       newDeployment()
         .metadata(newObjectMeta()
           .name("weblogic-operator")
-          .namespace(getInputs().getNamespace()))
+          .namespace(getInputs().getNamespace())
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .spec(newDeploymentSpec()
           .replicas(1)
           .template(newPodTemplateSpec()
             .metadata(newObjectMeta()
-              .putLabelsItem("app", "weblogic-operator"))
+              .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace())
+              .putLabelsItem(APP_LABEL, "weblogic-operator"))
             .spec(newPodSpec()
               .serviceAccountName(getInputs().getServiceAccount())
               .addContainersItem(newContainer()
@@ -165,10 +170,10 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
                   .name("JAVA_LOGGING_LEVEL")
                   .value(getInputs().getJavaLoggingLevel()))
                 .addVolumeMountsItem(newVolumeMount()
-                  .name("operator-config-volume")
+                  .name("weblogic-operator-cm-volume")
                   .mountPath("/operator/config"))
                 .addVolumeMountsItem(newVolumeMount()
-                  .name("operator-secrets-volume")
+                  .name("weblogic-operator-secrets-volume")
                   .mountPath("/operator/secrets")
                   .readOnly(true))
                 .livenessProbe(newProbe()
@@ -178,13 +183,13 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
                     .addCommandItem("bash")
                     .addCommandItem("/operator/livenessProbe.sh"))))
               .addVolumesItem(newVolume()
-                .name("operator-config-volume")
+                .name("weblogic-operator-cm-volume")
                   .configMap(newConfigMapVolumeSource()
-                    .name("operator-config-map")))
+                    .name("weblogic-operator-cm")))
               .addVolumesItem(newVolume()
-                .name("operator-secrets-volume")
+                .name("weblogic-operator-secrets-volume")
                   .secret(newSecretVolumeSource()
-                    .secretName("operator-secrets"))))));
+                    .secretName("weblogic-operator-secrets"))))));
   }
 
   @Test
@@ -211,10 +216,10 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     V1ServiceSpec spec =
       newServiceSpec()
         .type("NodePort")
-        .putSelectorItem("app", "weblogic-operator");
+        .putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(newServicePort()
-        .name("rest-https")
+        .name("rest")
         .port(8081)
         .nodePort(Integer.parseInt(getInputs().getExternalRestHttpsPort())));
     }
@@ -226,8 +231,9 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     }
     return newService()
       .metadata(newObjectMeta()
-        .name("external-weblogic-operator-service")
-        .namespace(getInputs().getNamespace()))
+        .name("external-weblogic-operator-svc")
+        .namespace(getInputs().getNamespace())
+        .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
       .spec(spec);
   }
 
@@ -246,13 +252,14 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newService()
         .metadata(newObjectMeta()
-          .name("internal-weblogic-operator-service")
-          .namespace(getInputs().getNamespace()))
+          .name("internal-weblogic-operator-svc")
+          .namespace(getInputs().getNamespace())
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .spec(newServiceSpec()
           .type("ClusterIP")
-          .putSelectorItem("app", "weblogic-operator")
+          .putSelectorItem(APP_LABEL, "weblogic-operator")
           .addPortsItem(newServicePort()
-            .name("rest-https")
+            .name("rest")
             .port(8082)));
   }
 
@@ -271,7 +278,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newNamespace()
         .metadata(newObjectMeta()
-          .name(getInputs().getNamespace()));
+          .name(getInputs().getNamespace())
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()));
   }
 
   @Test
@@ -290,7 +298,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
       newServiceAccount()
         .metadata(newObjectMeta()
           .name(getInputs().getServiceAccount())
-          .namespace(getInputs().getNamespace()));
+          .namespace(getInputs().getNamespace())
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()));
   }
 
   @Test
@@ -308,7 +317,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newClusterRole()
         .metadata(newObjectMeta()
-          .name("weblogic-operator-cluster-role"))
+          .name("weblogic-operator-cluster-role")
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(newPolicyRule()
           .addApiGroupsItem("")
           .resources(asList("namespaces", "persistentvolumes"))
@@ -346,7 +356,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newClusterRole()
         .metadata(newObjectMeta()
-          .name("weblogic-operator-cluster-role-nonresource"))
+          .name("weblogic-operator-cluster-role-nonresource")
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(newPolicyRule()
           .addNonResourceURLsItem("/version/*")
           .addVerbsItem("get"));
@@ -359,7 +370,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
       yamlEqualTo(
         newClusterRoleBinding()
           .metadata(newObjectMeta()
-            .name(getInputs().getNamespace() + "-operator-rolebinding"))
+            .name(getInputs().getNamespace() + "-operator-rolebinding")
+            .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
           .addSubjectsItem(newSubject()
             .kind("ServiceAccount")
             .name(getInputs().getServiceAccount())
@@ -385,7 +397,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newClusterRoleBinding()
         .metadata(newObjectMeta()
-          .name(getInputs().getNamespace() + "-operator-rolebinding-nonresource"))
+          .name(getInputs().getNamespace() + "-operator-rolebinding-nonresource")
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(newSubject()
           .kind("ServiceAccount")
           .name(getInputs().getServiceAccount())
@@ -411,7 +424,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newClusterRoleBinding()
         .metadata(newObjectMeta()
-          .name(getInputs().getNamespace() + "-operator-rolebinding-discovery"))
+          .name(getInputs().getNamespace() + "-operator-rolebinding-discovery")
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(newSubject()
           .kind("ServiceAccount")
           .name(getInputs().getServiceAccount())
@@ -437,7 +451,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newClusterRoleBinding()
         .metadata(newObjectMeta()
-          .name(getInputs().getNamespace() + "-operator-rolebinding-auth-delegator"))
+          .name(getInputs().getNamespace() + "-operator-rolebinding-auth-delegator")
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(newSubject()
           .kind("ServiceAccount")
           .name(getInputs().getServiceAccount())
@@ -463,7 +478,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     return
       newClusterRole()
         .metadata(newObjectMeta()
-          .name("weblogic-operator-namespace-role"))
+          .name("weblogic-operator-namespace-role")
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(newPolicyRule()
           .addApiGroupsItem("")
           .resources(asList("secrets", "persistentvolumeclaims"))
@@ -513,7 +529,8 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
       newRoleBinding()
         .metadata(newObjectMeta()
           .name("weblogic-operator-rolebinding")
-          .namespace(namespace))
+          .namespace(namespace)
+          .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(newSubject()
           .kind("ServiceAccount")
           .name(getInputs().getServiceAccount())
@@ -528,10 +545,10 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     V1ServiceSpec spec =
       newServiceSpec()
         .type("NodePort")
-        .putSelectorItem("app", "weblogic-operator");
+        .putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(newServicePort()
-        .name("rest-https")
+        .name("rest")
         .port(8081)
         .nodePort(Integer.parseInt(inputs.getExternalRestHttpsPort())));
     }
@@ -543,8 +560,9 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     }
     return newService()
       .metadata(newObjectMeta()
-        .name("external-weblogic-operator-service")
-        .namespace(inputs.getNamespace()))
+        .name("external-weblogic-operator-svc")
+        .namespace(inputs.getNamespace())
+        .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
       .spec(spec);
   }
 }

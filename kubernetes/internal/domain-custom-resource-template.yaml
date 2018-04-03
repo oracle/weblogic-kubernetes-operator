@@ -10,6 +10,7 @@ metadata:
   namespace: %NAMESPACE%
   labels:
     weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
 spec:
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
   # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
