@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import weblogic.nodemanager.common.NMWriter;
 import weblogic.nodemanager.server.InternalNMCommandHandler;
 import weblogic.nodemanager.server.NMServer;
 import weblogic.nodemanager.server.Server;
@@ -34,7 +34,6 @@ public class HeadlessServer implements Server {
     String serverName = System.getenv("SERVER_NAME");
 
     PipedInputStream inputPipeIn = new PipedInputStream();
-    PipedOutputStream inputPipeOut = new PipedOutputStream(inputPipeIn);
 
     PipedInputStream outputPipeIn = new PipedInputStream();
     PipedOutputStream outputPipeOut = new PipedOutputStream(outputPipeIn);
@@ -44,28 +43,24 @@ public class HeadlessServer implements Server {
     Thread in = new Thread(() -> {
       nmLog.entering(HeadlessServer.class.toString(), "inputReader");
       
-      try (PrintWriter pw = new PrintWriter(inputPipeOut)) {
+      try (PipedOutputStream inputPipeOut = new PipedOutputStream(inputPipeIn)) {
+        NMWriter writer = new NMWriter(inputPipeOut);
         nmLog.info("Injecting command DOMAIN " + domainName);
-        pw.write("DOMAIN ");
-        pw.write(domainName);
-        pw.flush();
-        handler.runCommand();
+        writer.writeLine("DOMAIN " + domainName);
 
         nmLog.info("Injecting command SERVER " + serverName);
-        pw.write("SERVER ");
-        pw.write(serverName);
-        pw.flush();
-        handler.runCommand();
+        writer.writeLine("SERVER " + serverName);
 
         nmLog.info("Injecting command START");
-        pw.write("START");
-        pw.flush();
-        handler.runCommand();
+        writer.writeLine("START");
         
         nmLog.info("Injecting command DONE");
-        pw.write("DONE");
-        pw.flush();
-        handler.runCommand();
+        writer.writeLine("DONE");
+        
+        nmLog.info("Processing queued requests");
+        handler.processRequests();
+      } catch (IOException io) {
+        nmLog.log(Level.SEVERE, "Exception writing commands", io);
       } finally {
         nmLog.exiting(HeadlessServer.class.toString(), "inputReader");
       }
