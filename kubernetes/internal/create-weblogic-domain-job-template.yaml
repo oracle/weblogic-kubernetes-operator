@@ -172,10 +172,10 @@ data:
     #!/bin/bash
     
     # Base64 decode binary support files
-    mkdir /weblogic-operator/bin
+    mkdir -p /tmp/weblogic-operator/bin
     shopt -s nullglob
     for f in /weblogic-operator/scripts/*.base64; do
-      cat "$f" | base64 > "/weblogic-operator/bin/$(basename "$f" .base64)"
+      cat "$f" | base64 > "/tmp/weblogic-operator/bin/$(basename "$f" .base64)"
     done
 
     # Check for stale state file and remove if found"
@@ -184,9 +184,9 @@ data:
       rm ${stateFile}
     fi
 
-    if [ -f /weblogic-operator/bin/headless-nodemanager.jar ]; then
+    if [ -f /tmp/weblogic-operator/bin/headless-nodemanager.jar ]; then
       echo "Start the nodemanager"
-      PRE_CLASSPATH=/weblogic-operator/bin/headless-nodemanager.jar
+      PRE_CLASSPATH=/tmp/weblogic-operator/bin/headless-nodemanager.jar
       . ${nmdir}/startNodeManager.sh &
 
     else
