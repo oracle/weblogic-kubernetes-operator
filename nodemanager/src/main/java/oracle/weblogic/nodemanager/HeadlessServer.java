@@ -37,7 +37,7 @@ public class HeadlessServer implements Server {
     PipedOutputStream inputPipeOut = new PipedOutputStream(inputPipeIn);
 
     PipedInputStream outputPipeIn = new PipedInputStream();
-    PipedOutputStream outputPipeOut = new PipedOutputStream(inputPipeIn);
+    PipedOutputStream outputPipeOut = new PipedOutputStream(outputPipeIn);
 
     InternalNMCommandHandler handler = new InternalNMCommandHandler(nmServer, outputPipeOut, inputPipeIn);
     
