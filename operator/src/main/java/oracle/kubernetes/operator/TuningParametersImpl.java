@@ -48,7 +48,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     
     MainTuning main = new MainTuning(
         (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
-        (int) readTuningParameter("statueUpdateUnchangedCountToDelayStatusRecheck", 10),
+        (int) readTuningParameter("statusUpdateUnchangedCountToDelayStatusRecheck", 10),
         readTuningParameter("statusUpdateInitialShortDelay", 3),
         readTuningParameter("statusUpdateEventualLongDelay", 30));
 
