@@ -2703,8 +2703,10 @@ function test_suite {
       # create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
       test_create_domain_pv_reclaim_policy_recycle domain6
 
-      # create domain7 in the default namespace with weblogicDomainStorageType="NFS", and verify it
-      test_domain_creation domain7
+      if [ "$JENKINS" = "true" ]; then
+        # create domain7 in the default namespace with weblogicDomainStorageType="NFS", and verify it
+        test_domain_creation domain7
+      fi
 
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1
