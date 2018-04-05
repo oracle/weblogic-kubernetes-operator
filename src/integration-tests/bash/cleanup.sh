@@ -206,7 +206,7 @@ function orderlyDelete {
     sleep 3
   
     echo @@ Deleting create domain ${curdomain} job in namespace $curns
-    kubectl -n $curns delete job domain-${curdomain}-job --ignore-not-found
+    kubectl -n $curns delete job ${curdomain}-create-weblogic-domain-job --ignore-not-found
   
     echo @@ Deleting domain pv and pvc for domain ${curdomain} in namespace $curns
     kubectl delete pv ${curdomain}-weblogic-domain-pv --ignore-not-found
@@ -216,11 +216,11 @@ function orderlyDelete {
     kubectl -n $curns delete secret ${curdomain}-weblogic-credentials --ignore-not-found
   
     echo @@ Deleting ${curdomain} traefik in namespace $curns
-    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/traefik.yaml" 
-    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/traefik-security.yaml"
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-traefik-cluster-1.yaml" 
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-traefik-security-cluster-1.yaml"
   
-    echo @@ Deleting configmap domain-${curdomain}-scripts in namespace $curns
-    kubectl -n $curns delete cm domain-${curdomain}-scripts  --ignore-not-found
+    echo @@ Deleting configmap ${curdomain}-create-weblogic-domain-job-cm in namespace $curns
+    kubectl -n $curns delete cm ${curdomain}-create-weblogic-domain-job-cm  --ignore-not-found
     
     kubectl -n $curns delete deploy ${curdomain}-cluster-1-traefik --ignore-not-found=true
     kubectl -n $curns delete service ${curdomain}-cluster-1-traefik --ignore-not-found=true

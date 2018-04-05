@@ -88,11 +88,11 @@ The names of several of the generated YAML files have changed.
 | --- | --- |
 | domain-custom-resource.yaml | same |
 | domain-job.yaml | create-weblogic-domain-job.yaml |
-| persistent-volume.yaml | weblogic-domain-persistent-volume.yaml |
-| persistent-volume-claim.yaml | weblogic-domain-persistent-volume-claim.yaml |
+| persistent-volume.yaml | weblogic-domain-pv.yaml |
+| persistent-volume-claim.yaml | weblogic-domain-pvc.yaml |
 | rbac.yaml | weblogic-operator-security.yaml |
-| traefik-deployment.yaml | traefik.yaml |
-| traefik-rbac.yaml | traefik-security.yaml |
+| traefik-deployment.yaml | weblogic-domain-traefik-${clusterName, lower case}.yaml |
+| traefik-rbac.yaml | weblogic-domain-traefik-security-${clusterName, lower case}.yaml |
 | weblogic-operator.yaml | same |
 
 ## Input File Contents
@@ -160,11 +160,29 @@ The following input properties, which used to have default values, now must be u
 | persistenceType | weblogicDomainStorageType | nfs | NFS |
 
 ## Kubernetes Artifact Names
-The input properties for controlling the domain's persistent volume, persistent volume claim and storage class names have been removed.  These names are now derived from the domain uid.
 
 | Artifact Type | Previous Name | New Name |
 | --- | --- | --- |
 | persistent volume | ${domainUid}-${persistenceVolume} or ${persistenceVolume} | ${domainUID}-weblogic-domain-pv |
 | persistent volume claim | ${domainUid}-${persistenceVolumeClaim} or ${persistenceVolumeClaim} | ${domainUID}-weblogic-domain-pvc |
 | storage class name | ${domainUid} or ${persistenceStorageClass} | ${domainUID-weblogic-domain-storage-class |
+| job | domain-${domainUid}-job | ${domainUID}-create-weblogic-domain-job |
+| container | domain-job | create-weblogic-domain-job |
+| container | ${d.domainUID}-${d.clusterName, lower case}-traefik | traefik |
+| config map | operator-config-map | weblogic-operator-cm |
+| config map | ${domainUid}-${clusterName, lower case}-traefik | ${domainUID}-${clusterName, lower case}-traefik-cm |
+| config map |  domain-${domainUid}-scripts | ${domainUID}-create-weblogic-domain-job-cm |
+| config map | weblogic-domain-config-map | weblogic-domain-cm |
+| secret | operator-secrets | weblogic-operator-secrets |
+| port | rest-https | rest |
+| service | external-weblogic-operator-service | external-weblogic-operator-srv |
+| service | internal-weblogic-operator-service | internal-weblogic-operator-srv |
+| volume & mount | operator-config-volume | weblogic-operator-cm-volume |
+| volume & mount | operator-secrets-volume | weblogic-operator-secrets-volume |
+| volume & mount | config-map-scripts | create-weblogic-domain-job-cm-volume |
+| volume & mount | pv-storage | weblogic-domain-storage-volume |
+| volume & mount | secrets | weblogic-credentials-volume |
+| volume & mount | scripts | weblogic-domain-cm-volume |
+
+Note: The input properties for controlling the domain's persistent volume, persistent volume claim and storage class names have been removed.  These names are now derived from the domain uid.
 

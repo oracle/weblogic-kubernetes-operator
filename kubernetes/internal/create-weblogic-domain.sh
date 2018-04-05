@@ -96,11 +96,12 @@ function initAndValidateOutputDir {
     ${domainOutputDir} \
     ${valuesInputFile} \
     create-weblogic-domain-inputs.yaml \
-    weblogic-domain-persistent-volume.yaml \
-    weblogic-domain-persistent-volume-claim.yaml \
+    weblogic-domain-pv.yaml \
+    weblogic-domain-pvc.yaml \
+    weblogic-domain-traefik-${clusterNameLC}.yaml \
+    weblogic-domain-traefik-security-${clusterNameLC}.yaml \
     create-weblogic-domain-job.yaml \
-    domain-custom-resource.yaml \
-    traefik.yaml
+    domain-custom-resource.yaml
 }
 
 #
@@ -290,12 +291,12 @@ function initialize {
     fi
   fi
 
-  domainPVInput="${scriptDir}/weblogic-domain-persistent-volume-template.yaml"
+  domainPVInput="${scriptDir}/weblogic-domain-pv-template.yaml"
   if [ ! -f ${domainPVInput} ]; then
     validationError "The template file ${domainPVInput} for generating a persistent volume was not found"
   fi
 
-  domainPVCInput="${scriptDir}/weblogic-domain-persistent-volume-claim-template.yaml"
+  domainPVCInput="${scriptDir}/weblogic-domain-pvc-template.yaml"
   if [ ! -f ${domainPVCInput} ]; then
     validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
@@ -310,12 +311,12 @@ function initialize {
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
 
-  traefikSecurityInput="${scriptDir}/traefik-security-template.yaml"
+  traefikSecurityInput="${scriptDir}/weblogic-domain-traefik-security-template.yaml"
   if [ ! -f ${traefikSecurityInput} ]; then
     validationError "The file ${traefikSecurityInput} for generating the traefik RBAC was not found"
   fi
 
-  traefikInput="${scriptDir}/traefik-template.yaml"
+  traefikInput="${scriptDir}/weblogic-domain-traefik-template.yaml"
   if [ ! -f ${traefikInput} ]; then
     validationError "The template file ${traefikInput} for generating the traefik deployment was not found"
   fi
@@ -381,12 +382,12 @@ function createYamlFiles {
   # (if needed) and copy the inputs file there.
   copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-weblogic-domain-inputs.yaml"
 
-  domainPVOutput="${domainOutputDir}/weblogic-domain-persistent-volume.yaml"
-  domainPVCOutput="${domainOutputDir}/weblogic-domain-persistent-volume-claim.yaml"
+  domainPVOutput="${domainOutputDir}/weblogic-domain-pv.yaml"
+  domainPVCOutput="${domainOutputDir}/weblogic-domain-pvc.yaml"
   jobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
-  traefikSecurityOutput="${domainOutputDir}/traefik-security.yaml"
-  traefikOutput="${domainOutputDir}/traefik.yaml"
+  traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"
+  traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -405,6 +406,7 @@ function createYamlFiles {
   fi
 
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${domainPVOutput}
@@ -418,6 +420,7 @@ function createYamlFiles {
   cp ${domainPVCInput} ${domainPVCOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVCOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVCOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
@@ -475,8 +478,9 @@ function createYamlFiles {
   echo Generating ${traefikOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikOutput}
-  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
+  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
   sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
   sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${traefikOutput}
 
@@ -485,6 +489,8 @@ function createYamlFiles {
   echo Generating ${traefikSecurityOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikSecurityOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikSecurityOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikSecurityOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikSecurityOutput}
   sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
 
   # Remove any "...yaml-e" files left over from running sed
@@ -527,7 +533,7 @@ function createDomainPVC {
 function createDomain {
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  JOB_NAME="domain-${domainUID}-job"
+  JOB_NAME="${domainUID}-create-weblogic-domain-job"
   deleteK8sObj job $JOB_NAME ${jobOutput}
 
   echo Creating the domain by creating the job ${jobOutput}
@@ -540,8 +546,8 @@ function createDomain {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print $3; } '`
-    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print "pod", $1, "status is", $3; } '`
+    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $3; } '`
+    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
     echo "$JOB_INFO"
 
@@ -559,7 +565,7 @@ function createDomain {
   done
 
   # Confirm the job pod is status completed
-  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep "domain-${domainUID}" | awk ' { print $1; } '`
+  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   if [ "$JOB_STATUS" != "Completed" ]; then
     echo The create domain job is not showing status completed after waiting 300 seconds
     echo Check the log output for errors
