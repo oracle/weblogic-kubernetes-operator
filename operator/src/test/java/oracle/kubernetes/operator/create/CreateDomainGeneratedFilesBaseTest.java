@@ -333,7 +333,6 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         getInputs().getAdminServerName(),
         getInputs().getManagedServerNameBase(),
         getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
-        getInputs().getDomainUID() + "-" + getInputs().getManagedServerNameBase(),
         "setProductionModeEnabled\\(" + getInputs().getProductionModeEnabled() + "\\)",
         "server_port *= " + getInputs().getManagedServerPort(),
         "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
