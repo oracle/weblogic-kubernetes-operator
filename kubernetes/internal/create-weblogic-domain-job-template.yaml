@@ -415,19 +415,6 @@ data:
     set('NodeManagerUsername', admin_username)
     set('NodeManagerPasswordEncrypted', admin_password)
 
-    # Configure machines
-    # ======================
-    for index in range(0, number_of_ms):
-
-      msIndex = index+1
-      machineName = '%DOMAIN_UID%-machine%s' % msIndex
-      cd('/')
-      create(machineName, 'Machine')
-      cd('Machine/%s' % machineName)
-      create(machineName, 'NodeManager')
-      cd('NodeManager/%s' % machineName)
-      set('ListenAddress', '%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%%s' % msIndex)
-
     # Create a cluster
     cd('/')
     create(cluster_name, 'Cluster')
@@ -438,7 +425,6 @@ data:
 
       msIndex = index+1
       name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
-      machineName = '%DOMAIN_UID%-machine%s' % msIndex
 
       create(name, 'Server')
       cd('/Servers/%s/' % name )
@@ -448,7 +434,6 @@ data:
       set('NumOfRetriesBeforeMSIMode', 0)
       set('RetryIntervalBeforeMSIMode', 1)
       set('Cluster', cluster_name)
-      set('Machine', machineName)
 
       create(name,'Log')
       cd('/Servers/%s/Log/%s' % (name, name))
