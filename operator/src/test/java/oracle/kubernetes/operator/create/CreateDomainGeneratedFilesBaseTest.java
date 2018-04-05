@@ -314,11 +314,6 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         cd('/Servers/%ADMIN_SERVER_NAME%/Log/%ADMIN_SERVER_NAME%')
         set('FileName', '/shared/logs/%ADMIN_SERVER_NAME%.log')
         cd('/Security/%DOMAIN_NAME%/User/weblogic')
-          machineName = '%DOMAIN_UID%-machine%s' % msIndex
-          set('ListenAddress', '%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%%s' % msIndex)
-          name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
-          machineName = '%DOMAIN_UID%-machine%s' % msIndex
-          set('ListenAddress', '%DOMAIN_UID%-%s' % name)
         cmo.setProductionModeEnabled(%PRODUCTION_MODE_ENABLED%)
         asbpFile=open('%s/servers/%ADMIN_SERVER_NAME%/security/boot.properties' % domain_path, 'w+')
           secdir='%s/servers/%MANAGED_SERVER_NAME_BASE%%s/security' % (domain_path, index+1)
@@ -332,7 +327,6 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         getInputs().getAdminServerName(),
         getInputs().getManagedServerNameBase(),
         getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
-        getInputs().getDomainUID() + "-" + getInputs().getManagedServerNameBase(),
         "setProductionModeEnabled\\(" + getInputs().getProductionModeEnabled() + "\\)",
         "server_port *= " + getInputs().getManagedServerPort(),
         "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
