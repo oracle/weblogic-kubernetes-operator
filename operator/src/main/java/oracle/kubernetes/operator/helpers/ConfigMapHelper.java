@@ -306,28 +306,31 @@ public class ConfigMapHelper {
   
   /**
    * Factory for {@link Step} that creates config map containing scripts
-   * @param namespace Namespace
+   * @param operatorNamespace the operator's namespace
+   * @param domainNamespace the domain's namespace
    * @param next Next processing step
    * @return Step for creating config map containing scripts
    */
-  public static Step createScriptConfigMapStep(String namespace, Step next) {
-    return new ScriptConfigMapStep(namespace, next);
+  public static Step createScriptConfigMapStep(String operatorNamespace, String domainNamespace, Step next) {
+    return new ScriptConfigMapStep(operatorNamespace, domainNamespace, next);
   }
 
   // Make this public so that it can be unit tested
   public static class ScriptConfigMapStep extends Step {
-    private final String namespace;
+    private final String operatorNamespace;
+    private final String domainNamespace;
     
-    public ScriptConfigMapStep(String namespace, Step next) {
+    public ScriptConfigMapStep(String operatorNamespace, String domainNamespace, Step next) {
       super(next);
-      this.namespace = namespace;
+      this.operatorNamespace = operatorNamespace;
+      this.domainNamespace = domainNamespace;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       V1ConfigMap cm = computeDomainConfigMap();
       CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      Step read = factory.create().readConfigMapAsync(cm.getMetadata().getName(), namespace, new ResponseStep<V1ConfigMap>(next) {
+      Step read = factory.create().readConfigMapAsync(cm.getMetadata().getName(), domainNamespace, new ResponseStep<V1ConfigMap>(next) {
         @Override
         public NextAction onFailure(Packet packet, ApiException e, int statusCode,
             Map<String, List<String>> responseHeaders) {
@@ -341,7 +344,7 @@ public class ConfigMapHelper {
         public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
-            Step create = factory.create().createConfigMapAsync(namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+            Step create = factory.create().createConfigMapAsync(domainNamespace, cm, new ResponseStep<V1ConfigMap>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -352,7 +355,7 @@ public class ConfigMapHelper {
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
                 
-                LOGGER.info(MessageKeys.CM_CREATED, namespace);
+                LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
                 packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
                 return doNext(packet);
               }
@@ -360,7 +363,7 @@ public class ConfigMapHelper {
             return doNext(create, packet);
           } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(cm.getData().entrySet())) {
             // existing config map has correct data
-            LOGGER.fine(MessageKeys.CM_EXISTS, namespace);
+            LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
             packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
             return doNext(packet);
           } else {
@@ -368,7 +371,7 @@ public class ConfigMapHelper {
             Map<String, String> updated = result.getData();
             updated.putAll(cm.getData());
             cm.setData(updated);
-            Step replace = factory.create().replaceConfigMapAsync(cm.getMetadata().getName(), namespace, cm, new ResponseStep<V1ConfigMap>(next) {
+            Step replace = factory.create().replaceConfigMapAsync(cm.getMetadata().getName(), domainNamespace, cm, new ResponseStep<V1ConfigMap>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
                   Map<String, List<String>> responseHeaders) {
@@ -378,7 +381,7 @@ public class ConfigMapHelper {
               @Override
               public NextAction onSuccess(Packet packet, V1ConfigMap result, int statusCode,
                   Map<String, List<String>> responseHeaders) {
-                LOGGER.info(MessageKeys.CM_REPLACED, namespace);
+                LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
                 packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
                 return doNext(packet);
               }
@@ -400,17 +403,12 @@ public class ConfigMapHelper {
 
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
-      metadata.setNamespace(namespace);
+      metadata.setNamespace(domainNamespace);
       
       AnnotationHelper.annotateWithFormat(metadata);
       
       Map<String, String> labels = new HashMap<>();
-      // This config map is a singleton that is shared by all the domains
-      // We need to add a domain uid label so that it can be located as
-      // related to the operator.  However, we don't have a specific domain uid
-      // to set as the value.  So, just set it to an empty string.  That way,
-      // someone seleting on just the weblogic.domainUID label will find it.
-      labels.put(LabelConstants.DOMAINUID_LABEL, "");
+      labels.put(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
       labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
       metadata.setLabels(labels);
 
