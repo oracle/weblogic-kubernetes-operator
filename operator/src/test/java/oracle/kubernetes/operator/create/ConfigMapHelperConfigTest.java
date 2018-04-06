@@ -19,7 +19,8 @@ import org.junit.Test;
  */
 public class ConfigMapHelperConfigTest {
 
-  private static final String NAMESPACE = "test-namespace";
+  private static final String OPERATOR_NAMESPACE = "test-operator-namespace";
+  private static final String DOMAIN_NAMESPACE = "test-domain-namespace";
   private static final String PROPERTY_LIVENESS_PROBE_SH = "livenessProbe.sh";
   private static final String PROPERTY_READINESS_PROBE_SH = "readinessProbe.sh";
   private static final String PROPERTY_READ_STATE_SH = "readState.sh";
@@ -45,8 +46,8 @@ public class ConfigMapHelperConfigTest {
       newConfigMap()
         .metadata(newObjectMeta()
           .name(DOMAIN_CONFIG_MAP_NAME)
-          .namespace(NAMESPACE)
-          .putLabelsItem(DOMAINUID_LABEL, "")
+          .namespace(DOMAIN_NAMESPACE)
+          .putLabelsItem(OPERATORNAME_LABEL, OPERATOR_NAMESPACE)
           .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
           .putAnnotationsItem(FORMAT_ANNOTATION, FORMAT_VERSION))
         .putDataItem(PROPERTY_LIVENESS_PROBE_SH, "")
@@ -60,7 +61,7 @@ public class ConfigMapHelperConfigTest {
 
   private static class TestScriptConfigMapStep extends ConfigMapHelper.ScriptConfigMapStep {
     public TestScriptConfigMapStep() {
-      super(NAMESPACE, null);
+      super(OPERATOR_NAMESPACE, DOMAIN_NAMESPACE, null);
     }
     @Override public V1ConfigMap computeDomainConfigMap() {
       return super.computeDomainConfigMap();
