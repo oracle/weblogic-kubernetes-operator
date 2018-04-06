@@ -66,7 +66,7 @@ public class ConfigMapHelper {
           "  cp /shared/domain/$3/bin/startNodeManager.sh ${srvr_nmdir}\n" +
           "\n" +
           "  # Edit the start nodemanager script to use the home for the server\n" +
-          "  sed -i -e \"s:/shared/domain/$3/nodemanager:/u01/nodemanager:g\" /startNodeManager.sh\n" +
+          "  sed -i -e \"s:/shared/domain/$3/nodemanager:/u01/nodemanager:g\" ${srvr_nmdir}/startNodeManager.sh\n" +
           "\n" +
           "  # Create startup.properties file\n" +
           "  datadir=${DOMAIN_HOME}/servers/$2/data/nodemanager\n" +
@@ -99,8 +99,8 @@ public class ConfigMapHelper {
           "}\n" +
           "\n" +
           "# Check for stale state file and remove if found\"\n" +
-          "if [ -f ${stateFile} ]; then\n" +
-          "  echo \"Removing stale file ${stateFile}\"\n" +
+          "if [ -f \"$stateFile\" ]; then\n" +
+          "  echo \"Removing stale file $stateFile\"\n" +
           "  rm ${stateFile}\n" +
           "fi\n" +
           "\n" +
@@ -205,6 +205,7 @@ public class ConfigMapHelper {
           "\n" +
           "service_name = domain_uid + \"-\" + server_name\n" +
           "\n" +
+    /* Commented out as we are not configuring machines for servers
           "# Update node manager listen address\n" +
           "if admin_server_url is not None:\n" +
           "  connect(admin_username, admin_password, admin_server_url)\n" +
@@ -231,6 +232,7 @@ public class ConfigMapHelper {
           "      cancelEdit('y')\n" +
           "  disconnect()\n" +
           "\n" +
+     */
           "# Connect to nodemanager and start server\n" +
           "try:\n" +
           "  nmConnect(admin_username, admin_password, service_name,  '5556', domain_name, domain_path, 'plain')\n" +

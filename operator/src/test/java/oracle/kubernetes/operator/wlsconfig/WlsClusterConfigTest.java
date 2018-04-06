@@ -11,6 +11,7 @@ import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -234,6 +235,7 @@ public class WlsClusterConfigTest {
     assertEquals(0, suggestedConfigUpdates.size());
   }
 
+  @Ignore // we are currently not suggesting updates based on number of machines
   @Test
   public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfNotEnoughMachines() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 1, "ms-", "cluster1");
@@ -259,6 +261,7 @@ public class WlsClusterConfigTest {
     assertEquals(2, configUpdate.targetClusterSize);
   }
 
+  @Ignore // we are currently not suggesting updates based on number of machines
   @Test
   public void verifyValidateClusterStartupDoNotLowerClusterSizeIfNotEnoughMachines() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 1, "ms-", "cluster1");
@@ -285,6 +288,7 @@ public class WlsClusterConfigTest {
     assertEquals(2, configUpdate.targetClusterSize);
   }
 
+  @Ignore // we are currently not suggesting updates based on number of machines
   @Test
   public void verifyValidateClusterStartupDoNotSuggestUpdateToDynamicClusterIfEnoughMachines() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");

@@ -562,12 +562,13 @@ public class WlsRetriever {
 
     boolean result = false;
     // Create machine(s)
-    String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
-    for (String machineName: newMachineNames) {
-      LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
-      httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),
-              serviceURL, WlsMachineConfig.getCreatePayload(machineName));
-    }
+    // Commented out as we are not configuring machines for servers
+//    String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
+//    for (String machineName: newMachineNames) {
+//      LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
+//      httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),
+//              serviceURL, WlsMachineConfig.getCreatePayload(machineName));
+//    }
 
     // Update the dynamic cluster size of the WebLogic cluster
     String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
