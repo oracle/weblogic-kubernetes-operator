@@ -70,30 +70,32 @@ EOF
 #
 function getDomainResources {
   if [ "$1" = "all" ]; then
-    local label_selector="weblogic.domainUID"
+    LABEL_SELECTOR="weblogic.domainUID"
   else
-    local label_selector="weblogic.domainUID in ($1)"
+    LABEL_SELECTOR="weblogic.domainUID in ($1)"
   fi
 
-  # first, let's get all namespaced types with -l $label_selector
+  # first, let's get all namespaced types with -l $LABEL_SELECTOR
 
-  local namespaced_types="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
+  NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
   # if domain crd exists, look for domains too:
   kubectl get crd domains.weblogic.oracle > /dev/null 2>&1
   if [ $? -eq 0 ]; then
-    namespaced_types="domain,$namespaced_types"
+    NAMESPACED_TYPES="domain,$NAMESPACED_TYPES"
   fi
 
-  kubectl get $namespaced_types \
-          -l "$label_selector" \
+  kubectl get $NAMESPACED_TYPES \
+          -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
           --all-namespaces=true > $2
 
-  # now, get all non-namespaced types with -l $label_selector
+  # now, get all non-namespaced types with -l $LABEL_SELECTOR
 
-  kubectl get pv,crd,clusterroles,clusterrolebindings \
-          -l "$label_selector" \
+  NOT_NAMESPACED_TYPES="pv,crd,clusterroles,clusterrolebindings"
+
+  kubectl get $NOT_NAMESPACED_TYPES \
+          -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $2
 }
@@ -191,13 +193,25 @@ function deleteDomains {
     # In phase 3, directly delete all k8s resources for the given domainUids
     # (including any leftover WLS pods from phases 1 & 2).
 
-    cat $tempfile | while read line; do 
+    # for each namespace with leftover resources, try delete them
+    cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
       if [ "$test_mode" = "true" ]; then
-        echo kubectl delete $line --ignore-not-found
+        echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
       else
-        kubectl delete $line --ignore-not-found
+        kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
       fi
     done
+
+    # if there are any non-namespaced types left, try delete them
+    local no_namespace_count=`grep -c -v " -n " $tempfile`
+    if [ ! "$no_namespace_count" = "0" ]; then
+      if [ "$test_mode" = "true" ]; then
+        echo kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+      else
+        kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+      fi
+    fi
+
     sleep 3
   done
 }
