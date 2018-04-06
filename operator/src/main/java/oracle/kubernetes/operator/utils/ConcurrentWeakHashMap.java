@@ -43,8 +43,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * values are desired, one can simply use a {@link WeakReference} for the value
  * type.
  *
- * Just like {@link java.util.ConcurrentHashMap}, this class obeys the same
- * functional specification as {@link java.util.Hashtable}, and includes
+ * Just like {@link java.util.concurrent.ConcurrentHashMap}, this class obeys the 
+ * same functional specification as {@link java.util.Hashtable}, and includes
  * versions of methods corresponding to each method of <tt>Hashtable</tt>.
  * However, even though all operations are thread-safe, retrieval operations do
  * <em>not</em> entail locking, and there is <em>not</em> any support for
@@ -1391,6 +1391,7 @@ public class ConcurrentWeakHashMap<K, V> extends AbstractMap<K, V>
    * the key (Object) and value (Object)
    * for each key-value mapping, followed by a null pair.
    * The key-value mappings are emitted in no particular order.
+   * @throws IOException IO Exception
    */
   private void writeObject(java.io.ObjectOutputStream s) throws IOException  {
     s.defaultWriteObject();
@@ -1422,6 +1423,8 @@ public class ConcurrentWeakHashMap<K, V> extends AbstractMap<K, V>
    * Reconstitute the <tt>ConcurrentWeakHashMap</tt> instance from a
    * stream (i.e., deserialize it).
    * @param s the stream
+   * @throws IOException IO Exception
+   * @throws ClassNotFoundException Class not found
    */
   @SuppressWarnings("unchecked")
   private void readObject(java.io.ObjectInputStream s)
