@@ -169,10 +169,7 @@ public class Main {
 
   private static void begin() {
     // read the operator configuration
-    String namespace = System.getenv("OPERATOR_NAMESPACE");
-    if (namespace == null) {
-      namespace = "default";
-    }
+    String namespace = getOperatorNamespace();
 
     Collection<String> targetNamespaces = getTargetNamespaces(namespace);
 
@@ -245,7 +242,7 @@ public class Main {
           }
         });
 
-        Step initialize = ConfigMapHelper.createScriptConfigMapStep(ns,
+        Step initialize = ConfigMapHelper.createScriptConfigMapStep(namespace, ns,
             new ConfigMapAfterStep(ns, callBuilderFactory.create().with($ -> {
               $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
             }).listPodAsync(ns, new ResponseStep<V1PodList>(callBuilderFactory.create().with($ -> {
@@ -1791,7 +1788,7 @@ public class Main {
       switch (item.type) {
       case "MODIFIED":
       case "DELETED":
-        engine.createFiber().start(ConfigMapHelper.createScriptConfigMapStep(c.getMetadata().getNamespace(), null),
+        engine.createFiber().start(ConfigMapHelper.createScriptConfigMapStep(getOperatorNamespace(), c.getMetadata().getNamespace(), null),
             new Packet(), new CompletionCallback() {
               @Override
               public void onCompletion(Packet packet) {
@@ -1918,5 +1915,13 @@ public class Main {
 
     LOGGER.exiting();
     return validatedChannels;
+  }
+
+  private static String getOperatorNamespace() {
+    String namespace = System.getenv("OPERATOR_NAMESPACE");
+    if (namespace == null) {
+      namespace = "default";
+    }
+    return namespace;
   }
 }
