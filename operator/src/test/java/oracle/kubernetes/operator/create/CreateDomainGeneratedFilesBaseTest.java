@@ -317,6 +317,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         cmo.setProductionModeEnabled(%PRODUCTION_MODE_ENABLED%)
         asbpFile=open('%s/servers/%ADMIN_SERVER_NAME%/security/boot.properties' % domain_path, 'w+')
           secdir='%s/servers/%MANAGED_SERVER_NAME_BASE%%s/security' % (domain_path, index+1)
+        set('ServerNamePrefix', '%MANAGED_SERVER_NAME_BASE%")
     */
     assertThat(
       actualCreateDomainPy,
@@ -332,7 +333,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
         "set\\('ListenPort', " + getInputs().getAdminPort() + "\\)",
         "set\\('PublicPort', " + getInputs().getT3ChannelPort() + "\\)",
-        "set\\('PublicAddress', '" + getInputs().getT3PublicAddress() + "'\\)"));
+        "set\\('PublicAddress', '" + getInputs().getT3PublicAddress() + "'\\)",
+        "set\\('ServerNamePrefix', \"" + getInputs().getManagedServerNameBase() + "\"\\)"));
      // TBD should we check anything else?
   }
 

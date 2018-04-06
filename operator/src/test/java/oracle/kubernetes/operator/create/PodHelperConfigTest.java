@@ -404,8 +404,6 @@ public class PodHelperConfigTest {
     pod.getMetadata()
       .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER_NAME);
     pod.getSpec().getContainers().get(0).addCommandItem(ADMIN_SERVER_NAME).addCommandItem(String.valueOf(ADMIN_SERVER_PORT));
-    pod.getSpec().getContainers().get(0).getPorts().get(0).setName("weblogic");
-    pod.getSpec().getContainers().get(0).addPortsItem(new V1ContainerPort().protocol("TCP").containerPort(5556).name("node-manager"));
     return pod;
   }
 

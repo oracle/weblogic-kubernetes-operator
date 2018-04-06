@@ -228,7 +228,8 @@ public class WlsClusterConfig {
     // Note: Never reduce the value of dynamicClusterSize even during scale down
     if (suggestedConfigUpdates != null) {
       if (hasDynamicServers()) {
-        if (replicas > getDynamicClusterSize() || !verifyMachinesConfigured(machineNamePrefix, replicas)) {
+//        if (replicas > getDynamicClusterSize() || !verifyMachinesConfigured(machineNamePrefix, replicas)) {
+        if (replicas > getDynamicClusterSize() ) {
           suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, Math.max(replicas, getDynamicClusterSize())));
         }
       }
