@@ -805,7 +805,7 @@ function run_create_domain_job {
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
 
     # Customize more configuration 
-    if [ "$DOMAIN_UID" == "domain7" ] ; then
+    if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
       sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
       sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
     fi
@@ -2632,7 +2632,6 @@ function test_suite {
     dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
     dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       managed-server 7051       30061           30705           8051    30309                  30319
     dom_define domain6  oper1   default   domain6    AUTO            cluster-1       managed-server 7061       30071           30706           8061    30310                  30320
-    dom_define domain7  oper1   default   domain7    AUTO            cluster-1       managed-server 7071       30081           30707           8071    30311                  30321
 
     # create namespaces for domains (the operator job creates a namespace if needed)
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
@@ -2698,15 +2697,11 @@ function test_suite {
       test_domain_lifecycle domain1 domain4 
 
       # create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created
+      # on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage (search for [ "$DOMAIN_UID" == "domain5" ])
       test_create_domain_startup_control_admin domain5
 
       # create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
       test_create_domain_pv_reclaim_policy_recycle domain6
-
-      if [ "$JENKINS" = "true" ]; then
-        # create domain7 in the default namespace with weblogicDomainStorageType="NFS", and verify it
-        test_domain_creation domain7
-      fi
 
       # test managed server 1 pod auto-restart
       test_wls_liveness_probe domain1
