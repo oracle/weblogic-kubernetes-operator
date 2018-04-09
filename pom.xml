@@ -6,7 +6,7 @@
   
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.2</version>
 
   <modules>
     <module>model</module>
@@ -46,6 +46,31 @@
             -->
         </repository>
     </repositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+            </plugin>
+
+		    <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-javadoc-plugin</artifactId>
+		        <version>3.0.0</version>
+                <configuration>
+                	<aggregate>true</aggregate>
+		            <show>public</show>
+		            <author>false</author>
+		            <!--  later Copyright 2018, {currentYear} -->
+		            <bottom><![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
+		            <doctitle>Oracle WebLogic Server Kubernetes Operator v0.2 Technology Preview API</doctitle>
+		        </configuration>
+		    </plugin>
+      
+        </plugins>
+    </build>
 
     <profiles>
 
