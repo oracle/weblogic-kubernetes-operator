@@ -1171,6 +1171,7 @@ public class CallBuilder {
    * Delete event
    * @param name Name
    * @param namespace Namespace
+   * @param deleteOptions Deletion options
    * @return Status of deletion
    * @throws ApiException API Exception
    */

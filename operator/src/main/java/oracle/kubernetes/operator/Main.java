@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -150,8 +152,20 @@ public class Main {
    *          none, ignored
    */
   public static void main(String[] args) {
-    // print startup log message
-    LOGGER.info(MessageKeys.OPERATOR_STARTED);
+    try (final InputStream stream =
+               Main.class.getResourceAsStream("/version.properties")) {
+      Properties buildProps = new Properties();
+      buildProps.load(stream);
+      
+      String operatorVersion = buildProps.getProperty("git.build.version");
+      String operatorImpl = buildProps.getProperty("git.branch") + "." + buildProps.getProperty("git.commit.id.abbrev");
+      String operatorBuildTime = buildProps.getProperty("git.build.time");
+      
+      // print startup log message
+      LOGGER.info(MessageKeys.OPERATOR_STARTED, operatorVersion, operatorImpl, operatorBuildTime);
+    } catch (IOException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+    }
 
     // start liveness thread
     startLivenessThread();
