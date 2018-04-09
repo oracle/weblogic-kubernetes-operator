@@ -1,0 +1,82 @@
+<!-- Copyright 2017, Oracle Corporation. All Rights Reserved. -->
+<!-- This is unreleased proprietary source code of Oracle Corporation -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>oracle.kubernetes</groupId>
+    <artifactId>operator-parent</artifactId>
+    <version>0.1.0</version>
+  </parent>
+
+    <groupId>oracle.kubernetes</groupId>
+    <artifactId>headless-nodemanager</artifactId>
+    <version>0.1.0</version>
+
+    <description>Oracle Weblogic Server Headless Node Manager</description>
+    <name>headless-nodemanager</name>
+    <packaging>jar</packaging>
+
+    <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
+    <inceptionYear>2017</inceptionYear>
+    <licenses>
+      <license>
+        <name>The Universal Permissive License (UPL), Version 1.0</name>
+        <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
+      </license>
+    </licenses>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jar</goal>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Implementation-Title>${project.artifactId}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Build>${git.branch}.${git.shortRevision}</Implementation-Build>
+                            <Implementation-DisplayVersion>${project.displayVersion}</Implementation-DisplayVersion>
+                            <Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
+                            <Specification-Title>${project.artifactId}</Specification-Title>
+                            <Built-By>Oracle</Built-By>
+                        </manifestEntries>
+                    </archive>
+                    <excludes>
+                        <exclude>weblogic/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <dependencies>
+        
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <surefireArgLine></surefireArgLine>
+                <failsafeArgLine></failsafeArgLine>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>

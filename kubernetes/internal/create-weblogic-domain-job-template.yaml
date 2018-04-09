@@ -148,6 +148,9 @@ data:
       sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nmdir}:g" ${prop}
       sed -i -e "s:ListenAddress=.*:ListenAddress=$1-$2:g" ${prop}
       sed -i -e "s:LogFile=.*:LogFile=/shared/logs/nodemanager-$2.log:g" ${prop}
+      
+      # Edit the nodemanager properties file to make the listener impl pluggable
+      echo "RestEnabled=true" >> ${prop}
 
     }
 
@@ -168,6 +171,13 @@ data:
       # The script and 'EOF' on the following lines must not be indented!
       cat << EOF > ${scriptFile}
     #!/bin/bash
+    
+    # Base64 decode binary support files
+    mkdir -p /tmp/weblogic-operator/bin
+    shopt -s nullglob
+    for f in /weblogic-operator/scripts/*.base64; do
+      cat "\$f" | base64 --decode > /tmp/weblogic-operator/bin/\$(basename "\$f" .base64)
+    done
 
     # Check for stale state file and remove if found"
     if [ -f ${stateFile} ]; then
@@ -175,26 +185,33 @@ data:
       rm ${stateFile}
     fi
 
-    echo "Start the nodemanager"
-    . ${nmdir}/startNodeManager.sh &
+    if [ -f /tmp/weblogic-operator/bin/headless-nodemanager.jar ]; then
+      echo "Start the headless nodemanager and server instance"
+      export PRE_CLASSPATH=/tmp/weblogic-operator/bin/headless-nodemanager.jar
+      . ${nmdir}/startNodeManager.sh &
 
-    echo "Allow the nodemanager some time to start before attempting to connect"
-    sleep 15
-    echo "Finished waiting for the nodemanager to start"
-
-    echo "Update JVM arguments"
-    if [ $# -eq 3 ]
-    then
-      echo "Update JVM arguments for admin server"
-      echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
     else
-      echo "Update JVM arguments for managed server"
-      wlst.sh ${argsFile} $1 $2 ${startProp}
+      echo "Start the nodemanager"
+      . ${nmdir}/startNodeManager.sh &
+
+      echo "Allow the nodemanager some time to start before attempting to connect"
+      sleep 15
+      echo "Finished waiting for the nodemanager to start"
+
+      echo "Update JVM arguments"
+      if [ $# -eq 3 ]
+      then
+        echo "Update JVM arguments for admin server"
+        echo "Arguments=\${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap \${JAVA_OPTIONS}" >> ${startProp}
+      else
+        echo "Update JVM arguments for managed server"
+        wlst.sh ${argsFile} $1 $2 ${startProp}
+      fi
+
+      echo "Start the server"
+      wlst.sh -skipWLSModuleScanning ${pyFile}
     fi
-
-    echo "Start the server"
-    wlst.sh -skipWLSModuleScanning ${pyFile}
-
+    
     echo "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
     while true; do sleep 60; done
     EOF

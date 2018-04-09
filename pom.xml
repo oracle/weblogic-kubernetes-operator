@@ -10,8 +10,9 @@
 
   <modules>
     <module>model</module>
-    <module>operator</module>
     <module>swagger</module>
+    <module>operator</module>
+    <module>nodemanager</module>
   </modules>
 
   <scm>

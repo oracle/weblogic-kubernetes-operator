@@ -3,6 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -208,10 +213,21 @@ public class ConfigMapHelper {
           "cat ${STATEFILE} | cut -f 1 -d ':'\n" +
           "exit 0");
 
+      try {
+        data.put("headless-nodemanager.jar.base64", toBase64("/operator/bin/headless-nodemanager.jar"));
+      } catch (IOException e1) {
+        return doTerminate(e1, packet);
+      }
+      
       cm.setData(data);
 
       return cm;
     }
   }
 
+  private static String toBase64(String fileName) throws IOException {
+    File file = new File(fileName);
+    byte[] encoded = Base64.getEncoder().encode(Files.readAllBytes(file.toPath()));
+    return new String(encoded, StandardCharsets.UTF_8);
+  }
 }
