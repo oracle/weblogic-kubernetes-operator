@@ -7,12 +7,12 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.2</version>
   </parent>
 
     <groupId>oracle.kubernetes</groupId>
     <artifactId>weblogic-kubernetes-operator</artifactId>
-    <version>0.1.0</version>
+    <version>0.2</version>
 
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>operator-runtime</name>
@@ -29,6 +29,40 @@
 
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.4</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <prefix>git</prefix>
+                    <verbose>false</verbose>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/version.properties</generateGitPropertiesFilename>
+                    <format>properties</format>
+                    <excludeProperties>
+                      <excludeProperty>git.build.host</excludeProperty>
+                      <excludeProperty>git.build.user.*</excludeProperty>
+                      <excludeProperty>git.closest.*</excludeProperty>
+                      <excludeProperty>git.commit.message.*</excludeProperty>
+                      <excludeProperty>git.commit.user.*</excludeProperty>
+                    </excludeProperties>
+                    <gitDescribe>
+                        <skip>false</skip>
+                        <always>false</always>
+                        <dirty>-dirty</dirty>
+                    </gitDescribe>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -51,7 +85,6 @@
                         <manifestEntries>
                             <Implementation-Title>${project.artifactId}</Implementation-Title>
                             <Implementation-Version>${project.version}</Implementation-Version>
-                            <Implementation-Build>${git.branch}.${git.shortRevision}</Implementation-Build>
                             <Implementation-DisplayVersion>${project.displayVersion}</Implementation-DisplayVersion>
                             <Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
                             <Specification-Title>${project.artifactId}</Specification-Title>
@@ -99,19 +132,6 @@
                 </configuration>
             </plugin>
 
-		    <plugin>
-		        <groupId>org.apache.maven.plugins</groupId>
-		        <artifactId>maven-javadoc-plugin</artifactId>
-		        <version>3.0.0</version>
-		        <configuration>
-		            <show>public</show>
-		            <author>false</author>
-		            <!--  later Copyright 2018, {currentYear} -->
-		            <bottom><![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
-		            <doctitle>Oracle WebLogic Server Kubernetes Operator v 0.1 Technology Preview API</doctitle>
-		        </configuration>
-		    </plugin>
-      
         </plugins>
     </build>
 
