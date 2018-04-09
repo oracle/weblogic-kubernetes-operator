@@ -32,8 +32,8 @@ build:
   - script:
     name: Install pre-reqs
     code: |
-      yum -y install tar gzip
-  - java/maven:
+      yum -y install tar gzip procps
+  - wercker/maven:
     goals: clean install
     version: 3.5.2
     cache_repo: true
