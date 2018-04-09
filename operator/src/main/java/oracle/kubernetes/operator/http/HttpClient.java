@@ -87,9 +87,7 @@ public class HttpClient {
    * @param payload The payload to be used in the HTTP POST request
    *
    * @return A Result object containing the respond from the REST call
-   * @throws HTTPException if throwOnFailure is true and the status of the HTTP response indicates the request was not
-   *                       successful
-   */
+   */  
   public Result executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload) {
     Result result = null;
     try {
