@@ -449,6 +449,28 @@ data:
     readDomain(domain_path)
     cd('/')
     cmo.setProductionModeEnabled(%PRODUCTION_MODE_ENABLED%)
+
+    # Enabled Coherence if COHERENCE_CLUSTER_NAME is specified by user
+    coherenceClusterName='%COHERENCE_CLUSTER_NAME%'
+    if not (coherenceClusterName is None):
+      create(coherenceClusterName, 'CoherenceClusterSystemResource')
+      servers=''
+      for index in range(0, number_of_ms):
+        server='%MANAGED_SERVER_NAME_BASE%%s' % (index+1)
+        cd('/Servers/%s' % server)
+        set('CoherenceClusterSystemResource', coherenceClusterName)
+        if index is 0:
+          servers=str(server)
+        else:
+          servers=str(servers + "," + server)
+
+      cd('/')
+      create('CacheTier', 'Cluster')
+      assign('Server', servers, 'Cluster', 'CacheTier')
+      assign('Cluster', 'CacheTier', 'CoherenceClusterSystemResource', coherenceClusterName)
+      cd('/CoherenceClusterSystemResource/%s' % coherenceClusterName)
+      set('Target', 'CacheTier')
+
     updateDomain()
     closeDomain()
     print 'Domain Updated'

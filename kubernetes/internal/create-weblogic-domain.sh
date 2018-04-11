@@ -366,7 +366,6 @@ function initialize {
   failIfValidationErrors
 }
 
-
 #
 # Function to generate the yaml files for creating a domain
 #
@@ -442,6 +441,7 @@ function createYamlFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
+  sed -i -e "s:%COHERENCE_CLUSTER_NAME%:${coherenceClusterName:-None}:g" ${jobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}

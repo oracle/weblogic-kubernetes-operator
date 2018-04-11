@@ -96,3 +96,7 @@ loadBalancerDashboardPort: 30315
 
 #Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
+
+# Option to enable coherence on managed servers
+# The following line must be uncommented and updated with desired cluster name to enable coherence.
+#coherenceClusterName: Cluster-0
