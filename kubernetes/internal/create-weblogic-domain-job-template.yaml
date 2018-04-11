@@ -181,7 +181,7 @@ data:
     set('DomainsDirRemoteSharingEnabled', 'true')
 
     # Set the Node Manager user name and password (domain name will change after writeDomain)
-    cd('/SecurityConfiguration/%DOMAIN_NAME%')
+    cd('/SecurityConfiguration/base_domain')
     set('NodeManagerUsername', admin_username)
     set('NodeManagerPasswordEncrypted', admin_password)
 
