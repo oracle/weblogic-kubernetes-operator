@@ -1074,6 +1074,7 @@ function verify_webapp_load_balancing {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
@@ -1104,13 +1105,14 @@ function verify_webapp_load_balancing {
     local max_count=30
     local wait_time=6
     local count=0
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME" # this is only useful to voyager but it does no harm to traefik etc
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
-        --write-out "%{http_code}" \
-        -o ${CURL_RESPONSE_BODY} \
+      local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+        --write-out '%{http_code}' \
+        -o ${CURL_RESPONSE_BODY}" \
       )
 
       if [ "${HTTP_RESPONSE}" != "200" ]; then
@@ -1141,9 +1143,9 @@ function verify_webapp_load_balancing {
       do
         echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-        local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
-          --write-out "%{http_code}" \
-          -o ${CURL_RESPONSE_BODY} \
+        local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+          --write-out '%{http_code}' \
+          -o ${CURL_RESPONSE_BODY}" \
         )
 
         echo $HTTP_RESPONSE | sed 's/^/+/'

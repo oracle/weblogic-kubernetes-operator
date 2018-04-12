@@ -1,0 +1,36 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: voyager-ingress
+  namespace: default
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+spec:
+  rules:
+  - host: %DOMAIN_UID%.%CLUSTER_NAME%
+    http:
+      nodePort: '%LOAD_BALANCER_WEB_PORT%'
+      paths:
+      - backend:
+          serviceName: %DOMAIN_UID%-cluster-%CLUSTER_NAME%
+          servicePort: '%MANAGED_SERVER_PORT%'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voyager-stats 
+  labels:
+    app: voyager-stats
+spec:
+  type: NodePort
+  ports:
+    - name: client
+      protocol: TCP
+      port: 56789
+      targetPort: 56789
+      nodePort: %LOAD_BALANCER_DASHBOARD_PORT%
+  selector:
+    origin: voyager
+    origin-name: voyager-ingress
