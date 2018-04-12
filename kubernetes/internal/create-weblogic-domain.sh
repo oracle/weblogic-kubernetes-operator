@@ -617,7 +617,17 @@ function setupVoyagerLoadBalancer {
   # deploy voyager ingress resource
   kubectl create -f ${voyagerOutput}
 
-  # TODO verify the result
+  echo Checking voyager deploy
+  vdep=`kubectl get deploy | grep voyager | wc | awk ' { print $1; } '`
+  if [ "$vdep" != "1" ]; then
+    fail "The deployment of voyager ingress was not created"
+  fi
+
+echo Checking voyager service
+  vscv=`kubectl get service voyager-stats | grep voyager-stats | wc | awk ' { print $1; } '`
+  if [ "$vscv" != "1" ]; then
+    fail "The service ${voyager-stats} was not created"
+  fi 
 }
 #
 # Deploy traefik load balancer
@@ -717,7 +727,7 @@ function outputJobSummary {
   if [ "${exposeAdminT3Channel}" = true ]; then
     echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
   fi
-  if [ "${loadBalancer}" = "TRAEFIK" ]|| [ "${loadBalancer}" = "VOYAGER" ]; then
+  if [ "${loadBalancer}" = "TRAEFIK" ] || [ "${loadBalancer}" = "VOYAGER" ]; then
     echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
     echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerDashboardPort}"
     echo ""
