@@ -472,50 +472,6 @@ public class WlsRetriever {
   }
 
   /**
-   * Update the dynamic cluster size of the WLS cluster configuration.
-   *
-   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated
-   * @param machineNamePrefix Prefix of names of new machines to be created
-   * @param targetClusterSize The target dynamic cluster size
-   * @return true if the request to update the cluster size is successful, false if it was not successful within the
-   *         time period, or the cluster is not a dynamic cluster
-   */
-  public boolean updateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig,
-                                          final String machineNamePrefix,
-                                          final int targetClusterSize) {
-
-    LOGGER.entering();
-
-    final long timeout = UPDATE_CONFIG_TIMEOUT_MILLIS;
-
-    String clusterName = wlsClusterConfig == null? "null": wlsClusterConfig.getClusterName();
-
-    if (wlsClusterConfig == null || !wlsClusterConfig.hasDynamicServers()) {
-      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER, clusterName);
-      return false;
-    }
-
-    ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
-    long startTime = System.currentTimeMillis();
-    Future<Boolean> future = executorService.submit(() -> doUpdateDynamicClusterSize(wlsClusterConfig, machineNamePrefix, targetClusterSize));
-    boolean result = false;
-    try {
-      result = future.get(timeout, TimeUnit.MILLISECONDS);
-      if (result) {
-        LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, targetClusterSize, (System.currentTimeMillis() - startTime));
-      } else {
-        LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  null);
-      }
-    } catch (InterruptedException | ExecutionException e) {
-      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  e);
-    } catch (TimeoutException e) {
-      LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_TIMED_OUT, clusterName, timeout);
-    }
-    LOGGER.exiting(result);
-    return result;
-  }
-
-  /**
    * Method called by the Callable that is submitted from the updateDynamicClusterSize method for updating the
    * WLS dynamic cluster size configuration.
    *
