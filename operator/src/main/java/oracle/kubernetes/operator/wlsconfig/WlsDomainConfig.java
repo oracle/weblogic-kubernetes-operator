@@ -306,7 +306,7 @@ public class WlsDomainConfig {
         if (clusterName != null) {
           WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
           updated |= wlsClusterConfig.validateClusterStartup(clusterStartup,
-            Util.getMachineNamePrefix(domainSpec, wlsClusterConfig), suggestedConfigUpdates);
+            suggestedConfigUpdates);
         }
       }
     }
@@ -318,7 +318,6 @@ public class WlsDomainConfig {
       if (clusterConfigs != null && clusterConfigs.size() == 1) {
         for (WlsClusterConfig wlsClusterConfig : clusterConfigs) {
           wlsClusterConfig.validateReplicas(domainSpec.getReplicas(),
-            Util.getMachineNamePrefix(domainSpec, wlsClusterConfig),
             "domainSpec",
             suggestedConfigUpdates);
         }

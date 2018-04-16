@@ -210,12 +210,8 @@ public class WlsRetriever {
 
           String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
 
-          Domain dom = info.getDomain();
-          DomainSpec domainSpec = dom.getSpec();
-          String machineNamePrefix = Util.getMachineNamePrefix(domainSpec, wlsClusterConfig);
-
           boolean successful = updateDynamicClusterSizeWithServiceURL(wlsClusterConfig,
-                  machineNamePrefix, targetClusterSize, httpClient, serviceURL);
+                  targetClusterSize, httpClient, serviceURL);
 
           if (successful) {
             LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, targetClusterSize, (System.currentTimeMillis() - startTime));
@@ -472,36 +468,10 @@ public class WlsRetriever {
   }
 
   /**
-   * Method called by the Callable that is submitted from the updateDynamicClusterSize method for updating the
-   * WLS dynamic cluster size configuration.
-   *
-   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
-   *                         caller should make sure that the cluster is a dynamic cluster.
-   * @param machineNamePrefix Prefix of names of new machines to be created
-   * @param targetClusterSize The target dynamic cluster size
-   * @return true if the request to update the cluster size is successful, false if it was not successful
-   */
-
-  private boolean doUpdateDynamicClusterSize(final WlsClusterConfig wlsClusterConfig,
-                                             final String machineNamePrefix,
-                                             final int targetClusterSize) throws Exception {
-    LOGGER.entering();
-
-    String serviceURL = connectAndGetServiceURL();
-
-    boolean result = updateDynamicClusterSizeWithServiceURL(wlsClusterConfig, machineNamePrefix,
-            targetClusterSize, httpClient, serviceURL);
-
-    LOGGER.exiting(result);
-    return result;
-  }
-
-  /**
    * Static method to update the WebLogic dynamic cluster size configuration.
    *
    * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
    *                         caller should make sure that the cluster is a dynamic cluster.
-   * @param machineNamePrefix Prefix of names of new machines to be created
    * @param targetClusterSize The target dynamic cluster size
    * @param httpClient HttpClient object for issuing the REST request
    * @param serviceURL service URL of the WebLogic admin server
@@ -510,22 +480,12 @@ public class WlsRetriever {
    */
 
   private static boolean updateDynamicClusterSizeWithServiceURL(final WlsClusterConfig wlsClusterConfig,
-                                                                final String machineNamePrefix,
                                                                 final int targetClusterSize,
                                                                 final HttpClient httpClient,
                                                                 final String serviceURL) {
     LOGGER.entering();
 
     boolean result = false;
-    // Create machine(s)
-    // Commented out as we are not configuring machines for servers
-//    String newMachineNames[] = wlsClusterConfig.getMachineNamesForDynamicServers(machineNamePrefix, targetClusterSize);
-//    for (String machineName: newMachineNames) {
-//      LOGGER.info(MessageKeys.WLS_CREATING_MACHINE, machineName);
-//      httpClient.executePostUrlOnServiceClusterIP(WlsMachineConfig.getCreateUrl(),
-//              serviceURL, WlsMachineConfig.getCreatePayload(machineName));
-//    }
-
     // Update the dynamic cluster size of the WebLogic cluster
     String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
             wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
