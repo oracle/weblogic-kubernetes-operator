@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Contains a snapsot of configuration for a WebLogic Domain
+ * Contains a snapshot of configuration for a WebLogic Domain
  */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
