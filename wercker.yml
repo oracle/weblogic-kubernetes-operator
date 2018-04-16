@@ -45,6 +45,7 @@ build:
       cp -R src/scripts/* /operator/
       cp operator/target/weblogic-kubernetes-operator-0.2.jar /operator/weblogic-kubernetes-operator.jar
       cp operator/target/lib/*.jar /operator/lib/
+      cp target/weblogic-deploy.zip /operator/weblogic-deploy.zip
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="latest"
