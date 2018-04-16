@@ -119,6 +119,7 @@ data:
     domain_path        = os.environ.get("DOMAIN_HOME")
     cluster_name       = "%CLUSTER_NAME%"
     number_of_ms       = %CONFIGURED_MANAGED_SERVER_COUNT%
+    initial_replicas   = %INITIAL_MANAGED_SERVER_REPLICAS%
     cluster_type       = "%CLUSTER_TYPE%"
 
     print('domain_path        : [%s]' % domain_path);
@@ -230,12 +231,9 @@ data:
       cd('DynamicServers/%s' % cluster_name)
       set('ServerTemplate', st1)
       set('ServerNamePrefix', "%MANAGED_SERVER_NAME_BASE%")
-      set('DynamicClusterSize', number_of_ms)
-      set('MaxDynamicClusterSize', 800)
-      #set('CalculatedMachineNames', true)
+      set('DynamicClusterSize', initial_replicas)
+      set('MaxDynamicClusterSize', number_of_ms)
       set('CalculatedListenPorts', false)
-      #machineNameExpression = '%DOMAIN_UID%-%s-machine*' % cluster_name
-      #set('MachineNameMatchExpression', machineNameExpression)
       set('Id', 1)
 
       print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
