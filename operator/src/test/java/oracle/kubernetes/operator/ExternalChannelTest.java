@@ -8,6 +8,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -110,7 +111,7 @@ public class ExternalChannelTest {
       chlist.clear();
       chlist.add("channel-99");
       
-      Collection<NetworkAccessPoint> validNaps = Main.adminChannelsToCreate(wlsDomainConfig, domain);
+      Collection<NetworkAccessPoint> validNaps = ExternalAdminChannelsStep.adminChannelsToCreate(wlsDomainConfig, domain);
       assertNotNull(validNaps);
       assertEquals(0, validNaps.size());
    }
@@ -135,7 +136,7 @@ public class ExternalChannelTest {
       setListenPort(7001);
       setPublicPort(7001);
 
-      Collection<NetworkAccessPoint> validNaps = Main.adminChannelsToCreate(wlsDomainConfig, domain);
+      Collection<NetworkAccessPoint> validNaps = ExternalAdminChannelsStep.adminChannelsToCreate(wlsDomainConfig, domain);
       assertNotNull(validNaps);
       assertEquals(0, validNaps.size());
    }
@@ -148,7 +149,7 @@ public class ExternalChannelTest {
       setListenPort(39001);
       setPublicPort(39002);
 
-      Collection<NetworkAccessPoint> validNaps = Main.adminChannelsToCreate(wlsDomainConfig, domain);
+      Collection<NetworkAccessPoint> validNaps = ExternalAdminChannelsStep.adminChannelsToCreate(wlsDomainConfig, domain);
       assertNotNull(validNaps);
       assertEquals(0, validNaps.size());
    }
@@ -162,7 +163,7 @@ public class ExternalChannelTest {
       setPublicPort(39001);
       setProtocol("http");
 
-      Collection<NetworkAccessPoint> validNaps = Main.adminChannelsToCreate(wlsDomainConfig, domain);
+      Collection<NetworkAccessPoint> validNaps = ExternalAdminChannelsStep.adminChannelsToCreate(wlsDomainConfig, domain);
       assertNotNull(validNaps);
       assertEquals(0, validNaps.size());
    }
@@ -176,7 +177,7 @@ public class ExternalChannelTest {
       setPublicPort(30999);
       setProtocol("t3");
 
-      Collection<NetworkAccessPoint> validNaps = Main.adminChannelsToCreate(wlsDomainConfig, domain);
+      Collection<NetworkAccessPoint> validNaps = ExternalAdminChannelsStep.adminChannelsToCreate(wlsDomainConfig, domain);
       assertNotNull(validNaps);
       assertEquals(1, validNaps.size());
       assertEquals("Channel-3", validNaps.iterator().next().getName());
