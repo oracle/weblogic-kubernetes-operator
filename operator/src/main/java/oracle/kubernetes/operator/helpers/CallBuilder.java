@@ -20,6 +20,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.apis.AuthenticationV1Api;
 import io.kubernetes.client.apis.AuthorizationV1Api;
+import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
@@ -28,9 +29,12 @@ import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1JobList;
 import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
+import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
@@ -879,6 +883,187 @@ public class CallBuilder {
     return createRequestAsync(responseStep, new RequestParams("deleteCollection", namespace, null, null), DELETECOLLECTION_POD);
   }
   
+  /* Jobs */
+  
+  /**
+   * List jobs
+   * @param namespace Namespace
+   * @return List of jobs
+   * @throws ApiException API Exception
+   */
+  public V1JobList listJob(String namespace) throws ApiException {
+    String _continue = "";
+    ApiClient client = helper.take();
+    try {
+      return new BatchV1Api(client).listNamespacedJob(namespace, pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call listJobAsync(ApiClient client, String namespace, String _continue, ApiCallback<V1JobList> callback) throws ApiException {
+    return new BatchV1Api(client).listNamespacedJobAsync(namespace, pretty, _continue,
+      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
+  }
+
+  private final CallFactory<V1JobList> LIST_JOB = (requestParams, usage, cont, callback) -> {
+    return listJobAsync(usage, requestParams.namespace, cont, callback);
+  };
+  
+  /**
+   * Asynchronous step for listing jobs
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listJobsAsync(String namespace, ResponseStep<V1JobList> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("listJob", namespace, null, null), LIST_JOB);
+  }
+  
+  /**
+   * Read job
+   * @param name Name
+   * @param namespace Namespace
+   * @return Read service
+   * @throws ApiException API Exception
+   */
+  public V1Job readJob(String name, String namespace) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new BatchV1Api(client).readNamespacedJob(name, namespace, pretty, exact, export);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call readJobAsync(ApiClient client, String name, String namespace, ApiCallback<V1Job> callback) throws ApiException {
+    return new BatchV1Api(client).readNamespacedJobAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  private final CallFactory<V1Job> READ_JOB = (requestParams, usage, cont, callback) -> {
+    return readJobAsync(usage, requestParams.name, requestParams.namespace, callback);
+  };
+  
+  /**
+   * Asynchronous step for reading job
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readJobAsync(String name, String namespace, ResponseStep<V1Job> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("readJob", namespace, name, null), READ_JOB);
+  }
+  
+  /**
+   * Create job
+   * @param namespace Namespace
+   * @param body Body
+   * @return Created job
+   * @throws ApiException API Exception
+   */
+  public V1Job createJob(String namespace, V1Job body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new BatchV1Api(client).createNamespacedJob(namespace, body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call createJobAsync(ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback) throws ApiException {
+    return new BatchV1Api(client).createNamespacedJobAsync(namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<V1Job> CREATE_JOB = (requestParams, usage, cont, callback) -> {
+    return createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for creating job
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createJobAsync(String namespace, V1Job body, ResponseStep<V1Job> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("createJob", namespace, null, body), CREATE_JOB);
+  }
+  
+  /**
+   * Replace job
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced job
+   * @throws ApiException API Exception
+   */
+  public V1Job replaceJob(String name, String namespace, V1Job body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new BatchV1Api(client).replaceNamespacedJob(name, namespace, body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call replaceJobAsync(ApiClient client, String name, String namespace, V1Job body, ApiCallback<V1Job> callback) throws ApiException {
+    return new BatchV1Api(client).replaceNamespacedJobAsync(name, namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<V1Job> REPLACE_JOB = (requestParams, usage, cont, callback) -> {
+    return replaceJobAsync(usage, requestParams.name, requestParams.namespace, (V1Job) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for replacing job
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceJobAsync(String name, String namespace, V1Job body, ResponseStep<V1Job> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("replaceJob", namespace, name, body), REPLACE_JOB);
+  }
+  
+  /**
+   * Delete job
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Delete options
+   * @return Status of deletion
+   * @throws ApiException API Exception
+   */
+  public V1Status deleteJob(String name, String namespace, V1DeleteOptions body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new BatchV1Api(client).deleteNamespacedJob(name, namespace, body, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call deleteJobAsync(ApiClient client, String name, String namespace,V1DeleteOptions body, ApiCallback<V1Status> callback) throws ApiException {
+    return new BatchV1Api(client).deleteNamespacedJobAsync(name, namespace, body, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_JOB = (requestParams, usage, cont, callback) -> {
+    return deleteJobAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for deleting job
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteJobAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("deleteJob", namespace, name, null), DELETE_JOB);
+  }
+
   /* Services */
   
   /**
@@ -1067,7 +1252,7 @@ public class CallBuilder {
    * @return List of events
    * @throws ApiException API Exception
    */
-  public V1EventList listEent(String namespace) throws ApiException {
+  public V1EventList listEvent(String namespace) throws ApiException {
     String _continue = "";
     ApiClient client = helper.take();
     try {
@@ -1163,7 +1348,7 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step createEventAsync(String namespace, V1Service body, ResponseStep<V1Event> responseStep) {
+  public Step createEventAsync(String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("createEvent", namespace, null, body), CREATE_EVENT);
   }
   
@@ -1203,6 +1388,143 @@ public class CallBuilder {
   public Step deleteEventAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("deleteEvent", namespace, name, null), DELETE_EVENT);
   }
+
+  /* Persistent Volumes */
+  
+  /**
+   * List persistent volumes
+   * @return List of persistent volumes
+   * @throws ApiException API Exception
+   */
+  public V1PersistentVolumeList listPersistentVolume() throws ApiException {
+    String _continue = "";
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).listPersistentVolume(pretty, _continue, fieldSelector,
+        includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call listPersistentVolumeAsync(ApiClient client, String _continue, ApiCallback<V1PersistentVolumeList> callback) throws ApiException {
+    return new CoreV1Api(client).listPersistentVolumeAsync(pretty, _continue,
+      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
+  }
+
+  private final CallFactory<V1PersistentVolumeList> LIST_PERSISTENT_VOLUME = (requestParams, usage, cont, callback) -> {
+    return listPersistentVolumeAsync(usage, cont, callback);
+  };
+  
+  /**
+   * Asynchronous step for listing persistent volumes
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listPersistentVolumeAsync(String namespace, ResponseStep<V1PersistentVolumeList> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("listPersistentVolume", null, null, null), LIST_PERSISTENT_VOLUME);
+  }
+  
+  /**
+   * Read persistent volume
+   * @param name Name
+   * @return Read persistent volume
+   * @throws ApiException API Exception
+   */
+  public V1PersistentVolume readEvent(String name) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).readPersistentVolume(name, pretty, exact, export);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call readPersistentVolumeAsync(ApiClient client, String name, ApiCallback<V1PersistentVolume> callback) throws ApiException {
+    return new CoreV1Api(client).readPersistentVolumeAsync(name, pretty, exact, export, callback);
+  }
+
+  private final CallFactory<V1PersistentVolume> READ_PERSISTENT_VOLUME = (requestParams, usage, cont, callback) -> {
+    return readPersistentVolumeAsync(usage, requestParams.name, callback);
+  };
+  
+  /**
+   * Asynchronous step for reading persistent volume
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readPersistentVolumeAsync(String name, ResponseStep<V1PersistentVolume> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("readEvent", null, name, null), READ_PERSISTENT_VOLUME);
+  }
+  
+  /**
+   * Create persistent volume
+   * @param body Body
+   * @return Created persistent volume
+   * @throws ApiException API Exception
+   */
+  public V1PersistentVolume createPersistentVolume(V1PersistentVolume body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).createPersistentVolume(body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call createPersistentVolumeAsync(ApiClient client, V1PersistentVolume body, ApiCallback<V1PersistentVolume> callback) throws ApiException {
+    return new CoreV1Api(client).createPersistentVolumeAsync(body, pretty, callback);
+  }
+
+  private final CallFactory<V1PersistentVolume> CREATE_PERSISTENT_VOLUME = (requestParams, usage, cont, callback) -> {
+    return createPersistentVolumeAsync(usage, (V1PersistentVolume) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for creating persistent volume
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createPersistentVolumeAsync(V1PersistentVolume body, ResponseStep<V1PersistentVolume> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("createPersistentVolume", null, null, body), CREATE_PERSISTENT_VOLUME);
+  }
+  
+  /**
+   * Delete persistent volume
+   * @param name Name
+   * @param deleteOptions Deletion options
+   * @return Status of deletion
+   * @throws ApiException API Exception
+   */
+  public V1Status deletePersistentVolume(String name, V1DeleteOptions deleteOptions) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new CoreV1Api(client).deletePersistentVolume(name, deleteOptions, pretty, gracePeriodSeconds,
+        orphanDependents, propagationPolicy);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call deletePersistentVolumeAsync(ApiClient client, String name, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback) throws ApiException {
+    return new CoreV1Api(client).deletePersistentVolumeAsync(name, deleteOptions, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy, callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_PERSISTENT_VOLUME = (requestParams, usage, cont, callback) -> {
+    return deletePersistentVolumeAsync(usage, requestParams.name, (V1DeleteOptions) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for deleting persistent volume
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deletePersistentVolumeAsync(String name, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("deletePersistentVolume", null, name, null), DELETE_PERSISTENT_VOLUME);
+  }
   
   /* Persistent Volume Claims */
   
@@ -1240,42 +1562,6 @@ public class CallBuilder {
    */
   public Step listPersistentVolumeClaimAsync(String namespace, ResponseStep<V1PersistentVolumeClaimList> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("listPersistentVolumeClaim", namespace, null, null), LIST_PERSISTENTVOLUMECLAIM);
-  }
-  
-  /* Persistent Volumes */
-  
-  /**
-   * List persistent volumes
-   * @return List of persistent volumes
-   * @throws ApiException API Exception
-   */
-  public V1PersistentVolumeList listPersistentVolume() throws ApiException {
-    String _continue = "";
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client).listPersistentVolume(pretty, _continue, fieldSelector, includeUninitialized,
-        labelSelector, limit, resourceVersion, timeoutSeconds, watch);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  private com.squareup.okhttp.Call listPersistentVolumeAsync(ApiClient client, String _continue, ApiCallback<V1PersistentVolumeList> callback) throws ApiException {
-    return new CoreV1Api(client).listPersistentVolumeAsync(pretty, _continue,
-      fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch, callback);
-  }
-
-  private final CallFactory<V1PersistentVolumeList> LIST_PERSISTENTVOLUME = (requestParams, usage, cont, callback) -> {
-    return listPersistentVolumeAsync(usage, cont, callback);
-  };
-  
-  /**
-   * Asynchronous step for listing persistent volumes
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step listPersistentVolumeAsync(ResponseStep<V1PersistentVolumeList> responseStep) {
-    return createRequestAsync(responseStep, new RequestParams("listPersistentVolume", null, null, null), LIST_PERSISTENTVOLUME);
   }
   
   /* Secrets */
