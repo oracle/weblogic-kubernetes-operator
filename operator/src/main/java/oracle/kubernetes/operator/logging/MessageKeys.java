@@ -135,5 +135,10 @@ public class MessageKeys {
   public static final String INGRESS_DELETED = "WLSKO-0125";
   public static final String TUNING_PARAMETERS = "WLSKO-0126";
   public static final String WLS_HEALTH_READ_FAILED = "WLSKO-0127";
-
+  public static final String WLS_UPDATE_CLUSTER_SIZE_STARTING = "WLSKO-0128";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_FAILED = "WLSKO-0129";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_TIMED_OUT = "WLSKO-0130";
+  public static final String WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER = "WLSKO-0131";
+  public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0132";
+  public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0133";
 }
