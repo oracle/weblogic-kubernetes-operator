@@ -141,5 +141,4 @@ public class MessageKeys {
   public static final String WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER = "WLSKO-0131";
   public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0132";
   public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0133";
-  public static final String WLS_CREATING_MACHINE = "WLSKO-0134";
 }
