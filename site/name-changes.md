@@ -10,7 +10,7 @@ We addressed this by:
 
 This changes how operators and domains are created, and also changes the generated artifacts for operators and domains.
 
-We're not providing an upgrade tool or backwards compatibility with the previous names.  Instead, customers need to use the new script, inputs file, and parameter names to recreate their operators and domains.
+We're not providing an upgrade tool or backward compatibility with the previous names.  Instead, customers need to use the new script, inputs file, and parameter names to recreate their operators and domains.
 
 This document lists the customer visible naming changes.  Also, the WebLogic Server Kubernetes Operator documentation has been updated.
 
@@ -35,7 +35,7 @@ Typically, customers do not use these YAML files.  However, customers can look a
 
 #### Directory for the Generated YAML Files
 
-Previously, these files were placed in the `kubernetes` directory (for example, `kubernetes/weblogic-operator.yaml`).  Now, they are placed in per-operator and per-domain directories (since a Kubernetes cluster can have more than one operator and an operator can manage more than one domain).
+Previously, these files were placed in the `kubernetes` directory (for example, `kubernetes/weblogic-operator.yaml`).  Now, they are placed in per-operator and per-domain directories (because a Kubernetes cluster can have more than one operator and an operator can manage more than one domain).
 
 The customer must create a directory that will parent the per-operator and per-domain directories, and use the `-o` option to pass the name of that directory to the create script, for example:
   `mkdir /scratch/my-user-projects
@@ -54,7 +54,7 @@ Similarly, the per-domain directory name is:
   * `kubernetes/delete-weblogic-domain-resources.sh yourDomainUID`
 * Remove the resources that were created for the operator:
   * `kubectl delete -f weblogic-operator.yaml`
-  * kubectl delete -f weblogic-operator-security.yaml
+  * `kubectl delete -f weblogic-operator-security.yaml`
 * Either remove the directory that was generated for that operator or domain, or remove the generated YAML files and the copy of the input file from it.
 * Make whatever changes you need in your inputs file.
 * Re-run the create script.
