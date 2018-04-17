@@ -231,11 +231,8 @@ data:
       set('ServerTemplate', st1)
       set('ServerNamePrefix', "%MANAGED_SERVER_NAME_BASE%")
       set('DynamicClusterSize', number_of_ms)
-      set('MaxDynamicClusterSize', 800)
-      #set('CalculatedMachineNames', true)
+      set('MaxDynamicClusterSize', number_of_ms)
       set('CalculatedListenPorts', false)
-      #machineNameExpression = '%DOMAIN_UID%-%s-machine*' % cluster_name
-      #set('MachineNameMatchExpression', machineNameExpression)
       set('Id', 1)
 
       print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);

@@ -171,14 +171,11 @@ public class WlsClusterConfig {
    * It is the responsibility of the caller to persist the changes to ClusterStartup to kubernetes.
    *
    * @param clusterStartup The ClusterStartup to be validated against the WLS configuration
-   * @param machineNamePrefix Optional, if this is not null, also validate whether the WebLogic domain already contains
-   *                          all the machines that will be used by the dynamic cluster
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
    *                              method. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
   public boolean validateClusterStartup(ClusterStartup clusterStartup,
-                                        String machineNamePrefix,
                                         List<ConfigUpdate> suggestedConfigUpdates) {
     LOGGER.entering();
 
@@ -190,7 +187,7 @@ public class WlsClusterConfig {
     }
 
     // Warns if replicas is larger than the number of servers configured in the cluster
-    validateReplicas(clusterStartup.getReplicas(), machineNamePrefix,"clusterStartup", suggestedConfigUpdates);
+    validateReplicas(clusterStartup.getReplicas(),"clusterStartup", suggestedConfigUpdates);
 
     LOGGER.exiting(modified);
 
@@ -204,34 +201,33 @@ public class WlsClusterConfig {
    *
    * @param replicas The configured replicas value for this cluster in the kubernetes weblogic domain spec
    *                 for this cluster
-   * @param machineNamePrefix Optional, if this is not null, also validate whether the WebLogic domain already contains
-   *                          all the machines that will be used by the dynamic cluster
    * @param source The name of the section in the domain spec where the replicas is specified,
    *               for logging purposes
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be filled in by this
    *                               method. Optional.
    */
-  public void validateReplicas(Integer replicas, String machineNamePrefix,
+  public void validateReplicas(Integer replicas,
                                String source, List<ConfigUpdate> suggestedConfigUpdates) {
     if (replicas == null) {
       return;
     }
-    // log warning if replicas is too large and cluster only contains statically configured servers
-    if (!hasDynamicServers() && replicas > getClusterSize()) {
-      LOGGER.warning(MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS, source, clusterName, replicas, getClusterSize());
+    // log warning if replicas is too large and cluster
+    int maxClusterSize = getClusterSize();
+    if (hasDynamicServers()) {
+      maxClusterSize += getMaxDynamicClusterSize();
+    }
+    if (replicas > maxClusterSize) {
+      LOGGER.warning(MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS, source, clusterName, replicas, maxClusterSize);
     }
     // recommend updating WLS dynamic cluster size and machines if requested to recommend
     // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
-    // the current dynamic cluster size, or if some of the machines to be used for the dynamic
-    // servers are not yet configured.
+    // the current dynamic cluster size.
     //
     // Note: Never reduce the value of dynamicClusterSize even during scale down
-    if (suggestedConfigUpdates != null) {
-      if (hasDynamicServers()) {
-//        if (replicas > getDynamicClusterSize() || !verifyMachinesConfigured(machineNamePrefix, replicas)) {
-        if (replicas > getDynamicClusterSize() ) {
-          suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, Math.max(replicas, getDynamicClusterSize())));
-        }
+    if (suggestedConfigUpdates != null && hasDynamicServers()) {
+      if (replicas > getDynamicClusterSize() && getDynamicClusterSize() < getMaxDynamicClusterSize()) {
+        // increase dynamic cluster size to satisfy replicas, but only up to the configured max dynamic cluster size
+        suggestedConfigUpdates.add(new DynamicClusterSizeConfigUpdate(this, Math.min(replicas, getMaxDynamicClusterSize())));
       }
     }
   }
@@ -329,17 +325,14 @@ public class WlsClusterConfig {
 
   /**
    * Return the payload used in the REST request for updating the dynamic cluster size. It will
-   * be used to update the cluster size and if necessary, the max cluster size of the dynamic servers
-   * of this cluster.
+   * be used to update the cluster size of the dynamic servers of this cluster.
    *
    * @param clusterSize Desired dynamic cluster size
    * @return A string containing the payload to be used in the REST request for updating the dynamic
    * cluster size to the specified value.
    */
   public String getUpdateDynamicClusterSizePayload(final int clusterSize) {
-    return "{ dynamicClusterSize: " + clusterSize + ", " +
-            " maxDynamicClusterSize: " + (clusterSize > getMaxDynamicClusterSize()? clusterSize: getMaxDynamicClusterSize()) +
-            " }";
+    return "{ dynamicClusterSize: " + clusterSize + " }";
   }
 
   @Override

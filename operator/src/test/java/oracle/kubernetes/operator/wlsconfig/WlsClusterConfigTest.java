@@ -164,7 +164,7 @@ public class WlsClusterConfigTest {
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null,null);
+      wlsClusterConfig.validateClusterStartup(cs, null);
       assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("No servers configured in WebLogic cluster with name cluster1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
@@ -179,7 +179,7 @@ public class WlsClusterConfigTest {
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null,null);
+      wlsClusterConfig.validateClusterStartup(cs, null);
       assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
@@ -192,32 +192,66 @@ public class WlsClusterConfigTest {
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(0, suggestedConfigUpdates.size());
   }
 
   @Test
-  public void verifyValidateClusterStartupDoesNotWarnIfDynamicCluster() throws Exception {
+  public void verifyValidateClusterStartupWarnsIfReplicasTooHigh_DynamicCluster() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     TestUtil.LogHandlerImpl handler = null;
     try {
       handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null, null);
-      assertFalse("No message should be logged, but found: " + handler.getAllFormattedMessage(), handler.hasWarningMessageLogged());
+      wlsClusterConfig.validateClusterStartup(cs, null);
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
     } finally {
       TestUtil.removeLogHandler(wlsClusterConfig, handler);
     }
   }
 
   @Test
-  public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfReplicasTooHigh() throws Exception {
+  public void verifyValidateClusterStartupWarnsIfReplicasTooHigh_mixedCluster() throws Exception {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+    wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(3);
+    TestUtil.LogHandlerImpl handler = null;
+    try {
+      handler = TestUtil.setupLogHandler(wlsClusterConfig);
+      wlsClusterConfig.validateClusterStartup(cs, null);
+      assertTrue("Message logged: " + handler.getAllFormattedMessage(), handler.hasWarningMessageWithSubString("Replicas in clusterStartup for cluster cluster1 is specified with a value of 3 which is larger than the number of configured WLS servers in the cluster: 2"));
+    } finally {
+      TestUtil.removeLogHandler(wlsClusterConfig, handler);
+    }
+  }
+
+  @Test
+  public void verifyValidateClusterStartupDoNotWarnIfReplicasNotHigh_mixedCluster() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+    wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
+    TestUtil.LogHandlerImpl handler = null;
+    try {
+      handler = TestUtil.setupLogHandler(wlsClusterConfig);
+      wlsClusterConfig.validateClusterStartup(cs, null);
+      assertFalse("No message should be logged, but found: " + handler.getAllFormattedMessage(), handler.hasWarningMessageLogged());
+    } finally {
+      TestUtil.removeLogHandler(wlsClusterConfig, handler);
+    }
+  }
+
+
+
+  @Test
+  public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfReplicasTooHigh() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 2, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(1, suggestedConfigUpdates.size());
     WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
       (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
@@ -225,14 +259,46 @@ public class WlsClusterConfigTest {
   }
 
   @Test
-  public void verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasNotHigh() throws Exception {
-    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 1, "ms-", "cluster1");
+  public void verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasSameAsClusterSize() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 2, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
     TestUtil.LogHandlerImpl handler = null;
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsClusterConfig.validateClusterStartup(cs, null, suggestedConfigUpdates);
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(0, suggestedConfigUpdates.size());
+  }
+
+  @Test
+  public void verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasLowerThanClusterSize() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 2, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
+    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
+    assertEquals(0, suggestedConfigUpdates.size());
+  }
+
+  @Test
+  public void verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfCurrentSizeAlreadyMax() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 2, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(3);
+    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
+    assertEquals(0, suggestedConfigUpdates.size());
+  }
+
+  @Test
+  public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterEvenIfReplicasExceedsMaxClusterSize() throws Exception {
+    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 2, "ms-", "cluster1");
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
+    ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(10);
+    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
+      (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
+    assertEquals(2, configUpdate.targetClusterSize);
   }
 
   @Ignore // we are currently not suggesting updates based on number of machines
@@ -254,7 +320,7 @@ public class WlsClusterConfigTest {
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(1, suggestedConfigUpdates.size());
     WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
       (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
@@ -281,7 +347,7 @@ public class WlsClusterConfigTest {
 
     // replica = 1, dynamicClusterSize = 2, num of machines = 0 ==> need to create one machine
     // but need to ensure that the update will not reduce dynamicClusterSize from 2 to 1
-    wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(1, suggestedConfigUpdates.size());
     WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
       (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
@@ -307,7 +373,7 @@ public class WlsClusterConfigTest {
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsClusterConfig.validateClusterStartup(cs, "domain1-cluster1-machine", suggestedConfigUpdates);
+    wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(0, suggestedConfigUpdates.size());
   }
 
@@ -319,24 +385,10 @@ public class WlsClusterConfigTest {
   }
 
   @Test
-  public void verifyGetUpdateDynamicClusterSizePayload1() {
+  public void verifyGetUpdateDynamicClusterSizePayload() {
     WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(1, 5, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    assertEquals(wlsClusterConfig.getUpdateDynamicClusterSizePayload(2), "{ dynamicClusterSize: 2,  maxDynamicClusterSize: 5 }");
-  }
-
-  @Test
-  public void verifyGetUpdateDynamicClusterSizePayload2() {
-    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 5, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    assertEquals(wlsClusterConfig.getUpdateDynamicClusterSizePayload(1), "{ dynamicClusterSize: 1,  maxDynamicClusterSize: 5 }");
-  }
-
-  @Test
-  public void verifyGetUpdateDynamicClusterSizePayload3() {
-    WlsDynamicServersConfig wlsDynamicServersConfig = createDynamicServersConfig(2, 5, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    assertEquals(wlsClusterConfig.getUpdateDynamicClusterSizePayload(8), "{ dynamicClusterSize: 8,  maxDynamicClusterSize: 8 }");
+    assertEquals(wlsClusterConfig.getUpdateDynamicClusterSizePayload(2), "{ dynamicClusterSize: 2 }");
   }
 
   @Test
