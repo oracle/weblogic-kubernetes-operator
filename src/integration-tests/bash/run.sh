@@ -811,6 +811,10 @@ function run_create_domain_job {
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
 
     # Customize more configuration 
+    if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
+      sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
+      sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
+    fi
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
     sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
@@ -2700,6 +2704,7 @@ function test_suite {
       test_domain_lifecycle domain1 domain4 
 
       # create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created
+      # on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage (search for [ "$DOMAIN_UID" == "domain5" ])
       test_create_domain_startup_control_admin domain5
 
       # create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
