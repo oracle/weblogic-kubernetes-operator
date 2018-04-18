@@ -9,15 +9,18 @@ import io.kubernetes.client.util.Config;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.ContainerResolver;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final ClientPool SINGLETON = new ClientPool();
-
-  private final AtomicBoolean first = new AtomicBoolean(true);
+  
+  private static final DefaultClientFactory FACTORY = new DefaultClientFactory();
 
   public static ClientPool getInstance() {
     return SINGLETON;
@@ -37,10 +40,16 @@ public class ClientPool extends Pool<ApiClient> {
     ApiClient client = null;
     LOGGER.fine(MessageKeys.CREATING_API_CLIENT);
     try {
-      client = Config.defaultClient();
-      if (first.getAndSet(false)) {
-        Configuration.setDefaultApiClient(client);
+      ClientFactory factory = null;
+      Container c = ContainerResolver.getInstance().getContainer();
+      if (c != null) {
+        factory = c.getSPI(ClientFactory.class);
       }
+      if (factory == null) {
+        factory = FACTORY;
+      }
+      
+      client = factory.get();
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
@@ -53,4 +62,22 @@ public class ClientPool extends Pool<ApiClient> {
     return client;
   }
 
+  private static class DefaultClientFactory implements ClientFactory {
+    private final AtomicBoolean first = new AtomicBoolean(true);
+
+    @Override
+    public ApiClient get() {
+      ApiClient client;
+      try {
+        client = Config.defaultClient();
+        if (first.getAndSet(false)) {
+          Configuration.setDefaultApiClient(client);
+        }
+        return client;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    
+  }
 }
