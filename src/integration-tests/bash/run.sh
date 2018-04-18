@@ -2467,7 +2467,6 @@ function test_suite_init {
 
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
     export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
-    export LB_TYPE=${LB_TPYE:-TRAEFIK}
     export NODEPORT_HOST=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
     export JVM_ARGS="${JVM_ARGS:-'-Dweblogic.StdoutDebugEnabled=false'}"
     export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
@@ -2475,6 +2474,10 @@ function test_suite_init {
     if [ -z "$BRANCH_NAME" ]; then
       export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
       [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
+    fi
+
+    if [ -z "$LB_TYPE" ]; then
+      export LB_TYPE=TRAEFIK
     fi
 
     export LEASE_ID="${LEASE_ID}"
