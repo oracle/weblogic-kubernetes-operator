@@ -692,7 +692,7 @@ function test_second_operator {
     declare_test_pass
 }
 
-# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
+# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
 #   Sets up a table of domain values:  all of the above, plus TMP_DIR which is derived.
 #
 # dom_get      DOM_KEY <value>
@@ -708,8 +708,8 @@ function test_second_operator {
 #   echo Defined operator $opkey with `dom_echo_all $DOM_KEY`
 #
 function dom_define {
-    if [ "$#" != 13 ] ; then
-      fail "requires 13 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT"
+    if [ "$#" != 14 ] ; then
+      fail "requires 14 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT"
     fi
     local DOM_KEY="`echo \"${1}\" | sed 's/-/_/g'`"
     eval export DOM_${DOM_KEY}_OP_KEY="$2"
@@ -717,13 +717,14 @@ function dom_define {
     eval export DOM_${DOM_KEY}_DOMAIN_UID="$4"
     eval export DOM_${DOM_KEY}_STARTUP_CONTROL="$5"
     eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$6"
-    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$7"
-    eval export DOM_${DOM_KEY}_ADMIN_PORT="$8"
-    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$9"
-    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${10}"
-    eval export DOM_${DOM_KEY}_MS_PORT="${11}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${12}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_DASHBOARD_PORT="${13}"
+    eval export DOM_${DOM_KEY}_WL_CLUSTER_TYPE="$7"
+    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$8"
+    eval export DOM_${DOM_KEY}_ADMIN_PORT="$9"
+    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="${10}"
+    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${11}"
+    eval export DOM_${DOM_KEY}_MS_PORT="${12}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${13}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_DASHBOARD_PORT="${14}"
 
     # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
@@ -753,6 +754,7 @@ function run_create_domain_job {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
+    local WL_CLUSTER_TYPE="`dom_get $1 WL_CLUSTER_TYPE`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
     local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
@@ -816,6 +818,7 @@ function run_create_domain_job {
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
     sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
+    sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
     sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
     sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
@@ -2629,13 +2632,13 @@ function test_suite {
     op_define  oper1   weblogic-operator-1  "default,test1"    31001
     op_define  oper2   weblogic-operator-2  test2              32001
 
-    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
-    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
-    dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
-    dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       managed-server 7051       30061           30705           8051    30309                  30319
-    dom_define domain6  oper1   default   domain6    AUTO            cluster-1       managed-server 7061       30071           30706           8061    30310                  30320
+    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
+    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
+    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
+    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
+    dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       CONFIGURED       managed-server 7041       30051           30704           8041    30308                  30318
+    dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       DYNAMIC          managed-server 7051       30061           30705           8051    30309                  30319
+    dom_define domain6  oper1   default   domain6    AUTO            cluster-1       DYNAMIC          managed-server 7061       30071           30706           8061    30310                  30320
 
     # create namespaces for domains (the operator job creates a namespace if needed)
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job

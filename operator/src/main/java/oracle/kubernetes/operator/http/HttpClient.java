@@ -114,12 +114,11 @@ public class HttpClient {
    */
   public Result executePostUrlOnServiceClusterIP(String requestUrl, String serviceURL, String payload,
                                                  boolean throwOnFailure) throws HTTPException {
-
     String url = serviceURL + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder = target.request().accept("application/json")
         .header("Authorization", "Basic " + encodedCredentials)
-        .header("X-Requested-By", "WebLogicOperator");
+        .header("X-Requested-By", "Weblogic Operator");
     Response response = invocationBuilder.post(Entity.json(payload));
     LOGGER.finer("Response is  " + response.getStatusInfo());
     String responseString = null;
@@ -240,6 +239,9 @@ public class HttpClient {
    * @return The URL of the Service, or null if it is not found
    */
   public static String getServiceURL(String name, String namespace) {
+    if (SERVICE_URL != null) {
+      return SERVICE_URL;
+    }
     try {
       CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       return getServiceURL(factory.create().readService(name, namespace));

@@ -40,6 +40,7 @@ import io.kubernetes.client.models.V1Service;
 
 /**
  * A helper class to retrieve configuration or health information from WebLogic servers.
+ * It also contains method to perform configuration updates to a WebLogic domain.
  */
 public class WlsRetriever {
   public static final String KEY = "wlsDomainConfig";
@@ -54,14 +55,17 @@ public class WlsRetriever {
   // timeout for reading server configured for the cluster from admin server - default is 180s
   private static final int READ_CONFIG_TIMEOUT_MILLIS = Integer.getInteger("read.config.timeout.ms", 180000);
 
+  // timeout for updating server configuration - default is 60s
+  private static final int UPDATE_CONFIG_TIMEOUT_MILLIS = Integer.getInteger("update.config.timeout.ms", 60000);
+
   // wait time before retrying to read server configured for the cluster from admin server - default is 1s
   private static final int READ_CONFIG_RETRY_MILLIS = Integer.getInteger("read.config.retry.ms", 1000);
 
   /**
    * Constructor.
    *
-   * @param namespace The Namespace in which the target Domain is located.
-   * @param asServiceName The name of the Kubernetes Service which provides access to the Admin Server.
+   * @param namespace       The Namespace in which the target Domain is located.
+   * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    * @return The WlsRetriever object for the specified inputs.
    */
@@ -72,8 +76,8 @@ public class WlsRetriever {
   /**
    * Constructor.
    *
-   * @param namespace The Namespace in which the target Domain is located.
-   * @param asServiceName The name of the Kubernetes Service which provides access to the Admin Server.
+   * @param namespace       The Namespace in which the target Domain is located.
+   * @param asServiceName   The name of the Kubernetes Service which provides access to the Admin Server.
    * @param adminSecretName The name of the Kubernetes Secret which contains the credentials to authenticate to the Admin Server.
    */
   public WlsRetriever(String namespace, String asServiceName, String adminSecretName) {
@@ -81,6 +85,7 @@ public class WlsRetriever {
     this.asServiceName = asServiceName;
     this.adminSecretName = adminSecretName;
   }
+
   
   private static final String START_TIME = "WlsRetriever-startTime";
   private static final String RETRY_COUNT = "WlsRetriever-retryCount";
@@ -97,6 +102,7 @@ public class WlsRetriever {
   
   /**
    * Creates asynchronous {@link Step} to read configuration from an admin server
+   *
    * @param next Next processing step
    * @return asynchronous step
    */
@@ -127,7 +133,7 @@ public class WlsRetriever {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
-        
+
         Domain dom = info.getDomain();
         V1ObjectMeta meta = dom.getMetadata();
         DomainSpec spec = dom.getSpec();
@@ -145,12 +151,11 @@ public class WlsRetriever {
         
         Step getClient = HttpClient.createAuthenticatedClientForServer(
             namespace, adminSecretName,
-            new WithHttpClientStep(requestType, namespace, sko.getService().get(), next));
+            new WithHttpClientStep(requestType, sko.getService().get(), next));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
       } catch (Throwable t) {
         LOGGER.info(MessageKeys.EXCEPTION, t);
-        
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
@@ -162,19 +167,78 @@ public class WlsRetriever {
       }
     }
   }
-  
+
+  /**
+   * Step for updating the cluster size of a WebLogic dynamic cluster
+   */
+  static final class UpdateDynamicClusterStep extends Step {
+
+    final WlsClusterConfig wlsClusterConfig;
+    final int targetClusterSize;
+
+    /**
+     * Constructor
+     *
+     * @param wlsClusterConfig The WlsClusterConfig object for the WebLogic dynamic cluster to be updated
+     * @param targetClusterSize The target dynamic cluster size
+     * @param next The next Step to be performed
+     */
+    public UpdateDynamicClusterStep(WlsClusterConfig wlsClusterConfig,
+                                    int targetClusterSize, Step next) {
+      super(next);
+      this.wlsClusterConfig = wlsClusterConfig;
+      this.targetClusterSize = targetClusterSize;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public NextAction apply(Packet packet) {
+
+      String clusterName = wlsClusterConfig == null? "null": wlsClusterConfig.getClusterName();
+
+      if (wlsClusterConfig == null || !wlsClusterConfig.hasDynamicServers()) {
+        LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER, clusterName);
+      } else {
+        try {
+          LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, targetClusterSize);
+          HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
+          DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+          long startTime = System.currentTimeMillis();
+
+          String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
+
+          boolean successful = updateDynamicClusterSizeWithServiceURL(wlsClusterConfig,
+                  targetClusterSize, httpClient, serviceURL);
+
+          if (successful) {
+            LOGGER.info(MessageKeys.WLS_CLUSTER_SIZE_UPDATED, clusterName, targetClusterSize, (System.currentTimeMillis() - startTime));
+          } else {
+            LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName,  null);
+          }
+        } catch (Throwable t) {
+          LOGGER.warning(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_FAILED, clusterName, t);
+        }
+      }
+      return doNext(packet);
+    }
+  }
+
   private static final class WithHttpClientStep extends Step {
     private final RequestType requestType;
-    private final String namespace;
     private final V1Service service;
 
-    public WithHttpClientStep(RequestType requestType, String namespace, V1Service service, Step next) {
+    public WithHttpClientStep(RequestType requestType, V1Service service, Step next) {
       super(next);
       this.requestType = requestType;
-      this.namespace = namespace;
       this.service = service;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public NextAction apply(Packet packet) {
       try {
@@ -183,29 +247,43 @@ public class WlsRetriever {
         Domain dom = info.getDomain();
   
         String serviceURL = HttpClient.getServiceURL(service);
-        
+
         if (RequestType.CONFIG.equals(requestType)) {
           WlsDomainConfig wlsDomainConfig = null;
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
               WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL,
               WlsDomainConfig.getRetrieveServersSearchPayload(),
-              true).getResponse();
+          true).getResponse();
 
-          wlsDomainConfig = WlsDomainConfig.create().load(jsonResult);
+          wlsDomainConfig = WlsDomainConfig.create(jsonResult);
 
-          // validate domain spec against WLS configuration. Currently this only logs warning messages.
-          wlsDomainConfig.updateDomainSpecAsNeeded(dom.getSpec());
+          List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+
+          // This logs warning messages as well as returning a list of suggested
+          // WebLogic configuration updates, but it does not update the DomainSpec.
+          wlsDomainConfig.validate(dom.getSpec(), suggestedConfigUpdates);
 
           info.setScan(wlsDomainConfig);
           info.setLastScanTime(new DateTime());
 
           LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ, (System.currentTimeMillis() - ((Long) packet.get(START_TIME))), wlsDomainConfig);
 
+          // If there are suggested WebLogic configuration update, perform them as the
+          // next Step, then read the updated WebLogic configuration again after the
+          // update(s) are performed.
+          if (!suggestedConfigUpdates.isEmpty()) {
+            Step nextStep = new WithHttpClientStep(requestType, service, next); // read WebLogic config again after config updates
+            for(ConfigUpdate suggestedConfigUpdate: suggestedConfigUpdates) {
+              nextStep = suggestedConfigUpdate.createStep(nextStep);
+            }
+            return doNext(nextStep, packet);
+          }
+
         } else { // RequestType.HEALTH
           String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
               getRetrieveHealthSearchUrl(), serviceURL,
               getRetrieveHealthSearchPayload(), true).getResponse();
-          
+
           ObjectMapper mapper = new ObjectMapper();
           JsonNode root = mapper.readTree(jsonResult);
           
@@ -294,7 +372,7 @@ public class WlsRetriever {
 
     LOGGER.entering();
 
-    long timeout = READ_CONFIG_TIMEOUT_MILLIS;
+    final long timeout = READ_CONFIG_TIMEOUT_MILLIS;
     ScheduledExecutorService executorService = ContainerResolver.getInstance().getContainer().getSPI(ScheduledExecutorService.class);
     long startTime = System.currentTimeMillis();
     Future<WlsDomainConfig> future = executorService.submit(() -> getWlsDomainConfig(timeout));
@@ -308,7 +386,7 @@ public class WlsRetriever {
       LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_TIMED_OUT, timeout);
     }
     if (wlsConfig == null) {
-      wlsConfig = WlsDomainConfig.create();
+      wlsConfig = new WlsDomainConfig(null);
     }
 
     LOGGER.exiting(wlsConfig);
@@ -319,46 +397,102 @@ public class WlsRetriever {
    * Method called by the Callable that is submitted from the readConfig method for reading the WLS server
    * configurations
    *
-   * @param timeout Maximum amount of time in millis to try to read configuration from the admin server before giving up
+   * @param timeoutMillis Maximum amount of time in milliseconds to try to read configuration from the admin server
+   *                     before giving up
+   *
    * @return A WlsClusterConfig object containing selected server configurations of all WLS servers configured in the
    * cluster. Method returns empty configuration object if timeout occurs before the configuration could be read from
    * the admin server.
    * @throws Exception if an exception occurs in the attempt just prior to the timeout
    */
-  private WlsDomainConfig getWlsDomainConfig(long timeout) throws Exception {
+  private WlsDomainConfig getWlsDomainConfig(final long timeoutMillis) throws Exception {
     LOGGER.entering();
 
-    long stopTime = System.currentTimeMillis() + timeout;
-    Exception exception = null;
     WlsDomainConfig result = null;
+    String jsonResult = executePostUrlWithRetry(
+            WlsDomainConfig.getRetrieveServersSearchUrl(),
+            WlsDomainConfig.getRetrieveServersSearchPayload(),
+            timeoutMillis);
+    if (jsonResult != null) {
+      result = WlsDomainConfig.create(jsonResult);
+    }
+    LOGGER.exiting(result);
+    return result;
+  }
+
+  /**
+   * Invokes a HTTP POST request using the provided URL and payload, and retry the request until it
+   * succeeded or the specified timeout period has reached.
+   *
+   * @param url The URL of the HTTP post request to be invoked
+   * @param payload The payload of the HTTP Post request to be invoked
+   * @param timeoutMillis Timeout in milliseconds
+   * @return The Json string returned from the HTTP POST request
+   * @throws Exception Any exception thrown while trying to invoke the HTTP POST request
+   */
+  private String executePostUrlWithRetry(final String url, final String payload, final long timeoutMillis)
+          throws Exception {
+    LOGGER.entering();
+
+    long stopTime = System.currentTimeMillis() + timeoutMillis;
+    Exception exception = null;
+    String jsonResult = null;
     long timeRemaining = stopTime - System.currentTimeMillis();
     // keep trying and ignore exceptions until timeout.
-    while (timeRemaining > 0 && result == null) {
+    while (timeRemaining > 0 && jsonResult == null) {
       LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_TRYING, timeRemaining);
       exception = null;
       try {
         String serviceURL = connectAndGetServiceURL();
-        String jsonResult =
-          httpClient.executePostUrlOnServiceClusterIP(WlsDomainConfig.getRetrieveServersSearchUrl(), serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload()).getResponse();
-        if (jsonResult != null) {
-          result = WlsDomainConfig.create().load(jsonResult);
-        }
+        jsonResult = httpClient.executePostUrlOnServiceClusterIP(url, serviceURL, payload).getResponse();
       } catch (Exception e) {
         exception = e;
         LOGGER.info(MessageKeys.WLS_CONFIGURATION_READ_RETRY, e, READ_CONFIG_RETRY_MILLIS);
       }
-      try {
-        // sleep before retrying
-        Thread.sleep(READ_CONFIG_RETRY_MILLIS);
-      } catch (InterruptedException ex) {
-        // ignore
+      if (jsonResult == null) {
+        try {
+          // sleep before retrying
+          Thread.sleep(READ_CONFIG_RETRY_MILLIS);
+        } catch (InterruptedException ex) {
+          // ignore
+        }
       }
       timeRemaining = stopTime - System.currentTimeMillis();
     }
-    if (result == null && exception != null) {
+    if (jsonResult == null && exception != null) {
       LOGGER.throwing(exception);
       throw exception;
     }
+    LOGGER.exiting(jsonResult);
+    return jsonResult;
+  }
+
+  /**
+   * Static method to update the WebLogic dynamic cluster size configuration.
+   *
+   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs to be updated. The
+   *                         caller should make sure that the cluster is a dynamic cluster.
+   * @param targetClusterSize The target dynamic cluster size
+   * @param httpClient HttpClient object for issuing the REST request
+   * @param serviceURL service URL of the WebLogic admin server
+   *
+   * @return true if the request to update the cluster size is successful, false if it was not successful
+   */
+
+  private static boolean updateDynamicClusterSizeWithServiceURL(final WlsClusterConfig wlsClusterConfig,
+                                                                final int targetClusterSize,
+                                                                final HttpClient httpClient,
+                                                                final String serviceURL) {
+    LOGGER.entering();
+
+    boolean result = false;
+    // Update the dynamic cluster size of the WebLogic cluster
+    String jsonResult = httpClient.executePostUrlOnServiceClusterIP(
+            wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+            serviceURL,
+            wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize)).getResponse();
+
+    result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
     LOGGER.exiting(result);
     return result;
   }
@@ -375,6 +509,4 @@ public class WlsRetriever {
 
     return HttpClient.getServiceURL(asServiceName, namespace);
   }
-
-
 }

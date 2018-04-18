@@ -1,6 +1,6 @@
 # Recent Changes to the Oracle WebLogic Server Kubernetes Operator
 
-This page track recent changes to the operator, especially ones that introduce backward incompatibilities.
+This page tracks recent changes to the operator, especially ones that introduce backward incompatibilities.
 
 | Date | Introduces Backward Incompatibilities | Change |
 | --- | --- | --- |
