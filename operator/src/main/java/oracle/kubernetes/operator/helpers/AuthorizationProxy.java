@@ -10,6 +10,8 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceAttributes;
 import io.kubernetes.client.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.models.V1SelfSubjectAccessReviewSpec;
+import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
@@ -231,5 +233,19 @@ public class AuthorizationProxy {
     }
     LOGGER.exiting(resourceAttributes);
     return resourceAttributes;
+  }
+  
+  public V1SelfSubjectRulesReview review(String namespace) {
+    V1SelfSubjectRulesReview subjectRulesReview = new V1SelfSubjectRulesReview();
+    V1SelfSubjectRulesReviewSpec spec = new V1SelfSubjectRulesReviewSpec();
+    spec.setNamespace(namespace);
+    subjectRulesReview.setSpec(spec);
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    try {
+      return factory.create().createSelfSubjectRulesReview(subjectRulesReview);
+    } catch (ApiException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+      return null;
+    }
   }
 }

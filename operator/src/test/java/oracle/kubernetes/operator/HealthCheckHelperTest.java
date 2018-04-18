@@ -12,7 +12,10 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import io.kubernetes.client.models.V1beta1PolicyRule;
 import io.kubernetes.client.models.V1beta1RoleBinding;
+import io.kubernetes.client.models.V1beta1RoleRef;
+import io.kubernetes.client.models.V1beta1Subject;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
 import oracle.kubernetes.TestUtils;
@@ -25,6 +28,7 @@ import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
+import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFormatter;
@@ -51,6 +55,7 @@ import java.util.logging.*;
 
 public class HealthCheckHelperTest {
 
+  private KubernetesVersion version;
   private HealthCheckHelper unitHealthCheckHelper;
 
   private final static String UNIT_NAMESPACE = "unit-test-namespace";
@@ -76,7 +81,7 @@ public class HealthCheckHelperTest {
     createNamespace(UNIT_NAMESPACE);
 
     unitHealthCheckHelper = new HealthCheckHelper(UNIT_NAMESPACE, Collections.singleton(UNIT_NAMESPACE));
-    
+
     userProjects = UserProjects.createUserProjectsDirectory();
   }
 
@@ -115,6 +120,8 @@ public class HealthCheckHelperTest {
     String token = new String(secret.getData().get("token"), StandardCharsets.UTF_8);
     */
     
+    applyMinimumSecurity(apiClient, UNIT_NAMESPACE, "alice");
+
     ContainerResolver.getInstance().getContainer().getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
         Component.createFor(
@@ -136,7 +143,8 @@ public class HealthCheckHelperTest {
     
     ClientPool.getInstance().drain();
     
-    unitHealthCheckHelper.performSecurityChecks();
+    version = unitHealthCheckHelper.performK8sVersionCheck();
+    unitHealthCheckHelper.performSecurityChecks(version);
     hdlr.flush();
     String logOutput = bos.toString();
 
@@ -186,13 +194,54 @@ public class HealthCheckHelperTest {
     
     ClientPool.getInstance().drain();
     
-    unitHealthCheckHelper.performSecurityChecks();
+    version = unitHealthCheckHelper.performK8sVersionCheck();
+    unitHealthCheckHelper.performSecurityChecks(version);
     hdlr.flush();
     String logOutput = bos.toString();
 
     Assert.assertFalse("Log output must not contain Access Denied error: " + logOutput,
         logOutput.contains("Access denied"));
     bos.reset();
+  }
+  
+  private void applyMinimumSecurity(ApiClient apiClient, String namespace, String sa) throws Exception {
+    V1beta1ClusterRole clusterRole = new V1beta1ClusterRole();
+    clusterRole.setMetadata(new V1ObjectMeta()
+        .name("test-role")
+        .putLabelsItem("weblogic.operatorName", namespace));
+    clusterRole.addRulesItem(new V1beta1PolicyRule().addNonResourceURLsItem("/version/*").addVerbsItem("get"));
+    clusterRole.addRulesItem(new V1beta1PolicyRule().addResourcesItem("selfsubjectrulesreviews")
+        .addApiGroupsItem("authorization.k8s.io").addVerbsItem("create"));
+    V1beta1ClusterRoleBinding clusterRoleBinding = new V1beta1ClusterRoleBinding();
+    clusterRoleBinding.setMetadata(new V1ObjectMeta()
+        .name(namespace + "-test-role")
+        .putLabelsItem("weblogic.operatorName", namespace));
+    clusterRoleBinding.addSubjectsItem(new V1beta1Subject()
+        .kind("ServiceAccount")
+        .apiGroup("")
+        .name(sa).namespace(namespace));
+    clusterRoleBinding.roleRef(new V1beta1RoleRef()
+        .kind("ClusterRole")
+        .apiGroup("rbac.authorization.k8s.io")
+        .name("test-role"));
+    RbacAuthorizationV1beta1Api rbac = new RbacAuthorizationV1beta1Api(apiClient);
+
+    try {
+      rbac.createClusterRole(clusterRole, "false");
+    } catch (ApiException api) {
+      if (api.getCode() != CallBuilder.CONFLICT) {
+        throw api;
+      }
+      rbac.replaceClusterRole(clusterRole.getMetadata().getName(), clusterRole, "false");
+    }
+    try {
+      rbac.createClusterRoleBinding(clusterRoleBinding, "false");
+    } catch (ApiException api) {
+      if (api.getCode() != CallBuilder.CONFLICT) {
+        throw api;
+      }
+      rbac.replaceClusterRoleBinding(clusterRoleBinding.getMetadata().getName(), clusterRoleBinding, "false");
+    }
   }
   
   private void applySecurity(ApiClient apiClient, String namespace, String sa) throws Exception {
