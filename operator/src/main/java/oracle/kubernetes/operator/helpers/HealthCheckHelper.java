@@ -6,6 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1ResourceRule;
+import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
@@ -44,83 +47,28 @@ public class HealthCheckHelper {
       AuthorizationProxy.Operation.delete,
       AuthorizationProxy.Operation.deletecollection};
 
-  private static final AuthorizationProxy.Operation[] domainOperations = {
+  private static final AuthorizationProxy.Operation[] cOperations = {
+      AuthorizationProxy.Operation.create};
+
+  private static final AuthorizationProxy.Operation[] glOperations = {
+      AuthorizationProxy.Operation.get,
+      AuthorizationProxy.Operation.list};
+
+  private static final AuthorizationProxy.Operation[] glwOperations = {
+      AuthorizationProxy.Operation.get,
+      AuthorizationProxy.Operation.list,
+      AuthorizationProxy.Operation.watch};
+
+  private static final AuthorizationProxy.Operation[] glwupOperations = {
       AuthorizationProxy.Operation.get,
       AuthorizationProxy.Operation.list,
       AuthorizationProxy.Operation.watch,
       AuthorizationProxy.Operation.update,
       AuthorizationProxy.Operation.patch};
 
-  private static final AuthorizationProxy.Operation[] tokenReviewOperations = {
-      AuthorizationProxy.Operation.get,
-      AuthorizationProxy.Operation.list,
-      AuthorizationProxy.Operation.watch};
-
-  private static final AuthorizationProxy.Operation[] ingressOperations = {
-      AuthorizationProxy.Operation.get,
-      AuthorizationProxy.Operation.list,
-      AuthorizationProxy.Operation.watch,
-      AuthorizationProxy.Operation.create,
-      AuthorizationProxy.Operation.update,
-      AuthorizationProxy.Operation.patch,
-      AuthorizationProxy.Operation.delete,
-      AuthorizationProxy.Operation.deletecollection};
-
-  private static final AuthorizationProxy.Operation[] namespaceOperations = {
-      AuthorizationProxy.Operation.get,
-      AuthorizationProxy.Operation.list,
-      AuthorizationProxy.Operation.watch};
-
-  private static final AuthorizationProxy.Operation[] persistentVolumeOperations = {
-          AuthorizationProxy.Operation.get,
-          AuthorizationProxy.Operation.list,
-          AuthorizationProxy.Operation.watch};
-
-  private static final AuthorizationProxy.Operation[] persistentVolumeClaimOperations = {
-          AuthorizationProxy.Operation.get,
-          AuthorizationProxy.Operation.list,
-          AuthorizationProxy.Operation.watch};
-
-  private static final AuthorizationProxy.Operation[] secretsOperations = {
-          AuthorizationProxy.Operation.get,
-          AuthorizationProxy.Operation.list,
-          AuthorizationProxy.Operation.watch};
-
-  private static final AuthorizationProxy.Operation[] serviceOperations = {
-          AuthorizationProxy.Operation.get,
-          AuthorizationProxy.Operation.list,
-          AuthorizationProxy.Operation.watch,
-          AuthorizationProxy.Operation.create,
-          AuthorizationProxy.Operation.update,
-          AuthorizationProxy.Operation.patch,
-          AuthorizationProxy.Operation.delete,
-          AuthorizationProxy.Operation.deletecollection};
-
-  private static final AuthorizationProxy.Operation[] podOperations = {
-          AuthorizationProxy.Operation.get,
-          AuthorizationProxy.Operation.list,
-          AuthorizationProxy.Operation.watch,
-          AuthorizationProxy.Operation.create,
-          AuthorizationProxy.Operation.update,
-          AuthorizationProxy.Operation.patch,
-          AuthorizationProxy.Operation.delete,
-          AuthorizationProxy.Operation.deletecollection};
-
-  private static final AuthorizationProxy.Operation[] networkPoliciesOperations = {
-          AuthorizationProxy.Operation.get,
-          AuthorizationProxy.Operation.list,
-          AuthorizationProxy.Operation.watch,
-          AuthorizationProxy.Operation.create,
-          AuthorizationProxy.Operation.update,
-          AuthorizationProxy.Operation.patch,
-          AuthorizationProxy.Operation.delete,
-          AuthorizationProxy.Operation.deletecollection};
 
   // default namespace or svc account name
   private static final String DEFAULT_NAMESPACE = "default";
-
-  // API Server command constants
-  private static final String SVC_ACCOUNT_PREFIX = "system:serviceaccount:";
 
   private static final String DOMAIN_UID_LABEL = "weblogic.domainUID";
   private static final String MINIMUM_K8S_VERSION = "v1.7.5";
@@ -140,22 +88,34 @@ public class HealthCheckHelper {
     // Initialize access checks to be performed
 
     // CRUD resources
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.pods, podOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.services, serviceOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.ingresses, ingressOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.networkpolicies, networkPoliciesOperations);
-    clusterAccessChecks.put(AuthorizationProxy.Resource.customresourcedefinitions, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODPRESETS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODTEMPLATES, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.SERVICES, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.CONFIGMAPS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.EVENTS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.JOBS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.CRONJOBS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMECLAIMS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.NETWORKPOLICIES, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODSECURITYPOLICIES, crudOperations);
+    
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.LOGS, glOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.EXEC, cOperations);
 
-    clusterAccessChecks.put(AuthorizationProxy.Resource.domains, domainOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.DOMAINS, glwupOperations);
+
+    clusterAccessChecks.put(AuthorizationProxy.Resource.CRDS, crudOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.INGRESSES, crudOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMES, crudOperations);
 
     // Readonly resources
-    clusterAccessChecks.put(AuthorizationProxy.Resource.namespaces, namespaceOperations);
-    clusterAccessChecks.put(AuthorizationProxy.Resource.persistentvolumes, persistentVolumeOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.secrets, secretsOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.persistentvolumeclaims, persistentVolumeClaimOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.NAMESPACES, glwOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.SECRETS, glwOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.STORAGECLASSES, glwOperations);
 
     // tokenreview
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.tokenreviews, tokenReviewOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
   }
 
   /**
@@ -173,36 +133,70 @@ public class HealthCheckHelper {
 
   /**
    * Verify Access.
-   *
-   * @param svcAccountName service account for checking access
+   * @param version Kubernetes version
    * @throws ApiException exception for k8s API
    **/
-  public void performSecurityChecks(String svcAccountName) throws ApiException {
+  public void performSecurityChecks(KubernetesVersion version) throws ApiException {
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
       LOGGER.info(MessageKeys.NAMESPACE_IS_DEFAULT);
     }
 
-    // Validate svc account
-    String principalName = svcAccountName;
-    if (svcAccountName == null || DEFAULT_NAMESPACE.equals(svcAccountName)) {
-      LOGGER.info(MessageKeys.SVC_ACCOUNT_IS_DEFAULT);
-      principalName = DEFAULT_NAMESPACE;
-    }
-
-    String fullName = SVC_ACCOUNT_PREFIX + operatorNamespace + ":" + principalName;
-
-    // Validate RBAC or ABAC policies allow service account to perform required opertions
+    // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_ACCESS_START, svcAccountName);
+    LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
+    
+    if (version.major > 1 || version.minor >= 8) {
+      boolean rulesReviewSuccessful = true;
+      for (String ns : targetNamespaces) {
+        V1SelfSubjectRulesReview review = ap.review(ns);
+        if (review == null) {
+          rulesReviewSuccessful = false;
+          break;
+        }
+        
+        V1SubjectRulesReviewStatus status = review.getStatus();
+        List<V1ResourceRule> rules = status.getResourceRules();
+        
+        for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
+          for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
+            check(rules, r, op);
+          }
+        }
+        for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+          for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+            check(rules, r, op);
+          }
+        }
+      }
+      if (!targetNamespaces.contains("default")) {
+        V1SelfSubjectRulesReview review = ap.review("default");
+        if (review == null) {
+          rulesReviewSuccessful = false;
+        } else {
+          V1SubjectRulesReviewStatus status = review.getStatus();
+          List<V1ResourceRule> rules = status.getResourceRules();
 
+          for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+            for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+              check(rules, r, op);
+            }
+          }
+        }
+      }
+      
+      if (rulesReviewSuccessful) {
+        return;
+      }
+    }
+    
     for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         for (String ns : targetNamespaces) {
-          if (!ap.check(fullName, op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-            logHealthCheckEvent(MessageKeys.VERIFY_ACCESS_DENIED, fullName, op, r);
+          if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
+            LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
           }
         }
       }
@@ -211,13 +205,44 @@ public class HealthCheckHelper {
     for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
-        if (!ap.check(fullName, op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          logHealthCheckEvent(MessageKeys.VERIFY_ACCESS_DENIED, fullName, op, r);
+        if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
         }
       }
     }
   }
+  
+  private void check(List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
+    String verb = op.name();
+    String apiGroup = r.getAPIGroup();
+    String resource = r.getResource();
+    String sub = r.getSubResource();
+    if (sub != null && !sub.isEmpty()) {
+      resource = resource + "/" + sub;
+    }
+    for (V1ResourceRule rule : rules) {
+      List<String> ruleApiGroups = rule.getApiGroups();
+      if (apiGroupMatch(ruleApiGroups, apiGroup)) {
+        List<String> ruleResources = rule.getResources();
+        if (ruleResources != null && ruleResources.contains(resource)) {
+          List<String> ruleVerbs = rule.getVerbs();
+          if (ruleVerbs != null && ruleVerbs.contains(verb)) {
+            return;
+          }
+        }
+      }
+    }
+    
+    LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+  }
 
+  private boolean apiGroupMatch(List<String> ruleApiGroups, String apiGroup) {
+    if (apiGroup == null || apiGroup.isEmpty()) {
+      return ruleApiGroups == null || ruleApiGroups.isEmpty() || ruleApiGroups.contains("");
+    }
+    return ruleApiGroups != null && ruleApiGroups.contains(apiGroup);
+  }
+  
   /**
    * Major and minor version of Kubernetes API Server
    * 
@@ -280,7 +305,7 @@ public class HealthCheckHelper {
 
       // Minimum k8s version not satisfied.
       if (!k8sMinVersion) {
-        logHealthCheckEvent(MessageKeys.K8S_MIN_VERSION_CHECK_FAILED, MINIMUM_K8S_VERSION, gitVersion);
+        LOGGER.warning(MessageKeys.K8S_MIN_VERSION_CHECK_FAILED, MINIMUM_K8S_VERSION, gitVersion);
       } else {
         LOGGER.info(MessageKeys.K8S_VERSION_CHECK, gitVersion);
       }
@@ -310,7 +335,7 @@ public class HealthCheckHelper {
         Domain domain2 = domainUIDMap.put(domain.getSpec().getDomainUID(), domain);
         // Domain UID already exist if not null
         if (domain2 != null) {
-          logHealthCheckEvent(MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED, domain.getSpec().getDomainUID(),
+          LOGGER.warning(MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED, domain.getSpec().getDomainUID(),
               domain.getMetadata().getName(), domain2.getMetadata().getName());
         }
       }
@@ -348,7 +373,7 @@ public class HealthCheckHelper {
 
           // Persistent volume does not have ReadWriteMany access mode,
           if (!foundAccessMode) {
-            logHealthCheckEvent(MessageKeys.PV_ACCESS_MODE_FAILED, pv.getMetadata().getName(),
+            LOGGER.warning(MessageKeys.PV_ACCESS_MODE_FAILED, pv.getMetadata().getName(),
                 domain.getMetadata().getName(), domainUID, READ_WRITE_MANY_ACCESS);
           }
           //TODO: Should we verify the claim, also?
@@ -357,7 +382,7 @@ public class HealthCheckHelper {
 
       // Persistent volume for domain UID not found
       if (!foundLabel) {
-        logHealthCheckEvent(MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID, domain.getMetadata().getName(), domainUID);
+        LOGGER.warning(MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID, domain.getMetadata().getName(), domainUID);
       }
     }
 
@@ -374,7 +399,7 @@ public class HealthCheckHelper {
     for (Domain domain : domainUIDMap.values()) {
       LOGGER.finest(MessageKeys.WEBLOGIC_DOMAIN, domain.toString());
       if (!domain.getSpec().getImage().equals(DOMAIN_IMAGE)) {
-        logHealthCheckEvent(MessageKeys.DOMAIN_IMAGE_FAILED, DOMAIN_IMAGE, domain.getSpec().getImage());
+        LOGGER.warning(MessageKeys.DOMAIN_IMAGE_FAILED, DOMAIN_IMAGE, domain.getSpec().getImage());
       }
     }
   }
@@ -410,15 +435,5 @@ public class HealthCheckHelper {
   private boolean isAdminServerRunning(Domain domain) {
     // TODO: Need to call API to find if an Admin server is running for a given domain
     return true;
-  }
-
-  /**
-   * Log health check failures.
-   *
-   * @param msg    the message to log
-   * @param params varargs list of objects to include in the log message
-   */
-  private void logHealthCheckEvent(String msg, Object... params) {
-    LOGGER.warning(msg, params);
   }
 }

@@ -74,4 +74,10 @@ public abstract class Pool<T> {
    */
   protected abstract T create();
 
+  /**
+   * Drains pool of all entries; useful for unit-testing
+   */
+  public void drain() {
+    getQueue().clear();
+  }
 }

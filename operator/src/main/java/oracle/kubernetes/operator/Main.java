@@ -220,7 +220,7 @@ public class Main {
         HealthCheckHelper healthCheck = new HealthCheckHelper(namespace, targetNamespaces);
         version = healthCheck.performK8sVersionCheck();
         healthCheck.performNonSecurityChecks();
-        healthCheck.performSecurityChecks(serviceAccountName);
+        healthCheck.performSecurityChecks(version);
       } catch (ApiException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
       }
