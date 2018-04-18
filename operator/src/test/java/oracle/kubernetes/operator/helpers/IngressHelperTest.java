@@ -79,9 +79,9 @@ public class IngressHelperTest {
     info = new DomainPresenceInfo(domain);
     
     // Create scan
-    WlsDomainConfig scan = new WlsDomainConfig();
-    WlsServerConfig server1Scan = new WlsServerConfig(server1Name, server1Port, server1Name, null);
-    WlsServerConfig server2Scan = new WlsServerConfig(server2Name, server2Port, server2Name, null);
+    WlsDomainConfig scan = new WlsDomainConfig(null);
+    WlsServerConfig server1Scan = new WlsServerConfig(server1Name, server1Port, server1Name, null, false, null, null);
+    WlsServerConfig server2Scan = new WlsServerConfig(server2Name, server2Port, server2Name, null, false, null, null);
 
     scan.getServerConfigs().put(server1Name, server1Scan);
     scan.getServerConfigs().put(server2Name, server2Scan);

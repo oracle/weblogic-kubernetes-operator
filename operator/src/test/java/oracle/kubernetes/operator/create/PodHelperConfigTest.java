@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.create;
 import java.util.HashMap;
 import java.util.List;
 
+import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
@@ -299,7 +300,7 @@ public class PodHelperConfigTest {
       packet.put(
         ProcessingConstants.SERVER_SCAN,
         // no listen address, no network access points since PodHelper doesn't use them:
-        new WlsServerConfig(MANAGED_SERVER_NAME, MANAGED_SERVER_PORT, null, null));
+        new WlsServerConfig(MANAGED_SERVER_NAME, MANAGED_SERVER_PORT, null, null, false, null, null));
       packet.put(
         ProcessingConstants.CLUSTER_SCAN,
         // don't attach WlsServerConfigs for the managed server to the WlsClusterConfig
@@ -402,6 +403,7 @@ public class PodHelperConfigTest {
         .value(MANAGED_OPTION2_VALUE));
     pod.getMetadata()
       .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER_NAME);
+    pod.getSpec().getContainers().get(0).addCommandItem(ADMIN_SERVER_NAME).addCommandItem(String.valueOf(ADMIN_SERVER_PORT));
     return pod;
   }
 
@@ -433,11 +435,18 @@ public class PodHelperConfigTest {
             .name("weblogic-server")
             .image(image)
             .imagePullPolicy(imagePullPolicy)
-            .addCommandItem("/shared/domain/" + DOMAIN_NAME + "/servers/" + serverName + "/nodemgr_home/startServer.sh")
+            .addCommandItem("/weblogic-operator/scripts/startServer.sh")
+            .addCommandItem(DOMAIN_UID)
+            .addCommandItem(serverName)
+            .addCommandItem(DOMAIN_NAME)
             .lifecycle(newLifecycle()
               .preStop(newHandler()
                 .exec(newExecAction()
-                  .addCommandItem("/shared/domain/" + DOMAIN_NAME + "/servers/" + serverName + "/nodemgr_home/stopServer.sh"))))
+                  .addCommandItem("/weblogic-operator/scripts/stopServer.sh")
+                  .addCommandItem(DOMAIN_UID)
+                  .addCommandItem(serverName)
+                  .addCommandItem(DOMAIN_NAME)
+                )))
             .livenessProbe(newProbe()
               .initialDelaySeconds(10)
               .periodSeconds(10)
