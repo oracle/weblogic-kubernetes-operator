@@ -626,7 +626,7 @@ function setupVoyagerLoadBalancer {
   fi
 
 echo Checking Voyager service
-  vscv=`kubectl get service -n ${namespace} | grep voyager-stats | wc | awk ' { print $1; } '`
+  vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep voyager-stats | wc | awk ' { print $1; } '`
   if [ "$vscv" != "1" ]; then
     fail "The service voyager-stats was not created"
   fi 
