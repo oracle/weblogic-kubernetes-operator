@@ -6,6 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1ResourceRule;
+import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
@@ -130,10 +133,10 @@ public class HealthCheckHelper {
 
   /**
    * Verify Access.
-   *
+   * @param version Kubernetes version
    * @throws ApiException exception for k8s API
    **/
-  public void performSecurityChecks() throws ApiException {
+  public void performSecurityChecks(KubernetesVersion version) throws ApiException {
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
@@ -143,7 +146,51 @@ public class HealthCheckHelper {
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
+    
+    if (version.major > 1 || version.minor >= 8) {
+      boolean rulesReviewSuccessful = true;
+      for (String ns : targetNamespaces) {
+        V1SelfSubjectRulesReview review = ap.review(ns);
+        if (review == null) {
+          rulesReviewSuccessful = false;
+          break;
+        }
+        
+        V1SubjectRulesReviewStatus status = review.getStatus();
+        List<V1ResourceRule> rules = status.getResourceRules();
+        
+        for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
+          for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
+            check(rules, r, op);
+          }
+        }
+        for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+          for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+            check(rules, r, op);
+          }
+        }
+      }
+      if (!targetNamespaces.contains("default")) {
+        V1SelfSubjectRulesReview review = ap.review("default");
+        if (review == null) {
+          rulesReviewSuccessful = false;
+        } else {
+          V1SubjectRulesReviewStatus status = review.getStatus();
+          List<V1ResourceRule> rules = status.getResourceRules();
 
+          for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+            for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+              check(rules, r, op);
+            }
+          }
+        }
+      }
+      
+      if (rulesReviewSuccessful) {
+        return;
+      }
+    }
+    
     for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
@@ -164,7 +211,38 @@ public class HealthCheckHelper {
       }
     }
   }
+  
+  private void check(List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
+    String verb = op.name();
+    String apiGroup = r.getAPIGroup();
+    String resource = r.getResource();
+    String sub = r.getSubResource();
+    if (sub != null && !sub.isEmpty()) {
+      resource = resource + "/" + sub;
+    }
+    for (V1ResourceRule rule : rules) {
+      List<String> ruleApiGroups = rule.getApiGroups();
+      if (apiGroupMatch(ruleApiGroups, apiGroup)) {
+        List<String> ruleResources = rule.getResources();
+        if (ruleResources != null && ruleResources.contains(resource)) {
+          List<String> ruleVerbs = rule.getVerbs();
+          if (ruleVerbs != null && ruleVerbs.contains(verb)) {
+            return;
+          }
+        }
+      }
+    }
+    
+    LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+  }
 
+  private boolean apiGroupMatch(List<String> ruleApiGroups, String apiGroup) {
+    if (apiGroup == null || apiGroup.isEmpty()) {
+      return ruleApiGroups == null || ruleApiGroups.isEmpty() || ruleApiGroups.contains("");
+    }
+    return ruleApiGroups != null && ruleApiGroups.contains(apiGroup);
+  }
+  
   /**
    * Major and minor version of Kubernetes API Server
    * 
