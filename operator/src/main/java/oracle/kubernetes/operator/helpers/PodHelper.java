@@ -216,7 +216,10 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStopHandler = new V1Handler();
       V1ExecAction lifecycleExecAction = new V1ExecAction();
-      lifecycleExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/stopServer.sh");
+      lifecycleExecAction.addCommandItem("/weblogic-operator/scripts/stopServer.sh");
+      lifecycleExecAction.addCommandItem(weblogicDomainUID);
+      lifecycleExecAction.addCommandItem(spec.getAsName());
+      lifecycleExecAction.addCommandItem(weblogicDomainName);
       preStopHandler.setExec(lifecycleExecAction);
       lifecycle.setPreStop(preStopHandler);
       container.setLifecycle(lifecycle);
@@ -238,7 +241,10 @@ public class PodHelper {
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/weblogic-operator/scripts/startServer.sh");
+      container.addCommandItem(weblogicDomainUID);
+      container.addCommandItem(spec.getAsName());
+      container.addCommandItem(weblogicDomainName);
 
       PodTuning tuning = configMapHelper.getPodTuning();
       
@@ -638,7 +644,10 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStop = new V1Handler();
       V1ExecAction exec = new V1ExecAction();
-      exec.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/stopServer.sh");
+      exec.addCommandItem("/weblogic-operator/scripts/stopServer.sh");
+      exec.addCommandItem(weblogicDomainUID);
+      exec.addCommandItem(weblogicServerName);
+      exec.addCommandItem(weblogicDomainName);
       preStop.setExec(exec);
       lifecycle.setPreStop(preStop);
       container.setLifecycle(lifecycle);
@@ -660,7 +669,12 @@ public class PodHelper {
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/weblogic-operator/scripts/startServer.sh");
+      container.addCommandItem(weblogicDomainUID);
+      container.addCommandItem(weblogicServerName);
+      container.addCommandItem(weblogicDomainName);
+      container.addCommandItem(spec.getAsName());
+      container.addCommandItem(String.valueOf(spec.getAsPort()));
 
       PodTuning tuning = configMapHelper.getPodTuning();
       

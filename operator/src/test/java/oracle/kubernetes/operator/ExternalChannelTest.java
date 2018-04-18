@@ -32,7 +32,7 @@ public class ExternalChannelTest {
    private DomainSpec spec = new DomainSpec();
    private V1ObjectMeta meta = new V1ObjectMeta();
    private List<String> chlist = new ArrayList<>();
-   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig();
+   private WlsDomainConfig wlsDomainConfig;
 
    private Field protocol;
    private Field listenPort;
@@ -90,7 +90,7 @@ public class ExternalChannelTest {
       spec.setAsName("admin-server");
       spec.setExportT3Channels(chlist);
 
-      wlsDomainConfig = wlsDomainConfig.load(jsonString);
+      wlsDomainConfig = WlsDomainConfig.create(jsonString);
 
       WlsServerConfig adminServerConfig = wlsDomainConfig.getServerConfig(spec.getAsName());
       List<NetworkAccessPoint> naps = adminServerConfig.getNetworkAccessPoints();
