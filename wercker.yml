@@ -53,8 +53,10 @@ build:
   - script:
     name: Remove things we do not want in the Docker image in order to reduce size of image
     code: |
-      yum -y remove tar gzip
+      rpm -e --nodeps tar 
+      rpm -e --nodeps gzip 
       yum clean all
+      rm -rf /var/cache/yum
   # push the image to quay.io using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:
