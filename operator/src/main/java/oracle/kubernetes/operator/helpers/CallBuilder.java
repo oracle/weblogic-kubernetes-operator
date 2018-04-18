@@ -36,6 +36,7 @@ import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
@@ -1382,6 +1383,41 @@ public class CallBuilder {
    */
   public Step createSubjectAccessReviewAsync(V1SubjectAccessReview body, ResponseStep<V1SubjectAccessReview> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("createSubjectAccessReview", null, null, body), CREATE_SUBJECTACCESSREVIEW);
+  }
+  
+  /* Self Subject Access Review */
+  
+  /**
+   * Create self subject access review
+   * @param body Body
+   * @return Created self subject access review
+   * @throws ApiException API Exception
+   */
+  public V1SelfSubjectAccessReview createSelfSubjectAccessReview(V1SelfSubjectAccessReview body) throws ApiException {
+    ApiClient client = helper.take();
+    try {
+      return new AuthorizationV1Api(client).createSelfSubjectAccessReview(body, pretty);
+    } finally {
+      helper.recycle(client);
+    }
+  }
+
+  private com.squareup.okhttp.Call createSelfSubjectAccessReviewAsync(ApiClient client, V1SelfSubjectAccessReview body, ApiCallback<V1SelfSubjectAccessReview> callback) throws ApiException {
+    return new AuthorizationV1Api(client).createSelfSubjectAccessReviewAsync(body, pretty, callback);
+  }
+
+  private final CallFactory<V1SelfSubjectAccessReview> CREATE_SELFSUBJECTACCESSREVIEW = (requestParams, usage, cont, callback) -> {
+    return createSelfSubjectAccessReviewAsync(usage, (V1SelfSubjectAccessReview) requestParams.body, callback);
+  };
+  
+  /**
+   * Asynchronous step for creating self subject access review
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createSelfSubjectAccessReviewAsync(V1SelfSubjectAccessReview body, ResponseStep<V1SelfSubjectAccessReview> responseStep) {
+    return createRequestAsync(responseStep, new RequestParams("createSelfSubjectAccessReview", null, null, body), CREATE_SELFSUBJECTACCESSREVIEW);
   }
   
   /* Token Review */
