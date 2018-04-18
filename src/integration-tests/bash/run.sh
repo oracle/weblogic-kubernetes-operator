@@ -78,6 +78,9 @@
 #                  See "Directory Configuration and Structure" below for
 #                  defaults and a detailed description of test directories.
 #
+#   LB_TYPE        Load balancer type. Can be 'TRAEFIK', 'VOYAGER'.
+#                  Default is 'TRAEFIK'.
+#
 #   VERBOSE        Set to 'true' to echo verbose output to stdout.
 #                  Default is 'false'.
 #
@@ -768,8 +771,8 @@ function run_create_domain_job {
 
     local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
-    trace "Create $DOMAIN_UID in $NAMESPACE namespace "
-
+    trace "Create $DOMAIN_UID in $NAMESPACE namespace with load balancer $LB_TYPE"
+  
     local tmp_dir="$TMP_DIR"
     mkdir -p $tmp_dir
 
@@ -823,6 +826,7 @@ function run_create_domain_job {
     if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
       sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
     fi
+    sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
@@ -2443,6 +2447,7 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   LB_TYPE \
                    VERBOSE \
                    QUICKTEST \
                    NODEPORT_HOST \
@@ -2462,6 +2467,7 @@ function test_suite_init {
 
     export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
     export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
+    export LB_TYPE=${LB_TPYE:-TRAEFIK}
     export NODEPORT_HOST=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
     export JVM_ARGS="${JVM_ARGS:-'-Dweblogic.StdoutDebugEnabled=false'}"
     export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
@@ -2485,6 +2491,7 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   LB_TYPE \
                    VERBOSE \
                    QUICKTEST \
                    NODEPORT_HOST \

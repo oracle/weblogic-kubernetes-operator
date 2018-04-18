@@ -325,7 +325,7 @@ function initialize {
 
   voyagerInput="${scriptDir}/voyager-ingress-template.yaml"
   if [ ! -f ${voyagerInput} ]; then
-    validationError "The template file ${voyagerInput} for generating the voyager ingress was not found"
+    validationError "The template file ${voyagerInput} for generating the Voyager Ingress was not found"
   fi
 
   failIfValidationErrors
@@ -504,10 +504,12 @@ function createYamlFiles {
   fi
 
   if [ "${loadBalancer}" = "VOYAGER" ]; then
-    # Voyager ingress file
+    # Voyager Ingress file
     cp ${voyagerInput} ${voyagerOutput}
     echo Generating ${voyagerOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${voyagerOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerOutput}
     sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerOutput}
@@ -606,25 +608,25 @@ function createDomain {
 }
 
 #
-# Deploy voyager/HAProxy load balancer
+# Deploy Voyager/HAProxy load balancer
 #
 function setupVoyagerLoadBalancer {
-  # deploy voyager ingress controller
+  # deploy Voyager Ingress controller
   kubectl create namespace voyager
   curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
   | bash -s -- --provider=baremetal --namespace=voyager
 
-  # deploy voyager ingress resource
-  kubectl create -f ${voyagerOutput}
+  # deploy Voyager Ingress resource
+  kubectl apply -f ${voyagerOutput}
 
-  echo Checking voyager deploy
-  vdep=`kubectl get deploy | grep voyager | wc | awk ' { print $1; } '`
+  echo Checking Voyager deploy
+  vdep=`kubectl get deploy -n ${namespace} | grep voyager | wc | awk ' { print $1; } '`
   if [ "$vdep" != "1" ]; then
-    fail "The deployment of voyager ingress was not created"
+    fail "The deployment of Voyager Ingress was not created"
   fi
 
-echo Checking voyager service
-  vscv=`kubectl get service voyager-stats | grep voyager-stats | wc | awk ' { print $1; } '`
+echo Checking Voyager service
+  vscv=`kubectl get service voyager-stats -n ${namespace} | grep voyager-stats | wc | awk ' { print $1; } '`
   if [ "$vscv" != "1" ]; then
     fail "The service voyager-stats was not created"
   fi 

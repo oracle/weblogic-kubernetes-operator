@@ -1,8 +1,11 @@
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
-  name: voyager-ingress
-  namespace: default
+  name: %DOMAIN_UID%-voyager
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
@@ -20,9 +23,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: voyager-stats 
+  name: %DOMAIN_UID%-voyager-stats
+  namespace: %NAMESPACE%
   labels:
-    app: voyager-stats
+    app: %DOMAIN_UID%-voyager-stats
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
 spec:
   type: NodePort
   ports:
@@ -33,4 +39,4 @@ spec:
       nodePort: %LOAD_BALANCER_DASHBOARD_PORT%
   selector:
     origin: voyager
-    origin-name: voyager-ingress
+    origin-name: %DOMAIN_UID%-voyager
