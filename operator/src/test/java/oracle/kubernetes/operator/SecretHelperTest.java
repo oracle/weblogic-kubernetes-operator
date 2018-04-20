@@ -13,14 +13,14 @@ import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Ignore
 public class SecretHelperTest {
@@ -37,7 +37,7 @@ public class SecretHelperTest {
 
   @Before
   public void setUp() throws Exception {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     // Determine if 1.8 since some bugs with kubernetes-client / java and secrets
     VersionInfo verInfo = factory.create().readVersionCode();
     if ("1".equals(verInfo.getMajor()) && "8".equals(verInfo.getMinor())) {
@@ -137,7 +137,7 @@ public class SecretHelperTest {
   // Create a named secret with username / password in specified name
   private V1Secret createSecret(String name, String namespace) throws Exception {
 
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       V1Secret existing = factory.create().readSecret(name, namespace);
       if (existing != null)
@@ -177,7 +177,7 @@ public class SecretHelperTest {
   // Create a named secret with no username / password in specified namespace
   private V1Secret createInvalidSecret(String name, String namespace) throws Exception {
 
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       V1Secret existing = factory.create().readSecret(name, namespace);
       if (existing != null)
@@ -210,14 +210,14 @@ public class SecretHelperTest {
     if (isVersion18)
       return null;
 
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     return factory.create().deleteSecret(name, namespace, new V1DeleteOptions());
   }
 
   // Create a named namespace
   private V1Namespace createNamespace(String name) throws Exception {
 
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)

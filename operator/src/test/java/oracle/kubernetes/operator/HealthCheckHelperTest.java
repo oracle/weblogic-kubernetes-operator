@@ -14,18 +14,20 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
 
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.*;
 
 public class HealthCheckHelperTest {
 
@@ -65,7 +67,7 @@ public class HealthCheckHelperTest {
   public void testDefaultNamespace() throws Exception {
     ContainerResolver.getInstance().getContainer().getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(new CallBuilderFactory(null)));
+        Component.createFor(new CallBuilderFactory()));
     
     defaultHealthCheckHelper.performSecurityChecks("default");
     hdlr.flush();
@@ -85,7 +87,7 @@ public class HealthCheckHelperTest {
   public void testUnitTestNamespace() throws Exception {
     ContainerResolver.getInstance().getContainer().getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(new CallBuilderFactory(null)));
+        Component.createFor(new CallBuilderFactory()));
     
     unitHealthCheckHelper.performSecurityChecks("weblogic-operator-account");
     hdlr.flush();
@@ -106,7 +108,7 @@ public class HealthCheckHelperTest {
     
     ContainerResolver.getInstance().getContainer().getComponents().put(
         ProcessingConstants.MAIN_COMPONENT_NAME,
-        Component.createFor(new CallBuilderFactory(null)));
+        Component.createFor(new CallBuilderFactory()));
     
     unitHealthCheckHelper.performSecurityChecks("unit-test-svc-account-no-privs");
     hdlr.flush();
@@ -119,7 +121,7 @@ public class HealthCheckHelperTest {
 
   // Create a named namespace
   private V1Namespace createNamespace(String name) throws Exception {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)

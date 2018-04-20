@@ -3,18 +3,19 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.List;
-import java.util.Map;
-
 import io.kubernetes.client.ApiException;
-import oracle.kubernetes.operator.helpers.CallBuilder.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder.RetryStrategy;
+import oracle.kubernetes.operator.calls.AsyncRequestStep;
+import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Step to receive response of Kubernetes API server call.
@@ -36,7 +37,7 @@ public abstract class ResponseStep<T> extends Step {
     super(nextStep);
   }
 
-  final void setPrevious(Step previousStep) {
+  public final void setPrevious(Step previousStep) {
     this.previousStep = previousStep;
   }
   
@@ -67,7 +68,7 @@ public abstract class ResponseStep<T> extends Step {
     
     if (previousStep != nextAction.getNext()) {
       // not a retry, clear out old response
-      packet.getComponents().remove(CallBuilder.RESPONSE_COMPONENT_NAME);
+      packet.getComponents().remove(AsyncRequestStep.RESPONSE_COMPONENT_NAME);
     }
 
     return nextAction;
