@@ -111,6 +111,12 @@ rules:
 - apiGroups: ["extensions"]
   resources: ["ingresses"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["selfsubjectaccessreviews", "localsubjectaccessreviews", "subjectaccessreviews", "selfsubjectrulesreviews"]
+  verbs: ["create"]
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1

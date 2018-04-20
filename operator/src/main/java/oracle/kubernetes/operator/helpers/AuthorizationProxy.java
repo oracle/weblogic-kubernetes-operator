@@ -8,6 +8,10 @@ import java.util.List;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ResourceAttributes;
+import io.kubernetes.client.models.V1SelfSubjectAccessReview;
+import io.kubernetes.client.models.V1SelfSubjectAccessReviewSpec;
+import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
@@ -37,18 +41,50 @@ public class AuthorizationProxy {
   }
 
   public enum Resource {
-    pods,
-    services,
-    namespaces,
-    customresources,
-    customresourcedefinitions,
-    domains,
-    tokenreviews,
-    networkpolicies,
-    secrets,
-    persistentvolumes,
-    persistentvolumeclaims,
-    ingresses
+    CONFIGMAPS ("configmaps", ""),
+    PODS ("pods", ""),
+    LOGS ("pods", "logs", ""),
+    EXEC ("pods", "exec", ""),
+    PODTEMPLATES ("podtemplates", ""),
+    EVENTS ("events", ""),
+    SERVICES ("services", ""),
+    NAMESPACES ("namespaces", ""),
+    JOBS ("jobs", "batch"),
+    CRONJOBS ("cronjobs", "batch"),
+    CRDS ("customresourcedefinitions", "apiextensions.k8s.io"),
+    DOMAINS ("domains", "weblogic.oracle"),
+    DOMAINSTATUSS ("domains", "status", "weblogic.oracle"),
+    SUBJECTACCESSREVIEWS ("subjectaccessreviews", "authorization.k8s.io"),
+    SELFSUBJECTACCESSREVIEWS ("selfsubjectaccessreviews", "authorization.k8s.io"),
+    LOCALSUBJECTACCESSREVIEWS ("localsubjectaccessreviews", "authorization.k8s.io"),
+    SELFSUBJECTRULESREVIEWS ("selfsubjectrulesreviews", "authorization.k8s.io"),
+    TOKENREVIEWS ("tokenreviews", "authentication.k8s.io"),
+    SECRETS ("secrets", ""),
+    PERSISTENTVOLUMES ("persistentvolumes", ""),
+    PERSISTENTVOLUMECLAIMS ("persistentvolumeclaims", ""),
+    STORAGECLASSES ("storageclasses", "storage.k8s.io"),
+    PODPRESETS ("podpresets" , "settings.k8s.io"),
+    INGRESSES ("ingresses", "extensions"),
+    NETWORKPOLICIES ("networkpolicies", "extensions"),
+    PODSECURITYPOLICIES ("podsecuritypolicies", "extensions");
+    
+    private final String resource;
+    private final String subResource;
+    private final String apiGroup;
+    
+    Resource(String resource, String apiGroup) {
+      this(resource, "", apiGroup);
+    }
+    
+    Resource(String resource, String subResource, String apiGroup) {
+      this.resource = resource;
+      this.subResource = subResource;
+      this.apiGroup = apiGroup;
+    }
+    
+    public String getResource() { return resource; }
+    public String getSubResource() { return subResource; }
+    public String getAPIGroup() { return apiGroup; }
   }
 
   public enum Scope {
@@ -104,6 +140,24 @@ public class AuthorizationProxy {
     return result;
   }
 
+  public boolean check(Operation operation, Resource resource, String resourceName, Scope scope, String namespaceName) {
+    LOGGER.entering();
+    V1SelfSubjectAccessReview subjectAccessReview = prepareSelfSubjectAccessReview(operation, resource, resourceName, scope, namespaceName);
+    try {
+      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      subjectAccessReview = factory.create().createSelfSubjectAccessReview(subjectAccessReview);
+    } catch (ApiException e) {
+      LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
+      LOGGER.exiting(Boolean.FALSE);
+      return Boolean.FALSE;
+
+    }
+    V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
+    Boolean result = subjectAccessReviewStatus.isAllowed();
+    LOGGER.exiting(result);
+    return result;
+  }
+
   /**
    * Prepares an instance of SubjectAccessReview and returns same.
    *
@@ -133,6 +187,21 @@ public class AuthorizationProxy {
     return subjectAccessReview;
   }
 
+  private V1SelfSubjectAccessReview prepareSelfSubjectAccessReview(Operation operation, Resource resource, String resourceName, Scope scope, String namespaceName) {
+    LOGGER.entering();
+    V1SelfSubjectAccessReviewSpec subjectAccessReviewSpec = new V1SelfSubjectAccessReviewSpec();
+
+    subjectAccessReviewSpec.setResourceAttributes(prepareResourceAttributes(operation, resource, resourceName, scope, namespaceName));
+
+    V1SelfSubjectAccessReview subjectAccessReview = new V1SelfSubjectAccessReview();
+    subjectAccessReview.setApiVersion("authorization.k8s.io/v1");
+    subjectAccessReview.setKind("SelfSubjectAccessReview");
+    subjectAccessReview.setMetadata(new V1ObjectMeta());
+    subjectAccessReview.setSpec(subjectAccessReviewSpec);
+    LOGGER.exiting(subjectAccessReview);
+    return subjectAccessReview;
+  }
+
   /**
    * Prepares an instance of ResourceAttributes and returns same.
    *
@@ -150,12 +219,9 @@ public class AuthorizationProxy {
       resourceAttributes.setVerb(operation.toString());
     }
     if (null != resource) {
-      resourceAttributes.setResource(resource.toString());
-    }
-
-    String apiGroup = getApiGroup(resource);
-    if (apiGroup != null) {
-      resourceAttributes.setGroup(apiGroup);
+      resourceAttributes.setResource(resource.resource);
+      resourceAttributes.setSubresource(resource.subResource);
+      resourceAttributes.setGroup(resource.apiGroup);
     }
 
     if (null != resourceName) {
@@ -168,25 +234,18 @@ public class AuthorizationProxy {
     LOGGER.exiting(resourceAttributes);
     return resourceAttributes;
   }
-
-  private String getApiGroup(Resource resource) {
-    if (resource == Resource.domains) {
-      return "weblogic.oracle";
+  
+  public V1SelfSubjectRulesReview review(String namespace) {
+    V1SelfSubjectRulesReview subjectRulesReview = new V1SelfSubjectRulesReview();
+    V1SelfSubjectRulesReviewSpec spec = new V1SelfSubjectRulesReviewSpec();
+    spec.setNamespace(namespace);
+    subjectRulesReview.setSpec(spec);
+    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    try {
+      return factory.create().createSelfSubjectRulesReview(subjectRulesReview);
+    } catch (ApiException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+      return null;
     }
-
-    if (resource == Resource.customresourcedefinitions) {
-      return "apiextensions.k8s.io";
-    }
-
-    if (resource == Resource.tokenreviews) {
-      return "authentication.k8s.io";
-    }
-    
-    if (resource == Resource.ingresses) {
-      return "extensions";
-    }
-
-    // TODO - do we need to specify the api group for any of the other Resource values?
-    return null;
   }
 }
