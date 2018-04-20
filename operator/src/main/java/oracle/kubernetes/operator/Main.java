@@ -105,13 +105,14 @@ public class Main {
   private static final TuningParameters tuningAndConfig;
   static {
     try {
-      tuningAndConfig = TuningParameters.initializeInstance(factory, "/operator/config");
+      TuningParameters.initializeInstance(factory, "/operator/config");
+      tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
   }
-  static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory(tuningAndConfig);
+  static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
 
   private static final Container container = new Container();
   private static final ScheduledExecutorService wrappedExecutorService = Engine.wrappedExecutorService("operator",

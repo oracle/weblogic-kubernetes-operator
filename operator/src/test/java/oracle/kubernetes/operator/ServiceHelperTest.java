@@ -8,8 +8,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1ServicePort;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -19,15 +17,17 @@ import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+
+import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.Map;
 
 @Ignore
 public class ServiceHelperTest {
@@ -38,7 +38,7 @@ public class ServiceHelperTest {
 
   @Before
   public void startClean() throws Exception {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     
     // Delete the service if left around.
     System.out.println("Deleting service pre-test");
@@ -54,7 +54,7 @@ public class ServiceHelperTest {
 
   @After
   public void tearDown() throws Exception {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
 
     // Delete the service if we created one.
     if (serviceCreated) {
@@ -66,7 +66,7 @@ public class ServiceHelperTest {
 
   @Test
   public void createReadListUpdate() throws Exception {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
 
     // Domain
     Domain dom = new Domain();

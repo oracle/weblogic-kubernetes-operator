@@ -13,14 +13,31 @@ import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EventList;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1SubjectAccessReview;
+import io.kubernetes.client.models.V1TokenReview;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.models.V1beta1Ingress;
+import io.kubernetes.client.models.V1beta1IngressList;
+import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.calls.AsyncRequestStep;
+import oracle.kubernetes.operator.calls.CallFactory;
+import oracle.kubernetes.operator.calls.CallWrapper;
+import oracle.kubernetes.operator.calls.CancelableCall;
+import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
@@ -28,13 +45,6 @@ import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
 
 import com.squareup.okhttp.Call;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
@@ -43,9 +53,6 @@ import java.util.function.Consumer;
  */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class CallBuilder {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  static final String RESPONSE_COMPONENT_NAME = "response";
 
   /**
    * HTTP status code for "Not Found"
@@ -192,8 +199,12 @@ public class CallBuilder {
   }
 
   private final CallFactory<DomainList> LIST_DOMAIN = (requestParams, usage, cont, callback)
-        -> listDomainAsync(usage, requestParams.namespace, cont, callback);
-  
+        -> wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
+
+  private CancelableCall wrap(Call call) {
+    return new CallWrapper(call);
+  }
+
   /**
    * Asynchronous step for listing domains
    * @param namespace Namespace
@@ -226,7 +237,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN = (requestParams, usage, cont, callback)
-        -> replaceDomainAsync(usage, requestParams.name, requestParams.namespace, (Domain) requestParams.body, callback);
+        -> wrap(replaceDomainAsync(usage, requestParams.name, requestParams.namespace, (Domain) requestParams.body, callback));
   
   /**
    * Asynchronous step for replacing domain
@@ -280,7 +291,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1ConfigMap> READ_CONFIGMAP = (requestParams, usage, cont, callback)
-        -> readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback);
+        -> wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
   
   /**
    * Asynchronous step for reading config map
@@ -298,7 +309,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1ConfigMap> CREATE_CONFIGMAP = (requestParams, usage, cont, callback)
-        -> createConfigMapAsync(usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback);
+        -> wrap(createConfigMapAsync(usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
   
   /**
    * Asynchronous step for creating config map
@@ -316,7 +327,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1ConfigMap> REPLACE_CONFIGMAP = (requestParams, usage, cont, callback)
-        -> replaceConfigMapAsync(usage, requestParams.name, requestParams.namespace, (V1ConfigMap) requestParams.body, callback);
+        -> wrap(replaceConfigMapAsync(usage, requestParams.name, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
   
   /**
    * Asynchronous step for replacing config map
@@ -338,7 +349,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1PodList> LIST_POD = (requestParams, usage, cont, callback)
-        -> listPodAsync(usage, requestParams.namespace, cont, callback);
+        -> wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
   
   /**
    * Asynchronous step for listing pods
@@ -355,7 +366,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Pod> READ_POD = (requestParams, usage, cont, callback)
-        -> readPodAsync(usage, requestParams.name, requestParams.namespace, callback);
+        -> wrap(readPodAsync(usage, requestParams.name, requestParams.namespace, callback));
   
   /**
    * Asynchronous step for reading pod
@@ -373,7 +384,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Pod> CREATE_POD = (requestParams, usage, cont, callback)
-        -> createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback);
+        -> wrap(createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback));
   
   /**
    * Asynchronous step for creating pod
@@ -391,7 +402,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Status> DELETE_POD = (requestParams, usage, cont, callback)
-        -> deletePodAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback);
+        -> wrap(deletePodAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback));
   
   /**
    * Asynchronous step for deleting pod
@@ -411,7 +422,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Status> DELETECOLLECTION_POD = (requestParams, usage, cont, callback)
-        -> deleteCollectionPodAsync(usage, requestParams.namespace, cont, callback);
+        -> wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont, callback));
   
   /**
    * Asynchronous step for deleting collection of pods
@@ -430,7 +441,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Job> CREATE_JOB = (requestParams, usage, cont, callback)
-        -> createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback);
+        -> wrap(createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback));
   
   /**
    * Asynchronous step for creating job
@@ -448,7 +459,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Status> DELETE_JOB = (requestParams, usage, cont, callback)
-        -> deleteJobAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback);
+        -> wrap(deleteJobAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback));
   
   /**
    * Asynchronous step for deleting job
@@ -486,7 +497,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1ServiceList> LIST_SERVICE = (requestParams, usage, cont, callback)
-        -> listServiceAsync(usage, requestParams.namespace, cont, callback);
+        -> wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
   
   /**
    * Asynchronous step for listing services
@@ -519,7 +530,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Service> READ_SERVICE = (requestParams, usage, cont, callback)
-        -> readServiceAsync(usage, requestParams.name, requestParams.namespace, callback);
+        -> wrap(readServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
   
   /**
    * Asynchronous step for reading service
@@ -537,7 +548,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Service> CREATE_SERVICE = (requestParams, usage, cont, callback)
-        -> createServiceAsync(usage, requestParams.namespace, (V1Service) requestParams.body, callback);
+        -> wrap(createServiceAsync(usage, requestParams.namespace, (V1Service) requestParams.body, callback));
   
   /**
    * Asynchronous step for creating service
@@ -571,7 +582,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Status> DELETE_SERVICE = (requestParams, usage, cont, callback)
-        -> deleteServiceAsync(usage, requestParams.name, requestParams.namespace, callback);
+        -> wrap(deleteServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
   
   /**
    * Asynchronous step for deleting service
@@ -592,7 +603,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1EventList> LIST_EVENT = (requestParams, usage, cont, callback)
-        -> listEventAsync(usage, requestParams.namespace, cont, callback);
+        -> wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
   
   /**
    * Asynchronous step for listing events
@@ -630,7 +641,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1PersistentVolumeClaimList> LIST_PERSISTENTVOLUMECLAIM = (requestParams, usage, cont, callback)
-        -> listPersistentVolumeClaimAsync(usage, requestParams.namespace, cont, callback);
+        -> wrap(listPersistentVolumeClaimAsync(usage, requestParams.namespace, cont, callback));
   
   /**
    * Asynchronous step for listing persistent volume claims
@@ -665,7 +676,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Secret> READ_SECRET = (requestParams, usage, cont, callback)
-        -> readSecretAsync(usage, requestParams.name, requestParams.namespace, callback);
+        -> wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
   
   /**
    * Create secret
@@ -754,7 +765,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1beta1IngressList> LIST_INGRESS = (requestParams, usage, cont, callback)
-        -> listIngressAsync(usage, requestParams.namespace, cont, callback);
+        -> wrap(listIngressAsync(usage, requestParams.namespace, cont, callback));
   
   /**
    * Asynchronous step for listing ingress
@@ -787,7 +798,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1beta1Ingress> READ_INGRESS = (requestParams, usage, cont, callback)
-        -> readIngressAsync(usage, requestParams.name, requestParams.namespace, callback);
+        -> wrap(readIngressAsync(usage, requestParams.name, requestParams.namespace, callback));
   
   /**
    * Asynchronous step for reading ingress
@@ -805,7 +816,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1beta1Ingress> CREATE_INGRESS = (requestParams, usage, cont, callback)
-        -> createIngressAsync(usage, requestParams.namespace, (V1beta1Ingress) requestParams.body, callback);
+        -> wrap(createIngressAsync(usage, requestParams.namespace, (V1beta1Ingress) requestParams.body, callback));
   
   /**
    * Asynchronous step for creating ingress
@@ -823,7 +834,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1beta1Ingress> REPLACE_INGRESS = (requestParams, usage, cont, callback)
-        -> replaceIngressAsync(usage, requestParams.name, requestParams.namespace, (V1beta1Ingress) requestParams.body, callback);
+        -> wrap(replaceIngressAsync(usage, requestParams.name, requestParams.namespace, (V1beta1Ingress) requestParams.body, callback));
   
   /**
    * Asynchronous step for replacing ingress
@@ -860,7 +871,7 @@ public class CallBuilder {
   }
 
   private final CallFactory<V1Status> DELETE_INGRESS = (requestParams, usage, cont, callback)
-        -> deleteIngressAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback);
+        -> wrap(deleteIngressAsync(usage, requestParams.name, requestParams.namespace, (V1DeleteOptions) requestParams.body, callback));
   
   /**
    * Asynchronous step for deleting ingress
@@ -873,269 +884,11 @@ public class CallBuilder {
   public Step deleteIngressAsync(String name, String namespace, V1DeleteOptions deleteOptions, ResponseStep<V1Status> responseStep) {
     return createRequestAsync(responseStep, new RequestParams("deleteIngress", namespace, name, deleteOptions), DELETE_INGRESS);
   }
-  
-  private static abstract class BaseApiCallback<T> implements ApiCallback<T> {
-    @Override
-    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-      // no-op
-    }
 
-    @Override
-    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-      // no-op
-    }
-  }
 
-  @FunctionalInterface
-  interface CallFactory<T> {
-    public Call generate(RequestParams requestParams, ApiClient client, String cont, ApiCallback<T> callback) throws ApiException;
-  }
-  
-  static final class RequestParams {
-    public final String call;
-    public final String namespace;
-    public final String name;
-    public final Object body;
-    
-    public RequestParams(String call, String namespace, String name, Object body) {
-      this.call = call;
-      this.namespace = namespace;
-      this.name = name;
-      this.body = body;
-    }
-  }
-  
-  static final class CallResponse<T> {
-    public final T result;
-    public final ApiException e;
-    public final int statusCode;
-    public final Map<String, List<String>> responseHeaders;
-    
-    public CallResponse(T result, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      this.result = result;
-      this.e = e;
-      this.statusCode = statusCode;
-      this.responseHeaders = responseHeaders;
-    }
-  }
-  
-  /**
-   * Failed or timed-out call retry strategy
-   * 
-   */
-  public interface RetryStrategy {
-    /**
-     * Initialization that provides reference to step that should be invoked on a retry attempt
-     * @param retryStep Retry step
-     */
-    public void setRetryStep(Step retryStep);
-    
-    /**
-     * Called during {@link ResponseStep#onFailure(Packet, ApiException, int, Map)} to decide
-     * if another retry attempt will occur.
-     * @param conflictStep Conflict step, or null
-     * @param packet Packet
-     * @param e ApiException thrown by Kubernetes client; will be null for simple timeout
-     * @param statusCode HTTP response status code; will be 0 for simple timeout
-     * @param responseHeaders HTTP response headers; will be null for simple timeout
-     * @return Desired next action which should specify retryStep.  Return null when call will not be retried.
-     */
-    public NextAction doPotentialRetry(Step conflictStep, Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders);
-    
-    /**
-     * Called when retry count, or other statistics, should be reset, such as when partial list 
-     * was returned and new request for next portion of list (continue) is invoked.
-     */
-    public void reset();
-  }
-  
-  private static final Random R = new Random();
-  private static final int HIGH = 200;
-  private static final int LOW = 10;
-  private static final int SCALE = 100;
-  private static final int MAX = 10000;
-  
-  private final class DefaultRetryStrategy implements RetryStrategy {
-    private long retryCount = 0;
-    private Step retryStep = null;
-    
-    @Override
-    public void setRetryStep(Step retryStep) {
-      this.retryStep = retryStep;
-    }
-
-    @Override
-    public NextAction doPotentialRetry(Step conflictStep, Packet packet, ApiException e, int statusCode,
-        Map<String, List<String>> responseHeaders) {
-      // Check statusCode, many statuses should not be retried
-      // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
-      if (statusCode == 0   /* simple timeout */ ||
-          statusCode == 429 /* StatusTooManyRequests */ ||
-          statusCode == 500 /* StatusInternalServerError */ ||
-          statusCode == 503 /* StatusServiceUnavailable */ ||
-          statusCode == 504 /* StatusServerTimeout */) {
-        
-        // exponential back-off
-        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
-        
-        if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
-          // increase server timeout
-          timeoutSeconds *= 2;
-        }
-        
-        NextAction na = new NextAction();
-        if (statusCode == 0 && retryCount <= maxRetryCount) {
-          na.invoke(retryStep, packet);
-        } else {
-          LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
-          na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
-        }
-        return na;
-      } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
-        // Conflict is an optimistic locking failure.  Therefore, we can't
-        // simply retry the request.  Instead, application code needs to rebuild
-        // the request based on latest contents.  If provided, a conflict step will do that.
-        
-        // exponential back-off
-        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
-        
-        LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
-        NextAction na = new NextAction();
-        na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
-        return na;
-      }
-      
-      // otherwise, we will not retry
-      return null;
-    }
-
-    @Override
-    public void reset() {
-      retryCount = 0;
-    }
-  }
-
-  private class AsyncRequestStep<T> extends Step {
-    private final RequestParams requestParams;
-    private final CallFactory<T> factory;
-    
-    public AsyncRequestStep(ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
-      super(next);
-      this.requestParams = requestParams;
-      this.factory = factory;
-      next.setPrevious(this);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      // clear out earlier results
-      String cont = null;
-      RetryStrategy retry = null;
-      Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
-      if (oldResponse != null) {
-        @SuppressWarnings("unchecked")
-        CallResponse<T> old = oldResponse.getSPI(CallResponse.class);
-        if (old != null && old.result != null) {
-          // called again, access continue value, if available
-          cont = accessContinue(old.result);
-        }
-        
-        retry = oldResponse.getSPI(RetryStrategy.class);
-      }
-      String _continue = (cont != null) ? cont : "";
-      if (retry == null) {
-        retry = new DefaultRetryStrategy();
-        retry.setRetryStep(this);
-      }
-      RetryStrategy _retry = retry;
-
-      LOGGER.fine(MessageKeys.ASYNC_REQUEST, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-
-      AtomicBoolean didResume = new AtomicBoolean(false);
-      AtomicBoolean didRecycle = new AtomicBoolean(false);
-      ApiClient client = helper.take();
-      return doSuspend((fiber) -> {
-        ApiCallback<T> callback = new BaseApiCallback<T>() {
-          @Override
-          public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-            if (didResume.compareAndSet(false, true)) {
-              if (statusCode != NOT_FOUND) {
-                LOGGER.info(MessageKeys.ASYNC_FAILURE, e, statusCode, responseHeaders, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-              }
-              
-              if (didRecycle.compareAndSet(false, true)) {
-                helper.recycle(client);
-              }
-              packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry, new CallResponse<Void>(null, e, statusCode, responseHeaders)));
-              fiber.resume(packet);
-            }
-          }
-
-          @Override
-          public void onSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-            if (didResume.compareAndSet(false, true)) {
-              LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
-
-              if (didRecycle.compareAndSet(false, true)) {
-                helper.recycle(client);
-              }
-              packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(new CallResponse<T>(result, null, statusCode, responseHeaders)));
-              fiber.resume(packet);
-            }
-          }
-        };
-        
-        try {
-          Call c = factory.generate(requestParams, client, _continue, callback);
-          
-          // timeout handling
-          fiber.owner.getExecutor().schedule(() -> {
-            if (didRecycle.compareAndSet(false, true)) {
-              // don't recycle on timeout because state is unknown
-              // usage.recycle();
-            }
-            if (didResume.compareAndSet(false, true)) {
-              try {
-                c.cancel();
-              } finally {
-                LOGGER.info(MessageKeys.ASYNC_TIMEOUT, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-                packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
-                fiber.resume(packet);
-              }
-            }
-          }, timeoutSeconds, TimeUnit.SECONDS);
-        } catch (Throwable t) {
-          LOGGER.warning(MessageKeys.ASYNC_FAILURE, t, 0, null, requestParams, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-          if (didRecycle.compareAndSet(false, true)) {
-            // don't recycle on throwable because state is unknown
-            // usage.recycle();
-          }
-          if (didResume.compareAndSet(false, true)) {
-            packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
-            fiber.resume(packet);
-          }
-        }
-      });
-    }
-  }
-  
   private <T> Step createRequestAsync(ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
-    return new AsyncRequestStep<T>(next, requestParams, factory);
+    return new AsyncRequestStep<>(next, requestParams, factory, helper, timeoutSeconds, maxRetryCount, fieldSelector, labelSelector, resourceVersion);
   }
   
-  private static String accessContinue(Object result) {
-    String cont = "";
-    if (result != null) {
-      try {
-        Method m = result.getClass().getMethod("getMetadata");
-        Object meta = m.invoke(result);
-        if (meta instanceof V1ListMeta) {
-          return ((V1ListMeta) meta).getContinue();
-        }
-      } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-        // no-op, no-log
-      }
-    }
-    return cont;
-  }
+
 }
