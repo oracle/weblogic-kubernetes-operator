@@ -342,7 +342,15 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .addRulesItem(newPolicyRule()
           .addApiGroupsItem("extensions")
           .addResourcesItem("ingresses")
-          .verbs(asList("get", "list", "watch", "create", "update", "patch", "delete", "deletecollection")));
+          .verbs(asList("get", "list", "watch", "create", "update", "patch", "delete", "deletecollection")))
+        .addRulesItem(newPolicyRule()
+          .addApiGroupsItem("authentication.k8s.io")
+          .addResourcesItem("tokenreviews")
+          .verbs(asList("create")))
+        .addRulesItem(newPolicyRule()
+          .addApiGroupsItem("authorization.k8s.io")
+          .resources(asList("selfsubjectaccessreviews", "localsubjectaccessreviews", "subjectaccessreviews", "selfsubjectrulesreviews"))
+          .verbs(asList("create")));
   }
 
   @Test

@@ -89,7 +89,7 @@ public class RestBackendImpl implements RestBackend {
           userInfo.getUsername(),
           userInfo.getGroups(),
           operation,
-          Resource.domains,
+          Resource.DOMAINS,
           null,
           Scope.cluster,
           null
@@ -100,7 +100,7 @@ public class RestBackendImpl implements RestBackend {
           userInfo.getUsername(),
           userInfo.getGroups(),
           operation,
-          Resource.domains,
+          Resource.DOMAINS,
           domainUID,
           Scope.namespace,
           getNamespace(domainUID)
