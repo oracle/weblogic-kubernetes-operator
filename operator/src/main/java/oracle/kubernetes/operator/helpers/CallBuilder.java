@@ -977,8 +977,10 @@ public class CallBuilder {
   }
 
 
+  private static final AsyncRequestStepFactory STEP_FACTORY = AsyncRequestStep::new;
+
   private <T> Step createRequestAsync(ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
-    return new AsyncRequestStep<>(next, requestParams, factory, helper, timeoutSeconds, maxRetryCount, fieldSelector, labelSelector, resourceVersion);
+    return STEP_FACTORY.createRequestAsync(next, requestParams, factory, helper, timeoutSeconds, maxRetryCount, fieldSelector, labelSelector, resourceVersion);
   }
   
 

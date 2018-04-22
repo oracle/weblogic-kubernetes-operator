@@ -88,6 +88,15 @@ public class AsyncRequestStepTest {
   }
 
   @Test
+  public void afterTimeout_newRequestSent() throws Exception {
+    callFactory.clearRequest();
+
+    schedule.setTime(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+    assertTrue(callFactory.invokedWith(requestParams));
+  }
+
+  @Test
   public void afterSuccessfulCallback_nextStepAppliedWithValue() throws Exception {
     callFactory.sendSuccessfulCallback(17);
 
@@ -103,16 +112,31 @@ public class AsyncRequestStepTest {
 
   @Test
   public void afterFailedCallback_packetContainsRetryStrategy() throws Exception {
-    schedule.execute(() ->
-      callFactory.sendFailedCallback(new ApiException("test failure"), HttpURLConnection.HTTP_UNAVAILABLE));
+    sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
 
     assertThat(packet.getComponents().get(RESPONSE_COMPONENT_NAME).getSPI(RetryStrategy.class), notNullValue());
   }
 
+  private void sendFailedCallback(int statusCode) {
+    schedule.execute(() -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
+  }
+
+  @Test
+  public void afterFailedCallback_retrySentAfterDelay() throws Exception {
+    sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
+    callFactory.clearRequest();
+
+    schedule.setTime(TIMEOUT_SECONDS-1, TimeUnit.SECONDS);
+
+    assertTrue(callFactory.invokedWith(requestParams));
+  }
+
   // todo tests
-  // after timeout, packet contains retry strategy
-  // after either failure, setting time to before the timeout causes new request
-  // after new request, success leads to invocation
+  // can new request clear timeout action?
+  // what is accessContinue?
+  // test CONFLICT (409) status
+  // no retry if status not handled
+  // test exceeded retry count
 
 
   static class TestStep extends ResponseStep<Integer> {
@@ -135,15 +159,19 @@ public class AsyncRequestStepTest {
     private RequestParams requestParams;
     private ApiCallback<Integer> callback;
 
-    private boolean invokedWith(RequestParams requestParams) {
+    void clearRequest() {
+      requestParams = null;
+    }
+
+    boolean invokedWith(RequestParams requestParams) {
       return requestParams == this.requestParams;
     }
 
-    private void sendSuccessfulCallback(Integer callbackValue) {
+    void sendSuccessfulCallback(Integer callbackValue) {
       callback.onSuccess(callbackValue, HttpURLConnection.HTTP_OK, Collections.emptyMap());
     }
 
-    private void sendFailedCallback(ApiException exception, int statusCode) {
+    void sendFailedCallback(ApiException exception, int statusCode) {
       callback.onFailure(exception, statusCode, Collections.emptyMap());
     }
 
