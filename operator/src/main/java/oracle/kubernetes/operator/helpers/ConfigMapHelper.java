@@ -155,7 +155,7 @@ public class ConfigMapHelper {
       return cm;
     }
 
-    private Map<String, String> loadScripts() {
+    private synchronized Map<String, String> loadScripts() {
       URI uri = null;
       try {
         uri = getClass().getResource(SCRIPT_LOCATION).toURI();
@@ -164,15 +164,14 @@ public class ConfigMapHelper {
         throw new RuntimeException(e);
       }
 
-      try {
-        FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap());
+      try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
         Stream<Path> walk = Files.walk(fileSystem.getPath(SCRIPT_LOCATION), 1);
         Map<String, String> data = new HashMap<>();
         for (Iterator<Path> it = walk.iterator(); it.hasNext();) {
           Path script = it.next();
           String scriptName = script.toString();
           if (!SCRIPT_LOCATION.equals(scriptName)) {
-            data.put(script.getFileName().toString(), readScript(getClass().getResourceAsStream(scriptName)));
+            data.put(script.getFileName().toString(), readScript(scriptName));
           }
         }
         LOGGER.info(MessageKeys.SCRIPT_LOADED, domainNamespace);
@@ -183,14 +182,18 @@ public class ConfigMapHelper {
       }
     }
 
-    private String readScript(InputStream inputStream) throws IOException {
-      ByteArrayOutputStream result = new ByteArrayOutputStream();
-      byte[] buffer = new byte[1024];
-      int length;
-      while ((length = inputStream.read(buffer)) != -1) {
-        result.write(buffer, 0, length);
+    private String readScript(String scriptName) throws IOException {
+      try (
+        InputStream inputStream = getClass().getResourceAsStream(scriptName);
+        ByteArrayOutputStream result = new ByteArrayOutputStream()
+      ) {
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = inputStream.read(buffer)) != -1) {
+          result.write(buffer, 0, length);
+        }
+        return result.toString();
       }
-      return result.toString();
     }
   }
 
