@@ -3,6 +3,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.function.Consumer;
+
+import com.squareup.okhttp.Call;
+
 import io.kubernetes.client.ApiCallback;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -13,41 +17,17 @@ import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1EventList;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.models.V1PersistentVolumeList;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1SelfSubjectAccessReview;
-import io.kubernetes.client.models.V1SelfSubjectRulesReview;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1SubjectAccessReview;
-import io.kubernetes.client.models.V1TokenReview;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
-import io.kubernetes.client.models.VersionInfo;
+import io.kubernetes.client.models.*;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallWrapper;
-import oracle.kubernetes.operator.calls.CancelableCall;
+import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
-
-import com.squareup.okhttp.Call;
-
-import java.util.function.Consumer;
 
 /**
  * Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server.
@@ -207,7 +187,7 @@ public class CallBuilder {
   private final CallFactory<DomainList> LIST_DOMAIN = (requestParams, usage, cont, callback)
         -> wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
 
-  private CancelableCall wrap(Call call) {
+  private CancellableCall wrap(Call call) {
     return new CallWrapper(call);
   }
 
