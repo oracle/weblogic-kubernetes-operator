@@ -2,6 +2,7 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -41,23 +42,23 @@ public class DeleteIngressListStepTest {
 
   @Test
   public void whenCollectionEmpty_makeNoCalls() throws Exception {
-    runStep();
+    runDeleteStep();
   }
 
-  private void runStep() {
-    testSupport.runStep(new DeleteIngressListStep(ingresses, terminalStep));
+  private void runDeleteStep(V1beta1Ingress... ingresses) {
+    this.ingresses.addAll(Arrays.asList(ingresses));
+    testSupport.runStep(new DeleteIngressListStep(this.ingresses, terminalStep));
   }
 
   @Test
   public void whenCollectionContainsItems_invokeDeleteCalls() throws Exception {
     defineResponse("namespace1", "name1").returning(new V1Status());
     defineResponse("namespace2", "name2").returning(new V1Status());
-    ingresses.add(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace1").name("name1")));
-    ingresses.add(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace2").name("name2")));
 
-    runStep();
+    runDeleteStep(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace1").name("name1")),
+                  new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace2").name("name2")));
 
-    testSupport.verify();
+    testSupport.verifyAllDefinedResponsesInvoked();
   }
 
   @SuppressWarnings("unchecked")
@@ -68,9 +69,8 @@ public class DeleteIngressListStepTest {
   @Test
   public void onFailureResponse_reportError() throws Exception {
     defineResponse("namespace1", "name1").failingWithStatus(HttpURLConnection.HTTP_FORBIDDEN);
-    ingresses.add(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace1").name("name1")));
 
-    runStep();
+    runDeleteStep(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace1").name("name1")));
 
     testSupport.verifyCompletionThrowable(ApiException.class);
   }
@@ -78,8 +78,7 @@ public class DeleteIngressListStepTest {
   @Test
   public void onNotFoundResponse_dontReportError() throws Exception {
     defineResponse("namespace1", "name1").failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
-    ingresses.add(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace1").name("name1")));
 
-    runStep();
+    runDeleteStep(new V1beta1Ingress().metadata(new V1ObjectMeta().namespace("namespace1").name("name1")));
   }
 }

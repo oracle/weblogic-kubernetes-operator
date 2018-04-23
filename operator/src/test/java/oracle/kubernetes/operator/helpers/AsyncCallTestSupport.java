@@ -106,7 +106,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
   /**
    * Throws an exception if any of the canned responses were not used.
    */
-  public void verify() {
+  public void verifyAllDefinedResponsesInvoked() {
     List<CannedResponse> unusedResponses = new ArrayList<>();
     for (CannedResponse cannedResponse : cannedResponses.keySet())
       if (!cannedResponses.get(cannedResponse)) unusedResponses.add(cannedResponse);
