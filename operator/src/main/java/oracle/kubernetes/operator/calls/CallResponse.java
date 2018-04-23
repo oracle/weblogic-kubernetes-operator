@@ -3,10 +3,10 @@
 
 package oracle.kubernetes.operator.calls;
 
-import io.kubernetes.client.ApiException;
-
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.ApiException;
 
 public final class CallResponse<T> {
   public final T result;
@@ -14,7 +14,7 @@ public final class CallResponse<T> {
   public final int statusCode;
   public final Map<String, List<String>> responseHeaders;
 
-  CallResponse(T result, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+  public CallResponse(T result, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
     this.result = result;
     this.e = e;
     this.statusCode = statusCode;

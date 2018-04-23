@@ -3,6 +3,14 @@
 
 package oracle.kubernetes.operator.calls;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.kubernetes.client.ApiCallback;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -17,14 +25,6 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of callbacks until canceled.
@@ -120,7 +120,7 @@ public class AsyncRequestStep<T> extends Step {
       };
 
       try {
-        CancelableCall c = factory.generate(requestParams, client, _continue, callback);
+        CancellableCall c = factory.generate(requestParams, client, _continue, callback);
 
         // timeout handling
         fiber.owner.getExecutor().schedule(() -> {

@@ -8,7 +8,7 @@ import com.squareup.okhttp.Call;
 /**
  * A wrapper for an OKHttp call to isolate its own callers.
  */
-public class CallWrapper implements CancelableCall {
+public class CallWrapper implements CancellableCall {
 
   private Call underlyingCall;
 

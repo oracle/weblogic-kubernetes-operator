@@ -9,5 +9,5 @@ import io.kubernetes.client.ApiException;
 
 @FunctionalInterface
 public interface CallFactory<T> {
-  CancelableCall generate(RequestParams requestParams, ApiClient client, String cont, ApiCallback<T> callback) throws ApiException;
+  CancellableCall generate(RequestParams requestParams, ApiClient client, String cont, ApiCallback<T> callback) throws ApiException;
 }

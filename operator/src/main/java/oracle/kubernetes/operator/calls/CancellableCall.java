@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.calls;
 /**
  * An interface for an asynchronous API invocation that can be canceled
  */
-public interface CancelableCall {
+public interface CancellableCall {
 
   /**
    * Cancels the active call.
