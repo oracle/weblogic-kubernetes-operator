@@ -30,7 +30,7 @@
 #   Phase 1:  Delete domain resources with label 'weblogic.domainUID'.
 #
 #   Phase 2:  Delete wls operator with lable 'weblogic.operatorName' and
-#             voyager operator with lable 'app=voyager'.
+#             delete voyager controller.
 #
 #   Phase 3:  Use a kubernetes job to delete the PV directories
 #             on the kubernetes cluster.
@@ -105,22 +105,27 @@ function deleteResWithLabel {
 }
 
 #
-# deleteOperators
+# deleteWLSOperators
 #
-function deleteOperators {
+function deleteWLSOperators {
   local tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
   # delete wls operator resources
   LABEL_SELECTOR="weblogic.operatorName"
   #getResWithLabel $tempfile
   deleteResWithLabel $tempfile
+}
 
-  # delete voyager operator resources
-  LABEL_SELECTOR="app=voyager"
-  #getResWithLabel $tempfile
-  deleteResWithLabel $tempfile
+#
+# deleteVoyagerController
+#
+function deleteVoyagerController {
+  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+      | bash -s -- --provider=baremetal --namespace=voyager --uninstall --purge
 }
 
 echo @@ Starting cleanup.
+script="${BASH_SOURCE[0]}"
+scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 
 echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT"
 
@@ -130,10 +135,13 @@ NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,r
 NOT_NAMESPACED_TYPES="pv,crd,clusterroles,clusterrolebindings"
 
 # Delele domain resources.
-../../../kubernetes/delete-weblogic-domain-resources.sh -d all
+${scriptDir}/../../../kubernetes/delete-weblogic-domain-resources.sh -d all
 
-# Delete wls operator and voyager operator
-deleteOperators
+# Delete wls operator
+deleteWLSOperators
+
+# Delete voyager controller
+deleteVoyagerController
 
 # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
 
@@ -166,3 +174,4 @@ fi
 
 echo @@ Exiting with status $SUCCESS
 exit $SUCCESS
+
