@@ -53,6 +53,47 @@ cat << EOF
 EOF
 }
 
+#
+# get voyager related resources of one domain
+#
+# Usage:
+#   getVoyagerOfDomain domainName outfilename
+function getVoyagerOfDomain {
+  local voyagerIngressName="ingress.voyager.appscode.com"
+  local domainName=$1
+  local ns=`kubectl get ingress.voyager.appscode.com --all-namespaces | grep $domainName | awk '{ print $1 }'`
+  if [ -n "$ns" ]; then
+    echo $voyagerIngressName $domainName-voyager -n $ns >> $2
+    echo service $domainName-voyager-stats -n $ns >> $2
+  fi
+}
+
+#
+# get voyager related resources
+#
+# Usage:
+#   getVoyagerRes domainA,domainB,... outfilename
+#   getVoyagerRes all outfilename
+function getVoyagerRes {
+  if [ "$1" = "all" ]; then
+    resList=`kubectl get ingress.voyager.appscode.com --all-namespaces | awk '{print $2}'`
+    for resName in $resList
+    do
+      if [ $resName != 'NAME' ]; then
+        tail="-voyager"
+        len=${#resName}-${#tail}
+        domainName=${resName:0:len}
+        getVoyagerOfDomain $domainName $2
+      fi
+    done
+  else
+    IFS=',' read -r -a array <<< "$1"
+    for domainName in "${array[@]}"
+    do
+      getVoyagerOfDomain $domainName $2
+    done
+  fi
+}
 
 #
 # getDomainResources domain(s) outfilename
@@ -98,6 +139,9 @@ function getDomainResources {
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $2
+
+  # get all voyager-related resources
+  getVoyagerRes $1 $2
 }
 
 #
