@@ -64,7 +64,6 @@ function getVoyagerOfDomain {
   local ns=`kubectl get ingress.voyager.appscode.com --all-namespaces | grep $domainName | awk '{ print $1 }'`
   if [ -n "$ns" ]; then
     echo $voyagerIngressName $domainName-voyager -n $ns >> $2
-    echo service $domainName-voyager-stats -n $ns >> $2
   fi
 }
 
@@ -116,8 +115,12 @@ function getDomainResources {
     LABEL_SELECTOR="weblogic.domainUID in ($1)"
   fi
 
-  # first, let's get all namespaced types with -l $LABEL_SELECTOR
+  # clean the output file
+  if [ -e $2 ]; then
+    rm $2
+  fi
 
+  # first, let's get all namespaced types with -l $LABEL_SELECTOR
   NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
   # if domain crd exists, look for domains too:
@@ -129,7 +132,7 @@ function getDomainResources {
   kubectl get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
-          --all-namespaces=true > $2
+          --all-namespaces=true >> $2
 
   # now, get all non-namespaced types with -l $LABEL_SELECTOR
 
@@ -240,9 +243,9 @@ function deleteDomains {
     # for each namespace with leftover resources, try delete them
     cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
       if [ "$test_mode" = "true" ]; then
-        echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+        echo kubectl -n $line delete $NAMESPACED_TYPES,ingress.voyager.appscode.com  -l "$LABEL_SELECTOR" 
       else
-        kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+        kubectl -n $line delete $NAMESPACED_TYPES,ingress.voyager.appscode.com -l "$LABEL_SELECTOR" 
       fi
     done
 
