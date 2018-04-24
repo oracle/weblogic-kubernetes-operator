@@ -612,8 +612,8 @@ function createDomain {
 #
 function setupVoyagerLoadBalancer {
   # only deploy Voyager Ingress Controller the first time
-  local vcon=`kubectl get namespace voyager| grep voyager | wc | awk ' { print $1; } '`
-  if [ "$vcon" == "0" ]; then
+  local vpod=`kubectl get pod -n voyager | grep voyager | wc -l`
+  if [ "$vpod" == "0" ]; then
     kubectl create namespace voyager
     curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
     | bash -s -- --provider=baremetal --namespace=voyager
