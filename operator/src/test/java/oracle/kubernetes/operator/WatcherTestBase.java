@@ -3,17 +3,17 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.meterware.simplestub.Memento;
+
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
-
-import com.meterware.simplestub.Memento;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
 import org.junit.Before;
@@ -34,6 +34,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     private static final int NEXT_RESOURCE_VERSION = 123456;
     private static final int INITIAL_RESOURCE_VERSION = 123;
     private static final String NAMESPACE = "testspace";
+    private final RuntimeException hasNextException = new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
 
     private List<Memento> mementos = new ArrayList<>();
     private List<Watch.Response<?>> callBacks = new ArrayList<>();
@@ -57,7 +58,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
 
     @Before
     public void setUp() throws Exception {
-        mementos.add(TestUtils.silenceOperatorLogger());
+        mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException));
         mementos.add(StubWatchFactory.install());
         StubWatchFactory.setListener(this);
     }
@@ -107,7 +108,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     @Test
     public void receivedEvents_areSentToListeners() throws Exception {
         Object object = createObjectWithMetaData();
-        StubWatchFactory.addCallResponses((Watch.Response) createAddResponse(object), (Watch.Response) createModifyResponse(object));
+        StubWatchFactory.addCallResponses(createAddResponse(object), (Watch.Response) createModifyResponse(object));
 
         createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -158,7 +159,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     @SuppressWarnings("unchecked")
     @Test
     public void afterExceptionDuringNext_closeWatchAndTryAgain() throws Exception {
-        StubWatchFactory.throwExceptionOnNext(new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE));
+        StubWatchFactory.throwExceptionOnNext(hasNextException);
         StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
 
         createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
@@ -166,6 +167,7 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
         assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(2));
     }
 
+    @SuppressWarnings("SameParameterValue")
     private V1ObjectMeta createMetaData(String name, String namespace) {
         return new V1ObjectMeta().name(name).namespace(namespace).resourceVersion(getNextResourceVersion());
     }

@@ -3,11 +3,6 @@
 
 package oracle.kubernetes;
 
-import com.meterware.simplestub.Memento;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -15,7 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import com.meterware.simplestub.Memento;
+
+import oracle.kubernetes.operator.logging.LoggingFactory;
+
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+
+import static com.meterware.simplestub.Stub.createStub;
 
 public class TestUtils {
   private static Boolean kubernetesStatus;
@@ -57,7 +62,7 @@ public class TestUtils {
    *
    * @return a collection of the removed handlers
    */
-  public static Memento silenceOperatorLogger() {
+  public static ExceptionFilteringMemento silenceOperatorLogger() {
     Logger logger = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
     List<Handler> savedHandlers = new ArrayList<>();
     for (Handler handler : logger.getHandlers()) {
@@ -69,7 +74,33 @@ public class TestUtils {
     for (Handler handler : savedHandlers)
       logger.removeHandler(handler);
 
-    return new ConsoleHandlerMemento(logger, savedHandlers);
+    TestLogHandler testHandler = createStub(TestLogHandler.class);
+    logger.addHandler(testHandler);
+
+    return new ConsoleHandlerMemento(logger, testHandler, savedHandlers);
+  }
+
+  abstract static class TestLogHandler extends Handler {
+    private Throwable throwable;
+    private List<Throwable> ignoredExceptions = new ArrayList<>();
+
+    @Override
+    public void publish(LogRecord record) {
+      if (record.getThrown() != null && !ignoredExceptions.contains(record.getThrown()))
+        throwable = record.getThrown();
+    }
+
+    void throwLoggedThrowable() {
+      if (throwable == null) return;
+
+      if (throwable instanceof Error) throw (Error) throwable;
+      if (throwable instanceof RuntimeException) throw (RuntimeException) throwable;
+      throw new RuntimeException(throwable);
+    }
+
+    void ignoreLoggedException(Throwable t) {
+      ignoredExceptions.add(t);
+    }
   }
 
   /**
@@ -102,18 +133,34 @@ public class TestUtils {
     }
   }
 
-  private static class ConsoleHandlerMemento implements Memento {
+  public interface ExceptionFilteringMemento extends Memento {
+    ExceptionFilteringMemento ignoringLoggedExceptions(Throwable... throwables);
+  }
+
+  private static class ConsoleHandlerMemento implements ExceptionFilteringMemento {
     private Logger logger;
+    private TestLogHandler testHandler;
     private List<Handler> savedHandlers;
 
-    ConsoleHandlerMemento(Logger logger, List<Handler> savedHandlers) {
+    ConsoleHandlerMemento(Logger logger, TestLogHandler testHandler, List<Handler> savedHandlers) {
       this.logger = logger;
+      this.testHandler = testHandler;
       this.savedHandlers = savedHandlers;
     }
 
     @Override
+    public ExceptionFilteringMemento ignoringLoggedExceptions(Throwable... throwables) {
+      for (Throwable throwable : throwables)
+        testHandler.ignoreLoggedException(throwable);
+      return this;
+    }
+
+    @Override
     public void revert() {
+      logger.removeHandler(testHandler);
       restoreConsoleHandlers(logger, savedHandlers);
+
+      testHandler.throwLoggedThrowable();
     }
 
     @Override
