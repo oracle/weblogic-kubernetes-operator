@@ -47,6 +47,7 @@ public class CreateDomainInputsFileTest {
         .adminPort("7001")
         .adminServerName("admin-server")
         .clusterName("cluster-1")
+        .clusterType("DYNAMIC")
         .domainName("base_domain")
         .domainUID("")
         .exposeAdminNodePort("false")

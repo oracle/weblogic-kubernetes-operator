@@ -24,6 +24,7 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest extends Creat
       CreateDomainInputs.newInputs()
         .exposeAdminNodePort("true")
         .exposeAdminT3Channel("true")
+        .clusterType("CONFIGURED")
         .weblogicImagePullSecretName("test-weblogic-image-pull-secret-name")
         .loadBalancer(LOAD_BALANCER_TRAEFIK)
         .weblogicDomainStorageType(STORAGE_TYPE_NFS)

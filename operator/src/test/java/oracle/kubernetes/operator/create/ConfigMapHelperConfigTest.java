@@ -24,6 +24,10 @@ public class ConfigMapHelperConfigTest {
   private static final String PROPERTY_LIVENESS_PROBE_SH = "livenessProbe.sh";
   private static final String PROPERTY_READINESS_PROBE_SH = "readinessProbe.sh";
   private static final String PROPERTY_READ_STATE_SH = "readState.sh";
+  private static final String PROPERTY_START_SERVER_SH = "startServer.sh";
+  private static final String PROPERTY_START_SERVER_PY = "start-server.py";
+  private static final String PROPERTY_STOP_SERVER_SH = "stopServer.sh";
+  private static final String PROPERTY_STOP_SERVER_PY = "stop-server.py";
 
   @Test
   public void computedDomainConfigMap_isCorrect() throws Exception {
@@ -36,6 +40,10 @@ public class ConfigMapHelperConfigTest {
     assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_LIVENESS_PROBE_SH), not(isEmptyOrNullString()));
     assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_READINESS_PROBE_SH), not(isEmptyOrNullString()));
     assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_READ_STATE_SH), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_START_SERVER_SH), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_START_SERVER_PY), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_STOP_SERVER_SH), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_STOP_SERVER_PY), not(isEmptyOrNullString()));
     assertThat(
       actual,
       yamlEqualTo(getDesiredDomainConfigMap()));
@@ -52,6 +60,11 @@ public class ConfigMapHelperConfigTest {
           .putAnnotationsItem(FORMAT_ANNOTATION, FORMAT_VERSION))
         .putDataItem(PROPERTY_LIVENESS_PROBE_SH, "")
         .putDataItem(PROPERTY_READINESS_PROBE_SH, "")
+        .putDataItem(PROPERTY_READ_STATE_SH, "")
+        .putDataItem(PROPERTY_START_SERVER_SH, "")
+        .putDataItem(PROPERTY_START_SERVER_PY, "")
+        .putDataItem(PROPERTY_STOP_SERVER_SH, "")
+        .putDataItem(PROPERTY_STOP_SERVER_PY, "")
         .putDataItem(PROPERTY_READ_STATE_SH, "");
   }
 
