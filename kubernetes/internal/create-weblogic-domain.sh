@@ -92,6 +92,7 @@ fi
 #
 function initAndValidateOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
+
   validateOutputDir \
     ${domainOutputDir} \
     ${valuesInputFile} \
@@ -100,6 +101,8 @@ function initAndValidateOutputDir {
     weblogic-domain-pvc.yaml \
     weblogic-domain-traefik-${clusterNameLC}.yaml \
     weblogic-domain-traefik-security-${clusterNameLC}.yaml \
+    weblogic-domain-apache.yaml \
+    weblogic-domain-apache-security.yaml 
     create-weblogic-domain-job.yaml \
     domain-custom-resource.yaml
 }
@@ -183,10 +186,12 @@ function validateLoadBalancer {
     case ${loadBalancer} in
       "TRAEFIK")
       ;;
+      "APACHE")
+      ;;
       "NONE")
       ;;
       *)
-        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are TRAEFIK and NONE."
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are TRAEFIK, APACHE and NONE."
       ;;
     esac
   fi
@@ -321,6 +326,16 @@ function initialize {
     validationError "The template file ${traefikInput} for generating the traefik deployment was not found"
   fi
 
+  apacheSecurityInput="${scriptDir}/weblogic-domain-apache-security-template.yaml"
+  if [ ! -f ${apacheSecurityInput} ]; then
+    validationError "The file ${apacheSecurityInput} for generating the apache-webtier RBAC was not found"
+  fi
+
+  apacheInput="${scriptDir}/weblogic-domain-apache-template.yaml"
+  if [ ! -f ${apacheInput} ]; then
+    validationError "The template file ${apacheInput} for generating the apache-webtier deployment was not found"
+  fi
+
   failIfValidationErrors
 
   # Parse the commonn inputs file
@@ -388,6 +403,9 @@ function createYamlFiles {
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
   traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"
   traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
+  apacheOutput="${domainOutputDir}/weblogic-domain-apache.yaml"
+  apacheSecurityOutput="${domainOutputDir}/weblogic-domain-apache-security.yaml"
+
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -473,25 +491,62 @@ function createYamlFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
 
-  # Traefik file
-  cp ${traefikInput} ${traefikOutput}
-  echo Generating ${traefikOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
-  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
-  sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
-  sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${traefikOutput}
+  if [ "${loadBalancer}" = "TRAEFIK" ]; then
+    # Traefik file
+    cp ${traefikInput} ${traefikOutput}
+    echo Generating ${traefikOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
+    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
+    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
+    sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${traefikOutput}
 
-  # Traefik security file
-  cp ${traefikSecurityInput} ${traefikSecurityOutput}
-  echo Generating ${traefikSecurityOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikSecurityOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikSecurityOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikSecurityOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikSecurityOutput}
-  sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
+    # Traefik security file
+    cp ${traefikSecurityInput} ${traefikSecurityOutput}
+    echo Generating ${traefikSecurityOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${traefikSecurityOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikSecurityOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikSecurityOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikSecurityOutput}
+    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
+
+  elif [ "${loadBalancer}" = "APACHE" ]; then
+    # Apache file
+    cp ${apacheInput} ${apacheOutput}
+    echo Generating ${apacheOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheOutput}
+    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${apacheOutput}
+    sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${apacheOutput}
+    sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${apacheOutput}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${apacheOutput}
+    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${apacheOutput}
+    sed -i -e "s:%WEB_APP_PREPATH%:$loadBalancerAppPrepath:g" ${apacheOutput}
+
+    if [ ${loadBalancerVolumePath} != "" ]; then
+      sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
+      sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
+      sed -i -e "s:# - name:- name:g" ${apacheOutput}
+      sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
+      sed -i -e "s:#     path:    path:g" ${apacheOutput}
+      sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
+      sed -i -e "s:# - name:- name:g" ${apacheOutput}
+      sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
+    fi
+ 
+    mkdir -p ${loadBalancerVolumePath}
+    cp ${scriptDir}/custom_mod_wl_apache.conf ${loadBalancerVolumePath}/
+
+    # Apache security file
+    cp ${apacheSecurityInput} ${apacheSecurityOutput}
+    echo Generating ${apacheSecurityOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheSecurityOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheSecurityOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheSecurityOutput}
+  fi
 
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
@@ -629,6 +684,36 @@ function setupTraefikLoadBalancer {
 }
 
 #
+# Deploy Apache load balancer
+#
+function setupApacheLoadBalancer {
+
+  apacheName="${domainUID}-apache-webtier"
+  apacheServiceName="${domainUID}-external-apache-webtier-service"
+
+  echo Deploying apache
+  kubectl apply -f ${apacheOutput}
+
+  echo Checking apache deployment
+  SS=`kubectl get deployment -n ${namespace} | grep ${apacheName} | wc | awk ' { print $1; } '`
+  if [ "$SS" != "1" ]; then
+    fail "The deployment ${apacheName} was not created"
+  fi
+
+  echo Checking the apache service account
+  SA=`kubectl get serviceaccount ${apacheName} -n ${namespace} | grep ${apacheName} | wc | awk ' { print $1; } '`
+  if [ "$SA" != "1" ]; then
+    fail "The service account ${apacheName} was not created"
+  fi
+
+  echo Checking apache service
+  TSVC=`kubectl get services -n ${namespace} | grep ${apacheServiceName} | wc | awk ' { print $1; } '`
+  if [ "$TSVC" != "1" ]; then
+    fail "The service ${apacheServiceName} was not created"
+  fi
+}
+
+#
 # Function to create the domain custom resource
 #
 function createDomainCustomResource {
@@ -686,6 +771,9 @@ function outputJobSummary {
     echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
     echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerDashboardPort}"
     echo ""
+  elif [ "${loadBalancer}" = "APACHE" ]; then
+    echo "The apache load balancer for '${domainUID}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
+
   fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-weblogic-domain-inputs.yaml"
@@ -696,6 +784,10 @@ function outputJobSummary {
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     echo "  ${traefikSecurityOutput}"
     echo "  ${traefikOutput}"
+  elif [ "${loadBalancer}" = "APACHE" ]; then
+    echo "  ${apacheSecurityOutput}"
+    echo "  ${apacheOutput}"
+
   fi
 }
 
@@ -726,6 +818,9 @@ if [ "${generateOnly}" = false ]; then
   # Setup load balancer
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     setupTraefikLoadBalancer
+  elif [ "${loadBalancer}" = "APACHE" ]; then
+    setupApacheLoadBalancer
+
   fi
 
   # Create the domain custom resource
