@@ -48,7 +48,7 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_LOAD_BALANCER_WEB_PORT = "loadBalancerWebPort";
   private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerDashboardPort";
   private static final String PARAM_LOAD_BALANCER_VOLUME_PATH = "loadBalancerVolumePath";
-  private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerAppPrepath";
+  private static final String PARAM_LOAD_BALANCER_APP_PREPATH = "loadBalancerAppPrepath";
   private static final String PARAM_JAVA_OPTIONS = "javaOptions";
 
   @Before
@@ -489,7 +489,7 @@ public class CreateDomainInputsValidationTest {
   @Test
   public void createDomain_with_missingLoadBalancerDashboardPort_failsAndReturnsError() throws Exception {
     assertThat(
-      execCreateDomain(newInputs().loadBalancerDashboardPort("")),
+      execCreateDomain(newInputs().loadBalancer(LOAD_BALANCER_TRAEFIK).loadBalancerDashboardPort("")),
       failsAndPrints(paramMissingError(PARAM_LOAD_BALANCER_DASHBOARD_PORT)));
   }
 
@@ -507,7 +507,7 @@ public class CreateDomainInputsValidationTest {
     GeneratedDomainYamlFiles
       .generateDomainYamlFiles(
         newInputs()
-          .loadBalancer(LOAD_BALANCER_APACHE)
+          .loadBalancer(LOAD_BALANCER_APACHE))
       .remove();
   }
 

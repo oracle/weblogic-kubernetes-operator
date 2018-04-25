@@ -490,6 +490,11 @@ public class CreateDomainInputs {
     this.loadBalancerDashboardPort = convertNullToEmptyString(loadBalancerDashboardPort);
   }
 
+  public CreateDomainInputs loadBalancerDashboardPort(String loadBalancerDashboardPort) {
+    setLoadBalancerDashboardPort(loadBalancerDashboardPort);
+    return this;
+  }
+
   public String getLoadBalancerVolumePath() {
     return loadBalancerVolumePath;
   }
@@ -498,8 +503,21 @@ public class CreateDomainInputs {
     this.loadBalancerVolumePath = convertNullToEmptyString(loadBalancerVolumePath);
   }
 
-  public CreateDomainInputs loadBalancerDashboardPort(String loadBalancerDashboardPort) {
-    setLoadBalancerDashboardPort(loadBalancerDashboardPort);
+  public CreateDomainInputs loadBalancerVolumePath(String loadBalancerVolumePath) {
+    setLoadBalancerVolumePath(loadBalancerVolumePath);
+    return this;
+  }
+
+  public String getLoadBalancerAppPrepath() {
+    return loadBalancerAppPrepath;
+  }
+
+  public void setLoadBalancerAppPrepath(String loadBalancerAppPrepath) {
+    this.loadBalancerAppPrepath = convertNullToEmptyString(loadBalancerAppPrepath);
+  }
+
+  public CreateDomainInputs loadBalancerAppPrepath(String loadBalancerAppPrepath) {
+    setLoadBalancerAppPrepath(loadBalancerAppPrepath);
     return this;
   }
 
