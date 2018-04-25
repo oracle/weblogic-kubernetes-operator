@@ -3,20 +3,20 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.ApiException;
@@ -25,7 +25,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -37,7 +36,8 @@ import oracle.kubernetes.operator.work.Step;
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final String SCRIPT_LOCATION = "/scripts";
+  private static final String SCRIPTS = "scripts";
+  private static final String SCRIPT_LOCATION = "/" + SCRIPTS;
 
   private ConfigMapHelper() {}
   
@@ -163,38 +163,38 @@ public class ConfigMapHelper {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
-
-      try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
-        Stream<Path> walk = Files.walk(fileSystem.getPath(SCRIPT_LOCATION), 1);
-        Map<String, String> data = new HashMap<>();
-        for (Iterator<Path> it = walk.iterator(); it.hasNext();) {
-          Path script = it.next();
-          String scriptName = script.toString();
-          if (!SCRIPT_LOCATION.equals(scriptName)) {
-            data.put(script.getFileName().toString(), readScript(scriptName));
+      
+      try {
+        if ("jar".equals(uri.getScheme())) {
+          try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
+            return walkScriptsPath(fileSystem.getPath(SCRIPTS));
           }
+        } else {
+          return walkScriptsPath(Paths.get(uri));
         }
-        LOGGER.info(MessageKeys.SCRIPT_LOADED, domainNamespace);
-        return data;
       } catch (IOException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
     }
-
-    private String readScript(String scriptName) throws IOException {
-      try (
-        InputStream inputStream = getClass().getResourceAsStream(scriptName);
-        ByteArrayOutputStream result = new ByteArrayOutputStream()
-      ) {
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = inputStream.read(buffer)) != -1) {
-          result.write(buffer, 0, length);
-        }
-        return result.toString();
+    
+    private Map<String, String> walkScriptsPath(Path scriptsDir) throws IOException {
+      try (Stream<Path> walk = Files.walk(scriptsDir, 1)) {
+        Map<String, String> data = walk.filter(i -> !Files.isDirectory(i)).collect(Collectors.toMap(
+            i -> i.getFileName().toString(), 
+            i -> new String(read(i), StandardCharsets.UTF_8)));
+        LOGGER.info(MessageKeys.SCRIPT_LOADED, domainNamespace);
+        return data;
       }
     }
+    
+    private byte[] read(Path path) {
+      try {
+        return Files.readAllBytes(path);
+      } catch (IOException io) {
+        LOGGER.warning(MessageKeys.EXCEPTION, io);
+      }
+      return null;
+    }
   }
-
 }
