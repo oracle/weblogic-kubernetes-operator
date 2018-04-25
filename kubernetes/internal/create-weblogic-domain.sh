@@ -709,7 +709,6 @@ function setupTraefikLoadBalancer {
 function setupApacheLoadBalancer {
 
   apacheName="${domainUID}-apache-webtier"
-  apacheServiceName="${domainUID}-external-apache-webtier-service"
 
   echo Deploying apache
   kubectl apply -f ${apacheOutput}
@@ -727,7 +726,7 @@ function setupApacheLoadBalancer {
   fi
 
   echo Checking apache service
-  TSVC=`kubectl get services -n ${namespace} | grep ${apacheServiceName} | wc | awk ' { print $1; } '`
+  TSVC=`kubectl get services -n ${namespace} | grep ${apacheName} | wc | awk ' { print $1; } '`
   if [ "$TSVC" != "1" ]; then
     fail "The service ${apacheServiceName} was not created"
   fi
