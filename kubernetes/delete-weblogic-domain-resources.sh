@@ -54,47 +54,6 @@ EOF
 }
 
 #
-# get voyager related resources of one domain
-#
-# Usage:
-#   getVoyagerOfDomain domainName outfilename
-function getVoyagerOfDomain {
-  local voyagerIngressName="ingress.voyager.appscode.com"
-  local domainName=$1
-  local ns=`kubectl get ingress.voyager.appscode.com --all-namespaces | grep $domainName | awk '{ print $1 }'`
-  if [ -n "$ns" ]; then
-    echo $voyagerIngressName $domainName-voyager -n $ns >> $2
-  fi
-}
-
-#
-# get voyager related resources
-#
-# Usage:
-#   getVoyagerRes domainA,domainB,... outfilename
-#   getVoyagerRes all outfilename
-function getVoyagerRes {
-  if [ "$1" = "all" ]; then
-    resList=`kubectl get ingress.voyager.appscode.com --all-namespaces | awk '{print $2}'`
-    for resName in $resList
-    do
-      if [ $resName != 'NAME' ]; then
-        tail="-voyager"
-        len=${#resName}-${#tail}
-        domainName=${resName:0:len}
-        getVoyagerOfDomain $domainName $2
-      fi
-    done
-  else
-    IFS=',' read -r -a array <<< "$1"
-    for domainName in "${array[@]}"
-    do
-      getVoyagerOfDomain $domainName $2
-    done
-  fi
-}
-
-#
 # getDomainResources domain(s) outfilename
 #
 # Usage:
@@ -129,6 +88,11 @@ function getDomainResources {
     NAMESPACED_TYPES="domain,$NAMESPACED_TYPES"
   fi
 
+  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+  if [ `kubectl get crd $VOYAGER_ING_NAME |grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+    NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
+  fi
+
   kubectl get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
@@ -142,9 +106,6 @@ function getDomainResources {
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $2
-
-  # get all voyager-related resources
-  getVoyagerRes $1 $2
 }
 
 #
@@ -243,9 +204,9 @@ function deleteDomains {
     # for each namespace with leftover resources, try delete them
     cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
       if [ "$test_mode" = "true" ]; then
-        echo kubectl -n $line delete $NAMESPACED_TYPES,ingress.voyager.appscode.com  -l "$LABEL_SELECTOR" 
+        echo kubectl -n $line delete $NAMESPACED_TYPES  -l "$LABEL_SELECTOR"
       else
-        kubectl -n $line delete $NAMESPACED_TYPES,ingress.voyager.appscode.com -l "$LABEL_SELECTOR" 
+        kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       fi
     done
 
@@ -307,3 +268,4 @@ if [ ! -x "$(command -v kubectl)" ]; then
 fi
 
 deleteDomains "${domains}" "${maxwaitsecs:-$default_maxwaitsecs}"
+

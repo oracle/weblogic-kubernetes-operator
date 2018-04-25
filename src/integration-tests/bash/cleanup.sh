@@ -78,6 +78,7 @@ function getResWithLabel {
 # deleteResWithLabel outputfile
 #
 function deleteResWithLabel {
+  echo @@ Delete resources with label $LABEL_SELECTOR.
   # clean the output file first
   if [ -e $1 ]; then
     rm $1
@@ -86,43 +87,51 @@ function deleteResWithLabel {
   getResWithLabel $1
   # delete namespaced types
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-    if [ "$test_mode" = "true" ]; then
-      echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
-    else
-      kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
-    fi
+    kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
   if [ ! "$no_namespace_count" = "0" ]; then
-    if [ "$test_mode" = "true" ]; then
-      echo kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+    kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+  fi
+
+  echo "@@ Waiting for pods to stop running."
+  local total=0
+  for count in {1..100}; do
+    pods=($(kubectl get pods --all-namespaces -l weblogic.domainUID -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+    total=${#pods[*]}
+    if [ $total -eq 0 ] ; then
+        break
     else
-      kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+      echo "@@ There are still $total running pods with label $LABEL_SELECTOR."
     fi
+    sleep 3
+  done
+
+  if [ $total -gt 0 ]; then
+    echo "Warning: after waiting 300 seconds, there are still $total running pods with label $LABEL_SELECTOR."
   fi
 }
 
-#
-# deleteWLSOperators
-#
-function deleteWLSOperators {
-  local tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
-  # delete wls operator resources
-  LABEL_SELECTOR="weblogic.operatorName"
-  #getResWithLabel $tempfile
-  deleteResWithLabel $tempfile
-}
-
-#
-# deleteVoyagerController
-#
 function deleteVoyagerController {
+
   curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
       | bash -s -- --provider=baremetal --namespace=voyager --uninstall --purge
+  kubectl delete namespace voyager
 }
 
+#
+# deleteNamespaces outputfile
+#
+function deleteNamespaces {
+  cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
+    if [ "$line" != "default" ]; then
+      kubectl delete namespace $line --ignore-not-found
+    fi
+  done
+
+}
 echo @@ Starting cleanup.
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
@@ -132,16 +141,37 @@ echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJEC
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
 NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
+
+HANDLE_VOYAGER="false"
+VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+if [ `kubectl get crd $VOYAGER_ING_NAME --ignore-not-found | grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+  NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
+  HANDLE_VOYAGER="true"
+fi
+
+DOMAIN_CRD="domains.weblogic.oracle"
+if [ `kubectl get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
+  NAMESPACED_TYPES="$DOMAIN_CRD,$NAMESPACED_TYPES"
+fi
+
 NOT_NAMESPACED_TYPES="pv,crd,clusterroles,clusterrolebindings"
 
-# Delele domain resources.
-${scriptDir}/../../../kubernetes/delete-weblogic-domain-resources.sh -d all
+tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
 
-# Delete wls operator
-deleteWLSOperators
+echo @@ Deleting domain resources.
+LABEL_SELECTOR="weblogic.domainUID"
+deleteResWithLabel "$tempfile-0"
+deleteNamespaces "$tempfile-0"
 
-# Delete voyager controller
-deleteVoyagerController
+echo @@ Deleting wls operator resources.
+LABEL_SELECTOR="weblogic.operatorName"
+deleteResWithLabel "$tempfile-1"
+deleteNamespaces "$tempfile-1"
+
+echo @@ Deleting voyager controller.
+if [ "$HANDLE_VOYAGER" = "true" ]; then
+  deleteVoyagerController
+fi
 
 # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
 
