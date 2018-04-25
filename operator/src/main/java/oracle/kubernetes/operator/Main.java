@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.JSON;
 import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -39,20 +38,14 @@ import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.Watch;
-
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
+import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -82,6 +75,11 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 /**
  * A Kubernetes Operator for WebLogic.
@@ -98,8 +96,8 @@ public class Main {
   };
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<String, DomainPresenceInfo>();
-  private static final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentWeakHashMap<String, ServerKubernetesObjects>();
+  private static final ConcurrentMap<String, DomainPresenceInfo> domains = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentWeakHashMap<>();
   private static final ServerKubernetesObjectsFactory skoFactory = new ServerKubernetesObjectsFactory(servers);
 
   private static final TuningParameters tuningAndConfig;
@@ -171,9 +169,7 @@ public class Main {
     // start liveness thread
     startLivenessThread();
 
-    engine.getExecutor().execute(() -> {
-      begin();
-    });
+    engine.getExecutor().execute(Main::begin);
 
     // now we just wait until the pod is terminated
     waitForDeath();
@@ -182,7 +178,7 @@ public class Main {
     stopRestServer();
   }
 
-  private static void begin() {
+  static void begin() {
     // read the operator configuration
     String namespace = getOperatorNamespace();
 
@@ -231,165 +227,15 @@ public class Main {
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
         initialized.put(ns, Boolean.TRUE);
-        Step domainList = callBuilderFactory.create().listDomainAsync(ns, new ResponseStep<DomainList>(null) {
-          @Override
-          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (statusCode == CallBuilder.NOT_FOUND) {
-              return onSuccess(packet, null, statusCode, responseHeaders);
-            }
-            return super.onFailure(packet, e, statusCode, responseHeaders);
-          }
-
-          @Override
-          public NextAction onSuccess(Packet packet, DomainList result, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (result != null) {
-              for (Domain dom : result.getItems()) {
-                doCheckAndCreateDomainPresence(dom);
-              }
-            }
-
-            // main logic now happens in the watch handlers
-            domainWatchers.put(ns,
-                createDomainWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
-            return doNext(packet);
-          }
-        });
+        Step domainList = callBuilderFactory.create().listDomainAsync(ns, new ExistingDomainListResponseStep(ns));
+        V1beta1IngressListResponseStep ingressListResponseStep = new V1beta1IngressListResponseStep(domainList, ns);
+        V1ServiceListResponseStep serviceListResponseStep = new V1ServiceListResponseStep(ns, ingressListResponseStep);
+        V1EventListResponseStep eventListResponseStep = new V1EventListResponseStep(ns, serviceListResponseStep);
+        V1PodListResponseStep podListResponseStep = new V1PodListResponseStep(ns, eventListResponseStep);
 
         Step initialize = ConfigMapHelper.createScriptConfigMapStep(namespace, ns,
             new ConfigMapAfterStep(ns, configMapWatchers, stopping, Main::dispatchConfigMapWatch,
-                callBuilderFactory.create().with($ -> {
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
-            }).listPodAsync(ns, new ResponseStep<V1PodList>(callBuilderFactory.create().with($ -> {
-              $.fieldSelector = READINESS_PROBE_FAILURE_EVENT_FILTER;
-            }).listEventAsync(ns, new ResponseStep<V1EventList>(callBuilderFactory.create().with($ -> {
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
-            }).listServiceAsync(ns, new ResponseStep<V1ServiceList>(callBuilderFactory.create().with($ -> {
-              $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
-            }).listIngressAsync(ns, new ResponseStep<V1beta1IngressList>(domainList) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (statusCode == CallBuilder.NOT_FOUND) {
-                  return onSuccess(packet, null, statusCode, responseHeaders);
-                }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
-              }
-
-              @Override
-              public NextAction onSuccess(Packet packet, V1beta1IngressList result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (result != null) {
-                  for (V1beta1Ingress ingress : result.getItems()) {
-                    String domainUID = IngressWatcher.getIngressDomainUID(ingress);
-                    String clusterName = IngressWatcher.getIngressClusterName(ingress);
-                    if (domainUID != null && clusterName != null) {
-                      DomainPresenceInfo created = new DomainPresenceInfo(ns);
-                      DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
-                      if (info == null) {
-                        info = created;
-                      }
-                      info.getIngresses().put(clusterName, ingress);
-                    }
-                  }
-                }
-                ingressWatchers.put(ns,
-                    createIngressWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
-                return doNext(packet);
-              }
-            })) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (statusCode == CallBuilder.NOT_FOUND) {
-                  return onSuccess(packet, null, statusCode, responseHeaders);
-                }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
-              }
-
-              @Override
-              public NextAction onSuccess(Packet packet, V1ServiceList result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (result != null) {
-                  for (V1Service service : result.getItems()) {
-                    String domainUID = ServiceWatcher.getServiceDomainUID(service);
-                    String serverName = ServiceWatcher.getServiceServerName(service);
-                    String channelName = ServiceWatcher.getServiceChannelName(service);
-                    if (domainUID != null && serverName != null) {
-                      DomainPresenceInfo created = new DomainPresenceInfo(ns);
-                      DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
-                      if (info == null) {
-                        info = created;
-                      }
-                      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, domainUID, serverName);
-                      if (channelName != null) {
-                        sko.getChannels().put(channelName, service);
-                      } else {
-                        sko.getService().set(service);
-                      }
-                    }
-                  }
-                }
-                serviceWatchers.put(ns,
-                    createServiceWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
-                return doNext(packet);
-              }
-            })) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (statusCode == CallBuilder.NOT_FOUND) {
-                  return onSuccess(packet, null, statusCode, responseHeaders);
-                }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
-              }
-
-              @Override
-              public NextAction onSuccess(Packet packet, V1EventList result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (result != null) {
-                  for (V1Event event : result.getItems()) {
-                    onEvent(event);
-                  }
-                }
-                eventWatchers.put(ns,
-                    createEventWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
-                return doNext(packet);
-              }
-            })) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (statusCode == CallBuilder.NOT_FOUND) {
-                  return onSuccess(packet, null, statusCode, responseHeaders);
-                }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
-              }
-
-              @Override
-              public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (result != null) {
-                  for (V1Pod pod : result.getItems()) {
-                    String domainUID = PodWatcher.getPodDomainUID(pod);
-                    String serverName = PodWatcher.getPodServerName(pod);
-                    if (domainUID != null && serverName != null) {
-                      DomainPresenceInfo created = new DomainPresenceInfo(ns);
-                      DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
-                      if (info == null) {
-                        info = created;
-                      }
-                      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, domainUID, serverName);
-                      sko.getPod().set(pod);
-                    }
-                  }
-                }
-                podWatchers.put(ns,
-                    createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
-                return doNext(packet);
-              }
-            })));
+                callBuilderFactory.create().with($ -> $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL).listPodAsync(ns, podListResponseStep)));
 
         engine.createFiber().start(initialize, new Packet(), new CompletionCallback() {
           @Override
@@ -432,43 +278,42 @@ public class Main {
   private static void normalizeDomainSpec(DomainSpec spec) {
     // Normalize DomainSpec so that equals() will work correctly
     String imageName = spec.getImage();
-    if (imageName == null || imageName.length() == 0) {
+    if (isNotDefined(imageName)) {
       spec.setImage(imageName = KubernetesConstants.DEFAULT_IMAGE);
     }
-    String imagePullPolicy = spec.getImagePullPolicy();
-    if (imagePullPolicy == null || imagePullPolicy.length() == 0) {
-      spec.setImagePullPolicy(imagePullPolicy = (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
+    if (isNotDefined(spec.getImagePullPolicy())) {
+      spec.setImagePullPolicy((imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
           ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
           : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY);
     }
     if (spec.getExportT3Channels() == null) {
-      spec.setExportT3Channels(new ArrayList<String>());
+      spec.setExportT3Channels(new ArrayList<>());
     }
     String startupControl = spec.getStartupControl();
-    if (startupControl == null || startupControl.length() == 0) {
-      spec.setStartupControl(startupControl = StartupControlConstants.AUTO_STARTUPCONTROL);
+    if (isNotDefined(startupControl)) {
+      spec.setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
     }
     if (spec.getServerStartup() == null) {
-      spec.setServerStartup(new ArrayList<ServerStartup>());
+      spec.setServerStartup(new ArrayList<>());
     } else {
       for (ServerStartup ss : spec.getServerStartup()) {
         if (ss.getDesiredState() == null) {
           ss.setDesiredState(WebLogicConstants.RUNNING_STATE);
         }
         if (ss.getEnv() == null) {
-          ss.setEnv(new ArrayList<V1EnvVar>());
+          ss.setEnv(new ArrayList<>());
         }
       }
     }
     if (spec.getClusterStartup() == null) {
-      spec.setClusterStartup(new ArrayList<ClusterStartup>());
+      spec.setClusterStartup(new ArrayList<>());
     } else {
       for (ClusterStartup cs : spec.getClusterStartup()) {
         if (cs.getDesiredState() == null) {
           cs.setDesiredState(WebLogicConstants.RUNNING_STATE);
         }
         if (cs.getEnv() == null) {
-          cs.setEnv(new ArrayList<V1EnvVar>());
+          cs.setEnv(new ArrayList<>());
         }
         if (cs.getReplicas() == null) {
           cs.setReplicas(1);
@@ -478,6 +323,10 @@ public class Main {
     if (spec.getReplicas() == null) {
       spec.setReplicas(1);
     }
+  }
+
+  private static boolean isNotDefined(String value) {
+    return value == null || value.length() == 0;
   }
 
   /**
@@ -1073,8 +922,6 @@ public class Main {
    *
    * @param item
    *          An item received from a Watch response.
-   * @param principal
-   *          The name of the principal that will be used in this watch.
    */
   private static void dispatchDomainWatch(Watch.Response<Domain> item) {
     Domain d;
@@ -1106,5 +953,202 @@ public class Main {
       namespace = "default";
     }
     return namespace;
+  }
+
+  private static class V1beta1IngressListResponseStep extends ResponseStep<V1beta1IngressList> {
+    private final String ns;
+
+    public V1beta1IngressListResponseStep(Step domainList, String ns) {
+      super(domainList);
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                Map<String, List<String>> responseHeaders) {
+      if (statusCode == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, null, statusCode, responseHeaders);
+      }
+      return super.onFailure(packet, e, statusCode, responseHeaders);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, V1beta1IngressList result, int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      if (result != null) {
+        for (V1beta1Ingress ingress : result.getItems()) {
+          String domainUID = IngressWatcher.getIngressDomainUID(ingress);
+          String clusterName = IngressWatcher.getIngressClusterName(ingress);
+          if (domainUID != null && clusterName != null) {
+            DomainPresenceInfo created = new DomainPresenceInfo(ns);
+            DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
+            if (info == null) {
+              info = created;
+            }
+            info.getIngresses().put(clusterName, ingress);
+          }
+        }
+      }
+      ingressWatchers.put(ns,
+          createIngressWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      return doNext(packet);
+    }
+  }
+
+  private static class V1ServiceListResponseStep extends ResponseStep<V1ServiceList> {
+    private final String ns;
+
+    public V1ServiceListResponseStep(String ns, V1beta1IngressListResponseStep ingressListResponseStep) {
+      super(Main.callBuilderFactory.create().with($ -> {
+        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
+      }).listIngressAsync(ns, ingressListResponseStep));
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                Map<String, List<String>> responseHeaders) {
+      if (statusCode == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, null, statusCode, responseHeaders);
+      }
+      return super.onFailure(packet, e, statusCode, responseHeaders);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, V1ServiceList result, int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      if (result != null) {
+        for (V1Service service : result.getItems()) {
+          String domainUID = ServiceWatcher.getServiceDomainUID(service);
+          String serverName = ServiceWatcher.getServiceServerName(service);
+          String channelName = ServiceWatcher.getServiceChannelName(service);
+          if (domainUID != null && serverName != null) {
+            DomainPresenceInfo created = new DomainPresenceInfo(ns);
+            DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
+            if (info == null) {
+              info = created;
+            }
+            ServerKubernetesObjects sko = skoFactory.getOrCreate(info, domainUID, serverName);
+            if (channelName != null) {
+              sko.getChannels().put(channelName, service);
+            } else {
+              sko.getService().set(service);
+            }
+          }
+        }
+      }
+      serviceWatchers.put(ns,
+          createServiceWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      return doNext(packet);
+    }
+  }
+
+  private static class V1EventListResponseStep extends ResponseStep<V1EventList> {
+    private final String ns;
+
+    public V1EventListResponseStep(String ns, V1ServiceListResponseStep serviceListResponseStep) {
+      super(Main.callBuilderFactory.create().with($ -> {
+        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
+      }).listServiceAsync(ns, serviceListResponseStep));
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                Map<String, List<String>> responseHeaders) {
+      if (statusCode == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, null, statusCode, responseHeaders);
+      }
+      return super.onFailure(packet, e, statusCode, responseHeaders);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, V1EventList result, int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      if (result != null) {
+        for (V1Event event : result.getItems()) {
+          onEvent(event);
+        }
+      }
+      eventWatchers.put(ns,
+          createEventWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      return doNext(packet);
+    }
+  }
+
+  private static class V1PodListResponseStep extends ResponseStep<V1PodList> {
+    private final String ns;
+
+    public V1PodListResponseStep(String ns, V1EventListResponseStep eventListResponseStep) {
+      super(Main.callBuilderFactory.create().with($ -> {
+        $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER;
+      }).listEventAsync(ns, eventListResponseStep));
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                Map<String, List<String>> responseHeaders) {
+      if (statusCode == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, null, statusCode, responseHeaders);
+      }
+      return super.onFailure(packet, e, statusCode, responseHeaders);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      if (result != null) {
+        for (V1Pod pod : result.getItems()) {
+          String domainUID = PodWatcher.getPodDomainUID(pod);
+          String serverName = PodWatcher.getPodServerName(pod);
+          if (domainUID != null && serverName != null) {
+            DomainPresenceInfo created = new DomainPresenceInfo(ns);
+            DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
+            if (info == null) {
+              info = created;
+            }
+            ServerKubernetesObjects sko = skoFactory.getOrCreate(info, domainUID, serverName);
+            sko.getPod().set(pod);
+          }
+        }
+      }
+      podWatchers.put(ns,
+          createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      return doNext(packet);
+    }
+  }
+
+  private static class ExistingDomainListResponseStep extends ResponseStep<DomainList> {
+    private final String ns;
+
+    public ExistingDomainListResponseStep(String ns) {
+      super(null);
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, ApiException e, int statusCode,
+                                Map<String, List<String>> responseHeaders) {
+      if (statusCode == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, null, statusCode, responseHeaders);
+      }
+      return super.onFailure(packet, e, statusCode, responseHeaders);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, DomainList result, int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      if (result != null) {
+        for (Domain dom : result.getItems()) {
+          doCheckAndCreateDomainPresence(dom);
+        }
+      }
+
+      // main logic now happens in the watch handlers
+      domainWatchers.put(ns,
+          createDomainWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      return doNext(packet);
+    }
   }
 }
