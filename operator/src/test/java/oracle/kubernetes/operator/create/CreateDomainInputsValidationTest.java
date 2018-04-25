@@ -47,6 +47,8 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_LOAD_BALANCER = "loadBalancer";
   private static final String PARAM_LOAD_BALANCER_WEB_PORT = "loadBalancerWebPort";
   private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerDashboardPort";
+  private static final String PARAM_LOAD_BALANCER_VOLUME_PATH = "loadBalancerVolumePath";
+  private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerAppPrepath";
   private static final String PARAM_JAVA_OPTIONS = "javaOptions";
 
   @Before
@@ -498,6 +500,15 @@ public class CreateDomainInputsValidationTest {
       execCreateDomain(
         newInputs().loadBalancerDashboardPort(val)),
       failsAndPrints(invalidIntegerParamValueError(PARAM_LOAD_BALANCER_DASHBOARD_PORT, val)));
+  }
+
+  @Test
+  public void createDomain_with_loadBalacnerApache_succeeds() throws Exception {
+    GeneratedDomainYamlFiles
+      .generateDomainYamlFiles(
+        newInputs()
+          .loadBalancer(LOAD_BALANCER_APACHE)
+      .remove();
   }
 
   // TBD - shouldn't we allow empty java options?
