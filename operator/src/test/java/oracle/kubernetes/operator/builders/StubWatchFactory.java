@@ -3,6 +3,15 @@
 
 package oracle.kubernetes.operator.builders;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.squareup.okhttp.Call;
@@ -12,15 +21,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.Pool;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
 
 /**
  * A test-time replacement for the factory that creates Watch objects, allowing
@@ -69,13 +69,17 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
         getRecordedParameters().add(recordedParams(callParams));
 
-        if (exceptionOnNext == null)
-            return (WatchI<T>) new WatchStub<T>((List)calls.remove(0));
+        if (exceptionOnNext == null && hasDefinedCallResponses())
+            return new WatchStub<T>((List)calls.remove(0));
         else try {
             return new ExceptionThrowingWatchStub<T>(exceptionOnNext);
         } finally {
             exceptionOnNext = null;
         }
+    }
+
+    private boolean hasDefinedCallResponses() {
+        return calls != null && !calls.isEmpty();
     }
 
     private Map<String,String> recordedParams(CallParams callParams) {

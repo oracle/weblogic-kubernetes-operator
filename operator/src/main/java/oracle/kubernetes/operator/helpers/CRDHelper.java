@@ -14,7 +14,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 
 /**
  * Helper class to ensure Domain CRD is created
@@ -50,7 +49,7 @@ public class CRDHelper {
     crds.setNames(crdn);
     crd.setSpec(crds);
 
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory();
     V1beta1CustomResourceDefinition existingCRD = null;
     try {
       existingCRD = factory.create().readCustomResourceDefinition(

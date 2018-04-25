@@ -3,6 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeList;
@@ -10,17 +15,11 @@ import io.kubernetes.client.models.V1ResourceRule;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainList;
 
 /**
  * A Helper Class for checking the health of the WebLogic Operator
@@ -273,7 +272,7 @@ public class HealthCheckHelper {
     int major = 0;
     int minor = 0;
     try {
-      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      CallBuilderFactory factory = new CallBuilderFactory();
       info = factory.create().readVersionCode();
 
       String gitVersion = info.getGitVersion();
@@ -322,7 +321,7 @@ public class HealthCheckHelper {
    * @throws ApiException exception for k8s API
    */
   private HashMap<String, Domain> verifyDomainUidUniqueness() throws ApiException {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory();
 
     HashMap<String, Domain> domainUIDMap = new HashMap<>();
     for (String namespace : targetNamespaces) {
@@ -350,7 +349,7 @@ public class HealthCheckHelper {
    * @throws ApiException exception for k8s API
    */
   private void verifyPersistentVolume(HashMap<String, Domain> domainUIDMap) throws ApiException {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory();
 
     V1PersistentVolumeList pvList = factory.create().listPersistentVolume();
 
