@@ -69,17 +69,13 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
         getRecordedParameters().add(recordedParams(callParams));
 
-        if (exceptionOnNext == null && hasDefinedCallResponses())
+        if (exceptionOnNext == null)
             return new WatchStub<T>((List)calls.remove(0));
         else try {
             return new ExceptionThrowingWatchStub<T>(exceptionOnNext);
         } finally {
             exceptionOnNext = null;
         }
-    }
-
-    private boolean hasDefinedCallResponses() {
-        return calls != null && !calls.isEmpty();
     }
 
     private Map<String,String> recordedParams(CallParams callParams) {
