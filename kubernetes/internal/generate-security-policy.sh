@@ -94,8 +94,11 @@ metadata:
     weblogic.operatorName: ${NAMESPACE}
 rules:
 - apiGroups: [""]
-  resources: ["namespaces", "persistentvolumes"]
+  resources: ["namespaces"]
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
@@ -108,6 +111,12 @@ rules:
 - apiGroups: ["extensions"]
   resources: ["ingresses"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["selfsubjectaccessreviews", "localsubjectaccessreviews", "subjectaccessreviews", "selfsubjectrulesreviews"]
+  verbs: ["create"]
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -197,13 +206,13 @@ metadata:
     weblogic.operatorName: ${NAMESPACE}
 rules:
 - apiGroups: [""]
-  resources: ["secrets", "persistentvolumeclaims"]
+  resources: ["secrets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["storage.k8s.io"]
   resources: ["storageclasses"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["services", "configmaps", "pods", "jobs", "events"]
+  resources: ["services", "configmaps", "pods", "podtemplates", "events", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
   resources: ["pods/logs"]
@@ -211,6 +220,9 @@ rules:
 - apiGroups: [""]
   resources: ["pods/exec"]
   verbs: ["create"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["settings.k8s.io"]
   resources: ["podpresets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
