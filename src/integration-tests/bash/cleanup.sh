@@ -219,6 +219,10 @@ function orderlyDelete {
     kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-traefik-cluster-1.yaml" 
     kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-traefik-security-cluster-1.yaml"
   
+    echo @@ Deleting apache in namespace $curns
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-apache.yaml" 
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-apache-security.yaml" 
+  
     echo @@ Deleting configmap ${curdomain}-create-weblogic-domain-job-cm in namespace $curns
     kubectl -n $curns delete cm ${curdomain}-create-weblogic-domain-job-cm  --ignore-not-found
     
@@ -229,6 +233,12 @@ function orderlyDelete {
     kubectl -n $curns delete serviceaccount ${curdomain}-cluster-1-traefik --ignore-not-found=true
     kubectl -n $curns delete clusterrole ${curdomain}-cluster-1-traefik --ignore-not-found=true
     kubectl -n $curns delete clusterrolebinding ${curdomain}-cluster-1-traefik --ignore-not-found=true
+
+    kubectl -n $curns delete deploy ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete service ${curdomain}-external-apache-webtier-service --ignore-not-found=true
+    kubectl -n $curns delete serviceaccount ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete clusterrole ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete clusterrolebinding ${curdomain}-apache-webtier --ignore-not-found=true
   done
   
   for ((i=0;i<OCOUNT;i++)); do
@@ -326,7 +336,7 @@ orderlyDelete
 #   arg2 - non-namespaced artifacts
 #   arg3 - keywords in deletable artificats
 
-genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik"
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|apache-webtier"
 SUCCESS="$?"
 
 # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).

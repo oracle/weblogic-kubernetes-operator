@@ -85,8 +85,15 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-# Load balancer to deploy.  Supported values are:TRAEFIK, NONE
+# Load balancer to deploy.  Supported values are:TRAEFIK, APACHE, NONE
 loadBalancer: TRAEFIK
+
+# Load balancer app prepath 
+loadBalancerAppPrepath: /
+
+# Docker volume path for APACHE
+# By default, the VolumePath is empty, which will cause the volume mount be disabled
+loadBalancerVolumePath:
 
 # Load balancer web port
 loadBalancerWebPort: 30305
