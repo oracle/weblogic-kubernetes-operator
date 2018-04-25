@@ -13,7 +13,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1beta1Ingress;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 
 import org.junit.After;

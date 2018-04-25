@@ -1,7 +1,7 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.work;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
@@ -19,11 +19,10 @@ import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.helpers.AsyncRequestStepFactory;
+import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 
 import javax.annotation.Nonnull;
 
