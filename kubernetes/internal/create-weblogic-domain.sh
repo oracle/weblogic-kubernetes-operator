@@ -102,7 +102,7 @@ function initAndValidateOutputDir {
     weblogic-domain-traefik-${clusterNameLC}.yaml \
     weblogic-domain-traefik-security-${clusterNameLC}.yaml \
     weblogic-domain-apache.yaml \
-    weblogic-domain-apache-security.yaml 
+    weblogic-domain-apache-security.yaml \
     create-weblogic-domain-job.yaml \
     domain-custom-resource.yaml
 }
@@ -546,7 +546,7 @@ function createYamlFiles {
     sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${apacheOutput}
     sed -i -e "s:%WEB_APP_PREPATH%:$loadBalancerAppPrepath:g" ${apacheOutput}
 
-    if [ ${loadBalancerVolumePath} != "" ]; then
+    if [ ! -z "${loadBalancerVolumePath}" ]; then
       sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
       sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
       sed -i -e "s:# - name:- name:g" ${apacheOutput}
