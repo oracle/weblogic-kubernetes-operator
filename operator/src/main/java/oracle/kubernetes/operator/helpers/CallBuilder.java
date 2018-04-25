@@ -250,7 +250,7 @@ public class CallBuilder {
   public V1beta1CustomResourceDefinition readCustomResourceDefinition(String name) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new ApiextensionsV1beta1Api(client).readCustomResourceDefinition(name, pretty, exact, export);
+      return CALL_FACTORY.readCustomResourceDefinition(client, name, pretty, exact, export);
     } finally {
       helper.recycle(client);
     }
@@ -266,7 +266,7 @@ public class CallBuilder {
       throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new ApiextensionsV1beta1Api(client).createCustomResourceDefinition(body, pretty);
+      return CALL_FACTORY.createCustomResourceDefinition(client, body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -968,6 +968,16 @@ public class CallBuilder {
 
 
   public static class SynchronousCallFactoryImpl implements SynchronousCallFactory {
+    @Override
+    public V1beta1CustomResourceDefinition readCustomResourceDefinition(ApiClient client, String name, String pretty, Boolean exact, Boolean export) throws ApiException {
+      return new ApiextensionsV1beta1Api(client).readCustomResourceDefinition(name, pretty, exact, export);
+    }
+
+    @Override
+    public V1beta1CustomResourceDefinition createCustomResourceDefinition(ApiClient client, V1beta1CustomResourceDefinition body, String pretty) throws ApiException {
+      return new ApiextensionsV1beta1Api(client).createCustomResourceDefinition(body, pretty);
+    }
+
     @Override
     public V1SelfSubjectRulesReview createSelfSubjectRulesReview(ApiClient client, V1SelfSubjectRulesReview body, String pretty) throws ApiException {
       return new AuthorizationV1Api(client).createSelfSubjectRulesReview(body, pretty);
