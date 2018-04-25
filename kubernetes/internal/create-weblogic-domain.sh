@@ -261,7 +261,25 @@ function validateStartupControl {
       "AUTO")
       ;;
       *)
-        validationError "Invalid valid for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+        validationError "Invalid value for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+      ;;
+    esac
+  fi
+}
+
+#
+# Function to validate the cluster type value
+#
+function validateClusterType {
+  validateInputParamsSpecified clusterType
+  if [ ! -z "${clusterType}" ]; then
+    case ${clusterType} in
+      "CONFIGURED")
+      ;;
+      "DYNAMIC")
+      ;;
+      *)
+        validationError "Invalid value for clusterType: ${clusterType}. Valid values are 'CONFIGURED' and 'DYNAMIC'."
       ;;
     esac
   fi
@@ -370,6 +388,7 @@ function initialize {
   validateLoadBalancer
   initAndValidateOutputDir
   validateStartupControl
+  validateClusterType
   failIfValidationErrors
 }
 
@@ -450,6 +469,7 @@ function createYamlFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
+  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${jobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
