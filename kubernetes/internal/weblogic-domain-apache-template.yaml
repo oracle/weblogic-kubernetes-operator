@@ -75,7 +75,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: %DOMAIN_UID%-external-apache-webtier-service
+  name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
     weblogic.domainUID: %DOMAIN_UID%
@@ -91,19 +91,3 @@ spec:
       nodePort: %LOAD_BALANCER_WEB_PORT%
       name: rest-https
 
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: %DOMAIN_UID%-internal-apache-webtier-service
-#   namespace: %NAMESPACE%
-#     labels:
-#     weblogic.domainUID: %DOMAIN_UID%
-#     weblogic.domainName: %DOMAIN_NAME%
-# spec:
-#   type: ClusterIP
-#   selector:
-#     app: %DOMAIN_UID%-apache-webtier
-#   ports:
-#     - port: %LOAD_BALANCER_WEB_PORT_INTERNAL%
-#       name: rest-httpe700
