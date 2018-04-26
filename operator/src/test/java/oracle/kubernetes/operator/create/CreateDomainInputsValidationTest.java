@@ -452,6 +452,21 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_loadBalanceTypeTraefik_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_TRAEFIK);
+  }
+
+  @Test
+  public void createDomain_with_loadBalanceTypeNone_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_NONE);
+  }
+
+  @Test
+  public void createDomain_with_loadBalanceTypeApache_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_APACHE);
+  }
+
+  @Test
   public void createDomain_with_missingLoadBalancer_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateDomain(newInputs().loadBalancer("")),
@@ -514,6 +529,10 @@ public class CreateDomainInputsValidationTest {
 
   private void createDomain_with_validClusterType_succeeds(String clusterType) throws Exception {
     createDomain_with_validInputs_succeeds(newInputs().clusterType(clusterType));
+  }
+
+  private void createDomain_with_validLoadBalancer_succeeds(String loadBalancerType) throws Exception {
+    createDomain_with_validInputs_succeeds(newInputs().loadBalancer(loadBalancerType));
   }
 
   private void createDomain_with_validInputs_succeeds(CreateDomainInputs inputs) throws Exception {
