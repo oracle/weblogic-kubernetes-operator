@@ -89,7 +89,7 @@ integration-test:
       
       function finish {
         exit_code=$?
-        export integration-test-result="$exit_code"
+        export INTEGRATION_TEST_RESULT="$exit_code"
         
         cleanup_and_store
         exit 0
