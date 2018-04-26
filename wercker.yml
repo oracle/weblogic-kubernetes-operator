@@ -178,20 +178,30 @@ integration-test:
       kubectl delete secret docker-store --ignore-not-found=true
       kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
       
-      kubectl delete ns test1 --ignore-not-found=true
-      kubectl create ns test1
+      local nss = `kubectl get ns -o name`
+      if [ `kubectl get ns -o name | grep namespaces/test1 | wc -l` = 0 ]; then
+        kubectl create ns test1
+      fi
+      if [ `kubectl get ns -o name | grep namespaces/test2 | wc -l` = 0 ]; then
+        kubectl create ns test2
+      fi
+      if [ `kubectl get ns -o name | grep namespaces/weblogic-operator-1 | wc -l` = 0 ]; then
+        kubectl create ns weblogic-operator-1
+      fi
+      if [ `kubectl get ns -o name | grep namespaces/weblogic-operator-2 | wc -l` = 0 ]; then
+        kubectl create ns weblogic-operator-2
+      fi
+      
+      kubectl delete secret docker-store -n test1 --ignore-not-found=true
       kubectl create secret docker-registry docker-store -n test1 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
 
-      kubectl delete ns test2 --ignore-not-found=true
-      kubectl create ns test2
+      kubectl delete secret docker-store -n test2 --ignore-not-found=true
       kubectl create secret docker-registry docker-store -n test2 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
       
-      kubectl delete ns weblogic-operator-1 --ignore-not-found=true
-      kubectl create ns weblogic-operator-1
+      kubectl delete secret quay-io -n weblogic-operator-1 --ignore-not-found=true
       kubectl create secret docker-registry quay-io -n weblogic-operator-1 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
 
-      kubectl delete ns weblogic-operator-2 --ignore-not-found=true
-      kubectl create ns weblogic-operator-2
+      kubectl delete secret quay-io -n weblogic-operator-2 --ignore-not-found=true
       kubectl create secret docker-registry quay-io -n weblogic-operator-2 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
 
       export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
