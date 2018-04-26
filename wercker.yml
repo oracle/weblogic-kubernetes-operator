@@ -69,6 +69,7 @@ build:
     env: "PATH=$PATH:/operator"
 
 # This pipeline runs the integration tests against a k8s cluster on OCI.
+command-timeout: 60
 integration-test:
   steps:
   - script:
