@@ -8,13 +8,13 @@ Note that there is a short video demonstration of the domain creation process av
 
 When running a WebLogic domain in Kubernetes, there are some additional considerations that must be taken into account to ensure correct functioning:
 
-*	Multicast is not well supported in Kubernetes at the time of writing.  Some networking providers have some support for multicast, but it is generally considered of “beta” quality.  Oracle recommends configuring WebLogic clusters to use unicast.
+*	Multicast is not currently well supported in Kubernetes.  Some networking providers have some support for multicast, but it is generally considered of “beta” quality.  Oracle recommends configuring WebLogic clusters to use unicast.
 *	The `ListenAddress` for all servers must be set to the correct DNS name; it should not be set to `0.0.0.0` or left blank.  This is required for cluster discovery of servers to work correctly.
 *	If there is a desire to expose a T3 channel outside of the Kubernetes cluster -- for example, to allow WLST or RMI connections from clients outside Kubernetes -- then the recommended approach is to define a dedicated channel (per server) and to expose that channel using a `NodePort` service.  It is required that the channel’s internal and external ports be set to the same value as the chosen `NodePort`; for example, they could all be `32000`.  If all three are not the same, WebLogic Server will reject T3 connection requests.
 
 ## Creating a domain namespace
 
-Oracle recommends creating namespaces to host WebLogic domains. It is not required to maintain a one-to-one relationship between WebLogic domains and Kubernetes namespaces, but this may be done if desired. More than one WebLogic domain may be run in a single namespace if desired.
+Oracle recommends creating namespaces to host WebLogic domains. It is not required to maintain a one-to-one relationship between WebLogic domains and Kubernetes namespaces, but this may be done if desired. More than one WebLogic domain may be run in a single namespace, if desired.
 
 Any namespaces that were listed in the `targetNamespaces` parameter in the operator parameters file when deploying the operator would have been created by the script.  
 
@@ -45,11 +45,11 @@ In this command, replace the uppercase items with the appropriate values. The `S
 
 ## Go to the Docker Store and accept the license agreement for the WebLogic Server image
 
-If you have never used the WebLogic Server image before, you will need to go to the [Docker Store web interface](https://store.docker.com/images/oracle-weblogic-server-12c) and accept the license agreement before Docker Store will allow you to pull this image.  This is a one-time requirement, you do not have to repeat it for each machine you want to use the image on. 
+If you have never used the WebLogic Server image before, you will need to go to the [Docker Store web interface](https://store.docker.com/images/oracle-weblogic-server-12c) and accept the license agreement before Docker Store will allow you to pull this image.  This is a one-time requirement, you do not have to repeat it for each machine you want to use the image on.
 
 ## Pull the WebLogic Server image
 
-You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes nodes*:
+You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues, like putting the secret in the wrong namespace or getting the credentials wrong, by just manually pulling the image by running these commands *on the Kubernetes nodes*:
 
 ```
 docker login
@@ -73,9 +73,9 @@ The `SECRET_NAME` value specified here must be in the format `DOMAINUID-weblogic
 
 ## Important considerations for persistent volumes
 
-WebLogic domains that are managed by the operator are required to store their configuration and state on a persistent volume.  This volume is mounted read/write on all containers that are running a server in the domain.  There are many different persistent volume providers, but they do not all support multiple read/write mounts.  It is required that the chosen provider supports multiple read/write mounts. Details of available providers are available at [https://kubernetes.io/docs/concepts/storage/persistent-volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes).  Careful attention should be given to the table in the section titled “Access Modes”.
+WebLogic domains that are managed by the operator are required to store their configuration and state on a persistent volume.  This volume is mounted read/write on all containers that are running a server in the domain.  There are many different persistent volume providers, but they do not all support multiple read/write mounts.  It is required that the chosen provider supports multiple read/write mounts. Details of available providers are available at [https://kubernetes.io/docs/concepts/storage/persistent-volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes).  Careful attention should be given to the information in the table in the section titled, “Access Modes”.
 
-In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
+In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster, a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
 
 ## Creating a persistent volume for the domain
 
@@ -85,50 +85,50 @@ The persistent volume for the domain must be created using the appropriate tools
 mkdir –m 777 –p /path/to/domain1PersistentVolume
 ```
 
-For other providers, consult the documentation for the provider for instructions on how to create a persistent volume.
+For other providers, consult the provider documentation for instructions on how to create a persistent volume.
 
 ## Customizing the domain parameters file
 
 The domain is created with the provided installation script (`create-weblogic-domain.sh`).  The input to this script is the file `create-weblogic-domain-inputs.yaml`, which must be copied and updated to reflect the target environment.  
 
-The following parameters must be provided in the input file:
+The following parameters must be provided in the input file.
 
-### CONFIGURATION PARAMETERS FOR THE CREATE DOMAIN JOB
+### Configuration parameters for the create domain job
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| adminPort | Port number for the Administration Server inside the Kubernetes cluster. | 7001 |
-| adminNodePort | Port number of the Administration Server outside the Kubernetes cluster. | 30701 |
-| adminServerName | The name of the Administration Server. | admin-server |
-| clusterName | The name of WebLogic Cluster instance to generate for the domain. | cluster-1 |
-| configuredManagedServerCount | Number of Managed Server instances to generate for the domain. | 2 |
-| domainName | Name of the WebLogic domain to create. | base_domain |
-| domainUID | Unique ID that will be used to identify this particular domain. This ID must be unique across all domains in a Kubernetes cluster. | no default |
-| exposeAdminNodePort | Boolean indicating if the the Administration Server is exposed outside of the Kubernetes cluster. | false |
-| exposeAdminT3Channel | Boolean indicating if the T3 admin channel is exposed outside the Kubernetes cluster. | false |
-| initialManagedServerReplicas | The number of managed servers to initially start for the domain | 2 |
-| javaOptions | Java options for starting the Admin and Managed servers. | -Dweblogic.StdoutDebugEnabled=false |
-| loadBalancer | The kind of load balancer to create.  Legal values are 'NONE' and 'TRAEFIK'. | TRAEFIK |
-| loadBalancerDashboardPort | The node port for the load balancer to accept dashboard traffic. | 30315 |
-| loadBalancerWebPort | The node port for the load balancer to accept user traffic. | 30305 |
-| managedServerNameBase | Base string used to generate Managed Server names. | managed-server |
-| managedServerPort | Port number for each Managed Server. | 8001 |
-| namespace | The Kubernetes namespace to create the domain in. | default |
-| productionModeEnabled | Boolean indicating if production mode is enabled for the domain. | true |
-| startupControl | Determines which WebLogic servers will be started up. Legal values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', or 'AUTO' | AUTO |
-| t3ChannelPort | Port for the T3Channel of the NetworkAccessPoint. | 30012 |
-| t3PublicAddress | Public address for the t3 channel. | kubernetes |
-| weblogicCredentialsSecretName | Name of the Kubernetes secret for the Administration Server's username and password. | domain1-weblogic-credentials |
-| weblogicDomainStoragePath | Physical path of the storage for the domain. | no default |
-| weblogicDomainStorageReclaimPolicy | Kubernetes persistent volume reclaim policy for the domain persistent storage | Retain |
-| weblogicDomainStorageSize | Total storage allocated for the domain. | 10Gi |
-| weblogicDomainStorageType | Type of storage for the domain. Legal values are 'NFS' and 'HOST_PATH". | HOST_PATH |
-| weblogicDomainStorageNFSServer| The name of IP address of the NFS server for the domain's storage. | no default |
-| weblogicImagePullSecretName | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | docker-store-secret |
+| `adminPort` | Port number for the Administration Server inside the Kubernetes cluster. | `7001` |
+| `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
+| `adminServerName` | Name of the Administration Server. | `admin-server` |
+| `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
+| `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
+| `domainName` | Name of the WebLogic domain to create. | `base_domain` |
+| `domainUID` | Unique ID that will be used to identify this particular domain. This ID must be unique across all domains in a Kubernetes cluster. | no default |
+| `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
+| `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
+| `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
+| `javaOptions` | Java options for starting the Administration and Managed Servers. | `-Dweblogic.StdoutDebugEnabled=false` |
+| `loadBalancer` | Type of load balancer to create.  Legal values are `NONE` and `TRAEFIK`. | `TRAEFIK` |
+| `loadBalancerDashboardPort` | Node port for the load balancer to accept dashboard traffic. | `30315` |
+| `loadBalancerWebPort` | Node port for the load balancer to accept user traffic. | `30305` |
+| `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
+| `managedServerPort` | Port number for each Managed Server. | `8001` |
+| `namespace` | Kubernetes namespace to create the domain in. | `default` |
+| `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
+| `startupControl` | Determines which WebLogic servers will be started up. Legal values are `NONE`, `ALL`, `ADMIN`, `SPECIFIED`, or `AUTO` | `AUTO` |
+| `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
+| `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
+| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
+| `weblogicDomainStoragePath` | Physical path of the storage for the domain. | no default |
+| `weblogicDomainStorageReclaimPolicy` | Kubernetes persistent volume reclaim policy for the domain persistent storage | `Retain` |
+| `weblogicDomainStorageSize` | Total storage allocated for the domain. | `10Gi` |
+| `weblogicDomainStorageType` | Type of storage for the domain. Legal values are `NFS` and `HOST_PATH`. | `HOST_PATH` |
+| `weblogicDomainStorageNFSServer`| Name of the IP address of the NFS server for the domain's storage. | no default |
+| `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
 
 ## Limitations of the create domain script
 
-This technology preview release has some limitations in the create domain script that users should be aware of.
+This release has some limitations in the create domain script that users should be aware of.
 
 *	The script creates the specified number of Managed Servers and places them all in one cluster.
 *	The script always creates one cluster.
@@ -139,11 +139,12 @@ Oracle intends to remove these limitations in a future release.
 
 At this point, you've created a customized copy of the inputs file.
 
-Next, choose and create a directory that generated operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+Next, choose and create a directory in which generated operator related files will be stored, for example, `/path/to/weblogic-operator-output-directory`.
 
 Finally, run the create script, pointing it at your inputs file and output directory:
 
-./create-weblogic-domain.sh \
+```
+  ./create-weblogic-domain.sh \
   –i create-domain-job-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
@@ -152,19 +153,19 @@ Finally, run the create script, pointing it at your inputs file and output direc
 
 The script will perform the following steps:
 
-*	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is /path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>.
+*	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
 *	Create Kubernetes YAML files based on the provided inputs.
 *	Create a persistent volume for the shared state.
 *	Create a persistent volume claim for that volume.
 *	Create a Kubernetes job that will start up a utility WebLogic Server container and run WLST to create the domain on the shared storage.
 *	Wait for the job to finish and then create a domain custom resource for the new domain.
 
-The default domain created the script has the following characteristics:
+The default domain created by the script has the following characteristics:
 
 *	An Administration Server named `admin-server` listening on port `7001`.
 *	A single cluster named `cluster-1` containing the specified number of Managed Servers.
 *	A Managed Server named `managed-server1` listening on port `8001` (and so on up to the requested number of Managed Servers).
-*	Log files are located in `/shared/logs`.
+*	Log files that are located in `/shared/logs`.
 *	No applications deployed.
 *	No data sources.
 *	No JMS resources.
@@ -313,7 +314,7 @@ Status:
 Events:  <none>
 ```
 
-In the "Status" section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting Managed Servers.
+In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting Managed Servers.
 
 ### Verify pods
 
@@ -381,6 +382,6 @@ Events:  <none>
 
 ## Configuring the domain readiness
 
-Kubernetes has a concept of “readiness” that is used to determine when external requests should be routed to a particular pod.  The domain creation job provided with the operator configures the readiness probe to use the WebLogic Server ReadyApp, which provides a mechanism to check when the server is actually ready to process work, as opposed to simply being in the RUNNING state.  Often applications have some work to do after the server is RUNNING but before they are ready to process new requests.
+Kubernetes has a concept of “readiness” that is used to determine when external requests should be routed to a particular pod.  The domain creation job provided with the operator configures the readiness probe to use the WebLogic Server ReadyApp, which provides a mechanism to check when the server is actually ready to process work, as opposed to simply being in the `RUNNING` state.  Often applications have some work to do after the server is `RUNNING` but before they are ready to process new requests.
 
 ReadyApp provides an API that allows an application to register itself, so that its state will be taken into consideration when determining if the server is “ready”, and an API that allows the application to inform ReadyApp when it considers itself to be ready.
