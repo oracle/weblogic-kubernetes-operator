@@ -648,18 +648,18 @@ function setupVoyagerLoadBalancer {
   # deploy Voyager Ingress resource
   kubectl apply -f ${voyagerOutput}
 
-    echo Checking Voyager deploy   
+    echo Checking Voyager Ingress resource
     local maxwaitsecs=100
     local mstart=`date +%s`
     while : ; do
       local mnow=`date +%s`
-      local vdep=`kubectl get deploy -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
+      local vdep=`kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
       if [ "$vdep" = "1" ]; then
-        echo 'The deployment ${domainUID}-voyager is created successful.'
+        echo 'The Voyager Ingress resource ${domainUID}-voyager is created successfully.'
         break
       fi
       if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-        fail "The deployment ${domainUID}-voyager was not created."
+        fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
       fi
       sleep 5
     done
@@ -671,7 +671,7 @@ function setupVoyagerLoadBalancer {
       local mnow=`date +%s`
       local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
       if [ "$vscv" = "1" ]; then
-        echo 'The service ${domainUID}-voyager-stats is created successful.'
+        echo 'The service ${domainUID}-voyager-stats is created successfully.'
         break
       fi
       if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
