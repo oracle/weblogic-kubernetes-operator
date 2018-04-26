@@ -178,7 +178,6 @@ integration-test:
       kubectl delete secret docker-store --ignore-not-found=true
       kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
       
-      local nss = `kubectl get ns -o name`
       if [ `kubectl get ns -o name | grep namespaces/test1 | wc -l` = 0 ]; then
         kubectl create ns test1
       fi
