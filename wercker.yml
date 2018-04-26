@@ -74,6 +74,7 @@ integration-test:
   - script:
     name: Run integration tests
     code: |
+      #!/bin/bash
       function cleanup_and_store {
         # release lease in case run.sh failed to release it
         # (the following command only releases the release after confirming this pipeline still owns it)
@@ -89,8 +90,7 @@ integration-test:
       
       function finish {
         exit_code=$?
-        varname=${WERCKER_DEPLOYTARGET_NAME}
-        export ${!varname}-result="$exit_code"
+        export INTEGRATION_TEST_RESULT="$exit_code"
         
         cleanup_and_store
         exit 0
@@ -179,20 +179,45 @@ integration-test:
       kubectl delete secret docker-store --ignore-not-found=true
       kubectl create secret docker-registry docker-store --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
       
-      kubectl delete ns test1 --ignore-not-found=true
+      if [ `kubectl get ns test1 | grep Error | wc -l` = 0 ]; then
+        kubectl delete ns test1 --ignore-not-found=true
+        while [`kubectl get ns test1 -o jsonpath='{.status.phase}' | grep Terminating | wc -l` = 1 ]; do
+          sleep 5
+        done
+      fi
       kubectl create ns test1
+      if [ `kubectl get ns test2 | grep Error | wc -l` = 0 ]; then
+        kubectl delete ns test2 --ignore-not-found=true
+        while [`kubectl get ns test2 -o jsonpath='{.status.phase}' | grep Terminating | wc -l` = 1 ]; do
+          sleep 5
+        done
+      fi
+      kubectl create ns test2
+      if [ `kubectl get ns weblogic-operator-1 | grep Error | wc -l` = 0 ]; then
+        kubectl delete ns weblogic-operator-1 --ignore-not-found=true
+        while [`kubectl get ns weblogic-operator-1 -o jsonpath='{.status.phase}' | grep Terminating | wc -l` = 1 ]; do
+          sleep 5
+        done
+      fi
+      kubectl create ns weblogic-operator-1
+      if [ `kubectl get ns weblogic-operator-2 | grep Error | wc -l` = 0 ]; then
+        kubectl delete ns weblogic-operator-2 --ignore-not-found=true
+        while [`kubectl get ns weblogic-operator-2 -o jsonpath='{.status.phase}' | grep Terminating | wc -l` = 1 ]; do
+          sleep 5
+        done
+      fi
+      kubectl create ns weblogic-operator-2
+      
+      kubectl delete secret docker-store -n test1 --ignore-not-found=true
       kubectl create secret docker-registry docker-store -n test1 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
 
-      kubectl delete ns test2 --ignore-not-found=true
-      kubectl create ns test2
+      kubectl delete secret docker-store -n test2 --ignore-not-found=true
       kubectl create secret docker-registry docker-store -n test2 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
       
-      kubectl delete ns weblogic-operator-1 --ignore-not-found=true
-      kubectl create ns weblogic-operator-1
+      kubectl delete secret quay-io -n weblogic-operator-1 --ignore-not-found=true
       kubectl create secret docker-registry quay-io -n weblogic-operator-1 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
 
-      kubectl delete ns weblogic-operator-2 --ignore-not-found=true
-      kubectl create ns weblogic-operator-2
+      kubectl delete secret quay-io -n weblogic-operator-2 --ignore-not-found=true
       kubectl create secret docker-registry quay-io -n weblogic-operator-2 --docker-server=quay.io --docker-username=$QUAY_USERNAME --docker-password=$QUAY_PASSWORD --docker-email=$QUAY_EMAIL
 
       export IMAGE_NAME_OPERATOR="quay.io/markxnelson/weblogic-kubernetes-operator"
