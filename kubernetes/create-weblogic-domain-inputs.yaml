@@ -89,7 +89,7 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-# Load balancer to deploy.  Supported values are: TRAEFIK, APACHE, NONE
+# Load balancer to deploy.  Supported values are: APACHE, TRAEFIK, VOYAGER, NONE
 loadBalancer: TRAEFIK
 
 # Load balancer app prepath used for APACHE load balancer 
