@@ -557,9 +557,6 @@ function createYamlFiles {
       sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
     fi
  
-    mkdir -p ${loadBalancerVolumePath}
-    cp ${scriptDir}/custom_mod_wl_apache.conf ${loadBalancerVolumePath}/
-
     # Apache security file
     cp ${apacheSecurityInput} ${apacheSecurityOutput}
     echo Generating ${apacheSecurityOutput}
