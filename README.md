@@ -8,14 +8,17 @@ Many organizations are exploring, testing, or actively moving application worklo
 
 Oracle has been working with the WebLogic community to find ways to make it as easy as possible for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  This release of the Operator provides a number of features to assist with the management of WebLogic domains in a Kubernetes environment, including:
 
-*	A mechanism to create a WebLogic domain on a Kubernetes persistent volume.
+*	A mechanism to create a WebLogic domain on a Kubernetes persistent volume.This persistent volume can reside in NFS.
 *	A mechanism to define a WebLogic domain as a Kubernetes resource (using a Kubernetes custom resource definition).
 *	The ability to automatically start servers based on declarative startup parameters and desired states.
+* The ability to manage a WebLogic configured or dynamic cluster.
 *	The ability to automatically expose the WebLogic Server Administration Console outside the Kubernetes cluster (if desired).
 *	The ability to automatically expose T3 channels outside the Kubernetes domain (if desired).
 *	The ability to automatically expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing, and to update the load balancer when Managed Servers in the WebLogic domain are started or stopped.
 *	The ability to scale a WebLogic domain by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus/Grafana, or other rules.
-*	The ability to publish Operator and WebLogic Server logs into ElasticSearch and interact with them in Kibana.
+*	The ability to publish Operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
+
+
 
 As part of Oracle’s ongoing commitment to open source in general, and to Kubernetes and the Cloud Native Computing Foundation specifically, Oracle has open sourced the Operator and is committed to enhancing it with additional features.  Oracle welcomes feedback, issues, pull requests, and feature requests from the WebLogic community.
 
@@ -155,10 +158,17 @@ Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more informati
 
 Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
 
-## Load balancing with the Traefik Ingress controller
+## Load balancing
 
-This release of the operator supports only the Traefik load balancer/Ingress controller.  Support for other load balancers is planned in the future.
+### Traefik
+
 Please refer to [Load balancing with Traefik](site/traefik.md) for information about the current capabilities.
+
+### Voyager
+
+
+### Apache
+
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
 
