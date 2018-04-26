@@ -145,8 +145,8 @@ function deleteDomains {
     # get a count of all k8s resources with matching domain-uid labels
     local allcount=`wc -l $tempfile | awk '{ print $1 }'`
 
-    # get a count of all WLS pods (any pod with a matching domain-uid label that doesn't have 'traefik' embedded in its name)
-    local podcount=`grep "^Pod" $tempfile | grep -v traefik | wc -l | awk '{ print $1 }'`
+    # get a count of all WLS pods (any pod with a matching domain-uid label that doesn't have 'traefik' or 'apache'  embedded in its name)
+    local podcount=`grep "^Pod" $tempfile | grep -v traefik | grep -v apache |  wc -l | awk '{ print $1 }'`
 
     local mnow=`date +%s`
 

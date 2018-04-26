@@ -78,7 +78,7 @@
 #                  See "Directory Configuration and Structure" below for
 #                  defaults and a detailed description of test directories.
 #
-#   LB_TYPE        Load balancer type. Can be 'TRAEFIK', 'VOYAGER'.
+#   LB_TYPE        Load balancer type. Can be 'TRAEFIK', 'VOYAGER', or 'APACHE'.
 #                  Default is 'TRAEFIK'.
 #
 #   VERBOSE        Set to 'true' to echo verbose output to stdout.
@@ -765,6 +765,7 @@ function run_create_domain_job {
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     local WLS_JAVA_OPTIONS="$JVM_ARGS"
@@ -836,6 +837,11 @@ function run_create_domain_job {
     sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
+    if [ "$LB_TYPE" == "APACHE" ] ; then
+      local load_balancer_app_prepath="/weblogic"
+      sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
+      sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+    fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
 
@@ -1108,11 +1114,15 @@ function verify_webapp_load_balancing {
     trace "verify that ingress is created.  see $TMP_DIR/describe.ingress.out"
     date >> $TMP_DIR/describe.ingress.out
     kubectl describe ingress -n $NAMESPACE >> $TMP_DIR/describe.ingress.out 2>&1
-
+  
     local TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
+    if [ "$LB_TYPE" == "APACHE" ] ; then
+      TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/weblogic/testwebapp/"
+    fi
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
 
-    trace 'wait for test app to become available'
+    trace "wait for test app to become available on ${TEST_APP_URL}"
+
     local max_count=30
     local wait_time=6
     local count=0
@@ -2488,6 +2498,10 @@ function test_suite_init {
     fi
 
     export LEASE_ID="${LEASE_ID}"
+
+   if [ -z "$LB_TYPE" ]; then
+      export LB_TYPE=TRAEFIK
+    fi
 
     # The following customizable exports are currently only customized by WERCKER
     export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
