@@ -204,7 +204,7 @@ function deleteDomains {
     # for each namespace with leftover resources, try delete them
     cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
       if [ "$test_mode" = "true" ]; then
-        echo kubectl -n $line delete $NAMESPACED_TYPES  -l "$LABEL_SELECTOR"
+        echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       else
         kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       fi
