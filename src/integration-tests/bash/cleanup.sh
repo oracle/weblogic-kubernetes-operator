@@ -235,7 +235,7 @@ function orderlyDelete {
     kubectl -n $curns delete clusterrolebinding ${curdomain}-cluster-1-traefik --ignore-not-found=true
 
     kubectl -n $curns delete deploy ${curdomain}-apache-webtier --ignore-not-found=true
-    kubectl -n $curns delete service ${curdomain}-external-apache-webtier-service --ignore-not-found=true
+    kubectl -n $curns delete service ${curdomain}-apache-webtier --ignore-not-found=true
     kubectl -n $curns delete serviceaccount ${curdomain}-apache-webtier --ignore-not-found=true
     kubectl -n $curns delete clusterrole ${curdomain}-apache-webtier --ignore-not-found=true
     kubectl -n $curns delete clusterrolebinding ${curdomain}-apache-webtier --ignore-not-found=true
