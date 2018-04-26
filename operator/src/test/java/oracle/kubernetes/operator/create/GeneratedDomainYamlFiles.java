@@ -23,6 +23,8 @@ public class GeneratedDomainYamlFiles {
   private ParsedDomainCustomResourceYaml domainCustomResourceYaml;
   private ParsedTraefikYaml traefikYaml;
   private ParsedTraefikSecurityYaml traefikSecurityYaml;
+  private ParsedApacheYaml apacheYaml;
+  private ParsedApacheSecurityYaml apacheSecurityYaml;
   private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
   private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
@@ -40,10 +42,17 @@ public class GeneratedDomainYamlFiles {
         new ParsedCreateWeblogicDomainJobYaml(domainFiles.getCreateWeblogicDomainJobYamlPath(), inputs);
       domainCustomResourceYaml =
         new ParsedDomainCustomResourceYaml(domainFiles.getDomainCustomResourceYamlPath(), inputs);
-      traefikYaml =
-        new ParsedTraefikYaml(domainFiles.getTraefikYamlPath(), inputs);
-      traefikSecurityYaml =
-        new ParsedTraefikSecurityYaml(domainFiles.getTraefikSecurityYamlPath(), inputs);
+      if (CreateDomainInputs.LOAD_BALANCER_TRAEFIK.equals(inputs.getLoadBalancer())) {
+        traefikYaml =
+          new ParsedTraefikYaml(domainFiles.getTraefikYamlPath(), inputs);
+        traefikSecurityYaml =
+          new ParsedTraefikSecurityYaml(domainFiles.getTraefikSecurityYamlPath(), inputs);
+      } else if (CreateDomainInputs.LOAD_BALANCER_APACHE.equals(inputs.getLoadBalancer())) {
+        apacheYaml =
+          new ParsedApacheYaml(domainFiles.getApacheYamlPath(), inputs);
+        apacheSecurityYaml =
+          new ParsedApacheSecurityYaml(domainFiles.getApacheSecurityYamlPath(), inputs);
+      }
       weblogicDomainPersistentVolumeYaml =
         new ParsedWeblogicDomainPersistentVolumeYaml(domainFiles.getWeblogicDomainPersistentVolumeYamlPath(), inputs);
       weblogicDomainPersistentVolumeClaimYaml =
@@ -62,6 +71,8 @@ public class GeneratedDomainYamlFiles {
   public ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() { return domainCustomResourceYaml; }
   public ParsedTraefikYaml getTraefikYaml() { return traefikYaml; }
   public ParsedTraefikSecurityYaml getTraefikSecurityYaml() { return traefikSecurityYaml; }
+  public ParsedApacheYaml getApacheYaml() { return apacheYaml; }
+  public ParsedApacheSecurityYaml getApacheSecurityYaml() { return apacheSecurityYaml; }
   public ParsedWeblogicDomainPersistentVolumeYaml getWeblogicDomainPersistentVolumeYaml() { return weblogicDomainPersistentVolumeYaml; }
   public ParsedWeblogicDomainPersistentVolumeClaimYaml getWeblogicDomainPersistentVolumeClaimYaml() { return weblogicDomainPersistentVolumeClaimYaml; }
 

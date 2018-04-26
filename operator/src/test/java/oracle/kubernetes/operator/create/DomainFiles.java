@@ -41,6 +41,14 @@ public class DomainFiles {
     return getWeblogicDomainPath().resolve(DOMAIN_CUSTOM_RESOURCE_YAML);
   }
 
+  public Path getApacheYamlPath() {
+    return getWeblogicDomainPath().resolve("weblogic-domain-apache.yaml");
+  }
+
+  public Path getApacheSecurityYamlPath() {
+    return getWeblogicDomainPath().resolve("weblogic-domain-apache-security.yaml");
+  }
+
   public Path getTraefikYamlPath() {
     return getWeblogicDomainPath().resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
