@@ -707,6 +707,21 @@ function setupApacheLoadBalancer {
 
   apacheName="${domainUID}-apache-webtier"
 
+  echo Setting up apache security
+  kubectl apply -f ${apacheSecurityOutput}
+
+  echo Checking the cluster role ${apacheName} was created
+  CLUSTERROLE=`kubectl get clusterroles | grep ${apacheName} | wc | awk ' { print $1; } '`
+  if [ "$CLUSTERROLE" != "1" ]; then
+    fail "The cluster role ${apacheName} was not created"
+  fi
+
+  echo Checking the cluster role binding ${apacheName} was created
+  CLUSTERROLEBINDING=`kubectl get clusterrolebindings | grep ${apacheName} | wc | awk ' { print $1; } '`
+  if [ "$CLUSTERROLEBINDING" != "1" ]; then
+    fail "The cluster role binding ${apacheName} was not created"
+  fi
+
   echo Deploying apache
   kubectl apply -f ${apacheOutput}
 
