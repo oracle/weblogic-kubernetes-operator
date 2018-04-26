@@ -89,8 +89,7 @@ integration-test:
       
       function finish {
         exit_code=$?
-        varname=${WERCKER_DEPLOYTARGET_NAME}
-        export ${!varname}-result="$exit_code"
+        export ${WERCKER_DEPLOYTARGET_NAME:-integration-test}-result="$exit_code"
         
         cleanup_and_store
         exit 0
