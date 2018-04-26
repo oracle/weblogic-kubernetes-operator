@@ -354,7 +354,8 @@ function initialize {
   apacheInput="${scriptDir}/weblogic-domain-apache-template.yaml"
   if [ ! -f ${apacheInput} ]; then
     validationError "The template file ${apacheInput} for generating the apache-webtier deployment was not found"
-
+  fi
+  
   voyagerInput="${scriptDir}/voyager-ingress-template.yaml"
   if [ ! -f ${voyagerInput} ]; then
     validationError "The template file ${voyagerInput} for generating the Voyager Ingress was not found"
