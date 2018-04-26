@@ -7,7 +7,7 @@ The operator consists of the following two main parts:
 
 The operator is packaged in a Docker image `container-registry.oracle.com/middleware/weblogic-operator:latest`.  This image can be deployed to a Kubernetes cluster.  It is recommended that the operator be deployed in its own namespace.  Only one operator is permitted in a namespace; however, multiple operators may be deployed in a Kubernetes cluster provided they are each in their own namespace and the list of namespaces they manage do not overlap.
 
-Scripts are provided to deploy the operator to a Kubernetes cluster.  These scripts also provide options to install and configure a load balancer and ELK integration.
+Scripts are provided to deploy the operator to a Kubernetes cluster.  These scripts also provide options to install and configure a load balancer and Elastic Stack integration.
 
 The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).
 
@@ -17,9 +17,9 @@ The diagram below shows the general layout of high-level components, including o
 
 The Kubernetes cluster has several namespaces.  Components may be deployed into namespaces as follows:
 
-*	The operator is deployed into its own namespace.  If the ELK integration option is configured, then a logstash pod will also be deployed in the operator’s namespace.
+*	The operator is deployed into its own namespace.  If the Elastic Stack integration option is configured, then a logstash pod will also be deployed in the operator’s namespace.
 *	WebLogic domains will be deployed into various namespaces.  There can be more than one domain in a namespace if desired.  There is no limit on the number of domains or namespaces that an operator can manage.  Note that there can be more than one operator in a Kubernetes cluster, but each operator is configured with a list of the specific namespaces that it is responsible for.  The operator will not take any action on any domain that is not in one of the namespaces the operator is configured to manage.
-*	If the ELK integration option is configured, Elasticsearch and Kibana will be deployed in the `default` namespace.
+*	If the Elastic Stack integration option is configured, Elasticsearch and Kibana will be deployed in the `default` namespace.
 *	If a load balancer is configured, it will be deployed in the `kube-system` namespace.
 
 ## Domain architecture
@@ -39,7 +39,7 @@ This diagram shows the following details:
 *	A pod is created for each WebLogic Managed Server.  These pods are labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in each pod.  WebLogic Node Manager and Managed Server processes are run inside each of these containers.  The Node Manager process is used as an internal implementation detail for the liveness probe.  It is not intended to be used for other purposes, and it may be removed in some future release.
 *	A `NodePort` type service is created for each Managed Server pod that contains a Managed Server that is not part of a WebLogic cluster.  These services provide HTTP access to the Managed Servers to clients that are outside the Kubernetes cluster.  These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with `weblogic.domainUID` and `weblogic.domainName`.
 *	An Ingress is created for each WebLogic cluster.  This Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The operator updates the Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.  The Ingress is labeled with `weblogic.domainUID`, `weblogic.clusterName`, and `weblogic.domainName`.  The Ingress is also annotated with a class which is used to match Ingresses to the correct instances of the load balancer.  In this release, there is one instance of the load balancer running for each WebLogic cluster, and the load balancers are configured with the root URL path (“/”).  More flexible load balancer configuration is planned for a future release.
-*	If the ELK integration was requested when configuring the operator, there will also be another pod that runs logstash in a container.  This pod will publish the logs from all WebLogic Server instances in the domain into Elasticsearch.  There is one logstash per domain, but only one Elasticsearch and one Kibana for the entire Kubernetes cluster.
+*	If the Elastic Stack integration was requested when configuring the operator, there will also be another pod that runs logstash in a container.  This pod will publish the logs from all WebLogic Server instances in the domain into Elasticsearch.  There is one logstash per domain, but only one Elasticsearch and one Kibana for the entire Kubernetes cluster.
 
 The diagram below shows the components inside the containers running WebLogic Server instances:
 
