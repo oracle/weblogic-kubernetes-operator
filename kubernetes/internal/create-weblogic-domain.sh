@@ -188,10 +188,12 @@ function validateLoadBalancer {
       ;;
       "APACHE")
       ;;
+      "VOYAGER")
+      ;;
       "NONE")
       ;;
       *)
-        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are TRAEFIK, APACHE and NONE."
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are APACHE, TRAEFIK, VOYAGER and NONE."
       ;;
     esac
   fi
@@ -353,6 +355,11 @@ function initialize {
   if [ ! -f ${apacheInput} ]; then
     validationError "The template file ${apacheInput} for generating the apache-webtier deployment was not found"
   fi
+  
+  voyagerInput="${scriptDir}/voyager-ingress-template.yaml"
+  if [ ! -f ${voyagerInput} ]; then
+    validationError "The template file ${voyagerInput} for generating the Voyager Ingress was not found"
+  fi
 
   failIfValidationErrors
 
@@ -424,7 +431,7 @@ function createYamlFiles {
   traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
   apacheOutput="${domainOutputDir}/weblogic-domain-apache.yaml"
   apacheSecurityOutput="${domainOutputDir}/weblogic-domain-apache-security.yaml"
-
+  voyagerOutput="${domainOutputDir}/voyager-ingress.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -531,8 +538,9 @@ function createYamlFiles {
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikSecurityOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikSecurityOutput}
     sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
+  fi
 
-  elif [ "${loadBalancer}" = "APACHE" ]; then
+  if [ "${loadBalancer}" = "APACHE" ]; then
     # Apache file
     cp ${apacheInput} ${apacheOutput}
     echo Generating ${apacheOutput}
@@ -563,6 +571,19 @@ function createYamlFiles {
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheSecurityOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheSecurityOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheSecurityOutput}
+  fi
+
+  if [ "${loadBalancer}" = "VOYAGER" ]; then
+    # Voyager Ingress file
+    cp ${voyagerInput} ${voyagerOutput}
+    echo Generating ${voyagerOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${voyagerOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerOutput}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerOutput}
+    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerOutput}
+    sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${voyagerOutput}
   fi
 
   # Remove any "...yaml-e" files left over from running sed
@@ -657,6 +678,59 @@ function createDomain {
 }
 
 #
+# Deploy Voyager/HAProxy load balancer
+#
+function setupVoyagerLoadBalancer {
+  # only deploy Voyager Ingress Controller the first time
+  local vpod=`kubectl get pod -n voyager | grep voyager | wc -l`
+  if [ "$vpod" == "0" ]; then
+    kubectl create namespace voyager
+    curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+    | bash -s -- --provider=baremetal --namespace=voyager
+  fi
+
+  # verify Voyager controller pod is ready
+  local ready=`kubectl -n voyager get pod | grep voyager-operator | awk ' { print $2; } '`
+  if [ "${ready}" != "1/1" ] ; then
+    fail "Voyager Ingress Controller is not ready"
+  fi
+
+  # deploy Voyager Ingress resource
+  kubectl apply -f ${voyagerOutput}
+
+    echo Checking Voyager Ingress resource
+    local maxwaitsecs=100
+    local mstart=`date +%s`
+    while : ; do
+      local mnow=`date +%s`
+      local vdep=`kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
+      if [ "$vdep" = "1" ]; then
+        echo 'The Voyager Ingress resource ${domainUID}-voyager is created successfully.'
+        break
+      fi
+      if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+        fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
+      fi
+      sleep 5
+    done
+
+    echo Checking Voyager service
+    local maxwaitsecs=100
+    local mstart=`date +%s`
+    while : ; do
+      local mnow=`date +%s`
+      local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
+      if [ "$vscv" = "1" ]; then
+        echo 'The service ${domainUID}-voyager-stats is created successfully.'
+        break
+      fi
+      if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+        fail "The service ${domainUID}-voyager-stats was not created."
+      fi
+      sleep 5
+    done
+}
+#
 # Deploy traefik load balancer
 #
 function setupTraefikLoadBalancer {
@@ -706,6 +780,21 @@ function setupTraefikLoadBalancer {
 function setupApacheLoadBalancer {
 
   apacheName="${domainUID}-apache-webtier"
+
+  echo Setting up apache security
+  kubectl apply -f ${apacheSecurityOutput}
+
+  echo Checking the cluster role ${apacheName} was created
+  CLUSTERROLE=`kubectl get clusterroles | grep ${apacheName} | wc | awk ' { print $1; } '`
+  if [ "$CLUSTERROLE" != "1" ]; then
+    fail "The cluster role ${apacheName} was not created"
+  fi
+
+  echo Checking the cluster role binding ${apacheName} was created
+  CLUSTERROLEBINDING=`kubectl get clusterrolebindings | grep ${apacheName} | wc | awk ' { print $1; } '`
+  if [ "$CLUSTERROLEBINDING" != "1" ]; then
+    fail "The cluster role binding ${apacheName} was not created"
+  fi
 
   echo Deploying apache
   kubectl apply -f ${apacheOutput}
@@ -783,7 +872,7 @@ function outputJobSummary {
   if [ "${exposeAdminT3Channel}" = true ]; then
     echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
   fi
-  if [ "${loadBalancer}" = "TRAEFIK" ]; then
+  if [ "${loadBalancer}" = "TRAEFIK" ] || [ "${loadBalancer}" = "VOYAGER" ]; then
     echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
     echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerDashboardPort}"
     echo ""
@@ -803,7 +892,8 @@ function outputJobSummary {
   elif [ "${loadBalancer}" = "APACHE" ]; then
     echo "  ${apacheSecurityOutput}"
     echo "  ${apacheOutput}"
-
+  elif [ "${loadBalancer}" = "VOYAGER" ]; then
+    echo "  ${voyagerOutput}"
   fi
 }
 
@@ -836,7 +926,8 @@ if [ "${generateOnly}" = false ]; then
     setupTraefikLoadBalancer
   elif [ "${loadBalancer}" = "APACHE" ]; then
     setupApacheLoadBalancer
-
+  elif [ "${loadBalancer}" = "VOYAGER" ]; then
+    setupVoyagerLoadBalancer
   fi
 
   # Create the domain custom resource
