@@ -183,29 +183,29 @@ integration-test:
         while [`kubectl get ns -o name | grep namespaces/test1 | wc -l` = 1 ]; do
           sleep 5
         done
-        kubectl create ns test1
       fi
+      kubectl create ns test1
       if [ `kubectl get ns -o name | grep namespaces/test2 | wc -l` = 1 ]; then
         kubectl delete ns test2 --ignore-not-found=true
         while [`kubectl get ns -o name | grep namespaces/test2 | wc -l` = 1 ]; do
           sleep 5
         done
-        kubectl create ns test2
       fi
+      kubectl create ns test2
       if [ `kubectl get ns -o name | grep namespaces/weblogic-operator-1 | wc -l` = 1 ]; then
         kubectl delete ns weblogic-operator-1 --ignore-not-found=true
         while [`kubectl get ns -o name | grep namespaces/weblogic-operator-1 | wc -l` = 1 ]; do
           sleep 5
         done
-        kubectl create ns weblogic-operator-1
       fi
+      kubectl create ns weblogic-operator-1
       if [ `kubectl get ns -o name | grep namespaces/weblogic-operator-2 | wc -l` = 1 ]; then
         kubectl delete ns weblogic-operator-2 --ignore-not-found=true
         while [`kubectl get ns -o name | grep namespaces/weblogic-operator-2 | wc -l` = 1 ]; do
           sleep 5
         done
-        kubectl create ns weblogic-operator-2
       fi
+      kubectl create ns weblogic-operator-2
       
       kubectl delete secret docker-store -n test1 --ignore-not-found=true
       kubectl create secret docker-registry docker-store -n test1 --docker-server=index.docker.io/v1/ --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
