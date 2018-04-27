@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -22,6 +23,7 @@ import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
@@ -31,6 +33,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainPresenceTest {
 
@@ -61,6 +65,16 @@ public class DomainPresenceTest {
     Main.begin();
   }
 
+  @Test
+  public void afterCancelDomainStatusUpdating_statusUpdaterIsNull() throws Exception {
+    DomainPresenceInfo info = new DomainPresenceInfo("namespace");
+    info.getStatusUpdater().getAndSet(createStub(ScheduledFuture.class));
+
+    DomainPresenceControl.cancelDomainStatusUpdating(info);
+
+    assertThat(info.getStatusUpdater().get(), nullValue());
+  }
+
   static abstract class SynchronousCallFactoryStub implements SynchronousCallFactory {
     @Override
     public VersionInfo getVersionCode(ApiClient client) throws ApiException {
@@ -68,12 +82,12 @@ public class DomainPresenceTest {
     }
 
     @Override
-    public DomainList getDomainList(ApiClient client, String namespace, String _continue, String pretty, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
+    public DomainList getDomainList(ApiClient client, String namespace, String pretty, String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
       return new DomainList();
     }
 
     @Override
-    public V1PersistentVolumeList listPersistentVolumes(String _continue, ApiClient client, String pretty, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
+    public V1PersistentVolumeList listPersistentVolumes(ApiClient client, String pretty, String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
       return new V1PersistentVolumeList();
     }
 
