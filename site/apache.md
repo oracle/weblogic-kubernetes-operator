@@ -13,7 +13,7 @@ You need to prepare the Docker image for Apache Web Server that enbeds Oracle We
 
 ```
 
-     docker tag 12213-apache:latest store/oracle/apache:12.2.1.
+     $ docker tag 12213-apache:latest store/oracle/apache:12.2.1.
 
 ```
 
