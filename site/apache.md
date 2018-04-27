@@ -394,7 +394,7 @@ domain1-apache-webtier                                    2h
 ### Use your own plugin WL module configuration
 
 
-You can fine turn the behavior of the Apache plugin by providing your own Apache plugin configuration. You put your custom_mod_wl_apache.conf file in a local directory, for example `<host-config-dir>` , and specify this location in the `create-weblogic-domain-inputs.yaml` file as follows.
+You can fine tune the behavior of the Apache plugin by providing your own Apache plugin configuration. You put your custom_mod_wl_apache.conf file in a local directory, for example `<host-config-dir>` , and specify this location in the `create-weblogic-domain-inputs.yaml` file as follows.
 
 ```
 
