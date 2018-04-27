@@ -52,7 +52,7 @@ The user can access an application from outside of the Kubernetes cluster via ht
 
 ### Use the default plugin WL module configuration
 
-By default, the Apache Docker image supports a simple WebLogic server proxy plugin configuration for a single WebLogic domain with an admin server and a cluster. The `create-weblogic-domain.sh` script automatically customizes the default behavior based on your domain configuration. The default setting only supports the type of load balancing that uses the root path ("/"). You can further customize the root path of the load balancer withloadBalancerAppPrepath property in the `create-weblogic-domain-inputs.yaml` file.
+By default, the Apache Docker image supports a simple WebLogic server proxy plugin configuration for a single WebLogic domain with an admin server and a cluster. The `create-weblogic-domain.sh` script automatically customizes the default behavior based on your domain configuration. The default setting only supports the type of load balancing that uses the root path ("/"). You can further customize the root path of the load balancer with `loadBalancerAppPrepath` property in the `create-weblogic-domain-inputs.yaml` file.
 
 ```
 
@@ -406,7 +406,7 @@ loadBalancerVolumePath: <host-config-dir>
 
 ```
 
-After the loadBalancerVolumePath is specified, the `create-weblogic-domain.sh` script will use the custom_mod_wl_apache.config file in `<host-config-dir>` directory to replace what is in the Docker image.
+After the `loadBalancerVolumePath` property is specified, the `create-weblogic-domain.sh` script will use the custom_mod_wl_apache.config file in `<host-config-dir>` directory to replace what is in the Docker image.
 
 The generated yaml files will look similar except with un-commented entries like bellow.
 
