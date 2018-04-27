@@ -165,7 +165,15 @@ Please refer to [Shutting down a domain](site/shutdown-domain.md) for informatio
 
 ## Removing a domain
 
-To permanently remove a domain from a Kubernetes cluster, first shut down the domain using the instructions provided in [Shutting down a domain](site/shutdown-domain.md), then remove the persistent volume claim and the persistent volume using these commands:
+To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](kubernetes/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
+
+The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](kubernetes/create-weblogic-domain.sh) script or the [integration tests](src/integration-tests/bash/run.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
+
+```
+kubectl -n <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>
+```
+
+To manually remove the persistent volume claim and the persistent volume, use these commands:
 
 ```
 kubectl delete pvc PVC-NAME -n NAMESPACE
@@ -174,7 +182,7 @@ kubectl delete pv PV-NAME
 
 Find the names of the persistent volume claim (represented above as `PVC-NAME`) and the persistent volume (represented as `PV-NAME`) in the domain custom resource YAML file, or if it is not available, check for the `domainUID` in the metadata on the persistent volumes. Replace `NAMESPACE` with the namespace that the operator is running in.
 
-To permanently delete the actual domain configuration, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath provider`, then delete the corresponding directory on the Kubernetes master.
+To permanently delete the actual WebLogic domain configuration and domain home, delete the physical volume using the appropriate tools.  For example, if the persistent volume used the `HostPath` provider, then delete the corresponding directory on the Kubernetes master.
 
 ## Removing the operator
 
