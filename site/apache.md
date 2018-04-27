@@ -7,9 +7,7 @@ This page describes how to setup and start a Apache Web Server for load balancin
 
 You need to prepare the Docker image for Apache Web Server that enbeds Oracle WebLogic Server Proxy Plugin.
 
-  1. Download and build the Docker image for the Apache Web Server with 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in
-
-[https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
+  1. Download and build the Docker image for the Apache Web Server with 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker] (https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
   2. tag your Docker image to `store/oracle/apache:12.2.1.3` using `docker tag` command.
 
@@ -19,7 +17,7 @@ docker tag 12213-apache:latest store/oracle/apache:12.2.1.
 
 ```
 
-More information about the Apache plugin can be found at: [https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395)
+More information about the Apache plugin can be found at: [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker] (https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
 
 Once you have access to the Docker image of the Apache Web Server, you can go ahead follow the instructions below to setup and start Kubernetes artifacts for Apache Web Server.
 
@@ -64,7 +62,7 @@ loadBalancerAppPrepath: /weblogic
 
 ```
 
-The user can then access an application from utsidie of the Kubernetes cluster via `http://<host>:30305/weblogic/<application-url>,` and the admin can then access the admin console via `http://<host>:30305/console`.
+The user can then access an application from utsidie of the Kubernetes cluster via `http://<host>:30305/weblogic/<application-url>,` and the admin can access the admin console via `http://<host>:30305/console`.
 
 The generated Kubernetes yaml files look like the following given the domainUID "domain1".
 
@@ -356,20 +354,6 @@ Here are examples of the Kubernetes artifacts created by the WebLogic Operator:
 
 ```
 
-
-AMESPACE             NAME                            DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-
-default               deploy/domain1-apache-webtier   1         1         1            1           4h
-
-
-
-default               po/domain1-apache-webtier-7f7cf44dcf-pqzn7          1/1       Running   1          4h
-
-PORT(S)           AGE
-
-default               svc/domain1-apache-webtier                      NodePort    10.96.36.137     <none>        80:30305/TCP      4h
-
-
 NAME                            DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 
 bash-4.2$ kubectl get all |grep apache
@@ -459,7 +443,7 @@ The generated yaml files will look similar except that the lines that start with
 If your WebLogic domain is not created by the WebLogic Operator, you need to manually create and start all Kubernetes' artifacts for Apache Web Server.
 
 
-  1. Create your own custom_mod_wl_apache.conf file, and put it in a local dir, say `<apache-conf-dir>`. See the instructions in [https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+  1. Create your own custom_mod_wl_apache.conf file, and put it in a local dir, say `<apache-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
 
   2. Create the Apache deployment yaml file. See the example above. Note that you need to use the **volumes** and **volumeMounts** to mount `<apache-config-dir>` in to `/config` directory inside the pod that runs Apache web tier. Note that the Apache Web Server needs to be in the same Kubernetes namespace as the WebLogic domains that it needs to access.
 
