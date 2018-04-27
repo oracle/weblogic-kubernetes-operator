@@ -75,11 +75,9 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 /**
  * A Kubernetes Operator for WebLogic.
@@ -275,60 +273,6 @@ public class Main {
   //
   // -----------------------------------------------------------------------------
 
-  private static void normalizeDomainSpec(DomainSpec spec) {
-    // Normalize DomainSpec so that equals() will work correctly
-    String imageName = spec.getImage();
-    if (isNotDefined(imageName)) {
-      spec.setImage(imageName = KubernetesConstants.DEFAULT_IMAGE);
-    }
-    if (isNotDefined(spec.getImagePullPolicy())) {
-      spec.setImagePullPolicy((imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
-          ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
-          : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY);
-    }
-    if (spec.getExportT3Channels() == null) {
-      spec.setExportT3Channels(new ArrayList<>());
-    }
-    String startupControl = spec.getStartupControl();
-    if (isNotDefined(startupControl)) {
-      spec.setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
-    }
-    if (spec.getServerStartup() == null) {
-      spec.setServerStartup(new ArrayList<>());
-    } else {
-      for (ServerStartup ss : spec.getServerStartup()) {
-        if (ss.getDesiredState() == null) {
-          ss.setDesiredState(WebLogicConstants.RUNNING_STATE);
-        }
-        if (ss.getEnv() == null) {
-          ss.setEnv(new ArrayList<>());
-        }
-      }
-    }
-    if (spec.getClusterStartup() == null) {
-      spec.setClusterStartup(new ArrayList<>());
-    } else {
-      for (ClusterStartup cs : spec.getClusterStartup()) {
-        if (cs.getDesiredState() == null) {
-          cs.setDesiredState(WebLogicConstants.RUNNING_STATE);
-        }
-        if (cs.getEnv() == null) {
-          cs.setEnv(new ArrayList<>());
-        }
-        if (cs.getReplicas() == null) {
-          cs.setReplicas(1);
-        }
-      }
-    }
-    if (spec.getReplicas() == null) {
-      spec.setReplicas(1);
-    }
-  }
-
-  private static boolean isNotDefined(String value) {
-    return value == null || value.length() == 0;
-  }
-
   /**
    * Restarts the admin server, if already running
    * 
@@ -454,13 +398,6 @@ public class Main {
     }
   }
 
-  private static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
-    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
-    if (statusUpdater != null) {
-      statusUpdater.cancel(true);
-    }
-  }
-
   private static void doCheckAndCreateDomainPresence(Domain dom) {
     doCheckAndCreateDomainPresence(dom, false, false, null, null);
   }
@@ -477,7 +414,7 @@ public class Main {
         || explicitRestartClusters != null;
 
     DomainSpec spec = dom.getSpec();
-    normalizeDomainSpec(spec);
+    DomainPresenceControl.normalizeDomainSpec(spec);
     String domainUID = spec.getDomainUID();
 
     DomainPresenceInfo created = new DomainPresenceInfo(dom);
@@ -599,7 +536,7 @@ public class Main {
 
     DomainPresenceInfo info = domains.remove(domainUID);
     if (info != null) {
-      cancelDomainStatusUpdating(info);
+      DomainPresenceControl.cancelDomainStatusUpdating(info);
     }
     domainUpdaters.startFiber(domainUID, new DeleteDomainStep(namespace, domainUID), new Packet(),
         new CompletionCallback() {
@@ -623,7 +560,7 @@ public class Main {
    * @return the collection of target namespace names
    */
   private static Collection<String> getTargetNamespaces(String namespace) {
-    Collection<String> targetNamespaces = new ArrayList<String>();
+    Collection<String> targetNamespaces = new ArrayList<>();
 
     String tnValue = tuningAndConfig.get("targetNamespaces");
     if (tnValue != null) {
@@ -676,10 +613,6 @@ public class Main {
    */
   public static boolean getStopping() {
     return stopping.get();
-  }
-
-  private static DomainWatcher createDomainWatcher(String namespace, String initialResourceVersion) {
-    return DomainWatcher.create(factory, namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
   }
 
   private static EventWatcher createEventWatcher(String namespace, String initialResourceVersion) {
@@ -958,7 +891,7 @@ public class Main {
   private static class V1beta1IngressListResponseStep extends ResponseStep<V1beta1IngressList> {
     private final String ns;
 
-    public V1beta1IngressListResponseStep(Step domainList, String ns) {
+    V1beta1IngressListResponseStep(Step domainList, String ns) {
       super(domainList);
       this.ns = ns;
     }
@@ -998,10 +931,10 @@ public class Main {
   private static class V1ServiceListResponseStep extends ResponseStep<V1ServiceList> {
     private final String ns;
 
-    public V1ServiceListResponseStep(String ns, V1beta1IngressListResponseStep ingressListResponseStep) {
-      super(Main.callBuilderFactory.create().with($ -> {
-        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
-      }).listIngressAsync(ns, ingressListResponseStep));
+    V1ServiceListResponseStep(String ns, V1beta1IngressListResponseStep ingressListResponseStep) {
+      super(Main.callBuilderFactory.create()
+            .with($ -> $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+            .listIngressAsync(ns, ingressListResponseStep));
       this.ns = ns;
     }
 
@@ -1046,10 +979,10 @@ public class Main {
   private static class V1EventListResponseStep extends ResponseStep<V1EventList> {
     private final String ns;
 
-    public V1EventListResponseStep(String ns, V1ServiceListResponseStep serviceListResponseStep) {
-      super(Main.callBuilderFactory.create().with($ -> {
-        $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL;
-      }).listServiceAsync(ns, serviceListResponseStep));
+    V1EventListResponseStep(String ns, V1ServiceListResponseStep serviceListResponseStep) {
+      super(Main.callBuilderFactory.create()
+            .with($ -> $.labelSelector = LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+            .listServiceAsync(ns, serviceListResponseStep));
       this.ns = ns;
     }
 
@@ -1079,10 +1012,10 @@ public class Main {
   private static class V1PodListResponseStep extends ResponseStep<V1PodList> {
     private final String ns;
 
-    public V1PodListResponseStep(String ns, V1EventListResponseStep eventListResponseStep) {
-      super(Main.callBuilderFactory.create().with($ -> {
-        $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER;
-      }).listEventAsync(ns, eventListResponseStep));
+    V1PodListResponseStep(String ns, V1EventListResponseStep eventListResponseStep) {
+      super(Main.callBuilderFactory.create()
+            .with($ -> $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
+            .listEventAsync(ns, eventListResponseStep));
       this.ns = ns;
     }
 
@@ -1122,7 +1055,7 @@ public class Main {
   private static class ExistingDomainListResponseStep extends ResponseStep<DomainList> {
     private final String ns;
 
-    public ExistingDomainListResponseStep(String ns) {
+    ExistingDomainListResponseStep(String ns) {
       super(null);
       this.ns = ns;
     }
@@ -1137,18 +1070,23 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, DomainList result, int statusCode,
-        Map<String, List<String>> responseHeaders) {
+    public NextAction onSuccess(Packet packet, DomainList result, int statusCode, Map<String, List<String>> responseHeaders) {
       if (result != null) {
         for (Domain dom : result.getItems()) {
           doCheckAndCreateDomainPresence(dom);
         }
       }
 
-      // main logic now happens in the watch handlers
-      domainWatchers.put(ns,
-          createDomainWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      domainWatchers.put(ns, createDomainWatcher(ns, getResourceVersion(result)));
       return doNext(packet);
+    }
+
+    String getResourceVersion(DomainList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
+    }
+
+    private static DomainWatcher createDomainWatcher(String namespace, String initialResourceVersion) {
+      return DomainWatcher.create(factory, namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
     }
   }
 }

@@ -174,7 +174,7 @@ public class CallBuilder {
     String _continue = "";
     ApiClient client = helper.take();
     try {
-      return CALL_FACTORY.getDomainList(client, namespace, _continue, pretty, fieldSelector, includeUninitialized, labelSelector,
+      return CALL_FACTORY.getDomainList(client, namespace, pretty, _continue, fieldSelector, includeUninitialized, labelSelector,
             limit, resourceVersion, timeoutSeconds, watch);
     } finally {
       helper.recycle(client);
@@ -614,7 +614,7 @@ public class CallBuilder {
     String _continue = "";
     ApiClient client = helper.take();
     try {
-      return CALL_FACTORY.listPersistentVolumes(_continue, client, pretty, fieldSelector, includeUninitialized,
+      return CALL_FACTORY.listPersistentVolumes(client, pretty, _continue, fieldSelector, includeUninitialized,
                                                 labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     } finally {
       helper.recycle(client);
@@ -984,7 +984,7 @@ public class CallBuilder {
     }
 
     @Override
-    public V1PersistentVolumeList listPersistentVolumes(String _continue, ApiClient client, String pretty, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
+    public V1PersistentVolumeList listPersistentVolumes(ApiClient client, String pretty, String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
       return new CoreV1Api(client).listPersistentVolume(pretty, _continue, fieldSelector,
             includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     }
@@ -995,7 +995,7 @@ public class CallBuilder {
     }
 
     @Override
-    public DomainList getDomainList(ApiClient client, String namespace, String _continue, String pretty, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
+    public DomainList getDomainList(ApiClient client, String namespace, String pretty, String _continue, String fieldSelector, Boolean includeUninitialized, String labelSelector, Integer limit, String resourceVersion, Integer timeoutSeconds, Boolean watch) throws ApiException {
       return new WeblogicApi(client).listWebLogicOracleV1NamespacedDomain(namespace, pretty, _continue,
             fieldSelector, includeUninitialized, labelSelector, limit, resourceVersion, timeoutSeconds, watch);
     }
