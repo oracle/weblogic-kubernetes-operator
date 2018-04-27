@@ -38,7 +38,7 @@ public class TestUtils {
     PrintStream savedOut = System.out;
     System.setOut(new PrintStream(new ByteArrayOutputStream()));
     try {
-      CommandLine cmdLine = CommandLine.parse("kubectl cluster-info");
+      CommandLine cmdLine = CommandLine.parse("kubectl cluster-info dump");
       DefaultExecutor executor = new DefaultExecutor();
       executor.execute(cmdLine);
       return true;
