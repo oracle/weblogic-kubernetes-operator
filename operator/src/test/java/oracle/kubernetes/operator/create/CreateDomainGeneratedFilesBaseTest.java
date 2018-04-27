@@ -467,7 +467,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
               .terminationGracePeriodSeconds(60L)
               .addContainersItem(newContainer()
                 .name(getApacheName())
-                .image("12213-apache:latest")
+                .image("store/oracle/apache:12.2.1.3")
                 .imagePullPolicy("Never")
                 .addEnvItem(newEnvVar()
                   .name("WEBLOGIC_CLUSTER")
