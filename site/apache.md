@@ -5,7 +5,7 @@ This page describes how to setup and start a Apache Web Server for load balancin
 
 ## Build Docker Image for Apache Web Server
 
-You need to prepare the Docker image for Apache Web Server that enbeds Oracle WebLogic Server Proxy Plugin.
+You need to build the Docker image for Apache Web Server that enbeds Oracle WebLogic Server Proxy Plugin.
 
   1. Download and build the Docker image for the Apache Web Server with 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
@@ -22,7 +22,7 @@ More information about the Apache plugin can be found at: [Apache Web Server wit
 Once you have access to the Docker image of the Apache Web Server, you can go ahead follow the instructions below to setup and start Kubernetes artifacts for Apache Web Server.
 
 
-## When use Apache load balancer with a WebLogic domain created with the WebLogic Operator
+## Use Apache load balancer with a WebLogic domain created with the WebLogic Operator
 
 Please refer to [Creating a domain using the WebLogic Operator](creating-domain.md) for how to create a domain with the WebLogic Operator.
 
@@ -36,9 +36,9 @@ loadBalancer: APACHE
 
 ```
 
-The `create-weblogic-domain.sh` script installs the Apache Web Server with Oracle WebLogic Server Proxy Plugin into the Kubernetes *cluster*  in the same namespace of the *domain*.
+The `create-weblogic-domain.sh` script installs the Apache Web Server with Oracle WebLogic Server Proxy Plugin into the Kubernetes *cluster*  in the same namespace as the *domain*.
 
-The Apache Web Server will expose a `NodePort` that allows access to the load balancer from the outside of the Kubernetes cluster.  The port is controlled by the following setting in `create-weblogic-domain-inputs.yaml` file:
+The Apache Web Server will expose a `NodePort` that allows access to the load balancer from outside of the Kubernetes cluster.  The port is configured by setting 'loadBalancerWebPort' in `create-weblogic-domain-inputs.yaml` file.
 
 ```
 
@@ -48,7 +48,7 @@ loadBalancerWebPort: 30305
 
 ```
 
-The user can access an application from utsidie of the Kubernetes cluster via http://<host>:30305/<application-url>.
+The user can access an application from outside of the Kubernetes cluster via http://<host>:30305/<application-url>.
 
 ### Use the default plugin WL module configuration
 
@@ -394,7 +394,7 @@ domain1-apache-webtier                                    2h
 ### Use your own plugin WL module configuration
 
 
-Optionally you can fine turn the behavior of the Apache plugin by providing your own Apache plugin configuration for `create-weblogic-domain.sh` script to use. You put your custom_mod_wl_apache.conf file in a local directory, say `/scratch/apache/config` , and specify this location in the `create-weblogic-domain-inputs.yaml` file as follows.
+You can fine turn the behavior of the Apache plugin by providing your own Apache plugin configuration. You put your custom_mod_wl_apache.conf file in a local directory, for example `<host-config-dir>` , and specify this location in the `create-weblogic-domain-inputs.yaml` file as follows.
 
 ```
 
@@ -402,13 +402,13 @@ Optionally you can fine turn the behavior of the Apache plugin by providing your
 
 # By default, the VolumePath is empty, which will cause the volume mount be disabled
 
-loadBalancerVolumePath: /scratch/apache/config
+loadBalancerVolumePath: <host-config-dir>
 
 ```
 
-Once the loadBalancerVolumePath is specified, the `create-weblogic-domain.sh` script will use the custom_mod_wl_apache.config file in `/scratch/apache/config` directory to replace what is in the Docker image.
+After the loadBalancerVolumePath is specified, the `create-weblogic-domain.sh` script will use the custom_mod_wl_apache.config file in `<host-config-dir>` directory to replace what is in the Docker image.
 
-The generated yaml files will look similar except that the lines that start with "#" will be un-commented like the following.
+The generated yaml files will look similar except with un-commented entries like bellow.
 
 ```
 
@@ -418,7 +418,7 @@ The generated yaml files will look similar except that the lines that start with
 
         hostPath:
 
-          path: /scratch/apache/config 
+          path: <host-config-dir> 
 
       containers:
 
@@ -438,14 +438,14 @@ The generated yaml files will look similar except that the lines that start with
 
 
 
-## When use Apache load balancer with a manually created WebLogic Domain
+## Use the Apache load balancer with a manually created WebLogic Domain
 
 If your WebLogic domain is not created by the WebLogic Operator, you need to manually create and start all Kubernetes' artifacts for Apache Web Server.
 
 
-  1. Create your own custom_mod_wl_apache.conf file, and put it in a local dir, say `<apache-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+  1. Create your own custom_mod_wl_apache.conf file, and put it in a local dir, say `<host-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
 
-  2. Create the Apache deployment yaml file. See the example above. Note that you need to use the **volumes** and **volumeMounts** to mount `<apache-config-dir>` in to `/config` directory inside the pod that runs Apache web tier. Note that the Apache Web Server needs to be in the same Kubernetes namespace as the WebLogic domains that it needs to access.
+  2. Create the Apache deployment yaml file. See the example above. Note that you need to use the **volumes** and **volumeMounts** to mount `<host-config-dir>` in to `/config` directory inside the pod that runs Apache web tier. Note that the Apache Web Server needs to be in the same Kubernetes namespace as the WebLogic domains that it needs to access.
 
   3. Create a RBAC yaml file. See the example above
 
