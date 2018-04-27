@@ -8,7 +8,7 @@ Many organizations are exploring, testing, or actively moving application worklo
 
 Oracle has been working with the WebLogic community to find ways to make it as easy as possible for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  This release of the Operator provides a number of features to assist with the management of WebLogic domains in a Kubernetes environment, including:
 
-*	A mechanism to create a WebLogic domain on a Kubernetes persistent volume.This persistent volume can reside in NFS.
+*	A mechanism to create a WebLogic domain on a Kubernetes persistent volume. This persistent volume can reside in NFS.
 *	A mechanism to define a WebLogic domain as a Kubernetes resource (using a Kubernetes custom resource definition).
 *	The ability to automatically start servers based on declarative startup parameters and desired states.
 * The ability to manage a WebLogic configured or dynamic cluster.
@@ -159,15 +159,6 @@ Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more informati
 Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
 
 ## Load balancing
-
-### Traefik
-
-Please refer to [Load balancing with Traefik](site/traefik.md) for information about the current capabilities.
-
-### Voyager
-
-
-### Apache
 
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
