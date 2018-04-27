@@ -7,7 +7,7 @@ This page describes how to setup and start a Apache Web Server for load balancin
 
 You need to prepare the Docker image for Apache Web Server that enbeds Oracle WebLogic Server Proxy Plugin.
 
-  1. Download and build the Docker image for the Apache Web Server with 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker] (https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
+  1. Download and build the Docker image for the Apache Web Server with 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
   2. tag your Docker image to `store/oracle/apache:12.2.1.3` using `docker tag` command.
 
@@ -17,7 +17,7 @@ docker tag 12213-apache:latest store/oracle/apache:12.2.1.
 
 ```
 
-More information about the Apache plugin can be found at: [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker] (https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+More information about the Apache plugin can be found at: [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
 
 Once you have access to the Docker image of the Apache Web Server, you can go ahead follow the instructions below to setup and start Kubernetes artifacts for Apache Web Server.
 
