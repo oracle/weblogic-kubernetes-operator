@@ -45,7 +45,7 @@ build:
       cp -R src/scripts/* /operator/
       cp operator/target/weblogic-kubernetes-operator-0.2.jar /operator/weblogic-kubernetes-operator.jar
       cp operator/target/lib/*.jar /operator/lib/
-      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
+      export IMAGE_TAG_OPERATOR="${IMAGE_TAG_OPERATOR:-${WERCKER_GIT_BRANCH//[_\/]/-}}"
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="latest"
       fi
@@ -59,10 +59,10 @@ build:
   # push the image to quay.io using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:
-    username: $QUAY_USERNAME
-    password: $QUAY_PASSWORD
-    email: $QUAY_EMAIL
-    repository: quay.io/markxnelson/weblogic-kubernetes-operator
+    username: $REPO_USERNAME
+    password: $REPO_PASSWORD
+    email: $REPO_EMAIL
+    repository: $REPO_LOCATION
     tag: $IMAGE_TAG_OPERATOR
     working-dir: "/operator"
     cmd: "operator.sh"
