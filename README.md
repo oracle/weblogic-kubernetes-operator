@@ -156,7 +156,7 @@ Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more informati
 
 Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
 
-##Load balancing with an Ingress Controller or a Web Server
+## Load balancing with an Ingress Controller or a Web Server
 
 You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to Load balancing with Voyager Ingress Controller (link TBD), [Load balancing with Traefik Ingress Controller](site/traefik.md), and [Load balancing with Apache Web Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
