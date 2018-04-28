@@ -78,6 +78,9 @@
 #                  See "Directory Configuration and Structure" below for
 #                  defaults and a detailed description of test directories.
 #
+#   LB_TYPE        Load balancer type. Can be 'TRAEFIK', 'VOYAGER', or 'APACHE'.
+#                  Default is 'TRAEFIK'.
+#
 #   VERBOSE        Set to 'true' to echo verbose output to stdout.
 #                  Default is 'false'.
 #
@@ -522,6 +525,9 @@ function setup_jenkins {
     docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
     docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
+    docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
+    docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
+
     # create a docker image for the operator code being tested
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
 
@@ -537,6 +543,9 @@ function setup_local {
 
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
+
+  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
 
 }
 
@@ -692,7 +701,7 @@ function test_second_operator {
     declare_test_pass
 }
 
-# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
+# dom_define   DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
 #   Sets up a table of domain values:  all of the above, plus TMP_DIR which is derived.
 #
 # dom_get      DOM_KEY <value>
@@ -708,8 +717,8 @@ function test_second_operator {
 #   echo Defined operator $opkey with `dom_echo_all $DOM_KEY`
 #
 function dom_define {
-    if [ "$#" != 13 ] ; then
-      fail "requires 13 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT"
+    if [ "$#" != 14 ] ; then
+      fail "requires 14 parameters: DOM_KEY OP_KEY NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE MS_BASE_NAME ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT"
     fi
     local DOM_KEY="`echo \"${1}\" | sed 's/-/_/g'`"
     eval export DOM_${DOM_KEY}_OP_KEY="$2"
@@ -717,13 +726,14 @@ function dom_define {
     eval export DOM_${DOM_KEY}_DOMAIN_UID="$4"
     eval export DOM_${DOM_KEY}_STARTUP_CONTROL="$5"
     eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$6"
-    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$7"
-    eval export DOM_${DOM_KEY}_ADMIN_PORT="$8"
-    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="$9"
-    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${10}"
-    eval export DOM_${DOM_KEY}_MS_PORT="${11}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${12}"
-    eval export DOM_${DOM_KEY}_LOAD_BALANCER_DASHBOARD_PORT="${13}"
+    eval export DOM_${DOM_KEY}_WL_CLUSTER_TYPE="$7"
+    eval export DOM_${DOM_KEY}_MS_BASE_NAME="$8"
+    eval export DOM_${DOM_KEY}_ADMIN_PORT="$9"
+    eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="${10}"
+    eval export DOM_${DOM_KEY}_ADMIN_NODE_PORT="${11}"
+    eval export DOM_${DOM_KEY}_MS_PORT="${12}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_WEB_PORT="${13}"
+    eval export DOM_${DOM_KEY}_LOAD_BALANCER_DASHBOARD_PORT="${14}"
 
     # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
@@ -753,6 +763,7 @@ function run_create_domain_job {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
     local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
+    local WL_CLUSTER_TYPE="`dom_get $1 WL_CLUSTER_TYPE`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
     local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
@@ -760,6 +771,7 @@ function run_create_domain_job {
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     local WLS_JAVA_OPTIONS="$JVM_ARGS"
@@ -768,8 +780,8 @@ function run_create_domain_job {
 
     local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
-    trace "Create $DOMAIN_UID in $NAMESPACE namespace "
-
+    trace "Create $DOMAIN_UID in $NAMESPACE namespace with load balancer $LB_TYPE"
+  
     local tmp_dir="$TMP_DIR"
     mkdir -p $tmp_dir
 
@@ -809,9 +821,14 @@ function run_create_domain_job {
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
 
     # Customize more configuration 
+    if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
+      sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
+      sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
+    fi
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
     sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
+    sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
     sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
     sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
@@ -823,8 +840,14 @@ function run_create_domain_job {
     if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
       sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
     fi
+    sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
+    if [ "$LB_TYPE" == "APACHE" ] ; then
+      local load_balancer_app_prepath="/weblogic"
+      sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
+      sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+    fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
 
@@ -1074,6 +1097,7 @@ function verify_webapp_load_balancing {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
@@ -1096,21 +1120,26 @@ function verify_webapp_load_balancing {
     trace "verify that ingress is created.  see $TMP_DIR/describe.ingress.out"
     date >> $TMP_DIR/describe.ingress.out
     kubectl describe ingress -n $NAMESPACE >> $TMP_DIR/describe.ingress.out 2>&1
-
+  
     local TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
+    if [ "$LB_TYPE" == "APACHE" ] ; then
+      TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/weblogic/testwebapp/"
+    fi
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
 
-    trace 'wait for test app to become available'
+    trace "wait for test app to become available on ${TEST_APP_URL}"
+
     local max_count=30
     local wait_time=6
     local count=0
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME" # this is only needed for voyager but it does no harm to traefik etc
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
-        --write-out "%{http_code}" \
-        -o ${CURL_RESPONSE_BODY} \
+      local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+        --write-out '%{http_code}' \
+        -o ${CURL_RESPONSE_BODY}" \
       )
 
       if [ "${HTTP_RESPONSE}" != "200" ]; then
@@ -1141,9 +1170,9 @@ function verify_webapp_load_balancing {
       do
         echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-        local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
-          --write-out "%{http_code}" \
-          -o ${CURL_RESPONSE_BODY} \
+        local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+          --write-out '%{http_code}' \
+          -o ${CURL_RESPONSE_BODY}" \
         )
 
         echo $HTTP_RESPONSE | sed 's/^/+/'
@@ -2441,6 +2470,7 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   LB_TYPE \
                    VERBOSE \
                    QUICKTEST \
                    NODEPORT_HOST \
@@ -2469,7 +2499,15 @@ function test_suite_init {
       [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
     fi
 
+    if [ -z "$LB_TYPE" ]; then
+      export LB_TYPE=TRAEFIK
+    fi
+
     export LEASE_ID="${LEASE_ID}"
+
+   if [ -z "$LB_TYPE" ]; then
+      export LB_TYPE=TRAEFIK
+    fi
 
     # The following customizable exports are currently only customized by WERCKER
     export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
@@ -2483,6 +2521,7 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   LB_TYPE \
                    VERBOSE \
                    QUICKTEST \
                    NODEPORT_HOST \
@@ -2625,13 +2664,13 @@ function test_suite {
     op_define  oper1   weblogic-operator-1  "default,test1"    31001
     op_define  oper2   weblogic-operator-2  test2              32001
 
-    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
-    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       managed-server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       managed-server 7021       30041           30703           8031    30307                  30317
-    dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       managed-server 7041       30051           30704           8041    30308                  30318
-    dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       managed-server 7051       30061           30705           8051    30309                  30319
-    dom_define domain6  oper1   default   domain6    AUTO            cluster-1       managed-server 7061       30071           30706           8061    30310                  30320
+    #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
+    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
+    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
+    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
+    dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       CONFIGURED       managed-server 7041       30051           30704           8041    30308                  30318
+    dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       DYNAMIC          managed-server 7051       30061           30705           8051    30309                  30319
+    dom_define domain6  oper1   default   domain6    AUTO            cluster-1       DYNAMIC          managed-server 7061       30071           30706           8061    30310                  30320
 
     # create namespaces for domains (the operator job creates a namespace if needed)
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
@@ -2697,6 +2736,7 @@ function test_suite {
       test_domain_lifecycle domain1 domain4 
 
       # create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created
+      # on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage (search for [ "$DOMAIN_UID" == "domain5" ])
       test_create_domain_startup_control_admin domain5
 
       # create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted

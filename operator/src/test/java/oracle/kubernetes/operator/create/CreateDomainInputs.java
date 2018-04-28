@@ -29,6 +29,7 @@ public class CreateDomainInputs {
 
   public static final String LOAD_BALANCER_NONE = "NONE";
   public static final String LOAD_BALANCER_TRAEFIK = "TRAEFIK";
+  public static final String LOAD_BALANCER_APACHE = "APACHE";
   public static final String STORAGE_TYPE_HOST_PATH = "HOST_PATH";
   public static final String STORAGE_TYPE_NFS = "NFS";
   public static final String STORAGE_RECLAIM_POLICY_RETAIN = "Retain";
@@ -39,6 +40,8 @@ public class CreateDomainInputs {
   public static final String STARTUP_CONTROL_ADMIN = "ADMIN";
   public static final String STARTUP_CONTROL_SPECIFIED = "SPECIFIED";
   public static final String STARTUP_CONTROL_AUTO = "AUTO";
+  public static final String CLUSTER_TYPE_CONFIGURED = "CONFIGURED";
+  public static final String CLUSTER_TYPE_DYNAMIC = "DYNAMIC";
 
   private static final String DEFAULT_INPUTS = "../kubernetes/create-weblogic-domain-inputs.yaml";
 
@@ -48,6 +51,7 @@ public class CreateDomainInputs {
   private String domainUID = "";
   private String startupControl = "";
   private String clusterName = "";
+  private String clusterType = "";
   private String configuredManagedServerCount = "";
   private String initialManagedServerReplicas = "";
   private String managedServerNameBase = "";
@@ -69,6 +73,8 @@ public class CreateDomainInputs {
   private String loadBalancer = "";
   private String loadBalancerWebPort = "";
   private String loadBalancerDashboardPort = "";
+  private String loadBalancerVolumePath = "";
+  private String loadBalancerAppPrepath = "";
   private String javaOptions = "";
 
   public static CreateDomainInputs newInputs() throws Exception {
@@ -78,6 +84,7 @@ public class CreateDomainInputs {
         .adminPort("7002")
         .adminServerName("TestAdminServer")
         .clusterName("TestCluster")
+        .clusterType(CLUSTER_TYPE_DYNAMIC)
         .domainName("TestDomain")
         .domainUID("test-domain-uid")
         .javaOptions("TestJavaOptions")
@@ -198,6 +205,19 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs clusterName(String clusterName) {
     setClusterName(clusterName);
+    return this;
+  }
+
+  public String getClusterType() {
+    return clusterType;
+  }
+
+  public void setClusterType(String clusterType) {
+    this.clusterType = convertNullToEmptyString(clusterType);
+  }
+
+  public CreateDomainInputs clusterType(String clusterType) {
+    setClusterType(clusterType);
     return this;
   }
 
@@ -472,6 +492,32 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs loadBalancerDashboardPort(String loadBalancerDashboardPort) {
     setLoadBalancerDashboardPort(loadBalancerDashboardPort);
+    return this;
+  }
+
+  public String getLoadBalancerVolumePath() {
+    return loadBalancerVolumePath;
+  }
+
+  public void setLoadBalancerVolumePath(String loadBalancerVolumePath) {
+    this.loadBalancerVolumePath = convertNullToEmptyString(loadBalancerVolumePath);
+  }
+
+  public CreateDomainInputs loadBalancerVolumePath(String loadBalancerVolumePath) {
+    setLoadBalancerVolumePath(loadBalancerVolumePath);
+    return this;
+  }
+
+  public String getLoadBalancerAppPrepath() {
+    return loadBalancerAppPrepath;
+  }
+
+  public void setLoadBalancerAppPrepath(String loadBalancerAppPrepath) {
+    this.loadBalancerAppPrepath = convertNullToEmptyString(loadBalancerAppPrepath);
+  }
+
+  public CreateDomainInputs loadBalancerAppPrepath(String loadBalancerAppPrepath) {
+    setLoadBalancerAppPrepath(loadBalancerAppPrepath);
     return this;
   }
 
