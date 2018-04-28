@@ -3,9 +3,21 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -13,7 +25,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -24,6 +35,9 @@ import oracle.kubernetes.operator.work.Step;
 
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  private static final String SCRIPTS = "scripts";
+  private static final String SCRIPT_LOCATION = "/" + SCRIPTS;
 
   private ConfigMapHelper() {}
   
@@ -136,82 +150,51 @@ public class ConfigMapHelper {
       metadata.setLabels(labels);
 
       cm.setMetadata(metadata);
-
-      Map<String, String> data = new HashMap<>();
-      
-      data.put("livenessProbe.sh", 
-          "#!/bin/bash\n" + 
-          "# Kubernetes periodically calls this liveness probe script to determine whether\n" + 
-          "# the pod should be restarted. The script checks a WebLogic Server state file which\n" + 
-          "# is updated by the node manager.\n" + 
-          "DN=${DOMAIN_NAME:-$1}\n" +
-          "SN=${SERVER_NAME:-$2}\n" +
-          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
-          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
-          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
-          "  exit 1\n" + 
-          "fi\n" + 
-          "if [ -f ${STATEFILE} ] && [ `grep -c \"" + WebLogicConstants.FAILED_NOT_RESTARTABLE_STATE + "\" ${STATEFILE}` -eq 1 ]; then\n" + 
-          "  echo \"Error: WebLogic Server state is " + WebLogicConstants.FAILED_NOT_RESTARTABLE_STATE + ".\"\n" +
-          "  exit 1\n" + 
-          "fi\n" + 
-          "exit 0");
-      
-      data.put("readinessProbe.sh", 
-          "#!/bin/bash\n" + 
-          "\n" + 
-          "# Kubernetes periodically calls this readiness probe script to determine whether\n" + 
-          "# the pod should be included in load balancing. The script checks a WebLogic Server state\n" + 
-          "# file which is updated by the node manager.\n" + 
-          "\n" + 
-          "DN=${DOMAIN_NAME:-$1}\n" +
-          "SN=${SERVER_NAME:-$2}\n" +
-          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
-          "\n" + 
-          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
-          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
-          "  exit 1\n" + 
-          "fi\n" + 
-          "\n" + 
-          "if [ ! -f ${STATEFILE} ]; then\n" + 
-          "  echo \"Error: WebLogic Server state file not found.\"\n" +
-          "  exit 2\n" + 
-          "fi\n" + 
-          "\n" + 
-          "state=$(cat ${STATEFILE} | cut -f 1 -d ':')\n" +
-          "if [ \"$state\" != \"" + WebLogicConstants.RUNNING_STATE + "\" ]; then\n" +
-          "  echo \"" + WebLogicConstants.READINESS_PROBE_NOT_READY_STATE + "${state}\"\n" +
-          "  exit 3\n" + 
-          "fi\n" + 
-          "exit 0");
-
-      data.put("readState.sh", 
-          "#!/bin/bash\n" + 
-          "\n" + 
-          "# Reads the current state of a server. The script checks a WebLogic Server state\n" + 
-          "# file which is updated by the node manager.\n" + 
-          "\n" + 
-          "DN=${DOMAIN_NAME:-$1}\n" +
-          "SN=${SERVER_NAME:-$2}\n" +
-          "STATEFILE=/shared/domain/${DN}/servers/${SN}/data/nodemanager/${SN}.state\n" + 
-          "\n" + 
-          "if [ `jps -l | grep -c \" weblogic.NodeManager\"` -eq 0 ]; then\n" + 
-          "  echo \"Error: WebLogic NodeManager process not found.\"\n" +
-          "  exit 1\n" + 
-          "fi\n" + 
-          "\n" + 
-          "if [ ! -f ${STATEFILE} ]; then\n" + 
-          "  echo \"Error: WebLogic Server state file not found.\"\n" +
-          "  exit 2\n" + 
-          "fi\n" + 
-          "\n" + 
-          "cat ${STATEFILE} | cut -f 1 -d ':'\n" +
-          "exit 0");
-
-      cm.setData(data);
+      cm.setData(loadScripts());
 
       return cm;
     }
-  }
 
+    private synchronized Map<String, String> loadScripts() {
+      URI uri = null;
+      try {
+        uri = getClass().getResource(SCRIPT_LOCATION).toURI();
+      } catch (URISyntaxException e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
+      }
+      
+      try {
+        if ("jar".equals(uri.getScheme())) {
+          try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
+            return walkScriptsPath(fileSystem.getPath(SCRIPTS));
+          }
+        } else {
+          return walkScriptsPath(Paths.get(uri));
+        }
+      } catch (IOException e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
+      }
+    }
+    
+    private Map<String, String> walkScriptsPath(Path scriptsDir) throws IOException {
+      try (Stream<Path> walk = Files.walk(scriptsDir, 1)) {
+        Map<String, String> data = walk.filter(i -> !Files.isDirectory(i)).collect(Collectors.toMap(
+            i -> i.getFileName().toString(), 
+            i -> new String(read(i), StandardCharsets.UTF_8)));
+        LOGGER.info(MessageKeys.SCRIPT_LOADED, domainNamespace);
+        return data;
+      }
+    }
+    
+    private byte[] read(Path path) {
+      try {
+        return Files.readAllBytes(path);
+      } catch (IOException io) {
+        LOGGER.warning(MessageKeys.EXCEPTION, io);
+      }
+      return null;
+    }
+  }
 }
