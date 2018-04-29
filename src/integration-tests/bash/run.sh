@@ -566,6 +566,35 @@ function create_image_pull_secret_jenkins {
 
 }
 
+function create_image_pull_secret_wercker {
+
+    trace "Creating Docker Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+    --docker-server=index.docker.io/v1/ \
+    --docker-username=$DOCKER_USERNAME \
+    --docker-password=$DOCKER_PASSWORD \
+    --docker-email=$DOCKER_EMAIL 2>&1 | sed 's/^/+' 2>&1
+
+    trace "Checking Secret"
+    local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+        fail 'secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully'
+    fi
+
+    trace "Creating Registry Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
+    --docker-server=$REPO_REGISTRY \
+    --docker-username=$REPO_USERNAME \
+    --docker-password=$REPO_PASSWORD 2>&1 | sed 's/^/+' 2>&1
+
+    trace "Checking Secret"
+    local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+        fail 'secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully'
+    fi
+
+}
+
 # op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT
 #   sets up table of operator values.
 #
@@ -2577,6 +2606,8 @@ function test_suite_init {
 
       mkdir -p $RESULT_ROOT/acceptance_test_tmp || fail "Could not mkdir -p RESULT_ROOT/acceptance_test_tmp (RESULT_ROOT=$RESULT_ROOT)"
 
+      create_image_pull_secret_wercker
+      
     elif [ "$JENKINS" = "true" ]; then
     
       trace "Test Suite is running on Jenkins and k8s is running locally on the same node."
