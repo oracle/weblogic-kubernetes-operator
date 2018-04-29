@@ -61,8 +61,8 @@ build:
   - internal/docker-push:
     username: $REPO_USERNAME
     password: $REPO_PASSWORD
-    email: $REPO_EMAIL
-    repository: $REPO_LOCATION
+    repository: $REPO_REPOSITORY
+    registry: $REPO_REGISTRY
     tag: $IMAGE_TAG_OPERATOR
     working-dir: "/operator"
     cmd: "operator.sh"
