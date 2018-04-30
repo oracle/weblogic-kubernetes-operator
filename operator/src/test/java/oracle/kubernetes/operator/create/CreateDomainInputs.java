@@ -29,6 +29,7 @@ public class CreateDomainInputs {
 
   public static final String LOAD_BALANCER_NONE = "NONE";
   public static final String LOAD_BALANCER_TRAEFIK = "TRAEFIK";
+  public static final String LOAD_BALANCER_APACHE = "APACHE";
   public static final String STORAGE_TYPE_HOST_PATH = "HOST_PATH";
   public static final String STORAGE_TYPE_NFS = "NFS";
   public static final String STORAGE_RECLAIM_POLICY_RETAIN = "Retain";
@@ -72,6 +73,8 @@ public class CreateDomainInputs {
   private String loadBalancer = "";
   private String loadBalancerWebPort = "";
   private String loadBalancerDashboardPort = "";
+  private String loadBalancerVolumePath = "";
+  private String loadBalancerAppPrepath = "";
   private String javaOptions = "";
 
   public static CreateDomainInputs newInputs() throws Exception {
@@ -489,6 +492,32 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs loadBalancerDashboardPort(String loadBalancerDashboardPort) {
     setLoadBalancerDashboardPort(loadBalancerDashboardPort);
+    return this;
+  }
+
+  public String getLoadBalancerVolumePath() {
+    return loadBalancerVolumePath;
+  }
+
+  public void setLoadBalancerVolumePath(String loadBalancerVolumePath) {
+    this.loadBalancerVolumePath = convertNullToEmptyString(loadBalancerVolumePath);
+  }
+
+  public CreateDomainInputs loadBalancerVolumePath(String loadBalancerVolumePath) {
+    setLoadBalancerVolumePath(loadBalancerVolumePath);
+    return this;
+  }
+
+  public String getLoadBalancerAppPrepath() {
+    return loadBalancerAppPrepath;
+  }
+
+  public void setLoadBalancerAppPrepath(String loadBalancerAppPrepath) {
+    this.loadBalancerAppPrepath = convertNullToEmptyString(loadBalancerAppPrepath);
+  }
+
+  public CreateDomainInputs loadBalancerAppPrepath(String loadBalancerAppPrepath) {
+    setLoadBalancerAppPrepath(loadBalancerAppPrepath);
     return this;
   }
 
