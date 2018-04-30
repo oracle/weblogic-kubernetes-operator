@@ -11,7 +11,46 @@ Note that there is a short video demonstration of the installation process avail
 [comment]: # ( Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first. )
 [comment]: # ( In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed. )
 
-## Build the Docker image for the operator
+## Build the Docker image for the operator using Wercker
+
+You can build, test, and publish the Docker image for the operator directly from Wercker using the ```wercker.yml``` from this repository.
+
+If you haven't done so already, navigate to [wercker.com](https://www.wercker.com) and create an account.  Once you are logged in,
+on the [app.wercker.com] (https://app.wercker.com) page press, "Create your first application."
+
+Select GitHub (the default, if you are new to Wercker).  If you haven't done so already, press the "Connect" button within the
+larger GitHub button and follow the prompts to provide a login for GitHub.  This connects your Wercker and GitHub accounts so
+that Wercker pipelines will later be able to clone this repository.  Press, "Next."
+
+Select the repository from GitHub.  This will be "oracle / weblogic-kubernetes-operator" or a different value if you
+forked this repository.  Press, "Next."
+
+Configure Wercker's access to the GitHub repository.  The default choice, "wercker will check out the code without using an SSH key", 
+is typically sufficient.  Press, "Next."
+
+Verify the settings so far on the review page and press, "Create."
+
+Since this GitHub repository already has a ```wercker.yml``` file, you can skip directly to the "Environment" tab.
+
+Please provide the following key/value pairs on the environment page.  Remember that these values will be 
+visible to anyone to whom you give access to the Wercker application, therefore, select "Protected" for any
+values that should remain hidden, including all passwords.
+
+| Key | Value | OCIR Sample |
+| --- | --- | --- |
+| DOCKER_USERNAME | Username for the Docker store for pulling serverjre image | |
+| DOCKER_PASSWORD | Password for the Docker store | |
+| REPO_REGISTRY| Registry address | https://phx.ocir.io/v2  |
+| REPO_REPOSITORY | Repository value | phx.ocir.io/<your tenancy>/weblogic-kubernetes-operator |
+| REPO_USERNAME | Username for registry | <your tenancy>/<your username> |
+| REPO_PASSWORD | Password for registry | Use generated SWIFT password |
+| IMAGE_TAG_OPERATOR | Image tag, such as 0.2 or latest |  |
+
+Select the "Runs" tab.  Skip to the bottom and press, "Trigger your first build now."
+
+When the run completes successfully, the Docker image for the operator will be built and published to your repository.
+
+## Build the Docker image for the operator locally
 
 The following software are required to obtain and build the operator:
 
