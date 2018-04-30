@@ -148,6 +148,11 @@ public class CreateOperatorInputs {
   // Note: don't allow null strings since, if you use snakeyaml to write out the instance
   // to a yaml file, the nulls are written out as "null".  Use "" instead.
 
+  private String version = "";
+  public String getVersion() { return version; }
+  public void setVersion(String val) { version = convertNullToEmptyString(val); }
+  public CreateOperatorInputs version(String val) { setVersion(val); return this; }
+
   private String serviceAccount = "";
   public String getServiceAccount() { return serviceAccount; }
   public void setServiceAccount(String val) { serviceAccount = convertNullToEmptyString(val); }

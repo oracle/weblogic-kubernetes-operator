@@ -108,6 +108,16 @@ function initAndValidateOutputDir {
 }
 
 #
+# Function to validate the version of the inputs file
+#
+function validateVersion {
+  local requiredVersion='create-weblogic-domain-inputs/v1'
+  if [ "${version}" != "${requiredVersion}" ]; then
+    validationError "Invalid version: \"${version}\".  Must be ${requiredVersion}."
+  fi
+}
+
+#
 # Function to ensure the domain uid is lowercase
 #
 function validateDomainUid {
@@ -376,7 +386,8 @@ function initialize {
     weblogicCredentialsSecretName \
     namespace \
     javaOptions \
-    t3PublicAddress
+    t3PublicAddress \
+    version
 
   validateIntegerInputParamsSpecified \
     adminPort \
@@ -393,6 +404,7 @@ function initialize {
     exposeAdminT3Channel \
     exposeAdminNodePort
 
+  validateVersion
   validateDomainUid
   validateNamespace
   validateClusterName

@@ -33,6 +33,7 @@ public class CreateOperatorInputsValidationTest {
     }
   }
 
+  private static final String PARAM_VERSION = "version";
   private static final String PARAM_SERVICE_ACCOUNT = "serviceAccount";
   private static final String PARAM_NAMESPACE = "namespace";
   private static final String PARAM_TARGET_NAMESPACES = "targetNamespaces";
@@ -49,6 +50,23 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_EXTERNAL_DEBUG_HTTP_PORT = "externalDebugHttpPort";
   private static final String PARAM_JAVA_LOGGING_LEVEL = "javaLoggingLevel";
   private static final String PARAM_ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
+
+  private static final String VERSION_V1 = "create-weblogic-operator-inputs/v1";
+
+  @Test
+  public void createOperator_with_missingVersion_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateOperator(newInputs().version("")),
+      failsAndPrints(paramMissingError(PARAM_VERSION)));
+  }
+
+  @Test
+  public void createOperator_with_invalidVersion_failsAndReturnsError() throws Exception {
+    String val = "no-such-version";
+    assertThat(
+      execCreateOperator(newInputs().version(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_VERSION, val)));
+  }
 
   @Test
   public void createOperator_with_missingServiceAccount_failsAndReturnsError() throws Exception {
