@@ -101,7 +101,7 @@ The operator provides some optional features that can be enabled in the configur
 
 ### Load balancing with an Ingress controller or a web server
 
-You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to Load balancing with Voyager Ingress Controller, [Load balancing with Traefik Ingress Controller](site/traefik.md), and [Load balancing with Apache Web Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
+You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to Load balancing with Voyager Ingress Controller, [Load balancing with Traefik Ingress Controller](site/traefik.md), and [Load balancing with the Apache HTTP Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
 Note these limitations:
 
