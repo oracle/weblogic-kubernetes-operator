@@ -12,7 +12,7 @@ The general design goal is to provide the operator with the minimum amount of pe
 | |	customresourcedefinitions in API group apiextensions.k8s.io	| get, list, watch, create, update, patch, delete, deletecollection	| |
 | |	domains in API group weblogic.oracle	| get, list, watch, update, patch	| |
 | |	Ingresses in API group extensions	| get, list, watch, create, update, patch, delete, deletecollection	| |
-| `weblogic-operator-cluster-role-nonresourc`e	| nonResourceURLs: ["/version/*"]	| get |	1 |
+| `weblogic-operator-cluster-role-nonresource`	| nonResourceURLs: ["/version/*"]	| get |	1 |
 |`weblogic-operator-namespace-role`	| secrets, persistentvolumeclaims	| get, list, watch	| 2 |
 | |	services, pods, networkpolicies	| get, list, watch, create, update, patch, delete, deletecollection | |
 | `NAMESPACE-operator-rolebinding-discovery`	| system:discovery in API group rbac.authorization.k8s.io | |		1 |
