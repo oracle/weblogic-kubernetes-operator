@@ -22,7 +22,7 @@ The operator source code is published on GitHub at https://github.com/oracle/web
 To clone the repository from GitHub, issue this command:
 
 ```
-git clone https://github.com/oracle/weblogic-kubernetes-operator
+git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
 ## Building the operator
@@ -49,7 +49,7 @@ The Javadoc is also available in the GitHub repository [here](https://oracle.git
 
 ## Running integration tests
 
-The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.x and 1.8.x currently.  There are some issues with 1.9, which are being worked on.
+The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.5+, 1.8.0+, 1.9.0+, and 1.10.0.
 
 To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
 
