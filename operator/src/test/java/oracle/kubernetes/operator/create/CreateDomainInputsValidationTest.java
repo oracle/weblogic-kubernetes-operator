@@ -48,6 +48,7 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_LOAD_BALANCER_WEB_PORT = "loadBalancerWebPort";
   private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerDashboardPort";
   private static final String PARAM_JAVA_OPTIONS = "javaOptions";
+  private static final String PARAM_VERSION = "version";
 
   @Before
   public void setup() throws Exception {
@@ -521,6 +522,21 @@ public class CreateDomainInputsValidationTest {
     assertThat(
       execCreateDomain(newInputs().javaOptions("")),
       failsAndPrints(paramMissingError(PARAM_JAVA_OPTIONS)));
+  }
+
+  @Test
+  public void createDomain_with_missingVersion_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(newInputs().version("")),
+      failsAndPrints(paramMissingError(PARAM_VERSION)));
+  }
+
+  @Test
+  public void createDomainwith_invalidVersion_failsAndReturnsError() throws Exception {
+    String val = "no-such-version";
+    assertThat(
+      execCreateDomain(newInputs().version(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_VERSION, val)));
   }
 
   private void createDomain_with_validStartupControl_succeeds(String startupControl) throws Exception {
