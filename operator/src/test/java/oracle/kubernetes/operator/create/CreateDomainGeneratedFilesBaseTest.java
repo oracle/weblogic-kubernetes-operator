@@ -267,27 +267,24 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   protected void assertThatActualCreateDomainScriptShIsCorrect(String actualCreateDomainScriptSh) {
     /*
       create-domain-script.sh: |-
+        #!/bin/bash
+        #
+
+        # Include common utility functions
+        source /u01/weblogic/utility.sh
+
         export DOMAIN_HOME=${SHARED_PATH}/domain/%DOMAIN_NAME%
-            echo "AdminURL=http\://$3\:%ADMIN_PORT%" >> ${startProp}
-        nmConnect(admin_username, admin_password, '$1-$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
-          nmConnect(admin_username, admin_password, '$1-$2',  '5556', '%DOMAIN_NAME%', '${DOMAIN_HOME}', 'plain')
-        createNodeMgrHome %DOMAIN_UID% %ADMIN_SERVER_NAME%
-        createStartScript %DOMAIN_UID% %ADMIN_SERVER_NAME%
-        createStopScript  %DOMAIN_UID% %ADMIN_SERVER_NAME%
-        while [ $index -lt %NUMBER_OF_MS% ]
-          createNodeMgrHome %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index} %DOMAIN_UID%-%ADMIN_SERVER_NAME%
-          createStartScript %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index}
-          createStopScript  %DOMAIN_UID% %MANAGED_SERVER_NAME_BASE%${index}
+
+        # Create the domain
+        wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py
+
+        echo "Successfully Completed"
     */
     assertThat(
       actualCreateDomainScriptSh,
       containsRegexps(
-        getInputs().getDomainUID(),
         getInputs().getDomainName(),
-        getInputs().getAdminServerName(),
-        getInputs().getManagedServerNameBase(),
-        getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
-        "index -lt " + getInputs().getConfiguredManagedServerCount()));
+        "wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py"));
   }
 
   protected void assertThatActualCreateDomainPyIsCorrect(String actualCreateDomainPy) {
@@ -296,6 +293,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         server_port        = %MANAGED_SERVER_PORT%
         cluster_name       = "%CLUSTER_NAME%"
         number_of_ms       = %NUMBER_OF_MS%
+        cluster_type       = "%CLUSTER_TYPE%"
         print('domain_name        : [%DOMAIN_NAME%]');
         print('admin_port         : [%ADMIN_PORT%]');
         set('Name', '%DOMAIN_NAME%')
@@ -319,12 +317,14 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         cmo.setProductionModeEnabled(%PRODUCTION_MODE_ENABLED%)
         asbpFile=open('%s/servers/%ADMIN_SERVER_NAME%/security/boot.properties' % domain_path, 'w+')
           secdir='%s/servers/%MANAGED_SERVER_NAME_BASE%%s/security' % (domain_path, index+1)
+        set('ServerNamePrefix', '%MANAGED_SERVER_NAME_BASE%")
     */
     assertThat(
       actualCreateDomainPy,
       containsRegexps(
         getInputs().getDomainName(),
         getInputs().getClusterName(),
+        getInputs().getClusterType(),
         getInputs().getAdminServerName(),
         getInputs().getManagedServerNameBase(),
         getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
@@ -333,7 +333,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
         "set\\('ListenPort', " + getInputs().getAdminPort() + "\\)",
         "set\\('PublicPort', " + getInputs().getT3ChannelPort() + "\\)",
-        "set\\('PublicAddress', '" + getInputs().getT3PublicAddress() + "'\\)"));
+        "set\\('PublicAddress', '" + getInputs().getT3PublicAddress() + "'\\)",
+        "set\\('ServerNamePrefix', \"" + getInputs().getManagedServerNameBase() + "\"\\)"));
      // TBD should we check anything else?
   }
 

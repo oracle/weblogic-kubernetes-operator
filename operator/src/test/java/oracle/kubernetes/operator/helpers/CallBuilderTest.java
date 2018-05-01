@@ -3,8 +3,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import io.kubernetes.client.ApiException;
+import oracle.kubernetes.operator.work.Engine;
+import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v1.DomainList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,13 +22,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import io.kubernetes.client.ApiException;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.operator.work.Engine;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.NextAction;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 // TODO fix this test so that it will not fail with 404 not found when run against a server
 // that does not have the domain CRD defined.
@@ -80,7 +80,7 @@ public class CallBuilderTest {
     public NextAction apply(Packet packet) {
       String namespace = "default";
       
-      CallBuilderFactory factory = new CallBuilderFactory(null);
+      CallBuilderFactory factory = new CallBuilderFactory();
       Step list = factory.create().listDomainAsync(namespace, new ResponseStep<DomainList>(null) {
 
         @SuppressWarnings("unchecked")

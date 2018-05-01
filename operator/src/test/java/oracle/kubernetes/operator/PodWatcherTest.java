@@ -3,6 +3,12 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.google.common.collect.ImmutableMap;
+
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodCondition;
@@ -13,13 +19,6 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-
-import com.google.common.collect.ImmutableMap;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -74,7 +73,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
   @Override
   protected PodWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return PodWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
+    return PodWatcher.create(this, nameSpace,
         Integer.toString(initialResourceVersion), this, stopping);
   }
 
@@ -171,7 +170,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Test
   public void waitForReady_returnsAStep() throws Exception {
     AtomicBoolean stopping = new AtomicBoolean(true);
-    PodWatcher watcher = PodWatcher.create(Executors.defaultThreadFactory(), "ns", 
+    PodWatcher watcher = PodWatcher.create(this, "ns",
         Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
 
     assertThat(watcher.waitForReady(pod, null), Matchers.instanceOf(Step.class));
@@ -180,7 +179,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Test
   public void WhenWaitForReadyAppliedToReadyPod_performNextStep() throws Exception {
     AtomicBoolean stopping = new AtomicBoolean(false);
-    PodWatcher watcher = PodWatcher.create(Executors.defaultThreadFactory(), "ns", 
+    PodWatcher watcher = PodWatcher.create(this, "ns",
         Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
 
     makePodReady(pod);

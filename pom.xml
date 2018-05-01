@@ -50,6 +50,23 @@
     <build>
         <plugins>
             <plugin>
+	            <groupId>com.googlecode.maven-download-plugin</groupId>
+	            <artifactId>download-maven-plugin</artifactId>
+	            <version>1.4.0</version>
+	            <executions>
+		            <execution>
+			            <id>install-wdt</id>
+			            <goals>
+				            <goal>wget</goal>
+			            </goals>
+			            <configuration>
+				            <url>https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.8/weblogic-deploy.zip</url>
+				            <outputDirectory>${project.build.directory}</outputDirectory>
+			            </configuration>
+		            </execution>
+	            </executions>
+	        </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.5.3</version>
@@ -100,7 +117,6 @@
             <id>integration-tests</id>
             <properties>
                 <src-integration-test>${project.basedir}/src/integration-test/java</src-integration-test>
-                <skip.unit.tests>true</skip.unit.tests>
             </properties>
             <build>
                 <plugins>
