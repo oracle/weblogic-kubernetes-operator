@@ -30,6 +30,7 @@ spec:
   template:
     metadata:
       labels:
+        weblogic.resourceVersion: apache-load-balancer/v1
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: apache-webtier
