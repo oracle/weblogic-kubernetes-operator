@@ -161,7 +161,7 @@ Please refer to [Shutting down a domain](site/shutdown-domain.md) for informatio
 
 ## Load balancing with an Ingress controller or a web server
 
-You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to Load balancing with Voyager Ingress Controller, [Load balancing with Traefik Ingress Controller](site/traefik.md), and [Load balancing with Apache Web Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
+You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to Load balancing with Voyager Ingress Controller, [Load balancing with Traefik Ingress Controller](site/traefik.md), and [Load balancing with Apache HTTP Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
