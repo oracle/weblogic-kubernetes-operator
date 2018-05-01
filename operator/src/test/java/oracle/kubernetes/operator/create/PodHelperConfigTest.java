@@ -426,7 +426,6 @@ public class PodHelperConfigTest {
           .putAnnotationsItem("prometheus.io/path", "/wls-exporter/metrics")
           .putAnnotationsItem("prometheus.io/port", "" + port)
           .putAnnotationsItem("prometheus.io/scrape", "true")
-          .putAnnotationsItem("weblogic.oracle/operator-formatVersion", "1")
           .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
           .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
