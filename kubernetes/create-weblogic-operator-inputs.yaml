@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
-version: create-weblogic-operator-inputs/v1
+version: create-weblogic-operator-inputs-v1
 
 # The name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
