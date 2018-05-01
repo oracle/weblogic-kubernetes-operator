@@ -7,11 +7,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 
 /**
  * Tests that create-weblogic-operator.sh properly validates the parameters
@@ -50,8 +50,6 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_EXTERNAL_DEBUG_HTTP_PORT = "externalDebugHttpPort";
   private static final String PARAM_JAVA_LOGGING_LEVEL = "javaLoggingLevel";
   private static final String PARAM_ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
-
-  private static final String VERSION_V1 = "create-weblogic-operator-inputs/v1";
 
   @Test
   public void createOperator_with_missingVersion_failsAndReturnsError() throws Exception {
