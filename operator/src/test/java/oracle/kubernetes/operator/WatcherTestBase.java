@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.meterware.simplestub.Memento;
@@ -17,7 +18,11 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
@@ -30,7 +35,7 @@ import static org.hamcrest.Matchers.hasEntry;
 /**
  * Tests behavior of the Watcher class.
  */
-public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClosedListener {
+public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClosedListener, ThreadFactory {
     private static final int NEXT_RESOURCE_VERSION = 123456;
     private static final int INITIAL_RESOURCE_VERSION = 123;
     private static final String NAMESPACE = "testspace";
@@ -46,6 +51,25 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
     }
 
     private AtomicBoolean stopping = new AtomicBoolean(false);
+
+    private String testName;
+    private List<Thread> threads = new ArrayList<>();
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        @Override
+        protected void starting(Description description) {
+            testName = description.getMethodName();
+        }
+    };
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread thread = new Thread(r);
+        threads.add(thread);
+        thread.setName(String.format("Test thread %d for %s", threads.size(), testName));
+        return thread;
+    }
 
     @Override
     public void allWatchesClosed() {
@@ -65,7 +89,16 @@ public abstract class WatcherTestBase implements StubWatchFactory.AllWatchesClos
 
     @After
     public void tearDown() throws Exception {
+        for (Thread thread : threads) shutDown(thread);
         for (Memento memento : mementos) memento.revert();
+    }
+
+    private void shutDown(Thread thread) {
+        try {
+            thread.interrupt();
+            thread.join();
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @SuppressWarnings("unchecked")
