@@ -1,5 +1,7 @@
 # Scaling a WebLogic cluster
 
+WebLogic Server supports two types of clustering configurations, configured and dynamic clustering. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/1221/wls/CLUST/dynamic_clusters.htm#CLUST678).
+
 The operator provides the ability to scale WebLogic clusters by simply editing the replicas setting, as you would do with most other Kubernetes resources that support scaling.
 
 ## Initiating a scaling operation using the REST API
