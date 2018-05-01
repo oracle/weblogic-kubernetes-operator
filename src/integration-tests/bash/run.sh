@@ -78,6 +78,9 @@
 #                  See "Directory Configuration and Structure" below for
 #                  defaults and a detailed description of test directories.
 #
+#   LB_TYPE        Load balancer type. Can be 'TRAEFIK'.
+#                  Default is 'TRAEFIK'.
+#
 #   VERBOSE        Set to 'true' to echo verbose output to stdout.
 #                  Default is 'false'.
 #
@@ -557,6 +560,35 @@ function create_image_pull_secret_jenkins {
 
 }
 
+function create_image_pull_secret_wercker {
+
+    trace "Creating Docker Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+    --docker-server=index.docker.io/v1/ \
+    --docker-username=$DOCKER_USERNAME \
+    --docker-password=$DOCKER_PASSWORD \
+    --docker-email=$DOCKER_EMAIL 2>&1 | sed 's/^/+' 2>&1
+
+    trace "Checking Secret"
+    local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+        fail 'secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully'
+    fi
+
+    trace "Creating Registry Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
+    --docker-server=$REPO_REGISTRY \
+    --docker-username=$REPO_USERNAME \
+    --docker-password=$REPO_PASSWORD 2>&1 | sed 's/^/+' 2>&1
+
+    trace "Checking Secret"
+    local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+        fail 'secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully'
+    fi
+
+}
+
 # op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT
 #   sets up table of operator values.
 #
@@ -770,8 +802,8 @@ function run_create_domain_job {
 
     local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
-    trace "Create $DOMAIN_UID in $NAMESPACE namespace "
-
+    trace "Create $DOMAIN_UID in $NAMESPACE namespace with load balancer $LB_TYPE"
+  
     local tmp_dir="$TMP_DIR"
     mkdir -p $tmp_dir
 
@@ -830,6 +862,7 @@ function run_create_domain_job {
     if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
       sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
     fi
+    sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
@@ -1081,6 +1114,7 @@ function verify_webapp_load_balancing {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
@@ -1103,21 +1137,23 @@ function verify_webapp_load_balancing {
     trace "verify that ingress is created.  see $TMP_DIR/describe.ingress.out"
     date >> $TMP_DIR/describe.ingress.out
     kubectl describe ingress -n $NAMESPACE >> $TMP_DIR/describe.ingress.out 2>&1
-
+  
     local TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
 
-    trace 'wait for test app to become available'
+    trace "wait for test app to become available on ${TEST_APP_URL}"
+
     local max_count=30
     local wait_time=6
     local count=0
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME"
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
-        --write-out "%{http_code}" \
-        -o ${CURL_RESPONSE_BODY} \
+      local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+        --write-out '%{http_code}' \
+        -o ${CURL_RESPONSE_BODY}" \
       )
 
       if [ "${HTTP_RESPONSE}" != "200" ]; then
@@ -1148,9 +1184,9 @@ function verify_webapp_load_balancing {
       do
         echo "NO_DATA" > $CURL_RESPONSE_BODY
 
-        local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
-          --write-out "%{http_code}" \
-          -o ${CURL_RESPONSE_BODY} \
+        local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+          --write-out '%{http_code}' \
+          -o ${CURL_RESPONSE_BODY}" \
         )
 
         echo $HTTP_RESPONSE | sed 's/^/+/'
@@ -1447,7 +1483,6 @@ EOF
 
     mkdir -p  $job_workspace
     rsync -a $PROJECT_ROOT $job_workspace/weblogic-operator
-    rsync -a $M2_HOME/ $job_workspace/apache-maven
     rsync -a $JAVA_HOME/ $job_workspace/java 
 
     cat <<EOF > $job_workspace/run_test.sh
@@ -2448,6 +2483,7 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   LB_TYPE \
                    VERBOSE \
                    QUICKTEST \
                    NODEPORT_HOST \
@@ -2476,7 +2512,15 @@ function test_suite_init {
       [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
     fi
 
+    if [ -z "$LB_TYPE" ]; then
+      export LB_TYPE=TRAEFIK
+    fi
+
     export LEASE_ID="${LEASE_ID}"
+
+   if [ -z "$LB_TYPE" ]; then
+      export LB_TYPE=TRAEFIK
+    fi
 
     # The following customizable exports are currently only customized by WERCKER
     export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
@@ -2490,6 +2534,7 @@ function test_suite_init {
     local varname
     for varname in RESULT_ROOT \
                    PV_ROOT \
+                   LB_TYPE \
                    VERBOSE \
                    QUICKTEST \
                    NODEPORT_HOST \
@@ -2545,6 +2590,8 @@ function test_suite_init {
 
       mkdir -p $RESULT_ROOT/acceptance_test_tmp || fail "Could not mkdir -p RESULT_ROOT/acceptance_test_tmp (RESULT_ROOT=$RESULT_ROOT)"
 
+      create_image_pull_secret_wercker
+      
     elif [ "$JENKINS" = "true" ]; then
     
       trace "Test Suite is running on Jenkins and k8s is running locally on the same node."
