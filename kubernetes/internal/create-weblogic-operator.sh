@@ -209,7 +209,7 @@ function validateImagePullPolicy {
 # Function to validate the version of the inputs file
 #
 function validateVersion {
-  local requiredVersion='create-weblogic-operator-inputs/v1'
+  local requiredVersion='create-weblogic-operator-inputs-v1'
   if [ "${version}" != "${requiredVersion}" ]; then
     validationError "Invalid version: \"${version}\".  Must be ${requiredVersion}."
   fi

@@ -5,7 +5,7 @@ metadata:
   name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
-    weblogic.resourceVersion: apache-load-balancer/v1
+    weblogic.resourceVersion: apache-load-balancer-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     app: apache-webtier
@@ -16,7 +16,7 @@ metadata:
   name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
-    weblogic.resourceVersion: apache-load-balancer/v1
+    weblogic.resourceVersion: apache-load-balancer-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     app: apache-webtier
@@ -30,7 +30,7 @@ spec:
   template:
     metadata:
       labels:
-        weblogic.resourceVersion: apache-load-balancer/v1
+        weblogic.resourceVersion: apache-load-balancer-v1
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: apache-webtier
@@ -81,7 +81,7 @@ metadata:
   name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
-    weblogic.resourceVersion: apache-load-balancer/v1
+    weblogic.resourceVersion: apache-load-balancer-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
 spec:
