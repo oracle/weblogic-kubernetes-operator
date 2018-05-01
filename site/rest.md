@@ -2,16 +2,16 @@
 
 The operator provides a REST server which can be used to get a list of WebLogic domains and clusters and to initiate scaling operations.  Swagger documentation for the REST API is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 
-Most of the services access a `GET`, for example:
+You can access most of the REST services using `GET`, for example:
 
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`.
 * To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`.
 
 All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  The `X-Requested-By` header is not required.  Callers should pass in the `Accept:/application/json` header.
 
-If using `curl`, the `-k` option can be used to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`).
+If using `curl`, you can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`).
 
-Here is a small BASH script that may help to prepare the necessary token, certificates, and so on, to call the operator's REST services:
+Here is a small BASH script that may help to prepare the necessary token, certificates, and such, to call the operator's REST services:
 
 ```
 #!/bin/bash
