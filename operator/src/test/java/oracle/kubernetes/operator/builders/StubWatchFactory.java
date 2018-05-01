@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.builders;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +22,8 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.Pool;
+
+import javax.annotation.Nonnull;
 
 /**
  * A test-time replacement for the factory that creates Watch objects, allowing
@@ -69,13 +72,24 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     public <T> WatchI<T> createWatch(Pool<ApiClient> pool, CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) throws ApiException {
         getRecordedParameters().add(recordedParams(callParams));
 
-        if (exceptionOnNext == null)
-            return new WatchStub<T>((List)calls.remove(0));
-        else try {
-            return new ExceptionThrowingWatchStub<T>(exceptionOnNext);
-        } finally {
-            exceptionOnNext = null;
+        try {
+            if (nothingToDo())
+                return new WatchStub<>(Collections.emptyList());
+            else if (exceptionOnNext == null)
+                return new WatchStub<T>((List)calls.remove(0));
+            else try {
+                return new ExceptionThrowingWatchStub<>(exceptionOnNext);
+            } finally {
+                exceptionOnNext = null;
+            }
+        } catch (IndexOutOfBoundsException e) {
+            System.out.println("Failed in thread " + Thread.currentThread());
+            throw e;
         }
+    }
+
+    public boolean nothingToDo() {
+        return calls.isEmpty() && exceptionOnNext == null;
     }
 
     private Map<String,String> recordedParams(CallParams callParams) {
@@ -116,7 +130,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
         }
 
         @Override
-        public Iterator<Watch.Response<T>> iterator() {
+        public @Nonnull Iterator<Watch.Response<T>> iterator() {
             return responses.iterator();
         }
 
