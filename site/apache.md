@@ -52,7 +52,7 @@ Users can access an application from outside of the Kubernetes cluster by using 
 
 ### Use the default plugin WL module configuration
 
-By default, the Apache Docker image supports a simple WebLogic Server proxy plugin configuration for a single WebLogic domain with an Administration Server and a cluster. The `create-weblogic-domain.sh` script automatically customizes the default behavior based on your domain configuration by generating a customized Kubernetes resources yaml file for Apache named `weblogic-domain-apache.yaml`. The default setting supports only the type of load balancing that uses the root path ("/"). You can further customize the root path of the load balancer with the `loadBalancerAppPrepath` property in the `create-weblogic-domain-inputs.yaml` file.
+By default, the Apache Docker image supports a simple WebLogic Server proxy plugin configuration for a single WebLogic domain with an Administration Server and a cluster. The `create-weblogic-domain.sh` script automatically customizes the default behavior based on your domain configuration by generating a customized Kubernetes resources YAML file for Apache named `weblogic-domain-apache.yaml`. The default setting supports only the type of load balancing that uses the root path ("/"). You can further customize the root path of the load balancer with the `loadBalancerAppPrepath` property in the `create-weblogic-domain-inputs.yaml` file.
 
 ```
 
@@ -62,9 +62,9 @@ loadBalancerAppPrepath: /weblogic
 
 ```
 
-It is sometimes, but rarely, desirable to expose a WebLogic administrative host and port through a load balancer to a public network.  If this is needed, then, once the `weblogic-domain-apache.yaml` file is generated, you can customize exposure of the WebLogic admin admin host and port by uncommenting the `WEBLOGIC_HOST` and `WEBLOGIC_PORT` environment variables in the file.   If this files' resources have already been deployed (as happens automatically when running `create-weblogic-domain.sh`), one way to make the change is to delete the files' running Kubernetes resources via `kubectl delete -f weblogic-domain-apache.yaml`, and then deploy them again via `kubectl create -f weblogic-domain-apache.yaml`.
+It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, then, after the `weblogic-domain-apache.yaml` file is generated, you can customize exposure of the WebLogic Administration Server host and port by uncommenting the `WEBLOGIC_HOST` and `WEBLOGIC_PORT` environment variables in the file.   If this file's resources have already been deployed (as happens automatically when running `create-weblogic-domain.sh`), one way to make the change is to delete the file's running Kubernetes resources using `kubectl delete -f weblogic-domain-apache.yaml`, and then deploy them again via `kubectl create -f weblogic-domain-apache.yaml`.
 
-Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>,` and, if the WebLogic administration server host and port environment variables are uncommented below, an adminstrator can access the Administration Console via `http://<host>:30305/console`.
+Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>,` and, if the WebLogic Administration Server host and port environment variables are uncommented below, an adminstrator can access the Administration Console using `http://<host>:30305/console`.
 
 The generated Kubernetes YAML files look like the following, given the `domainUID`, "`domain1`".
 
