@@ -184,8 +184,7 @@ public class PodHelper {
       metadata.setName(podName);
       metadata.setNamespace(namespace);
       adminPod.setMetadata(metadata);
-      
-      AnnotationHelper.annotateWithFormat(metadata);
+
       AnnotationHelper.annotateForPrometheus(metadata, spec.getAsPort());
 
       Map<String, String> labels = new HashMap<>();
@@ -408,7 +407,7 @@ public class PodHelper {
     // returns fields, such as nodeName, even when export=true is specified.
     // Therefore, we'll just compare specific fields
     
-    if (!AnnotationHelper.checkFormatAnnotation(current.getMetadata())) {
+    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), LabelConstants.RESOURCE_VERSION_LABEL)) {
       return false;
     }
     
@@ -613,7 +612,6 @@ public class PodHelper {
       metadata.setNamespace(namespace);
       pod.setMetadata(metadata);
 
-      AnnotationHelper.annotateWithFormat(metadata);
       AnnotationHelper.annotateForPrometheus(metadata, scan.getListenPort());
 
       Map<String, String> labels = new HashMap<>();

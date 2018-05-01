@@ -99,7 +99,8 @@ public class ConfigMapHelper {
               }
             });
             return doNext(create, packet);
-          } else if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && result.getData().entrySet().containsAll(cm.getData().entrySet())) {
+          } else if (VersionHelper.matchesResourceVersion(result.getMetadata(), LabelConstants.RESOURCE_VERSION_LABEL) &&
+                     result.getData().entrySet().containsAll(cm.getData().entrySet())) {
             // existing config map has correct data
             LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
             packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
@@ -142,9 +143,7 @@ public class ConfigMapHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(domainNamespace);
-      
-      AnnotationHelper.annotateWithFormat(metadata);
-      
+
       Map<String, String> labels = new HashMap<>();
       labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
