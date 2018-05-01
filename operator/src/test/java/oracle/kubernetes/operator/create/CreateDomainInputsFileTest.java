@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static oracle.kubernetes.operator.VersionConstants.*;
 import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
@@ -43,6 +44,7 @@ public class CreateDomainInputsFileTest {
     assertThat(
       readDefaultInputsFile(),
       yamlEqualTo((new CreateDomainInputs())
+        .version(CREATE_WEBLOGIC_DOMAIN_INPUTS_V1)
         .adminNodePort("30701")
         .adminPort("7001")
         .adminServerName("admin-server")
