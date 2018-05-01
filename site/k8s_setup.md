@@ -11,18 +11,18 @@ If you need some help setting up a Kubernetes environment to experiment with the
 
 * Set up your own Kubernetes environment on bare compute resources on a cloud.
 * Use you cloud provider's management console to provision a managed Kubernetes environment.
-* Install Kubernetes on your own compute resources (i.e. "real" computers, outside a cloud).
+* Install Kubernetes on your own compute resources (for example, "real" computers, outside a cloud).
 
 "Development/test" options:
 
 * Install [Docker for Mac](https://docs.docker.com/docker-for-mac/#kubernetes) and enable its embedded Kubernetes cluster (or register for the [Docker for Windows](https://beta.docker.com/form) beta and wait until Kubernetes is available there).
 * Install [Minikube](https://github.com/kubernetes/minikube) on your Windows/Linux/Mac computer.
 
-We have provided our hints and tips for several of these options in the sections below:
+We have provided our hints and tips for several of these options in the sections below.
 
 ## Set up Kubernetes on bare compute resources in a cloud
 
-Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer):
+Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer).
 
 ### Prerequisites
 
@@ -34,7 +34,7 @@ providers {
   oci = "<path_to_provider_binary>/terraform-provider-oci"
 }
 ```
-4.  Ensure you have [Kubectl][Kubectl] installed if you plan to interact with the cluster locally.
+4.  Ensure that you have [Kubectl][Kubectl] installed if you plan to interact with the cluster locally.
 
 ### Quick Start
 
@@ -50,13 +50,13 @@ cd terraform-kubernetes-installer
 terraform init
 ```
 
-3.  Copy the example terraform.tvfars:
+3.  Copy the example `terraform.tvfars`:
 
 ```
 cp terraform.example.tfvars terraform.tfvars
 ```
 
-4.  Edit the `terraform.tvfars` file to include values for your tenancy, user, and compartment.  Optionally edit variables to change the `Shape` of the VMs for your Kubernetes master and workers, and your etcd cluster.   For example:
+4.  Edit the `terraform.tvfars` file to include values for your tenancy, user, and compartment.  Optionally, edit variables to change the `Shape` of the VMs for your Kubernetes master and workers, and your `etcd` cluster.   For example:
 
 ```
 #give a label to your cluster to help identify it if you have multiple
@@ -138,20 +138,20 @@ $
 ```
 
 
-## Install Kubernetes on your own compute resources (e.g. Oracle Linux servers outside a cloud)
+## Install Kubernetes on your own compute resources (for example, Oracle Linux servers outside a cloud)
 
-These instructions are for Oracle Linux 7u2+.  If you are using a different flavor of Linux, you will need to adjust accordingly.
+These instructions are for Oracle Linux 7u2+.  If you are using a different flavor of Linux, you will need to adjust them accordingly.
 
-**NOTE** These steps must be run with the `root` user, until specified otherwise!  Any time you see `YOUR_USERID` in a command, you should replace it with your actual userid.
+**NOTE**: These steps must be run with the `root` user, until specified otherwise!  Any time you see `YOUR_USERID` in a command, you should replace it with your actual `userid`.
 
-Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) because it will be used for the `/var/lib/docker` file syste, which contains all of your images and containers. The Kubernetes directory will be used for the `/var/lib/kubelet` file system and persistent volume storage.
+Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) because it will be used for the `/var/lib/docker` file system, which contains all of your images and containers. The Kubernetes directory will be used for the `/var/lib/kubelet` file system and persistent volume storage.
 
 ```
 export docker_dir=/scratch/docker
 export k8s_dir=/scratch/k8s_dir
 ```
 
-Create a shell script that sets up the necessary environment variables. You should probably just append this to the user's `.bashrc` so that it will get executed at login.  You will also need to configure your proxy settings in here if you are behind an HTTP proxy:
+Create a shell script that sets up the necessary environment variables. You should probably just append this to the user's `.bashrc` so that it will get executed at login.  You will also need to configure your proxy settings here if you are behind an HTTP proxy:
 
 ```
 export PATH=$PATH:/sbin:/usr/sbin
@@ -186,14 +186,14 @@ If you want command completion, you can add the following to the script:
 source <(kubectl completion bash)
 ```
 
-Create the directories we need:
+Create the directories you need:
 
 ```
 mkdir -p $docker_dir $k8s_dir/kubelet
 ln -s $k8s_dir/kubelet /var/lib/kubelet
 ```
 
-Set an environment variable with the Docker version we want to install:
+Set an environment variable with the Docker version you want to install:
 
 ```
 docker_version="17.03.1.ce"
@@ -219,7 +219,7 @@ diff /etc/sysconfig/docker /tmp/docker.out
 mv /tmp/docker.out /etc/sysconfig/docker
 ```
 
-Set up the Docker network, including the HTTP proxy configuration if you need it:
+Set up the Docker network, including the HTTP proxy configuration, if you need it:
 
 ```
 # generate a custom /setc/sysconfig/docker-network
@@ -238,7 +238,7 @@ Add your user to the `docker` group:
 usermod -aG docker YOUR_USERID
 ```
 
-Enable and start the Docker service that we just installed and configured:
+Enable and start the Docker service that you just installed and configured:
 
 ```
 systemctl enable docker && systemctl start docker
@@ -314,7 +314,7 @@ chown YOUR_USERID:YOUR_GROUP $KUBECONFIG
 chmod 644 $KUBECONFIG
 ```
 
-**NOTE** The following steps should be run with your normal (non-`root`) user.
+**NOTE**: The following steps should be run with your normal (non-`root`) user.
 
 Configure CNI:
 
@@ -357,7 +357,7 @@ Congratulations!  Docker and Kubernetes are installed and configured!
 
 ## Install Docker for Mac with Kubernetes
 
-Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https://docs.docker.com/docker-for-mac/#kubernetes) that is a pretty quick and easy way to get a simple test environment set up on your Mac.  To set it up, follow these instructions:
+Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https://docs.docker.com/docker-for-mac/#kubernetes) that is a quick and easy way to get a simple test environment set up on your Mac.  To set it up, follow these instructions:
 
 Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (press Command-Space bar, type in `Docker` and run it).  After it is running you will see the Docker icon appear in your status bar:
 
@@ -371,7 +371,7 @@ Go to the "Kubernetes" tab and click on the option to enable Kubernetes:
 
 ![Enable Kubernetes setting](images/docker-enable-k8s.png)
 
-**Note** If you are behind an HTTP proxy, then you should also go to the "Proxies" tab and enter your proxy details.
+**Note**: If you are behind an HTTP proxy, then you should also go to the "Proxies" tab and enter your proxy details.
 
 Docker will download the Kuberentes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
 
