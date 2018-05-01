@@ -29,6 +29,7 @@ spec:
   template:
     metadata:
       labels:
+        weblogic.resourceVersion: traefik-load-balancer/v1
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         weblogic.clusterName: %CLUSTER_NAME%
