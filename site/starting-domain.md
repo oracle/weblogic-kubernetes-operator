@@ -1,6 +1,6 @@
 # Starting a WebLogic domain
 
-Startup of the domain is controlled by settings in the domain custom resource.  The domain creation job, if used, will have created a domain custom resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.
+Startup of the domain is controlled by settings in the domain custom resource.  If used, the domain creation job will have created a domain custom resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.
 
 An example of the domain custom resource YAML file is shown below:
 
@@ -96,10 +96,10 @@ The operator determines which servers to start using the following logic:
 * If `startupControl` is set to `SPECIFIED`, then:
 
   * The Administration Server will be started.
-  * Each server listed in a `serverStartup` section will be brought up to state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.
-  * For each cluster listed in a `clusterStartup` section, a number of servers in that cluster equal to the `replicas` setting will be brought up to state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.  If `replicas` is not specified in `clusterStartup`, then the top-level `replicas` field in the domain custom resource will be used instead.
+  * Each server listed in a `serverStartup` section will be brought up to the state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.
+  * For each cluster listed in a `clusterStartup` section, a number of servers in that cluster, equal to the `replicas` setting, will be brought up to the state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.  If `replicas` is not specified in `clusterStartup`, then the top-level `replicas` field in the domain custom resource will be used instead.
 
 * If `startupControl` is set to `AUTO`, then:
 
   * The operator will perform as if `startupControl` were set to `SPECIFIED`.
-  * For all clusters that do not have a `clusterStartup` section, a number of servers in that cluster equal to the top-level `replicas` setting will be brought up to `RUNNING` state.
+  * For all clusters that do not have a `clusterStartup` section, the number of servers in that cluster equal to the top-level `replicas` setting, will be brought up to the `RUNNING` state.
