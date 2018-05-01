@@ -1,4 +1,4 @@
-# Oracle WebLogic Server Kubernetes Operator Name Changes
+# Oracle WebLogic Server Kubernetes Operator name changes
 
 The initial version of the WebLogic Server Kubernetes Operator did not use consistent conventions for many customer visible names.
 
@@ -14,13 +14,13 @@ We're not providing an upgrade tool or backward compatibility with the previous 
 
 This document lists the customer visible naming changes.  Also, the WebLogic Server Kubernetes Operator documentation has been updated.
 
-## Customer Visible Files
+## Customer visible files
 
-### Files for Creating and Deleting Operators and Domains
+### Files for creating and deleting operators and domains
 
-The following files are used to create the operator and to create and delete domains.
+The following files are used to create the operator, and to create and delete domains.
 
-| Previous File Name | New File Name |
+| Previous file name | New file name |
 | --- | --- |
 | `kubernetes/create-domain-job.sh` | `kubernetes/create-weblogic-domain.sh` |
 | `kubernetes/create-domain-job-inputs.yaml` | `kubernetes/create-weblogic-domain-inputs.yaml` |
@@ -28,27 +28,27 @@ The following files are used to create the operator and to create and delete dom
 | `kubernetes/create-weblogic-operator.sh` | same |
 | `kubernetes/delete-domain.sh` | `kubernetes/delete-weblogic-operator-resources.sh` |
 
-### Generated YAML Files for Operators and Domains
+### Generated YAML files for operators and domains
 
 The create scripts generate a number of YAML files that are used to configure the corresponding Kubernetes artifacts for the operator and the domains.
 Typically, customers do not use these YAML files.  However, customers can look at them.  They can also change the operator and domain configuration by editing these files and reapplying them.
 
-#### Directory for the Generated YAML Files
+#### Directory for the generated YAML files
 
 Previously, these files were placed in the `kubernetes` directory (for example, `kubernetes/weblogic-operator.yaml`).  Now, they are placed in per-operator and per-domain directories (because a Kubernetes cluster can have more than one operator and an operator can manage more than one domain).
 
-The customer must create a directory that will parent the per-operator and per-domain directories, and use the `-o` option to pass the name of that directory to the create script, for example:
+The customer must create a directory that will parent the per-operator and per-domain directories, and use the `-o` option to pass the name of that directory to the create script, for example,
   `mkdir /scratch/my-user-projects
   create-weblogic-operator.sh -o /scratch/my-user-projects`.
 The pathname can be either a full path name or a relative path name.  If it's a relative pathname, then it's relative to the directory of the shell invoking the create script.
 
-The per-operator directory name is:
+The per-operator directory name is
   `<user project dir from -o>/weblogic-operators/<operator namespace from the input YAML file's namespace property>`.
 
-Similarly, the per-domain directory name is:
+Similarly, the per-domain directory name is
   `<user project dir from -o>/weblogic-domains/<domain uid from the input YAML file's domainUid property>`.
 
-#### What If I Mess Up Creating a Domain or Operator And Want To Do It Again?
+#### What if I mess up creating a domain or operator and want to do it again?
 
 * Remove the resources that were created for the domain:
   * `kubernetes/delete-weblogic-domain-resources.sh yourDomainUID`
@@ -61,7 +61,7 @@ Similarly, the per-domain directory name is:
 
 If you run the create script without cleaning up the previously generated directory, the create script will tell you about the offending files and then exit without creating anything.
 
-#### Location of the Input YAML Files
+#### Location of the input YAML files
 
 The create scripts support an `-i` option for specifying the location of the inputs file.  Similar to the `-o` option, the path can be either a full path name or a relative path name.  Relative path names are relative to the directory of the shell invoking the create script.
 
@@ -72,19 +72,19 @@ Previously, `kubernetes/create-domain-job.sh` used `kubernetes/create-domain-job
 Also, we do not want the customer to have to change files in the operator's install directory.  Because of this, the `-i` option MUST be specified when calling `kubernetes/create-weblogic-operator.sh`.  The basic flow is:
 
 * Pick a user projects directory, for example, `/scratch/my-user-projects`
-* `mkdir /scratch/my-user-projects`
+ * `mkdir /scratch/my-user-projects`
 * Pick a unique ID for the domain, for example, `foo.com`
-* `cp kubernetes/create-weblogic-domain-inputs.yaml my-inputs.yaml`
-* Set the domainUid in `my-inputs.yaml` to `foo.com`
-* `kubernetes/create-weblogic-operator.sh -i my-inputs.yaml -o /scratch/my-user-projects`
+ * `cp kubernetes/create-weblogic-domain-inputs.yaml my-inputs.yaml`
+* Set the `domainUid` in `my-inputs.yaml` to `foo.com`
+ * `kubernetes/create-weblogic-operator.sh -i my-inputs.yaml -o /scratch/my-user-projects`
 
 **Note:** `my-inputs.yaml` will be copied to `/scratch/my-user-projects/weblogic-domains/foo.com/create-weblogic-domain-inputs.yaml`
 
-#### File Names of the Generated YAML Files
+#### File names of the generated YAML files
 
 The names of several of the generated YAML files have changed.
 
-| Previous File Name | New File Name |
+| Previous file name | New file name |
 | --- | --- |
 | `domain-custom-resource.yaml` | same |
 | `domain-job.yaml` | `create-weblogic-domain-job.yaml` |
@@ -95,7 +95,7 @@ The names of several of the generated YAML files have changed.
 | `traefik-rbac.yaml` | `weblogic-domain-traefik-security-${clusterName, lower case}.yaml` |
 | `weblogic-operator.yaml` | same |
 
-## Input File Contents
+## Input file contents
 Some of the contents of the inputs files have changed:
 * Some properties have been renamed
 * Some properties that are no longer needed have been removed
@@ -104,17 +104,17 @@ Some of the contents of the inputs files have changed:
 
 ### create-weblogic-operator-inputs.yaml
 
-#### Property Names
+#### Property names
 
-| Previous Property Name | New Property Name |
+| Previous property name | New property name |
 | --- | --- |
 | `image` | `weblogicOperatorImage` |
 | `imagePullPolicy` | `weblogicOperatorImagePullPolicy` |
 | `imagePullSecretName` | `weblogicOperatorImagePullSecretName` |
 
-#### Property Values
+#### Property values
 
-| Previous Property Name | Property Name | Old Property Value | New Property Value |
+| Previous property name | Property name | Old property value | New property value |
 | --- | --- | --- | --- |
 | `externalRestOption` | `externalRestOption` | `none` | `NONE` |
 | `externalRestOption` | `externalRestOption` | `custom-cert` | `CUSTOM_CERT` |
@@ -122,9 +122,9 @@ Some of the contents of the inputs files have changed:
 
 ### create-weblogic-domain-inputs.yaml
 
-#### Property Names
+#### Property names
 
-| Previous Property Name | New Property Name |
+| Previous property name | New property name |
 | --- | --- |
 | `createDomainScript` | This property has been removed |
 | `domainUid` | `domainUID` |
@@ -141,27 +141,27 @@ Some of the contents of the inputs files have changed:
 | `persistenceVolumeName` | This property has been removed |
 | `secretName` | `weblogicCredentialsSecretName` |
 
-#### Properties That Must be Customized
+#### Properties that must be customized
 The following input properties, which used to have default values, now must be uncommented and customized.
 
-| Previous Property Name | New Property Name | Previous Default Value | Notes |
+| Previous property name | New property name | Previous Default Value | Notes |
 | --- | --- | --- | --- |
 | `domainUid` | `domainUID` | `domain1` | Because the domain UID is supposed to be unique across the Kubernetes cluster, the customer must choose one. |
 | `persistencePath` | `weblogicDomainStoragePath` | `/scratch/k8s_dir/persistentVolume001` | The customer must select a directory for the domain's storage. |
 | `nfsServer` | `weblogicDomainStorageNFSServer` | `nfsServer` | If `weblogicDomainStorageType` is NFS, then the customer must specify the name or IP of the NFS server. |
 
-#### Property Values
+#### Property values
 
-| Previous Property Name | New Property Name | Old Property Value | New Property Value |
+| Previous property name | New property name | Old property value | New property value |
 | --- | --- | --- | --- |
 | `loadBalancer` | `loadBalancer` | `none` | `NONE` |
 | `loadBalancer` | `loadBalancer` | `traefik` | `TRAEFIK` |
 | `persistenceType` | `weblogicDomainStorageType` | `hostPath` | `HOST_PATH` |
 | `persistenceType` | `weblogicDomainStorageType` | `nfs` | `NFS` |
 
-## Kubernetes Artifact Names
+## Kubernetes artifact names
 
-| Artifact Type | Previous Name | New Name |
+| Artifact type | Previous name | New name |
 | --- | --- | --- |
 | persistent volume | `${domainUid}-${persistenceVolume}` or `${persistenceVolume}` | `${domainUID}-weblogic-domain-pv` |
 | persistent volume claim | `${domainUid}-${persistenceVolumeClaim}` or `${persistenceVolumeClaim}` | `${domainUID}-weblogic-domain-pvc` |
