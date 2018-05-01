@@ -6,7 +6,7 @@
 # archive.sh <source_dir> <target_dir>
 #   - internal helper method called by run.sh
 #   - archives directory ${1} into ${2}/IntSuite.TIMESTAMP.tar.gz
-#   - deletes all but the 5 newest archives
+#   - deletes all but the 10 newest archives
 #   - this method doesn't have any configurable env vars
 #
 
@@ -38,7 +38,7 @@ function archive {
   [ $? -eq 0 ] || fail "Could not archive, 'tar -czf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
   rm -f $OUTFILE
 
-  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*tar.gz" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
+  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*tar.gz" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
 
   trace Archived to \'$ARCHIVE\'.
 }
