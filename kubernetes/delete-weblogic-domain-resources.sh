@@ -53,7 +53,6 @@ cat << EOF
 EOF
 }
 
-
 #
 # getDomainResources domain(s) outfilename
 #
@@ -75,8 +74,12 @@ function getDomainResources {
     LABEL_SELECTOR="weblogic.domainUID in ($1)"
   fi
 
-  # first, let's get all namespaced types with -l $LABEL_SELECTOR
+  # clean the output file
+  if [ -e $2 ]; then
+    rm $2
+  fi
 
+  # first, let's get all namespaced types with -l $LABEL_SELECTOR
   NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
   # if domain crd exists, look for domains too:
@@ -85,10 +88,15 @@ function getDomainResources {
     NAMESPACED_TYPES="domain,$NAMESPACED_TYPES"
   fi
 
+  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+  if [ `kubectl get crd $VOYAGER_ING_NAME |grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+    NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
+  fi
+
   kubectl get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
-          --all-namespaces=true > $2
+          --all-namespaces=true >> $2
 
   # now, get all non-namespaced types with -l $LABEL_SELECTOR
 
@@ -137,8 +145,8 @@ function deleteDomains {
     # get a count of all k8s resources with matching domain-uid labels
     local allcount=`wc -l $tempfile | awk '{ print $1 }'`
 
-    # get a count of all WLS pods (any pod with a matching domain-uid label that doesn't have 'traefik' embedded in its name)
-    local podcount=`grep "^Pod" $tempfile | grep -v traefik | wc -l | awk '{ print $1 }'`
+    # get a count of all WLS pods (any pod with a matching domain-uid label that doesn't have 'traefik' or 'apache'  embedded in its name)
+    local podcount=`grep "^Pod" $tempfile | grep -v traefik | grep -v apache |  wc -l | awk '{ print $1 }'`
 
     local mnow=`date +%s`
 
@@ -196,9 +204,9 @@ function deleteDomains {
     # for each namespace with leftover resources, try delete them
     cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
       if [ "$test_mode" = "true" ]; then
-        echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+        echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       else
-        kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+        kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       fi
     done
 
@@ -260,3 +268,4 @@ if [ ! -x "$(command -v kubectl)" ]; then
 fi
 
 deleteDomains "${domains}" "${maxwaitsecs:-$default_maxwaitsecs}"
+
