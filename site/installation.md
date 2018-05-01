@@ -69,7 +69,7 @@ The operator is deployed with the provided installation script (`create-weblogic
 | Parameter | Definition | Default |
 | --- | --- | --- |
 | `elkIntegrationEnabled` | Determines whether the Elastic Stack integration will be enabled.  If set to `true`, then Elasticsearch, Logstash, and Kibana will be installed, and Logstash will be configured to export the operator’s logs to Elasticsearch. | `false` |
-| `externalDebugHttpPort` | The port number of the operator's debugging port outside of the Kubernetes cluster. | `3099`9 |
+| `externalDebugHttpPort` | The port number of the operator's debugging port outside of the Kubernetes cluster. | `30999` |
 | `externalOperatorCert` | A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `CUSTOM_CERT`. | |
 | `externalOperatorKey` | A base64 encoded string containing the private key of the operator's X.509 certificate.  This value is used only when `externalRestOption` is set to `CUSTOM_CERT`. | |
 | `externalRestHttpsPort`| The `NodePort` number that should be allocated on which the operator REST server should listen for HTTPS requests. | `31001` |
