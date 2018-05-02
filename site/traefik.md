@@ -4,7 +4,7 @@ If the `loadBalancer` option is set to `traefik` when running the `create-weblog
 
 More information about the Traefik Ingress controller can be found at: [https://docs.traefik.io/user-guide/kubernetes/](https://docs.traefik.io/user-guide/kubernetes/)
 
-Traefik will expose two `NodePorts` that allow access to the Ingress itself and to the Traefik admin UI.  The ports are controlled by these settings in the domain inputs YAML file:
+Traefik will expose two `NodePorts` that allow access to the Ingress itself and to the Traefik Web UI.  The ports are controlled by these settings in the domain inputs YAML file:
 
 ```
 # Load balancer web port
