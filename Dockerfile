@@ -9,7 +9,6 @@ ENV PATH=$PATH:/operator
 
 COPY src/scripts/* /operator/
 COPY operator/target/weblogic-kubernetes-operator-0.2.jar /operator/weblogic-kubernetes-operator.jar
-COPY target/weblogic-deploy.zip /operator/weblogic-deploy.zip
 COPY operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
