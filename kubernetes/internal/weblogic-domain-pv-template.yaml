@@ -6,6 +6,7 @@ kind: PersistentVolume
 metadata:
   name: %DOMAIN_UID%-weblogic-domain-pv
   labels:
+    weblogic.resourceVersion: domain-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
 spec:

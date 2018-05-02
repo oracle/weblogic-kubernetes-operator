@@ -11,6 +11,7 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.*;
+import static oracle.kubernetes.operator.VersionConstants.*;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
@@ -425,7 +426,7 @@ public class PodHelperConfigTest {
           .putAnnotationsItem("prometheus.io/path", "/wls-exporter/metrics")
           .putAnnotationsItem("prometheus.io/port", "" + port)
           .putAnnotationsItem("prometheus.io/scrape", "true")
-          .putAnnotationsItem("weblogic.oracle/operator-formatVersion", "1")
+          .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
           .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
           .putLabelsItem(DOMAINUID_LABEL, DOMAIN_UID)

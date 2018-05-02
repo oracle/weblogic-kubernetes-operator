@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.create;
 import io.kubernetes.client.models.V1ConfigMap;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.*;
+import static oracle.kubernetes.operator.VersionConstants.*;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.*;
@@ -55,9 +56,9 @@ public class ConfigMapHelperConfigTest {
         .metadata(newObjectMeta()
           .name(DOMAIN_CONFIG_MAP_NAME)
           .namespace(DOMAIN_NAMESPACE)
+          .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
           .putLabelsItem(OPERATORNAME_LABEL, OPERATOR_NAMESPACE)
-          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
-          .putAnnotationsItem(FORMAT_ANNOTATION, FORMAT_VERSION))
+          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"))
         .putDataItem(PROPERTY_LIVENESS_PROBE_SH, "")
         .putDataItem(PROPERTY_READINESS_PROBE_SH, "")
         .putDataItem(PROPERTY_READ_STATE_SH, "")
