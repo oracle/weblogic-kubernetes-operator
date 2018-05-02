@@ -407,7 +407,7 @@ public class PodHelper {
     // returns fields, such as nodeName, even when export=true is specified.
     // Therefore, we'll just compare specific fields
     
-    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), LabelConstants.RESOURCE_VERSION_LABEL)) {
+    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
       return false;
     }
     
