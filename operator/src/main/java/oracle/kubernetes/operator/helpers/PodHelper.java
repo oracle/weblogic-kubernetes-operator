@@ -24,6 +24,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -183,11 +184,11 @@ public class PodHelper {
       metadata.setName(podName);
       metadata.setNamespace(namespace);
       adminPod.setMetadata(metadata);
-      
-      AnnotationHelper.annotateWithFormat(metadata);
+
       AnnotationHelper.annotateForPrometheus(metadata, spec.getAsPort());
 
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, spec.getAsName());
@@ -406,7 +407,7 @@ public class PodHelper {
     // returns fields, such as nodeName, even when export=true is specified.
     // Therefore, we'll just compare specific fields
     
-    if (!AnnotationHelper.checkFormatAnnotation(current.getMetadata())) {
+    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), LabelConstants.RESOURCE_VERSION_LABEL)) {
       return false;
     }
     
@@ -611,10 +612,10 @@ public class PodHelper {
       metadata.setNamespace(namespace);
       pod.setMetadata(metadata);
 
-      AnnotationHelper.annotateWithFormat(metadata);
       AnnotationHelper.annotateForPrometheus(metadata, scan.getListenPort());
 
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, weblogicServerName);

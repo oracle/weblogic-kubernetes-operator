@@ -1392,7 +1392,7 @@ function call_operator_rest {
 
     trace "Calling some operator REST APIs via ${REST_ADDR}/${URL_TAIL}"
 
-    #pod=`kubectl get pod -n $OPERATOR_NS | grep $OPERATOR_NS | awk '{ print $1 }'`
+    #pod=`kubectl get pod -n $OPERATOR_NS --show-labels=true | grep $OPERATOR_NS | awk '{ print $1 }'`
     #kubectl logs $pod -n $OPERATOR_NS > "${OPERATOR_TMP_DIR}/operator.pre.rest.log"
 
     # turn off all of the https proxying so that curl will work
@@ -1950,7 +1950,7 @@ function verify_service_and_pod_created {
     done
 
     if [ "${srv_count:=Error}" != "1" ]; then
-      local pod=`kubectl get pod -n $OPERATOR_NS | grep $OPERATOR_NS | awk '{ print $1 }'`
+      local pod=`kubectl get pod -n $OPERATOR_NS --show-labels=true | grep $OPERATOR_NS | awk '{ print $1 }'`
       local debuglog="${OPERATOR_TMP_DIR}/verify_domain_debugging.log"
       kubectl logs $pod -n $OPERATOR_NS > "${debuglog}"
       if [ -f ${debuglog} ] ; then
@@ -1975,7 +1975,7 @@ function verify_service_and_pod_created {
     fi
 
     if [ "${srv_count:=Error}" != "1" ]; then
-      local pod=`kubectl get pod -n $OPERATOR_NS | grep $OPERATOR_NS | awk '{ print $1 }'`
+      local pod=`kubectl get pod -n $OPERATOR_NS --show-labels=true | grep $OPERATOR_NS | awk '{ print $1 }'`
       local debuglog="${OPERATOR_TMP_DIR}/verify_domain_debugging.log"
       kubectl logs $pod -n $OPERATOR_NS > "${debuglog}"
       if [ -f ${debuglog} ] ; then
