@@ -76,6 +76,7 @@ public class CreateDomainInputs {
   private String loadBalancerVolumePath = "";
   private String loadBalancerAppPrepath = "";
   private String javaOptions = "";
+  private String version = "";
 
   public static CreateDomainInputs newInputs() throws Exception {
     return
@@ -531,6 +532,19 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs javaOptions(String javaOptions) {
     setJavaOptions(javaOptions);
+    return this;
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = convertNullToEmptyString(version);
+  }
+
+  public CreateDomainInputs version(String version) {
+    setVersion(version);
     return this;
   }
 

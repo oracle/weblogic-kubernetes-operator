@@ -5,6 +5,7 @@ metadata:
   name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: apache-load-balancer-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     app: apache-webtier
@@ -15,6 +16,7 @@ metadata:
   name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: apache-load-balancer-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
     app: apache-webtier
@@ -28,6 +30,7 @@ spec:
   template:
     metadata:
       labels:
+        weblogic.resourceVersion: apache-load-balancer-v1
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: apache-webtier
@@ -50,10 +53,10 @@ spec:
             value: '%DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%:%MANAGED_SERVER_PORT%'
           - name: LOCATION
             value: '%WEB_APP_PREPATH%'
-          - name: WEBLOGIC_HOST
-            value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
-          - name: WEBLOGIC_PORT
-            value: '%ADMIN_PORT%'
+          #- name: WEBLOGIC_HOST
+          #  value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
+          #- name: WEBLOGIC_PORT
+          #  value: '%ADMIN_PORT%'
         readinessProbe:
           tcpSocket:
             port: 80
@@ -78,6 +81,7 @@ metadata:
   name: %DOMAIN_UID%-apache-webtier
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: apache-load-balancer-v1
     weblogic.domainUID: %DOMAIN_UID%
     weblogic.domainName: %DOMAIN_NAME%
 spec:

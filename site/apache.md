@@ -1,15 +1,15 @@
 
-# Load Balancing with Apache Web Server
+# Load balancing with the Apache HTTP Server
 
-This page describes how to setup and start a Apache Web Server for load balancing inside a Kubernets cluster. The configuration and startup can either be automatic when you create a domain using the WebLogic Operator's `create-weblogic-domain.sh` script, or manually if you have an existing WebLogic domain configuration.
+This document describes how to set up and start an Apache HTTP Server for load balancing inside a Kubernetes cluster. The configuration and startup can be either automatic, when you create a domain using the WebLogic Operator's `create-weblogic-domain.sh` script, or manual, if you have an existing WebLogic domain configuration.
 
-## Build Docker Image for Apache Web Server
+## Build the Docker image for the Apache HTTP Server
 
-You need to build the Docker image for Apache Web Server that enbeds Oracle WebLogic Server Proxy Plugin.
+You need to build the Docker image for the Apache HTTP Server that embeds the Oracle WebLogic Server Proxy Plugin.
 
-  1. Download and build the Docker image for the Apache Web Server with 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
+  1. Download and build the Docker image for the Apache HTTP Server with the 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the instructions in [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
-  2. tag your Docker image to `store/oracle/apache:12.2.1.3` using `docker tag` command.
+  2. Tag your Docker image, `store/oracle/apache:12.2.1.3`, using the `docker tag` command.
 
 ```
 
@@ -17,16 +17,16 @@ You need to build the Docker image for Apache Web Server that enbeds Oracle WebL
 
 ```
 
-More information about the Apache plugin can be found at: [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+For more information about the Apache plugin, see [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
 
-Once you have access to the Docker image of the Apache Web Server, you can go ahead follow the instructions below to setup and start Kubernetes artifacts for Apache Web Server.
+After you have access to the Docker image of the Apache HTTP Server, you can follow the instructions below to set up and start the Kubernetes resources for the Apache HTTP Server.
 
 
-## Use Apache load balancer with a WebLogic domain created with the WebLogic Operator
+## Use the Apache load balancer with a WebLogic domain created with the WebLogic Operator
 
-Please refer to [Creating a domain using the WebLogic Operator](creating-domain.md) for how to create a domain with the WebLogic Operator.
+For how to create a domain with the WebLogic Operator, please refer to [Creating a domain using the WebLogic Operator](creating-domain.md).
 
-You need to configure Apache Web Server as your load balancer for a WebLogic domain by setting the `loadBalancer` option to `APACHE` in `create-weblogic-domain-inputs.yaml` (as shown below) when running the `create-weblogic-domain.sh` script to create a domain. 
+You need to configure the Apache HTTP Server as your load balancer for a WebLogic domain by setting the `loadBalancer` option to `APACHE` in the `create-weblogic-domain-inputs.yaml` (as shown below) when running the `create-weblogic-domain.sh` script to create a domain.
 
 ```
 
@@ -36,9 +36,9 @@ loadBalancer: APACHE
 
 ```
 
-The `create-weblogic-domain.sh` script installs the Apache Web Server with Oracle WebLogic Server Proxy Plugin into the Kubernetes *cluster*  in the same namespace as the *domain*.
+The `create-weblogic-domain.sh` script installs the Apache HTTP Server with the Oracle WebLogic Server Proxy Plugin into the Kubernetes *cluster*  in the same namespace as the *domain*.
 
-The Apache Web Server will expose a `NodePort` that allows access to the load balancer from outside of the Kubernetes cluster.  The port is configured by setting 'loadBalancerWebPort' in `create-weblogic-domain-inputs.yaml` file.
+The Apache HTTP Server will expose a `NodePort` that allows access to the load balancer from outside of the Kubernetes cluster.  The port is configured by setting `loadBalancerWebPort` in the `create-weblogic-domain-inputs.yaml` file.
 
 ```
 
@@ -48,11 +48,11 @@ loadBalancerWebPort: 30305
 
 ```
 
-The user can access an application from outside of the Kubernetes cluster via http://<host>:30305/<application-url>.
+Users can access an application from outside of the Kubernetes cluster by using `http://<host>:30305/<application-url>`.
 
 ### Use the default plugin WL module configuration
 
-By default, the Apache Docker image supports a simple WebLogic server proxy plugin configuration for a single WebLogic domain with an admin server and a cluster. The `create-weblogic-domain.sh` script automatically customizes the default behavior based on your domain configuration. The default setting only supports the type of load balancing that uses the root path ("/"). You can further customize the root path of the load balancer with `loadBalancerAppPrepath` property in the `create-weblogic-domain-inputs.yaml` file.
+By default, the Apache Docker image supports a simple WebLogic Server proxy plugin configuration for a single WebLogic domain with an Administration Server and a cluster. The `create-weblogic-domain.sh` script automatically customizes the default behavior based on your domain configuration by generating a customized Kubernetes resources YAML file for Apache named `weblogic-domain-apache.yaml`. The default setting supports only the type of load balancing that uses the root path ("/"). You can further customize the root path of the load balancer with the `loadBalancerAppPrepath` property in the `create-weblogic-domain-inputs.yaml` file.
 
 ```
 
@@ -62,11 +62,13 @@ loadBalancerAppPrepath: /weblogic
 
 ```
 
-The user can then access an application from utsidie of the Kubernetes cluster via `http://<host>:30305/weblogic/<application-url>,` and the admin can access the admin console via `http://<host>:30305/console`.
+It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, then, after the `weblogic-domain-apache.yaml` file is generated, you can customize exposure of the WebLogic Administration Server host and port by uncommenting the `WEBLOGIC_HOST` and `WEBLOGIC_PORT` environment variables in the file.   If this file's resources have already been deployed (as happens automatically when running `create-weblogic-domain.sh`), one way to make the change is to delete the file's running Kubernetes resources using `kubectl delete -f weblogic-domain-apache.yaml`, and then deploy them again via `kubectl create -f weblogic-domain-apache.yaml`.
 
-The generated Kubernetes yaml files look like the following given the domainUID "domain1".
+Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>,` and, if the WebLogic Administration Server host and port environment variables are uncommented below, an adminstrator can access the Administration Console using `http://<host>:30305/console`.
 
-`weblogic-domain-apache.yaml` for Apache web server deployment
+The generated Kubernetes YAML files look like the following, given the `domainUID`, "`domain1`".
+
+Sample `weblogic-domain-apache.yaml` file for Apache HTTP Server deployment.
 
 ```
 
@@ -174,13 +176,13 @@ spec:
 
             value: '/weblogic'
 
-          - name: WEBLOGIC_HOST
+          #- name: WEBLOGIC_HOST
 
-            value: 'domain1-admin-server'
+          #  value: 'domain1-admin-server'
 
-          - name: WEBLOGIC_PORT
+          #- name: WEBLOGIC_PORT
 
-            value: '7001'
+          #  value: '7001'
 
         readinessProbe:
 
@@ -254,7 +256,7 @@ spec:
 
 ```
 
-`weblogic-domain-apache-security.yaml` for associated RBAC roles and role bindings
+Sample `weblogic-domain-apache-security.yaml` file for associated RBAC roles and role bindings.
 
 ```
 
@@ -349,7 +351,7 @@ subjects:
 ```
 
 
-Here are examples of the Kubernetes artifacts created by the WebLogic Operator:
+Here are examples of the Kubernetes resources created by the WebLogic Operator:
 
 
 ```
@@ -394,7 +396,7 @@ domain1-apache-webtier                                    2h
 ### Use your own plugin WL module configuration
 
 
-You can fine tune the behavior of the Apache plugin by providing your own Apache plugin configuration. You put your custom_mod_wl_apache.conf file in a local directory, for example `<host-config-dir>` , and specify this location in the `create-weblogic-domain-inputs.yaml` file as follows.
+You can fine tune the behavior of the Apache plugin by providing your own Apache plugin configuration. You put your `custom_mod_wl_apache.conf` file in a local directory, for example, `<host-config-dir>` , and specify this location in the `create-weblogic-domain-inputs.yaml` file as follows:
 
 ```
 
@@ -406,9 +408,9 @@ loadBalancerVolumePath: <host-config-dir>
 
 ```
 
-After the `loadBalancerVolumePath` property is specified, the `create-weblogic-domain.sh` script will use the custom_mod_wl_apache.config file in `<host-config-dir>` directory to replace what is in the Docker image.
+After the `loadBalancerVolumePath` property is specified, the `create-weblogic-domain.sh` script will use the `custom_mod_wl_apache.conf` file in `<host-config-dir>` directory to replace what is in the Docker image.
 
-The generated yaml files will look similar except with un-commented entries like bellow.
+The generated YAML files will look similar except with un-commented entries like below:
 
 ```
 
@@ -418,7 +420,7 @@ The generated yaml files will look similar except with un-commented entries like
 
         hostPath:
 
-          path: <host-config-dir> 
+          path: <host-config-dir>
 
       containers:
 
@@ -440,21 +442,13 @@ The generated yaml files will look similar except with un-commented entries like
 
 ## Use the Apache load balancer with a manually created WebLogic Domain
 
-If your WebLogic domain is not created by the WebLogic Operator, you need to manually create and start all Kubernetes' artifacts for Apache Web Server.
+If your WebLogic domain is not created by the WebLogic Operator, you need to manually create and start all Kubernetes' resources for the Apache HTTP Server.
 
 
-  1. Create your own custom_mod_wl_apache.conf file, and put it in a local dir, say `<host-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+  1. Create your own `custom_mod_wl_apache.conf` file, and put it in a local directory, for example, `<host-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
 
-  2. Create the Apache deployment yaml file. See the example above. Note that you need to use the **volumes** and **volumeMounts** to mount `<host-config-dir>` in to `/config` directory inside the pod that runs Apache web tier. Note that the Apache Web Server needs to be in the same Kubernetes namespace as the WebLogic domains that it needs to access.
+  2. Create the Apache deployment YAML file. See the example above. Note that you need to use the **volumes** and **volumeMounts** to mount `<host-config-dir>` into the `/config` directory inside the pod that runs the Apache web tier. Note that the Apache HTTP Server needs to be in the same Kubernetes namespace as the WebLogic domain that it needs to access.
 
-  3. Create a RBAC yaml file. See the example above
+  3. Create a RBAC YAML file. See the example above.
 
-Note that you can choose to run one Apache Web Server to load balance to multiple domains/clusters inside the same Kubernetes cluster as long as the Apache Web Server and the domains are all in the same namespace.
-
-
-
-
-
-
-
-
+Note that you can choose to run one Apache HTTP Server to balance the loads from multiple domains/clusters inside the same Kubernetes cluster, as long as the Apache HTTP Server and the domains are all in the same namespace.
