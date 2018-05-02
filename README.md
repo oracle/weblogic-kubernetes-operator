@@ -154,10 +154,6 @@ The operator provides the ability to scale up or down WebLogic clusters.  There 
 
 Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more information.
 
-## Shutting down a domain
-
-Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
-
 
 ## Load balancing with an Ingress controller or a web server
 
@@ -165,6 +161,10 @@ You can choose a load balancer provider for your WebLogic domains running in a K
 
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
+
+## Shutting down a domain
+
+Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
 
 ## Removing a domain
 
