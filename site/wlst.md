@@ -2,7 +2,7 @@
 
 Note that a video demonstration of using WLST to create a data source is available [here](https://youtu.be/eY-KXEk8rI4).
 
-WebLogic Scripting Tool (WLST) can be used to manage a domain running in Kubernetes.  If the domain was configured to expose a T3 channel using the `exposeAdminT3Channel` setting when creating the domain, then the matching T3 service can be used to connect.  For example, if the `domainUID` is `domain1`, and the Administration Server name is `admin-server`, then the service would be called:
+You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.  If the domain was configured to expose a T3 channel using the `exposeAdminT3Channel` setting when creating the domain, then the matching T3 service can be used to connect.  For example, if the `domainUID` is `domain1`, and the Administration Server name is `admin-server`, then the service would be called:
 
 ```
 domain1-admin-server-extchannel-t3channel  
@@ -15,7 +15,7 @@ $ kubectl get service domain1-admin-server-extchannel-t3channel -n domain1 -o js
 30012
 ```
 
-In this example, the `nodePort` is `30012`.  If the Kubernetes server’s address were `kubernetes001`, then WLST can connect to `t3://kubernetes001:30012` as shown below:
+In this example, the `nodePort` is `30012`.  If the Kubernetes server’s address was `kubernetes001`, then WLST can connect to `t3://kubernetes001:30012` as shown below:
 
 ```
 $ ~/wls/oracle_common/common/bin/wlst.sh
