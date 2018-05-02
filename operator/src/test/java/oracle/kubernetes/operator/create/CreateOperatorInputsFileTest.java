@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static oracle.kubernetes.operator.VersionConstants.*;
 import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
@@ -46,6 +47,7 @@ public class CreateOperatorInputsFileTest {
     assertThat(
       readDefaultInputsFile(),
       yamlEqualTo((new CreateOperatorInputs())
+        .version(CREATE_WEBLOGIC_OPERATOR_INPUTS_V1)
         .elkIntegrationEnabled("false")
         .externalDebugHttpPort("30999")
         .externalOperatorCert("")
