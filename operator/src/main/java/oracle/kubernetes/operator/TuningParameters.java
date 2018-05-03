@@ -9,9 +9,13 @@ import java.util.concurrent.ThreadFactory;
 
 public interface TuningParameters extends Map<String, String> {
   
-  public static TuningParameters initializeInstance(
+  static TuningParameters initializeInstance(
       ThreadFactory factory, String mountPoint) throws IOException {
     return TuningParametersImpl.initializeInstance(factory, mountPoint);
+  }
+
+  public static TuningParameters getInstance() {
+    return TuningParametersImpl.getInstance();
   }
   
   public static class MainTuning {

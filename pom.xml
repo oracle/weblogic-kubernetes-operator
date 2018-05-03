@@ -100,7 +100,6 @@
             <id>integration-tests</id>
             <properties>
                 <src-integration-test>${project.basedir}/src/integration-test/java</src-integration-test>
-                <skip.unit.tests>true</skip.unit.tests>
             </properties>
             <build>
                 <plugins>

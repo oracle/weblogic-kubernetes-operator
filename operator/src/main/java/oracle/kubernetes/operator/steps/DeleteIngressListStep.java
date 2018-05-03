@@ -19,7 +19,6 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -36,7 +35,7 @@ public class DeleteIngressListStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory();
 
     if (it.hasNext()) {
       V1beta1Ingress v1beta1Ingress = it.next();
