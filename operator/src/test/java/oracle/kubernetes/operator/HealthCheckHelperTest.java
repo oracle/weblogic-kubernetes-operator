@@ -148,7 +148,7 @@ public class HealthCheckHelperTest {
                 }
               }
             },
-            new CallBuilderFactory(null)));
+            new CallBuilderFactory()));
     
     ClientPool.getInstance().drain();
     
@@ -197,7 +197,7 @@ public class HealthCheckHelperTest {
                 }
               }
             },
-            new CallBuilderFactory(null)));
+            new CallBuilderFactory()));
     
     ClientPool.getInstance().drain();
     
@@ -347,7 +347,7 @@ public class HealthCheckHelperTest {
 
   // Create a named namespace
   private V1Namespace createNamespace(String name) throws Exception {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       V1Namespace existing = factory.create().readNamespace(name);
       if (existing != null)

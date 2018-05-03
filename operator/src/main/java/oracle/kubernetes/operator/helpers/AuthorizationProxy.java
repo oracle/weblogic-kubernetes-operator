@@ -235,12 +235,12 @@ public class AuthorizationProxy {
     return resourceAttributes;
   }
   
-  public V1SelfSubjectRulesReview review(String namespace) {
+  V1SelfSubjectRulesReview review(String namespace) {
     V1SelfSubjectRulesReview subjectRulesReview = new V1SelfSubjectRulesReview();
     V1SelfSubjectRulesReviewSpec spec = new V1SelfSubjectRulesReviewSpec();
     spec.setNamespace(namespace);
     subjectRulesReview.setSpec(spec);
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       return factory.create().createSelfSubjectRulesReview(subjectRulesReview);
     } catch (ApiException e) {

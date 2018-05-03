@@ -16,8 +16,6 @@ import io.kubernetes.client.models.V1beta1IngressBackend;
 import io.kubernetes.client.models.V1beta1IngressRule;
 import io.kubernetes.client.models.V1beta1IngressSpec;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -27,16 +25,18 @@ import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * To test Ingress Helper
@@ -127,7 +127,7 @@ public class IngressHelperTest {
   
   @After
   public void tearDown() throws ApiException {
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     try {
       factory.create().deleteIngress(ingressName, namespace, new V1DeleteOptions());
     } catch (ApiException api) {
@@ -165,7 +165,7 @@ public class IngressHelperTest {
     }
     
     // Now check
-    CallBuilderFactory factory = new CallBuilderFactory(null);
+    CallBuilderFactory factory = new CallBuilderFactory();
     V1beta1Ingress v1beta1Ingress = factory.create().readIngress(ingressName, namespace);
     
     List<V1beta1HTTPIngressPath> v1beta1HTTPIngressPaths = getPathArray(v1beta1Ingress);
