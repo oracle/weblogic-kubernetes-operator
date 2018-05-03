@@ -99,7 +99,7 @@ public class ConfigMapHelper {
               }
             });
             return doNext(create, packet);
-          } else if (VersionHelper.matchesResourceVersion(result.getMetadata(), LabelConstants.RESOURCE_VERSION_LABEL) &&
+          } else if (VersionHelper.matchesResourceVersion(result.getMetadata(), VersionConstants.DOMAIN_V1) &&
                      result.getData().entrySet().containsAll(cm.getData().entrySet())) {
             // existing config map has correct data
             LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
