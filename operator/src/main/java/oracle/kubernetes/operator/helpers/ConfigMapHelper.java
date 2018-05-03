@@ -175,7 +175,13 @@ public class ConfigMapHelper {
         }
       } catch (IOException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
-        throw new RuntimeException(e);
+        e.printStackTrace(); // xyz-
+        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz- uri is " + uri));
+        try (FileSystem fileSystem = FileSystems.getFileSystem(uri)) {
+          return walkScriptsPath(fileSystem.getPath(SCRIPTS));
+        } catch(IOException ioe) {
+          throw new RuntimeException(e);
+        }
       }
     }
     
