@@ -368,7 +368,7 @@ public class ServiceHelper {
     V1ServiceSpec buildSpec = build.getSpec();
     V1ServiceSpec currentSpec = current.getSpec();
     
-    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), LabelConstants.RESOURCE_VERSION_LABEL)) {
+    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
       return false;
     }
     
