@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
@@ -152,33 +153,30 @@ public class ConfigMapHelper {
       metadata.setLabels(labels);
 
       cm.setMetadata(metadata);
-      LOGGER.warning("xyz- computeDomainConfigMap called, cm.getData() is " + cm.getData());
-      cm.setData(loadScripts());
-      LOGGER.warning("xyz- computeDomainConfigMap called, cm.getData() after setData().size() is " + cm.getData().size());
+      LOGGER.warning("xyz- computeDomainConfigMap called for domainNamespace:" + domainNamespace + ", cm.getData() is " + cm.getData());
+      cm.setData(loadScripts(domainNamespace));
+      LOGGER.warning("xyz- computeDomainConfigMap called for domainNamespace:" + domainNamespace + ", cm.getData() after setData().size() is " + cm.getData().size());
 
       return cm;
     }
-    Map<String, String> scripts;
-    private synchronized Map<String, String> loadScripts() {
-      if (scripts != null) {
-        LOGGER.warning("xyz- computeDomainConfigMap loadScripts() returning previously loaded scripts");
-        return scripts;
-      }
+
+    private static synchronized Map<String, String> loadScripts(String domainNamespace) {
       URI uri = null;
       try {
-        uri = getClass().getResource(SCRIPT_LOCATION).toURI();
+        uri = ScriptConfigMapStep.class.getResource(SCRIPT_LOCATION).toURI();
       } catch (URISyntaxException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
-      
+      LOGGER.warning("xyz- loadScripts() domainNamespace:" + domainNamespace + ", uri is " + uri + ", scheme=" + uri.getScheme());
       try {
         if ("jar".equals(uri.getScheme())) {
           try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
-            return scripts = walkScriptsPath(fileSystem.getPath(SCRIPTS));
+            LOGGER.warning("xyz- walkScriptsPath for domainNamespace=" + domainNamespace + ", fileSystem=" + fileSystem);
+            return walkScriptsPath(fileSystem.getPath(SCRIPTS), domainNamespace);
           }
         } else {
-          return scripts = walkScriptsPath(Paths.get(uri));
+          return walkScriptsPath(Paths.get(uri), domainNamespace);
         }
 //      } catch (FileSystemAlreadyExistsException ale) {
 //        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystemAlreadyExistsException uri is " + uri));
@@ -189,12 +187,13 @@ public class ConfigMapHelper {
 //          throw new RuntimeException(e);
 //        }
       } catch (IOException e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, new FileAlreadyExistsException("xyz- uri," + uri));
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
     }
     
-    private Map<String, String> walkScriptsPath(Path scriptsDir) throws IOException {
+    private static Map<String, String> walkScriptsPath(Path scriptsDir, String domainNamespace) throws IOException {
       try (Stream<Path> walk = Files.walk(scriptsDir, 1)) {
         Map<String, String> data = walk.filter(i -> !Files.isDirectory(i)).collect(Collectors.toMap(
             i -> i.getFileName().toString(), 
@@ -204,7 +203,7 @@ public class ConfigMapHelper {
       }
     }
     
-    private byte[] read(Path path) {
+    private static byte[] read(Path path) {
       try {
         return Files.readAllBytes(path);
       } catch (IOException io) {
