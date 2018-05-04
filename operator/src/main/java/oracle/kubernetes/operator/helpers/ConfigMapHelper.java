@@ -151,27 +151,26 @@ public class ConfigMapHelper {
       metadata.setLabels(labels);
 
       cm.setMetadata(metadata);
-      cm.setData(loadScripts());
+      cm.setData(loadScripts(domainNamespace));
 
       return cm;
     }
 
-    private synchronized Map<String, String> loadScripts() {
+    private static synchronized Map<String, String> loadScripts(String domainNamespace) {
       URI uri = null;
       try {
-        uri = getClass().getResource(SCRIPT_LOCATION).toURI();
+        uri = ScriptConfigMapStep.class.getResource(SCRIPT_LOCATION).toURI();
       } catch (URISyntaxException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
-      
       try {
         if ("jar".equals(uri.getScheme())) {
           try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
-            return walkScriptsPath(fileSystem.getPath(SCRIPTS));
+            return walkScriptsPath(fileSystem.getPath(SCRIPTS), domainNamespace);
           }
         } else {
-          return walkScriptsPath(Paths.get(uri));
+          return walkScriptsPath(Paths.get(uri), domainNamespace);
         }
       } catch (IOException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -179,7 +178,7 @@ public class ConfigMapHelper {
       }
     }
     
-    private Map<String, String> walkScriptsPath(Path scriptsDir) throws IOException {
+    private static Map<String, String> walkScriptsPath(Path scriptsDir, String domainNamespace) throws IOException {
       try (Stream<Path> walk = Files.walk(scriptsDir, 1)) {
         Map<String, String> data = walk.filter(i -> !Files.isDirectory(i)).collect(Collectors.toMap(
             i -> i.getFileName().toString(), 
@@ -189,7 +188,7 @@ public class ConfigMapHelper {
       }
     }
     
-    private byte[] read(Path path) {
+    private static byte[] read(Path path) {
       try {
         return Files.readAllBytes(path);
       } catch (IOException io) {
