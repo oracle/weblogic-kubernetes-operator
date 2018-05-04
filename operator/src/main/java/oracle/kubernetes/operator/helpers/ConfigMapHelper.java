@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -173,15 +174,16 @@ public class ConfigMapHelper {
         } else {
           return walkScriptsPath(Paths.get(uri));
         }
-      } catch (IOException e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-        e.printStackTrace(); // xyz-
-        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz- uri is " + uri));
+      } catch (FileSystemAlreadyExistsException ale) {
+        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystemAlreadyExistsException uri is " + uri));
         try (FileSystem fileSystem = FileSystems.getFileSystem(uri)) {
           return walkScriptsPath(fileSystem.getPath(SCRIPTS));
-        } catch(IOException ioe) {
+        } catch(IOException e) {
           throw new RuntimeException(e);
         }
+      } catch (IOException e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
       }
     }
     
