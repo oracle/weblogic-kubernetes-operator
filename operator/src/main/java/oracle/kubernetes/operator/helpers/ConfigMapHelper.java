@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -153,9 +151,7 @@ public class ConfigMapHelper {
       metadata.setLabels(labels);
 
       cm.setMetadata(metadata);
-      LOGGER.warning("xyz- computeDomainConfigMap called for domainNamespace:" + domainNamespace + ", cm.getData() is " + cm.getData());
       cm.setData(loadScripts(domainNamespace));
-      LOGGER.warning("xyz- computeDomainConfigMap called for domainNamespace:" + domainNamespace + ", cm.getData() after setData().size() is " + cm.getData().size());
 
       return cm;
     }
@@ -177,7 +173,6 @@ public class ConfigMapHelper {
           return walkScriptsPath(Paths.get(uri), domainNamespace);
         }
       } catch (IOException e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, new FileAlreadyExistsException("xyz- uri," + uri));
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
