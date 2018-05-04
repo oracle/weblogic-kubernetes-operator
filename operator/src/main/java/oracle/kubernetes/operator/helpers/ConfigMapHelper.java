@@ -168,24 +168,14 @@ public class ConfigMapHelper {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
-      LOGGER.warning("xyz- loadScripts() domainNamespace:" + domainNamespace + ", uri is " + uri + ", scheme=" + uri.getScheme());
       try {
         if ("jar".equals(uri.getScheme())) {
           try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
-            LOGGER.warning("xyz- walkScriptsPath for domainNamespace=" + domainNamespace + ", fileSystem=" + fileSystem);
             return walkScriptsPath(fileSystem.getPath(SCRIPTS), domainNamespace);
           }
         } else {
           return walkScriptsPath(Paths.get(uri), domainNamespace);
         }
-//      } catch (FileSystemAlreadyExistsException ale) {
-//        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystemAlreadyExistsException uri is " + uri));
-//        try (FileSystem fileSystem = FileSystems.getFileSystem(uri)) {
-//          LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystem " + fileSystem + ", isOpen()=" + fileSystem.isOpen()));
-//            return walkScriptsPath(fileSystem.getPath(SCRIPTS));
-//        } catch(IOException e) {
-//          throw new RuntimeException(e);
-//        }
       } catch (IOException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, new FileAlreadyExistsException("xyz- uri," + uri));
         LOGGER.warning(MessageKeys.EXCEPTION, e);
