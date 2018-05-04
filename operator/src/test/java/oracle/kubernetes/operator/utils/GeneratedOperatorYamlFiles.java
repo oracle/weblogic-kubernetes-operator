@@ -1,13 +1,13 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
-import static oracle.kubernetes.operator.create.UserProjects.createUserProjectsDirectory;
+import static oracle.kubernetes.operator.utils.ExecCreateOperator.*;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.succeedsAndPrints;
+import static oracle.kubernetes.operator.utils.UserProjects.createUserProjectsDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**

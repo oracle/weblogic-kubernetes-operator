@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.models.V1Service;
+import oracle.kubernetes.operator.utils.CreateOperatorInputs;
 import org.junit.BeforeClass;
 
 /**

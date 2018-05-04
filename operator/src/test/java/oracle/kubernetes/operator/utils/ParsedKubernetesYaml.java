@@ -1,7 +1,7 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,8 +24,8 @@ import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.apache.commons.codec.binary.Base64;
 

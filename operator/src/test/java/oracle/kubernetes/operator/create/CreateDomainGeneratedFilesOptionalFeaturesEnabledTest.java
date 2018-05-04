@@ -5,9 +5,10 @@ package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1PersistentVolume;
-import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNull;

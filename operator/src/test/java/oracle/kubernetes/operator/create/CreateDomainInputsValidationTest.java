@@ -7,8 +7,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.*;
+import oracle.kubernetes.operator.utils.ExecCreateDomain;
+import oracle.kubernetes.operator.utils.ExecResult;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.*;
+import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
+import oracle.kubernetes.operator.utils.UserProjects;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**

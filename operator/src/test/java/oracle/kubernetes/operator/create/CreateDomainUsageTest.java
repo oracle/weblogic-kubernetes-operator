@@ -5,8 +5,8 @@ package oracle.kubernetes.operator.create;
 
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
+import static oracle.kubernetes.operator.utils.ExecCreateDomain.*;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**

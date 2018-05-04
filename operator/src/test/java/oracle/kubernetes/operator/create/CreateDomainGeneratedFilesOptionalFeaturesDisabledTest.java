@@ -4,7 +4,8 @@
 package oracle.kubernetes.operator.create;
 
 import io.kubernetes.client.models.V1PersistentVolume;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import org.junit.BeforeClass;
 
 /**
