@@ -16,7 +16,7 @@ spec:
       nodePort: '%LOAD_BALANCER_WEB_PORT%'
       paths:
       - backend:
-          serviceName: %DOMAIN_UID%-cluster-%CLUSTER_NAME%
+          serviceName: %DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%
           servicePort: '%MANAGED_SERVER_PORT%'
 
 ---
