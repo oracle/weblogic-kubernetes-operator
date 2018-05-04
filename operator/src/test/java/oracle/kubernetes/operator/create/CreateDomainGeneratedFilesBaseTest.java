@@ -10,14 +10,25 @@ import io.kubernetes.client.models.*;
 
 import static oracle.kubernetes.operator.LabelConstants.*;
 import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.create.CreateDomainInputs.readInputsYamlFile;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.readInputsYamlFile;
+import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import oracle.kubernetes.operator.utils.ParsedApacheSecurityYaml;
+import oracle.kubernetes.operator.utils.ParsedApacheYaml;
+import oracle.kubernetes.operator.utils.ParsedCreateWeblogicDomainJobYaml;
+import oracle.kubernetes.operator.utils.ParsedDomainCustomResourceYaml;
+import oracle.kubernetes.operator.utils.ParsedTraefikSecurityYaml;
+import oracle.kubernetes.operator.utils.ParsedTraefikYaml;
+import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
+import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
+import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.Test;
+
 
 /**
  * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh

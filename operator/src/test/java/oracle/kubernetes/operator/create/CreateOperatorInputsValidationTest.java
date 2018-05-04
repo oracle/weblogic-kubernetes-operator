@@ -7,11 +7,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
+import oracle.kubernetes.operator.utils.CreateOperatorInputs;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.*;
+import oracle.kubernetes.operator.utils.ExecCreateOperator;
+import oracle.kubernetes.operator.utils.ExecResult;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.errorRegexp;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.failsAndPrints;
+import oracle.kubernetes.operator.utils.GeneratedOperatorYamlFiles;
+import oracle.kubernetes.operator.utils.UserProjects;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 
 /**
  * Tests that create-weblogic-operator.sh properly validates the parameters

@@ -12,10 +12,13 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
-import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
-import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
+import oracle.kubernetes.operator.utils.CreateOperatorInputs;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.*;
+import static oracle.kubernetes.operator.utils.ExecCreateOperator.execCreateOperator;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.succeedsAndPrints;
+import  oracle.kubernetes.operator.utils.OperatorFiles;
+import oracle.kubernetes.operator.utils.UserProjects;
+import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;

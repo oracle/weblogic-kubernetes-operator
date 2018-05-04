@@ -1,7 +1,7 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.utils;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -10,7 +10,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
 /**
  * Class that mirrors create-weblogic-domain-inputs.yaml
