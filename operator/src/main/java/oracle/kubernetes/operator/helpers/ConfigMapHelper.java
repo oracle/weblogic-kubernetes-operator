@@ -152,12 +152,18 @@ public class ConfigMapHelper {
       metadata.setLabels(labels);
 
       cm.setMetadata(metadata);
+      LOGGER.warning("xyz- computeDomainConfigMap called, cm.getData() is " + cm.getData());
       cm.setData(loadScripts());
+      LOGGER.warning("xyz- computeDomainConfigMap called, cm.getData() after setData().size() is " + cm.getData().size());
 
       return cm;
     }
-
+    Map<String, String> scripts;
     private synchronized Map<String, String> loadScripts() {
+      if (scripts != null) {
+        LOGGER.warning("xyz- computeDomainConfigMap loadScripts() returning previously loaded scripts");
+        return scripts;
+      }
       URI uri = null;
       try {
         uri = getClass().getResource(SCRIPT_LOCATION).toURI();
@@ -169,18 +175,19 @@ public class ConfigMapHelper {
       try {
         if ("jar".equals(uri.getScheme())) {
           try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
-            return walkScriptsPath(fileSystem.getPath(SCRIPTS));
+            return scripts = walkScriptsPath(fileSystem.getPath(SCRIPTS));
           }
         } else {
-          return walkScriptsPath(Paths.get(uri));
+          return scripts = walkScriptsPath(Paths.get(uri));
         }
-      } catch (FileSystemAlreadyExistsException ale) {
-        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystemAlreadyExistsException uri is " + uri));
-        try (FileSystem fileSystem = FileSystems.getFileSystem(uri)) {
-          return walkScriptsPath(fileSystem.getPath(SCRIPTS));
-        } catch(IOException e) {
-          throw new RuntimeException(e);
-        }
+//      } catch (FileSystemAlreadyExistsException ale) {
+//        LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystemAlreadyExistsException uri is " + uri));
+//        try (FileSystem fileSystem = FileSystems.getFileSystem(uri)) {
+//          LOGGER.warning(MessageKeys.EXCEPTION, new IOException("xyz-FileSystem " + fileSystem + ", isOpen()=" + fileSystem.isOpen()));
+//            return walkScriptsPath(fileSystem.getPath(SCRIPTS));
+//        } catch(IOException e) {
+//          throw new RuntimeException(e);
+//        }
       } catch (IOException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
