@@ -43,7 +43,7 @@ In this documentation, several important terms are used and are intended to have
 
 Before using the operator, it is highly recommended that you read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.  It is also worth reading the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
 
-# Exposing applications outside the Kubernetes cluster
+## Exposing applications outside the Kubernetes cluster
 The operator can configure services to expose WebLogic applications and features outside of the Kubernetes cluster.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account. In this regard, there is no significant difference between a WebLogic domain running in a Kubernetes cluster and a domain running in a traditional data center.  The same kinds of considerations should be taken into account, for example:
 
 * Only expose those protocols and ports that need to be exposed.
@@ -58,7 +58,7 @@ While it is natural to expose web applications outside the cluster, exposing adm
 
 Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.
 
-# Requirements
+## Requirements
 
 The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 
@@ -69,7 +69,7 @@ The Oracle WebLogic Server Kubernetes Operator has the following requirements:
 
 **Note:** Minikube and the embedded Kubernetes in Docker for Mac and Docker for Windows are not "supported" platforms right now, but we have done some basic testing and everything appears to work in these environments.  They are probably suitable for "trying out" the operator, but if you run into issues, we would ask that you try to reproduce them on a supported environment before reporting them.  Also, Calico networking appears to work in the limited testing we have done so far.
 
-# Restrictions
+## Restrictions
 
 The following features are not certified or supported in this release:
 
@@ -82,14 +82,6 @@ The following features are not certified or supported in this release:
 *	Production redeployment
 
 Please consult My Oracle Support [Doc ID 2349228.1](https://support.oracle.com/rs?type=doc&id=2349228.1) for up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments.
-
-# API documentation
-
-Documentation for APIs is provided here:
-
-* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
-
-* [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
 # User guide
 
@@ -110,7 +102,7 @@ Like what you see?  Read on for all the nitty-gritty details...
 
 Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.  If you need help setting up a Kubernetes environment, please check our [cheat sheets](site/k8s_setup.md).
 
-The overall process of installing and configuring the operator and using it to manage WebLogic domains consists of the following steps.  The provided scripts will perform most of these steps, but some must be performed manually:
+The overall process of installing and configuring the operator, and using it to manage WebLogic domains, consists of the following steps:
 
 *	Registering for access to the Oracle Container Registry
 * Setting up secrets to access the Oracle Container Registry
@@ -121,27 +113,27 @@ The overall process of installing and configuring the operator and using it to m
 *	Customizing the domain parameters file
 *	Creating a WebLogic domain
 
-All of the [installation steps are explained in detail here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
+The provided scripts will perform most of these steps, but some must be performed manually. All of the [installation steps are explained in detail here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
 
 [comment]: # (If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page] site/database.md for information about how to run the Oracle database in Kubernetes.)
 
-## Using the operator's REST services
-
-The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. Please refer to [Using the operator's REST services](site/rest.md) for details about how to use the REST APIs.
-
 ## Creating a WebLogic domain with the operator
 
-Please refer to [Creating a WebLogic domain with the operator](site/creating-domain.md) for information about how to create a WebLogic domain with the operator.
+For information about how to create a WebLogic domain with the operator, see [Creating a WebLogic domain with the operator](site/creating-domain.md).
 
 [comment]: # ( Manually creating a WebLogic domain.  If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain] site/manually-creating-domain.md for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications. )
 
-## Starting up the domain
-
-The operator will automatically start up domains that it is aware of, based on the configuration in the domain custom resource.  Please refer to [Startup up a WebLogic domain](site/starting-domain.md) for details.
-
 ## Using WLST
 
-When creating a domain, there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  Please refer to [Using WLST](site/wlst.md) for more information about how to use WLST with a domain running in Kubernetes.
+When creating a domain, there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  For more information about how to use WLST with a domain running in Kubernetes, see [Using WLST](site/wlst.md) .
+
+## Starting up the domain
+
+The operator will automatically start up domains that it is aware of, based on the configuration in the domain custom resource.  For details, see [Startup up a WebLogic domain](site/starting-domain.md).
+
+## Using the operator's REST services
+
+The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md)
 
 ## Scaling a cluster
 
@@ -152,8 +144,7 @@ The operator provides the ability to scale up or down WebLogic clusters.  There 
 * Using a WLDF policy rule and script action to call the operator's REST `scale` API.
 * Using a Prometheus alert action to call the operator's REST `scale` API.
 
-Please refer to [Scaling a WebLogic cluster](site/scaling.md) for more information.
-
+For more information, see [Scaling a WebLogic cluster](site/scaling.md).
 
 ## Load balancing with an Ingress controller or a web server
 
@@ -164,7 +155,7 @@ You can choose a load balancer provider for your WebLogic domains running in a K
 
 ## Shutting down a domain
 
-Please refer to [Shutting down a domain](site/shutdown-domain.md) for information about how to shut down a domain running in Kubernetes.
+For information about how to shut down a domain running in Kubernetes, see [Shutting down a domain](site/shutdown-domain.md) .
 
 ## Removing a domain
 
@@ -201,17 +192,23 @@ Replace `NAMESPACE` with the namespace that the operator is running in.
 
 To remove more than one operator, repeat these steps for each operator namespace.
 
-
-# Recent changes
-
-See [Recent changes](site/recent-changes.md) for recent changes to the operator, including any backward incompatible changes.
-
-
 # Developer guide
 
 Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
 Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
+
+# API documentation
+
+Documentation for APIs is provided here:
+
+* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
+
+* [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
+
+# Recent changes
+
+See [Recent changes](site/recent-changes.md) for recent changes to the operator, including any backward incompatible changes.
 
 # Contributing to the operator
 
