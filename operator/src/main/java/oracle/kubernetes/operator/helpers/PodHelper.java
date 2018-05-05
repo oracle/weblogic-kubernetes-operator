@@ -91,13 +91,8 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-      Boolean explicitRestartAdmin = (Boolean) packet.get(ProcessingConstants.EXPLICIT_RESTART_ADMIN);
-      @SuppressWarnings("unchecked")
-      List<String> explicitRestartServers = (List<String>) packet.get(ProcessingConstants.EXPLICIT_RESTART_SERVERS);
-      
       boolean isExplicitRestartThisServer = 
-          (Boolean.TRUE.equals(explicitRestartAdmin)) ||
-          (explicitRestartServers != null && explicitRestartServers.contains(asName));
+         info.getExplicitRestartAdmin().get() || info.getExplicitRestartServers().contains(asName);
 
       ServerKubernetesObjects sko = skoFactory.getOrCreate(info, asName);
 
@@ -116,6 +111,8 @@ public class PodHelper {
         public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
+            info.getExplicitRestartAdmin().set(false);
+            info.getExplicitRestartServers().remove(asName);
             Step create = factory.create().createPodAsync(namespace, adminPod, new ResponseStep<V1Pod>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -145,7 +142,7 @@ public class PodHelper {
             Step replace = new CyclePodStep(
                 AdminPodStep.this,
                 podName, namespace, adminPod, MessageKeys.ADMIN_POD_REPLACED, 
-                weblogicDomainUID, asName, sko, next);
+                weblogicDomainUID, asName, info, sko, next);
             return doNext(replace, packet);
           }
         }
@@ -332,9 +329,12 @@ public class PodHelper {
     private final String messageKey;
     private final String weblogicDomainUID;
     private final String serverName;
+    private final DomainPresenceInfo info;
     private final ServerKubernetesObjects sko;
     
-    public CyclePodStep(Step conflictStep, String podName, String namespace, V1Pod newPod, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, Step next) {
+    public CyclePodStep(Step conflictStep, String podName, String namespace, V1Pod newPod, 
+        String messageKey, String weblogicDomainUID, String serverName, DomainPresenceInfo info,
+        ServerKubernetesObjects sko, Step next) {
       super(next);
       this.conflictStep = conflictStep;
       this.podName = podName;
@@ -343,6 +343,7 @@ public class PodHelper {
       this.messageKey = messageKey;
       this.weblogicDomainUID = weblogicDomainUID;
       this.serverName = serverName;
+      this.info = info;
       this.sko = sko;
     }
 
@@ -365,6 +366,10 @@ public class PodHelper {
         @Override
         public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
             Map<String, List<String>> responseHeaders) {
+          if (conflictStep instanceof AdminPodStep) {
+            info.getExplicitRestartAdmin().set(false);
+          }
+          info.getExplicitRestartServers().contains(serverName);
           Step create = factory.create().createPodAsync(namespace, newPod, new ResponseStep<V1Pod>(next) {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -497,14 +502,9 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-      @SuppressWarnings("unchecked")
-      List<String> explicitRestartServers = (List<String>) packet.get(ProcessingConstants.EXPLICIT_RESTART_SERVERS);
-      @SuppressWarnings("unchecked")
-      List<String> explicitRestartClusters = (List<String>) packet.get(ProcessingConstants.EXPLICIT_RESTART_CLUSTERS);
-      
       boolean isExplicitRestartThisServer = 
-          (explicitRestartServers != null && explicitRestartServers.contains(weblogicServerName)) ||
-          (explicitRestartClusters != null && weblogicClusterName != null && explicitRestartClusters.contains(weblogicClusterName));
+          info.getExplicitRestartServers().contains(weblogicServerName) ||
+          (weblogicClusterName != null && info.getExplicitRestartClusters().contains(weblogicClusterName));
 
       ServerKubernetesObjects sko = skoFactory.getOrCreate(info, weblogicServerName);
 
@@ -523,6 +523,7 @@ public class PodHelper {
         public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
+            info.getExplicitRestartServers().remove(weblogicServerName);
             Step create = factory.create().createPodAsync(namespace, pod, new ResponseStep<V1Pod>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -553,7 +554,7 @@ public class PodHelper {
             Step replace = new CyclePodStep(
                 ManagedPodStep.this,
                 podName, namespace, pod, MessageKeys.MANAGED_POD_REPLACED, 
-                weblogicDomainUID, weblogicServerName, sko, next);
+                weblogicDomainUID, weblogicServerName, info, sko, next);
             synchronized (packet) {
               @SuppressWarnings("unchecked")
               Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);

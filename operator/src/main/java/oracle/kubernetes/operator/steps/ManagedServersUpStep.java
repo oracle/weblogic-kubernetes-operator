@@ -65,6 +65,16 @@ public class ManagedServersUpStep extends Step {
     Collection<ServerStartupInfo> ssic = new ArrayList<ServerStartupInfo>();
 
     String asName = spec.getAsName();
+    
+    for (String clusterName : info.getExplicitRestartClusters()) {
+      WlsClusterConfig cluster = scan.getClusterConfig(clusterName);
+      if (cluster != null) {
+        for (WlsServerConfig server : cluster.getServerConfigs()) {
+          info.getExplicitRestartServers().add(server.getName());
+        }
+      }
+    }
+    info.getExplicitRestartClusters().clear();
 
     boolean startAll = false;
     Collection<String> servers = new ArrayList<String>();
