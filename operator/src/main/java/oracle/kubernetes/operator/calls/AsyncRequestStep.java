@@ -86,7 +86,6 @@ public class AsyncRequestStep<T> extends Step {
     LOGGER.fine(MessageKeys.ASYNC_REQUEST, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
 
     AtomicBoolean didResume = new AtomicBoolean(false);
-    AtomicBoolean didRecycle = new AtomicBoolean(false);
     ApiClient client = helper.take();
     return doSuspend((fiber) -> {
       ApiCallback<T> callback = new BaseApiCallback<T>() {
@@ -97,9 +96,7 @@ public class AsyncRequestStep<T> extends Step {
               LOGGER.info(MessageKeys.ASYNC_FAILURE, e, statusCode, responseHeaders, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
             }
 
-            if (didRecycle.compareAndSet(false, true)) {
-              helper.recycle(client);
-            }
+            helper.recycle(client);
             packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry, new CallResponse<Void>(null, e, statusCode, responseHeaders)));
             fiber.resume(packet);
           }
@@ -110,24 +107,18 @@ public class AsyncRequestStep<T> extends Step {
           if (didResume.compareAndSet(false, true)) {
             LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
 
-            if (didRecycle.compareAndSet(false, true)) {
-              helper.recycle(client);
-            }
+            helper.recycle(client);
             packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(new CallResponse<>(result, null, statusCode, responseHeaders)));
             fiber.resume(packet);
           }
         }
       };
-
+      
       try {
         CancellableCall c = factory.generate(requestParams, client, _continue, callback);
 
         // timeout handling
         fiber.owner.getExecutor().schedule(() -> {
-          if (didRecycle.compareAndSet(false, true)) {
-            // don't recycle on timeout because state is unknown
-            // usage.recycle();
-          }
           if (didResume.compareAndSet(false, true)) {
             try {
               c.cancel();
@@ -140,10 +131,6 @@ public class AsyncRequestStep<T> extends Step {
         }, timeoutSeconds, TimeUnit.SECONDS);
       } catch (Throwable t) {
         LOGGER.warning(MessageKeys.ASYNC_FAILURE, t, 0, null, requestParams, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-        if (didRecycle.compareAndSet(false, true)) {
-          // don't recycle on throwable because state is unknown
-          // usage.recycle();
-        }
         if (didResume.compareAndSet(false, true)) {
           packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
           fiber.resume(packet);
