@@ -65,9 +65,10 @@ metadata:
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
 spec:
   rules:
-  - host: domain1.cluster-1
+  - host: '*'
     http:
       nodePort: '30305'
       paths:
