@@ -1498,6 +1498,7 @@ EOF
 
     mkdir -p  $job_workspace
     rsync -a $PROJECT_ROOT $job_workspace/weblogic-operator
+    rsync -a $M2_HOME/ $job_workspace/apache-maven
     rsync -a $JAVA_HOME/ $job_workspace/java 
 
     cat <<EOF > $job_workspace/run_test.sh
