@@ -1161,6 +1161,7 @@ function verify_webapp_load_balancing {
     local max_count=30
     local wait_time=6
     local count=0
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME"
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
@@ -1497,7 +1498,6 @@ EOF
 
     mkdir -p  $job_workspace
     rsync -a $PROJECT_ROOT $job_workspace/weblogic-operator
-    rsync -a $M2_HOME/ $job_workspace/apache-maven
     rsync -a $JAVA_HOME/ $job_workspace/java 
 
     cat <<EOF > $job_workspace/run_test.sh
