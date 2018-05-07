@@ -718,7 +718,7 @@ function setupVoyagerLoadBalancer {
     local mnow=`date +%s`
     local vdep=`kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
     if [ "$vdep" = "1" ]; then
-      echo 'The Voyager Ingress resource ${domainUID}-voyager is created successfully.'
+      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
       break
     fi
     if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
@@ -734,7 +734,7 @@ function setupVoyagerLoadBalancer {
     local mnow=`date +%s`
     local st=`kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } '`
     if [ "$st" = "Running" ]; then
-      echo 'The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is created successfully.'
+      echo "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is created successfully."
       break
     fi
     if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
