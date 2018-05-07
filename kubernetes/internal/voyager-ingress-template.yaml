@@ -10,9 +10,10 @@ metadata:
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
 spec:
   rules:
-  - host: %DOMAIN_UID%.%CLUSTER_NAME%
+  - host: '*' 
     http:
       nodePort: '%LOAD_BALANCER_WEB_PORT%'
       paths:
