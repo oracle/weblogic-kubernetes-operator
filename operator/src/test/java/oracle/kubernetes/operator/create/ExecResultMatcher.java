@@ -1,17 +1,15 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Matcher for testing the results of using java to execute a command
- */
+/** Matcher for testing the results of using java to execute a command */
 public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
   public static final String MULTI_LINE_REGEXP_PREFIX = "(?s)";
   private int expectedExitValue;
@@ -51,7 +49,7 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
     return combined;
   }
 
-  public static String[] toArray(String ... vals) {
+  public static String[] toArray(String... vals) {
     return vals;
   }
 
@@ -78,17 +76,22 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
     return false;
   }
 
-  private boolean hasIncorrectOutputStream(Description description, String streamName, String streamContent, String[] regExps) {
+  private boolean hasIncorrectOutputStream(
+      Description description, String streamName, String streamContent, String[] regExps) {
     if (regExps == null) {
       // null regExps implies that the stream should return no content
       if (streamContent.length() != 0) {
         description.appendText("\n  " + streamName + " has ").appendValue(streamContent);
         return true;
       }
-    }  else {
+    } else {
       List<String> missingRegexps = getMissingRegexps(streamContent, regExps);
       if (!missingRegexps.isEmpty()) {
-        description.appendValueList("\n  actual " + streamName + " was\n'" + streamContent + "'\n  is missing [", ", ", "]", missingRegexps);
+        description.appendValueList(
+            "\n  actual " + streamName + " was\n'" + streamContent + "'\n  is missing [",
+            ", ",
+            "]",
+            missingRegexps);
         return true;
       }
     }
@@ -112,7 +115,8 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
     describeRequiredOutputStream(description, "stderr", stderrRegExps);
   }
 
-  private void describeRequiredOutputStream(Description description, String streamName, String[] regExps) {
+  private void describeRequiredOutputStream(
+      Description description, String streamName, String[] regExps) {
     if (regExps == null) {
       description.appendText("\n  with an empty " + streamName);
     } else {

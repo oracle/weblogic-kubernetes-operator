@@ -1,42 +1,36 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
-
-import org.glassfish.jersey.message.MessageUtils;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-
-import javax.annotation.Priority;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.ext.Provider;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import javax.annotation.Priority;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.ext.Provider;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.glassfish.jersey.message.MessageUtils;
 
-/**
- * RequestDebugLoggingFilter debug logs all the REST Requests
- */
+/** RequestDebugLoggingFilter debug logs all the REST Requests */
 @Provider
 @Priority(FilterPriorities.REQUEST_DEBUG_LOGGING_FILTER_PRIORITY)
-public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter implements ContainerRequestFilter {
+public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
+    implements ContainerRequestFilter {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /**
-   * Construct a RequestDebugLoggingFilter
-   */
+  /** Construct a RequestDebugLoggingFilter */
   public RequestDebugLoggingFilter() {
     // nothing to do
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void filter(ContainerRequestContext req) throws IOException {
     LOGGER.entering();

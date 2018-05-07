@@ -1,9 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
-
-import oracle.kubernetes.operator.logging.LoggingFacade;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -12,10 +11,9 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import oracle.kubernetes.operator.logging.LoggingFacade;
 
-/**
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- */
+/** Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved. */
 public class TestUtil {
   static Field wlsClusterConfigLoggerFacadeField = null;
   static Field wlsClusterConfigLoggerField = null;
@@ -28,7 +26,8 @@ public class TestUtil {
       wlsClusterConfigLoggerFacadeField = wlsClusterConfig.getClass().getDeclaredField("LOGGER");
       wlsClusterConfigLoggerFacadeField.setAccessible(true);
     }
-    LoggingFacade loggingFacade = (LoggingFacade) wlsClusterConfigLoggerFacadeField.get(wlsClusterConfig);
+    LoggingFacade loggingFacade =
+        (LoggingFacade) wlsClusterConfigLoggerFacadeField.get(wlsClusterConfig);
     if (wlsClusterConfigLoggerField == null) {
       wlsClusterConfigLoggerField = loggingFacade.getClass().getDeclaredField("logger");
       wlsClusterConfigLoggerField.setAccessible(true);
@@ -41,7 +40,8 @@ public class TestUtil {
       wlsDomainConfigLoggerFacadeField = wlsDomainConfig.getClass().getDeclaredField("LOGGER");
       wlsDomainConfigLoggerFacadeField.setAccessible(true);
     }
-    LoggingFacade loggingFacade = (LoggingFacade) wlsDomainConfigLoggerFacadeField.get(wlsDomainConfig);
+    LoggingFacade loggingFacade =
+        (LoggingFacade) wlsDomainConfigLoggerFacadeField.get(wlsDomainConfig);
     if (wlsDomainConfigLoggerField == null) {
       wlsDomainConfigLoggerField = loggingFacade.getClass().getDeclaredField("logger");
       wlsDomainConfigLoggerField.setAccessible(true);
@@ -63,16 +63,17 @@ public class TestUtil {
     return handler;
   }
 
-  static void removeLogHandler(WlsClusterConfig wlsClusterConfig, Handler logHandler) throws Exception {
+  static void removeLogHandler(WlsClusterConfig wlsClusterConfig, Handler logHandler)
+      throws Exception {
     Logger logger = getLogger(wlsClusterConfig);
     logger.removeHandler(logHandler);
   }
 
-  static void removeLogHandler(WlsDomainConfig wlsDomainConfig, Handler logHandler) throws Exception {
+  static void removeLogHandler(WlsDomainConfig wlsDomainConfig, Handler logHandler)
+      throws Exception {
     Logger logger = getLogger(wlsDomainConfig);
     logger.removeHandler(logHandler);
   }
-
 
   static class LogHandlerImpl extends Handler {
 
@@ -93,14 +94,10 @@ public class TestUtil {
     }
 
     @Override
-    public void flush() {
-
-    }
+    public void flush() {}
 
     @Override
-    public void close() throws SecurityException {
-
-    }
+    public void close() throws SecurityException {}
 
     public String formatMessage(LogRecord logRecord) {
       return getFormatter().format(logRecord);
@@ -145,6 +142,5 @@ public class TestUtil {
       }
       return false;
     }
-
   }
 }

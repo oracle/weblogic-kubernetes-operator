@@ -1,16 +1,13 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
 
-/**
- * ErrorModel describes an error response from a WebLogic operator REST resource.
- */
+/** ErrorModel describes an error response from a WebLogic operator REST resource. */
 public class ErrorModel extends BaseModel {
 
-  /**
-   * Construct an empty ErrorModel.
-   */
+  /** Construct an empty ErrorModel. */
   public ErrorModel() {
     setType("http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1");
     setTitle("FAILURE");
@@ -18,6 +15,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Construct a populated ErrorModel.
+   *
    * @param status - the error's the HTTP status code.
    * @param detail - details describing the error.
    */
@@ -31,6 +29,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Get the error's HTTP status code.
+   *
    * @return the error's HTTP status code.
    */
   public int getStatus() {
@@ -39,6 +38,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Set the error's HTTP status code.
+   *
    * @param status - the error's HTTP status code.
    */
   public void setStatus(int status) {
@@ -49,6 +49,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Get a detailed description of the error.
+   *
    * @return a detailed description of the error.
    */
   public String getDetail() {
@@ -57,7 +58,8 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Set the details describing the error.
-   * @param details -  details describing the error.
+   *
+   * @param details - details describing the error.
    */
   public void setDetail(String details) {
     this.detail = details;
@@ -67,6 +69,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Get the error's type.
+   *
    * @return the error's type.
    */
   public String getType() {
@@ -75,6 +78,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Set the error's type.
+   *
    * @param type - the error's type.
    */
   public void setType(String type) {
@@ -85,6 +89,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Get the error's title.
+   *
    * @return the error's title.
    */
   public String getTitle() {
@@ -93,6 +98,7 @@ public class ErrorModel extends BaseModel {
 
   /**
    * Set the error's title.
+   *
    * @param title - the error's title.
    */
   public void setTitle(String title) {
@@ -101,6 +107,13 @@ public class ErrorModel extends BaseModel {
 
   @Override
   protected String propertiesToString() {
-    return "status=" + getStatus() + ", title=" + getTitle() + ", detail=" + getDetail() + ", type=" + getType();
+    return "status="
+        + getStatus()
+        + ", title="
+        + getTitle()
+        + ", detail="
+        + getDetail()
+        + ", type="
+        + getType();
   }
 }

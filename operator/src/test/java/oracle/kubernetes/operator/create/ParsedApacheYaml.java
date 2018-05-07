@@ -1,19 +1,15 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
-import java.nio.file.Path;
-
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1beta2Deployment;
+import java.nio.file.Path;
 
-/**
- * Parses a generated weblogic-domain-apache.yaml file into a set of typed k8s java objects
- */
+/** Parses a generated weblogic-domain-apache.yaml file into a set of typed k8s java objects */
 public class ParsedApacheYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
@@ -29,7 +25,6 @@ public class ParsedApacheYaml extends ParsedKubernetesYaml {
 
   public ExtensionsV1beta1Deployment getApacheDeployment() {
     return getDeployments().find(getApacheName());
-
   }
 
   public V1Service getApacheService() {
@@ -40,6 +35,7 @@ public class ParsedApacheYaml extends ParsedKubernetesYaml {
     return 3;
   }
 
-  private String getApacheName() { return inputs.getDomainUID() + "-apache-webtier"; }
+  private String getApacheName() {
+    return inputs.getDomainUID() + "-apache-webtier";
+  }
 }
-

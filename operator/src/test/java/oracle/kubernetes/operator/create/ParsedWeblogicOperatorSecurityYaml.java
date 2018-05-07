@@ -1,5 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
@@ -8,17 +9,15 @@ import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
-
 import java.nio.file.Path;
 
-/**
- * Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects
- */
+/** Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
 
   private CreateOperatorInputs inputs;
 
-  public ParsedWeblogicOperatorSecurityYaml(Path yamlPath, CreateOperatorInputs inputs) throws Exception {
+  public ParsedWeblogicOperatorSecurityYaml(Path yamlPath, CreateOperatorInputs inputs)
+      throws Exception {
     super(yamlPath);
     this.inputs = inputs;
   }
@@ -44,7 +43,8 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBindingNonResource() {
-    return getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding-nonresource");
+    return getClusterRoleBindings()
+        .find(inputs.getNamespace() + "-operator-rolebinding-nonresource");
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBindingDiscovery() {
@@ -52,7 +52,8 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() {
-    return getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding-auth-delegator");
+    return getClusterRoleBindings()
+        .find(inputs.getNamespace() + "-operator-rolebinding-auth-delegator");
   }
 
   public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() {
@@ -66,10 +67,10 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   public int getExpectedObjectCount() {
     int rtn = 9;
     // add one role binding for each namespace
-    for (@SuppressWarnings("unused") String targetNamespace : inputs.getTargetNamespaces().split(",")) {
+    for (@SuppressWarnings("unused")
+    String targetNamespace : inputs.getTargetNamespaces().split(",")) {
       rtn++;
     }
     return rtn;
   }
 }
-

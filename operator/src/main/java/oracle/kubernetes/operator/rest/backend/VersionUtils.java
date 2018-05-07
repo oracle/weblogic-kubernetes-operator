@@ -1,15 +1,13 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.backend;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * VersionUtils contains utilities for managing the versions of the WebLogic operator
- * REST api.
- */
+/** VersionUtils contains utilities for managing the versions of the WebLogic operator REST api. */
 public class VersionUtils {
 
   private static final String LATEST = "latest";
@@ -26,6 +24,7 @@ public class VersionUtils {
 
   /**
    * Get the supported versions of the WebLogic operator REST api.
+   *
    * @return a List of version names.
    */
   public static List<String> getVersions() {
@@ -34,6 +33,7 @@ public class VersionUtils {
 
   /**
    * Get the un-aliased name of a version of the WebLogic operator REST api.
+   *
    * @param version - the potentially aliased name of the api.
    * @return - the un-aliased name of the api.
    */
@@ -44,6 +44,7 @@ public class VersionUtils {
 
   /**
    * Determines whether a version exists.
+   *
    * @param version - the version's name (can be aliased).
    * @return whether not the version exists.
    */
@@ -53,9 +54,9 @@ public class VersionUtils {
 
   /**
    * Gets the lifecycle of a version.
-   * @param version - the version's name (can be aliased).  The caller is responsible
-   * for calling isVersion first and should not call this method if the version does
-   * not exist.
+   *
+   * @param version - the version's name (can be aliased). The caller is responsible for calling
+   *     isVersion first and should not call this method if the version does not exist.
    * @return the version's lifecyle (either 'active' or 'deprecated')
    */
   public static String getLifecycle(String version) {
@@ -64,8 +65,9 @@ public class VersionUtils {
 
   /**
    * Get whether or not a version is the latest version of the WebLogic operator REST api.
-   * @param version - the version's name (can be aliased).  The caller is responsible
-   * for calling isVersion first and should not call this method if the version does
+   *
+   * @param version - the version's name (can be aliased). The caller is responsible for calling
+   *     isVersion first and should not call this method if the version does
    * @return whether or not this is the latest version of the WebLogic operator REST api.
    */
   public static boolean isLatest(String version) {
@@ -82,4 +84,3 @@ public class VersionUtils {
     }
   }
 }
-

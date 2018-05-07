@@ -1,5 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
@@ -7,17 +8,17 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Manages the input and generated files for a domain
- */
+/** Manages the input and generated files for a domain */
 public class DomainFiles {
 
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-domain.sh";
-  private static final String CREATE_WEBLOGIC_DOMAIN_INPUTS_YAML = "create-weblogic-domain-inputs.yaml";
+  private static final String CREATE_WEBLOGIC_DOMAIN_INPUTS_YAML =
+      "create-weblogic-domain-inputs.yaml";
   private static final String DOMAIN_CUSTOM_RESOURCE_YAML = "domain-custom-resource.yaml";
   private static final String CREATE_WEBLOGIC_DOMAIN_JOB_YAML = "create-weblogic-domain-job.yaml";
   private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_YAML = "weblogic-domain-pv.yaml";
-  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_YAML = "weblogic-domain-pvc.yaml";
+  private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_YAML =
+      "weblogic-domain-pvc.yaml";
 
   private Path userProjectsPath;
   private CreateDomainInputs inputs;
@@ -27,7 +28,9 @@ public class DomainFiles {
     this.inputs = inputs;
   }
 
-  public Path userProjectsPath() { return userProjectsPath; }
+  public Path userProjectsPath() {
+    return userProjectsPath;
+  }
 
   public Path getCreateWeblogicDomainInputsYamlPath() {
     return getWeblogicDomainPath().resolve(CREATE_WEBLOGIC_DOMAIN_INPUTS_YAML);
@@ -50,11 +53,14 @@ public class DomainFiles {
   }
 
   public Path getTraefikYamlPath() {
-    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");
+    return getWeblogicDomainPath()
+        .resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
 
   public Path getTraefikSecurityYamlPath() {
-    return getWeblogicDomainPath().resolve("weblogic-domain-traefik-security-" + inputs.getClusterName().toLowerCase() + ".yaml");
+    return getWeblogicDomainPath()
+        .resolve(
+            "weblogic-domain-traefik-security-" + inputs.getClusterName().toLowerCase() + ".yaml");
   }
 
   public Path getWeblogicDomainPersistentVolumeYamlPath() {
