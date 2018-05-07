@@ -259,6 +259,14 @@ public class Main {
           }
         }
       }
+      
+      // start periodic retry and recheck
+      MainTuning main = tuningAndConfig.getMainTuning();
+      engine.getExecutor().scheduleWithFixedDelay(() -> {
+        for (DomainPresenceInfo info : domains.values()) {
+          checkAndCreateDomainPresence(info, false);
+        }
+      }, main.domainPresenceRecheckIntervalSeconds, main.domainPresenceRecheckIntervalSeconds, TimeUnit.SECONDS);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     } finally {
@@ -405,6 +413,7 @@ public class Main {
   private static void doCheckAndCreateDomainPresence(Domain dom, boolean explicitRecheck) {
     doCheckAndCreateDomainPresence(dom, explicitRecheck, false, null, null);
   }
+  
 
   private static void doCheckAndCreateDomainPresence(Domain dom, boolean explicitRecheck, boolean explicitRestartAdmin,
       List<String> explicitRestartServers, List<String> explicitRestartClusters) {
@@ -433,6 +442,31 @@ public class Main {
       }
       info.setDomain(dom);
     }
+    
+    if (explicitRestartAdmin) {
+      LOGGER.info(MessageKeys.RESTART_ADMIN_STARTING, domainUID);
+      info.getExplicitRestartAdmin().set(true);
+    }
+    if (explicitRestartServers != null) {
+      LOGGER.info(MessageKeys.RESTART_SERVERS_STARTING, domainUID, explicitRestartServers);
+      info.getExplicitRestartServers().addAll(explicitRestartServers);
+    }
+    if (explicitRestartClusters != null) {
+      LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
+      info.getExplicitRestartClusters().addAll(explicitRestartClusters);
+    }
+
+    checkAndCreateDomainPresence(info);
+  }
+  
+  private static void checkAndCreateDomainPresence(DomainPresenceInfo info) {
+    checkAndCreateDomainPresence(info, true);
+  }
+  
+  private static void checkAndCreateDomainPresence(DomainPresenceInfo info, boolean isCausedByWatch) {
+    Domain dom = info.getDomain();
+    DomainSpec spec = dom.getSpec();
+    String domainUID = spec.getDomainUID();
 
     String ns = dom.getMetadata().getNamespace();
     if (initialized.getOrDefault(ns, Boolean.FALSE) && !stopping.get()) {
@@ -449,34 +483,10 @@ public class Main {
       p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
       p.put(ProcessingConstants.PRINCIPAL, principal);
 
-      if (explicitRestartAdmin) {
-        p.put(ProcessingConstants.EXPLICIT_RESTART_ADMIN, Boolean.TRUE);
-      }
-      p.put(ProcessingConstants.EXPLICIT_RESTART_SERVERS, explicitRestartServers);
-      p.put(ProcessingConstants.EXPLICIT_RESTART_CLUSTERS, explicitRestartClusters);
-
-      if (explicitRestartAdmin) {
-        LOGGER.info(MessageKeys.RESTART_ADMIN_STARTING, domainUID);
-      }
-      if (explicitRestartServers != null) {
-        LOGGER.info(MessageKeys.RESTART_SERVERS_STARTING, domainUID, explicitRestartServers);
-      }
-      if (explicitRestartClusters != null) {
-        LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
-      }
-
-      domainUpdaters.startFiber(domainUID, strategy, p, new CompletionCallback() {
+      CompletionCallback cc = new CompletionCallback() {
         @Override
         public void onCompletion(Packet packet) {
-          if (explicitRestartAdmin) {
-            LOGGER.info(MessageKeys.RESTART_ADMIN_COMPLETE, domainUID);
-          }
-          if (explicitRestartServers != null) {
-            LOGGER.info(MessageKeys.RESTART_SERVERS_COMPLETE, domainUID, explicitRestartServers);
-          }
-          if (explicitRestartClusters != null) {
-            LOGGER.info(MessageKeys.ROLLING_CLUSTERS_COMPLETE, domainUID, explicitRestartClusters);
-          }
+          info.complete();
         }
 
         @Override
@@ -496,9 +506,16 @@ public class Main {
                 }
               });
 
-          // TODO: consider retrying domain update after a delay
+          engine.getExecutor().schedule(() -> { checkAndCreateDomainPresence(info, false); }, 
+              tuningAndConfig.getMainTuning().domainPresenceFailureRetrySeconds, TimeUnit.SECONDS);
         }
-      });
+      };
+      
+      if (isCausedByWatch) {
+        domainUpdaters.startFiber(domainUID, strategy, p, cc);
+      } else {
+        domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, p, cc);
+      }
 
       scheduleDomainStatusUpdating(info);
     }

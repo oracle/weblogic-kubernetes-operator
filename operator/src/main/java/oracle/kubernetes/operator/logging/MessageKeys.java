@@ -119,9 +119,6 @@ public class MessageKeys {
   public static final String NULL_TOKEN_REVIEW_STATUS = "WLSKO-0109";
   public static final String NULL_USER_INFO = "WLSKO-0110";
   public static final String RESOURCE_BUNDLE_NOT_FOUND = "WLSKO-0111";
-  public static final String RESTART_ADMIN_COMPLETE = "WLSKO-0112";
-  public static final String RESTART_SERVERS_COMPLETE = "WLSKO-0113";
-  public static final String ROLLING_CLUSTERS_COMPLETE = "WLSKO-0114";
   public static final String RESTART_ADMIN_STARTING = "WLSKO-0115";
   public static final String RESTART_SERVERS_STARTING = "WLSKO-0116";
   public static final String ROLLING_CLUSTERS_STARTING = "WLSKO-0117";

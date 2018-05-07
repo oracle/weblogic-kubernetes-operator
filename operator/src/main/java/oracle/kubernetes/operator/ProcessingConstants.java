@@ -26,9 +26,6 @@ public interface ProcessingConstants {
   public static final String NETWORK_ACCESS_POINT = "nap";
   
   public static final String SERVERS_TO_ROLL = "roll";
-  public static final String EXPLICIT_RESTART_ADMIN = "explicitRestartAdmin";
-  public static final String EXPLICIT_RESTART_SERVERS = "explicitRestartServers";
-  public static final String EXPLICIT_RESTART_CLUSTERS = "explicitRestartClusters";
   
   public static final String SCRIPT_CONFIG_MAP = "scriptConfigMap";
   public static final String SERVER_STATE_MAP = "serverStateMap";

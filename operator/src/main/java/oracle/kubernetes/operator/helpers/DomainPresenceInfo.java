@@ -5,9 +5,12 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.joda.time.DateTime;
@@ -37,11 +40,16 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
+  
+  private final AtomicBoolean explicitRestartAdmin = new AtomicBoolean(false);
+  private final Set<String> explicitRestartServers = new CopyOnWriteArraySet<>();
+  private final Set<String> explicitRestartClusters = new CopyOnWriteArraySet<>();
 
   private V1PersistentVolumeClaimList claims = null;
 
   private WlsDomainConfig domainConfig;
   private DateTime lastScanTime;
+  private DateTime lastCompletionTime;
 
   /**
    * Create presence for a domain
@@ -114,6 +122,21 @@ public class DomainPresenceInfo {
   }
 
   /**
+   * Last completion time
+   * @return Last completion time
+   */
+  public DateTime getLastCompletionTime() {
+    return lastCompletionTime;
+  }
+
+  /**
+   * Sets the last completion time to now
+   */
+  public void complete() {
+    this.lastCompletionTime = new DateTime();
+  }
+
+  /**
    * Gets the domain.  Except the instance to change frequently based on status updates
    * @return Domain
    */
@@ -161,6 +184,30 @@ public class DomainPresenceInfo {
     return ingresses;
   }
   
+  /**
+   * Control for if domain has outstanding restart admin server pending
+   * @return Control for pending admin server restart
+   */
+  public AtomicBoolean getExplicitRestartAdmin() {
+    return explicitRestartAdmin;
+  }
+  
+  /**
+   * Control list for outstanding server restarts
+   * @return Control list for outstanding server restarts
+   */
+  public Set<String> getExplicitRestartServers() {
+    return explicitRestartServers;
+  }
+  
+  /**
+   * Control list for outstanding cluster restarts
+   * @return Control list for outstanding cluster restarts
+   */
+  public Set<String> getExplicitRestartClusters() {
+    return explicitRestartClusters;
+  }
+
   /**
    * Server objects (Pods and Services) for admin server
    * @return Server objects for admin server
