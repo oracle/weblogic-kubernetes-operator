@@ -13,7 +13,6 @@ import java.util.Map;
 
 /**
  * Contains values from a WLS dynamic servers configuration, which configures a WLS dynamic cluster
- * <p>
  */
 public class WlsDynamicServersConfig {
 
