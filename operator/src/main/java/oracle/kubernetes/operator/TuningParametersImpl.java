@@ -49,6 +49,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     LOGGER.info(MessageKeys.TUNING_PARAMETERS);
     
     MainTuning main = new MainTuning(
+        (int) readTuningParameter("domainPresenceFailureRetrySeconds", 30),
+        (int) readTuningParameter("domainPresenceRecheckIntervalSeconds", 300),
         (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
         (int) readTuningParameter("statusUpdateUnchangedCountToDelayStatusRecheck", 10),
         readTuningParameter("statusUpdateInitialShortDelay", 3),
