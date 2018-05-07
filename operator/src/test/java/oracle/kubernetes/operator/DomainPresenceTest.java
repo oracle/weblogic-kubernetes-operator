@@ -30,6 +30,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainList;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
@@ -56,6 +57,7 @@ public class DomainPresenceTest {
 
   @SuppressWarnings("unchecked")
   @Test
+  @Ignore
   public void watchPresenceWithNoPreexistingData_doesNothing() throws Exception {
     testSupport.createCannedResponse("listDomain").withNamespace("default").returning(new DomainList());
     testSupport.createCannedResponse("listIngress").withNamespace("default").returning(new V1beta1IngressList());
