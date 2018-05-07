@@ -8,8 +8,8 @@ import oracle.kubernetes.operator.TuningParameters;
 public class CallBuilderFactory {
   private final TuningParameters tuning;
   
-  public CallBuilderFactory(TuningParameters tuning) {
-    this.tuning = tuning;
+  public CallBuilderFactory() {
+    this.tuning = TuningParameters.getInstance();
   }
   
   public CallBuilder create() {

@@ -1,4 +1,4 @@
-<!-- Copyright 2017, Oracle Corporation. All Rights Reserved. -->
+<!-- Copyright 2017, 2018, Oracle Corporation. All Rights Reserved. -->
 <!-- This is unreleased proprietary source code of Oracle Corporation -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,7 +6,7 @@
   
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>0.2</version>
+    <version>1.0</version>
 
   <modules>
     <module>model</module>
@@ -65,7 +65,7 @@
 		            <author>false</author>
 		            <!--  later Copyright 2018, {currentYear} -->
 		            <bottom><![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
-		            <doctitle>Oracle WebLogic Server Kubernetes Operator v0.2 Technology Preview API</doctitle>
+		            <doctitle>Oracle WebLogic Server Kubernetes Operator v1.0 API</doctitle>
 		        </configuration>
 		    </plugin>
       
@@ -100,7 +100,6 @@
             <id>integration-tests</id>
             <properties>
                 <src-integration-test>${project.basedir}/src/integration-test/java</src-integration-test>
-                <skip.unit.tests>true</skip.unit.tests>
             </properties>
             <build>
                 <plugins>

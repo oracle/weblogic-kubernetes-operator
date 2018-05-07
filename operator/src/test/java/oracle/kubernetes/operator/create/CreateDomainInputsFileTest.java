@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static oracle.kubernetes.operator.VersionConstants.*;
 import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
 import static oracle.kubernetes.operator.create.ExecCreateDomain.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
@@ -43,10 +44,12 @@ public class CreateDomainInputsFileTest {
     assertThat(
       readDefaultInputsFile(),
       yamlEqualTo((new CreateDomainInputs())
+        .version(CREATE_WEBLOGIC_DOMAIN_INPUTS_V1)
         .adminNodePort("30701")
         .adminPort("7001")
         .adminServerName("admin-server")
         .clusterName("cluster-1")
+        .clusterType("DYNAMIC")
         .domainName("base_domain")
         .domainUID("")
         .exposeAdminNodePort("false")
@@ -56,6 +59,8 @@ public class CreateDomainInputsFileTest {
         .loadBalancer(LOAD_BALANCER_TRAEFIK)
         .loadBalancerDashboardPort("30315")
         .loadBalancerWebPort("30305")
+        .loadBalancerVolumePath("")
+        .loadBalancerAppPrepath("/")
         .configuredManagedServerCount("2")
         .managedServerNameBase("managed-server")
         .managedServerPort("8001")

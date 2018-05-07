@@ -7,6 +7,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.*;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
@@ -72,10 +73,10 @@ public class ServiceHelper {
       metadata.setName(name);
       metadata.setNamespace(namespace);
       
-      AnnotationHelper.annotateWithFormat(metadata);
       metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
 
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
@@ -252,9 +253,8 @@ public class ServiceHelper {
       metadata.setName(name);
       metadata.setNamespace(namespace);
       
-      AnnotationHelper.annotateWithFormat(metadata);
-
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
@@ -368,7 +368,7 @@ public class ServiceHelper {
     V1ServiceSpec buildSpec = build.getSpec();
     V1ServiceSpec currentSpec = current.getSpec();
     
-    if (!AnnotationHelper.checkFormatAnnotation(current.getMetadata())) {
+    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
       return false;
     }
     
@@ -520,10 +520,9 @@ public class ServiceHelper {
       V1ObjectMeta metadata = new V1ObjectMeta();
       metadata.setName(name);
       metadata.setNamespace(namespace);
-      
-      AnnotationHelper.annotateWithFormat(metadata);
 
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, serverName);

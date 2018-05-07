@@ -125,6 +125,13 @@ function deleteWithOneLabel {
   fi
 }
 
+function deleteVoyagerController {
+
+  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+      | bash -s -- --provider=baremetal --namespace=voyager --uninstall --purge
+  kubectl delete namespace voyager
+}
+
 #
 # Usage:
 # deleteNamespaces outputfile
@@ -140,6 +147,13 @@ function deleteNamespaces {
 
 function deleteWithLabels {
   NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
+
+  HANDLE_VOYAGER="false"
+  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+  if [ `kubectl get crd $VOYAGER_ING_NAME --ignore-not-found | grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+    NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
+    HANDLE_VOYAGER="true"
+  fi
 
   DOMAIN_CRD="domains.weblogic.oracle"
   if [ `kubectl get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
@@ -160,6 +174,11 @@ function deleteWithLabels {
 
   deleteNamespaces "$tempfile-0"
   deleteNamespaces "$tempfile-1"
+
+  echo @@ Deleting voyager controller.
+  if [ "$HANDLE_VOYAGER" = "true" ]; then
+    deleteVoyagerController
+  fi
 }
 
 # function genericDelete
@@ -318,6 +337,10 @@ function orderlyDelete {
     kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-traefik-cluster-1.yaml" 
     kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-traefik-security-cluster-1.yaml"
   
+    echo @@ Deleting apache in namespace $curns
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-apache.yaml" 
+    kubectlDeleteF "${USER_PROJECTS_DIR}/weblogic-domains/${curdomain}/weblogic-domain-apache-security.yaml" 
+  
     echo @@ Deleting configmap ${curdomain}-create-weblogic-domain-job-cm in namespace $curns
     kubectl -n $curns delete cm ${curdomain}-create-weblogic-domain-job-cm  --ignore-not-found
     
@@ -328,6 +351,12 @@ function orderlyDelete {
     kubectl -n $curns delete serviceaccount ${curdomain}-cluster-1-traefik --ignore-not-found=true
     kubectl -n $curns delete clusterrole ${curdomain}-cluster-1-traefik --ignore-not-found=true
     kubectl -n $curns delete clusterrolebinding ${curdomain}-cluster-1-traefik --ignore-not-found=true
+
+    kubectl -n $curns delete deploy ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete service ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete serviceaccount ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete clusterrole ${curdomain}-apache-webtier --ignore-not-found=true
+    kubectl -n $curns delete clusterrolebinding ${curdomain}-apache-webtier --ignore-not-found=true
   done
   
   for ((i=0;i<OCOUNT;i++)); do
@@ -428,7 +457,7 @@ deleteWithLabels
 #   arg3 - keywords in deletable artificats
 
 echo @@ Starting genericDelete
-genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik"
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier"
 SUCCESS="$?"
 
 # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).

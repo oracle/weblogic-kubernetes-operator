@@ -1,6 +1,9 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+# The version of this inputs file.  Do not modify.
+version: create-weblogic-domain-inputs-v1
+
 # Port number for admin server
 adminPort: 7001
 
@@ -13,6 +16,10 @@ domainName: base_domain
 # Unique id identifying a domain.
 # This id must be lowercase and unique across all domains in a Kubernetes cluster.
 #domainUID: domain1
+
+# Type of WebLogic Cluster
+# Legal values are "CONFIGURED" or "DYNAMIC" 
+clusterType: DYNAMIC
 
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
@@ -85,8 +92,18 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-# Load balancer to deploy.  Supported values are:TRAEFIK, NONE
+# Load balancer to deploy.  Supported values are: APACHE, TRAEFIK, VOYAGER, NONE
 loadBalancer: TRAEFIK
+
+# Load balancer app prepath used for APACHE load balancer 
+# This defines the /location in the built-in Apache plugin configuration module for WebLogic
+loadBalancerAppPrepath: /
+
+# Docker volume path for APACHE. By default, it is empty, which causes the volume mount be 
+# disabled and, thereforem the built-in Apache plugin config be used.
+# Use this to provide your own Apache plugin configuration as needed; simply define this 
+# path and put your own custom_mod_wl_apache.conf file under this path.
+loadBalancerVolumePath:
 
 # Load balancer web port
 loadBalancerWebPort: 30305

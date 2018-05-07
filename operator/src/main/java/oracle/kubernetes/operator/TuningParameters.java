@@ -9,19 +9,28 @@ import java.util.concurrent.ThreadFactory;
 
 public interface TuningParameters extends Map<String, String> {
   
-  public static TuningParameters initializeInstance(
+  static TuningParameters initializeInstance(
       ThreadFactory factory, String mountPoint) throws IOException {
     return TuningParametersImpl.initializeInstance(factory, mountPoint);
   }
+
+  public static TuningParameters getInstance() {
+    return TuningParametersImpl.getInstance();
+  }
   
   public static class MainTuning {
+    public final int domainPresenceFailureRetrySeconds;
+    public final int domainPresenceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck; 
     public final long initialShortDelay; 
     public final long eventualLongDelay;
     
-    public MainTuning(int statusUpdateTimeoutSeconds, int unchangedCountToDelayStatusRecheck, 
+    public MainTuning(int domainPresenceFailureRetrySeconds, int domainPresenceRecheckIntervalSeconds,
+        int statusUpdateTimeoutSeconds, int unchangedCountToDelayStatusRecheck, 
         long initialShortDelay, long eventualLongDelay) {
+      this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
+      this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
       this.initialShortDelay = initialShortDelay;

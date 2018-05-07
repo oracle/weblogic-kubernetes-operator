@@ -67,6 +67,7 @@ kind: Namespace
 metadata:
   name: ${NAMESPACE}
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 ---
 #
@@ -78,6 +79,7 @@ metadata:
   namespace: ${NAMESPACE}
   name: ${ACCOUNT_NAME}
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 ---
 EOF
@@ -91,11 +93,15 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-cluster-role
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 rules:
 - apiGroups: [""]
-  resources: ["namespaces", "persistentvolumes"]
+  resources: ["namespaces"]
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
@@ -108,12 +114,19 @@ rules:
 - apiGroups: ["extensions"]
   resources: ["ingresses"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["selfsubjectaccessreviews", "localsubjectaccessreviews", "subjectaccessreviews", "selfsubjectrulesreviews"]
+  verbs: ["create"]
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-cluster-role-nonresource
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 rules:
 - nonResourceURLs: ["/version/*"]
@@ -127,6 +140,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
@@ -143,6 +157,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding-nonresource
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
@@ -159,6 +174,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding-discovery
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
@@ -175,6 +191,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: ${NAMESPACE}-operator-rolebinding-auth-delegator
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount
@@ -194,16 +211,17 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-operator-namespace-role
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 rules:
 - apiGroups: [""]
-  resources: ["secrets", "persistentvolumeclaims"]
+  resources: ["secrets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["storage.k8s.io"]
   resources: ["storageclasses"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["services", "configmaps", "pods", "jobs", "events"]
+  resources: ["services", "configmaps", "pods", "podtemplates", "events", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
   resources: ["pods/logs"]
@@ -211,6 +229,9 @@ rules:
 - apiGroups: [""]
   resources: ["pods/exec"]
   verbs: ["create"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["settings.k8s.io"]
   resources: ["podpresets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
@@ -233,6 +254,7 @@ metadata:
   name: weblogic-operator-rolebinding
   namespace: ${i}
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
 subjects:
 - kind: ServiceAccount

@@ -14,6 +14,7 @@ metadata:
   name: weblogic-operator-cm
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: %NAMESPACE%
 data:
   serviceaccount: %ACCOUNT_NAME%
@@ -28,6 +29,7 @@ metadata:
   name: weblogic-operator-secrets
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: %NAMESPACE%
 type: Opaque
 data:
@@ -42,12 +44,14 @@ metadata:
   # set the namespace that you want the operator deployed in here
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: %NAMESPACE%
 spec:
   replicas: 1
   template:
     metadata:
      labels:
+        weblogic.resourceVersion: operator-v1
         weblogic.operatorName: %NAMESPACE%
         app: weblogic-operator
     spec:
@@ -129,6 +133,7 @@ spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  name: external-weblogic-operator-svc
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  namespace: %NAMESPACE%
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  labels:
+%EXTERNAL_OPERATOR_SERVICE_PREFIX%    weblogic.resourceVersion: operator-v1
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%    weblogic.operatorName: %NAMESPACE%
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%spec:
 %EXTERNAL_OPERATOR_SERVICE_PREFIX%  type: NodePort
@@ -151,6 +156,7 @@ metadata:
   name: internal-weblogic-operator-svc
   namespace: %NAMESPACE%
   labels:
+    weblogic.resourceVersion: operator-v1
     weblogic.operatorName: %NAMESPACE%
 spec:
   type: ClusterIP
@@ -159,4 +165,3 @@ spec:
   ports:
     - port: 8082
       name: rest
-
