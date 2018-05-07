@@ -126,7 +126,6 @@ public class HealthCheckHelper {
 
     HashMap<String, Domain> domainUIDMap = verifyDomainUidUniqueness();
     verifyPersistentVolume(domainUIDMap);
-    verifyDomainImage(domainUIDMap);
     verifyAdminServer(domainUIDMap);
   }
 
@@ -385,22 +384,6 @@ public class HealthCheckHelper {
       }
     }
 
-  }
-
-  /**
-   * Verify the domain image is what we expect.
-   *
-   * @throws ApiException exception for k8s API
-   */
-  private void verifyDomainImage(HashMap<String, Domain> domainUIDMap) throws ApiException {
-
-    // Verify the domain image is the expected WebLogic image.
-    for (Domain domain : domainUIDMap.values()) {
-      LOGGER.finest(MessageKeys.WEBLOGIC_DOMAIN, domain.toString());
-      if (!domain.getSpec().getImage().equals(DOMAIN_IMAGE)) {
-        LOGGER.warning(MessageKeys.DOMAIN_IMAGE_FAILED, DOMAIN_IMAGE, domain.getSpec().getImage());
-      }
-    }
   }
 
   /**

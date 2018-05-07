@@ -17,6 +17,7 @@ public class VersionHelper {
    * Determines whether a resource matches a version
    * @param meta Metadata
    * @param resourceVersion resource version
+   * @return true, if the labeled and expected versions match
    */
   public static boolean matchesResourceVersion(V1ObjectMeta meta, String resourceVersion) {
     if (meta == null) {
