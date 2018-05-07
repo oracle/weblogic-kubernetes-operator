@@ -1,20 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
-
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.WatchListener;
-
-import com.google.common.collect.ImmutableMap;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.junit.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -25,11 +13,18 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-/**
- * This test class verifies the behavior of the ServiceWatcher.
- */
-public class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {
+import com.google.common.collect.ImmutableMap;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.util.Watch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.watcher.WatchListener;
+import org.junit.Test;
 
+/** This test class verifies the behavior of the ServiceWatcher. */
+public class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {
 
   private static final int INITIAL_RESOURCE_VERSION = 987;
 
@@ -38,14 +33,19 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
     recordCallBack(response);
   }
 
-
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector()
+      throws Exception {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
-    assertThat(StubWatchFactory.getRecordedParameters().get(0),
-                    both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
-                    .and(hasEntry("labelSelector", asList(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL))));
+    assertThat(
+        StubWatchFactory.getRecordedParameters().get(0),
+        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+            .and(
+                hasEntry(
+                    "labelSelector",
+                    asList(
+                        LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL))));
   }
 
   private String asList(String... selectors) {
@@ -55,13 +55,18 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   @SuppressWarnings("unchecked")
   @Override
   protected <T> T createObjectWithMetaData(V1ObjectMeta metaData) {
-      return (T) new V1Service().metadata(metaData);
+    return (T) new V1Service().metadata(metaData);
   }
 
   @Override
-  protected ServiceWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-      return ServiceWatcher.create(Executors.defaultThreadFactory(), nameSpace, 
-          Integer.toString(initialResourceVersion), this, stopping);
+  protected ServiceWatcher createWatcher(
+      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
+    return ServiceWatcher.create(
+        Executors.defaultThreadFactory(),
+        nameSpace,
+        Integer.toString(initialResourceVersion),
+        this,
+        stopping);
   }
 
   @Test
@@ -73,7 +78,9 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
   @Test
   public void whenServiceHasDomainUid_returnIt() throws Exception {
-    V1Service service = new V1Service().metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
+    V1Service service =
+        new V1Service()
+            .metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
 
     assertThat(ServiceWatcher.getServiceDomainUID(service), equalTo("domain1"));
   }
@@ -87,7 +94,9 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
   @Test
   public void whenServiceHasServerName_returnIt() throws Exception {
-    V1Service service = new V1Service().metadata(new V1ObjectMeta().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver")));
+    V1Service service =
+        new V1Service()
+            .metadata(new V1ObjectMeta().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver")));
 
     assertThat(ServiceWatcher.getServiceServerName(service), equalTo("myserver"));
   }
@@ -101,7 +110,9 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
   @Test
   public void whenServiceHasChannelName_returnIt() throws Exception {
-    V1Service service = new V1Service().metadata(new V1ObjectMeta().labels(ImmutableMap.of(CHANNELNAME_LABEL, "channel1")));
+    V1Service service =
+        new V1Service()
+            .metadata(new V1ObjectMeta().labels(ImmutableMap.of(CHANNELNAME_LABEL, "channel1")));
 
     assertThat(ServiceWatcher.getServiceChannelName(service), equalTo("channel1"));
   }

@@ -1,22 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.meterware.simplestub.Memento;
-
-import io.kubernetes.client.models.V1EnvVar;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -25,6 +11,18 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1EnvVar;
+import java.util.ArrayList;
+import java.util.List;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DomainNormalizationTest {
 
@@ -62,9 +60,11 @@ public class DomainNormalizationTest {
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 
     assertThat(domainSpec.getImage(), equalTo(KubernetesConstants.DEFAULT_IMAGE));
-    assertThat(domainSpec.getImagePullPolicy(), equalTo(KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(
+        domainSpec.getImagePullPolicy(), equalTo(KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY));
     assertThat(domainSpec.getExportT3Channels(), empty());
-    assertThat(domainSpec.getStartupControl(), equalTo(StartupControlConstants.AUTO_STARTUPCONTROL));
+    assertThat(
+        domainSpec.getStartupControl(), equalTo(StartupControlConstants.AUTO_STARTUPCONTROL));
     assertThat(domainSpec.getServerStartup(), empty());
     assertThat(domainSpec.getClusterStartup(), empty());
     assertThat(domainSpec.getReplicas(), equalTo(1));
@@ -93,54 +93,62 @@ public class DomainNormalizationTest {
 
   private static ServerStartup[] createServerStartups() {
     return new ServerStartup[] {
-          new ServerStartup().withDesiredState("STANDBY")
-                             .withEnv(asList(ENV_VAR1, ENV_VAR2)),
-          new ServerStartup().withDesiredState("RUNNING")
-                             .withEnv(singletonList(ENV_VAR3))
+      new ServerStartup().withDesiredState("STANDBY").withEnv(asList(ENV_VAR1, ENV_VAR2)),
+      new ServerStartup().withDesiredState("RUNNING").withEnv(singletonList(ENV_VAR3))
     };
   }
 
   private static ClusterStartup[] createClusterStartups() {
-    return new ClusterStartup[]{
-          new ClusterStartup()
-                .withDesiredState("ADMIN")
-                .withEnv(asList(ENV_VAR1, ENV_VAR2, ENV_VAR3))
-                .withReplicas(3)
+    return new ClusterStartup[] {
+      new ClusterStartup()
+          .withDesiredState("ADMIN")
+          .withEnv(asList(ENV_VAR1, ENV_VAR2, ENV_VAR3))
+          .withReplicas(3)
     };
   }
 
   @Test
-  public void whenDomainSpecHasLatestImageAndNoPullPolicy_normalizationSetsAlwaysPull() throws Exception {
+  public void whenDomainSpecHasLatestImageAndNoPullPolicy_normalizationSetsAlwaysPull()
+      throws Exception {
     domainSpec.setImage(LATEST_IMAGE);
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 
-    assertThat(domainSpec.getImagePullPolicy(), equalTo(KubernetesConstants.ALWAYS_IMAGEPULLPOLICY));
+    assertThat(
+        domainSpec.getImagePullPolicy(), equalTo(KubernetesConstants.ALWAYS_IMAGEPULLPOLICY));
   }
 
   @Test
-  public void whenDomainSpecHasServerStartupsWithoutDesiredState_normalizationSetsRunningState() throws Exception {
-    domainSpec.setServerStartup(asList(
-          new ServerStartup().withServerName("server1").withEnv(singletonList(ENV_VAR1)),
-          new ServerStartup().withServerName("server2").withEnv(asList(ENV_VAR2, ENV_VAR3))));
+  public void whenDomainSpecHasServerStartupsWithoutDesiredState_normalizationSetsRunningState()
+      throws Exception {
+    domainSpec.setServerStartup(
+        asList(
+            new ServerStartup().withServerName("server1").withEnv(singletonList(ENV_VAR1)),
+            new ServerStartup().withServerName("server2").withEnv(asList(ENV_VAR2, ENV_VAR3))));
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 
     assertThat(domainSpec.getServerStartup(), hasSize(2));
     assertThat(domainSpec.getServerStartup().get(0).getServerName(), equalTo("server1"));
-    assertThat(domainSpec.getServerStartup().get(0).getDesiredState(), equalTo(WebLogicConstants.RUNNING_STATE));
+    assertThat(
+        domainSpec.getServerStartup().get(0).getDesiredState(),
+        equalTo(WebLogicConstants.RUNNING_STATE));
     assertThat(domainSpec.getServerStartup().get(0).getEnv(), contains(ENV_VAR1));
 
     assertThat(domainSpec.getServerStartup().get(1).getServerName(), equalTo("server2"));
-    assertThat(domainSpec.getServerStartup().get(1).getDesiredState(), equalTo(WebLogicConstants.RUNNING_STATE));
+    assertThat(
+        domainSpec.getServerStartup().get(1).getDesiredState(),
+        equalTo(WebLogicConstants.RUNNING_STATE));
     assertThat(domainSpec.getServerStartup().get(1).getEnv(), contains(ENV_VAR2, ENV_VAR3));
   }
 
   @Test
-  public void whenDomainSpecHasServerStartupsWithoutEnv_normalizationSetsEmptyList() throws Exception {
-    domainSpec.setServerStartup(asList(
-          new ServerStartup().withServerName("server1").withDesiredState("ADMIN").withEnv(null),
-          new ServerStartup().withServerName("server2").withDesiredState("STANDBY")));
+  public void whenDomainSpecHasServerStartupsWithoutEnv_normalizationSetsEmptyList()
+      throws Exception {
+    domainSpec.setServerStartup(
+        asList(
+            new ServerStartup().withServerName("server1").withDesiredState("ADMIN").withEnv(null),
+            new ServerStartup().withServerName("server2").withDesiredState("STANDBY")));
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 
@@ -155,23 +163,32 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasClusterStartupsWithoutDesiredState_normalizationSetsRunningState() throws Exception {
-    domainSpec.setClusterStartup(singletonList(
-          new ClusterStartup().withClusterName("cluster1").withEnv(asList(ENV_VAR2, ENV_VAR3))));
+  public void whenDomainSpecHasClusterStartupsWithoutDesiredState_normalizationSetsRunningState()
+      throws Exception {
+    domainSpec.setClusterStartup(
+        singletonList(
+            new ClusterStartup().withClusterName("cluster1").withEnv(asList(ENV_VAR2, ENV_VAR3))));
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 
     assertThat(domainSpec.getClusterStartup(), hasSize(1));
     assertThat(domainSpec.getClusterStartup().get(0).getClusterName(), equalTo("cluster1"));
-    assertThat(domainSpec.getClusterStartup().get(0).getDesiredState(), equalTo(WebLogicConstants.RUNNING_STATE));
+    assertThat(
+        domainSpec.getClusterStartup().get(0).getDesiredState(),
+        equalTo(WebLogicConstants.RUNNING_STATE));
     assertThat(domainSpec.getClusterStartup().get(0).getEnv(), contains(ENV_VAR2, ENV_VAR3));
   }
 
   @Test
-  public void whenDomainSpecHasClusterStartupsWithoutEnv_normalizationSetsEmptyList() throws Exception {
-    domainSpec.setClusterStartup(asList(
-          new ClusterStartup().withClusterName("cluster1").withDesiredState("ADMIN"),
-          new ClusterStartup().withClusterName("cluster2").withDesiredState("STANDBY").withEnv(null)));
+  public void whenDomainSpecHasClusterStartupsWithoutEnv_normalizationSetsEmptyList()
+      throws Exception {
+    domainSpec.setClusterStartup(
+        asList(
+            new ClusterStartup().withClusterName("cluster1").withDesiredState("ADMIN"),
+            new ClusterStartup()
+                .withClusterName("cluster2")
+                .withDesiredState("STANDBY")
+                .withEnv(null)));
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 
@@ -184,5 +201,4 @@ public class DomainNormalizationTest {
     assertThat(domainSpec.getClusterStartup().get(1).getDesiredState(), equalTo("STANDBY"));
     assertThat(domainSpec.getClusterStartup().get(1).getEnv(), empty());
   }
-
 }

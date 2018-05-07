@@ -1,29 +1,29 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
+import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-
-import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 
 /**
  * Class that mirrors create-weblogic-domain-inputs.yaml
  *
- * Used to parse create-weblogic-domain-inputs.yaml into java
- * and convert java to create-weblogic-domain-inputs.yaml
+ * <p>Used to parse create-weblogic-domain-inputs.yaml into java and convert java to
+ * create-weblogic-domain-inputs.yaml
  *
- * Note: use strings to represent params that must be ints or booleans at runtime
- * so that we can test more invalid input options (e.g. missing value, not int value)
+ * <p>Note: use strings to represent params that must be ints or booleans at runtime so that we can
+ * test more invalid input options (e.g. missing value, not int value)
  *
- * Note: initialize to empty strings and change nulls to empty strings
- * so that when this is written out to a yaml file, the files don't
- * include the literal "null" string. 
+ * <p>Note: initialize to empty strings and change nulls to empty strings so that when this is
+ * written out to a yaml file, the files don't include the literal "null" string.
  */
 public class CreateDomainInputs {
 
@@ -79,8 +79,7 @@ public class CreateDomainInputs {
   private String version = "";
 
   public static CreateDomainInputs newInputs() throws Exception {
-    return
-      readDefaultInputsFile()
+    return readDefaultInputsFile()
         .adminNodePort("30702")
         .adminPort("7002")
         .adminServerName("TestAdminServer")
@@ -112,7 +111,7 @@ public class CreateDomainInputs {
 
   public static CreateDomainInputs readInputsYamlFile(Path path) throws Exception {
     Reader r = Files.newBufferedReader(path, Charset.forName("UTF-8"));
-    return (CreateDomainInputs)newYaml().loadAs(r, CreateDomainInputs.class);
+    return (CreateDomainInputs) newYaml().loadAs(r, CreateDomainInputs.class);
   }
 
   private static Path defaultInputsPath() {
@@ -318,10 +317,12 @@ public class CreateDomainInputs {
   }
 
   public void setWeblogicDomainStorageReclaimPolicy(String weblogicDomainStorageReclaimPolicy) {
-    this.weblogicDomainStorageReclaimPolicy = convertNullToEmptyString(weblogicDomainStorageReclaimPolicy);
+    this.weblogicDomainStorageReclaimPolicy =
+        convertNullToEmptyString(weblogicDomainStorageReclaimPolicy);
   }
 
-  public CreateDomainInputs weblogicDomainStorageReclaimPolicy(String weblogicDomainStorageReclaimPolicy) {
+  public CreateDomainInputs weblogicDomainStorageReclaimPolicy(
+      String weblogicDomainStorageReclaimPolicy) {
     setWeblogicDomainStorageReclaimPolicy(weblogicDomainStorageReclaimPolicy);
     return this;
   }
@@ -390,7 +391,6 @@ public class CreateDomainInputs {
     setT3PublicAddress(t3PublicAddress);
     return this;
   }
-
 
   public String getT3ChannelPort() {
     return t3ChannelPort;
