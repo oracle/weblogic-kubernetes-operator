@@ -8,7 +8,6 @@ import java.util.List;
 
 /**
  * Contains configuration of a WLS server that belongs to a dynamic cluster
- * <p>
  */
 public class WlsDynamicServerConfig extends WlsServerConfig {
 

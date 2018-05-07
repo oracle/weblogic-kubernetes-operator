@@ -8,7 +8,6 @@ import java.util.Map;
 
 /**
  * Contains values from a WLS machine configuration
- * <p>
  */
 public class WlsMachineConfig {
 
