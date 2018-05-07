@@ -25,6 +25,7 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_DOMAIN_UID = "domainUID";
   private static final String PARAM_STARTUP_CONTROL = "startupControl";
   private static final String PARAM_CLUSTER_NAME = "clusterName";
+  private static final String PARAM_CLUSTER_TYPE = "clusterType";
   private static final String PARAM_CONFIGURED_MANAGED_SERVER_COUNT = "configuredManagedServerCount";
   private static final String PARAM_INITIAL_MANAGED_SERVER_REPLICAS = "initialManagedServerReplicas";
   private static final String PARAM_MANAGED_SERVER_NAME_BASE = "managedServerNameBase";
@@ -47,6 +48,7 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_LOAD_BALANCER_WEB_PORT = "loadBalancerWebPort";
   private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerDashboardPort";
   private static final String PARAM_JAVA_OPTIONS = "javaOptions";
+  private static final String PARAM_VERSION = "version";
 
   @Before
   public void setup() throws Exception {
@@ -152,6 +154,31 @@ public class CreateDomainInputsValidationTest {
     assertThat(
       execCreateDomain(newInputs().startupControl(val)),
       failsAndPrints(invalidEnumParamValueError(PARAM_STARTUP_CONTROL, val)));
+  }
+
+  @Test
+  public void createDomain_with_missingClusterType_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(newInputs().clusterType("")),
+      failsAndPrints(paramMissingError(PARAM_CLUSTER_TYPE)));
+  }
+
+  @Test
+  public void createDomain_with_clusterTypeConfigured_succeeds() throws Exception {
+    createDomain_with_validClusterType_succeeds(CLUSTER_TYPE_CONFIGURED);
+  }
+
+  @Test
+  public void createDomain_with_clusterTypeDynamic_succeeds() throws Exception {
+    createDomain_with_validClusterType_succeeds(CLUSTER_TYPE_DYNAMIC);
+  }
+
+  @Test
+  public void createDomain_with_invalidClusterType_failsAndReturnsError() throws Exception {
+    String val = "Invalid-cluster-type";
+    assertThat(
+      execCreateDomain(newInputs().clusterType(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_CLUSTER_TYPE, val)));
   }
 
   @Test
@@ -426,6 +453,21 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_loadBalanceTypeTraefik_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_TRAEFIK);
+  }
+
+  @Test
+  public void createDomain_with_loadBalanceTypeNone_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_NONE);
+  }
+
+  @Test
+  public void createDomain_with_loadBalanceTypeApache_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_APACHE);
+  }
+
+  @Test
   public void createDomain_with_missingLoadBalancer_failsAndReturnsError() throws Exception {
     assertThat(
       execCreateDomain(newInputs().loadBalancer("")),
@@ -482,8 +524,31 @@ public class CreateDomainInputsValidationTest {
       failsAndPrints(paramMissingError(PARAM_JAVA_OPTIONS)));
   }
 
+  @Test
+  public void createDomain_with_missingVersion_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateDomain(newInputs().version("")),
+      failsAndPrints(paramMissingError(PARAM_VERSION)));
+  }
+
+  @Test
+  public void createDomainwith_invalidVersion_failsAndReturnsError() throws Exception {
+    String val = "no-such-version";
+    assertThat(
+      execCreateDomain(newInputs().version(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_VERSION, val)));
+  }
+
   private void createDomain_with_validStartupControl_succeeds(String startupControl) throws Exception {
     createDomain_with_validInputs_succeeds(newInputs().startupControl(startupControl));
+  }
+
+  private void createDomain_with_validClusterType_succeeds(String clusterType) throws Exception {
+    createDomain_with_validInputs_succeeds(newInputs().clusterType(clusterType));
+  }
+
+  private void createDomain_with_validLoadBalancer_succeeds(String loadBalancerType) throws Exception {
+    createDomain_with_validInputs_succeeds(newInputs().loadBalancer(loadBalancerType));
   }
 
   private void createDomain_with_validInputs_succeeds(CreateDomainInputs inputs) throws Exception {

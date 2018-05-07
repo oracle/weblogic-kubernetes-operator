@@ -20,6 +20,7 @@ import io.kubernetes.client.models.V1beta1IngressSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -78,9 +79,9 @@ public class IngressHelper {
         v1ObjectMeta.setNamespace(namespace);
 
         v1ObjectMeta.putAnnotationsItem(KubernetesConstants.CLASS_INGRESS, KubernetesConstants.CLASS_INGRESS_VALUE);
-        AnnotationHelper.annotateWithFormat(v1ObjectMeta);
 
         Map<String, String> labels = new HashMap<>();
+        labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
         labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
         labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
         labels.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
@@ -141,7 +142,7 @@ public class IngressHelper {
                         }
                       }), packet);
                 } else {
-                  if (AnnotationHelper.checkFormatAnnotation(result.getMetadata()) && v1beta1Ingress.getSpec().equals(result.getSpec())) {
+                  if (VersionHelper.matchesResourceVersion(result.getMetadata(), VersionConstants.DOMAIN_V1) && v1beta1Ingress.getSpec().equals(result.getSpec())) {
                     return doNext(packet);
                   }
                   return doNext(factory.create().replaceIngressAsync(ingressName, meta.getNamespace(),

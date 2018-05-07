@@ -3,19 +3,19 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
+import java.io.IOException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 public class TuningParametersImpl extends ConfigMapConsumer implements TuningParameters {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static TuningParametersImpl INSTANCE = null;
+  private static TuningParameters INSTANCE = null;
   
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private MainTuning main = null;
@@ -23,30 +23,34 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private WatchTuning watch = null;
   private PodTuning pod = null;
   
-  public synchronized static TuningParameters initializeInstance(
-      ThreadFactory factory, String mountPoint) throws IOException {
+  synchronized static TuningParameters initializeInstance(
+        ThreadFactory factory, String mountPoint) throws IOException {
     if (INSTANCE == null) {
       INSTANCE = new TuningParametersImpl(factory, mountPoint);
       return INSTANCE;
     }
     throw new IllegalStateException();
   }
+
+  public synchronized static TuningParameters getInstance() {
+    return INSTANCE;
+  }
   
   private TuningParametersImpl(ThreadFactory factory, String mountPoint) throws IOException {
-    super(factory, mountPoint, () -> {
-      updateTuningParameters();
-    });
+    super(factory, mountPoint, TuningParametersImpl::updateTuningParameters);
     update();
   }
 
-  public static void updateTuningParameters() {
-    INSTANCE.update();
+  private static void updateTuningParameters() {
+    ((TuningParametersImpl) INSTANCE).update();
   }
   
   private void update() {
     LOGGER.info(MessageKeys.TUNING_PARAMETERS);
     
     MainTuning main = new MainTuning(
+        (int) readTuningParameter("domainPresenceFailureRetrySeconds", 30),
+        (int) readTuningParameter("domainPresenceRecheckIntervalSeconds", 300),
         (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
         (int) readTuningParameter("statusUpdateUnchangedCountToDelayStatusRecheck", 10),
         readTuningParameter("statusUpdateInitialShortDelay", 3),

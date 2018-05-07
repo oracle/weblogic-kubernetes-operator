@@ -1,0 +1,45 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: %DOMAIN_UID%-voyager
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  rules:
+  - host: '*' 
+    http:
+      nodePort: '%LOAD_BALANCER_WEB_PORT%'
+      paths:
+      - backend:
+          serviceName: %DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%
+          servicePort: '%MANAGED_SERVER_PORT%'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: %DOMAIN_UID%-voyager-stats
+  namespace: %NAMESPACE%
+  labels:
+    app: %DOMAIN_UID%-voyager-stats
+    weblogic.resourceVersion: voyager-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+spec:
+  type: NodePort
+  ports:
+    - name: client
+      protocol: TCP
+      port: 56789
+      targetPort: 56789
+      nodePort: %LOAD_BALANCER_DASHBOARD_PORT%
+  selector:
+    origin: voyager
+    origin-name: %DOMAIN_UID%-voyager

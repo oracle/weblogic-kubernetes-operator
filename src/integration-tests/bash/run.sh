@@ -78,7 +78,7 @@
 #                  See "Directory Configuration and Structure" below for
 #                  defaults and a detailed description of test directories.
 #
-#   LB_TYPE        Load balancer type. Can be 'TRAEFIK'.
+#   LB_TYPE        Load balancer type. Can be 'TRAEFIK', 'VOYAGER', or 'APACHE'.
 #                  Default is 'TRAEFIK'.
 #
 #   VERBOSE        Set to 'true' to echo verbose output to stdout.
@@ -525,6 +525,9 @@ function setup_jenkins {
     docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
     docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
+    docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
+    docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
+
     # create a docker image for the operator code being tested
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
 
@@ -540,6 +543,9 @@ function setup_local {
 
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
+
+  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
 
 }
 
@@ -794,6 +800,7 @@ function run_create_domain_job {
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     local WLS_JAVA_OPTIONS="$JVM_ARGS"
@@ -865,6 +872,11 @@ function run_create_domain_job {
     sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
     sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
     sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
+    if [ "$LB_TYPE" == "APACHE" ] ; then
+      local load_balancer_app_prepath="/weblogic"
+      sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
+      sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+    fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
 
@@ -1139,6 +1151,9 @@ function verify_webapp_load_balancing {
     kubectl describe ingress -n $NAMESPACE >> $TMP_DIR/describe.ingress.out 2>&1
   
     local TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/testwebapp/"
+    if [ "$LB_TYPE" == "APACHE" ] ; then
+      TEST_APP_URL="http://${NODEPORT_HOST}:${LOAD_BALANCER_WEB_PORT}/weblogic/testwebapp/"
+    fi
     local CURL_RESPONSE_BODY="$TMP_DIR/testapp.response.body"
 
     trace "wait for test app to become available on ${TEST_APP_URL}"
@@ -1151,7 +1166,7 @@ function verify_webapp_load_balancing {
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+      local HTTP_RESPONSE=$(eval "curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
         --write-out '%{http_code}' \
         -o ${CURL_RESPONSE_BODY}" \
       )
@@ -1377,7 +1392,7 @@ function call_operator_rest {
 
     trace "Calling some operator REST APIs via ${REST_ADDR}/${URL_TAIL}"
 
-    #pod=`kubectl get pod -n $OPERATOR_NS | grep $OPERATOR_NS | awk '{ print $1 }'`
+    #pod=`kubectl get pod -n $OPERATOR_NS --show-labels=true | grep $OPERATOR_NS | awk '{ print $1 }'`
     #kubectl logs $pod -n $OPERATOR_NS > "${OPERATOR_TMP_DIR}/operator.pre.rest.log"
 
     # turn off all of the https proxying so that curl will work
@@ -1483,6 +1498,7 @@ EOF
 
     mkdir -p  $job_workspace
     rsync -a $PROJECT_ROOT $job_workspace/weblogic-operator
+    rsync -a $M2_HOME/ $job_workspace/apache-maven
     rsync -a $JAVA_HOME/ $job_workspace/java 
 
     cat <<EOF > $job_workspace/run_test.sh
@@ -1934,7 +1950,7 @@ function verify_service_and_pod_created {
     done
 
     if [ "${srv_count:=Error}" != "1" ]; then
-      local pod=`kubectl get pod -n $OPERATOR_NS | grep $OPERATOR_NS | awk '{ print $1 }'`
+      local pod=`kubectl get pod -n $OPERATOR_NS --show-labels=true | grep $OPERATOR_NS | awk '{ print $1 }'`
       local debuglog="${OPERATOR_TMP_DIR}/verify_domain_debugging.log"
       kubectl logs $pod -n $OPERATOR_NS > "${debuglog}"
       if [ -f ${debuglog} ] ; then
@@ -1959,7 +1975,7 @@ function verify_service_and_pod_created {
     fi
 
     if [ "${srv_count:=Error}" != "1" ]; then
-      local pod=`kubectl get pod -n $OPERATOR_NS | grep $OPERATOR_NS | awk '{ print $1 }'`
+      local pod=`kubectl get pod -n $OPERATOR_NS --show-labels=true | grep $OPERATOR_NS | awk '{ print $1 }'`
       local debuglog="${OPERATOR_TMP_DIR}/verify_domain_debugging.log"
       kubectl logs $pod -n $OPERATOR_NS > "${debuglog}"
       if [ -f ${debuglog} ] ; then

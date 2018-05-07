@@ -11,9 +11,48 @@ Note that there is a short video demonstration of the installation process avail
 [comment]: # ( Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first. )
 [comment]: # ( In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed. )
 
-## Build the Docker image for the operator
+## Build the Docker image for the operator using Wercker
 
-The following software are required to obtain and build the operator:
+You can build, test, and publish the Docker image for the operator directly from Wercker using the ```wercker.yml``` from this repository.
+
+If you haven't done so already, navigate to [wercker.com](https://www.wercker.com) and create an account.  After you are logged in,
+on the [app.wercker.com](https://app.wercker.com) page, click "Create your first application."
+
+Select GitHub (the default, if you are new to Wercker).  If you haven't done so already, click the "Connect" button within the
+larger GitHub button, and follow the prompts to provide a login for GitHub.  This connects your Wercker and GitHub accounts so
+that Wercker pipelines will later be able to clone this repository.  Click "Next."
+
+Select the repository from GitHub.  This will be `oracle / weblogic-kubernetes-operator` or a different value if you
+forked this repository.  Click "Next."
+
+Configure Wercker's access to the GitHub repository.  The default choice, "wercker will check out the code without using an SSH key",
+is typically sufficient.  Click "Next."
+
+Verify the settings so far on the review page and click "Create."
+
+Because this GitHub repository already has a ```wercker.yml``` file, you can skip directly to the "Environment" tab.
+
+Please provide the following key/value pairs on the Environment page.  Remember that these values will be
+visible to anyone to whom you give access to the Wercker application, therefore, select "Protected" for any
+values that should remain hidden, including all passwords.
+
+| Key | Value | OCIR Sample |
+| --- | --- | --- |
+| `DOCKER_USERNAME` | Username for the Docker store for pulling server JRE image | |
+| `DOCKER_PASSWORD` | Password for the Docker store | |
+| `REPO_REGISTRY`| Registry address | `https://phx.ocir.io/v2`  |
+| `REPO_REPOSITORY` | Repository value | `phx.ocir.io/<your tenancy>/weblogic-kubernetes-operator` |
+| `REPO_USERNAME` | Username for registry | `<your tenancy>/<your username>` |
+| `REPO_PASSWORD` | Password for registry | `Use generated SWIFT password` |
+| `IMAGE_TAG_OPERATOR` | Image tag, such as 0.2 or latest |  |
+
+Select the "Runs" tab.  Scroll to the bottom and click "Trigger your first build now."
+
+When the run completes successfully, the Docker image for the operator will be built and published to your repository.
+
+## Build the Docker image for the operator locally
+
+The following software is required to obtain and build the operator:
 
 *    Git (1.8 or later recommended)
 *    Apache Maven (3.3 or later recommended)
@@ -32,28 +71,28 @@ Then run the build using this command:
 mvn clean install
 ```
 
-Then login to Docker Store so that you will be able to pull the base image, and create the Docker image as follows.  These commands should be executed in the project root directory.:
+Log in to the Docker Store so that you will be able to pull the base image and create the Docker image as follows.  These commands should be executed in the project root directory:
 
 ```
 docker login
 docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
 ```
 
-Note: If you have not used the base image (`store/oracle/serverjre:8`) before you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before Docker Store will give you permission to pull that image.
+**Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
 
-We recommend that you use a tag other than `latest` to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
+We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
 Next, upload your image to your Kubernetes server as follows:
 
 ```
-# on your build machine
+# on your build machine:
 docker save weblogic-kubernetes-operator:developer > operator.tar
 scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on each Kubernetes worker:
 docker load < /some/path/operator.tar
 ```
 
-Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image ID.
+Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image IDs.
 
 [comment]: # ( Pull the operator image )
 [comment]: # ( You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*: )
@@ -64,26 +103,26 @@ Verify that you have the right image by running `docker images | grep webloogic-
 
 The operator is deployed with the provided installation script (`create-weblogic-operator.sh`).  The default input to this script is the file `create-weblogic-operator-inputs.yaml`.  It contains the following parameters:
 
-### CONFIGURATION PARAMETERS FOR THE OPERATOR
+### Configuration parameters for the operator
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| elkIntegrationEnabled | Determines whether the ELK integration will be enabled.  If set to `true`, then ElasticSearch, logstash and Kibana will be installed, and logstash will be configured to export the operator’s logs to ElasticSearch. | false |
-| externalDebugHttpPort | The port number of the operator's debugging port outside of the Kubernetes cluster. | 30999 |
-| externalOperatorCert | A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `CUSTOM_CERT`. | |
-| externalOperatorKey | A base64 encoded string containing the private key of the operator's X.509 certificate.  This value is only used when externalRestOption is set to `CUSTOM_CERT`. | |
-| externalRestHttpsPort| The NodePort number that should be allocated for the operator REST server should listen for HTTPS requests on. | 31001 |
-| externalRestOption | Which of the available REST options is desired.  Allowed values: <br/>- `NONE` Disable the REST interface.  <br/>- `SELF_SIGNED_CERT` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `CUSTOM_CERT` Provide custom certificates, for example from an external certification authority. If this value is specified, then the `externalOperatorCert` and `externalOperatorKey` must also be provided.| NONE |
-| externalSans| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
-| internalDebugHttpPort | The port number of the operator's debugging port inside the Kubernetes cluster. | 30999 |
-| javaLoggingLevel | The level of Java logging that should be enabled in the operator.  Allowed values are `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST` | INFO |
-| namespace | The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.| weblogic-operator |
-| remoteDebugNodePortEnabled | Controls whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached. | false |
-| serviceAccount| The name of the service account that the operator will use to make requests to the Kubernetes API server. | weblogic-operator |
-| targetNamespaces | A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here. | default |
-| weblogicOperatorImage | The Docker image containing the operator code. | container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest |
-| weblogicOperatorImagePullPolicy | The image pull policy for the operator docker image.  Allowed values are 'Always', 'Never' and 'IfNotPresent' | IfNotPresent |
-| weblogicOperatorImagePullSecretName | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image.  The presence of the secret will be validated when this parameter is enabled. | |
+| `elkIntegrationEnabled` | Determines whether the Elastic Stack integration will be enabled.  If set to `true`, then Elasticsearch, Logstash, and Kibana will be installed, and Logstash will be configured to export the operator’s logs to Elasticsearch. | `false` |
+| `externalDebugHttpPort` | The port number of the operator's debugging port outside of the Kubernetes cluster. | `30999` |
+| `externalOperatorCert` | A base64 encoded string containing the X.509 certificate that the operator will present to clients accessing its REST endpoints. This value is only used when `externalRestOption` is set to `CUSTOM_CERT`. | |
+| `externalOperatorKey` | A base64 encoded string containing the private key of the operator's X.509 certificate.  This value is used only when `externalRestOption` is set to `CUSTOM_CERT`. | |
+| `externalRestHttpsPort`| The `NodePort` number that should be allocated on which the operator REST server should listen for HTTPS requests. | `31001` |
+| `externalRestOption` | The available REST options.  Allowed values are: <br/>- `NONE` Disable the REST interface.  <br/>- `SELF_SIGNED_CERT` The operator will use a self-signed certificate for its REST server.  If this value is specified, then the `externalSans` parameter must also be set. <br/>- `CUSTOM_CERT` Provide custom certificates, for example, from an external certification authority. If this value is specified, then `externalOperatorCert` and `externalOperatorKey` must also be provided.| `NONE` |
+| `externalSans`| A comma-separated list of Subject Alternative Names that should be included in the X.509 Certificate.  This list should include ... <br/>Example:  `DNS:myhost,DNS:localhost,IP:127.0.0.1` | |
+| `internalDebugHttpPort` | The port number of the operator's debugging port inside the Kubernetes cluster. | `30999` |
+| `javaLoggingLevel` | The level of Java logging that should be enabled in the operator.  Allowed values are: `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST` | `INFO` |
+| `namespace` | The Kubernetes namespace that the operator will be deployed in.  It is recommended that a namespace be created for the operator rather than using the `default` namespace.| `weblogic-operator` |
+| `remoteDebugNodePortEnabled` | Controls whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached. | `false` |
+| `serviceAccount`| The name of the service account that the operator will use to make requests to the Kubernetes API server. | `weblogic-operator` |
+| `targetNamespaces` | A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here. | `default` |
+| `weblogicOperatorImage` | The Docker image containing the operator code. | `container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest` |
+| `weblogicOperatorImagePullPolicy` | The image pull policy for the operator Docker image.  Allowed values are: `Always`, `Never` and `IfNotPresent` | `IfNotPresent` |
+| `weblogicOperatorImagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image.  The presence of the secret will be validated when this parameter is enabled. | |
 
 Review the default values to see if any need to be updated to reflect the target environment.  If so, then make a copy of the input file and modify it.  Otherwise, you can use the default input file.
 
@@ -91,19 +130,19 @@ Review the default values to see if any need to be updated to reflect the target
 
 The operator provides three REST certificate options:
 
-*	`NONE` will disable the REST server.
-*	`SELF_SIGNED_CERT` will generate self-signed certificates.
-*	`CUSTOM_CERT` provides a mechanism to provide certificates that were created and signed by some other means.
+*	`NONE` Disables the REST server.
+*	`SELF_SIGNED_CERT` Generates self-signed certificates.
+*	`CUSTOM_CERT` Provides a mechanism to provide certificates that were created and signed by some other means.
 
 ## Decide which options to enable
 
 The operator provides some optional features that can be enabled in the configuration file.
 
-### Load Balancing
+### Load balancing with an Ingress controller or a web server
 
-The operator can install the Traefik Ingress provider to provide load balancing for web applications running in WebLogic clusters.  If enabled, an instance of Traefik and an Ingress will be created for each WebLogic cluster.  Additional configuration is performed when creating the domain.
+You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to [Load balancing with Voyager/HAProxy](site/voyager.md), [Load balancing with Traefik](site/traefik.md), and [Load balancing with the Apache HTTP Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
-Note that the technology preview release provides only basic load balancing:
+Note these limitations:
 
 *	Only HTTP(S) is supported. Other protocols are not supported.
 *	A root path rule is created for each cluster.  Rules based on the DNS name, or on URL paths other than ‘/’, are not supported.
@@ -111,17 +150,17 @@ Note that the technology preview release provides only basic load balancing:
 
 Note that Ingresses are not created for servers that are not part of a WebLogic cluster, including the Administration Server.  Such servers are exposed externally using NodePort services.
 
-### Log integration with ELK
+### Log integration with Elastic Stack
 
-The operator can install the ELK stack and publish its logs into ELK.  If enabled, ElasticSearch and Kibana will be installed in the `default` namespace, and a logstash container will be created in the operator pod.  Logstash will be configured to publish the operator’s logs into ElasticSearch, and the log data will be available for visualization and analysis in Kibana.
+The operator can install the Elastic Stack and publish its logs into it.  If enabled, Elasticsearch and Kibana will be installed in the `default` namespace, and a Logstash container will be created in the operator pod.  Logstash will be configured to publish the operator’s logs into Elasticsearch, and the log data will be available for visualization and analysis in Kibana.
 
-To enable the ELK integration, set the `elkIntegrationEnabled` option to `true`.
+To enable the Elastic Stack integration, set the `elkIntegrationEnabled` option to `true`.
 
 ## Deploying the operator to a Kubernetes cluster
 
 At this point, you've created a custom inputs file, or you've decided to use the default one.
 
-Next, choose and create a directory that generated operator related files will be stored in, e.g. /path/to/weblogic-operator-output-directory.
+Next, choose and create a directory that generated operator-related files will be stored in, for example, `/path/to/weblogic-operator-output-directory`.
 
 Finally, run the operator installation script to deploy the operator, pointing it at your inputs file and your output directory:
 
@@ -135,20 +174,20 @@ Finally, run the operator installation script to deploy the operator, pointing i
 
 The script will carry out the following actions:
 
-*	Create a directory for the generated Kubernetes YAML files for this operator.  The pathname is /path/to/weblogic-operator-output-directory/weblogic-operators/<namespace parameter from create-weblogic-operator-inputs.yaml.
+*	Create a directory for the generated Kubernetes YAML files for this operator.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-operators/<namespace parameter from create-weblogic-operator-inputs.yaml`.
 *	A set of Kubernetes YAML files will be created from the inputs provided in this directory.
 *	A namespace will be created for the operator.
 *	A service account will be created in that namespace.
 *	A set of RBAC roles and bindings will be created.
 *	The operator will be deployed.
 *	If requested, the load balancer will be deployed.
-*	If requested, ELK will be deployed and logstash will be configured for the operator’s logs.
+*	If requested, Elastic Stack will be deployed and Logstash will be configured for the operator’s logs.
 
 The script will validate each action before it proceeds.
 
 ## YAML files created during the deployment of the operator
 
-The script will create a YAML file called `weblogic-operator.yaml`.  An example of this file is shown below.  This file can be kept for later use.  Developers or advanced users may wish to hand-edit this file.
+The script will create a YAML file called `weblogic-operator.yaml`.  An example of this file is shown below.  This file can be kept for later use.  Developers or advanced users may wish to hand edit this file.
 
 ```
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.

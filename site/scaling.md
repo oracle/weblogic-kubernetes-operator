@@ -1,12 +1,13 @@
 # Scaling a WebLogic cluster
 
+WebLogic Server supports two types of clustering configurations, configured and dynamic clustering. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/1221/wls/CLUST/dynamic_clusters.htm#CLUST678).
+
 The operator provides the ability to scale WebLogic clusters by simply editing the replicas setting, as you would do with most other Kubernetes resources that support scaling.
 
 ## Initiating a scaling operation using the REST API
 
 Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes cloud environments, scaling WebLogic clusters involves scaling the corresponding pods in which WebLogic Managed Server instances are running.  Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.
 
-**Note:** In the technology preview release, only WebLogic Server configured clusters are supported by the operator, and the operator will scale up only to the number of Managed Servers that are already defined.  Support for WebLogic Server dynamic clusters, and for scaling configured clusters to more servers than are defined, is planned for a future release.
 
 The following URL format is used for describing the resources for scaling (scale up and scale down) a WebLogic cluster:
 
@@ -46,7 +47,6 @@ When the operator receives a scaling request, it will:
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
 *	Initiate scaling by setting the `replicas` property within the corresponding domain custom resource, which can be done in either:
-
   *	A `clusterStartup` entry, if defined within its cluster list
   *	At the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`
 

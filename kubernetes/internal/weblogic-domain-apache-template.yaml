@@ -1,0 +1,97 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: %DOMAIN_UID%-apache-webtier
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: apache-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+    app: apache-webtier
+--- 
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: %DOMAIN_UID%-apache-webtier
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: apache-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+    app: apache-webtier
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      weblogic.domainUID: %DOMAIN_UID%
+      weblogic.domainName: %DOMAIN_NAME%
+      app: apache-webtier
+  template:
+    metadata:
+      labels:
+        weblogic.resourceVersion: apache-load-balancer-v1
+        weblogic.domainUID: %DOMAIN_UID%
+        weblogic.domainName: %DOMAIN_NAME%
+        app: apache-webtier
+    spec:
+      serviceAccountName: %DOMAIN_UID%-apache-webtier
+      terminationGracePeriodSeconds: 60
+      # volumes:
+      # - name: "%DOMAIN_UID%-apache-webtier"
+      #   hostPath:
+      #     path: %LOAD_BALANCER_VOLUME_PATH%
+      containers:
+      - name: %DOMAIN_UID%-apache-webtier
+        image: store/oracle/apache:12.2.1.3
+        imagePullPolicy: Never
+        # volumeMounts:
+        # - name: "%DOMAIN_UID%-apache-webtier"
+        #   mountPath: "/config"
+        env:
+          - name: WEBLOGIC_CLUSTER
+            value: '%DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%:%MANAGED_SERVER_PORT%'
+          - name: LOCATION
+            value: '%WEB_APP_PREPATH%'
+          #- name: WEBLOGIC_HOST
+          #  value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
+          #- name: WEBLOGIC_PORT
+          #  value: '%ADMIN_PORT%'
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: %DOMAIN_UID%-apache-webtier
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: apache-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+spec:
+  type: NodePort
+  selector:
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+    app: apache-webtier
+  ports:
+    - port: 80
+      nodePort: %LOAD_BALANCER_WEB_PORT%
+      name: rest-https
+

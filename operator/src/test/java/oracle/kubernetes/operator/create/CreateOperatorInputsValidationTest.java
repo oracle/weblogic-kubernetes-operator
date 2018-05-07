@@ -7,11 +7,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
 
 /**
  * Tests that create-weblogic-operator.sh properly validates the parameters
@@ -33,6 +33,7 @@ public class CreateOperatorInputsValidationTest {
     }
   }
 
+  private static final String PARAM_VERSION = "version";
   private static final String PARAM_SERVICE_ACCOUNT = "serviceAccount";
   private static final String PARAM_NAMESPACE = "namespace";
   private static final String PARAM_TARGET_NAMESPACES = "targetNamespaces";
@@ -49,6 +50,21 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_EXTERNAL_DEBUG_HTTP_PORT = "externalDebugHttpPort";
   private static final String PARAM_JAVA_LOGGING_LEVEL = "javaLoggingLevel";
   private static final String PARAM_ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
+
+  @Test
+  public void createOperator_with_missingVersion_failsAndReturnsError() throws Exception {
+    assertThat(
+      execCreateOperator(newInputs().version("")),
+      failsAndPrints(paramMissingError(PARAM_VERSION)));
+  }
+
+  @Test
+  public void createOperator_with_invalidVersion_failsAndReturnsError() throws Exception {
+    String val = "no-such-version";
+    assertThat(
+      execCreateOperator(newInputs().version(val)),
+      failsAndPrints(invalidEnumParamValueError(PARAM_VERSION, val)));
+  }
 
   @Test
   public void createOperator_with_missingServiceAccount_failsAndReturnsError() throws Exception {

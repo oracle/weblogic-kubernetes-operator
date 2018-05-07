@@ -24,6 +24,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -90,13 +91,8 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-      Boolean explicitRestartAdmin = (Boolean) packet.get(ProcessingConstants.EXPLICIT_RESTART_ADMIN);
-      @SuppressWarnings("unchecked")
-      List<String> explicitRestartServers = (List<String>) packet.get(ProcessingConstants.EXPLICIT_RESTART_SERVERS);
-      
       boolean isExplicitRestartThisServer = 
-          (Boolean.TRUE.equals(explicitRestartAdmin)) ||
-          (explicitRestartServers != null && explicitRestartServers.contains(asName));
+         info.getExplicitRestartAdmin().get() || info.getExplicitRestartServers().contains(asName);
 
       ServerKubernetesObjects sko = skoFactory.getOrCreate(info, asName);
 
@@ -115,6 +111,8 @@ public class PodHelper {
         public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
+            info.getExplicitRestartAdmin().set(false);
+            info.getExplicitRestartServers().remove(asName);
             Step create = factory.create().createPodAsync(namespace, adminPod, new ResponseStep<V1Pod>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -144,7 +142,7 @@ public class PodHelper {
             Step replace = new CyclePodStep(
                 AdminPodStep.this,
                 podName, namespace, adminPod, MessageKeys.ADMIN_POD_REPLACED, 
-                weblogicDomainUID, asName, sko, next);
+                weblogicDomainUID, asName, info, sko, next);
             return doNext(replace, packet);
           }
         }
@@ -183,11 +181,11 @@ public class PodHelper {
       metadata.setName(podName);
       metadata.setNamespace(namespace);
       adminPod.setMetadata(metadata);
-      
-      AnnotationHelper.annotateWithFormat(metadata);
+
       AnnotationHelper.annotateForPrometheus(metadata, spec.getAsPort());
 
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, spec.getAsName());
@@ -216,7 +214,10 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStopHandler = new V1Handler();
       V1ExecAction lifecycleExecAction = new V1ExecAction();
-      lifecycleExecAction.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/stopServer.sh");
+      lifecycleExecAction.addCommandItem("/weblogic-operator/scripts/stopServer.sh");
+      lifecycleExecAction.addCommandItem(weblogicDomainUID);
+      lifecycleExecAction.addCommandItem(spec.getAsName());
+      lifecycleExecAction.addCommandItem(weblogicDomainName);
       preStopHandler.setExec(lifecycleExecAction);
       lifecycle.setPreStop(preStopHandler);
       container.setLifecycle(lifecycle);
@@ -238,7 +239,10 @@ public class PodHelper {
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + spec.getAsName() + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/weblogic-operator/scripts/startServer.sh");
+      container.addCommandItem(weblogicDomainUID);
+      container.addCommandItem(spec.getAsName());
+      container.addCommandItem(weblogicDomainName);
 
       PodTuning tuning = configMapHelper.getPodTuning();
       
@@ -325,9 +329,12 @@ public class PodHelper {
     private final String messageKey;
     private final String weblogicDomainUID;
     private final String serverName;
+    private final DomainPresenceInfo info;
     private final ServerKubernetesObjects sko;
     
-    public CyclePodStep(Step conflictStep, String podName, String namespace, V1Pod newPod, String messageKey, String weblogicDomainUID, String serverName, ServerKubernetesObjects sko, Step next) {
+    public CyclePodStep(Step conflictStep, String podName, String namespace, V1Pod newPod, 
+        String messageKey, String weblogicDomainUID, String serverName, DomainPresenceInfo info,
+        ServerKubernetesObjects sko, Step next) {
       super(next);
       this.conflictStep = conflictStep;
       this.podName = podName;
@@ -336,6 +343,7 @@ public class PodHelper {
       this.messageKey = messageKey;
       this.weblogicDomainUID = weblogicDomainUID;
       this.serverName = serverName;
+      this.info = info;
       this.sko = sko;
     }
 
@@ -358,6 +366,10 @@ public class PodHelper {
         @Override
         public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
             Map<String, List<String>> responseHeaders) {
+          if (conflictStep instanceof AdminPodStep) {
+            info.getExplicitRestartAdmin().set(false);
+          }
+          info.getExplicitRestartServers().contains(serverName);
           Step create = factory.create().createPodAsync(namespace, newPod, new ResponseStep<V1Pod>(next) {
             @Override
             public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -400,7 +412,7 @@ public class PodHelper {
     // returns fields, such as nodeName, even when export=true is specified.
     // Therefore, we'll just compare specific fields
     
-    if (!AnnotationHelper.checkFormatAnnotation(current.getMetadata())) {
+    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
       return false;
     }
     
@@ -490,14 +502,9 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-      @SuppressWarnings("unchecked")
-      List<String> explicitRestartServers = (List<String>) packet.get(ProcessingConstants.EXPLICIT_RESTART_SERVERS);
-      @SuppressWarnings("unchecked")
-      List<String> explicitRestartClusters = (List<String>) packet.get(ProcessingConstants.EXPLICIT_RESTART_CLUSTERS);
-      
       boolean isExplicitRestartThisServer = 
-          (explicitRestartServers != null && explicitRestartServers.contains(weblogicServerName)) ||
-          (explicitRestartClusters != null && weblogicClusterName != null && explicitRestartClusters.contains(weblogicClusterName));
+          info.getExplicitRestartServers().contains(weblogicServerName) ||
+          (weblogicClusterName != null && info.getExplicitRestartClusters().contains(weblogicClusterName));
 
       ServerKubernetesObjects sko = skoFactory.getOrCreate(info, weblogicServerName);
 
@@ -516,6 +523,7 @@ public class PodHelper {
         public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
             Map<String, List<String>> responseHeaders) {
           if (result == null) {
+            info.getExplicitRestartServers().remove(weblogicServerName);
             Step create = factory.create().createPodAsync(namespace, pod, new ResponseStep<V1Pod>(next) {
               @Override
               public NextAction onFailure(Packet packet, ApiException e, int statusCode,
@@ -546,7 +554,7 @@ public class PodHelper {
             Step replace = new CyclePodStep(
                 ManagedPodStep.this,
                 podName, namespace, pod, MessageKeys.MANAGED_POD_REPLACED, 
-                weblogicDomainUID, weblogicServerName, sko, next);
+                weblogicDomainUID, weblogicServerName, info, sko, next);
             synchronized (packet) {
               @SuppressWarnings("unchecked")
               Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
@@ -605,10 +613,10 @@ public class PodHelper {
       metadata.setNamespace(namespace);
       pod.setMetadata(metadata);
 
-      AnnotationHelper.annotateWithFormat(metadata);
       AnnotationHelper.annotateForPrometheus(metadata, scan.getListenPort());
 
       Map<String, String> labels = new HashMap<>();
+      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
       labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
       labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
       labels.put(LabelConstants.SERVERNAME_LABEL, weblogicServerName);
@@ -638,7 +646,10 @@ public class PodHelper {
       V1Lifecycle lifecycle = new V1Lifecycle();
       V1Handler preStop = new V1Handler();
       V1ExecAction exec = new V1ExecAction();
-      exec.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/stopServer.sh");
+      exec.addCommandItem("/weblogic-operator/scripts/stopServer.sh");
+      exec.addCommandItem(weblogicDomainUID);
+      exec.addCommandItem(weblogicServerName);
+      exec.addCommandItem(weblogicDomainName);
       preStop.setExec(exec);
       lifecycle.setPreStop(preStop);
       container.setLifecycle(lifecycle);
@@ -660,7 +671,12 @@ public class PodHelper {
       volumeMountScripts.setReadOnly(true);
       container.addVolumeMountsItem(volumeMountScripts);
 
-      container.addCommandItem("/shared/domain/" + weblogicDomainName + "/servers/" + weblogicServerName + "/nodemgr_home/startServer.sh");
+      container.addCommandItem("/weblogic-operator/scripts/startServer.sh");
+      container.addCommandItem(weblogicDomainUID);
+      container.addCommandItem(weblogicServerName);
+      container.addCommandItem(weblogicDomainName);
+      container.addCommandItem(spec.getAsName());
+      container.addCommandItem(String.valueOf(spec.getAsPort()));
 
       PodTuning tuning = configMapHelper.getPodTuning();
       

@@ -36,7 +36,7 @@ public class AuthenticationProxy {
     try {
       boolean allowed = authorizationProxy.check(principal,
           AuthorizationProxy.Operation.create,
-          AuthorizationProxy.Resource.tokenreviews,
+          AuthorizationProxy.Resource.TOKENREVIEWS,
           null,
           AuthorizationProxy.Scope.cluster,
           null);

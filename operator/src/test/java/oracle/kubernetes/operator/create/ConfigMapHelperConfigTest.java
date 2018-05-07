@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.create;
 import io.kubernetes.client.models.V1ConfigMap;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.*;
+import static oracle.kubernetes.operator.VersionConstants.*;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.create.YamlUtils.*;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.*;
@@ -24,6 +25,10 @@ public class ConfigMapHelperConfigTest {
   private static final String PROPERTY_LIVENESS_PROBE_SH = "livenessProbe.sh";
   private static final String PROPERTY_READINESS_PROBE_SH = "readinessProbe.sh";
   private static final String PROPERTY_READ_STATE_SH = "readState.sh";
+  private static final String PROPERTY_START_SERVER_SH = "startServer.sh";
+  private static final String PROPERTY_START_SERVER_PY = "start-server.py";
+  private static final String PROPERTY_STOP_SERVER_SH = "stopServer.sh";
+  private static final String PROPERTY_STOP_SERVER_PY = "stop-server.py";
 
   @Test
   public void computedDomainConfigMap_isCorrect() throws Exception {
@@ -36,6 +41,10 @@ public class ConfigMapHelperConfigTest {
     assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_LIVENESS_PROBE_SH), not(isEmptyOrNullString()));
     assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_READINESS_PROBE_SH), not(isEmptyOrNullString()));
     assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_READ_STATE_SH), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_START_SERVER_SH), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_START_SERVER_PY), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_STOP_SERVER_SH), not(isEmptyOrNullString()));
+    assertThat(getThenEmptyConfigMapDataValue(actual, PROPERTY_STOP_SERVER_PY), not(isEmptyOrNullString()));
     assertThat(
       actual,
       yamlEqualTo(getDesiredDomainConfigMap()));
@@ -47,11 +56,16 @@ public class ConfigMapHelperConfigTest {
         .metadata(newObjectMeta()
           .name(DOMAIN_CONFIG_MAP_NAME)
           .namespace(DOMAIN_NAMESPACE)
+          .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
           .putLabelsItem(OPERATORNAME_LABEL, OPERATOR_NAMESPACE)
-          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
-          .putAnnotationsItem(FORMAT_ANNOTATION, FORMAT_VERSION))
+          .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"))
         .putDataItem(PROPERTY_LIVENESS_PROBE_SH, "")
         .putDataItem(PROPERTY_READINESS_PROBE_SH, "")
+        .putDataItem(PROPERTY_READ_STATE_SH, "")
+        .putDataItem(PROPERTY_START_SERVER_SH, "")
+        .putDataItem(PROPERTY_START_SERVER_PY, "")
+        .putDataItem(PROPERTY_STOP_SERVER_SH, "")
+        .putDataItem(PROPERTY_STOP_SERVER_PY, "")
         .putDataItem(PROPERTY_READ_STATE_SH, "");
   }
 
