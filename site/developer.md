@@ -184,7 +184,7 @@ To disable it by default in new projects, use ```File > Other Settings > Default
 
 When enabled, it will replace the normal "Reformat Code" action, which can be triggered from the "Code" menu or with the Ctrl-Alt-L (by default) keyboard shortcut.
 
-The import ordering is not handled by this plugin, unfortunately. To fix the import order, download the (IntelliJ Java Google Style file)[https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml] and import it into File→Settings→Editor→Code Style.
+The import ordering is not handled by this plugin, unfortunately. To fix the import order, download the [IntelliJ Java Google Style file](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml) and import it into File→Settings→Editor→Code Style.
 
 ### Eclipse
 
