@@ -1,27 +1,29 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
+
+import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
-
-/**
- * Class for running create-weblogic-domain.sh
- */
+/** Class for running create-weblogic-domain.sh */
 public class ExecCreateDomain {
 
   public static final String CREATE_SCRIPT = "src/test/scripts/unit-test-create-weblogic-domain.sh";
 
-  public static ExecResult execCreateDomain(Path userProjectsPath, CreateDomainInputs inputs) throws Exception {
+  public static ExecResult execCreateDomain(Path userProjectsPath, CreateDomainInputs inputs)
+      throws Exception {
     return execCreateDomain(userProjectsPath, inputs, getInputsYamlPath(userProjectsPath));
   }
 
-  public static ExecResult execCreateDomain(Path userProjectsPath, CreateDomainInputs inputs, Path inputsYamlPath) throws Exception {
+  public static ExecResult execCreateDomain(
+      Path userProjectsPath, CreateDomainInputs inputs, Path inputsYamlPath) throws Exception {
     newYaml().dump(inputs, Files.newBufferedWriter(inputsYamlPath));
-    return execCreateDomain(" -g -o " + userProjectsPath.toString() + " -i " + inputsYamlPath.toString());
+    return execCreateDomain(
+        " -g -o " + userProjectsPath.toString() + " -i " + inputsYamlPath.toString());
   }
 
   public static ExecResult execCreateDomain(String options) throws Exception {

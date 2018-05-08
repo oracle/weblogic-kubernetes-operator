@@ -1,8 +1,12 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes;
 
+import static com.meterware.simplestub.Stub.createStub;
+
+import com.meterware.simplestub.Memento;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -12,25 +16,16 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import com.meterware.simplestub.Memento;
-
 import oracle.kubernetes.operator.logging.LoggingFactory;
-
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-
-import static com.meterware.simplestub.Stub.createStub;
 
 public class TestUtils {
   private static Boolean kubernetesStatus;
 
-  /**
-   * Returns true if Kubernetes-dependent tests should run
-   */
+  /** Returns true if Kubernetes-dependent tests should run */
   public static boolean isKubernetesAvailable() { // assume it is available when running on Linux
-    if (kubernetesStatus == null)
-      kubernetesStatus = checkKubernetes();
+    if (kubernetesStatus == null) kubernetesStatus = checkKubernetes();
     return kubernetesStatus;
   }
 
@@ -51,6 +46,7 @@ public class TestUtils {
 
   /**
    * Returns true if the current system is running Linux
+   *
    * @return a boolean indicating the operating system match
    */
   public static boolean isLinux() {
@@ -71,8 +67,7 @@ public class TestUtils {
       }
     }
 
-    for (Handler handler : savedHandlers)
-      logger.removeHandler(handler);
+    for (Handler handler : savedHandlers) logger.removeHandler(handler);
 
     TestLogHandler testHandler = createStub(TestLogHandler.class);
     logger.addHandler(testHandler);
@@ -116,8 +111,7 @@ public class TestUtils {
         savedHandlers.add(handler);
       }
     }
-    for (Handler handler : savedHandlers)
-      logger.removeHandler(handler);
+    for (Handler handler : savedHandlers) logger.removeHandler(handler);
     return savedHandlers;
   }
 
@@ -150,8 +144,7 @@ public class TestUtils {
 
     @Override
     public ExceptionFilteringMemento ignoringLoggedExceptions(Throwable... throwables) {
-      for (Throwable throwable : throwables)
-        testHandler.ignoreLoggedException(throwable);
+      for (Throwable throwable : throwables) testHandler.ignoreLoggedException(throwable);
       return this;
     }
 
