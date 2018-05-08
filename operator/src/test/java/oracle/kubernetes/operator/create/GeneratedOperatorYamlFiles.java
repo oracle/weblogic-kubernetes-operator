@@ -1,19 +1,20 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
-
-import java.nio.file.Path;
 
 import static oracle.kubernetes.operator.create.ExecCreateOperator.*;
 import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
 import static oracle.kubernetes.operator.create.UserProjects.createUserProjectsDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.nio.file.Path;
+
 /**
- * Generates the operator yaml files for a set of valid operator input params.
- * Creates and managed the user projects directory that the files are stored in.
- * Parses the generated yaml files into typed java objects.
+ * Generates the operator yaml files for a set of valid operator input params. Creates and managed
+ * the user projects directory that the files are stored in. Parses the generated yaml files into
+ * typed java objects.
  */
 public class GeneratedOperatorYamlFiles {
 
@@ -22,7 +23,8 @@ public class GeneratedOperatorYamlFiles {
   private ParsedWeblogicOperatorYaml weblogicOperatorYaml;
   private ParsedWeblogicOperatorSecurityYaml weblogicOperatorSecurityYaml;
 
-  public static GeneratedOperatorYamlFiles generateOperatorYamlFiles(CreateOperatorInputs inputs) throws Exception {
+  public static GeneratedOperatorYamlFiles generateOperatorYamlFiles(CreateOperatorInputs inputs)
+      throws Exception {
     return new GeneratedOperatorYamlFiles(inputs);
   }
 
@@ -31,11 +33,13 @@ public class GeneratedOperatorYamlFiles {
     boolean ok = false;
     try {
       operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);
-      assertThat(execCreateOperator(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
+      assertThat(
+          execCreateOperator(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
       weblogicOperatorYaml =
-        new ParsedWeblogicOperatorYaml(operatorFiles.getWeblogicOperatorYamlPath(), inputs);
+          new ParsedWeblogicOperatorYaml(operatorFiles.getWeblogicOperatorYamlPath(), inputs);
       weblogicOperatorSecurityYaml =
-        new ParsedWeblogicOperatorSecurityYaml(operatorFiles.getWeblogicOperatorSecurityYamlPath(), inputs);
+          new ParsedWeblogicOperatorSecurityYaml(
+              operatorFiles.getWeblogicOperatorSecurityYamlPath(), inputs);
       ok = true;
     } finally {
       if (!ok) {
@@ -44,10 +48,21 @@ public class GeneratedOperatorYamlFiles {
     }
   }
 
-  public Path getInputsYamlPath() { return ExecCreateOperator.getInputsYamlPath(userProjects.getPath()); }
-  public OperatorFiles getOperatorFiles() { return operatorFiles; }
-  public ParsedWeblogicOperatorYaml getWeblogicOperatorYaml() { return weblogicOperatorYaml; }
-  public ParsedWeblogicOperatorSecurityYaml getWeblogicOperatorSecurityYaml() { return weblogicOperatorSecurityYaml; }
+  public Path getInputsYamlPath() {
+    return ExecCreateOperator.getInputsYamlPath(userProjects.getPath());
+  }
+
+  public OperatorFiles getOperatorFiles() {
+    return operatorFiles;
+  }
+
+  public ParsedWeblogicOperatorYaml getWeblogicOperatorYaml() {
+    return weblogicOperatorYaml;
+  }
+
+  public ParsedWeblogicOperatorSecurityYaml getWeblogicOperatorSecurityYaml() {
+    return weblogicOperatorSecurityYaml;
+  }
 
   public void remove() throws Exception {
     userProjects.remove();

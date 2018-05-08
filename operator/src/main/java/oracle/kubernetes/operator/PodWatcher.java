@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -9,6 +10,12 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodCondition;
 import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -26,28 +33,20 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-/**
- * Watches for Pods to become Ready or leave Ready state
- * 
- */
+/** Watches for Pods to become Ready or leave Ready state */
 public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   private final String ns;
   private final WatchListener<V1Pod> listener;
 
   // Map of Pod name to OnReady
-  private final ConcurrentMap<String, OnReady> readyCallbackRegistrations = new ConcurrentHashMap<>();
-  
+  private final ConcurrentMap<String, OnReady> readyCallbackRegistrations =
+      new ConcurrentHashMap<>();
+
   /**
    * Factory for PodWatcher
+   *
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
@@ -55,13 +54,22 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
    */
-  public static PodWatcher create(ThreadFactory factory, String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
+  public static PodWatcher create(
+      ThreadFactory factory,
+      String ns,
+      String initialResourceVersion,
+      WatchListener<V1Pod> listener,
+      AtomicBoolean isStopping) {
     PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
-  private PodWatcher(String ns, String initialResourceVersion, WatchListener<V1Pod> listener, AtomicBoolean isStopping) {
+  private PodWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchListener<V1Pod> listener,
+      AtomicBoolean isStopping) {
     super(initialResourceVersion, isStopping);
     setListener(this);
     this.ns = ns;
@@ -71,44 +79,45 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   @Override
   public WatchI<V1Pod> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
-             .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-             .createPodWatch(ns);
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .createPodWatch(ns);
   }
 
   public void receivedResponse(Watch.Response<V1Pod> item) {
     LOGGER.entering();
-    
-    switch(item.type) {
-    case "ADDED":
-    case "MODIFIED":
-      V1Pod pod = item.object;
-      Boolean isReady = isReady(pod);
-      String podName = pod.getMetadata().getName();
-      Container c = ContainerResolver.getInstance().getContainer();
-      ServerKubernetesObjectsFactory skoFactory = c != null ? c.getSPI(ServerKubernetesObjectsFactory.class) : null;
-      ServerKubernetesObjects sko = skoFactory != null ? skoFactory.lookup(podName) : null;
-      if (sko != null) {
-        sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
-      }
-      if (isReady) {
+
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        V1Pod pod = item.object;
+        Boolean isReady = isReady(pod);
+        String podName = pod.getMetadata().getName();
+        Container c = ContainerResolver.getInstance().getContainer();
+        ServerKubernetesObjectsFactory skoFactory =
+            c != null ? c.getSPI(ServerKubernetesObjectsFactory.class) : null;
+        ServerKubernetesObjects sko = skoFactory != null ? skoFactory.lookup(podName) : null;
         if (sko != null) {
-          sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+          sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
         }
-        OnReady ready = readyCallbackRegistrations.remove(podName);
-        if (ready != null) {
-          ready.onReady();
+        if (isReady) {
+          if (sko != null) {
+            sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+          }
+          OnReady ready = readyCallbackRegistrations.remove(podName);
+          if (ready != null) {
+            ready.onReady();
+          }
+        } else {
+          if (sko != null) {
+            sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
+          }
         }
-      } else {
-        if (sko != null) {
-          sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
-        }
-      }
-      break;
-    case "DELETED":
-    case "ERROR":
-    default:
+        break;
+      case "DELETED":
+      case "ERROR":
+      default:
     }
-    
+
     listener.receivedResponse(item);
 
     LOGGER.exiting();
@@ -117,7 +126,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   static boolean isReady(V1Pod pod) {
     return isReady(pod, false);
   }
-  
+
   static boolean isReady(V1Pod pod, boolean isStatusCheck) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
@@ -140,7 +149,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
     }
     return false;
   }
-  
+
   static boolean isFailed(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
@@ -151,7 +160,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
     }
     return false;
   }
-  
+
   static String getPodDomainUID(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -160,7 +169,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
     }
     return null;
   }
-  
+
   static String getPodServerName(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -169,9 +178,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
     }
     return null;
   }
-  
+
   /**
    * Waits until the Pod is Ready
+   *
    * @param pod Pod to watch
    * @param next Next processing step once Pod is ready
    * @return Asynchronous step
@@ -179,7 +189,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   public Step waitForReady(V1Pod pod, Step next) {
     return new WaitForPodReadyStep(pod, next);
   }
-  
+
   private class WaitForPodReadyStep extends Step {
     private final V1Pod pod;
 
@@ -193,49 +203,67 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
       if (isReady(pod)) {
         return doNext(packet);
       }
-      
+
       V1ObjectMeta metadata = pod.getMetadata();
-      
+
       LOGGER.info(MessageKeys.WAITING_FOR_POD_READY, metadata.getName());
-      
+
       AtomicBoolean didResume = new AtomicBoolean(false);
-      return doSuspend((fiber) -> {
-        OnReady ready = () -> {
-          if (didResume.compareAndSet(false, true)) {
-            fiber.resume(packet);
-          }
-        };
-        readyCallbackRegistrations.put(metadata.getName(), ready);
-
-        // Timing window -- pod may have come ready before registration for callback
-        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-        fiber.createChildFiber().start(factory.create().readPodAsync(
-            metadata.getName(), metadata.getNamespace(), new ResponseStep<V1Pod>(null) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (statusCode == CallBuilder.NOT_FOUND) {
-                  return onSuccess(packet, null, statusCode, responseHeaders);
-                }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
-              }
-
-              @Override
-              public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (result != null && isReady(result)) {
+      return doSuspend(
+          (fiber) -> {
+            OnReady ready =
+                () -> {
                   if (didResume.compareAndSet(false, true)) {
-                    readyCallbackRegistrations.remove(metadata.getName(), ready);
                     fiber.resume(packet);
                   }
-                }
-                return doNext(packet);
-              }
-        }), packet.clone(), null);
-      });
+                };
+            readyCallbackRegistrations.put(metadata.getName(), ready);
+
+            // Timing window -- pod may have come ready before registration for callback
+            CallBuilderFactory factory =
+                ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+            fiber
+                .createChildFiber()
+                .start(
+                    factory
+                        .create()
+                        .readPodAsync(
+                            metadata.getName(),
+                            metadata.getNamespace(),
+                            new ResponseStep<V1Pod>(null) {
+                              @Override
+                              public NextAction onFailure(
+                                  Packet packet,
+                                  ApiException e,
+                                  int statusCode,
+                                  Map<String, List<String>> responseHeaders) {
+                                if (statusCode == CallBuilder.NOT_FOUND) {
+                                  return onSuccess(packet, null, statusCode, responseHeaders);
+                                }
+                                return super.onFailure(packet, e, statusCode, responseHeaders);
+                              }
+
+                              @Override
+                              public NextAction onSuccess(
+                                  Packet packet,
+                                  V1Pod result,
+                                  int statusCode,
+                                  Map<String, List<String>> responseHeaders) {
+                                if (result != null && isReady(result)) {
+                                  if (didResume.compareAndSet(false, true)) {
+                                    readyCallbackRegistrations.remove(metadata.getName(), ready);
+                                    fiber.resume(packet);
+                                  }
+                                }
+                                return doNext(packet);
+                              }
+                            }),
+                    packet.clone(),
+                    null);
+          });
     }
   }
-  
+
   @FunctionalInterface
   private interface OnReady {
     void onReady();

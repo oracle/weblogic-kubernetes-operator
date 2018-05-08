@@ -1,5 +1,6 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
 
@@ -7,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * LinkContainerModel is the base class of WebLogic operator model classes that
- * support links to related REST endpoints.
+ * LinkContainerModel is the base class of WebLogic operator model classes that support links to
+ * related REST endpoints.
  */
 public class LinkContainerModel extends BaseModel {
 
@@ -16,6 +17,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Get the links.
+   *
    * @return a List of LinkModels.
    */
   public List<LinkModel> getLinks() {
@@ -24,6 +26,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Set the links.
+   *
    * @param links - a List of LinkModels.
    */
   public void setLinks(List<LinkModel> links) {
@@ -32,6 +35,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Add the standard self and canonical links to the list of links.
+   *
    * @param selfHref - the self link's hypertext reference.
    */
   public void addSelfLinks(String selfHref) {
@@ -41,6 +45,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Add the standard self, canonical and parent links to the list of links.
+   *
    * @param selfHref - the self link's hypertext reference.
    * @param parentHref - the parent link's hypertext reference.
    */
@@ -51,6 +56,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Add a link to an action resource.
+   *
    * @param action - the name of the action (i.e. the terminal path segement in the url)
    * @param actionHref - the action link's hypertext reference.
    */
@@ -60,6 +66,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Add an untitled link to a resource.
+   *
    * @param rel - the link's relationship.
    * @param href - the link's hypertext reference.
    */
@@ -69,6 +76,7 @@ public class LinkContainerModel extends BaseModel {
 
   /**
    * Add a link to a resource.
+   *
    * @param rel - the link's relationship.
    * @param title -the link's title.
    * @param href - the link's hypertext reference.

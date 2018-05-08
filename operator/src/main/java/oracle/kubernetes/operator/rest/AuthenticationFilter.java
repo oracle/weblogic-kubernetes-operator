@@ -1,14 +1,13 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.rest.backend.RestBackend;
-import org.glassfish.jersey.server.ResourceConfig;
-
+import java.io.IOException;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 import javax.annotation.Priority;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -20,29 +19,29 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
-import java.io.IOException;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.logging.Logger;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.backend.RestBackend;
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
- * AuthenticationFilter authenticates the request by extracting the access token
- * from tha authorization header and using it to construct a RestBackend
- * impl for this request.  It stores the RestBackend in as a request property
- * so that the jaxrs resource impls can call the backend to get their work done.
- * <p>
- * The backend impl is responsible for authenticating the token
- * (if it can't then it throws a WebApplicationException) and storing
- * info about the authenticated user so that it can do access checks
- * for this request later.
+ * AuthenticationFilter authenticates the request by extracting the access token from tha
+ * authorization header and using it to construct a RestBackend impl for this request. It stores the
+ * RestBackend in as a request property so that the jaxrs resource impls can call the backend to get
+ * their work done.
+ *
+ * <p>The backend impl is responsible for authenticating the token (if it can't then it throws a
+ * WebApplicationException) and storing info about the authenticated user so that it can do access
+ * checks for this request later.
  */
 @Provider
-@PreMatching // so that it's called before the subresource locators are called since they need to access the backend
+@PreMatching // so that it's called before the subresource locators are called since they need to
+// access the backend
 @Priority(FilterPriorities.AUTHENTICATION_FILTER_PRIORITY)
 public class AuthenticationFilter extends BaseDebugLoggingFilter implements ContainerRequestFilter {
 
-  @Context
-  private Application application; // TBD - does this work?
+  @Context private Application application; // TBD - does this work?
 
   public static final String REST_BACKEND_PROPERTY = "RestBackend";
 
@@ -50,16 +49,12 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
 
   private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /**
-   * Construct an AuthenticationFilter
-   */
+  /** Construct an AuthenticationFilter */
   public AuthenticationFilter() {
     // nothing to do
   }
 
-  /**
-   * {@inheritDoc}
-   */ 
+  /** {@inheritDoc} */
   @Override
   public void filter(ContainerRequestContext req) throws IOException {
     LOGGER.entering();
@@ -91,7 +86,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
     }
     String msg = formatMessage(req, MessageKeys.REST_AUTHENTICATION_MISSING_ACCESS_TOKEN);
     WebApplicationException e =
-      new WebApplicationException(Response.status(Status.UNAUTHORIZED).entity(msg).build());
+        new WebApplicationException(Response.status(Status.UNAUTHORIZED).entity(msg).build());
     LOGGER.throwing(e);
     throw e;
   }
