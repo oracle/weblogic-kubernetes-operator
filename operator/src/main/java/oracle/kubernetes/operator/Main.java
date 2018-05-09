@@ -235,10 +235,7 @@ public class Main {
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
         initialized.put(ns, Boolean.TRUE);
-        engine
-            .createFiber()
-            .start(
-                readExistingResources(namespace, ns), new Packet(), new NullCompletionCallback());
+        runSteps(readExistingResources(namespace, ns));
       }
 
       // delete stranded resources
@@ -264,6 +261,10 @@ public class Main {
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
+  }
+
+  private static void runSteps(Step firstStep) {
+    engine.createFiber().start(firstStep, new Packet(), new NullCompletionCallback());
   }
 
   private static Runnable updateDomainPresenceInfos(Collection<DomainPresenceInfo> infos) {
@@ -984,23 +985,9 @@ public class Main {
       switch (item.type) {
         case "MODIFIED":
         case "DELETED":
-          engine
-              .createFiber()
-              .start(
-                  ConfigMapHelper.createScriptConfigMapStep(
-                      getOperatorNamespace(), c.getMetadata().getNamespace(), null),
-                  new Packet(),
-                  new CompletionCallback() {
-                    @Override
-                    public void onCompletion(Packet packet) {
-                      // no-op
-                    }
-
-                    @Override
-                    public void onThrowable(Packet packet, Throwable throwable) {
-                      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                    }
-                  });
+          runSteps(
+              ConfigMapHelper.createScriptConfigMapStep(
+                  getOperatorNamespace(), c.getMetadata().getNamespace(), null));
           break;
 
         case "ERROR":
@@ -1074,12 +1061,7 @@ public class Main {
           String domainUID = IngressWatcher.getIngressDomainUID(ingress);
           String clusterName = IngressWatcher.getIngressClusterName(ingress);
           if (domainUID != null && clusterName != null) {
-            DomainPresenceInfo created = new DomainPresenceInfo(ns);
-            DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
-            if (info == null) {
-              info = created;
-            }
-            info.getIngresses().put(clusterName, ingress);
+            getOrCreateDomainPresenceInfo(ns, domainUID).getIngresses().put(clusterName, ingress);
           }
         }
       }
@@ -1089,6 +1071,12 @@ public class Main {
               ns, result != null ? result.getMetadata().getResourceVersion() : ""));
       return doNext(packet);
     }
+  }
+
+  static DomainPresenceInfo getOrCreateDomainPresenceInfo(String ns, String domainUID) {
+    DomainPresenceInfo createdInfo = new DomainPresenceInfo(ns);
+    DomainPresenceInfo existingInfo = domains.putIfAbsent(domainUID, createdInfo);
+    return existingInfo != null ? existingInfo : createdInfo;
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {
@@ -1164,11 +1152,7 @@ public class Main {
           String serverName = ServiceWatcher.getServiceServerName(service);
           String channelName = ServiceWatcher.getServiceChannelName(service);
           if (domainUID != null && serverName != null) {
-            DomainPresenceInfo created = new DomainPresenceInfo(ns);
-            DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
-            if (info == null) {
-              info = created;
-            }
+            DomainPresenceInfo info = getOrCreateDomainPresenceInfo(ns, domainUID);
             ServerKubernetesObjects sko = skoFactory.getOrCreate(info, domainUID, serverName);
             if (channelName != null) {
               sko.getChannels().put(channelName, service);
@@ -1249,11 +1233,7 @@ public class Main {
           String domainUID = PodWatcher.getPodDomainUID(pod);
           String serverName = PodWatcher.getPodServerName(pod);
           if (domainUID != null && serverName != null) {
-            DomainPresenceInfo created = new DomainPresenceInfo(ns);
-            DomainPresenceInfo info = domains.putIfAbsent(domainUID, created);
-            if (info == null) {
-              info = created;
-            }
+            DomainPresenceInfo info = getOrCreateDomainPresenceInfo(ns, domainUID);
             ServerKubernetesObjects sko = skoFactory.getOrCreate(info, domainUID, serverName);
             sko.getPod().set(pod);
           }
