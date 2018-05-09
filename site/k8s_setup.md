@@ -373,11 +373,11 @@ Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https
 
 **Note**: If you are behind an HTTP proxy, then you should also go to the "Proxies" tab and enter your proxy details.
 
-4. Docker will download the Kuberentes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
+Docker will download the Kuberentes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
 
 ![Kubernetes running](images/docker-k8s-running.png)
 
-5. If you have previously used `kubectl` on your Mac, then you must make sure it is pointing to the correct cluster and context.
+4. Ensure that `kubectl` on your Mac, is pointing to the correct cluster and context.
 
 ```
 $ kubectl config get-contexts
@@ -394,7 +394,7 @@ $ kubectl config set-cluster docker-for-desktop-cluster
 Cluster "docker-for-desktop-cluster" set.
 ```
 
-6. You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must use an admin user to edit this file:
+5. You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must use an admin user to edit this file:
 
 ```
 ##
@@ -408,13 +408,13 @@ Cluster "docker-for-desktop-cluster" set.
 ::1             localhost
 ```
 
-You may also have to tell `kubectl` to ignore the certificate by entering this command:
+6. You may also have to tell `kubectl` to ignore the certificate by entering this command:
 
 ```
 kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true
 ```
 
-Then validate you are talking to the Kubernetes in Docker by entering these commands:
+7. Then validate you are talking to the Kubernetes in Docker by entering these commands:
 
 ```
 $ kubectl cluster-info
