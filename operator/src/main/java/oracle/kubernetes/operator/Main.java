@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,7 +31,6 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -75,6 +75,7 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -82,15 +83,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
 
-  private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
-  private static final ThreadFactory factory =
-      (r) -> {
-        Thread t = defaultFactory.newThread(r);
-        if (!t.isDaemon()) {
-          t.setDaemon(true);
-        }
-        return t;
-      };
+  private static final ThreadFactory factory = ThreadFactorySingleton.getInstance();
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final ConcurrentMap<String, DomainPresenceInfo> domains =
@@ -112,7 +105,7 @@ public class Main {
     }
   }
 
-  static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
+  private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
 
   private static final Container container = new Container();
   private static final ScheduledExecutorService wrappedExecutorService =
@@ -154,6 +147,10 @@ public class Main {
   private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
+  static Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
+    return Collections.unmodifiableMap(domains);
+  }
+
   /**
    * Entry point
    *
@@ -189,7 +186,7 @@ public class Main {
     stopRestServer();
   }
 
-  static void begin() {
+  private static void begin() {
     // read the operator configuration
     String namespace = getOperatorNamespace();
 
@@ -238,84 +235,100 @@ public class Main {
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
       for (String ns : targetNamespaces) {
         initialized.put(ns, Boolean.TRUE);
-        Step domainList =
-            callBuilderFactory.create().listDomainAsync(ns, new ExistingDomainListResponseStep(ns));
-        V1beta1IngressListResponseStep ingressListResponseStep =
-            new V1beta1IngressListResponseStep(domainList, ns);
-        V1ServiceListResponseStep serviceListResponseStep =
-            new V1ServiceListResponseStep(ns, ingressListResponseStep);
-        V1EventListResponseStep eventListResponseStep =
-            new V1EventListResponseStep(ns, serviceListResponseStep);
-        V1PodListResponseStep podListResponseStep =
-            new V1PodListResponseStep(ns, eventListResponseStep);
-
-        Step initialize =
-            ConfigMapHelper.createScriptConfigMapStep(
-                namespace,
-                ns,
-                new ConfigMapAfterStep(
-                    ns,
-                    configMapWatchers,
-                    stopping,
-                    Main::dispatchConfigMapWatch,
-                    callBuilderFactory
-                        .create()
-                        .with(
-                            $ ->
-                                $.labelSelector =
-                                    LabelConstants.DOMAINUID_LABEL
-                                        + ","
-                                        + LabelConstants.CREATEDBYOPERATOR_LABEL)
-                        .listPodAsync(ns, podListResponseStep)));
-
         engine
             .createFiber()
             .start(
-                initialize,
-                new Packet(),
-                new CompletionCallback() {
-                  @Override
-                  public void onCompletion(Packet packet) {
-                    // no-op
-                  }
-
-                  @Override
-                  public void onThrowable(Packet packet, Throwable throwable) {
-                    LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                  }
-                });
+                readExistingResources(namespace, ns), new Packet(), new NullCompletionCallback());
       }
 
       // delete stranded resources
       for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
         String domainUID = entry.getKey();
         DomainPresenceInfo info = entry.getValue();
-        if (info != null) {
-          if (info.getDomain() == null) {
-            // no domain resource
-            deleteDomainPresence(info.getNamespace(), domainUID);
-          }
+        if (info != null && info.getDomain() == null) {
+          deleteDomainPresence(info.getNamespace(), domainUID);
         }
       }
 
       // start periodic retry and recheck
-      MainTuning main = tuningAndConfig.getMainTuning();
+      int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
       engine
           .getExecutor()
           .scheduleWithFixedDelay(
-              () -> {
-                for (DomainPresenceInfo info : domains.values()) {
-                  checkAndCreateDomainPresence(info, false);
-                }
-              },
-              main.domainPresenceRecheckIntervalSeconds,
-              main.domainPresenceRecheckIntervalSeconds,
+              updateDomainPresenceInfos(domains.values()),
+              recheckInterval,
+              recheckInterval,
               TimeUnit.SECONDS);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
+  }
+
+  private static Runnable updateDomainPresenceInfos(Collection<DomainPresenceInfo> infos) {
+    return () -> {
+      for (DomainPresenceInfo info : infos) {
+        checkAndCreateDomainPresence(info, false);
+      }
+    };
+  }
+
+  static Step readExistingResources(String operatorNamespace, String ns) {
+    Step domainStep = listDomains(ns, new DomainListStep(ns));
+    Step ingressStep = listIngresses(ns, new IngressListStep(ns, domainStep));
+    Step serviceStep = listServices(ns, new ServiceListStep(ns, ingressStep));
+    Step eventStep = listEvents(ns, new EventListStep(ns, serviceStep));
+    Step podStep = listPods(ns, new PodListStep(ns, eventStep));
+    Step configMapStep = createConfigMapStep(ns, podStep);
+
+    return ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns, configMapStep);
+  }
+
+  private static Step listDomains(String ns, ResponseStep<DomainList> responseStep) {
+    return callBuilderFactory.create().listDomainAsync(ns, responseStep);
+  }
+
+  private static Step listIngresses(String ns, ResponseStep<V1beta1IngressList> responseStep) {
+    return Main.callBuilderFactory
+        .create()
+        .with(
+            $ ->
+                $.labelSelector =
+                    LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .listIngressAsync(ns, responseStep);
+  }
+
+  private static Step listServices(String ns, ResponseStep<V1ServiceList> responseStep) {
+    return Main.callBuilderFactory
+        .create()
+        .with(
+            $ ->
+                $.labelSelector =
+                    LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .listServiceAsync(ns, responseStep);
+  }
+
+  private static Step listEvents(String ns, ResponseStep<V1EventList> eventListResponseStep1) {
+    return Main.callBuilderFactory
+        .create()
+        .with($ -> $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
+        .listEventAsync(ns, eventListResponseStep1);
+  }
+
+  private static Step listPods(String ns, ResponseStep<V1PodList> podListResponseStep) {
+    return callBuilderFactory
+        .create()
+        .with(
+            $ ->
+                $.labelSelector =
+                    LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .listPodAsync(ns, podListResponseStep);
+  }
+
+  private static ConfigMapAfterStep createConfigMapStep(String ns, Step nextStep) {
+    return new ConfigMapAfterStep(
+        ns, configMapWatchers, stopping, Main::dispatchConfigMapWatch, nextStep);
   }
 
   // -----------------------------------------------------------------------------
@@ -485,6 +498,7 @@ public class Main {
     doCheckAndCreateDomainPresence(dom, false, false, null, null);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private static void doCheckAndCreateDomainPresence(Domain dom, boolean explicitRecheck) {
     doCheckAndCreateDomainPresence(dom, explicitRecheck, false, null, null);
   }
@@ -599,9 +613,7 @@ public class Main {
               engine
                   .getExecutor()
                   .schedule(
-                      () -> {
-                        checkAndCreateDomainPresence(info, false);
-                      },
+                      () -> checkAndCreateDomainPresence(info, false),
                       tuningAndConfig.getMainTuning().domainPresenceFailureRetrySeconds,
                       TimeUnit.SECONDS);
             }
@@ -1034,11 +1046,11 @@ public class Main {
     return namespace;
   }
 
-  private static class V1beta1IngressListResponseStep extends ResponseStep<V1beta1IngressList> {
+  private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
     private final String ns;
 
-    V1beta1IngressListResponseStep(Step domainList, String ns) {
-      super(domainList);
+    IngressListStep(String ns, Step nextStep) {
+      super(nextStep);
       this.ns = ns;
     }
 
@@ -1079,20 +1091,55 @@ public class Main {
     }
   }
 
-  private static class V1ServiceListResponseStep extends ResponseStep<V1ServiceList> {
+  private static class DomainListStep extends ResponseStep<DomainList> {
     private final String ns;
 
-    V1ServiceListResponseStep(String ns, V1beta1IngressListResponseStep ingressListResponseStep) {
-      super(
-          Main.callBuilderFactory
-              .create()
-              .with(
-                  $ ->
-                      $.labelSelector =
-                          LabelConstants.DOMAINUID_LABEL
-                              + ","
-                              + LabelConstants.CREATEDBYOPERATOR_LABEL)
-              .listIngressAsync(ns, ingressListResponseStep));
+    DomainListStep(String ns) {
+      super(null);
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(
+        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+      if (statusCode == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, null, statusCode, responseHeaders);
+      }
+      return super.onFailure(packet, e, statusCode, responseHeaders);
+    }
+
+    @Override
+    public NextAction onSuccess(
+        Packet packet,
+        DomainList result,
+        int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      if (result != null) {
+        for (Domain dom : result.getItems()) {
+          doCheckAndCreateDomainPresence(dom);
+        }
+      }
+
+      domainWatchers.put(ns, createDomainWatcher(ns, getResourceVersion(result)));
+      return doNext(packet);
+    }
+
+    String getResourceVersion(DomainList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
+    }
+
+    private static DomainWatcher createDomainWatcher(
+        String namespace, String initialResourceVersion) {
+      return DomainWatcher.create(
+          factory, namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
+    }
+  }
+
+  private static class ServiceListStep extends ResponseStep<V1ServiceList> {
+    private final String ns;
+
+    ServiceListStep(String ns, Step nextStep) {
+      super(nextStep);
       this.ns = ns;
     }
 
@@ -1139,20 +1186,11 @@ public class Main {
     }
   }
 
-  private static class V1EventListResponseStep extends ResponseStep<V1EventList> {
+  private static class EventListStep extends ResponseStep<V1EventList> {
     private final String ns;
 
-    V1EventListResponseStep(String ns, V1ServiceListResponseStep serviceListResponseStep) {
-      super(
-          Main.callBuilderFactory
-              .create()
-              .with(
-                  $ ->
-                      $.labelSelector =
-                          LabelConstants.DOMAINUID_LABEL
-                              + ","
-                              + LabelConstants.CREATEDBYOPERATOR_LABEL)
-              .listServiceAsync(ns, serviceListResponseStep));
+    EventListStep(String ns, Step nextStep) {
+      super(nextStep);
       this.ns = ns;
     }
 
@@ -1183,15 +1221,11 @@ public class Main {
     }
   }
 
-  private static class V1PodListResponseStep extends ResponseStep<V1PodList> {
+  private static class PodListStep extends ResponseStep<V1PodList> {
     private final String ns;
 
-    V1PodListResponseStep(String ns, V1EventListResponseStep eventListResponseStep) {
-      super(
-          Main.callBuilderFactory
-              .create()
-              .with($ -> $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
-              .listEventAsync(ns, eventListResponseStep));
+    PodListStep(String ns, Step nextStep) {
+      super(nextStep);
       this.ns = ns;
     }
 
@@ -1232,47 +1266,15 @@ public class Main {
     }
   }
 
-  private static class ExistingDomainListResponseStep extends ResponseStep<DomainList> {
-    private final String ns;
-
-    ExistingDomainListResponseStep(String ns) {
-      super(null);
-      this.ns = ns;
+  private static class NullCompletionCallback implements CompletionCallback {
+    @Override
+    public void onCompletion(Packet packet) {
+      // no-op
     }
 
     @Override
-    public NextAction onFailure(
-        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      if (statusCode == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, null, statusCode, responseHeaders);
-      }
-      return super.onFailure(packet, e, statusCode, responseHeaders);
-    }
-
-    @Override
-    public NextAction onSuccess(
-        Packet packet,
-        DomainList result,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
-      if (result != null) {
-        for (Domain dom : result.getItems()) {
-          doCheckAndCreateDomainPresence(dom);
-        }
-      }
-
-      domainWatchers.put(ns, createDomainWatcher(ns, getResourceVersion(result)));
-      return doNext(packet);
-    }
-
-    String getResourceVersion(DomainList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-
-    private static DomainWatcher createDomainWatcher(
-        String namespace, String initialResourceVersion) {
-      return DomainWatcher.create(
-          factory, namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
+    public void onThrowable(Packet packet, Throwable throwable) {
+      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
     }
   }
 }
