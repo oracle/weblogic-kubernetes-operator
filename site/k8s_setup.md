@@ -108,7 +108,7 @@ scripts/cluster-check.sh
 $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generated/instances_id_rsa && chmod 600 generated/instances_id_rsa
 ```
 
-7. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
+8. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
 ```
 $ terraform output worker_public_ips
@@ -144,14 +144,14 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
 **NOTE**: These steps must be run with the `root` user, until specified otherwise!  Any time you see `YOUR_USERID` in a command, you should replace it with your actual `userid`.
 
-Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) because it will be used for the `/var/lib/docker` file system, which contains all of your images and containers. The Kubernetes directory will be used for the `/var/lib/kubelet` file system and persistent volume storage.
+1. Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) because it will be used for the `/var/lib/docker` file system, which contains all of your images and containers. The Kubernetes directory will be used for the `/var/lib/kubelet` file system and persistent volume storage.
 
 ```
 export docker_dir=/scratch/docker
 export k8s_dir=/scratch/k8s_dir
 ```
 
-Create a shell script that sets up the necessary environment variables. You should probably just append this to the user's `.bashrc` so that it will get executed at login.  You will also need to configure your proxy settings here if you are behind an HTTP proxy:
+2. Create a shell script that sets up the necessary environment variables. You should probably just append this to the user's `.bashrc` so that it will get executed at login.  You will also need to configure your proxy settings here if you are behind an HTTP proxy:
 
 ```
 export PATH=$PATH:/sbin:/usr/sbin
@@ -186,20 +186,20 @@ If you want command completion, you can add the following to the script:
 source <(kubectl completion bash)
 ```
 
-Create the directories you need:
+3. Create the directories you need:
 
 ```
 mkdir -p $docker_dir $k8s_dir/kubelet
 ln -s $k8s_dir/kubelet /var/lib/kubelet
 ```
 
-Set an environment variable with the Docker version you want to install:
+4. Set an environment variable with the Docker version you want to install:
 
 ```
 docker_version="17.03.1.ce"
 ```
 
-Install Docker, removing any previously installed version:
+5. Install Docker, removing any previously installed version:
 
 ```
 ### install docker and curl-devel (for git if needed)
@@ -210,7 +210,7 @@ yum -y erase docker-engine docker-engine-selinux
 yum -y install docker-engine-$docker_version curl-devel
 ```
 
-Update the Docker options:
+6. Update the Docker options:
 
 ```
 # edit /etc/sysconfig/docker to add custom OPTIONS
@@ -219,7 +219,7 @@ diff /etc/sysconfig/docker /tmp/docker.out
 mv /tmp/docker.out /etc/sysconfig/docker
 ```
 
-Set up the Docker network, including the HTTP proxy configuration, if you need it:
+7. Set up the Docker network, including the HTTP proxy configuration, if you need it:
 
 ```
 # generate a custom /setc/sysconfig/docker-network
@@ -232,19 +232,19 @@ NO_PROXY="localhost,127.0.0.0/8,.my.domain.com,/var/run/docker.sock"
 EOF
 ```
 
-Add your user to the `docker` group:
+8. Add your user to the `docker` group:
 
 ```
 usermod -aG docker YOUR_USERID
 ```
 
-Enable and start the Docker service that you just installed and configured:
+9. Enable and start the Docker service that you just installed and configured:
 
 ```
 systemctl enable docker && systemctl start docker
 ```
 
-Install the Kubernetes packages:
+10. Install the Kubernetes packages:
 
 ```
 # generate the yum repo config
@@ -286,13 +286,13 @@ EOF
 fi
 ```
 
-Enable and start the Kubernetes service:
+11. Enable and start the Kubernetes service:
 
 ```
 systemctl enable kubelet && systemctl start kubelet
 ```
 
-Install and use Flannel for CNI:
+12. Install and use Flannel for CNI:
 
 ```
 # run kubeadm init as root
@@ -316,7 +316,7 @@ chmod 644 $KUBECONFIG
 
 **NOTE**: The following steps should be run with your normal (non-`root`) user.
 
-Configure CNI:
+13. Configure CNI:
 
 ```
 sudo -u YOUR_USERID kubectl create clusterrolebinding permissive-binding --clusterrole=cluster-admin --user=admin --user=kubelet --group=system:serviceaccounts
@@ -344,7 +344,7 @@ if [ ${status:=Error} != "Ready" ] ; then
 fi
 ```
 
-Taint the nodes:
+14. Taint the nodes:
 
 ```
 sudo -u YOUR_USERID kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -359,15 +359,15 @@ Congratulations!  Docker and Kubernetes are installed and configured!
 
 Docker for Mac 17.12 CE Edge provides an [embedded Kubernetes environment](https://docs.docker.com/docker-for-mac/#kubernetes) that is a quick and easy way to get a simple test environment set up on your Mac.  To set it up, follow these instructions:
 
-Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (press Command-Space bar, type in `Docker` and run it).  After it is running you will see the Docker icon appear in your status bar:
+1. Install "Docker for Mac" from the Edge channel [https://download.docker.com/mac/edge/Docker.dmg](https://download.docker.com/mac/edge/Docker.dmg).  Then start up the Docker application (press Command-Space bar, type in `Docker` and run it).  After it is running you will see the Docker icon appear in your status bar:
 
 ![Docker icon in status bar](images/docker-icon-in-status-bar.png)
 
-Click on that icon and select "Preferences..." from the drop down menu.  Go to the "Advanced" tab and give Docker a bit more memory if you have enough to spare:
+2. Click the Docker icon and select "Preferences..." from the drop down menu.  Go to the "Advanced" tab and give Docker a bit more memory if you have enough to spare:
 
 ![Docker memory settings](images/docker-memory.png)
 
-Go to the "Kubernetes" tab and click on the option to enable Kubernetes:
+3. Go to the "Kubernetes" tab and click on the option to enable Kubernetes:
 
 ![Enable Kubernetes setting](images/docker-enable-k8s.png)
 
@@ -377,7 +377,7 @@ Docker will download the Kuberentes components and start them up for you.  When 
 
 ![Kubernetes running](images/docker-k8s-running.png)
 
-If you have previously used `kubectl` on your Mac, then you must make sure it is pointing to the correct cluster and context.
+4. Ensure that `kubectl` on your Mac, is pointing to the correct cluster and context.
 
 ```
 $ kubectl config get-contexts
@@ -394,7 +394,7 @@ $ kubectl config set-cluster docker-for-desktop-cluster
 Cluster "docker-for-desktop-cluster" set.
 ```
 
-You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must use an admin user to edit this file:
+5. You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must use an admin user to edit this file:
 
 ```
 ##
@@ -408,13 +408,13 @@ You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0
 ::1             localhost
 ```
 
-You may also have to tell `kubectl` to ignore the certificate by entering this command:
+6. You may also have to tell `kubectl` to ignore the certificate by entering this command:
 
 ```
 kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true
 ```
 
-Then validate you are talking to the Kubernetes in Docker by entering these commands:
+7. Then validate you are talking to the Kubernetes in Docker by entering these commands:
 
 ```
 $ kubectl cluster-info
