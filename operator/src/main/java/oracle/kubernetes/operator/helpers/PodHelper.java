@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -21,17 +22,18 @@ import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -42,11 +44,9 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 public class PodHelper {
   private static final String INTERNAL_OPERATOR_CERT_FILE = "internalOperatorCert";
@@ -55,9 +55,10 @@ public class PodHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {}
-  
+
   /**
    * Factory for {@link Step} that creates admin server pod
+   *
    * @param next Next processing step
    * @return Step for creating admin server pod
    */
@@ -91,63 +92,104 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-      boolean isExplicitRestartThisServer = 
-         info.getExplicitRestartAdmin().get() || info.getExplicitRestartServers().contains(asName);
+      boolean isExplicitRestartThisServer =
+          info.getExplicitRestartAdmin().get() || info.getExplicitRestartServers().contains(asName);
 
       ServerKubernetesObjects sko = skoFactory.getOrCreate(info, asName);
 
       // First, verify existing Pod
-      Step read = factory.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return onSuccess(packet, null, statusCode, responseHeaders);
-          }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
-        }
+      Step read =
+          factory
+              .create()
+              .readPodAsync(
+                  podName,
+                  namespace,
+                  new ResponseStep<V1Pod>(next) {
+                    @Override
+                    public NextAction onFailure(
+                        Packet packet,
+                        ApiException e,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (statusCode == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, null, statusCode, responseHeaders);
+                      }
+                      return super.onFailure(packet, e, statusCode, responseHeaders);
+                    }
 
-        @Override
-        public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (result == null) {
-            info.getExplicitRestartAdmin().set(false);
-            info.getExplicitRestartServers().remove(asName);
-            Step create = factory.create().createPodAsync(namespace, adminPod, new ResponseStep<V1Pod>(next) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                return super.onFailure(AdminPodStep.this, packet, e, statusCode, responseHeaders);
-              }
-              
-              @Override
-              public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                
-                LOGGER.info(MessageKeys.ADMIN_POD_CREATED, weblogicDomainUID, asName);
-                if (result != null) {
-                  sko.getPod().set(result);
-                }
-                return doNext(packet);
-              }
-            });
-            return doNext(create, packet);
-          } else if (!isExplicitRestartThisServer && validateCurrentPod(adminPod, result)) {
-            // existing Pod has correct spec
-            LOGGER.fine(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, asName);
-            sko.getPod().set(result);
-            return doNext(packet);
-          } else {
-            // we need to update the Pod
-            Step replace = new CyclePodStep(
-                AdminPodStep.this,
-                podName, namespace, adminPod, MessageKeys.ADMIN_POD_REPLACED, 
-                weblogicDomainUID, asName, info, sko, next);
-            return doNext(replace, packet);
-          }
-        }
-      });
-      
+                    @Override
+                    public NextAction onSuccess(
+                        Packet packet,
+                        V1Pod result,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (result == null) {
+                        info.getExplicitRestartAdmin().set(false);
+                        info.getExplicitRestartServers().remove(asName);
+                        Step create =
+                            factory
+                                .create()
+                                .createPodAsync(
+                                    namespace,
+                                    adminPod,
+                                    new ResponseStep<V1Pod>(next) {
+                                      @Override
+                                      public NextAction onFailure(
+                                          Packet packet,
+                                          ApiException e,
+                                          int statusCode,
+                                          Map<String, List<String>> responseHeaders) {
+                                        return super.onFailure(
+                                            AdminPodStep.this,
+                                            packet,
+                                            e,
+                                            statusCode,
+                                            responseHeaders);
+                                      }
+
+                                      @Override
+                                      public NextAction onSuccess(
+                                          Packet packet,
+                                          V1Pod result,
+                                          int statusCode,
+                                          Map<String, List<String>> responseHeaders) {
+
+                                        LOGGER.info(
+                                            MessageKeys.ADMIN_POD_CREATED,
+                                            weblogicDomainUID,
+                                            asName);
+                                        if (result != null) {
+                                          sko.getPod().set(result);
+                                        }
+                                        return doNext(packet);
+                                      }
+                                    });
+                        return doNext(create, packet);
+                      } else if (!isExplicitRestartThisServer
+                          && validateCurrentPod(adminPod, result)) {
+                        // existing Pod has correct spec
+                        LOGGER.fine(MessageKeys.ADMIN_POD_EXISTS, weblogicDomainUID, asName);
+                        sko.getPod().set(result);
+                        return doNext(packet);
+                      } else {
+                        // we need to update the Pod
+                        Step replace =
+                            new CyclePodStep(
+                                AdminPodStep.this,
+                                podName,
+                                namespace,
+                                adminPod,
+                                MessageKeys.ADMIN_POD_REPLACED,
+                                weblogicDomainUID,
+                                asName,
+                                info,
+                                sko,
+                                next);
+                        return doNext(replace, packet);
+                      }
+                    }
+                  });
+
       return doNext(read, packet);
     }
 
@@ -162,7 +204,7 @@ public class PodHelper {
 
       String weblogicDomainUID = spec.getDomainUID();
       String weblogicDomainName = spec.getDomainName();
-      
+
       // Create local admin server Pod object
       String podName = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + spec.getAsName());
 
@@ -172,7 +214,10 @@ public class PodHelper {
       }
       String imagePullPolicy = spec.getImagePullPolicy();
       if (imagePullPolicy == null || imagePullPolicy.length() == 0) {
-        imagePullPolicy = (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX)) ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+        imagePullPolicy =
+            (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
+                ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
+                : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
       }
 
       V1Pod adminPod = new V1Pod();
@@ -245,7 +290,7 @@ public class PodHelper {
       container.addCommandItem(weblogicDomainName);
 
       PodTuning tuning = configMapHelper.getPodTuning();
-      
+
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
       readinessAction.addCommandItem("/weblogic-operator/scripts/readinessProbe.sh");
@@ -291,19 +336,21 @@ public class PodHelper {
       if (!info.getClaims().getItems().isEmpty()) {
         V1Volume volume = new V1Volume();
         volume.setName("weblogic-domain-storage-volume");
-        V1PersistentVolumeClaimVolumeSource pvClaimSource = new V1PersistentVolumeClaimVolumeSource();
-        pvClaimSource.setClaimName(info.getClaims().getItems().iterator().next().getMetadata().getName());
+        V1PersistentVolumeClaimVolumeSource pvClaimSource =
+            new V1PersistentVolumeClaimVolumeSource();
+        pvClaimSource.setClaimName(
+            info.getClaims().getItems().iterator().next().getMetadata().getName());
         volume.setPersistentVolumeClaim(pvClaimSource);
         podSpec.addVolumesItem(volume);
       }
-      
+
       V1Volume volumeSecret = new V1Volume();
       volumeSecret.setName("weblogic-credentials-volume");
       V1SecretVolumeSource secret = new V1SecretVolumeSource();
       secret.setSecretName(spec.getAdminSecret().getName());
       volumeSecret.setSecret(secret);
       podSpec.addVolumesItem(volumeSecret);
-      
+
       V1Volume volumeDomainConfigMap = new V1Volume();
       volumeDomainConfigMap.setName("weblogic-domain-cm-volume");
       V1ConfigMapVolumeSource cm = new V1ConfigMapVolumeSource();
@@ -321,7 +368,7 @@ public class PodHelper {
     }
   }
 
-  private static class CyclePodStep extends Step  {
+  private static class CyclePodStep extends Step {
     private final Step conflictStep;
     private final String podName;
     private final String namespace;
@@ -331,10 +378,18 @@ public class PodHelper {
     private final String serverName;
     private final DomainPresenceInfo info;
     private final ServerKubernetesObjects sko;
-    
-    public CyclePodStep(Step conflictStep, String podName, String namespace, V1Pod newPod, 
-        String messageKey, String weblogicDomainUID, String serverName, DomainPresenceInfo info,
-        ServerKubernetesObjects sko, Step next) {
+
+    public CyclePodStep(
+        Step conflictStep,
+        String podName,
+        String namespace,
+        V1Pod newPod,
+        String messageKey,
+        String weblogicDomainUID,
+        String serverName,
+        DomainPresenceInfo info,
+        ServerKubernetesObjects sko,
+        Step next) {
       super(next);
       this.conflictStep = conflictStep;
       this.podName = podName;
@@ -352,81 +407,109 @@ public class PodHelper {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       // Set to null so that watcher doesn't recreate pod with old spec
       sko.getPod().set(null);
-      CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      Step delete = factory.create().deletePodAsync(podName, namespace, deleteOptions, new ResponseStep<V1Status>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return onSuccess(packet, null, statusCode, responseHeaders);
-          }
-          return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
-        }
+      CallBuilderFactory factory =
+          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      Step delete =
+          factory
+              .create()
+              .deletePodAsync(
+                  podName,
+                  namespace,
+                  deleteOptions,
+                  new ResponseStep<V1Status>(next) {
+                    @Override
+                    public NextAction onFailure(
+                        Packet packet,
+                        ApiException e,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (statusCode == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, null, statusCode, responseHeaders);
+                      }
+                      return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+                    }
 
-        @Override
-        public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (conflictStep instanceof AdminPodStep) {
-            info.getExplicitRestartAdmin().set(false);
-          }
-          info.getExplicitRestartServers().contains(serverName);
-          Step create = factory.create().createPodAsync(namespace, newPod, new ResponseStep<V1Pod>(next) {
-            @Override
-            public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                Map<String, List<String>> responseHeaders) {
-              return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
-            }
-            
-            @Override
-            public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
-                Map<String, List<String>> responseHeaders) {
-              
-              LOGGER.info(messageKey, weblogicDomainUID, serverName);
-              if (result != null) {
-                sko.getPod().set(result);
-              }
-              
-              PodWatcher pw = packet.getSPI(PodWatcher.class);
-              return doNext(pw.waitForReady(result, next), packet);
-            }
-          });
-          return doNext(create, packet);
-        }
-      });
+                    @Override
+                    public NextAction onSuccess(
+                        Packet packet,
+                        V1Status result,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (conflictStep instanceof AdminPodStep) {
+                        info.getExplicitRestartAdmin().set(false);
+                      }
+                      info.getExplicitRestartServers().contains(serverName);
+                      Step create =
+                          factory
+                              .create()
+                              .createPodAsync(
+                                  namespace,
+                                  newPod,
+                                  new ResponseStep<V1Pod>(next) {
+                                    @Override
+                                    public NextAction onFailure(
+                                        Packet packet,
+                                        ApiException e,
+                                        int statusCode,
+                                        Map<String, List<String>> responseHeaders) {
+                                      return super.onFailure(
+                                          conflictStep, packet, e, statusCode, responseHeaders);
+                                    }
+
+                                    @Override
+                                    public NextAction onSuccess(
+                                        Packet packet,
+                                        V1Pod result,
+                                        int statusCode,
+                                        Map<String, List<String>> responseHeaders) {
+
+                                      LOGGER.info(messageKey, weblogicDomainUID, serverName);
+                                      if (result != null) {
+                                        sko.getPod().set(result);
+                                      }
+
+                                      PodWatcher pw = packet.getSPI(PodWatcher.class);
+                                      return doNext(pw.waitForReady(result, next), packet);
+                                    }
+                                  });
+                      return doNext(create, packet);
+                    }
+                  });
       return doNext(delete, packet);
     }
   }
-  
+
   /**
    * Factory for {@link Step} that creates managed server pod
+   *
    * @param next Next processing step
    * @return Step for creating managed server pod
    */
   public static Step createManagedPodStep(Step next) {
     return new ManagedPodStep(next);
   }
-  
+
   private static boolean validateCurrentPod(V1Pod build, V1Pod current) {
     // We want to detect changes that would require replacing an existing Pod
     // however, we've also found that Pod.equals(Pod) isn't right because k8s
     // returns fields, such as nodeName, even when export=true is specified.
     // Therefore, we'll just compare specific fields
-    
+
     if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
       return false;
     }
-    
+
     V1PodSpec buildSpec = build.getSpec();
     V1PodSpec currentSpec = current.getSpec();
-    
+
     List<V1Container> buildContainers = buildSpec.getContainers();
     List<V1Container> currentContainers = currentSpec.getContainers();
-    
+
     if (buildContainers != null) {
       if (currentContainers == null) {
         return false;
       }
-      
+
       for (V1Container bc : buildContainers) {
         V1Container fcc = null;
         for (V1Container cc : currentContainers) {
@@ -438,12 +521,13 @@ public class PodHelper {
         if (fcc == null) {
           return false;
         }
-        if (!fcc.getImage().equals(bc.getImage()) || !fcc.getImagePullPolicy().equals(bc.getImagePullPolicy())) {
+        if (!fcc.getImage().equals(bc.getImage())
+            || !fcc.getImagePullPolicy().equals(bc.getImagePullPolicy())) {
           return false;
         }
         if (!compareUnordered(fcc.getPorts(), bc.getPorts())) {
           return false;
-        }        
+        }
         if (!compareUnordered(fcc.getEnv(), bc.getEnv())) {
           return false;
         }
@@ -452,10 +536,10 @@ public class PodHelper {
         }
       }
     }
-    
+
     return true;
   }
-  
+
   private static <T> boolean compareUnordered(List<T> a, List<T> b) {
     if (a == b) {
       return true;
@@ -465,7 +549,7 @@ public class PodHelper {
     if (a.size() != b.size()) {
       return false;
     }
-    
+
     List<T> bprime = new ArrayList<>(b);
     for (T at : a) {
       if (!bprime.remove(at)) {
@@ -502,72 +586,128 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-      boolean isExplicitRestartThisServer = 
-          info.getExplicitRestartServers().contains(weblogicServerName) ||
-          (weblogicClusterName != null && info.getExplicitRestartClusters().contains(weblogicClusterName));
+      boolean isExplicitRestartThisServer =
+          info.getExplicitRestartServers().contains(weblogicServerName)
+              || (weblogicClusterName != null
+                  && info.getExplicitRestartClusters().contains(weblogicClusterName));
 
       ServerKubernetesObjects sko = skoFactory.getOrCreate(info, weblogicServerName);
 
       // First, verify there existing Pod
-      Step read = factory.create().readPodAsync(podName, namespace, new ResponseStep<V1Pod>(next) {
-        @Override
-        public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (statusCode == CallBuilder.NOT_FOUND) {
-            return onSuccess(packet, null, statusCode, responseHeaders);
-          }
-          return super.onFailure(packet, e, statusCode, responseHeaders);
-        }
+      Step read =
+          factory
+              .create()
+              .readPodAsync(
+                  podName,
+                  namespace,
+                  new ResponseStep<V1Pod>(next) {
+                    @Override
+                    public NextAction onFailure(
+                        Packet packet,
+                        ApiException e,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (statusCode == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, null, statusCode, responseHeaders);
+                      }
+                      return super.onFailure(packet, e, statusCode, responseHeaders);
+                    }
 
-        @Override
-        public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
-            Map<String, List<String>> responseHeaders) {
-          if (result == null) {
-            info.getExplicitRestartServers().remove(weblogicServerName);
-            Step create = factory.create().createPodAsync(namespace, pod, new ResponseStep<V1Pod>(next) {
-              @Override
-              public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                return super.onFailure(ManagedPodStep.this, packet, e, statusCode, responseHeaders);
-              }
-              
-              @Override
-              public NextAction onSuccess(Packet packet, V1Pod result, int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                
-                LOGGER.info(MessageKeys.MANAGED_POD_CREATED, weblogicDomainUID, weblogicServerName);
-                if (result != null) {
-                  sko.getPod().set(result);
-                }
-                return doNext(packet);
-              }
-            });
-            return doNext(DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, create), packet);
-          } else if (!isExplicitRestartThisServer && validateCurrentPod(pod, result)) {
-            // existing Pod has correct spec
-            LOGGER.fine(MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
-            sko.getPod().set(result);
-            return doNext(packet);
-          } else {
-            // we need to update the Pod
-            // defer to Pod rolling step
-            Step replace = new CyclePodStep(
-                ManagedPodStep.this,
-                podName, namespace, pod, MessageKeys.MANAGED_POD_REPLACED, 
-                weblogicDomainUID, weblogicServerName, info, sko, next);
-            synchronized (packet) {
-              @SuppressWarnings("unchecked")
-              Map<String, StepAndPacket> rolling = (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
-              if (rolling != null) {
-                rolling.put(weblogicServerName, new StepAndPacket(
-                    DomainStatusUpdater.createProgressingStep(DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, replace), packet.clone()));
-              }
-            }
-            return doEnd(packet);
-          }
-        }
-      });
-      
+                    @Override
+                    public NextAction onSuccess(
+                        Packet packet,
+                        V1Pod result,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (result == null) {
+                        info.getExplicitRestartServers().remove(weblogicServerName);
+                        Step create =
+                            factory
+                                .create()
+                                .createPodAsync(
+                                    namespace,
+                                    pod,
+                                    new ResponseStep<V1Pod>(next) {
+                                      @Override
+                                      public NextAction onFailure(
+                                          Packet packet,
+                                          ApiException e,
+                                          int statusCode,
+                                          Map<String, List<String>> responseHeaders) {
+                                        return super.onFailure(
+                                            ManagedPodStep.this,
+                                            packet,
+                                            e,
+                                            statusCode,
+                                            responseHeaders);
+                                      }
+
+                                      @Override
+                                      public NextAction onSuccess(
+                                          Packet packet,
+                                          V1Pod result,
+                                          int statusCode,
+                                          Map<String, List<String>> responseHeaders) {
+
+                                        LOGGER.info(
+                                            MessageKeys.MANAGED_POD_CREATED,
+                                            weblogicDomainUID,
+                                            weblogicServerName);
+                                        if (result != null) {
+                                          sko.getPod().set(result);
+                                        }
+                                        return doNext(packet);
+                                      }
+                                    });
+                        return doNext(
+                            DomainStatusUpdater.createProgressingStep(
+                                DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
+                                false,
+                                create),
+                            packet);
+                      } else if (!isExplicitRestartThisServer && validateCurrentPod(pod, result)) {
+                        // existing Pod has correct spec
+                        LOGGER.fine(
+                            MessageKeys.MANAGED_POD_EXISTS, weblogicDomainUID, weblogicServerName);
+                        sko.getPod().set(result);
+                        return doNext(packet);
+                      } else {
+                        // we need to update the Pod
+                        // defer to Pod rolling step
+                        Step replace =
+                            new CyclePodStep(
+                                ManagedPodStep.this,
+                                podName,
+                                namespace,
+                                pod,
+                                MessageKeys.MANAGED_POD_REPLACED,
+                                weblogicDomainUID,
+                                weblogicServerName,
+                                info,
+                                sko,
+                                next);
+                        synchronized (packet) {
+                          @SuppressWarnings("unchecked")
+                          Map<String, StepAndPacket> rolling =
+                              (Map<String, StepAndPacket>)
+                                  packet.get(ProcessingConstants.SERVERS_TO_ROLL);
+                          if (rolling != null) {
+                            rolling.put(
+                                weblogicServerName,
+                                new StepAndPacket(
+                                    DomainStatusUpdater.createProgressingStep(
+                                        DomainStatusUpdater
+                                            .MANAGED_SERVERS_STARTING_PROGRESS_REASON,
+                                        false,
+                                        replace),
+                                    packet.clone()));
+                          }
+                        }
+                        return doEnd(packet);
+                      }
+                    }
+                  });
+
       return doNext(read, packet);
     }
 
@@ -582,28 +722,30 @@ public class PodHelper {
 
       String weblogicDomainUID = spec.getDomainUID();
       String weblogicDomainName = spec.getDomainName();
-      
+
       WlsServerConfig scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
       WlsClusterConfig cluster = (WlsClusterConfig) packet.get(ProcessingConstants.CLUSTER_SCAN);
       @SuppressWarnings("unchecked")
       List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
-      
+
       String weblogicServerName = scan.getName();
-      
+
       // Create local managed server Pod object
       String podName = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + weblogicServerName);
 
       String weblogicClusterName = null;
-      if (cluster != null)
-        weblogicClusterName = cluster.getClusterName();
-      
+      if (cluster != null) weblogicClusterName = cluster.getClusterName();
+
       String imageName = spec.getImage();
       if (imageName == null || imageName.length() == 0) {
         imageName = KubernetesConstants.DEFAULT_IMAGE;
       }
       String imagePullPolicy = spec.getImagePullPolicy();
       if (imagePullPolicy == null || imagePullPolicy.length() == 0) {
-        imagePullPolicy = (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX)) ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+        imagePullPolicy =
+            (imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
+                ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
+                : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
       }
 
       V1Pod pod = new V1Pod();
@@ -679,7 +821,7 @@ public class PodHelper {
       container.addCommandItem(String.valueOf(spec.getAsPort()));
 
       PodTuning tuning = configMapHelper.getPodTuning();
-      
+
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
       readinessAction.addCommandItem("/weblogic-operator/scripts/readinessProbe.sh");
@@ -707,8 +849,10 @@ public class PodHelper {
       if (!info.getClaims().getItems().isEmpty()) {
         V1Volume volume = new V1Volume();
         volume.setName("weblogic-domain-storage-volume");
-        V1PersistentVolumeClaimVolumeSource pvClaimSource = new V1PersistentVolumeClaimVolumeSource();
-        pvClaimSource.setClaimName(info.getClaims().getItems().iterator().next().getMetadata().getName());
+        V1PersistentVolumeClaimVolumeSource pvClaimSource =
+            new V1PersistentVolumeClaimVolumeSource();
+        pvClaimSource.setClaimName(
+            info.getClaims().getItems().iterator().next().getMetadata().getName());
         volume.setPersistentVolumeClaim(pvClaimSource);
         podSpec.addVolumesItem(volume);
       }
@@ -719,7 +863,7 @@ public class PodHelper {
       secret.setSecretName(spec.getAdminSecret().getName());
       volumeSecret.setSecret(secret);
       podSpec.addVolumesItem(volumeSecret);
-      
+
       V1Volume volumeDomainConfigMap = new V1Volume();
       volumeDomainConfigMap.setName("weblogic-domain-cm-volume");
       V1ConfigMapVolumeSource cm = new V1ConfigMapVolumeSource();
@@ -744,7 +888,8 @@ public class PodHelper {
 
   // Override the weblogic domain and admin server related environment variables that
   // come for free with the WLS docker container with the correct values.
-  private static void overrideContainerWeblogicEnvVars(DomainSpec spec, String serverName, V1Container container) {
+  private static void overrideContainerWeblogicEnvVars(
+      DomainSpec spec, String serverName, V1Container container) {
     // Override the domain name, domain directory, admin server name and admin server port.
     addEnvVar(container, "DOMAIN_NAME", spec.getDomainName());
     addEnvVar(container, "DOMAIN_HOME", "/shared/domain/" + spec.getDomainName());
@@ -769,9 +914,10 @@ public class PodHelper {
     envVar.setValue(value);
     container.addEnvItem(envVar);
   }
-  
+
   /**
    * Factory for {@link Step} that deletes server pod
+   *
    * @param sko Server Kubernetes Objects
    * @param next Next processing step
    * @return Step for deleting server pod
@@ -791,32 +937,47 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      
+
       Domain dom = info.getDomain();
       V1ObjectMeta meta = dom.getMetadata();
       String namespace = meta.getNamespace();
-      
+
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       // Set pod to null so that watcher doesn't try to recreate pod
       V1Pod oldPod = sko.getPod().getAndSet(null);
       if (oldPod != null) {
-        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-        return doNext(factory.create().deletePodAsync(oldPod.getMetadata().getName(), namespace, deleteOptions, new ResponseStep<V1Status>(next) {
-          @Override
-          public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            if (statusCode == CallBuilder.NOT_FOUND) {
-              return onSuccess(packet, null, statusCode, responseHeaders);
-            }
-            return super.onFailure(packet, e, statusCode, responseHeaders);
-          }
-  
-          @Override
-          public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
-              Map<String, List<String>> responseHeaders) {
-            return doNext(next, packet);
-          }
-        }), packet);
+        CallBuilderFactory factory =
+            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        return doNext(
+            factory
+                .create()
+                .deletePodAsync(
+                    oldPod.getMetadata().getName(),
+                    namespace,
+                    deleteOptions,
+                    new ResponseStep<V1Status>(next) {
+                      @Override
+                      public NextAction onFailure(
+                          Packet packet,
+                          ApiException e,
+                          int statusCode,
+                          Map<String, List<String>> responseHeaders) {
+                        if (statusCode == CallBuilder.NOT_FOUND) {
+                          return onSuccess(packet, null, statusCode, responseHeaders);
+                        }
+                        return super.onFailure(packet, e, statusCode, responseHeaders);
+                      }
+
+                      @Override
+                      public NextAction onSuccess(
+                          Packet packet,
+                          V1Status result,
+                          int statusCode,
+                          Map<String, List<String>> responseHeaders) {
+                        return doNext(next, packet);
+                      }
+                    }),
+            packet);
       }
       return doNext(packet);
     }

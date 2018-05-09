@@ -1,14 +1,13 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
 import java.io.*;
 import java.util.stream.Collectors;
 
-/**
- * Class for executing shell commands from java
- */
+/** Class for executing shell commands from java */
 public class ExecCommand {
 
   public static ExecResult exec(String command) throws Exception {

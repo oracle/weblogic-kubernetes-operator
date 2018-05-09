@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
 
@@ -10,26 +11,25 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Map.Entry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.codec.binary.Base64;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Map.Entry;
-
 /**
- * This class provides helper methods for getting Service Accounts and
- * Secrets for authentication purposes.
+ * This class provides helper methods for getting Service Accounts and Secrets for authentication
+ * purposes.
  */
 public class Helpers {
 
   @SuppressWarnings("unused")
   private final Authenticator authenticator;
+
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
 
   public Helpers(Authenticator authenticator) {
     this.authenticator = authenticator;
@@ -42,11 +42,12 @@ public class Helpers {
    *
    * @param serviceAccountName The name of the Service Account.
    * @param namespace The Namespace the Service Account is defined in.
-   * @return V1ServiceAccount object that matches the requested Service Account name and Namespace (if found).
+   * @return V1ServiceAccount object that matches the requested Service Account name and Namespace
+   *     (if found).
    * @throws ApiException if an API error occurs.
    */
-  protected V1ServiceAccount findServiceAccount(String serviceAccountName, String namespace) throws
-      ApiException {
+  protected V1ServiceAccount findServiceAccount(String serviceAccountName, String namespace)
+      throws ApiException {
 
     LOGGER.entering();
 
@@ -71,15 +72,15 @@ public class Helpers {
       }
     }
     if (sas.isEmpty()) {
-      ApiException e = new ApiException("serviceAccount " + serviceAccountName
-          + " not found");
+      ApiException e = new ApiException("serviceAccount " + serviceAccountName + " not found");
       LOGGER.throwing(e);
       throw e;
     }
 
     if (sas.size() > 1) {
-      ApiException e =  new ApiException("serviceAccount " + serviceAccountName
-          + " appears in more than one namespace");
+      ApiException e =
+          new ApiException(
+              "serviceAccount " + serviceAccountName + " appears in more than one namespace");
       LOGGER.throwing(e);
       throw e;
     }
@@ -90,8 +91,7 @@ public class Helpers {
   }
 
   /**
-   * Get a list of all Service Accounts on this cluster. Only looking at the
-   * first 4K accounts.
+   * Get a list of all Service Accounts on this cluster. Only looking at the first 4K accounts.
    *
    * @return A list of Service Accounts.
    * @throws ApiException on API Exception
@@ -102,17 +102,26 @@ public class Helpers {
 
     String _continue = "";
 
-    serviceAccountList = coreApi.listServiceAccountForAllNamespaces(
-        _continue               // continue option
-        , ""                    // field selector
-        , Boolean.FALSE         // includeUninitialized
-        , ""                    // labelSelector
-        , 4096                  // limit size for list
-        , "false"               // pretty
-        , ""                    // resourceVersion
-        , 0                     // timeout (seconds)
-        , Boolean.FALSE         // watch indicator
-    );
+    serviceAccountList =
+        coreApi.listServiceAccountForAllNamespaces(
+            _continue // continue option
+            ,
+            "" // field selector
+            ,
+            Boolean.FALSE // includeUninitialized
+            ,
+            "" // labelSelector
+            ,
+            4096 // limit size for list
+            ,
+            "false" // pretty
+            ,
+            "" // resourceVersion
+            ,
+            0 // timeout (seconds)
+            ,
+            Boolean.FALSE // watch indicator
+            );
 
     return serviceAccountList;
   }
@@ -132,8 +141,8 @@ public class Helpers {
 
     for (V1ServiceAccount serviceAccount : serviceAccounts.getItems()) {
       for (V1ObjectReference reference : serviceAccount.getSecrets()) {
-        V1Secret secret = readSecretByReference(reference
-            , serviceAccount.getMetadata().getNamespace());
+        V1Secret secret =
+            readSecretByReference(reference, serviceAccount.getMetadata().getNamespace());
         Map<String, byte[]> secretMap = secret.getData();
         for (Entry<String, byte[]> entry : secretMap.entrySet()) {
           String secretToken = new String(entry.getValue());
@@ -157,8 +166,8 @@ public class Helpers {
    * @return V1Secret The requested Secret.
    * @throws ApiException if there is an API error.
    */
-  protected V1Secret readSecretByReference(V1ObjectReference reference
-      , String namespace) throws ApiException {
+  protected V1Secret readSecretByReference(V1ObjectReference reference, String namespace)
+      throws ApiException {
 
     LOGGER.entering();
 
@@ -166,13 +175,9 @@ public class Helpers {
       namespace = reference.getNamespace();
     }
 
-    V1Secret secret = coreApi.readNamespacedSecret(
-        reference.getName()
-        , namespace
-        , "false"
-        , Boolean.TRUE
-        , Boolean.TRUE
-    );
+    V1Secret secret =
+        coreApi.readNamespacedSecret(
+            reference.getName(), namespace, "false", Boolean.TRUE, Boolean.TRUE);
 
     LOGGER.exiting(secret);
     return secret;

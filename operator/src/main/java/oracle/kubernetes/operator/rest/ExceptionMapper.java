@@ -1,36 +1,31 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
-
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
- * ExceptionMapper converts non-WebApplicationExceptions into internal server errors
- * and logs warnings for them.  It debug logs WebApplicationExceptions then lets them
- * flow through unchanged.
+ * ExceptionMapper converts non-WebApplicationExceptions into internal server errors and logs
+ * warnings for them. It debug logs WebApplicationExceptions then lets them flow through unchanged.
  */
 @Provider
 public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exception> {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /**
-   * Construct an ExceptionMapper.
-   */
+  /** Construct an ExceptionMapper. */
   public ExceptionMapper() {
     // nothing to do
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public Response toResponse(Exception e) {
     LOGGER.entering(e);
@@ -48,7 +43,8 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
       }
     }
     if (r == null) {
-      LOGGER.finer("Constructing an INTERNAL_SERVER_ERROR response from a non-WebApplicationException");
+      LOGGER.finer(
+          "Constructing an INTERNAL_SERVER_ERROR response from a non-WebApplicationException");
       // It isn't a WebApplicationException - return INTERNAL_SERVER_ERROR
       r = Response.status(Status.INTERNAL_SERVER_ERROR).entity(getExceptionMessage(e)).build();
     } else {

@@ -1,15 +1,15 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
 /**
  * This class determines an instance of {@link Container} for the runtime.
  *
- * <p>
- * ContainerResolver uses a static field to keep the instance of the resolver
- * object. Typically, a server may set its custom container resolver using the
- * static method {@link #setInstance(ContainerResolver)}
+ * <p>ContainerResolver uses a static field to keep the instance of the resolver object. Typically,
+ * a server may set its custom container resolver using the static method {@link
+ * #setInstance(ContainerResolver)}
  */
 public abstract class ContainerResolver {
 
@@ -18,11 +18,9 @@ public abstract class ContainerResolver {
   private static volatile ContainerResolver theResolver = DEFAULT;
 
   /**
-   * Sets the custom container resolver which can be used to get client's
-   * {@link Container}.
+   * Sets the custom container resolver which can be used to get client's {@link Container}.
    *
-   * @param resolver
-   *          container resolver
+   * @param resolver container resolver
    */
   public static void setInstance(ContainerResolver resolver) {
     if (resolver == null) {
@@ -32,8 +30,7 @@ public abstract class ContainerResolver {
   }
 
   /**
-   * Returns the container resolver which can be used to get client's
-   * {@link Container}.
+   * Returns the container resolver which can be used to get client's {@link Container}.
    *
    * @return container resolver instance
    */
@@ -42,8 +39,7 @@ public abstract class ContainerResolver {
   }
 
   /**
-   * Returns the default container resolver which can be used to get
-   * {@link Container}.
+   * Returns the default container resolver which can be used to get {@link Container}.
    *
    * @return default container resolver
    */
@@ -57,5 +53,4 @@ public abstract class ContainerResolver {
    * @return container instance for the client
    */
   public abstract Container getContainer();
-
 }

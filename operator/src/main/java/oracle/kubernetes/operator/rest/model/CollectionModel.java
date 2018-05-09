@@ -1,20 +1,20 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * ItemModel is the base class for collection resources.
- */
+/** ItemModel is the base class for collection resources. */
 public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
 
   private List<T> items = new ArrayList<T>();
 
   /**
    * Get the items in the collection.
+   *
    * @return a List of items.
    */
   public List<T> getItems() {
@@ -23,6 +23,7 @@ public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
 
   /**
    * Set the items in the collection.
+   *
    * @param items - a List of items.
    */
   public void setItems(List<T> items) {
@@ -31,6 +32,7 @@ public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
 
   /**
    * Add an item to the collection.
+   *
    * @param item - the item to add to the collection.
    */
   public void addItem(T item) {

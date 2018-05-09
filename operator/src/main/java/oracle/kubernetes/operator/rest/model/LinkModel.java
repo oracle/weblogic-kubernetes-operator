@@ -1,21 +1,18 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
 
-/**
- * LinkModel describes a link to a WebLogic operator REST resource.
- */
+/** LinkModel describes a link to a WebLogic operator REST resource. */
 public class LinkModel extends BaseModel {
 
-  /**
-   * Construct an empty LinkModel.
-   */
-  public LinkModel() {
-  }
+  /** Construct an empty LinkModel. */
+  public LinkModel() {}
 
   /**
    * Construct a populated untitled LinkModel.
+   *
    * @param rel - the link's relationship.
    * @param href - the link's hypertext reference.
    */
@@ -25,6 +22,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Construct a populated LinkModel.
+   *
    * @param rel - the link's relationship.
    * @param title -the link's title.
    * @param href - the link's hypertext reference.
@@ -39,6 +37,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Get the link's relationship.
+   *
    * @return the link's relationship.
    */
   public String getRel() {
@@ -47,6 +46,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Set the link's relationship.
+   *
    * @param rel - the link's relationship.
    */
   public void setRel(String rel) {
@@ -57,6 +57,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Get the link's title.
+   *
    * @return the link's title.
    */
   public String getTitle() {
@@ -65,6 +66,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Set the link's title.
+   *
    * @param title - the link's title.
    */
   public void setTitle(String title) {
@@ -75,6 +77,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Get the link's hypertext reference.
+   *
    * @return the link's hypertext reference.
    */
   public String getHref() {
@@ -83,6 +86,7 @@ public class LinkModel extends BaseModel {
 
   /**
    * Set the link's hypertext reference.
+   *
    * @param href - the link's hypertext reference.
    */
   public void setHref(String href) {
