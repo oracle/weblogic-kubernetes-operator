@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static org.hamcrest.Matchers.both;
@@ -17,7 +18,6 @@ import com.google.common.collect.ImmutableMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -34,18 +34,13 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector()
-      throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndLabelSelector() throws Exception {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
         StubWatchFactory.getRecordedParameters().get(0),
         both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
-            .and(
-                hasEntry(
-                    "labelSelector",
-                    asList(
-                        LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL))));
+            .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
   private String asList(String... selectors) {
@@ -59,14 +54,8 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Override
-  protected ServiceWatcher createWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return ServiceWatcher.create(
-        Executors.defaultThreadFactory(),
-        nameSpace,
-        Integer.toString(initialResourceVersion),
-        this,
-        stopping);
+  protected ServiceWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
+    return ServiceWatcher.create(this, ns, Integer.toString(rv), this, stopping);
   }
 
   @Test
