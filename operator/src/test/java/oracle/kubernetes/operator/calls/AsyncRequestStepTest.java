@@ -1,30 +1,8 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
-
-import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import com.meterware.simplestub.Memento;
-
-import io.kubernetes.client.ApiCallback;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,6 +11,26 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiCallback;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
+import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AsyncRequestStepTest {
 
@@ -45,8 +43,17 @@ public class AsyncRequestStepTest {
   private ClientPool helper = ClientPool.getInstance();
   private List<Memento> mementos = new ArrayList<>();
 
-  private final AsyncRequestStep<Integer> asyncRequestStep
-        = new AsyncRequestStep<>(nextStep, requestParams, callFactory, helper, TIMEOUT_SECONDS, MAX_RETRY_COUNT, null, null, null);
+  private final AsyncRequestStep<Integer> asyncRequestStep =
+      new AsyncRequestStep<>(
+          nextStep,
+          requestParams,
+          callFactory,
+          helper,
+          TIMEOUT_SECONDS,
+          MAX_RETRY_COUNT,
+          null,
+          null,
+          null);
 
   @Before
   public void setUp() throws Exception {
@@ -97,11 +104,14 @@ public class AsyncRequestStepTest {
   public void afterFailedCallback_packetContainsRetryStrategy() throws Exception {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
 
-    assertThat(testSupport.getPacketComponents().get(RESPONSE_COMPONENT_NAME).getSPI(RetryStrategy.class), notNullValue());
+    assertThat(
+        testSupport.getPacketComponents().get(RESPONSE_COMPONENT_NAME).getSPI(RetryStrategy.class),
+        notNullValue());
   }
 
   private void sendFailedCallback(int statusCode) {
-    testSupport.schedule(() -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
+    testSupport.schedule(
+        () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
   }
 
   @Test
@@ -109,7 +119,7 @@ public class AsyncRequestStepTest {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
     callFactory.clearRequest();
 
-    testSupport.setTime(TIMEOUT_SECONDS-1, TimeUnit.SECONDS);
+    testSupport.setTime(TIMEOUT_SECONDS - 1, TimeUnit.SECONDS);
 
     assertTrue(callFactory.invokedWith(requestParams));
   }
@@ -121,7 +131,6 @@ public class AsyncRequestStepTest {
   // no retry if status not handled
   // test exceeded retry count
 
-
   static class TestStep extends ResponseStep<Integer> {
     private Integer result;
 
@@ -130,7 +139,8 @@ public class AsyncRequestStepTest {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, Integer result, int statusCode, Map<String, List<String>> responseHeaders) {
+    public NextAction onSuccess(
+        Packet packet, Integer result, int statusCode, Map<String, List<String>> responseHeaders) {
       this.result = result;
       return null;
     }
@@ -159,7 +169,9 @@ public class AsyncRequestStepTest {
     }
 
     @Override
-    public CancellableCall generate(RequestParams requestParams, ApiClient client, String cont, ApiCallback<Integer> callback) throws ApiException {
+    public CancellableCall generate(
+        RequestParams requestParams, ApiClient client, String cont, ApiCallback<Integer> callback)
+        throws ApiException {
       this.requestParams = requestParams;
       this.callback = callback;
 
@@ -175,5 +187,4 @@ public class AsyncRequestStepTest {
       canceled = true;
     }
   }
-
 }

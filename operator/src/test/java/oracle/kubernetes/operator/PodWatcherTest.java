@@ -1,28 +1,10 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.common.collect.ImmutableMap;
-
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodStatus;
-import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-
-import org.hamcrest.Matchers;
-import org.junit.Test;
-
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static org.hamcrest.Matchers.both;
@@ -32,9 +14,24 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-/**
- * This test class verifies the behavior of the PodWatcher.
- */
+import com.google.common.collect.ImmutableMap;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodCondition;
+import io.kubernetes.client.models.V1PodStatus;
+import io.kubernetes.client.util.Watch;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+/** This test class verifies the behavior of the PodWatcher. */
 public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
   private static final int INITIAL_RESOURCE_VERSION = 234;
@@ -51,14 +48,15 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
     recordCallBack(response);
   }
 
-
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector()
+      throws Exception {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
-    assertThat(StubWatchFactory.getRecordedParameters().get(0),
-                    both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
-                    .and(hasEntry("labelSelector", asList(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL))));
+    assertThat(
+        StubWatchFactory.getRecordedParameters().get(0),
+        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
+            .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
   private String asList(String... selectors) {
@@ -68,13 +66,12 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @SuppressWarnings("unchecked")
   @Override
   protected <T> T createObjectWithMetaData(V1ObjectMeta metaData) {
-      return (T) new V1Pod().metadata(metaData);
+    return (T) new V1Pod().metadata(metaData);
   }
 
   @Override
-  protected PodWatcher createWatcher(String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return PodWatcher.create(this, nameSpace,
-        Integer.toString(initialResourceVersion), this, stopping);
+  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
+    return PodWatcher.create(this, ns, Integer.toString(rv), this, stopping);
   }
 
   @Test
@@ -106,7 +103,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
   @Test
   public void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() throws Exception {
-    List<V1PodCondition> conditions = Collections.singletonList(new V1PodCondition().type("Ready").status("False"));
+    List<V1PodCondition> conditions =
+        Collections.singletonList(new V1PodCondition().type("Ready").status("False"));
     pod.status(new V1PodStatus().phase("Running").conditions(conditions));
 
     assertThat(PodWatcher.isReady(pod), is(false));
@@ -120,7 +118,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   private void makePodReady(V1Pod pod) {
-    List<V1PodCondition> conditions = Collections.singletonList(new V1PodCondition().type("Ready").status("True"));
+    List<V1PodCondition> conditions =
+        Collections.singletonList(new V1PodCondition().type("Ready").status("True"));
     pod.status(new V1PodStatus().phase("Running").conditions(conditions));
   }
 
@@ -170,8 +169,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Test
   public void waitForReady_returnsAStep() throws Exception {
     AtomicBoolean stopping = new AtomicBoolean(true);
-    PodWatcher watcher = PodWatcher.create(this, "ns",
-        Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
+    PodWatcher watcher =
+        PodWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
 
     assertThat(watcher.waitForReady(pod, null), Matchers.instanceOf(Step.class));
   }
@@ -179,8 +178,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Test
   public void WhenWaitForReadyAppliedToReadyPod_performNextStep() throws Exception {
     AtomicBoolean stopping = new AtomicBoolean(false);
-    PodWatcher watcher = PodWatcher.create(this, "ns",
-        Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
+    PodWatcher watcher =
+        PodWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
 
     makePodReady(pod);
 

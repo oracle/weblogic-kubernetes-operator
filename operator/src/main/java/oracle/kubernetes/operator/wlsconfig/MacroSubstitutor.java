@@ -1,31 +1,28 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
 
 /**
+ * Substitute macro specified in WLS server template. Behavior of this class should mimic the
+ * behavior of the macro substitution logic in WebLogic
  *
- * Substitute macro specified in WLS server template. Behavior of this class should mimic the behavior of the
- * macro substitution logic in WebLogic
+ * <p>From WebLogic documentation at
+ * https://docs.oracle.com/middleware/12213/wls/DOMCF/server_templates.htm#DOMCF-GUID-EA003F89-C8E4-4CE1-81DF-6FF25F92D21B
  *
- * From WebLogic documentation at https://docs.oracle.com/middleware/12213/wls/DOMCF/server_templates.htm#DOMCF-GUID-EA003F89-C8E4-4CE1-81DF-6FF25F92D21B
- *
- * You can define a macro for any string attribute in a server template.
- * Macros cannot be used for integers or references to other configuration elements.
- * The valid macros available for use in server templates are:
- *
- * <br> ${id}: Instance ID of the dynamically created server; this ID starts at 1
- *
- * <br> ${serverName}: The name of the server to which this element belongs
- *
- * <br> ${clusterName}: The name of the cluster to which this element belongs
- *
- * <br> ${domainName}: The name of the domain to which this element belongs
- *
- * <br> ${system-property-name}: If this is not one of the predefined macro names listed previously, then it will be evaluated as a system property, and the value will be returned. If the system property does not exist, then an empty string will be substituted.
- *
- * <br> ${machineName}: The name of the machine to which this element belongs (Note: This is missing from the documentation)
- *
+ * <p>You can define a macro for any string attribute in a server template. Macros cannot be used
+ * for integers or references to other configuration elements. The valid macros available for use in
+ * server templates are: <br>
+ * ${id}: Instance ID of the dynamically created server; this ID starts at 1 <br>
+ * ${serverName}: The name of the server to which this element belongs <br>
+ * ${clusterName}: The name of the cluster to which this element belongs <br>
+ * ${domainName}: The name of the domain to which this element belongs <br>
+ * ${system-property-name}: If this is not one of the predefined macro names listed previously, then
+ * it will be evaluated as a system property, and the value will be returned. If the system property
+ * does not exist, then an empty string will be substituted. <br>
+ * ${machineName}: The name of the machine to which this element belongs (Note: This is missing from
+ * the documentation)
  */
 public class MacroSubstitutor {
 
@@ -47,7 +44,8 @@ public class MacroSubstitutor {
    * @param domainName Value for replacing values in ${domainName} macro
    * @param machineName Value for replacing values in ${machineName} macro
    */
-  public MacroSubstitutor(int id, String serverName, String clusterName, String domainName, String machineName) {
+  public MacroSubstitutor(
+      int id, String serverName, String clusterName, String domainName, String machineName) {
     this.id = id;
     this.serverName = serverName;
     this.clusterName = clusterName;
@@ -56,8 +54,8 @@ public class MacroSubstitutor {
   }
 
   /**
-   * Perform macro substitution. Extracts the macro name and resolves its macro value using values specified
-   * in this MacroSubstitutor.
+   * Perform macro substitution. Extracts the macro name and resolves its macro value using values
+   * specified in this MacroSubstitutor.
    *
    * @param inputValue String containing macros
    * @return String with values substituted for macros
@@ -127,5 +125,4 @@ public class MacroSubstitutor {
     // Look for macro in ConfigurationProperty or as system property
     return System.getProperty(macro);
   }
-
 }
