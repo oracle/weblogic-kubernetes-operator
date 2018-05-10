@@ -11,6 +11,9 @@
 # Usage:
 #   See "function usage" below or call this script with no parameters.
 #
+script="${BASH_SOURCE[0]}"
+scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
+source ${scriptDir}/internal/utility.sh
 
 function usage {
 cat << EOF
@@ -51,6 +54,13 @@ cat << EOF
   This script exits with a zero status on success, and a 
   non-zero status on failure.
 EOF
+}
+
+function deleteVoyager {
+  if [ `kubectl get ingresses.voyager.appscode.com -l weblogic.domainName --all-namespaces=true | grep "voyager" | wc -l` -eq 0 ]; then
+    echo @@ There are no voyager ingress, about to uninstall voyager.
+    deleteVoyagerController
+  fi
 }
 
 #
@@ -155,6 +165,7 @@ function deleteDomains {
     # Exit if all k8s resources deleted or max wait seconds exceeded.
 
     if [ $allcount -eq 0 ]; then
+      deleteVoyager
       echo @@ Success.
       rm -f $tempfile
       exit 0
