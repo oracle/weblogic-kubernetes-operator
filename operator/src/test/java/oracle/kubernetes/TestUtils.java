@@ -88,6 +88,7 @@ public class TestUtils {
     void throwLoggedThrowable() {
       if (throwable == null) return;
 
+      throwable.printStackTrace();
       if (throwable instanceof Error) throw (Error) throwable;
       if (throwable instanceof RuntimeException) throw (RuntimeException) throwable;
       throw new RuntimeException(throwable);
