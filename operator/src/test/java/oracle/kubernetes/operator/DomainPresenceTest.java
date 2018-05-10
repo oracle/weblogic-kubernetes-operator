@@ -207,16 +207,4 @@ public class DomainPresenceTest {
       return new ApiClient();
     }
   }
-
-  public static void main(String[] args) throws Exception {
-
-    for (int i = 0; i < 1000; i++) runTest();
-  }
-
-  private static void runTest() throws Exception {
-    DomainPresenceTest test = new DomainPresenceTest();
-    test.setUp();
-    test.whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap();
-    test.tearDown();
-  }
 }
