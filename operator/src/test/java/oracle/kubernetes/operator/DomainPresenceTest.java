@@ -94,6 +94,7 @@ public class DomainPresenceTest {
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(SynchronousCallFactoryStub.install());
     mementos.add(ClientFactoryStub.install());
+    mementos.add(StubWatchFactory.install());
   }
 
   @After
