@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -63,7 +64,7 @@ public abstract class WatcherTestBase
       };
 
   @Override
-  public Thread newThread(Runnable r) {
+  public Thread newThread(@Nonnull Runnable r) {
     Thread thread = new Thread(r);
     threads.add(thread);
     thread.setName(String.format("Test thread %d for %s", threads.size(), testName));
@@ -120,19 +121,19 @@ public abstract class WatcherTestBase
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(1));
   }
 
-  private <T> Watch.Response<T> createAddResponse(T object) {
+  private <T> Watch.Response createAddResponse(T object) {
     return WatchEvent.createAddedEvent(object).toWatchResponse();
   }
 
-  private <T> Watch.Response<?> createModifyResponse(T object) {
+  private <T> Watch.Response createModifyResponse(T object) {
     return WatchEvent.createModifiedEvent(object).toWatchResponse();
   }
 
-  private <T> Watch.Response<?> createDeleteResponse(T object) {
+  private <T> Watch.Response createDeleteResponse(T object) {
     return WatchEvent.createDeleteEvent(object).toWatchResponse();
   }
 
-  private Watch.Response<?> createHttpGoneErrorResponse(int nextResourceVersion) {
+  private Watch.Response createHttpGoneErrorResponse(int nextResourceVersion) {
     return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
   }
 
@@ -140,8 +141,7 @@ public abstract class WatcherTestBase
   @Test
   public void receivedEvents_areSentToListeners() throws Exception {
     Object object = createObjectWithMetaData();
-    StubWatchFactory.addCallResponses(
-        createAddResponse(object), (Watch.Response) createModifyResponse(object));
+    StubWatchFactory.addCallResponses(createAddResponse(object), createModifyResponse(object));
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -169,10 +169,8 @@ public abstract class WatcherTestBase
   @Test
   public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() throws Exception {
     try {
-      StubWatchFactory.addCallResponses(
-          (Watch.Response) createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
-      StubWatchFactory.addCallResponses(
-          (Watch.Response) createDeleteResponse(createObjectWithMetaData()));
+      StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
+      StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
 
       createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -187,8 +185,7 @@ public abstract class WatcherTestBase
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterDelete_nextRequestSendsIncrementedResourceVersion() throws Exception {
-    StubWatchFactory.addCallResponses(
-        (Watch.Response) createDeleteResponse(createObjectWithMetaData()));
+    StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
     StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
@@ -221,12 +218,10 @@ public abstract class WatcherTestBase
     return Integer.toString(resourceVersion++);
   }
 
-  private void createAndRunWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    Watcher<?> watcher = createWatcher(nameSpace, stopping, initialResourceVersion);
+  private void createAndRunWatcher(String nameSpace, AtomicBoolean stopping, int resourceVersion) {
+    Watcher<?> watcher = createWatcher(nameSpace, stopping, resourceVersion);
     watcher.waitForExit();
   }
 
-  protected abstract Watcher<?> createWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion);
+  protected abstract Watcher<?> createWatcher(String ns, AtomicBoolean stopping, int rv);
 }
