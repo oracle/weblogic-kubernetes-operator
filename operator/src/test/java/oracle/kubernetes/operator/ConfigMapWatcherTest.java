@@ -11,7 +11,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -45,13 +44,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
   }
 
   @Override
-  protected ConfigMapWatcher createWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return ConfigMapWatcher.create(
-        Executors.defaultThreadFactory(),
-        nameSpace,
-        Integer.toString(initialResourceVersion),
-        this,
-        stopping);
+  protected ConfigMapWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
+    return ConfigMapWatcher.create(this, ns, Integer.toString(rv), this, stopping);
   }
 }

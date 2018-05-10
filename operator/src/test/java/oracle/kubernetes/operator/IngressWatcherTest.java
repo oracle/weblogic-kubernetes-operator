@@ -16,7 +16,6 @@ import com.google.common.collect.ImmutableMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -89,13 +88,7 @@ public class IngressWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Override
-  protected IngressWatcher createWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return IngressWatcher.create(
-        Executors.defaultThreadFactory(),
-        nameSpace,
-        Integer.toString(initialResourceVersion),
-        this,
-        stopping);
+  protected IngressWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
+    return IngressWatcher.create(this, ns, Integer.toString(rv), this, stopping);
   }
 }
