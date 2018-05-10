@@ -17,7 +17,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,6 +44,20 @@ public class StepTest {
 
   private Engine engine = null;
 
+  private static final Logger UNDERLYING_LOGGER =
+      LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+  private List<Handler> savedhandlers;
+
+  @Before
+  public void disableConsoleLogging() {
+    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+  }
+
+  @After
+  public void restoreConsoleLogging() {
+    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+  }
+
   @Before
   public void setup() {
     engine = new Engine("StepTest");
@@ -50,8 +69,8 @@ public class StepTest {
     Packet p = new Packet();
 
     Semaphore signal = new Semaphore(0);
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -102,8 +121,8 @@ public class StepTest {
     p.put(NA, commandMap);
 
     Semaphore signal = new Semaphore(0);
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -154,8 +173,8 @@ public class StepTest {
     p.put(NA, commandMap);
 
     Semaphore signal = new Semaphore(0);
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -210,7 +229,7 @@ public class StepTest {
     p.put(Step2.class.getName() + ACQUIRE_SEMAPHORE_SUFFIX, acquireSemaphore);
 
     Semaphore signal = new Semaphore(0);
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -258,8 +277,8 @@ public class StepTest {
       Packet p = new Packet();
 
       Semaphore signal = new Semaphore(0);
-      List<Step> called = new ArrayList<Step>();
-      List<Throwable> throwables = new ArrayList<Throwable>();
+      List<Step> called = new ArrayList<>();
+      List<Throwable> throwables = new ArrayList<>();
 
       sems.add(signal);
       calls.add(called);
@@ -314,8 +333,8 @@ public class StepTest {
     Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     Fiber f = engine.createFiber();
     f.start(
@@ -366,7 +385,7 @@ public class StepTest {
     p.put(Step2.class.getName() + ACQUIRE_SEMAPHORE_SUFFIX, acquireSemaphore);
 
     Semaphore signal = new Semaphore(0);
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Throwable> throwables = new ArrayList<>();
 
     Fiber f = engine.createFiber();
     f.start(
@@ -466,7 +485,7 @@ public class StepTest {
       @SuppressWarnings({"rawtypes", "unchecked"})
       List<Step> called = (List) packet.get(MARK);
       if (called == null) {
-        called = new ArrayList<Step>();
+        called = new ArrayList<>();
         packet.put(MARK, called);
       }
       called.add(this);
