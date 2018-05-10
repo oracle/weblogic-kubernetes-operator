@@ -90,7 +90,6 @@ public class DomainPresenceTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StubWatchFactory.install());
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(SynchronousCallFactoryStub.install());
     mementos.add(ClientFactoryStub.install());
