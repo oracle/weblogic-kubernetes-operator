@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -51,6 +52,8 @@ public class DomainPresenceTest {
   private final V1EventList expectedEvents = createEmptyEventList();
   private final V1PodList expectedPods = createEmptyPodList();
   private final V1ConfigMap expectedDomainConfigMap = createEmptyConfigMap();
+
+  private AtomicBoolean stopping;
 
   private DomainList createEmptyDomainList() {
     return new DomainList().withMetadata(createListMetadata());
@@ -89,16 +92,24 @@ public class DomainPresenceTest {
 
   @Before
   public void setUp() throws Exception {
+    stopping = getStoppingVariable();
+
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StubWatchFactory.install());
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(SynchronousCallFactoryStub.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
   }
 
+  private AtomicBoolean getStoppingVariable() throws NoSuchFieldException {
+    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "stopping");
+    return stoppingMemento.getOriginalValue();
+  }
+
   @After
   public void tearDown() throws Exception {
+    stopping.set(true);
+
     for (Memento memento : mementos) memento.revert();
 
     testSupport.throwOnCompletionFailure();
