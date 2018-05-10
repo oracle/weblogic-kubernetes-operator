@@ -29,7 +29,6 @@ import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -69,8 +68,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       V1ConfigMap cm = computeDomainConfigMap();
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+      CallBuilderFactory factory = new CallBuilderFactory();
       Step read =
           factory
               .create()
@@ -208,17 +206,17 @@ public class ConfigMapHelper {
     }
 
     private static synchronized Map<String, String> loadScripts(String domainNamespace) {
-      URI uri = null;
+      URI uri;
       try {
         uri = ScriptConfigMapStep.class.getResource(SCRIPT_LOCATION).toURI();
       } catch (URISyntaxException e) {
         LOGGER.warning(MessageKeys.EXCEPTION, e);
         throw new RuntimeException(e);
       }
+
       try {
         if ("jar".equals(uri.getScheme())) {
-          try (FileSystem fileSystem =
-              FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap())) {
+          try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
             return walkScriptsPath(fileSystem.getPath(SCRIPTS), domainNamespace);
           }
         } else {
