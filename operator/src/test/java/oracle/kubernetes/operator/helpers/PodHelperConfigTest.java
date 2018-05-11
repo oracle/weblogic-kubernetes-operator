@@ -2,13 +2,13 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.*;
 import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
@@ -18,8 +18,6 @@ import java.util.List;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
