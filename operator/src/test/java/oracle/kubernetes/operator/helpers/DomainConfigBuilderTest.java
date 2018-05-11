@@ -8,45 +8,52 @@ import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.Test;
 
 /** Tests DomainConfigBuilder's concrete methods */
-public class DomainConfigBuilderTest extends DomainConfigBuilder {
-
-  @Override
-  public void updateDomainSpec(DomainSpec domainSpec, ClusterConfig clusterConfig) {}
-
-  @Override
-  public NonClusteredServerConfig getEffectiveNonClusteredServerConfig(
-      DomainSpec domainSpec, String serverName) {
-    return null;
-  }
-
-  @Override
-  public ClusteredServerConfig getEffectiveClusteredServerConfig(
-      DomainSpec domainSpec, String clusterName, String serverName) {
-    return null;
-  }
-
-  @Override
-  public ClusterConfig getEffectiveClusterConfig(DomainSpec domainSpec, String clusterName) {
-    return null;
-  }
+public class DomainConfigBuilderTest {
 
   @Test
   public void getDefaultImagePullPolicy_nullImage_returns_ifNotPresent() {
-    assertThat(getDefaultImagePullPolicy(null), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(newBuilder().getDefaultImagePullPolicy(null), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
   }
 
   @Test
   public void getDefaultImagePullPolicy_imageDoesNotEndWithLatest_returns_ifNotPresent() {
-    assertThat(getDefaultImagePullPolicy("image1"), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(
+        newBuilder().getDefaultImagePullPolicy("image1"), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
   }
 
   @Test
   public void getImagePullPolicy_imageEndsWithLatest_returns_always() {
     assertThat(
-        getDefaultImagePullPolicy("image1" + LATEST_IMAGE_SUFFIX), equalTo(ALWAYS_IMAGEPULLPOLICY));
+        newBuilder().getDefaultImagePullPolicy("image1" + LATEST_IMAGE_SUFFIX),
+        equalTo(ALWAYS_IMAGEPULLPOLICY));
+  }
+
+  private DomainConfigBuilder newBuilder() {
+    return new TestDomainConfigBuilder();
+  }
+
+  private static class TestDomainConfigBuilder extends DomainConfigBuilder {
+
+    @Override
+    public void updateDomainSpec(ClusterConfig clusterConfig) {}
+
+    @Override
+    public NonClusteredServerConfig getEffectiveNonClusteredServerConfig(String serverName) {
+      return null;
+    }
+
+    @Override
+    public ClusteredServerConfig getEffectiveClusteredServerConfig(
+        String clusterName, String serverName) {
+      return null;
+    }
+
+    @Override
+    public ClusterConfig getEffectiveClusterConfig(String clusterName) {
+      return null;
+    }
   }
 }

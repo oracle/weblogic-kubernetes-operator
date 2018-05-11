@@ -8,6 +8,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.StartupControlConstants.*;
 import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.helpers.ClusteredServerConfig.*;
+import static oracle.kubernetes.operator.helpers.DomainConfigBuilder.*;
 import static oracle.kubernetes.operator.helpers.NonClusteredServerConfig.*;
 import static oracle.kubernetes.operator.helpers.ServerConfig.*;
 import static org.hamcrest.MatcherAssert.*;
@@ -21,7 +22,7 @@ import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import org.junit.Test;
 
 /** Tests DomainConfigBuilderV1 */
-public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
+public class DomainConfigBuilderV1Test {
 
   @Test
   public void
@@ -37,7 +38,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     clusterStartup.setReplicas(clusterStartupReplicas);
     DomainSpec domainSpec =
         (new DomainSpec()).withReplicas(domainReplicas).withClusterStartup(clusterStartups);
-    updateDomainSpec(domainSpec, clusterConfig);
+    newBuilder(domainSpec).updateDomainSpec(clusterConfig);
     assertThat(domainSpec.getReplicas(), equalTo(domainReplicas));
     assertThat(clusterStartup.getReplicas(), equalTo(clusterConfigReplicas));
   }
@@ -54,7 +55,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterStartup clusterStartup = clusterStartups.get(0);
     DomainSpec domainSpec =
         (new DomainSpec()).withReplicas(domainReplicas).withClusterStartup(clusterStartups);
-    updateDomainSpec(domainSpec, clusterConfig);
+    newBuilder(domainSpec).updateDomainSpec(clusterConfig);
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
     assertThat(clusterStartup.getReplicas(), nullValue());
   }
@@ -67,7 +68,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterConfig clusterConfig =
         (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
     DomainSpec domainSpec = (new DomainSpec()).withReplicas(domainReplicas);
-    updateDomainSpec(domainSpec, clusterConfig);
+    newBuilder(domainSpec).updateDomainSpec(clusterConfig);
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
   }
 
@@ -83,7 +84,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterStartup clusterStartup = clusterStartups.get(0);
     clusterStartup.setReplicas(clusterStartupReplicas);
     DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(clusterStartups);
-    updateDomainSpec(domainSpec, clusterConfig);
+    newBuilder(domainSpec).updateDomainSpec(clusterConfig);
     assertThat(domainSpec.getReplicas(), nullValue());
     assertThat(clusterStartup.getReplicas(), equalTo(clusterConfigReplicas));
   }
@@ -98,7 +99,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
     ClusterStartup clusterStartup = clusterStartups.get(0);
     DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(clusterStartups);
-    updateDomainSpec(domainSpec, clusterConfig);
+    newBuilder(domainSpec).updateDomainSpec(clusterConfig);
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
     assertThat(clusterStartup.getReplicas(), nullValue());
   }
@@ -110,7 +111,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterConfig clusterConfig =
         (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
     DomainSpec domainSpec = new DomainSpec();
-    updateDomainSpec(domainSpec, clusterConfig);
+    newBuilder(domainSpec).updateDomainSpec(clusterConfig);
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
   }
 
@@ -131,10 +132,12 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withImage("image2")
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withServerStartup(serverStartups);
-    NonClusteredServerConfig actual = getEffectiveNonClusteredServerConfig(domainSpec, server1);
+    NonClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(server1);
     NonClusteredServerConfig want = (new NonClusteredServerConfig()).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withNodePort(serverStartup.getNodePort())
         .withStartedServerState(serverStartup.getDesiredState())
         .withEnv(serverStartup.getEnv())
@@ -154,10 +157,12 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withAsName("adminServer")
             .withImage("image2")
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
-    NonClusteredServerConfig actual = getEffectiveNonClusteredServerConfig(domainSpec, server1);
+    NonClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(server1);
     NonClusteredServerConfig want = (new NonClusteredServerConfig()).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withNonClusteredServerStartPolicy(NON_CLUSTERED_SERVER_START_POLICY_NEVER);
@@ -170,10 +175,12 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String server1 = "server1";
     DomainSpec domainSpec =
         (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
-    NonClusteredServerConfig actual = getEffectiveNonClusteredServerConfig(domainSpec, server1);
+    NonClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(server1);
     NonClusteredServerConfig want = (new NonClusteredServerConfig()).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY)
         .withNonClusteredServerStartPolicy(NON_CLUSTERED_SERVER_START_POLICY_ALWAYS);
     assertThat(actual, equalTo(want));
@@ -203,11 +210,13 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withClusterStartup(clusterStartups)
             .withServerStartup(serverStartups);
-    ClusteredServerConfig actual = getEffectiveClusteredServerConfig(domainSpec, cluster1, server1);
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
     ClusteredServerConfig want =
         (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withNodePort(serverStartup.getNodePort())
         .withStartedServerState(serverStartup.getDesiredState())
         .withEnv(serverStartup.getEnv())
@@ -235,11 +244,13 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withImage("image2")
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withServerStartup(serverStartups);
-    ClusteredServerConfig actual = getEffectiveClusteredServerConfig(domainSpec, cluster1, server1);
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
     ClusteredServerConfig want =
         (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withNodePort(serverStartup.getNodePort())
         .withStartedServerState(serverStartup.getDesiredState())
         .withEnv(serverStartup.getEnv())
@@ -266,11 +277,13 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withImage("image2")
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withClusterStartup(clusterStartups);
-    ClusteredServerConfig actual = getEffectiveClusteredServerConfig(domainSpec, cluster1, server1);
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
     ClusteredServerConfig want =
         (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withStartedServerState(clusterStartup.getDesiredState())
         .withEnv(clusterStartup.getEnv())
         .withImage(domainSpec.getImage())
@@ -290,11 +303,13 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withAsName("adminServer")
             .withImage("image2")
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
-    ClusteredServerConfig actual = getEffectiveClusteredServerConfig(domainSpec, cluster1, server1);
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
     ClusteredServerConfig want =
         (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_NEVER);
@@ -308,11 +323,13 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String server1 = "server1";
     DomainSpec domainSpec =
         (new DomainSpec()).withStartupControl(ALL_STARTUPCONTROL).withAsName("adminServer");
-    ClusteredServerConfig actual = getEffectiveClusteredServerConfig(domainSpec, cluster1, server1);
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
     ClusteredServerConfig want =
         (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    initServerConfigFromDefaults(
-        want); // setup up the default values - we have separate tests for this
+    newBuilder()
+        .initServerConfigFromDefaults(
+            want); // setup up the default values - we have separate tests for this
     want.withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_ALWAYS)
         .withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY);
     assertThat(actual, equalTo(want));
@@ -327,7 +344,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     clusterStartups.get(0).setReplicas(replicasWant);
     DomainSpec domainSpec =
         (new DomainSpec()).withReplicas(new Integer(2)).withClusterStartup(clusterStartups);
-    ClusterConfig actual = getEffectiveClusterConfig(domainSpec, cluster1);
+    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(cluster1);
     ClusterConfig want =
         (new ClusterConfig())
             .withClusterName(cluster1)
@@ -343,7 +360,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String cluster1 = "cluster1";
     Integer replicasWant = new Integer(1);
     DomainSpec domainSpec = (new DomainSpec()).withReplicas(replicasWant);
-    ClusterConfig actual = getEffectiveClusterConfig(domainSpec, cluster1);
+    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(cluster1);
     ClusterConfig want =
         (new ClusterConfig())
             .withClusterName(cluster1)
@@ -362,7 +379,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withReplicas(0)
             .withMinReplicas(0)
             .withMaxReplicas(0);
-    ClusterConfig actual = getEffectiveClusterConfig(new DomainSpec(), cluster1);
+    ClusterConfig actual = newBuilder().getEffectiveClusterConfig(cluster1);
     assertThat(actual, equalTo(want));
   }
 
@@ -378,7 +395,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withNodePort(want.getNodePort())
             .withStartedServerState(want.getStartedServerState())
             .withEnv(want.getEnv());
-    initServerConfigFromServerStartup(actual, null);
+    newBuilder().initServerConfigFromServerStartup(actual, null);
     assertThat(actual, equalTo(want));
   }
 
@@ -396,7 +413,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withNodePort(want.getNodePort())
             .withStartedServerState(want.getStartedServerState())
             .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    initServerConfigFromServerStartup(actual, new ServerStartup());
+    newBuilder().initServerConfigFromServerStartup(actual, new ServerStartup());
     assertThat(actual, equalTo(want));
   }
 
@@ -417,7 +434,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withNodePort(want.getNodePort())
             .withDesiredState(want.getStartedServerState())
             .withEnv(want.getEnv());
-    initServerConfigFromServerStartup(actual, serverStartup);
+    newBuilder().initServerConfigFromServerStartup(actual, serverStartup);
     assertThat(actual, equalTo(want));
   }
 
@@ -431,7 +448,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
         (new ClusteredServerConfig())
             .withStartedServerState(want.getStartedServerState())
             .withEnv(want.getEnv());
-    initClusteredServerConfigFromClusterStartup(actual, null);
+    newBuilder().initClusteredServerConfigFromClusterStartup(actual, null);
     assertThat(actual, equalTo(want));
   }
 
@@ -447,7 +464,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
         (new ClusteredServerConfig())
             .withStartedServerState(want.getStartedServerState())
             .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
+    newBuilder().initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
     assertThat(actual, equalTo(want));
   }
 
@@ -466,7 +483,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
         (new ClusteredServerConfig())
             .withStartedServerState(STARTED_SERVER_STATE_RUNNING)
             .withEnv(newEnvVarList().addElement(newEnvVar().name("name2").value("value2")));
-    initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
+    newBuilder().initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
     assertThat(actual, equalTo(want));
   }
 
@@ -478,7 +495,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ServerConfig want =
         (new ServerConfig()).withImage("image1").withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY);
     ServerConfig actual = (new ServerConfig()).withImage(want.getImage());
-    initServerConfigFromDomainSpec(actual, new DomainSpec());
+    newBuilder().initServerConfigFromDomainSpec(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -491,7 +508,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
         (new ServerConfig()).withImage("image1:latest").withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
     DomainSpec domainSpec = (new DomainSpec()).withImage(want.getImage());
     ServerConfig actual = (new ServerConfig()).withImage("image2");
-    initServerConfigFromDomainSpec(actual, domainSpec);
+    newBuilder(domainSpec).initServerConfigFromDomainSpec(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -505,7 +522,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withImagePullPolicy(want.getImagePullPolicy());
     ServerConfig actual =
         (new ServerConfig()).withImage("image2").withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
-    initServerConfigFromDomainSpec(actual, domainSpec);
+    newBuilder(domainSpec).initServerConfigFromDomainSpec(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -522,7 +539,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
             .withGracefulShutdownIgnoreSessions(Boolean.FALSE)
             .withGracefulShutdownWaitForSessions(Boolean.FALSE);
     ServerConfig actual = new ServerConfig();
-    initServerConfigFromDefaults(actual);
+    newBuilder().initServerConfigFromDefaults(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -530,7 +547,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
   public void initClusterConfigFromClusterStartup_nullClusterStartup_doesNotSetProperies() {
     ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
     ClusterConfig actual = new ClusterConfig().withReplicas(want.getReplicas());
-    initClusterConfigFromClusterStartup(actual, null);
+    newBuilder().initClusterConfigFromClusterStartup(actual, null);
     assertThat(actual, equalTo(want));
   }
 
@@ -538,7 +555,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
   public void initClusterConfigFromClusterStartup_unsetProperties_doesNotSetProperies() {
     ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
     ClusterConfig actual = new ClusterConfig().withReplicas(want.getReplicas());
-    initClusterConfigFromClusterStartup(actual, new ClusterStartup());
+    newBuilder().initClusterConfigFromClusterStartup(actual, new ClusterStartup());
     assertThat(actual, equalTo(want));
   }
 
@@ -547,7 +564,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
     ClusterStartup clusterStartup = (new ClusterStartup()).withReplicas(want.getReplicas());
     ClusterConfig actual = new ClusterConfig().withReplicas(new Integer(2));
-    initClusterConfigFromClusterStartup(actual, clusterStartup);
+    newBuilder().initClusterConfigFromClusterStartup(actual, clusterStartup);
     assertThat(actual, equalTo(want));
   }
 
@@ -556,7 +573,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
     DomainSpec domainSpec = new DomainSpec();
     ClusterConfig actual = new ClusterConfig().withReplicas(new Integer(1));
-    initClusterConfigFromDomainSpec(actual, domainSpec);
+    newBuilder(domainSpec).initClusterConfigFromDomainSpec(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -565,7 +582,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
     DomainSpec domainSpec = (new DomainSpec()).withReplicas(want.getReplicas());
     ClusterConfig actual = new ClusterConfig().withReplicas(new Integer(2));
-    initClusterConfigFromDomainSpec(actual, domainSpec);
+    newBuilder(domainSpec).initClusterConfigFromDomainSpec(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -573,7 +590,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
   public void initClusterConfigFromDefaults_setProperties_setsPropertiesToDefaults() {
     ClusterConfig want = (new ClusterConfig()).withReplicas(DEFAULT_REPLICAS);
     ClusterConfig actual = new ClusterConfig();
-    initClusterConfigFromDefaults(actual);
+    newBuilder().initClusterConfigFromDefaults(actual);
     assertThat(actual, equalTo(want));
   }
 
@@ -637,7 +654,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
 
   @Test(expected = AssertionError.class)
   public void getNonClusteredServerStartPolicy_startupControlUnknown_throwsException() {
-    getNonClusteredServerStartPolicy("unknown", true, true);
+    newBuilder().getNonClusteredServerStartPolicy("unknown", true, true);
   }
 
   @Test
@@ -721,34 +738,34 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
 
   @Test(expected = AssertionError.class)
   public void getClusteredServerStartPolicy_startupControlUnknown_throwsException() {
-    getClusteredServerStartPolicy("unknown", false, false, false);
+    newBuilder().getClusteredServerStartPolicy("unknown", false, false, false);
   }
 
   @Test
   public void isAdminServer_sameName_returnsTrue() {
-    assertThat(isAdminServer("server1", "server1"), equalTo(true));
+    assertThat(newBuilder().isAdminServer("server1", "server1"), equalTo(true));
   }
 
   @Test
   public void isAdminServer_differentNames_returnsFalse() {
-    assertThat(isAdminServer("server1", "server2"), equalTo(false));
+    assertThat(newBuilder().isAdminServer("server1", "server2"), equalTo(false));
   }
 
   @Test
   public void isAdminServer_serverNameNotNull_adminServerNameNull_returnsFalse() {
-    assertThat(isAdminServer("server1", null), equalTo(false));
+    assertThat(newBuilder().isAdminServer("server1", null), equalTo(false));
   }
 
   @Test
   public void isAdminServer_serverNameNull_adminServerNameNotNull_returnsFalse() {
-    assertThat(isAdminServer(null, "server1"), equalTo(false));
+    assertThat(newBuilder().isAdminServer(null, "server1"), equalTo(false));
   }
 
   @Test
   public void getClusterStartup_nullClusterStartups_returnsNull() {
     String cluster2 = "cluster2";
     DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(null);
-    ClusterStartup actual = getClusterStartup(domainSpec, cluster2);
+    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(cluster2);
     assertThat(actual, nullValue());
   }
 
@@ -757,7 +774,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String cluster1 = "cluster1";
     String cluster2 = "cluster2";
     DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(createClusterStartups(cluster1));
-    ClusterStartup actual = getClusterStartup(domainSpec, cluster2);
+    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(cluster2);
     assertThat(actual, nullValue());
   }
 
@@ -767,7 +784,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String cluster2 = "cluster2";
     DomainSpec domainSpec =
         (new DomainSpec()).withClusterStartup(createClusterStartups(cluster1, cluster2));
-    ClusterStartup actual = getClusterStartup(domainSpec, cluster2);
+    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(cluster2);
     ClusterStartup want = domainSpec.getClusterStartup().get(1);
     assertThat(actual, equalTo(want));
   }
@@ -776,7 +793,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
   public void getServerStartup_nullServerStartups_returnsNull() {
     String server2 = "server2";
     DomainSpec domainSpec = (new DomainSpec()).withServerStartup(null);
-    ServerStartup actual = getServerStartup(domainSpec, server2);
+    ServerStartup actual = newBuilder(domainSpec).getServerStartup(server2);
     assertThat(actual, nullValue());
   }
 
@@ -785,7 +802,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String server1 = "server1";
     String server2 = "server2";
     DomainSpec domainSpec = (new DomainSpec()).withServerStartup(createServerStartups(server1));
-    ServerStartup actual = getServerStartup(domainSpec, server2);
+    ServerStartup actual = newBuilder(domainSpec).getServerStartup(server2);
     assertThat(actual, nullValue());
   }
 
@@ -795,7 +812,7 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
     String server2 = "server2";
     DomainSpec domainSpec =
         (new DomainSpec()).withServerStartup(createServerStartups(server1, server2));
-    ServerStartup actual = getServerStartup(domainSpec, server2);
+    ServerStartup actual = newBuilder(domainSpec).getServerStartup(server2);
     ServerStartup want = domainSpec.getServerStartup().get(1);
     assertThat(actual, equalTo(want));
   }
@@ -807,16 +824,16 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
       String isAdminServer_noServerStartup_policy,
       String isAdminServer_hasServerStartup_policy) {
     assertThat(
-        getNonClusteredServerStartPolicy(startupControl, false, false),
+        newBuilder().getNonClusteredServerStartPolicy(startupControl, false, false),
         equalTo(notAdminServer_noServerStartup_policy));
     assertThat(
-        getNonClusteredServerStartPolicy(startupControl, false, true),
+        newBuilder().getNonClusteredServerStartPolicy(startupControl, false, true),
         equalTo(notAdminServer_hasServerStartup_policy));
     assertThat(
-        getNonClusteredServerStartPolicy(startupControl, true, false),
+        newBuilder().getNonClusteredServerStartPolicy(startupControl, true, false),
         equalTo(isAdminServer_noServerStartup_policy));
     assertThat(
-        getNonClusteredServerStartPolicy(startupControl, true, true),
+        newBuilder().getNonClusteredServerStartPolicy(startupControl, true, true),
         equalTo(isAdminServer_hasServerStartup_policy));
   }
 
@@ -831,28 +848,28 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
       String isAdminServer_hasClusterStartup_noServerStartup_policy,
       String isAdminServer_hasClusterStartup_hasServerStartup_policy) {
     assertThat(
-        getClusteredServerStartPolicy(startupControl, false, false, false),
+        newBuilder().getClusteredServerStartPolicy(startupControl, false, false, false),
         equalTo(notAdminServer_noClusterStartup_noServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, false, false, true),
+        newBuilder().getClusteredServerStartPolicy(startupControl, false, false, true),
         equalTo(notAdminServer_noClusterStartup_hasServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, false, true, false),
+        newBuilder().getClusteredServerStartPolicy(startupControl, false, true, false),
         equalTo(notAdminServer_hasClusterStartup_noServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, false, true, true),
+        newBuilder().getClusteredServerStartPolicy(startupControl, false, true, true),
         equalTo(notAdminServer_hasClusterStartup_hasServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, true, false, false),
+        newBuilder().getClusteredServerStartPolicy(startupControl, true, false, false),
         equalTo(isAdminServer_noClusterStartup_noServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, true, false, true),
+        newBuilder().getClusteredServerStartPolicy(startupControl, true, false, true),
         equalTo(isAdminServer_noClusterStartup_hasServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, true, true, false),
+        newBuilder().getClusteredServerStartPolicy(startupControl, true, true, false),
         equalTo(isAdminServer_hasClusterStartup_noServerStartup_policy));
     assertThat(
-        getClusteredServerStartPolicy(startupControl, true, true, true),
+        newBuilder().getClusteredServerStartPolicy(startupControl, true, true, true),
         equalTo(isAdminServer_hasClusterStartup_hasServerStartup_policy));
   }
 
@@ -874,5 +891,13 @@ public class DomainConfigBuilderV1Test extends DomainConfigBuilderV1 {
       rtn.add(serverStartup);
     }
     return rtn;
+  }
+
+  private DomainConfigBuilderV1 newBuilder() {
+    return newBuilder(new DomainSpec());
+  }
+
+  private DomainConfigBuilderV1 newBuilder(DomainSpec domainSpec) {
+    return new DomainConfigBuilderV1(domainSpec);
   }
 }

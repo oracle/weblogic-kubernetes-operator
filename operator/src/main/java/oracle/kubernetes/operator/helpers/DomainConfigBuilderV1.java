@@ -23,24 +23,24 @@ import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
  */
 public class DomainConfigBuilderV1 extends DomainConfigBuilder {
 
-  protected DomainConfigBuilderV1() {}
-
-  private static final DomainConfigBuilderV1 INSTANCE = new DomainConfigBuilderV1();
+  private DomainSpec domainSpec;
 
   /**
-   * Gets the DomainConfigBuilderV1 singleton.
+   * Construct a DomainConfigBuilderV1 instance.
    *
-   * @return the domain config builder v1 singleton
+   * @param domainSpec the domain spec
    */
-  public static DomainConfigBuilderV1 instance() {
-    return INSTANCE;
+  public DomainConfigBuilderV1(DomainSpec domainSpec) {
+    this.domainSpec = domainSpec;
+    LOGGER.entering(domainSpec);
+    LOGGER.exiting();
   }
 
   /** {@inheritDoc} */
   @Override
-  public void updateDomainSpec(DomainSpec domainSpec, ClusterConfig clusterConfig) {
-    LOGGER.entering(domainSpec, clusterConfig);
-    ClusterStartup clusterStartup = getClusterStartup(domainSpec, clusterConfig.getClusterName());
+  public void updateDomainSpec(ClusterConfig clusterConfig) {
+    LOGGER.entering(clusterConfig);
+    ClusterStartup clusterStartup = getClusterStartup(clusterConfig.getClusterName());
     if (clusterStartup != null && clusterStartup.getReplicas() != null) {
       clusterStartup.setReplicas(new Integer(clusterConfig.getReplicas()));
     } else {
@@ -52,13 +52,12 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
 
   /** {@inheritDoc} */
   @Override
-  public NonClusteredServerConfig getEffectiveNonClusteredServerConfig(
-      DomainSpec domainSpec, String serverName) {
-    LOGGER.entering(domainSpec, serverName);
+  public NonClusteredServerConfig getEffectiveNonClusteredServerConfig(String serverName) {
+    LOGGER.entering(serverName);
     NonClusteredServerConfig result = new NonClusteredServerConfig().withServerName(serverName);
-    ServerStartup serverStartup = getServerStartup(domainSpec, serverName);
+    ServerStartup serverStartup = getServerStartup(serverName);
     initServerConfigFromDefaults(result);
-    initServerConfigFromDomainSpec(result, domainSpec);
+    initServerConfigFromDomainSpec(result);
     initServerConfigFromServerStartup(result, serverStartup);
     result.setNonClusteredServerStartPolicy(
         getNonClusteredServerStartPolicy(
@@ -72,14 +71,14 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
   /** {@inheritDoc} */
   @Override
   public ClusteredServerConfig getEffectiveClusteredServerConfig(
-      DomainSpec domainSpec, String clusterName, String serverName) {
-    LOGGER.entering(domainSpec, clusterName, serverName);
+      String clusterName, String serverName) {
+    LOGGER.entering(clusterName, serverName);
     ClusteredServerConfig result =
         new ClusteredServerConfig().withClusterName(clusterName).withServerName(serverName);
-    ClusterStartup clusterStartup = getClusterStartup(domainSpec, clusterName);
-    ServerStartup serverStartup = getServerStartup(domainSpec, serverName);
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
+    ServerStartup serverStartup = getServerStartup(serverName);
     initServerConfigFromDefaults(result);
-    initServerConfigFromDomainSpec(result, domainSpec);
+    initServerConfigFromDomainSpec(result);
     initClusteredServerConfigFromClusterStartup(result, clusterStartup);
     initServerConfigFromServerStartup(result, serverStartup);
     result.setClusteredServerStartPolicy(
@@ -94,12 +93,12 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
 
   /** {@inheritDoc} */
   @Override
-  public ClusterConfig getEffectiveClusterConfig(DomainSpec domainSpec, String clusterName) {
-    LOGGER.entering(domainSpec, clusterName);
+  public ClusterConfig getEffectiveClusterConfig(String clusterName) {
+    LOGGER.entering(clusterName);
     ClusterConfig result = new ClusterConfig().withClusterName(clusterName);
-    ClusterStartup clusterStartup = getClusterStartup(domainSpec, clusterName);
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
     initClusterConfigFromDefaults(result);
-    initClusterConfigFromDomainSpec(result, domainSpec);
+    initClusterConfigFromDomainSpec(result);
     initClusterConfigFromClusterStartup(result, clusterStartup);
     result.withMinReplicas(result.getReplicas()).withMaxReplicas(result.getReplicas());
     LOGGER.exiting(result);
@@ -132,7 +131,7 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
     }
   }
 
-  protected void initServerConfigFromDomainSpec(ServerConfig serverConfig, DomainSpec domainSpec) {
+  protected void initServerConfigFromDomainSpec(ServerConfig serverConfig) {
     String image = domainSpec.getImage();
     if (image != null) {
       serverConfig.withImage(image);
@@ -168,8 +167,7 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
     }
   }
 
-  protected void initClusterConfigFromDomainSpec(
-      ClusterConfig clusterConfig, DomainSpec domainSpec) {
+  protected void initClusterConfigFromDomainSpec(ClusterConfig clusterConfig) {
     Integer replicas = domainSpec.getReplicas();
     if (replicas != null) {
       clusterConfig.withReplicas(replicas);
@@ -250,7 +248,7 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
     return false;
   }
 
-  protected ClusterStartup getClusterStartup(DomainSpec domainSpec, String clusterName) {
+  protected ClusterStartup getClusterStartup(String clusterName) {
     List<ClusterStartup> clusterStartups = domainSpec.getClusterStartup();
     if (clusterName != null && clusterStartups != null) {
       for (ClusterStartup clusterStartup : clusterStartups) {
@@ -262,7 +260,7 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
     return null;
   }
 
-  protected ServerStartup getServerStartup(DomainSpec domainSpec, String serverName) {
+  protected ServerStartup getServerStartup(String serverName) {
     List<ServerStartup> serverStartups = domainSpec.getServerStartup();
     if (serverName != null && serverStartups != null) {
       for (ServerStartup serverStartup : serverStartups) {
