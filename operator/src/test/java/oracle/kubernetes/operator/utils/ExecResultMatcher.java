@@ -2,7 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.utils;
 
 import java.util.ArrayList;
 import java.util.List;

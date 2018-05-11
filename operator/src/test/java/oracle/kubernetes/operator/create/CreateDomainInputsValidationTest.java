@@ -4,10 +4,15 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.*;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.*;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import oracle.kubernetes.operator.utils.ExecCreateDomain;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
+import oracle.kubernetes.operator.utils.UserProjects;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
