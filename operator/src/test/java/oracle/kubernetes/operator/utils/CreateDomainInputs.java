@@ -2,9 +2,9 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.utils;
 
-import static oracle.kubernetes.operator.create.YamlUtils.newYaml;
+import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
 import java.io.*;
 import java.nio.charset.Charset;

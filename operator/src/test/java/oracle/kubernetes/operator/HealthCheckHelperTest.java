@@ -4,9 +4,9 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.readDefaultInputsFile;
-import static oracle.kubernetes.operator.create.ExecCreateOperator.execCreateOperator;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.succeedsAndPrints;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.readDefaultInputsFile;
+import static oracle.kubernetes.operator.utils.ExecCreateOperator.execCreateOperator;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.succeedsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiClient;
@@ -32,10 +32,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.*;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.create.CreateOperatorInputs;
-import oracle.kubernetes.operator.create.OperatorFiles;
-import oracle.kubernetes.operator.create.ParsedWeblogicOperatorSecurityYaml;
-import oracle.kubernetes.operator.create.UserProjects;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientFactory;
@@ -45,6 +41,10 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFormatter;
+import oracle.kubernetes.operator.utils.CreateOperatorInputs;
+import oracle.kubernetes.operator.utils.OperatorFiles;
+import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorSecurityYaml;
+import oracle.kubernetes.operator.utils.UserProjects;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import org.junit.After;
