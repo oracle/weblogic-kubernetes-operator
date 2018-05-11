@@ -6,11 +6,11 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.StartupControlConstants.*;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.helpers.ClusteredServerConfig.*;
 import static oracle.kubernetes.operator.helpers.DomainConfigBuilder.*;
 import static oracle.kubernetes.operator.helpers.NonClusteredServerConfig.*;
 import static oracle.kubernetes.operator.helpers.ServerConfig.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 

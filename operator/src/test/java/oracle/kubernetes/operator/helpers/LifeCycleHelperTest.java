@@ -8,7 +8,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.*;
 import static oracle.kubernetes.operator.StartupControlConstants.*;
 import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
