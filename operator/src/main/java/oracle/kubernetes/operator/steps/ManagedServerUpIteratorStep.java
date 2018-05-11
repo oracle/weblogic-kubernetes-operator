@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
@@ -7,12 +8,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
@@ -24,7 +24,7 @@ import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   private final Collection<ServerStartupInfo> c;
 
   public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> c, Step next) {
@@ -62,8 +62,11 @@ public class ManagedServerUpIteratorStep extends Step {
       for (ServerStartupInfo ssi : c) {
         serverList.add(ssi.serverConfig.getName());
       }
-      LOGGER.fine("Starting or validating servers for domain with UID: " + spec.getDomainUID() + ", server list: "
-          + serverList);
+      LOGGER.fine(
+          "Starting or validating servers for domain with UID: "
+              + spec.getDomainUID()
+              + ", server list: "
+              + serverList);
     }
 
     if (startDetails.isEmpty()) {
@@ -71,7 +74,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
     return doForkJoin(new ManagedServerUpAfterStep(next), packet, startDetails);
   }
-  
+
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   // "serverScan"

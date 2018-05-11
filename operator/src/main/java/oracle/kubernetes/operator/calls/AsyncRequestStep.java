@@ -1,8 +1,13 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
+import io.kubernetes.client.ApiCallback;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ListMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -10,11 +15,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.kubernetes.client.ApiCallback;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -27,7 +27,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /**
- * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of callbacks until canceled.
+ * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
+ * callbacks until canceled.
  */
 public class AsyncRequestStep<T> extends Step {
   public static final String RESPONSE_COMPONENT_NAME = "response";
@@ -47,7 +48,16 @@ public class AsyncRequestStep<T> extends Step {
   private final String labelSelector;
   private final String resourceVersion;
 
-  public AsyncRequestStep(ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, ClientPool helper, int timeoutSeconds, int maxRetryCount, String fieldSelector, String labelSelector, String resourceVersion) {
+  public AsyncRequestStep(
+      ResponseStep<T> next,
+      RequestParams requestParams,
+      CallFactory<T> factory,
+      ClientPool helper,
+      int timeoutSeconds,
+      int maxRetryCount,
+      String fieldSelector,
+      String labelSelector,
+      String resourceVersion) {
     super(next);
     this.helper = helper;
     this.requestParams = requestParams;
@@ -83,73 +93,126 @@ public class AsyncRequestStep<T> extends Step {
     }
     RetryStrategy _retry = retry;
 
-    LOGGER.fine(MessageKeys.ASYNC_REQUEST, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
+    LOGGER.fine(
+        MessageKeys.ASYNC_REQUEST,
+        requestParams.call,
+        requestParams.namespace,
+        requestParams.name,
+        requestParams.body,
+        fieldSelector,
+        labelSelector,
+        resourceVersion);
 
     AtomicBoolean didResume = new AtomicBoolean(false);
-    AtomicBoolean didRecycle = new AtomicBoolean(false);
     ApiClient client = helper.take();
-    return doSuspend((fiber) -> {
-      ApiCallback<T> callback = new BaseApiCallback<T>() {
-        @Override
-        public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-          if (didResume.compareAndSet(false, true)) {
-            if (statusCode != CallBuilder.NOT_FOUND) {
-              LOGGER.info(MessageKeys.ASYNC_FAILURE, e, statusCode, responseHeaders, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-            }
+    return doSuspend(
+        (fiber) -> {
+          ApiCallback<T> callback =
+              new BaseApiCallback<T>() {
+                @Override
+                public void onFailure(
+                    ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                  if (didResume.compareAndSet(false, true)) {
+                    if (statusCode != CallBuilder.NOT_FOUND) {
+                      LOGGER.info(
+                          MessageKeys.ASYNC_FAILURE,
+                          e,
+                          statusCode,
+                          responseHeaders,
+                          requestParams.call,
+                          requestParams.namespace,
+                          requestParams.name,
+                          requestParams.body,
+                          fieldSelector,
+                          labelSelector,
+                          resourceVersion);
+                    }
 
-            if (didRecycle.compareAndSet(false, true)) {
-              helper.recycle(client);
-            }
-            packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry, new CallResponse<Void>(null, e, statusCode, responseHeaders)));
-            fiber.resume(packet);
-          }
-        }
+                    helper.recycle(client);
+                    packet
+                        .getComponents()
+                        .put(
+                            RESPONSE_COMPONENT_NAME,
+                            Component.createFor(
+                                RetryStrategy.class,
+                                _retry,
+                                new CallResponse<Void>(null, e, statusCode, responseHeaders)));
+                    fiber.resume(packet);
+                  }
+                }
 
-        @Override
-        public void onSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-          if (didResume.compareAndSet(false, true)) {
-            LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
+                @Override
+                public void onSuccess(
+                    T result, int statusCode, Map<String, List<String>> responseHeaders) {
+                  if (didResume.compareAndSet(false, true)) {
+                    LOGGER.fine(MessageKeys.ASYNC_SUCCESS, result, statusCode, responseHeaders);
 
-            if (didRecycle.compareAndSet(false, true)) {
-              helper.recycle(client);
-            }
-            packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(new CallResponse<>(result, null, statusCode, responseHeaders)));
-            fiber.resume(packet);
-          }
-        }
-      };
+                    helper.recycle(client);
+                    packet
+                        .getComponents()
+                        .put(
+                            RESPONSE_COMPONENT_NAME,
+                            Component.createFor(
+                                new CallResponse<>(result, null, statusCode, responseHeaders)));
+                    fiber.resume(packet);
+                  }
+                }
+              };
 
-      try {
-        CancellableCall c = factory.generate(requestParams, client, _continue, callback);
+          try {
+            CancellableCall c = factory.generate(requestParams, client, _continue, callback);
 
-        // timeout handling
-        fiber.owner.getExecutor().schedule(() -> {
-          if (didRecycle.compareAndSet(false, true)) {
-            // don't recycle on timeout because state is unknown
-            // usage.recycle();
-          }
-          if (didResume.compareAndSet(false, true)) {
-            try {
-              c.cancel();
-            } finally {
-              LOGGER.info(MessageKeys.ASYNC_TIMEOUT, requestParams.call, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-              packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
+            // timeout handling
+            fiber
+                .owner
+                .getExecutor()
+                .schedule(
+                    () -> {
+                      if (didResume.compareAndSet(false, true)) {
+                        try {
+                          c.cancel();
+                        } finally {
+                          LOGGER.info(
+                              MessageKeys.ASYNC_TIMEOUT,
+                              requestParams.call,
+                              requestParams.namespace,
+                              requestParams.name,
+                              requestParams.body,
+                              fieldSelector,
+                              labelSelector,
+                              resourceVersion);
+                          packet
+                              .getComponents()
+                              .put(
+                                  RESPONSE_COMPONENT_NAME,
+                                  Component.createFor(RetryStrategy.class, _retry));
+                          fiber.resume(packet);
+                        }
+                      }
+                    },
+                    timeoutSeconds,
+                    TimeUnit.SECONDS);
+          } catch (Throwable t) {
+            LOGGER.warning(
+                MessageKeys.ASYNC_FAILURE,
+                t,
+                0,
+                null,
+                requestParams,
+                requestParams.namespace,
+                requestParams.name,
+                requestParams.body,
+                fieldSelector,
+                labelSelector,
+                resourceVersion);
+            if (didResume.compareAndSet(false, true)) {
+              packet
+                  .getComponents()
+                  .put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
               fiber.resume(packet);
             }
           }
-        }, timeoutSeconds, TimeUnit.SECONDS);
-      } catch (Throwable t) {
-        LOGGER.warning(MessageKeys.ASYNC_FAILURE, t, 0, null, requestParams, requestParams.namespace, requestParams.name, requestParams.body, fieldSelector, labelSelector, resourceVersion);
-        if (didRecycle.compareAndSet(false, true)) {
-          // don't recycle on throwable because state is unknown
-          // usage.recycle();
-        }
-        if (didResume.compareAndSet(false, true)) {
-          packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
-          fiber.resume(packet);
-        }
-      }
-    });
+        });
   }
 
   private static String accessContinue(Object result) {
@@ -161,7 +224,11 @@ public class AsyncRequestStep<T> extends Step {
         if (meta instanceof V1ListMeta) {
           return ((V1ListMeta) meta).getContinue();
         }
-      } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      } catch (NoSuchMethodException
+          | SecurityException
+          | IllegalAccessException
+          | IllegalArgumentException
+          | InvocationTargetException e) {
         // no-op, no-log
       }
     }
@@ -169,66 +236,70 @@ public class AsyncRequestStep<T> extends Step {
   }
 
   private final class DefaultRetryStrategy implements RetryStrategy {
-      private long retryCount = 0;
-      private Step retryStep = null;
+    private long retryCount = 0;
+    private Step retryStep = null;
 
-      @Override
-      public void setRetryStep(Step retryStep) {
-        this.retryStep = retryStep;
-      }
-
-      @Override
-      public NextAction doPotentialRetry(Step conflictStep, Packet packet, ApiException e, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        // Check statusCode, many statuses should not be retried
-        // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
-        if (statusCode == 0   /* simple timeout */ ||
-            statusCode == 429 /* StatusTooManyRequests */ ||
-            statusCode == 500 /* StatusInternalServerError */ ||
-            statusCode == 503 /* StatusServiceUnavailable */ ||
-            statusCode == 504 /* StatusServerTimeout */) {
-
-          // exponential back-off
-          long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
-
-          if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
-            // increase server timeout
-            timeoutSeconds *= 2;
-          }
-
-          NextAction na = new NextAction();
-          if (statusCode == 0 && retryCount <= maxRetryCount) {
-            na.invoke(retryStep, packet);
-          } else {
-            LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
-            na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
-          }
-          return na;
-        } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
-          // Conflict is an optimistic locking failure.  Therefore, we can't
-          // simply retry the request.  Instead, application code needs to rebuild
-          // the request based on latest contents.  If provided, a conflict step will do that.
-
-          // exponential back-off
-          long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
-
-          LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
-          NextAction na = new NextAction();
-          na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
-          return na;
-        }
-
-        // otherwise, we will not retry
-        return null;
-      }
-
-      @Override
-      public void reset() {
-        retryCount = 0;
-      }
+    @Override
+    public void setRetryStep(Step retryStep) {
+      this.retryStep = retryStep;
     }
 
-  private static abstract class BaseApiCallback<T> implements ApiCallback<T> {
+    @Override
+    public NextAction doPotentialRetry(
+        Step conflictStep,
+        Packet packet,
+        ApiException e,
+        int statusCode,
+        Map<String, List<String>> responseHeaders) {
+      // Check statusCode, many statuses should not be retried
+      // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
+      if (statusCode == 0 /* simple timeout */
+          || statusCode == 429 /* StatusTooManyRequests */
+          || statusCode == 500 /* StatusInternalServerError */
+          || statusCode == 503 /* StatusServiceUnavailable */
+          || statusCode == 504 /* StatusServerTimeout */) {
+
+        // exponential back-off
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
+
+        if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
+          // increase server timeout
+          timeoutSeconds *= 2;
+        }
+
+        NextAction na = new NextAction();
+        if (statusCode == 0 && retryCount <= maxRetryCount) {
+          na.invoke(retryStep, packet);
+        } else {
+          LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
+          na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        }
+        return na;
+      } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
+        // Conflict is an optimistic locking failure.  Therefore, we can't
+        // simply retry the request.  Instead, application code needs to rebuild
+        // the request based on latest contents.  If provided, a conflict step will do that.
+
+        // exponential back-off
+        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
+
+        LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
+        NextAction na = new NextAction();
+        na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        return na;
+      }
+
+      // otherwise, we will not retry
+      return null;
+    }
+
+    @Override
+    public void reset() {
+      retryCount = 0;
+    }
+  }
+
+  private abstract static class BaseApiCallback<T> implements ApiCallback<T> {
     @Override
     public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
       // no-op

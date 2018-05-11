@@ -1,5 +1,6 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
@@ -9,9 +10,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Centralized logging for the operator.
- */
+/** Centralized logging for the operator. */
 public class LoggingFacade {
 
   private final Logger logger;
@@ -32,14 +31,12 @@ public class LoggingFacade {
     ConsoleHandler handler = new ConsoleHandler();
     handler.setFormatter(new LoggingFormatter());
     logger.addHandler(handler);
-
   }
 
   /**
-   * Sets the level at which the underlying Logger operates. This should not be
-   * called in the general case; levels should be set via OOB configuration
-   * (a configuration file exposed by the logging implementation, management
-   * API, etc).
+   * Sets the level at which the underlying Logger operates. This should not be called in the
+   * general case; levels should be set via OOB configuration (a configuration file exposed by the
+   * logging implementation, management API, etc).
    *
    * @param newLevel Level to set
    */
@@ -62,7 +59,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the CONFIG level.
    *
-   * @param msg    message to log
+   * @param msg message to log
    * @param params vararg list of parameters to use when logging the message
    */
   public void config(String msg, Object... params) {
@@ -75,7 +72,7 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the CONFIG level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void config(String msg, Throwable thrown) {
@@ -83,9 +80,7 @@ public class LoggingFacade {
     logger.logp(Level.CONFIG, details.clazz, details.method, msg, thrown);
   }
 
-  /**
-   * Logs a method entry. The calling class and method names will be inferred.
-   */
+  /** Logs a method entry. The calling class and method names will be inferred. */
   public void entering() {
     if (isFinerEnabled()) {
       CallerDetails details = inferCaller();
@@ -94,11 +89,10 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a method entry, with a list of arguments of interest. The calling class and method
-   * names will be inferred.
-   * Warning: Depending on the nature of the arguments, it may be required to cast those of type
-   * String to Object, to ensure that this variant is called as expected, instead of one of those
-   * referenced below.
+   * Logs a method entry, with a list of arguments of interest. The calling class and method names
+   * will be inferred. Warning: Depending on the nature of the arguments, it may be required to cast
+   * those of type String to Object, to ensure that this variant is called as expected, instead of
+   * one of those referenced below.
    *
    * @param params varargs list of objects to include in the log message
    */
@@ -109,9 +103,7 @@ public class LoggingFacade {
     }
   }
 
-  /**
-   * Logs a method exit. The calling class and method names will be inferred.
-   */
+  /** Logs a method exit. The calling class and method names will be inferred. */
   public void exiting() {
     if (isFinerEnabled()) {
       CallerDetails details = inferCaller();
@@ -120,8 +112,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a method exit, with a result object. The calling class and method names will be
-   * inferred.
+   * Logs a method exit, with a result object. The calling class and method names will be inferred.
    *
    * @param result object to log which is the result of the method call
    */
@@ -147,7 +138,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the FINE level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    */
   public void fine(String msg, Object... params) {
@@ -160,7 +151,7 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the FINE level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void fine(String msg, Throwable thrown) {
@@ -183,7 +174,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the FINER level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    */
   public void finer(String msg, Object... params) {
@@ -196,7 +187,7 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the FINER level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void finer(String msg, Throwable thrown) {
@@ -219,7 +210,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the FINEST level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    */
   public void finest(String msg, Object... params) {
@@ -232,7 +223,7 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the FINEST level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void finest(String msg, Throwable thrown) {
@@ -259,8 +250,8 @@ public class LoggingFacade {
   }
 
   /**
-   * Returns the underlying logger. This should only be used when component code calls others' code, and that code
-   * requires that we provide it with a Logger.
+   * Returns the underlying logger. This should only be used when component code calls others' code,
+   * and that code requires that we provide it with a Logger.
    *
    * @return the underlying Logger object
    */
@@ -281,7 +272,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the INFO level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    */
   public void info(String msg, Object... params) {
@@ -292,14 +283,13 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the INFO level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void info(String msg, Throwable thrown) {
     CallerDetails details = inferCaller();
     logger.logp(Level.INFO, details.clazz, details.method, msg, thrown);
   }
-
 
   /**
    * Checks if a message at CONFIG level would actually be logged.
@@ -375,11 +365,11 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message at the requested level. Normally, one of the level-specific
-   * methods should be used instead.
+   * Logs a message at the requested level. Normally, one of the level-specific methods should be
+   * used instead.
    *
    * @param level Level at which log log the message
-   * @param msg   the message to log
+   * @param msg the message to log
    */
   public void log(Level level, String msg) {
     if (isLoggable(level)) {
@@ -389,12 +379,12 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message which requires parameters. This replaces the Logger equivalents taking a single param or an Object
-   * array, and is backward-compatible with them. Calling the per-Level methods is preferred, but this is present for
-   * completeness.
+   * Logs a message which requires parameters. This replaces the Logger equivalents taking a single
+   * param or an Object array, and is backward-compatible with them. Calling the per-Level methods
+   * is preferred, but this is present for completeness.
    *
-   * @param level  Level at which log log the message
-   * @param msg    the message to log
+   * @param level Level at which log log the message
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    * @see Logger#log(java.util.logging.Level, String, Object[])
    */
@@ -406,11 +396,11 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message which accompanies a Throwable. Calling equivalent per-Level method is preferred, but this is
-   * present for completeness.
+   * Logs a message which accompanies a Throwable. Calling equivalent per-Level method is preferred,
+   * but this is present for completeness.
    *
-   * @param level  Level at which log log the message
-   * @param msg    the message to log
+   * @param level Level at which log log the message
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void log(Level level, String msg, Throwable thrown) {
@@ -433,7 +423,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the SEVERE level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    */
   public void severe(String msg, Object... params) {
@@ -444,7 +434,7 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the SEVERE level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void severe(String msg, Throwable thrown) {
@@ -453,7 +443,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs that an exception will be thrown.  The calling class and method names will be inferred.
+   * Logs that an exception will be thrown. The calling class and method names will be inferred.
    *
    * @param pending an Exception to include in the logged message
    */
@@ -477,7 +467,7 @@ public class LoggingFacade {
   /**
    * Logs a message which requires parameters at the WARNING level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    */
   public void warning(String msg, Object... params) {
@@ -488,7 +478,7 @@ public class LoggingFacade {
   /**
    * Logs a message which accompanies a Throwable at the WARNING level.
    *
-   * @param msg    the message to log
+   * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */
   public void warning(String msg, Throwable thrown) {
@@ -508,7 +498,7 @@ public class LoggingFacade {
   /**
    * Logs a trace message with the ID FMW-TRACE at the FINER level
    *
-   * @param msg  the message to log
+   * @param msg the message to log
    * @param args parameters to the trace message
    */
   public void trace(String msg, Object... args) {
@@ -518,7 +508,7 @@ public class LoggingFacade {
   /**
    * Converts an array to a loggable string.
    *
-   * @param value    the object to log
+   * @param value the object to log
    * @param password true if the value is a password that should not be logged
    * @return a loggable string
    */
@@ -562,10 +552,10 @@ public class LoggingFacade {
   }
 
   /**
-   * Obtains caller details, class name and method, to be provided to the actual Logger. This
-   * code is adapted from ODLLogRecord, which should yield consistency in reporting using
-   * PlatformLogger versus a raw (ODL) Logger. JDK Logger does something similar but utilizes
-   * native methods directly.
+   * Obtains caller details, class name and method, to be provided to the actual Logger. This code
+   * is adapted from ODLLogRecord, which should yield consistency in reporting using PlatformLogger
+   * versus a raw (ODL) Logger. JDK Logger does something similar but utilizes native methods
+   * directly.
    */
   CallerDetails inferCaller() {
     CallerDetails details = new CallerDetails();
@@ -588,9 +578,7 @@ public class LoggingFacade {
     return details;
   }
 
-  /**
-   * Holds caller details obtained by inference.
-   */
+  /** Holds caller details obtained by inference. */
   class CallerDetails {
     String clazz;
     String method;
