@@ -21,7 +21,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.Test;
 
 /** Tests LifeCycleHelper */
-public class LifeCycleHelperTest extends LifeCycleHelper {
+public class LifeCycleHelperTest {
 
   @Test
   public void updateDomainSpec_updatesSpec() {
@@ -31,7 +31,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
         (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
     DomainSpec domainSpec = new DomainSpec();
     Domain domain = newDomainV1().withSpec(domainSpec);
-    updateDomainSpec(domain, clusterConfig);
+    getHelper().updateDomainSpec(domain, clusterConfig);
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
   }
 
@@ -49,7 +49,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     DomainSpec domainSpec =
         (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server3);
     Domain domain = newDomainV1().withSpec(domainSpec);
-    DomainConfig actual = getEffectiveDomainConfig(domain, servers, clusters);
+    DomainConfig actual = getHelper().getEffectiveDomainConfig(domain, servers, clusters);
     // Just spot check that the expected servers and clusters got created
     assertThat(actual.getServers().keySet(), contains(server3));
     assertThat(actual.getClusters().keySet(), contains(cluster1, cluster2));
@@ -63,7 +63,8 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     DomainSpec domainSpec =
         (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
     Domain domain = newDomainV1().withSpec(domainSpec);
-    NonClusteredServerConfig actual = getEffectiveNonClusteredServerConfig(domain, server1);
+    NonClusteredServerConfig actual =
+        getHelper().getEffectiveNonClusteredServerConfig(domain, server1);
     // Just check that we got something back.  The unit tests for the various
     // DomainConfigBuilders test the specific.
     assertThat(actual, notNullValue());
@@ -76,7 +77,8 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     DomainSpec domainSpec =
         (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
     Domain domain = newDomainV1().withSpec(domainSpec);
-    ClusteredServerConfig actual = getEffectiveClusteredServerConfig(domain, cluster1, server1);
+    ClusteredServerConfig actual =
+        getHelper().getEffectiveClusteredServerConfig(domain, cluster1, server1);
     // Just check that we got something back.  The unit tests for the various
     // DomainConfigBuilders test the specific.
     assertThat(actual, notNullValue());
@@ -89,7 +91,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     DomainSpec domainSpec =
         (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
     Domain domain = newDomainV1().withSpec(domainSpec);
-    ClusterConfig actual = getEffectiveClusterConfig(domain, cluster1);
+    ClusterConfig actual = getHelper().getEffectiveClusterConfig(domain, cluster1);
     // Just check that we got something back.  The unit tests for the various
     // DomainConfigBuilders test the specific.
     assertThat(actual, notNullValue());
@@ -100,7 +102,8 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     String server1 = "server1";
     String server2 = "server2";
     DomainConfig actual = new DomainConfig();
-    getEffectiveNonClusteredServerConfigs(getBuilder(), actual, null, getServers(server1, server2));
+    getHelper()
+        .getEffectiveNonClusteredServerConfigs(getBuilder(), actual, getServers(server1, server2));
     DomainConfig want =
         (new DomainConfig())
             .withServer(server1, (new NonClusteredServerConfig()).withServerName(server1))
@@ -112,7 +115,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
   public void getEffectiveNonClusteredServerConfig_returnsExpectedConfig() {
     String server1 = "server1";
     DomainConfig actual = new DomainConfig();
-    getEffectiveNonClusteredServerConfig(getBuilder(), actual, null, server1);
+    getHelper().getEffectiveNonClusteredServerConfig(getBuilder(), actual, server1);
     DomainConfig want =
         (new DomainConfig())
             .withServer(server1, (new NonClusteredServerConfig()).withServerName(server1));
@@ -129,7 +132,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     clusters.put(cluster1, getServers(server1));
     clusters.put(cluster2, getServers(server2));
     DomainConfig actual = new DomainConfig();
-    getEffectiveClusterConfigs(getBuilder(), actual, null, clusters);
+    getHelper().getEffectiveClusterConfigs(getBuilder(), actual, clusters);
     DomainConfig want =
         (new DomainConfig())
             .withCluster(
@@ -158,7 +161,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     String cluster1 = "cluster1";
     String server1 = "server1";
     DomainConfig actual = new DomainConfig();
-    getEffectiveClusterConfig(getBuilder(), actual, null, cluster1, getServers(server1));
+    getHelper().getEffectiveClusterConfig(getBuilder(), actual, cluster1, getServers(server1));
     DomainConfig want =
         (new DomainConfig())
             .withCluster(
@@ -178,7 +181,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     String cluster1 = "cluster1";
     String server1 = "server1";
     ClusterConfig actual =
-        getEffectiveClusterConfig(getBuilder(), null, cluster1, getServers(server1));
+        getHelper().getEffectiveClusterConfig(getBuilder(), cluster1, getServers(server1));
     ClusterConfig want =
         (new ClusterConfig())
             .withClusterName(cluster1)
@@ -194,7 +197,8 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     String server1 = "server1";
     String server2 = "server2";
     ClusterConfig actual = (new ClusterConfig()).withClusterName(cluster1);
-    getEffectiveClusteredServerConfigs(getBuilder(), actual, null, getServers(server1, server2));
+    getHelper()
+        .getEffectiveClusteredServerConfigs(getBuilder(), actual, getServers(server1, server2));
     ClusterConfig want =
         (new ClusterConfig())
             .withClusterName(cluster1)
@@ -212,7 +216,7 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
     String cluster1 = "cluster1";
     String server1 = "server1";
     ClusterConfig actual = (new ClusterConfig()).withClusterName(cluster1);
-    getEffectiveClusteredServerConfig(getBuilder(), actual, null, server1);
+    getHelper().getEffectiveClusteredServerConfig(getBuilder(), actual, server1);
     ClusterConfig want =
         (new ClusterConfig())
             .withClusterName(cluster1)
@@ -224,19 +228,22 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
 
   @Test
   public void getDomainConfigBuilder_domainV1ResourceVersion_returnsDomainConfigBuilderV1() {
-    assertThat(getDomainConfigBuilder(newDomainV1()), instanceOf(DomainConfigBuilderV1.class));
+    assertThat(
+        getHelper().getDomainConfigBuilder(newDomainV1()), instanceOf(DomainConfigBuilderV1.class));
   }
 
   @Test(expected = AssertionError.class)
   public void getDomainConfigBuilder_missingResourceVersion_throwsException() {
-    getDomainConfigBuilder(newDomain());
+    getHelper().getDomainConfigBuilder(newDomain());
   }
 
   @Test(expected = AssertionError.class)
   public void getDomainConfigBuilder_unsupportedResourceVersion_throwsException() {
-    getDomainConfigBuilder(
-        newDomain()
-            .withMetadata(newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, "NoSuchVersion")));
+    getHelper()
+        .getDomainConfigBuilder(
+            newDomain()
+                .withMetadata(
+                    newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, "NoSuchVersion")));
   }
 
   private Domain newDomainV1() {
@@ -258,25 +265,26 @@ public class LifeCycleHelperTest extends LifeCycleHelper {
 
   private static class TestDomainConfigBuilder extends DomainConfigBuilder {
     @Override
-    public NonClusteredServerConfig getEffectiveNonClusteredServerConfig(
-        DomainSpec domainSpec, String serverName) {
+    public NonClusteredServerConfig getEffectiveNonClusteredServerConfig(String serverName) {
       return (new NonClusteredServerConfig()).withServerName(serverName);
     }
 
     @Override
     public ClusteredServerConfig getEffectiveClusteredServerConfig(
-        DomainSpec domainSpec, String clusterName, String serverName) {
+        String clusterName, String serverName) {
       return (new ClusteredServerConfig()).withClusterName(clusterName).withServerName(serverName);
     }
 
     @Override
-    public ClusterConfig getEffectiveClusterConfig(DomainSpec domainSpec, String clusterName) {
+    public ClusterConfig getEffectiveClusterConfig(String clusterName) {
       return (new ClusterConfig()).withClusterName(clusterName);
     }
 
     @Override
-    public void updateDomainSpec(DomainSpec domainSpec, ClusterConfig clusterConfig) {
-      // TBD - should we modify domainSpec?
-    }
+    public void updateDomainSpec(ClusterConfig clusterConfig) {}
+  }
+
+  private LifeCycleHelper getHelper() {
+    return LifeCycleHelper.instance();
   }
 }

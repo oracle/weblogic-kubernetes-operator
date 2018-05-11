@@ -11,7 +11,6 @@ import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 /**
  * This helper class uses the domain resource that the customer configured to calculate the
@@ -43,9 +42,8 @@ public class LifeCycleHelper {
    */
   public void updateDomainSpec(Domain domain, ClusterConfig clusterConfig) {
     LOGGER.entering(domain, clusterConfig);
-    DomainSpec domainSpec = domain.getSpec();
-    getDomainConfigBuilder(domain).updateDomainSpec(domainSpec, clusterConfig);
-    LOGGER.finer("Updated domainSpec: " + domainSpec);
+    getDomainConfigBuilder(domain).updateDomainSpec(clusterConfig);
+    LOGGER.finer("Updated domainSpec: " + domain.getSpec());
     LOGGER.exiting();
   }
 
@@ -64,9 +62,8 @@ public class LifeCycleHelper {
     LOGGER.entering(domain, servers, clusters);
     DomainConfig result = new DomainConfig();
     DomainConfigBuilder bldr = getDomainConfigBuilder(domain);
-    DomainSpec domainSpec = domain.getSpec();
-    getEffectiveNonClusteredServerConfigs(bldr, result, domainSpec, servers);
-    getEffectiveClusterConfigs(bldr, result, domainSpec, clusters);
+    getEffectiveNonClusteredServerConfigs(bldr, result, servers);
+    getEffectiveClusterConfigs(bldr, result, clusters);
     LOGGER.exiting(result);
     return result;
   }
@@ -82,8 +79,7 @@ public class LifeCycleHelper {
       Domain domain, String serverName) {
     LOGGER.entering(domain, serverName);
     NonClusteredServerConfig result =
-        getDomainConfigBuilder(domain)
-            .getEffectiveNonClusteredServerConfig(domain.getSpec(), serverName);
+        getDomainConfigBuilder(domain).getEffectiveNonClusteredServerConfig(serverName);
     LOGGER.exiting(result);
     return result;
   }
@@ -100,8 +96,7 @@ public class LifeCycleHelper {
       Domain domain, String clusterName, String serverName) {
     LOGGER.entering(domain, clusterName, serverName);
     ClusteredServerConfig result =
-        getDomainConfigBuilder(domain)
-            .getEffectiveClusteredServerConfig(domain.getSpec(), clusterName, serverName);
+        getDomainConfigBuilder(domain).getEffectiveClusteredServerConfig(clusterName, serverName);
     LOGGER.exiting(result);
     return result;
   }
@@ -115,80 +110,65 @@ public class LifeCycleHelper {
    */
   public ClusterConfig getEffectiveClusterConfig(Domain domain, String clusterName) {
     LOGGER.entering(domain, clusterName);
-    ClusterConfig result =
-        getDomainConfigBuilder(domain).getEffectiveClusterConfig(domain.getSpec(), clusterName);
+    ClusterConfig result = getDomainConfigBuilder(domain).getEffectiveClusterConfig(clusterName);
     LOGGER.exiting(result);
     return result;
   }
 
   protected void getEffectiveNonClusteredServerConfigs(
-      DomainConfigBuilder bldr,
-      DomainConfig domainConfig,
-      DomainSpec domainSpec,
-      Set<String> servers) {
+      DomainConfigBuilder bldr, DomainConfig domainConfig, Set<String> servers) {
     for (String server : servers) {
-      getEffectiveNonClusteredServerConfig(bldr, domainConfig, domainSpec, server);
+      getEffectiveNonClusteredServerConfig(bldr, domainConfig, server);
     }
   }
 
   protected void getEffectiveNonClusteredServerConfig(
-      DomainConfigBuilder bldr, DomainConfig domainConfig, DomainSpec domainSpec, String server) {
-    NonClusteredServerConfig ncsc = bldr.getEffectiveNonClusteredServerConfig(domainSpec, server);
+      DomainConfigBuilder bldr, DomainConfig domainConfig, String server) {
+    NonClusteredServerConfig ncsc = bldr.getEffectiveNonClusteredServerConfig(server);
     domainConfig.setServer(ncsc.getServerName(), ncsc);
   }
 
   protected void getEffectiveClusterConfigs(
-      DomainConfigBuilder bldr,
-      DomainConfig domainConfig,
-      DomainSpec domainSpec,
-      Map<String, Set<String>> clusters) {
+      DomainConfigBuilder bldr, DomainConfig domainConfig, Map<String, Set<String>> clusters) {
     for (Map.Entry<String, Set<String>> cluster : clusters.entrySet()) {
-      getEffectiveClusterConfig(
-          bldr, domainConfig, domainSpec, cluster.getKey(), cluster.getValue());
+      getEffectiveClusterConfig(bldr, domainConfig, cluster.getKey(), cluster.getValue());
     }
   }
 
   protected void getEffectiveClusterConfig(
-      DomainConfigBuilder bldr,
-      DomainConfig domainConfig,
-      DomainSpec domainSpec,
-      String cluster,
-      Set<String> servers) {
-    ClusterConfig cc = getEffectiveClusterConfig(bldr, domainSpec, cluster, servers);
+      DomainConfigBuilder bldr, DomainConfig domainConfig, String cluster, Set<String> servers) {
+    ClusterConfig cc = getEffectiveClusterConfig(bldr, cluster, servers);
     domainConfig.setCluster(cluster, cc);
   }
 
   protected ClusterConfig getEffectiveClusterConfig(
-      DomainConfigBuilder bldr, DomainSpec domainSpec, String cluster, Set<String> servers) {
-    ClusterConfig clusterConfig = bldr.getEffectiveClusterConfig(domainSpec, cluster);
-    getEffectiveClusteredServerConfigs(bldr, clusterConfig, domainSpec, servers);
+      DomainConfigBuilder bldr, String cluster, Set<String> servers) {
+    ClusterConfig clusterConfig = bldr.getEffectiveClusterConfig(cluster);
+    getEffectiveClusteredServerConfigs(bldr, clusterConfig, servers);
     return clusterConfig;
   }
 
   protected void getEffectiveClusteredServerConfigs(
-      DomainConfigBuilder bldr,
-      ClusterConfig clusterConfig,
-      DomainSpec domainSpec,
-      Set<String> servers) {
+      DomainConfigBuilder bldr, ClusterConfig clusterConfig, Set<String> servers) {
     for (String server : servers) {
-      getEffectiveClusteredServerConfig(bldr, clusterConfig, domainSpec, server);
+      getEffectiveClusteredServerConfig(bldr, clusterConfig, server);
     }
   }
 
   protected void getEffectiveClusteredServerConfig(
-      DomainConfigBuilder bldr, ClusterConfig clusterConfig, DomainSpec domainSpec, String server) {
+      DomainConfigBuilder bldr, ClusterConfig clusterConfig, String server) {
     ClusteredServerConfig csc =
-        bldr.getEffectiveClusteredServerConfig(domainSpec, clusterConfig.getClusterName(), server);
+        bldr.getEffectiveClusteredServerConfig(clusterConfig.getClusterName(), server);
     clusterConfig.setServer(csc.getServerName(), csc);
   }
 
   protected DomainConfigBuilder getDomainConfigBuilder(Domain domain) {
     if (VersionHelper.matchesResourceVersion(domain.getMetadata(), VersionConstants.DOMAIN_V1)) {
-      return DomainConfigBuilderV1.instance();
+      return new DomainConfigBuilderV1(domain.getSpec());
     }
     /*
     if (VersionHelper.matchesResourceVersion(domain.getMetadata(), VersionConstants.DOMAIN_V2)) {
-      return DomainConfigBuilderV1.instance();
+      return new DomainConfigBuilderV2(domain.getSpec());
     }
     */
     // TBD - how should we report this error?
