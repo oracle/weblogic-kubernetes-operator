@@ -1,17 +1,15 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
-import java.lang.ref.WeakReference;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-/**
- * General-purpose object pool.
- */
+/** General-purpose object pool. */
 public abstract class Pool<T> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -19,8 +17,8 @@ public abstract class Pool<T> {
   private volatile WeakReference<ConcurrentLinkedQueue<T>> queue;
 
   /**
-   * Gets a new object from the pool.
-   * If no object is available in the pool, this method creates a new one.
+   * Gets a new object from the pool. If no object is available in the pool, this method creates a
+   * new one.
    *
    * @return always non-null.
    */
@@ -32,7 +30,8 @@ public abstract class Pool<T> {
     }
 
     if (LOGGER.isFinerEnabled()) {
-      LOGGER.finer("Returning existing instance from pool, instances remaining: " + getQueue().size());
+      LOGGER.finer(
+          "Returning existing instance from pool, instances remaining: " + getQueue().size());
     }
     return instance;
   }
@@ -55,6 +54,7 @@ public abstract class Pool<T> {
 
   /**
    * Returns an object back to the pool.
+   *
    * @param instance Pool object to recycle
    */
   public final void recycle(T instance) {
@@ -65,18 +65,15 @@ public abstract class Pool<T> {
   }
 
   /**
-   * Creates a new instance of object.
-   * This method is used when someone wants to
-   * {@link #take() take} an object from an empty pool.
-   * Also note that multiple threads may call this method
+   * Creates a new instance of object. This method is used when someone wants to {@link #take()
+   * take} an object from an empty pool. Also note that multiple threads may call this method
    * concurrently.
+   *
    * @return Created instance
    */
   protected abstract T create();
 
-  /**
-   * Drains pool of all entries; useful for unit-testing
-   */
+  /** Drains pool of all entries; useful for unit-testing */
   public void drain() {
     getQueue().clear();
   }

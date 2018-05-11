@@ -1,12 +1,18 @@
 // Copyright 2017, 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
+
+import static java.net.HttpURLConnection.HTTP_GONE;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
+import java.lang.reflect.Method;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -14,16 +20,9 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static java.net.HttpURLConnection.HTTP_GONE;
-
 /**
- * This class handles the Watching interface and drives the watch support
- * for a specific type of object. It runs in a separate thread to drive
- * watching asynchronously to the main thread.
+ * This class handles the Watching interface and drives the watch support for a specific type of
+ * object. It runs in a separate thread to drive watching asynchronously to the main thread.
  *
  * @param <T> The type of the object to be watched.
  */
@@ -39,7 +38,9 @@ abstract class Watcher<T> {
   private Thread thread = null;
 
   /**
-   * Constructs a watcher without specifying a listener. Needed when the listener is the watch subclass itself.
+   * Constructs a watcher without specifying a listener. Needed when the listener is the watch
+   * subclass itself.
+   *
    * @param resourceVersion the oldest version to return for this watch
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
@@ -50,6 +51,7 @@ abstract class Watcher<T> {
 
   /**
    * Constructs a watcher with a separate listener.
+   *
    * @param resourceVersion the oldest version to return for this watch
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    * @param listener a listener to which to dispatch watch events
@@ -59,9 +61,7 @@ abstract class Watcher<T> {
     this.listener = listener;
   }
 
-  /**
-   * Waits for this watcher's thread to exit. For unit testing only.
-   */
+  /** Waits for this watcher's thread to exit. For unit testing only. */
   void waitForExit() {
     try {
       if (thread != null) {
@@ -73,15 +73,14 @@ abstract class Watcher<T> {
 
   /**
    * Sets the listener for watch events.
+   *
    * @param listener the instance which should receive watch events
    */
   void setListener(WatchListener<T> listener) {
     this.listener = listener;
   }
 
-  /**
-   * Kick off the watcher processing that runs in a separate thread.
-   */
+  /** Kick off the watcher processing that runs in a separate thread. */
   void start(ThreadFactory factory) {
     thread = factory.newThread(this::doWatch);
     thread.start();
@@ -91,10 +90,8 @@ abstract class Watcher<T> {
     setIsDraining(false);
 
     while (!isDraining()) {
-      if (isStopping())
-        setIsDraining(true);
-      else
-        watchForEvents();
+      if (isStopping()) setIsDraining(true);
+      else watchForEvents();
     }
   }
 
@@ -117,15 +114,11 @@ abstract class Watcher<T> {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 
-        if (isStopping())
-          setIsDraining(true);
-        if (isDraining())
-          continue;
+        if (isStopping()) setIsDraining(true);
+        if (isDraining()) continue;
 
-        if (isError(item))
-          handleErrorResponse(item);
-        else
-          handleRegularUpdate(item);
+        if (isError(item)) handleErrorResponse(item);
+        else handleRegularUpdate(item);
       }
     } catch (Throwable ex) {
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
@@ -134,6 +127,7 @@ abstract class Watcher<T> {
 
   /**
    * Initiates a watch by using the watch builder to request any updates for the specified watcher
+   *
    * @param watchBuilder the watch builder, initialized with the current resource version.
    * @return Watch object or null if the operation should end
    * @throws ApiException if there is an API error.
@@ -147,31 +141,29 @@ abstract class Watcher<T> {
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.type, item.object);
-    if (listener != null)
-      listener.receivedResponse(item);
+    if (listener != null) listener.receivedResponse(item);
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
     V1Status status = item.status;
     if (status != null && status.getCode() == HTTP_GONE) {
-        String message = status.getMessage();
-        int index1 = message.indexOf('(');
-        if (index1 > 0) {
-            int index2 = message.indexOf(')', index1+1);
-            if (index2 > 0) {
-                resourceVersion = message.substring(index1+1, index2);
-            }
+      String message = status.getMessage();
+      int index1 = message.indexOf('(');
+      if (index1 > 0) {
+        int index2 = message.indexOf(')', index1 + 1);
+        if (index2 > 0) {
+          resourceVersion = message.substring(index1 + 1, index2);
         }
+      }
     }
   }
 
   /**
-   * Track resourceVersion and keep highest one for next watch iteration. The
-   * resourceVersion is extracted from the metadata in the class by a
-   * getter written to return that information. If the getter is not defined
-   * then the user will get all watches repeatedly.
+   * Track resourceVersion and keep highest one for next watch iteration. The resourceVersion is
+   * extracted from the metadata in the class by a getter written to return that information. If the
+   * getter is not defined then the user will get all watches repeatedly.
    *
-   * @param type   the type of operation
+   * @param type the type of operation
    * @param object the object that is returned
    */
   private void trackResourceVersion(String type, Object object) {
@@ -181,8 +173,7 @@ abstract class Watcher<T> {
   private String getNewResourceVersion(String type, Object object) {
     if (type.equalsIgnoreCase("DELETED"))
       return Integer.toString(1 + Integer.parseInt(resourceVersion));
-    else
-      return getResourceVersionFromMetadata(object);
+    else return getResourceVersionFromMetadata(object);
   }
 
   private String getResourceVersionFromMetadata(Object object) {
@@ -197,8 +188,7 @@ abstract class Watcher<T> {
   }
 
   private void updateResourceVersion(String newResourceVersion) {
-    if (isNullOrEmptyString(resourceVersion))
-      resourceVersion = newResourceVersion;
+    if (isNullOrEmptyString(resourceVersion)) resourceVersion = newResourceVersion;
     else if (newResourceVersion.compareTo(resourceVersion) > 0)
       resourceVersion = newResourceVersion;
   }
@@ -206,5 +196,4 @@ abstract class Watcher<T> {
   private static boolean isNullOrEmptyString(String s) {
     return s == null || s.equals("");
   }
-
 }

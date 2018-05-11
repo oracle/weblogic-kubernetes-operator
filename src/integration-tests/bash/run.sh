@@ -1161,12 +1161,12 @@ function verify_webapp_load_balancing {
     local max_count=30
     local wait_time=6
     local count=0
-    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME" # this is only needed for voyager but it does no harm to traefik etc
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME"
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
       echo "NO_DATA" > $CURL_RESPONSE_BODY
-      local HTTP_RESPONSE=$(eval "curl --silent --show-error -H '${vheader}' --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
+      local HTTP_RESPONSE=$(eval "curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_APP_URL} \
         --write-out '%{http_code}' \
         -o ${CURL_RESPONSE_BODY}" \
       )
