@@ -57,9 +57,12 @@ EOF
 }
 
 function deleteVoyager {
-  if [ `kubectl get ingresses.voyager.appscode.com -l weblogic.domainName --all-namespaces=true | grep "voyager" | wc -l` -eq 0 ]; then
-    echo @@ There are no voyager ingress, about to uninstall voyager.
-    deleteVoyagerController
+  local VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+  if [ `kubectl get crd $VOYAGER_ING_NAME |grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+    if [ `kubectl get $VOYAGER_ING_NAME -l weblogic.domainName --all-namespaces=true | grep "voyager" | wc -l` -eq 0 ]; then
+      echo @@ There are no voyager ingress, about to uninstall voyager.
+      deleteVoyagerController
+    fi
   fi
 }
 
