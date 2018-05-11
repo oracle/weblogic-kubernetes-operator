@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 
 import io.kubernetes.client.models.V1PersistentVolume;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
 import org.junit.BeforeClass;
 
 /**
