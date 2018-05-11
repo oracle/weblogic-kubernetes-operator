@@ -585,7 +585,8 @@ function create_image_pull_secret_wercker {
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
     --docker-server=$REPO_REGISTRY \
     --docker-username=$REPO_USERNAME \
-    --docker-password=$REPO_PASSWORD 2>&1 | sed 's/^/+' 2>&1
+    --docker-password=$REPO_PASSWORD \
+    --docker-email=$REPO_EMAIL 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
     local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
