@@ -14,6 +14,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
+import io.kubernetes.client.models.V1EnvVar;
 import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
@@ -24,573 +25,686 @@ import org.junit.Test;
 /** Tests DomainConfigBuilderV1 */
 public class DomainConfigBuilderV1Test {
 
+  private static final String CLUSTER1 = "cluster1";
+  private static final String CLUSTER2 = "cluster2";
+  private static final String SERVER1 = "server1";
+  private static final String SERVER2 = "server2";
+  private static final String SERVER3 = "server3";
+  private static final String ADMIN_SERVER = "adminServer";
+
+  private static final String IMAGE1 = "image1";
+  private static final String IMAGE2 = "image2";
+  private static final String IMAGE1_LATEST = "image1:latest";
+
+  private static List<V1EnvVar> ENV1 =
+      newEnvVarList().addElement(newEnvVar().name("name2").value("value2"));
+  private static List<V1EnvVar> ENV2 =
+      newEnvVarList().addElement(newEnvVar().name("name2").value("value2"));
+  private static List<V1EnvVar> EMPTY_ENV = newEnvVarList();
+
   @Test
   public void
-      updateDomainSpec_haveDomainSpecProperties_haveClusterStartupProperties_updatesClusterStartup() {
-    String cluster1 = "cluster1";
-    int clusterConfigReplicas = 1;
-    Integer domainReplicas = new Integer(2);
-    Integer clusterStartupReplicas = new Integer(3);
-    ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
+      updateDomainSpec_domainSpecPropertiesSet_clusterStartupPropertiesSet_updatesClusterStartup() {
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
     ClusterStartup clusterStartup = clusterStartups.get(0);
+    int clusterStartupReplicas = 3;
     clusterStartup.setReplicas(clusterStartupReplicas);
+
+    int domainReplicas = 2;
     DomainSpec domainSpec =
         (new DomainSpec()).withReplicas(domainReplicas).withClusterStartup(clusterStartups);
+
+    int clusterConfigReplicas = 1;
+    ClusterConfig clusterConfig =
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     newBuilder(domainSpec).updateDomainSpec(clusterConfig);
-    assertThat(domainSpec.getReplicas(), equalTo(domainReplicas));
-    assertThat(clusterStartup.getReplicas(), equalTo(clusterConfigReplicas));
+
+    assertThat(domainSpec.getReplicas(), equalTo(domainReplicas)); // verify it didn't change
+    assertThat(clusterStartup.getReplicas(), equalTo(clusterConfigReplicas)); // verify it changed
   }
 
   @Test
   public void
-      updateDomainSpec_haveDomainSpecProperties_clusterStartupPropertiesNotSet_updatesDomainSpec() {
-    String cluster1 = "cluster1";
-    int clusterConfigReplicas = 1;
-    Integer domainReplicas = new Integer(2);
-    ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
+      updateDomainSpec_domainSpecPropertiesSet_clusterStartupPropertiesNotSet_updatesDomainSpec() {
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
     ClusterStartup clusterStartup = clusterStartups.get(0);
+
+    int domainReplicas = 2;
     DomainSpec domainSpec =
         (new DomainSpec()).withReplicas(domainReplicas).withClusterStartup(clusterStartups);
+
+    int clusterConfigReplicas = 1;
+    ClusterConfig clusterConfig =
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     newBuilder(domainSpec).updateDomainSpec(clusterConfig);
-    assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
-    assertThat(clusterStartup.getReplicas(), nullValue());
+
+    assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas)); // verify it changed
+    assertThat(clusterStartup.getReplicas(), nullValue()); // verify it didn't change
   }
 
   @Test
-  public void updateDomainSpec_haveDomainSpecProperties_noClusterStartup_updatesDomainSpec() {
-    String cluster1 = "cluster1";
-    int clusterConfigReplicas = 1;
-    Integer domainReplicas = new Integer(2);
-    ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
+  public void updateDomainSpec_domainSpecPropertiesSet_noClusterStartup_updatesDomainSpec() {
+    int domainReplicas = 2;
     DomainSpec domainSpec = (new DomainSpec()).withReplicas(domainReplicas);
+
+    int clusterConfigReplicas = 1;
+    ClusterConfig clusterConfig =
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     newBuilder(domainSpec).updateDomainSpec(clusterConfig);
+
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
   }
 
   @Test
   public void
-      updateDomainSpec_domainSpecPropertiesNotSet_haveClusterStartupProperties_updatesClusterStartup() {
-    String cluster1 = "cluster1";
-    int clusterConfigReplicas = 1;
-    Integer clusterStartupReplicas = new Integer(3);
-    ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
+      updateDomainSpec_domainSpecPropertiesNotSet_clusterStartupPropertiesSet_updatesClusterStartup() {
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
     ClusterStartup clusterStartup = clusterStartups.get(0);
+    int clusterStartupReplicas = 3;
     clusterStartup.setReplicas(clusterStartupReplicas);
+
     DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(clusterStartups);
+
+    int clusterConfigReplicas = 1;
+    ClusterConfig clusterConfig =
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     newBuilder(domainSpec).updateDomainSpec(clusterConfig);
-    assertThat(domainSpec.getReplicas(), nullValue());
-    assertThat(clusterStartup.getReplicas(), equalTo(clusterConfigReplicas));
+
+    assertThat(domainSpec.getReplicas(), nullValue()); // verify it didn't change
+    assertThat(clusterStartup.getReplicas(), equalTo(clusterConfigReplicas)); // verify it changed
   }
 
   @Test
   public void
       updateDomainSpec_domainSpecPropertiesNotSet_clusterStartupPropertiesNotSet_updatesDomainSpec() {
-    String cluster1 = "cluster1";
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
+    ClusterStartup clusterStartup = clusterStartups.get(0);
+
+    DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(clusterStartups);
+
     int clusterConfigReplicas = 1;
     ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
-    ClusterStartup clusterStartup = clusterStartups.get(0);
-    DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(clusterStartups);
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     newBuilder(domainSpec).updateDomainSpec(clusterConfig);
-    assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
-    assertThat(clusterStartup.getReplicas(), nullValue());
+
+    assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas)); // verify it changed
+    assertThat(clusterStartup.getReplicas(), nullValue()); // verify it didn't change
   }
 
   @Test
   public void updateDomainSpec_domainSpecPropertiesNotSet_noClusterStartup_updatesDomainSpec() {
-    String cluster1 = "cluster1";
+    DomainSpec domainSpec = new DomainSpec();
+
     int clusterConfigReplicas = 1;
     ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
-    DomainSpec domainSpec = new DomainSpec();
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     newBuilder(domainSpec).updateDomainSpec(clusterConfig);
+
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
   }
 
   @Test
   public void
-      getEffectiveNonClusteredServerConfig_haveDomainSpecProperties_haveServerStartupProperties_returnsCorrectConfig() {
-    String server1 = "server1";
-    List<ServerStartup> serverStartups = createServerStartups(server1);
+      getEffectiveNonClusteredServerConfig_domainSpecPropertiesSet_serverStartupPropertiesSet_returnsCorrectConfig() {
+    List<ServerStartup> serverStartups = createServerStartups(SERVER1);
     ServerStartup serverStartup = serverStartups.get(0);
-    serverStartup
-        .withNodePort(new Integer(1))
-        .withDesiredState(STARTED_SERVER_STATE_ADMIN)
-        .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
+    serverStartup.withNodePort(1).withDesiredState(STARTED_SERVER_STATE_ADMIN).withEnv(ENV1);
+
     DomainSpec domainSpec =
         (new DomainSpec())
             .withStartupControl(SPECIFIED_STARTUPCONTROL)
-            .withAsName("adminServer")
-            .withImage("image2")
+            .withAsName(ADMIN_SERVER)
+            .withImage(IMAGE2)
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withServerStartup(serverStartups);
-    NonClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(server1);
-    NonClusteredServerConfig want = (new NonClusteredServerConfig()).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withNodePort(serverStartup.getNodePort())
+
+    // we want the default properties plus whatever we customized:
+    NonClusteredServerConfig want = new NonClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withServerName(SERVER1)
+        .withNodePort(serverStartup.getNodePort())
         .withStartedServerState(serverStartup.getDesiredState())
         .withEnv(serverStartup.getEnv())
         .withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withNonClusteredServerStartPolicy(NON_CLUSTERED_SERVER_START_POLICY_ALWAYS);
+
+    NonClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveNonClusteredServerConfig_haveDomainSpecProperties_noServerStartup_returnsCorrectConfig() {
-    String server1 = "server1";
+      getEffectiveNonClusteredServerConfig_domainSpecPropertiesSet_noServerStartup_returnsCorrectConfig() {
     DomainSpec domainSpec =
         (new DomainSpec())
             .withStartupControl(SPECIFIED_STARTUPCONTROL)
-            .withAsName("adminServer")
-            .withImage("image2")
+            .withAsName(ADMIN_SERVER)
+            .withImage(IMAGE2)
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
-    NonClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(server1);
-    NonClusteredServerConfig want = (new NonClusteredServerConfig()).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withImage(domainSpec.getImage())
+
+    // we want the default properties plus whatever we customized:
+    NonClusteredServerConfig want = new NonClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withServerName(SERVER1)
+        .withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withNonClusteredServerStartPolicy(NON_CLUSTERED_SERVER_START_POLICY_NEVER);
-    assertThat(actual, equalTo(want));
-  }
 
-  @Test
-  public void
-      getEffectiveNonClusteredServerConfig_noDomainSpecProperties_noServerStartup_returnsCorrectConfig() {
-    String server1 = "server1";
-    DomainSpec domainSpec =
-        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
     NonClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(server1);
-    NonClusteredServerConfig want = (new NonClusteredServerConfig()).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY)
-        .withNonClusteredServerStartPolicy(NON_CLUSTERED_SERVER_START_POLICY_ALWAYS);
+        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveClusteredServerConfig_haveDomainSpecProperties_haveClusterStartupProperties_haveServerStartupProperties_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    List<ServerStartup> serverStartups = createServerStartups(server1);
+      getEffectiveNonClusteredServerConfig_domainSpecPropertiesNotSet_noServerStartup_returnsCorrectConfig() {
+    DomainSpec domainSpec =
+        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(SERVER1);
+
+    // we want the default properties plus whatever we customized:
+    NonClusteredServerConfig want = new NonClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withServerName(SERVER1)
+        .withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY)
+        .withNonClusteredServerStartPolicy(NON_CLUSTERED_SERVER_START_POLICY_ALWAYS);
+
+    NonClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveNonClusteredServerConfig(SERVER1);
+
+    assertThat(actual, equalTo(want));
+  }
+
+  @Test
+  public void
+      getEffectiveClusteredServerConfig_domainSpecPropertiesSet_clusterStartupPropertiesSet_serverStartupPropertiesSet_returnsCorrectConfig() {
+    List<ServerStartup> serverStartups = createServerStartups(SERVER1);
     ServerStartup serverStartup = serverStartups.get(0);
-    serverStartup
-        .withNodePort(new Integer(1))
-        .withDesiredState(STARTED_SERVER_STATE_ADMIN)
-        .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
+    serverStartup.withNodePort(1).withDesiredState(STARTED_SERVER_STATE_ADMIN).withEnv(ENV1);
+
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
     ClusterStartup clusterStartup = clusterStartups.get(0);
-    clusterStartup
-        .withDesiredState(STARTED_SERVER_STATE_RUNNING)
-        .withEnv(newEnvVarList().addElement(newEnvVar().name("name2").value("value2")));
+    clusterStartup.withDesiredState(STARTED_SERVER_STATE_RUNNING).withEnv(ENV2);
+
     DomainSpec domainSpec =
         (new DomainSpec())
             .withStartupControl(SPECIFIED_STARTUPCONTROL)
-            .withAsName("adminServer")
-            .withImage("image2")
+            .withAsName(ADMIN_SERVER)
+            .withImage(IMAGE2)
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withClusterStartup(clusterStartups)
             .withServerStartup(serverStartups);
-    ClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withNodePort(serverStartup.getNodePort())
+
+    // we want the default properties plus whatever we customized:
+    ClusteredServerConfig want = new ClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withClusterName(CLUSTER1)
+        .withServerName(SERVER1)
+        .withNodePort(serverStartup.getNodePort())
         .withStartedServerState(serverStartup.getDesiredState())
         .withEnv(serverStartup.getEnv())
         .withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_ALWAYS);
+
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(CLUSTER1, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveClusteredServerConfig_haveDomainSpecProperties_noClusterStartup_haveServerStartupProperties_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    List<ServerStartup> serverStartups = createServerStartups(server1);
+      getEffectiveClusteredServerConfig_domainSpecPropertiesSet_noClusterStartup_serverStartupPropertiesSet_returnsCorrectConfig() {
+    List<ServerStartup> serverStartups = createServerStartups(SERVER1);
     ServerStartup serverStartup = serverStartups.get(0);
-    serverStartup
-        .withNodePort(new Integer(1))
-        .withDesiredState(STARTED_SERVER_STATE_ADMIN)
-        .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
+    serverStartup.withNodePort(1).withDesiredState(STARTED_SERVER_STATE_ADMIN).withEnv(ENV1);
+
     DomainSpec domainSpec =
         (new DomainSpec())
             .withStartupControl(SPECIFIED_STARTUPCONTROL)
-            .withAsName("adminServer")
-            .withImage("image2")
+            .withAsName(ADMIN_SERVER)
+            .withImage(IMAGE2)
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withServerStartup(serverStartups);
-    ClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withNodePort(serverStartup.getNodePort())
+
+    // we want the default properties plus whatever we customized:
+    ClusteredServerConfig want = new ClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withClusterName(CLUSTER1)
+        .withServerName(SERVER1)
+        .withNodePort(serverStartup.getNodePort())
         .withStartedServerState(serverStartup.getDesiredState())
         .withEnv(serverStartup.getEnv())
         .withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_ALWAYS);
+
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(CLUSTER1, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveClusteredServerConfig_haveDomainSpecProperties_haveClusterStartupProperties_noServerStartup_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
+      getEffectiveClusteredServerConfig_domainSpecPropertiesSet_clusterStartupPropertiesSet_noServerStartup_returnsCorrectConfig() {
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
     ClusterStartup clusterStartup = clusterStartups.get(0);
-    clusterStartup
-        .withDesiredState(STARTED_SERVER_STATE_RUNNING)
-        .withEnv(newEnvVarList().addElement(newEnvVar().name("name2").value("value2")));
+    clusterStartup.withDesiredState(STARTED_SERVER_STATE_RUNNING).withEnv(ENV2);
+
     DomainSpec domainSpec =
         (new DomainSpec())
             .withStartupControl(SPECIFIED_STARTUPCONTROL)
-            .withAsName("adminServer")
-            .withImage("image2")
+            .withAsName(ADMIN_SERVER)
+            .withImage(IMAGE2)
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
             .withClusterStartup(clusterStartups);
-    ClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withStartedServerState(clusterStartup.getDesiredState())
+
+    // we want the default properties plus whatever we customized:
+    ClusteredServerConfig want = new ClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withClusterName(CLUSTER1)
+        .withServerName(SERVER1)
         .withEnv(clusterStartup.getEnv())
         .withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
-        .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_IF_NEEDED);
+        .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_IF_NEEDED)
+        .withStartedServerState(clusterStartup.getDesiredState());
+
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(CLUSTER1, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveClusteredServerConfig_haveDomainSpecProperties_noClusterStartupProperties_noServerStartupProperties_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
+      getEffectiveClusteredServerConfig_domainSpecPropertiesSet_noClusterStartup_noServerStartup_returnsCorrectConfig() {
     DomainSpec domainSpec =
         (new DomainSpec())
             .withStartupControl(SPECIFIED_STARTUPCONTROL)
-            .withAsName("adminServer")
-            .withImage("image2")
+            .withAsName(ADMIN_SERVER)
+            .withImage(IMAGE2)
             .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
-    ClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withImage(domainSpec.getImage())
+
+    // we want the default properties plus whatever we customized:
+    ClusteredServerConfig want = new ClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withClusterName(CLUSTER1)
+        .withServerName(SERVER1)
+        .withImage(domainSpec.getImage())
         .withImagePullPolicy(domainSpec.getImagePullPolicy())
         .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_NEVER);
-    assertThat(actual, equalTo(want));
-  }
 
-  @Test
-  public void
-      getEffectiveClusteredServerConfig_noDomainSpecProperties_noClusterStartupProperties_noServerStartupProperties_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    DomainSpec domainSpec =
-        (new DomainSpec()).withStartupControl(ALL_STARTUPCONTROL).withAsName("adminServer");
     ClusteredServerConfig actual =
-        newBuilder(domainSpec).getEffectiveClusteredServerConfig(cluster1, server1);
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1);
-    newBuilder()
-        .initServerConfigFromDefaults(
-            want); // setup up the default values - we have separate tests for this
-    want.withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_ALWAYS)
-        .withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY);
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(CLUSTER1, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveClusterConfig_haveDomainSpecProperties_haveClusterStartupProperties_returnsClusterStartupProperties() {
-    String cluster1 = "cluster1";
-    List<ClusterStartup> clusterStartups = createClusterStartups(cluster1);
-    Integer replicasWant = new Integer(1);
-    clusterStartups.get(0).setReplicas(replicasWant);
+      getEffectiveClusteredServerConfig_domainSpecPropertiesNotSet_noClusterStartup_noServerStartup_returnsCorrectConfig() {
     DomainSpec domainSpec =
-        (new DomainSpec()).withReplicas(new Integer(2)).withClusterStartup(clusterStartups);
-    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(cluster1);
-    ClusterConfig want =
-        (new ClusterConfig())
-            .withClusterName(cluster1)
-            .withReplicas(replicasWant)
-            .withMinReplicas(replicasWant)
-            .withMaxReplicas(replicasWant);
+        (new DomainSpec()).withStartupControl(ALL_STARTUPCONTROL).withAsName(ADMIN_SERVER);
+
+    // we want the default properties plus whatever we customized:
+    ClusteredServerConfig want = new ClusteredServerConfig();
+    newBuilder().initServerConfigFromDefaults(want);
+    want.withClusterName(CLUSTER1)
+        .withServerName(SERVER1)
+        .withClusteredServerStartPolicy(CLUSTERED_SERVER_START_POLICY_ALWAYS)
+        .withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY);
+
+    ClusteredServerConfig actual =
+        newBuilder(domainSpec).getEffectiveClusteredServerConfig(CLUSTER1, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      getEffectiveClusterConfig_haveDomainSpecProperties_noClusterStartup_returnsDomainSpecProperties() {
-    String cluster1 = "cluster1";
-    Integer replicasWant = new Integer(1);
-    DomainSpec domainSpec = (new DomainSpec()).withReplicas(replicasWant);
-    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(cluster1);
+      getEffectiveClusterConfig_domainSpecPropertiesSet_clusterStartupPropertiesSet_returnsClusterStartupProperties() {
+    List<ClusterStartup> clusterStartups = createClusterStartups(CLUSTER1);
+    int replicasWant = 1;
+    ClusterStartup clusterStartup = clusterStartups.get(0);
+    clusterStartup.setReplicas(replicasWant);
+
+    DomainSpec domainSpec = (new DomainSpec()).withReplicas(2).withClusterStartup(clusterStartups);
+
     ClusterConfig want =
         (new ClusterConfig())
-            .withClusterName(cluster1)
+            .withClusterName(CLUSTER1)
             .withReplicas(replicasWant)
             .withMinReplicas(replicasWant)
             .withMaxReplicas(replicasWant);
+
+    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(CLUSTER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void getEffectiveClusterConfig_noDomainSpecProperties_noClusterStartup_returnsDefaults() {
-    String cluster1 = "cluster1";
+  public void
+      getEffectiveClusterConfig_domainSpecPropertiesSet_noClusterStartup_returnsDomainSpecProperties() {
+    int replicasWant = 1;
+    DomainSpec domainSpec = (new DomainSpec()).withReplicas(replicasWant);
+
     ClusterConfig want =
         (new ClusterConfig())
-            .withClusterName(cluster1)
+            .withClusterName(CLUSTER1)
+            .withReplicas(replicasWant)
+            .withMinReplicas(replicasWant)
+            .withMaxReplicas(replicasWant);
+
+    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(CLUSTER1);
+
+    assertThat(actual, equalTo(want));
+  }
+
+  @Test
+  public void
+      getEffectiveClusterConfig_domainSpecPropertiesNotSet_noClusterStartup_returnsDefaults() {
+    DomainSpec domainSpec = new DomainSpec();
+
+    ClusterConfig want =
+        (new ClusterConfig())
+            .withClusterName(CLUSTER1)
             .withReplicas(0)
             .withMinReplicas(0)
             .withMaxReplicas(0);
-    ClusterConfig actual = newBuilder().getEffectiveClusterConfig(cluster1);
+
+    ClusterConfig actual = newBuilder(domainSpec).getEffectiveClusterConfig(CLUSTER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initServerConfigFromServerStartup_nullServerStartup_doesNotSetProperties() {
-    ServerConfig want =
-        (new ServerConfig())
-            .withNodePort(new Integer(1))
-            .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
-            .withEnv(newEnvVarList());
+  public void initServerConfigFromServerStartup_noServerStartup_doesNotSetProperties() {
     ServerConfig actual =
         (new ServerConfig())
-            .withNodePort(want.getNodePort())
-            .withStartedServerState(want.getStartedServerState())
-            .withEnv(want.getEnv());
-    newBuilder().initServerConfigFromServerStartup(actual, null);
-    assertThat(actual, equalTo(want));
-  }
+            .withNodePort(1)
+            .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
+            .withEnv(ENV1);
 
-  @Test
-  public void initServerConfigFromServerStartup_unsetProperties_doesNotSetProperties() {
-    // env always gets replaced by an empty list if there is a server startup and its env hasn't
-    // been initialized:
-    ServerConfig want =
-        (new ServerConfig())
-            .withNodePort(new Integer(1))
-            .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
-            .withEnv(newEnvVarList());
-    ServerConfig actual =
-        (new ServerConfig())
-            .withNodePort(want.getNodePort())
-            .withStartedServerState(want.getStartedServerState())
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    newBuilder().initServerConfigFromServerStartup(actual, new ServerStartup());
-    assertThat(actual, equalTo(want));
-  }
+    ServerStartup serverStartup = null;
 
-  @Test
-  public void initServerConfigFromServerStartup_setProperties_copiesProperties() {
     ServerConfig want =
         (new ServerConfig())
-            .withNodePort(new Integer(1))
-            .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    ServerConfig actual =
-        (new ServerConfig())
-            .withNodePort(new Integer(2))
-            .withStartedServerState(STARTED_SERVER_STATE_RUNNING)
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name2").value("value2")));
-    ServerStartup serverStartup =
-        (new ServerStartup())
-            .withNodePort(want.getNodePort())
-            .withDesiredState(want.getStartedServerState())
-            .withEnv(want.getEnv());
+            .withNodePort(actual.getNodePort())
+            .withStartedServerState(actual.getStartedServerState())
+            .withEnv(actual.getEnv());
+
     newBuilder().initServerConfigFromServerStartup(actual, serverStartup);
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initClusteredServerFromClusterStartup_nullClusterStartup_doesNotCopyProperties() {
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig())
+  public void
+      initServerConfigFromServerStartup_serverStartupPropertiesNotSet_doesNotSetProperties() {
+    ServerConfig actual =
+        (new ServerConfig())
+            .withNodePort(1)
             .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    ClusteredServerConfig actual =
-        (new ClusteredServerConfig())
-            .withStartedServerState(want.getStartedServerState())
-            .withEnv(want.getEnv());
-    newBuilder().initClusteredServerConfigFromClusterStartup(actual, null);
+            .withEnv(ENV1);
+
+    ServerStartup serverStartup = new ServerStartup(); // defaults env to an empty list
+
+    ServerConfig want =
+        (new ServerConfig())
+            .withNodePort(actual.getNodePort())
+            .withStartedServerState(actual.getStartedServerState())
+            .withEnv(EMPTY_ENV); // since ServerStartup defaulted this to an empty list
+
+    newBuilder().initServerConfigFromServerStartup(actual, serverStartup);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void
-      initClusteredServerFromClusterStartup_haveClusterStartup_unsetProperties_doesNotSetProperties() {
-    ClusteredServerConfig want =
-        (new ClusteredServerConfig())
-            .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
-            .withEnv(newEnvVarList());
-    ClusterStartup clusterStartup = new ClusterStartup(); // defaults env to an empty list
+  public void initServerConfigFromServerStartup_serverStartupPropertiesSet_copiesProperties() {
+    ServerConfig actual =
+        (new ServerConfig())
+            .withNodePort(2)
+            .withStartedServerState(STARTED_SERVER_STATE_RUNNING)
+            .withEnv(ENV2);
+
+    ServerStartup serverStartup =
+        (new ServerStartup())
+            .withNodePort(1)
+            .withDesiredState(STARTED_SERVER_STATE_ADMIN)
+            .withEnv(ENV1);
+
+    ServerConfig want =
+        (new ServerConfig())
+            .withNodePort(serverStartup.getNodePort())
+            .withStartedServerState(serverStartup.getDesiredState())
+            .withEnv(serverStartup.getEnv());
+
+    newBuilder().initServerConfigFromServerStartup(actual, serverStartup);
+
+    assertThat(actual, equalTo(want));
+  }
+
+  @Test
+  public void initClusteredServerFromClusterStartup_noClusterStartup_doesNotCopyProperties() {
     ClusteredServerConfig actual =
         (new ClusteredServerConfig())
-            .withStartedServerState(want.getStartedServerState())
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
+            .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
+            .withEnv(ENV1);
+
+    ClusterStartup clusterStartup = null;
+
+    ClusteredServerConfig want =
+        (new ClusteredServerConfig())
+            .withStartedServerState(actual.getStartedServerState())
+            .withEnv(actual.getEnv());
+
     newBuilder().initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      initClusteredServerFromClusterStartup_haveClusterStartup_setProperties_copiesProperties() {
-    ClusteredServerConfig want =
+      initClusteredServerFromClusterStartup_clusterStartupPropertiesNotSet_doesNotSetProperties() {
+    ClusteredServerConfig actual =
         (new ClusteredServerConfig())
             .withStartedServerState(STARTED_SERVER_STATE_ADMIN)
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name1").value("value1")));
-    ClusterStartup clusterStartup =
-        (new ClusterStartup())
-            .withDesiredState(want.getStartedServerState())
-            .withEnv(want.getEnv());
+            .withEnv(ENV1);
+
+    ClusterStartup clusterStartup = new ClusterStartup(); // defaults env to an empty list
+
+    ClusteredServerConfig want =
+        (new ClusteredServerConfig())
+            .withStartedServerState(actual.getStartedServerState())
+            .withEnv(EMPTY_ENV); // since ClusterStartup defaulted this to an empty list
+
+    newBuilder().initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
+
+    assertThat(actual, equalTo(want));
+  }
+
+  @Test
+  public void initClusteredServerFromClusterStartup_clusterStartupPropertiesSet_copiesProperties() {
     ClusteredServerConfig actual =
         (new ClusteredServerConfig())
             .withStartedServerState(STARTED_SERVER_STATE_RUNNING)
-            .withEnv(newEnvVarList().addElement(newEnvVar().name("name2").value("value2")));
+            .withEnv(ENV2);
+
+    ClusterStartup clusterStartup =
+        (new ClusterStartup()).withDesiredState(STARTED_SERVER_STATE_ADMIN).withEnv(ENV1);
+
+    ClusteredServerConfig want =
+        (new ClusteredServerConfig())
+            .withStartedServerState(clusterStartup.getDesiredState())
+            .withEnv(clusterStartup.getEnv());
+
     newBuilder().initClusteredServerConfigFromClusterStartup(actual, clusterStartup);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      initServerConfigFromDomainSpec_unsetProperties_doesNotSetPropertiesAndDefaultsImagePullPolicy() {
+      initServerConfigFromDomainSpec_domainSpecPropertiesNotSet_doesNotSetPropertiesAndDefaultsImagePullPolicy() {
+    ServerConfig actual = (new ServerConfig()).withImage(IMAGE1);
+
+    DomainSpec domainSpec = new DomainSpec();
+
     // the image pull policy should get set to IfNotPresent because the policy isn't set
     // and the image doesn't end with :latest
     ServerConfig want =
-        (new ServerConfig()).withImage("image1").withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY);
-    ServerConfig actual = (new ServerConfig()).withImage(want.getImage());
-    newBuilder().initServerConfigFromDomainSpec(actual);
+        (new ServerConfig())
+            .withImage(actual.getImage())
+            .withImagePullPolicy(IFNOTPRESENT_IMAGEPULLPOLICY);
+
+    newBuilder(domainSpec).initServerConfigFromDomainSpec(actual);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void
-      initServerConfigFromDomainSpec_setPropertiesExceptImagePullPolicy_copiesPropertiesAndDefaultsImagePullPolicy() {
-    // the image pull policy should get set to IfNotPresent because the policy isn't set
-    // and the image ends with :latest
+      initServerConfigFromDomainSpec_domainSpecPropertiesSetExceptForImagePullPolicy_copiesPropertiesAndDefaultsImagePullPolicy() {
+    ServerConfig actual = (new ServerConfig()).withImage(IMAGE2); // should get overridden
+
+    DomainSpec domainSpec = (new DomainSpec()).withImage(IMAGE1_LATEST);
+
+    // the image pull policy should get set to Always because the policy isn't set and the image
+    // ends with :latest
     ServerConfig want =
-        (new ServerConfig()).withImage("image1:latest").withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
-    DomainSpec domainSpec = (new DomainSpec()).withImage(want.getImage());
-    ServerConfig actual = (new ServerConfig()).withImage("image2");
+        (new ServerConfig())
+            .withImage(domainSpec.getImage())
+            .withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
+
     newBuilder(domainSpec).initServerConfigFromDomainSpec(actual);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initServerConfigFromDomainSpec_setProperties_copiesProperties() {
-    ServerConfig want =
-        (new ServerConfig()).withImage("image1:latest").withImagePullPolicy(NEVER_IMAGEPULLPOLICY);
-    DomainSpec domainSpec =
-        (new DomainSpec())
-            .withImage(want.getImage())
-            .withImagePullPolicy(want.getImagePullPolicy());
+  public void initServerConfigFromDomainSpec_domainSpecPropertiesSet_copiesProperties() {
     ServerConfig actual =
-        (new ServerConfig()).withImage("image2").withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
+        (new ServerConfig()).withImage(IMAGE2).withImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
+
+    DomainSpec domainSpec =
+        (new DomainSpec()).withImage(IMAGE1_LATEST).withImagePullPolicy(NEVER_IMAGEPULLPOLICY);
+
+    ServerConfig want =
+        (new ServerConfig())
+            .withImage(domainSpec.getImage())
+            .withImagePullPolicy(domainSpec.getImagePullPolicy());
+
     newBuilder(domainSpec).initServerConfigFromDomainSpec(actual);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void initServerConfigFromDefaults_setsPropertiesToDefaultValues() {
+    ServerConfig actual = new ServerConfig();
+
     ServerConfig want =
         (new ServerConfig())
-            .withNodePort(new Integer(0))
+            .withNodePort(0)
             .withStartedServerState(STARTED_SERVER_STATE_RUNNING)
-            .withEnv(newEnvVarList())
+            .withEnv(EMPTY_ENV)
             .withImage("store/oracle/weblogic:12.2.1.3")
             .withShutdownPolicy(SHUTDOWN_POLICY_FORCED_SHUTDOWN)
-            .withGracefulShutdownTimeout(new Integer(0))
-            .withGracefulShutdownIgnoreSessions(Boolean.FALSE)
-            .withGracefulShutdownWaitForSessions(Boolean.FALSE);
-    ServerConfig actual = new ServerConfig();
+            .withGracefulShutdownTimeout(0)
+            .withGracefulShutdownIgnoreSessions(false)
+            .withGracefulShutdownWaitForSessions(false);
+
     newBuilder().initServerConfigFromDefaults(actual);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initClusterConfigFromClusterStartup_nullClusterStartup_doesNotSetProperies() {
-    ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
-    ClusterConfig actual = new ClusterConfig().withReplicas(want.getReplicas());
-    newBuilder().initClusterConfigFromClusterStartup(actual, null);
-    assertThat(actual, equalTo(want));
-  }
+  public void initClusterConfigFromClusterStartup_noClusterStartup_doesNotSetProperies() {
+    ClusterConfig actual = new ClusterConfig().withReplicas(1);
 
-  @Test
-  public void initClusterConfigFromClusterStartup_unsetProperties_doesNotSetProperies() {
-    ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
-    ClusterConfig actual = new ClusterConfig().withReplicas(want.getReplicas());
-    newBuilder().initClusterConfigFromClusterStartup(actual, new ClusterStartup());
-    assertThat(actual, equalTo(want));
-  }
+    ClusterStartup clusterStartup = null;
 
-  @Test
-  public void initClusterConfigFromClusterStartup_setProperties_copiesProperies() {
-    ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
-    ClusterStartup clusterStartup = (new ClusterStartup()).withReplicas(want.getReplicas());
-    ClusterConfig actual = new ClusterConfig().withReplicas(new Integer(2));
+    ClusterConfig want = (new ClusterConfig()).withReplicas(actual.getReplicas());
+
     newBuilder().initClusterConfigFromClusterStartup(actual, clusterStartup);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initClusterConfigFromDomainSpec_unsetProperties_doesNotSetProperties() {
-    ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
+  public void
+      initClusterConfigFromClusterStartup_clusterStartupPropertiesNotSet_doesNotSetProperies() {
+    ClusterConfig actual = new ClusterConfig().withReplicas(1);
+
+    ClusterStartup clusterStartup = new ClusterStartup();
+
+    ClusterConfig want = (new ClusterConfig()).withReplicas(actual.getReplicas());
+
+    newBuilder().initClusterConfigFromClusterStartup(actual, clusterStartup);
+
+    assertThat(actual, equalTo(want));
+  }
+
+  @Test
+  public void initClusterConfigFromClusterStartup_clusterStartupPropertiesSet_copiesProperies() {
+    ClusterConfig actual = new ClusterConfig().withReplicas(2);
+
+    ClusterStartup clusterStartup = (new ClusterStartup()).withReplicas(1);
+
+    ClusterConfig want = (new ClusterConfig()).withReplicas(clusterStartup.getReplicas());
+
+    newBuilder().initClusterConfigFromClusterStartup(actual, clusterStartup);
+
+    assertThat(actual, equalTo(want));
+  }
+
+  @Test
+  public void initClusterConfigFromDomainSpec_domainSpecPropertiesNotSet_doesNotSetProperties() {
+    ClusterConfig actual = new ClusterConfig().withReplicas(1);
+
     DomainSpec domainSpec = new DomainSpec();
-    ClusterConfig actual = new ClusterConfig().withReplicas(new Integer(1));
+
+    ClusterConfig want = (new ClusterConfig()).withReplicas(actual.getReplicas());
+
     newBuilder(domainSpec).initClusterConfigFromDomainSpec(actual);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initClusterConfigFromDomainSpec_setProperties_copiesProperties() {
-    ClusterConfig want = (new ClusterConfig()).withReplicas(new Integer(1));
-    DomainSpec domainSpec = (new DomainSpec()).withReplicas(want.getReplicas());
-    ClusterConfig actual = new ClusterConfig().withReplicas(new Integer(2));
+  public void initClusterConfigFromDomainSpec_domainSpecPropertiesSet_copiesProperties() {
+    ClusterConfig actual = new ClusterConfig().withReplicas(2);
+
+    DomainSpec domainSpec = (new DomainSpec()).withReplicas(1);
+
+    ClusterConfig want = (new ClusterConfig()).withReplicas(domainSpec.getReplicas());
+
     newBuilder(domainSpec).initClusterConfigFromDomainSpec(actual);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
-  public void initClusterConfigFromDefaults_setProperties_setsPropertiesToDefaults() {
-    ClusterConfig want = (new ClusterConfig()).withReplicas(DEFAULT_REPLICAS);
+  public void initClusterConfigFromDefaults_setsPropertiesToDefaults() {
     ClusterConfig actual = new ClusterConfig();
+
+    ClusterConfig want = (new ClusterConfig()).withReplicas(DEFAULT_REPLICAS);
+
     newBuilder().initClusterConfigFromDefaults(actual);
+
     assertThat(actual, equalTo(want));
   }
 
@@ -743,77 +857,94 @@ public class DomainConfigBuilderV1Test {
 
   @Test
   public void isAdminServer_sameName_returnsTrue() {
-    assertThat(newBuilder().isAdminServer("server1", "server1"), equalTo(true));
+    assertThat(newBuilder().isAdminServer("SERVER1", "SERVER1"), equalTo(true));
   }
 
   @Test
   public void isAdminServer_differentNames_returnsFalse() {
-    assertThat(newBuilder().isAdminServer("server1", "server2"), equalTo(false));
+    assertThat(newBuilder().isAdminServer("SERVER1", "SERVER2"), equalTo(false));
   }
 
   @Test
   public void isAdminServer_serverNameNotNull_adminServerNameNull_returnsFalse() {
-    assertThat(newBuilder().isAdminServer("server1", null), equalTo(false));
+    assertThat(newBuilder().isAdminServer("SERVER1", null), equalTo(false));
   }
 
   @Test
   public void isAdminServer_serverNameNull_adminServerNameNotNull_returnsFalse() {
-    assertThat(newBuilder().isAdminServer(null, "server1"), equalTo(false));
+    assertThat(newBuilder().isAdminServer(null, "SERVER1"), equalTo(false));
   }
 
   @Test
   public void getClusterStartup_nullClusterStartups_returnsNull() {
-    String cluster2 = "cluster2";
+    String CLUSTER2 = "CLUSTER2";
     DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(null);
-    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(cluster2);
+    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(CLUSTER2);
     assertThat(actual, nullValue());
   }
 
   @Test
   public void getClusterStartup_doesNotHaveClusterName_returnsNull() {
-    String cluster1 = "cluster1";
-    String cluster2 = "cluster2";
-    DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(createClusterStartups(cluster1));
-    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(cluster2);
+    String CLUSTER1 = "CLUSTER1";
+    String CLUSTER2 = "CLUSTER2";
+
+    DomainSpec domainSpec = (new DomainSpec()).withClusterStartup(createClusterStartups(CLUSTER1));
+
+    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(CLUSTER2);
+
     assertThat(actual, nullValue());
   }
 
   @Test
   public void getClusterStartup_hasClusterName_returnsClusterStartup() {
-    String cluster1 = "cluster1";
-    String cluster2 = "cluster2";
+    String CLUSTER1 = "CLUSTER1";
+    String CLUSTER2 = "CLUSTER2";
+
     DomainSpec domainSpec =
-        (new DomainSpec()).withClusterStartup(createClusterStartups(cluster1, cluster2));
-    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(cluster2);
+        (new DomainSpec()).withClusterStartup(createClusterStartups(CLUSTER1, CLUSTER2));
+
+    ClusterStartup actual = newBuilder(domainSpec).getClusterStartup(CLUSTER2);
+
     ClusterStartup want = domainSpec.getClusterStartup().get(1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getServerStartup_nullServerStartups_returnsNull() {
-    String server2 = "server2";
+    String SERVER2 = "SERVER2";
+
     DomainSpec domainSpec = (new DomainSpec()).withServerStartup(null);
-    ServerStartup actual = newBuilder(domainSpec).getServerStartup(server2);
+
+    ServerStartup actual = newBuilder(domainSpec).getServerStartup(SERVER2);
+
     assertThat(actual, nullValue());
   }
 
   @Test
   public void getServerStartup_doesNotHaveServerName_returnsNull() {
-    String server1 = "server1";
-    String server2 = "server2";
-    DomainSpec domainSpec = (new DomainSpec()).withServerStartup(createServerStartups(server1));
-    ServerStartup actual = newBuilder(domainSpec).getServerStartup(server2);
+    String SERVER1 = "SERVER1";
+    String SERVER2 = "SERVER2";
+
+    DomainSpec domainSpec = (new DomainSpec()).withServerStartup(createServerStartups(SERVER1));
+
+    ServerStartup actual = newBuilder(domainSpec).getServerStartup(SERVER2);
+
     assertThat(actual, nullValue());
   }
 
   @Test
   public void getServerStartup_hasServerName_returnsServerStartup() {
-    String server1 = "server1";
-    String server2 = "server2";
+    String SERVER1 = "SERVER1";
+    String SERVER2 = "SERVER2";
+
     DomainSpec domainSpec =
-        (new DomainSpec()).withServerStartup(createServerStartups(server1, server2));
-    ServerStartup actual = newBuilder(domainSpec).getServerStartup(server2);
+        (new DomainSpec()).withServerStartup(createServerStartups(SERVER1, SERVER2));
+
+    ServerStartup actual = newBuilder(domainSpec).getServerStartup(SERVER2);
+
     ServerStartup want = domainSpec.getServerStartup().get(1);
+
     assertThat(actual, equalTo(want));
   }
 

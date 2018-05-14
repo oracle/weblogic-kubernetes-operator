@@ -42,7 +42,7 @@ public class DomainConfigBuilderV1 extends DomainConfigBuilder {
     LOGGER.entering(clusterConfig);
     ClusterStartup clusterStartup = getClusterStartup(clusterConfig.getClusterName());
     if (clusterStartup != null && clusterStartup.getReplicas() != null) {
-      clusterStartup.setReplicas(new Integer(clusterConfig.getReplicas()));
+      clusterStartup.setReplicas(clusterConfig.getReplicas());
     } else {
       domainSpec.setReplicas(clusterConfig.getReplicas());
     }
