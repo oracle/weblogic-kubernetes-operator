@@ -45,8 +45,8 @@ public class GeneratedDomainYamlFiles {
           new ParsedCreateWeblogicDomainJobYaml(
               domainFiles.getCreateWeblogicDomainJobYamlPath(), inputs);
       deleteWeblogicDomainJobYaml =
-        new ParsedDeleteWeblogicDomainJobYaml(
-          domainFiles.getDeleteWeblogicDomainJobYamlPath(), inputs);
+          new ParsedDeleteWeblogicDomainJobYaml(
+              domainFiles.getDeleteWeblogicDomainJobYamlPath(), inputs);
       domainCustomResourceYaml =
           new ParsedDomainCustomResourceYaml(domainFiles.getDomainCustomResourceYamlPath(), inputs);
       if (CreateDomainInputs.LOAD_BALANCER_TRAEFIK.equals(inputs.getLoadBalancer())) {
