@@ -9,7 +9,7 @@ import io.kubernetes.client.models.V1Job;
 
 import java.nio.file.Path;
 
-/** Parses a generated create-weblogic-domain-job.yaml file into a set of typed k8s java objects */
+/** Parses a generated delete-weblogic-domain-job.yaml file into a set of typed k8s java objects */
 public class ParsedDeleteWeblogicDomainJobYaml extends ParsedKubernetesYaml {
 
   private CreateDomainInputs inputs;
@@ -20,11 +20,11 @@ public class ParsedDeleteWeblogicDomainJobYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
-  public V1ConfigMap getCreateWeblogicDomainConfigMap() {
+  public V1ConfigMap getDeleteWeblogicDomainConfigMap() {
     return getConfigMaps().find(inputs.getDomainUID() + "-delete-weblogic-domain-job-cm");
   }
 
-  public V1Job getCreateWeblogicDomainJob() {
+  public V1Job getDeleteWeblogicDomainJob() {
     return getJobs().find(inputs.getDomainUID() + "-delete-weblogic-domain-job");
   }
 
