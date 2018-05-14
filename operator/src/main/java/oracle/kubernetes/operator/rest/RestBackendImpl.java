@@ -27,8 +27,8 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -40,6 +40,7 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to
@@ -213,7 +214,7 @@ public class RestBackendImpl implements RestBackend {
     // Domain UID
     Domain domain = findDomain(domainUID);
     String namespace = getNamespace(domainUID);
-    String adminServerServiceName = getAdminServerServiceName(domain);
+    String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
     String adminSecretName = getAdminServiceSecretName(domain);
     Map<String, WlsClusterConfig> wlsClusterConfigs =
         getWLSConfiguredClusters(namespace, adminServerServiceName, adminSecretName);
@@ -222,10 +223,8 @@ public class RestBackendImpl implements RestBackend {
     return result;
   }
 
-  private static String getAdminServerServiceName(Domain domain) {
-    String adminServerServiceName =
-        domain.getSpec().getDomainUID() + "-" + domain.getSpec().getAsName();
-    return CallBuilder.toDNS1123LegalName(adminServerServiceName);
+  private static String getAdminServerServiceName(DomainSpec domainSpec) {
+    return LegalNames.toServerServiceName(domainSpec.getDomainUID(), domainSpec.getAsName());
   }
 
   /** {@inheritDoc} */
@@ -311,7 +310,7 @@ public class RestBackendImpl implements RestBackend {
       String namespace, Domain domain, String cluster, int managedServerCount) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
-    String adminServerServiceName = getAdminServerServiceName(domain);
+    String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
     String adminSecretName = getAdminServiceSecretName(domain);
     WlsClusterConfig wlsClusterConfig =
         getWlsClusterConfig(namespace, cluster, adminServerServiceName, adminSecretName);

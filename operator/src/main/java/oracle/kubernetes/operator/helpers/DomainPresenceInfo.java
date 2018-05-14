@@ -251,6 +251,21 @@ public class DomainPresenceInfo {
     this.serverStartupInfo.set(serverStartupInfo);
   }
 
+  @Override
+  public String toString() {
+    StringBuilder sb =
+        new StringBuilder(
+            String.format(
+                "DomainPresenceInfo{uid=%s, namespace=%s",
+                getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    if (!ingresses.isEmpty()) {
+      sb.append(", ingresses ").append(String.join(",", ingresses.keySet()));
+    }
+    sb.append("}");
+
+    return sb.toString();
+  }
+
   /** Details about a specific managed server that will be started up */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;

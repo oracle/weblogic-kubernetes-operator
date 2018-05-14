@@ -89,7 +89,7 @@ public class DomainStatusUpdater {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       return doNext(
           ServerStatusReader.createDomainStatusReaderStep(
-              info, timeoutSeconds, new StatusUpdateStep(next)),
+              info, timeoutSeconds, new StatusUpdateStep(getNext())),
           packet);
     }
   }
@@ -306,7 +306,7 @@ public class DomainStatusUpdater {
       LOGGER.exiting();
 
       return madeChange == true
-          ? doDomainUpdate(dom, info, packet, StatusUpdateStep.this, next)
+          ? doDomainUpdate(dom, info, packet, StatusUpdateStep.this, getNext())
           : doNext(packet);
     }
   }
@@ -446,7 +446,7 @@ public class DomainStatusUpdater {
       LOGGER.exiting();
 
       return madeChange == true
-          ? doDomainUpdate(dom, info, packet, ProgressingStep.this, next)
+          ? doDomainUpdate(dom, info, packet, ProgressingStep.this, getNext())
           : doNext(packet);
     }
   }
@@ -514,7 +514,7 @@ public class DomainStatusUpdater {
       LOGGER.exiting();
 
       return madeChange == true
-          ? doDomainUpdate(dom, info, packet, EndProgressingStep.this, next)
+          ? doDomainUpdate(dom, info, packet, EndProgressingStep.this, getNext())
           : doNext(packet);
     }
   }
@@ -630,7 +630,7 @@ public class DomainStatusUpdater {
       LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
       LOGGER.exiting();
       return madeChange == true
-          ? doDomainUpdate(dom, info, packet, AvailableStep.this, next)
+          ? doDomainUpdate(dom, info, packet, AvailableStep.this, getNext())
           : doNext(packet);
     }
   }
@@ -792,7 +792,7 @@ public class DomainStatusUpdater {
       LOGGER.exiting();
 
       return madeChange == true
-          ? doDomainUpdate(dom, info, packet, FailedStep.this, next)
+          ? doDomainUpdate(dom, info, packet, FailedStep.this, getNext())
           : doNext(packet);
     }
   }

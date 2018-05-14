@@ -17,6 +17,6 @@ public class ServerDownFinalizeStep extends Step {
   public NextAction apply(Packet packet) {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
     info.getServers().remove(serverName);
-    return doNext(next, packet);
+    return doNext(getNext(), packet);
   }
 }
