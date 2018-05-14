@@ -568,12 +568,15 @@ function create_image_pull_secret_jenkins {
 
 function create_image_pull_secret_wercker {
 
+    local namespace=${1:-default}
+
     trace "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
     --docker-server=index.docker.io/v1/ \
     --docker-username=$DOCKER_USERNAME \
     --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL 2>&1 | sed 's/^/+' 2>&1
+    --docker-email=$DOCKER_EMAIL 
+    -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
     local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -585,7 +588,9 @@ function create_image_pull_secret_wercker {
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
     --docker-server=$REPO_REGISTRY \
     --docker-username=$REPO_USERNAME \
-    --docker-password=$REPO_PASSWORD 2>&1 | sed 's/^/+' 2>&1
+    --docker-password=$REPO_PASSWORD \
+    --docker-email=$REPO_EMAIL 
+    -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
     local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
@@ -649,6 +654,10 @@ function deploy_operator {
     local TARGET_NAMESPACES="`op_get $opkey TARGET_NAMESPACES`"
     local EXTERNAL_REST_HTTPSPORT="`op_get $opkey EXTERNAL_REST_HTTPSPORT`"
     local TMP_DIR="`op_get $opkey TMP_DIR`"
+
+    if [ "$WERCKER" = "true" ]; then 
+      create_image_pull_secret_wercker $NAMESPACE
+    fi
 
     trace 'customize the yaml'
     local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
@@ -802,6 +811,10 @@ function run_create_domain_job {
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
     # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
+
+    if [ "$WERCKER" = "true" ]; then 
+      create_image_pull_secret_wercker $NAMESPACE
+    fi
 
     local WLS_JAVA_OPTIONS="$JVM_ARGS"
 
