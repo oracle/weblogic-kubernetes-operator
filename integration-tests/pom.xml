@@ -62,7 +62,7 @@
     <profiles>
 
         <profile>
-            <id>integration-tests</id>
+            <id>java-integration-tests</id>
             <properties>
                 <src-integration-test>${project.basedir}/src/integration-tests/java</src-integration-test>
                 <resource-integration-test>${project.basedir}/src/integration-tests/resources</resource-integration-test>
