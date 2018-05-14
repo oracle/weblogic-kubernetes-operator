@@ -336,9 +336,14 @@ function initialize {
     validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
 
-  jobInput="${scriptDir}/create-weblogic-domain-job-template.yaml"
-  if [ ! -f ${jobInput} ]; then
-    validationError "The template file ${jobInput} for creating a WebLogic domain was not found"
+  createJobInput="${scriptDir}/create-weblogic-domain-job-template.yaml"
+  if [ ! -f ${createJobInput} ]; then
+    validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
+  fi
+
+  deleteJobInput="${scriptDir}/delete-weblogic-domain-job-template.yaml"
+  if [ ! -f ${deleteJobInput} ]; then
+    validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
   dcrInput="${scriptDir}/domain-custom-resource-template.yaml"
@@ -437,7 +442,8 @@ function createYamlFiles {
 
   domainPVOutput="${domainOutputDir}/weblogic-domain-pv.yaml"
   domainPVCOutput="${domainOutputDir}/weblogic-domain-pvc.yaml"
-  jobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
+  createJobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
+  deleteJobOutput="${domainOutputDir}/delete-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
   traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"
   traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
@@ -480,25 +486,36 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
-  echo Generating ${jobOutput}
+  echo Generating ${createJobOutput}
 
-  cp ${jobInput} ${jobOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${jobOutput}
-  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${jobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${jobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${jobOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${jobOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${jobOutput}
-  sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${jobOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${jobOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${jobOutput}
-  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${jobOutput}
-  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${jobOutput}
-  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${jobOutput}
-  sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
-  sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
-  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${jobOutput}
+  cp ${createJobInput} ${createJobOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
+  sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
+  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
+  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${createJobOutput}
+  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${createJobOutput}
+  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${createJobOutput}
+  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${createJobOutput}
+  sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
+  sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
+  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
+
+  # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
+  echo Generating ${deleteJobOutput}
+
+  cp ${deleteJobInput} ${deleteJobOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
@@ -640,10 +657,10 @@ function createDomain {
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-domain-job"
-  deleteK8sObj job $JOB_NAME ${jobOutput}
+  deleteK8sObj job $JOB_NAME ${createJobOutput}
 
-  echo Creating the domain by creating the job ${jobOutput}
-  kubectl create -f ${jobOutput}
+  echo Creating the domain by creating the job ${createJobOutput}
+  kubectl create -f ${createJobOutput}
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
@@ -914,7 +931,7 @@ function outputJobSummary {
   echo "  ${domainOutputDir}/create-weblogic-domain-inputs.yaml"
   echo "  ${domainPVOutput}"
   echo "  ${domainPVCOutput}"
-  echo "  ${jobOutput}"
+  echo "  ${createJobOutput}"
   echo "  ${dcrOutput}"
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     echo "  ${traefikSecurityOutput}"
