@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
 import oracle.kubernetes.operator.utils.ParsedApacheSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedApacheYaml;
 import oracle.kubernetes.operator.utils.ParsedCreateWeblogicDomainJobYaml;
+import oracle.kubernetes.operator.utils.ParsedDeleteWeblogicDomainJobYaml;
 import oracle.kubernetes.operator.utils.ParsedDomainCustomResourceYaml;
 import oracle.kubernetes.operator.utils.ParsedTraefikSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedTraefikYaml;
@@ -56,6 +57,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
 
   protected ParsedCreateWeblogicDomainJobYaml getCreateWeblogicDomainJobYaml() {
     return getGeneratedFiles().getCreateWeblogicDomainJobYaml();
+  }
+
+  protected ParsedDeleteWeblogicDomainJobYaml getDeleteWeblogicDomainJobYaml() {
+    return getGeneratedFiles().getDeleteWeblogicDomainJobYaml();
   }
 
   protected ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() {
@@ -114,6 +119,13 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   @Test
+  public void deleteWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+        getDeleteWeblogicDomainJobYaml().getObjectCount(),
+        is(getDeleteWeblogicDomainJobYaml().getExpectedObjectCount()));
+  }
+
+  @Test
   public void domainCustomResourceYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
         getDomainCustomResourceYaml().getObjectCount(),
@@ -154,6 +166,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
 
   protected V1Job getActualCreateWeblogicDomainJob() {
     return getCreateWeblogicDomainJobYaml().getCreateWeblogicDomainJob();
+  }
+
+  protected V1Job getActualDeleteWeblogicDomainJob() {
+    return getDeleteWeblogicDomainJobYaml().getDeleteWeblogicDomainJob();
   }
 
   protected V1Job getExpectedCreateWeblogicDomainJob() {
