@@ -75,7 +75,7 @@ public class ConfigMapHelper {
               .readConfigMapAsync(
                   cm.getMetadata().getName(),
                   domainNamespace,
-                  new ResponseStep<V1ConfigMap>(next) {
+                  new ResponseStep<V1ConfigMap>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -101,7 +101,7 @@ public class ConfigMapHelper {
                                 .createConfigMapAsync(
                                     domainNamespace,
                                     cm,
-                                    new ResponseStep<V1ConfigMap>(next) {
+                                    new ResponseStep<V1ConfigMap>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -148,7 +148,7 @@ public class ConfigMapHelper {
                                     cm.getMetadata().getName(),
                                     domainNamespace,
                                     cm,
-                                    new ResponseStep<V1ConfigMap>(next) {
+                                    new ResponseStep<V1ConfigMap>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,

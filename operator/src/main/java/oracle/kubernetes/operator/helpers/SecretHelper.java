@@ -124,7 +124,7 @@ public class SecretHelper {
               .readSecretAsync(
                   secretName,
                   namespace,
-                  new ResponseStep<V1Secret>(next) {
+                  new ResponseStep<V1Secret>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
