@@ -23,48 +23,55 @@ import org.junit.Test;
 /** Tests LifeCycleHelper */
 public class LifeCycleHelperTest {
 
+  private static final String CLUSTER1 = "cluster1";
+  private static final String CLUSTER2 = "cluster2";
+  private static final String SERVER1 = "server1";
+  private static final String SERVER2 = "server2";
+  private static final String SERVER3 = "server3";
+
   @Test
   public void updateDomainSpec_updatesSpec() {
-    String cluster1 = "cluster1";
     int clusterConfigReplicas = 1;
     ClusterConfig clusterConfig =
-        (new ClusterConfig()).withClusterName(cluster1).withReplicas(clusterConfigReplicas);
+        (new ClusterConfig()).withClusterName(CLUSTER1).withReplicas(clusterConfigReplicas);
+
     DomainSpec domainSpec = new DomainSpec();
     Domain domain = newDomainV1().withSpec(domainSpec);
+
     getHelper().updateDomainSpec(domain, clusterConfig);
+
     assertThat(domainSpec.getReplicas(), equalTo(clusterConfigReplicas));
   }
 
   @Test
   public void getEffectiveDomainConfig_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String cluster2 = "cluster2";
-    String server1 = "server1";
-    String server2 = "server2";
-    String server3 = "server3";
     Map<String, Set<String>> clusters = new HashMap();
-    clusters.put(cluster1, getServers(server1));
-    clusters.put(cluster2, getServers(server2));
-    Set<String> servers = getServers(server3);
+    clusters.put(CLUSTER1, getServers(SERVER1));
+    clusters.put(CLUSTER2, getServers(SERVER2));
+    Set<String> servers = getServers(SERVER3);
+
     DomainSpec domainSpec =
-        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server3);
+        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(SERVER3);
     Domain domain = newDomainV1().withSpec(domainSpec);
+
     DomainConfig actual = getHelper().getEffectiveDomainConfig(domain, servers, clusters);
+
     // Just spot check that the expected servers and clusters got created
-    assertThat(actual.getServers().keySet(), contains(server3));
-    assertThat(actual.getClusters().keySet(), contains(cluster1, cluster2));
-    assertThat(actual.getClusters().get(cluster1).getServers().keySet(), contains(server1));
-    assertThat(actual.getClusters().get(cluster2).getServers().keySet(), contains(server2));
+    assertThat(actual.getServers().keySet(), contains(SERVER3));
+    assertThat(actual.getClusters().keySet(), contains(CLUSTER1, CLUSTER2));
+    assertThat(actual.getClusters().get(CLUSTER1).getServers().keySet(), contains(SERVER1));
+    assertThat(actual.getClusters().get(CLUSTER2).getServers().keySet(), contains(SERVER2));
   }
 
   @Test
   public void getEffectiveNonClusteredServerConfig_returnsCorrectConfig() {
-    String server1 = "server1";
     DomainSpec domainSpec =
-        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
+        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(SERVER1);
     Domain domain = newDomainV1().withSpec(domainSpec);
+
     NonClusteredServerConfig actual =
-        getHelper().getEffectiveNonClusteredServerConfig(domain, server1);
+        getHelper().getEffectiveNonClusteredServerConfig(domain, SERVER1);
+
     // Just check that we got something back.  The unit tests for the various
     // DomainConfigBuilders test the specific.
     assertThat(actual, notNullValue());
@@ -72,13 +79,13 @@ public class LifeCycleHelperTest {
 
   @Test
   public void getEffectiveClusteredServerConfig_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
     DomainSpec domainSpec =
-        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
+        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(SERVER1);
     Domain domain = newDomainV1().withSpec(domainSpec);
+
     ClusteredServerConfig actual =
-        getHelper().getEffectiveClusteredServerConfig(domain, cluster1, server1);
+        getHelper().getEffectiveClusteredServerConfig(domain, CLUSTER1, SERVER1);
+
     // Just check that we got something back.  The unit tests for the various
     // DomainConfigBuilders test the specific.
     assertThat(actual, notNullValue());
@@ -86,12 +93,12 @@ public class LifeCycleHelperTest {
 
   @Test
   public void getEffectiveClusterConfig_returnsCorrectConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
     DomainSpec domainSpec =
-        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(server1);
+        (new DomainSpec()).withStartupControl(ADMIN_STARTUPCONTROL).withAsName(SERVER1);
     Domain domain = newDomainV1().withSpec(domainSpec);
-    ClusterConfig actual = getHelper().getEffectiveClusterConfig(domain, cluster1);
+
+    ClusterConfig actual = getHelper().getEffectiveClusterConfig(domain, CLUSTER1);
+
     // Just check that we got something back.  The unit tests for the various
     // DomainConfigBuilders test the specific.
     assertThat(actual, notNullValue());
@@ -99,130 +106,135 @@ public class LifeCycleHelperTest {
 
   @Test
   public void getEffectiveNonClusteredServerConfigs_returnsExpectedConfig() {
-    String server1 = "server1";
-    String server2 = "server2";
     DomainConfig actual = new DomainConfig();
+
     getHelper()
-        .getEffectiveNonClusteredServerConfigs(getBuilder(), actual, getServers(server1, server2));
+        .getEffectiveNonClusteredServerConfigs(getBuilder(), actual, getServers(SERVER1, SERVER2));
+
     DomainConfig want =
         (new DomainConfig())
-            .withServer(server1, (new NonClusteredServerConfig()).withServerName(server1))
-            .withServer(server2, (new NonClusteredServerConfig()).withServerName(server2));
+            .withServer(SERVER1, (new NonClusteredServerConfig()).withServerName(SERVER1))
+            .withServer(SERVER2, (new NonClusteredServerConfig()).withServerName(SERVER2));
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getEffectiveNonClusteredServerConfig_returnsExpectedConfig() {
-    String server1 = "server1";
     DomainConfig actual = new DomainConfig();
-    getHelper().getEffectiveNonClusteredServerConfig(getBuilder(), actual, server1);
+
     DomainConfig want =
         (new DomainConfig())
-            .withServer(server1, (new NonClusteredServerConfig()).withServerName(server1));
+            .withServer(SERVER1, (new NonClusteredServerConfig()).withServerName(SERVER1));
+
+    getHelper().getEffectiveNonClusteredServerConfig(getBuilder(), actual, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getEffectiveClusterConfigs_returnsExpectedConfig() {
-    String cluster1 = "cluster1";
-    String cluster2 = "cluster2";
-    String server1 = "server1";
-    String server2 = "server2";
     Map<String, Set<String>> clusters = new HashMap();
-    clusters.put(cluster1, getServers(server1));
-    clusters.put(cluster2, getServers(server2));
+    clusters.put(CLUSTER1, getServers(SERVER1));
+    clusters.put(CLUSTER2, getServers(SERVER2));
+
     DomainConfig actual = new DomainConfig();
-    getHelper().getEffectiveClusterConfigs(getBuilder(), actual, clusters);
+
     DomainConfig want =
         (new DomainConfig())
             .withCluster(
-                cluster1,
+                CLUSTER1,
                 (new ClusterConfig())
-                    .withClusterName(cluster1)
+                    .withClusterName(CLUSTER1)
                     .withServer(
-                        server1,
+                        SERVER1,
                         (new ClusteredServerConfig())
-                            .withClusterName(cluster1)
-                            .withServerName(server1)))
+                            .withClusterName(CLUSTER1)
+                            .withServerName(SERVER1)))
             .withCluster(
-                cluster2,
+                CLUSTER2,
                 (new ClusterConfig())
-                    .withClusterName(cluster2)
+                    .withClusterName(CLUSTER2)
                     .withServer(
-                        server2,
+                        SERVER2,
                         (new ClusteredServerConfig())
-                            .withClusterName(cluster2)
-                            .withServerName(server2)));
+                            .withClusterName(CLUSTER2)
+                            .withServerName(SERVER2)));
+
+    getHelper().getEffectiveClusterConfigs(getBuilder(), actual, clusters);
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getEffectiveClusterConfig1_returnsExpectedConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
     DomainConfig actual = new DomainConfig();
-    getHelper().getEffectiveClusterConfig(getBuilder(), actual, cluster1, getServers(server1));
+
     DomainConfig want =
         (new DomainConfig())
             .withCluster(
-                cluster1,
+                CLUSTER1,
                 (new ClusterConfig())
-                    .withClusterName(cluster1)
+                    .withClusterName(CLUSTER1)
                     .withServer(
-                        server1,
+                        SERVER1,
                         (new ClusteredServerConfig())
-                            .withClusterName(cluster1)
-                            .withServerName(server1)));
+                            .withClusterName(CLUSTER1)
+                            .withServerName(SERVER1)));
+
+    getHelper().getEffectiveClusterConfig(getBuilder(), actual, CLUSTER1, getServers(SERVER1));
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getEffectiveClusterConfig2_returnsExpectedConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    ClusterConfig actual =
-        getHelper().getEffectiveClusterConfig(getBuilder(), cluster1, getServers(server1));
     ClusterConfig want =
         (new ClusterConfig())
-            .withClusterName(cluster1)
+            .withClusterName(CLUSTER1)
             .withServer(
-                server1,
-                (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1));
+                SERVER1,
+                (new ClusteredServerConfig()).withClusterName(CLUSTER1).withServerName(SERVER1));
+
+    ClusterConfig actual =
+        getHelper().getEffectiveClusterConfig(getBuilder(), CLUSTER1, getServers(SERVER1));
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getEffectiveClusteredServerConfigs_returnsExpectedConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    String server2 = "server2";
-    ClusterConfig actual = (new ClusterConfig()).withClusterName(cluster1);
-    getHelper()
-        .getEffectiveClusteredServerConfigs(getBuilder(), actual, getServers(server1, server2));
+    ClusterConfig actual = (new ClusterConfig()).withClusterName(CLUSTER1);
+
     ClusterConfig want =
         (new ClusterConfig())
-            .withClusterName(cluster1)
+            .withClusterName(CLUSTER1)
             .withServer(
-                server1,
-                (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1))
+                SERVER1,
+                (new ClusteredServerConfig()).withClusterName(CLUSTER1).withServerName(SERVER1))
             .withServer(
-                server2,
-                (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server2));
+                SERVER2,
+                (new ClusteredServerConfig()).withClusterName(CLUSTER1).withServerName(SERVER2));
+
+    getHelper()
+        .getEffectiveClusteredServerConfigs(getBuilder(), actual, getServers(SERVER1, SERVER2));
+
     assertThat(actual, equalTo(want));
   }
 
   @Test
   public void getEffectiveClusteredServerConfig_returnsExpectedConfig() {
-    String cluster1 = "cluster1";
-    String server1 = "server1";
-    ClusterConfig actual = (new ClusterConfig()).withClusterName(cluster1);
-    getHelper().getEffectiveClusteredServerConfig(getBuilder(), actual, server1);
+    ClusterConfig actual = (new ClusterConfig()).withClusterName(CLUSTER1);
+
     ClusterConfig want =
         (new ClusterConfig())
-            .withClusterName(cluster1)
+            .withClusterName(CLUSTER1)
             .withServer(
-                server1,
-                (new ClusteredServerConfig()).withClusterName(cluster1).withServerName(server1));
+                SERVER1,
+                (new ClusteredServerConfig()).withClusterName(CLUSTER1).withServerName(SERVER1));
+
+    getHelper().getEffectiveClusteredServerConfig(getBuilder(), actual, SERVER1);
+
     assertThat(actual, equalTo(want));
   }
 
