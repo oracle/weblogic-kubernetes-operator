@@ -79,7 +79,7 @@ public class ServerStatusReader {
       if (startDetails.isEmpty()) {
         return doNext(packet);
       }
-      return doForkJoin(next, packet, startDetails);
+      return doForkJoin(getNext(), packet, startDetails);
     }
   }
 
@@ -193,7 +193,7 @@ public class ServerStatusReader {
 
       if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
-        return doNext(WlsRetriever.readHealthStep(next), packet);
+        return doNext(WlsRetriever.readHealthStep(getNext()), packet);
       }
 
       return doNext(packet);

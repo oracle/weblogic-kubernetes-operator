@@ -72,7 +72,7 @@ public class ManagedServerUpIteratorStep extends Step {
     if (startDetails.isEmpty()) {
       return doNext(packet);
     }
-    return doForkJoin(new ManagedServerUpAfterStep(next), packet, startDetails);
+    return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
   }
 
   // pre-conditions: DomainPresenceInfo SPI

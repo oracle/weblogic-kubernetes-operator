@@ -59,7 +59,7 @@ public class AsyncRequestStepTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
 
-    testSupport.runStep(asyncRequestStep);
+    testSupport.runSteps(asyncRequestStep);
   }
 
   @After

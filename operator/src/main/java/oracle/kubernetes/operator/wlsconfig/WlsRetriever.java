@@ -160,7 +160,7 @@ public class WlsRetriever {
             HttpClient.createAuthenticatedClientForServer(
                 namespace,
                 adminSecretName,
-                new WithHttpClientStep(requestType, sko.getService().get(), next));
+                new WithHttpClientStep(requestType, sko.getService().get(), getNext()));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
       } catch (Throwable t) {
@@ -290,7 +290,9 @@ public class WlsRetriever {
           if (!suggestedConfigUpdates.isEmpty()) {
             Step nextStep =
                 new WithHttpClientStep(
-                    requestType, service, next); // read WebLogic config again after config updates
+                    requestType,
+                    service,
+                    getNext()); // read WebLogic config again after config updates
             for (ConfigUpdate suggestedConfigUpdate : suggestedConfigUpdates) {
               nextStep = suggestedConfigUpdate.createStep(nextStep);
             }

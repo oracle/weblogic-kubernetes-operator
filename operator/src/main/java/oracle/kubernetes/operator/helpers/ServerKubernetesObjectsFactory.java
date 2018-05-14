@@ -7,13 +7,14 @@ package oracle.kubernetes.operator.helpers;
 import java.util.concurrent.ConcurrentMap;
 
 public class ServerKubernetesObjectsFactory {
+  /** A map of server names to server kubernetes objects. */
   private final ConcurrentMap<String, ServerKubernetesObjects> serverMap;
 
   public ServerKubernetesObjectsFactory(ConcurrentMap<String, ServerKubernetesObjects> serverMap) {
     this.serverMap = serverMap;
   }
 
-  public ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
+  ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
     return getOrCreate(info, info.getDomain().getSpec().getDomainUID(), serverName);
   }
 
@@ -22,14 +23,13 @@ public class ServerKubernetesObjectsFactory {
     ServerKubernetesObjects created = new ServerKubernetesObjects();
     ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
     if (current == null) {
-      String podName = CallBuilder.toDNS1123LegalName(domainUID + "-" + serverName);
-      serverMap.put(podName, created);
+      serverMap.put(LegalNames.toServerName(domainUID, serverName), created);
       return created;
     }
     return current;
   }
 
-  public ServerKubernetesObjects lookup(String podName) {
-    return serverMap.get(podName);
+  public ServerKubernetesObjects lookup(String serverLegalName) {
+    return serverMap.get(serverLegalName);
   }
 }

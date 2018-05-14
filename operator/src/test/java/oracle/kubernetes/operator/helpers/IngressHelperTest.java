@@ -47,11 +47,10 @@ public class IngressHelperTest {
   private final Integer server1Port = 8001;
   private final String server2Name = "server2";
   private final Integer server2Port = 8002;
-  private final String service1Name = CallBuilder.toDNS1123LegalName(domainUID + "-" + server1Name);
-  private final String service2Name = CallBuilder.toDNS1123LegalName(domainUID + "-" + server2Name);
-  private final String ingressName = CallBuilder.toDNS1123LegalName(domainUID + "-" + clusterName);
-  private final String clusterServiceName =
-      CallBuilder.toDNS1123LegalName(domainUID + "-cluster-" + clusterName);
+  private final String service1Name = LegalNames.toServerServiceName(domainUID, server1Name);
+  private final String service2Name = LegalNames.toServerServiceName(domainUID, server2Name);
+  private final String ingressName = LegalNames.toIngressName(domainUID, clusterName);
+  private final String clusterServiceName = LegalNames.toClusterServiceName(domainUID, clusterName);
 
   private DomainPresenceInfo info;
   private Engine engine;

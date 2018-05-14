@@ -62,10 +62,9 @@ public class IngressHelper {
         String weblogicDomainUID = spec.getDomainUID();
         String weblogicDomainName = spec.getDomainName();
 
-        String serviceName =
-            CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-cluster-" + clusterName);
+        String serviceName = LegalNames.toClusterServiceName(weblogicDomainUID, clusterName);
 
-        String ingressName = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + clusterName);
+        String ingressName = LegalNames.toIngressName(weblogicDomainUID, clusterName);
 
         V1beta1Ingress v1beta1Ingress = new V1beta1Ingress();
         v1beta1Ingress.setApiVersion(KubernetesConstants.EXTENSIONS_API_VERSION);
@@ -114,7 +113,7 @@ public class IngressHelper {
                 .readIngressAsync(
                     ingressName,
                     meta.getNamespace(),
-                    new ResponseStep<V1beta1Ingress>(next) {
+                    new ResponseStep<V1beta1Ingress>(getNext()) {
                       @Override
                       public NextAction onFailure(
                           Packet packet,
@@ -141,7 +140,7 @@ public class IngressHelper {
                                   .createIngressAsync(
                                       meta.getNamespace(),
                                       v1beta1Ingress,
-                                      new ResponseStep<V1beta1Ingress>(next) {
+                                      new ResponseStep<V1beta1Ingress>(getNext()) {
                                         @Override
                                         public NextAction onFailure(
                                             Packet packet,
@@ -182,7 +181,7 @@ public class IngressHelper {
                                       ingressName,
                                       meta.getNamespace(),
                                       v1beta1Ingress,
-                                      new ResponseStep<V1beta1Ingress>(next) {
+                                      new ResponseStep<V1beta1Ingress>(getNext()) {
                                         @Override
                                         public NextAction onFailure(
                                             Packet packet,
