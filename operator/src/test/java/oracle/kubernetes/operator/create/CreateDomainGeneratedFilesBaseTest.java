@@ -169,7 +169,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1Job getActualDeleteWeblogicDomainJob() {
-    return getDeleteWeblogicDomainJobYaml().getCreateWeblogicDomainJob();
+    return getDeleteWeblogicDomainJobYaml().getDeleteWeblogicDomainJob();
   }
 
   protected V1Job getExpectedCreateWeblogicDomainJob() {
