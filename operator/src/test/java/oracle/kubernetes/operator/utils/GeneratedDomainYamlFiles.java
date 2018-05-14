@@ -21,6 +21,7 @@ public class GeneratedDomainYamlFiles {
   private UserProjects userProjects;
   private DomainFiles domainFiles;
   private ParsedCreateWeblogicDomainJobYaml createWeblogicDomainJobYaml;
+  private ParsedDeleteWeblogicDomainJobYaml deleteWeblogicDomainJobYaml;
   private ParsedDomainCustomResourceYaml domainCustomResourceYaml;
   private ParsedTraefikYaml traefikYaml;
   private ParsedTraefikSecurityYaml traefikSecurityYaml;
@@ -43,6 +44,9 @@ public class GeneratedDomainYamlFiles {
       createWeblogicDomainJobYaml =
           new ParsedCreateWeblogicDomainJobYaml(
               domainFiles.getCreateWeblogicDomainJobYamlPath(), inputs);
+      deleteWeblogicDomainJobYaml =
+          new ParsedDeleteWeblogicDomainJobYaml(
+              domainFiles.getDeleteWeblogicDomainJobYamlPath(), inputs);
       domainCustomResourceYaml =
           new ParsedDomainCustomResourceYaml(domainFiles.getDomainCustomResourceYamlPath(), inputs);
       if (CreateDomainInputs.LOAD_BALANCER_TRAEFIK.equals(inputs.getLoadBalancer())) {
@@ -78,6 +82,10 @@ public class GeneratedDomainYamlFiles {
 
   public ParsedCreateWeblogicDomainJobYaml getCreateWeblogicDomainJobYaml() {
     return createWeblogicDomainJobYaml;
+  }
+
+  public ParsedDeleteWeblogicDomainJobYaml getDeleteWeblogicDomainJobYaml() {
+    return deleteWeblogicDomainJobYaml;
   }
 
   public ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() {

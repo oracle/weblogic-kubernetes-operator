@@ -16,6 +16,7 @@ public class DomainFiles {
       "create-weblogic-domain-inputs.yaml";
   private static final String DOMAIN_CUSTOM_RESOURCE_YAML = "domain-custom-resource.yaml";
   private static final String CREATE_WEBLOGIC_DOMAIN_JOB_YAML = "create-weblogic-domain-job.yaml";
+  private static final String DELETE_WEBLOGIC_DOMAIN_JOB_YAML = "delete-weblogic-domain-job.yaml";
   private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_YAML = "weblogic-domain-pv.yaml";
   private static final String WEBLOGIC_DOMAIN_PERSISTENT_VOLUME_CLAIM_YAML =
       "weblogic-domain-pvc.yaml";
@@ -38,6 +39,10 @@ public class DomainFiles {
 
   public Path getCreateWeblogicDomainJobYamlPath() {
     return getWeblogicDomainPath().resolve(CREATE_WEBLOGIC_DOMAIN_JOB_YAML);
+  }
+
+  public Path getDeleteWeblogicDomainJobYamlPath() {
+    return getWeblogicDomainPath().resolve(DELETE_WEBLOGIC_DOMAIN_JOB_YAML);
   }
 
   public Path getDomainCustomResourceYamlPath() {
@@ -79,6 +84,7 @@ public class DomainFiles {
     List<Path> rtn = new ArrayList<>();
     rtn.add(getCreateWeblogicDomainInputsYamlPath());
     rtn.add(getCreateWeblogicDomainJobYamlPath());
+    rtn.add(getDeleteWeblogicDomainJobYamlPath());
     rtn.add(getDomainCustomResourceYamlPath());
     rtn.add(getTraefikYamlPath());
     rtn.add(getTraefikSecurityYamlPath());
