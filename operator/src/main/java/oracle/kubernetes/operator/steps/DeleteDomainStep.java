@@ -53,7 +53,7 @@ public class DeleteDomainStep extends Step {
                 })
             .deleteCollectionPodAsync(
                 namespace,
-                new ResponseStep<V1Status>(next) {
+                new ResponseStep<V1Status>(getNext()) {
                   @Override
                   public NextAction onFailure(
                       Packet packet,

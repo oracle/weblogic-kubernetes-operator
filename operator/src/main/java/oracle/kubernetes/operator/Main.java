@@ -151,6 +151,10 @@ public class Main {
     return Collections.unmodifiableMap(domains);
   }
 
+  static ServerKubernetesObjects getKubernetesObjects(String serverLegalName) {
+    return skoFactory.lookup(serverLegalName);
+  }
+
   /**
    * Entry point
    *
@@ -238,14 +242,7 @@ public class Main {
         runSteps(readExistingResources(namespace, ns));
       }
 
-      // delete stranded resources
-      for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
-        String domainUID = entry.getKey();
-        DomainPresenceInfo info = entry.getValue();
-        if (info != null && info.getDomain() == null) {
-          deleteDomainPresence(info.getNamespace(), domainUID);
-        }
-      }
+      deleteStrandedResources();
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
@@ -260,6 +257,16 @@ public class Main {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
+    }
+  }
+
+  private static void deleteStrandedResources() {
+    for (Map.Entry<String, DomainPresenceInfo> entry : domains.entrySet()) {
+      String domainUID = entry.getKey();
+      DomainPresenceInfo info = entry.getValue();
+      if (info != null && info.getDomain() == null) {
+        deleteDomainPresence(info.getNamespace(), domainUID);
+      }
     }
   }
 

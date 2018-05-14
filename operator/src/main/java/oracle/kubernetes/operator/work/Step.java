@@ -4,20 +4,18 @@
 
 package oracle.kubernetes.operator.work;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
 /** Individual step in a processing flow */
 public abstract class Step {
-  protected final Step next;
+  private Step next;
 
   /**
    * Create a step with the indicated next step.
@@ -26,6 +24,31 @@ public abstract class Step {
    */
   public Step(Step next) {
     this.next = next;
+  }
+
+  /**
+   * Chain the specified step groups into a single chain of steps.
+   *
+   * @param stepGroups multiple groups of steps
+   * @return the first step of the resultant chain
+   */
+  public static Step chain(@Nonnull Step... stepGroups) {
+    for (int i = 0; i < stepGroups.length - 1; i++) {
+      addLink(stepGroups[i], stepGroups[i + 1]);
+    }
+    return stepGroups[0];
+  }
+
+  private static void addLink(Step stepGroup1, Step stepGroup2) {
+    lastStep(stepGroup1).next = stepGroup2;
+  }
+
+  private static Step lastStep(Step stepGroup) {
+    Step s = stepGroup;
+    while (s.next != null) {
+      s = s.next;
+    }
+    return s;
   }
 
   /**
@@ -160,6 +183,10 @@ public abstract class Step {
     return na;
   }
 
+  protected Step getNext() {
+    return next;
+  }
+
   /** Multi-exception */
   @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {
@@ -234,32 +261,6 @@ public abstract class Step {
             fiber.createChildFiber().start(sp.step, sp.packet, callback);
           }
         });
-  }
-
-  /**
-   * Simplifies creation of stepline. Steps will be connected following the list ordering of their
-   * classes
-   *
-   * @param steps List of step classes
-   * @return Head step
-   */
-  public static Step createStepline(List<Class<? extends Step>> steps) {
-    try {
-      Step s = null;
-      ListIterator<Class<? extends Step>> it = steps.listIterator(steps.size());
-      while (it.hasPrevious()) {
-        Class<? extends Step> c = it.previous();
-        Constructor<? extends Step> construct = c.getConstructor(Step.class);
-        s = construct.newInstance(s);
-      }
-      return s;
-    } catch (NoSuchMethodException
-        | InstantiationException
-        | IllegalAccessException
-        | IllegalArgumentException
-        | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   public static class StepAndPacket {
