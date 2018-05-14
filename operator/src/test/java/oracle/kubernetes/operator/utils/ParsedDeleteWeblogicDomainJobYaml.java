@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.utils;
 
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Job;
-
 import java.nio.file.Path;
 
 /** Parses a generated delete-weblogic-domain-job.yaml file into a set of typed k8s java objects */

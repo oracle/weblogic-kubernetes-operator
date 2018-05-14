@@ -121,8 +121,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   @Test
   public void deleteWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
-      getDeleteWeblogicDomainJobYaml().getObjectCount(),
-      is(getDeleteWeblogicDomainJobYaml().getExpectedObjectCount()));
+        getDeleteWeblogicDomainJobYaml().getObjectCount(),
+        is(getDeleteWeblogicDomainJobYaml().getExpectedObjectCount()));
   }
 
   @Test
