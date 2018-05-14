@@ -23,7 +23,7 @@ public abstract class DomainConfigBuilder {
   protected static Integer DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT = new Integer(0);
   protected static Boolean DEFAULT_GRACEFUL_SHUTDOWN_IGNORE_SESSIONS = Boolean.FALSE;
   protected static Boolean DEFAULT_GRACEFUL_SHUTDOWN_WAIT_FOR_SESSIONS = Boolean.FALSE;
-  protected static Integer DEFAULT_REPLICAS = new Integer(0); // TBD - is this correct?
+  protected static Integer DEFAULT_REPLICAS = new Integer(0);
 
   /**
    * Update a domain spec to reflect the cluster's new replicas count.
