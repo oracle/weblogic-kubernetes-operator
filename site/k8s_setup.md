@@ -110,6 +110,10 @@ $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generat
 
 8. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
+In the current GA version, OCI Container Engine for Kubernetes support network Block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write the rest only read). The WebLogic on Kubernetes domain created by the WebLogic Server Kubernetes Operator at this time requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, we need to install an NFS server in one node and share the file system across all nodes.
+Note: Currently we advise to use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. We found during certification that when using NFS 4.0, the Servers in the WebLogic Domain went into failed state intermittently. Since multiple threads use NFS (default store, diag store, node manager, logging, domain_home), there are issues to access the file store. These issues disappear by changing NFS to version 3.0.
+
+
 ```
 $ terraform output worker_public_ips
 IP1,
@@ -130,7 +134,7 @@ $ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
 worker-2$ sudo su -
 worker-2# yum install -y nfs-utils
 worker-2# mkdir /scratch
-worker-2# echo "PRIVATE_IP1:/scratch /scratch  nfs" >> /etc/fstab
+worker-2# echo "PRIVATE_IP1:/scratch /scratch  nfs nfsvers=3 0 0" >> /etc/fstab
 worker-2# mount /scratch
 worker-2# exit
 worker-2$ exit
