@@ -28,7 +28,7 @@ In this URL format:
 *	`<domainUID>` is the unique identifier of the WebLogic domain.
 *	`<clusterName>` is the name of the WebLogic cluster to be scaled.
 
-The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `configuredManagedServerCount`; for example:
+The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `managedServerCount`; for example:
 
 ```
 {
