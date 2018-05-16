@@ -166,17 +166,18 @@ public class LifeCycleHelper {
     if (VersionHelper.matchesResourceVersion(domain.getMetadata(), VersionConstants.DOMAIN_V1)) {
       return new DomainConfigBuilderV1(domain.getSpec());
     }
-    /*
-    if (VersionHelper.matchesResourceVersion(domain.getMetadata(), VersionConstants.DOMAIN_V2)) {
-      return new DomainConfigBuilderV2(domain.getSpec());
+    if (VersionHelper.matchesResourceVersion(
+        domain.getMetadata(), VersionConstants.DOMAIN_V1DOT1)) {
+      return new DomainConfigBuilderV1Dot1(domain.getSpec());
     }
-    */
     // TBD - how should we report this error?
     throw new AssertionError(
         "Invalid or missing "
             + LabelConstants.RESOURCE_VERSION_LABEL
             + " label.  It should be "
             + VersionConstants.DOMAIN_V1
+            + " or "
+            + VersionConstants.DOMAIN_V1DOT1
             + ". "
             + domain);
   }
