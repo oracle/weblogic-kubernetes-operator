@@ -75,7 +75,7 @@ Log in to the Docker Store so that you will be able to pull the base image and c
 
 ```
 docker login
-docker build -t weblogic-kubernetes-operator:developer --no-cache=true .
+docker build -t weblogic-kubernetes-operator:some-tag --no-cache=true .
 ```
 
 **Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
@@ -86,18 +86,13 @@ Next, upload your image to your Kubernetes server as follows:
 
 ```
 # on your build machine:
-docker save weblogic-kubernetes-operator:developer > operator.tar
+docker save weblogic-kubernetes-operator:some-tag > operator.tar
 scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on each Kubernetes worker:
 docker load < /some/path/operator.tar
 ```
 
-Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image IDs.
-
-[comment]: # ( Pull the operator image )
-[comment]: # ( You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues like putting the secret in the wrong namespace or getting the credentials wrong by just manually pulling the image by running these commands *on the Kubernetes master*: )
-[comment]: # ( docker login container-registry.oracle.com )
-[comment]: # ( docker pull container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest )
+Verify that you have the right image by running `docker images | grep weblogic-kubernetes-operator` on both machines and comparing the image IDs.
 
 ## Customizing the operator parameters file
 
@@ -120,7 +115,7 @@ The operator is deployed with the provided installation script (`create-weblogic
 | `remoteDebugNodePortEnabled` | Controls whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached. | `false` |
 | `serviceAccount`| The name of the service account that the operator will use to make requests to the Kubernetes API server. | `weblogic-operator` |
 | `targetNamespaces` | A list of the Kubernetes namespaces that may contain WebLogic domains that the operator will manage.  The operator will not take any action against a domain that is in a namespace not listed here. | `default` |
-| `weblogicOperatorImage` | The Docker image containing the operator code. | `container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest` |
+| `weblogicOperatorImage` | The Docker image containing the operator code. | `weblogic-kubernetes-operator:1.0` |
 | `weblogicOperatorImagePullPolicy` | The image pull policy for the operator Docker image.  Allowed values are: `Always`, `Never` and `IfNotPresent` | `IfNotPresent` |
 | `weblogicOperatorImagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image.  The presence of the secret will be validated when this parameter is enabled. | |
 
@@ -218,7 +213,7 @@ The spec section provides details for the container that the operator will execu
       serviceAccountName: weblogic-operator
       containers:
       - name: weblogic-operator
-        image: container-registry.oracle.com/middleware/weblogic-operator:latest
+        image: weblogic-kubernetes-operator:1.0
         imagePullPolicy: IfNotPresent
         command: ["bash"]
         args: ["/operator/operator.sh"]
