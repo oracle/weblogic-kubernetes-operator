@@ -28,15 +28,24 @@ In this URL format:
 *	`<domainUID>` is the unique identifier of the WebLogic domain.
 *	`<clusterName>` is the name of the WebLogic cluster to be scaled.
 
-The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `configuredManagedServerCount`; for example:
+The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `managedServerCount`; for example:
 
 ```
 {
-    "configuredManagedServerCount": 3
+    "managedServerCount": 3
 }
 ```
 
-The `configuredManagedServerCount` value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of `204 (“No Content”)` because the resource method’s return type is void and does not return a message body.
+The `managedServerCount` value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of `204 (“No Content”)` because the resource method’s return type is void and does not return a message body.
+
+When you POST to the `/scale` REST endpoint, you must send in a `X-Requested-By` request value.  The value is an arbitrary name such as 'MyClient'.  For example, when using curl:
+
+```
+curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d { "managedServerCount": 3 } https:/.../scaling
+```
+
+If you omit the header, you'll get a 400 (bad request) response without any details explaining why the request was bad.
+
 
 ## What does the operator do in response to a scaling request?
 
