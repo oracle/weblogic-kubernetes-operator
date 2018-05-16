@@ -10,43 +10,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 
-public class DomainPresenceInfoFactory {
-  private static final DomainPresenceInfoFactory SINGELTON = new DomainPresenceInfoFactory();
-
-  public static DomainPresenceInfoFactory getInstance() {
-    return SINGELTON;
-  }
-
+public class DomainPresenceInfoManager {
   /** A map of domainUID to DomainPresenceInfo */
   private static final ConcurrentMap<String, DomainPresenceInfo> domains =
       new ConcurrentHashMap<>();
 
-  public DomainPresenceInfoFactory() {}
+  private DomainPresenceInfoManager() {}
 
-  public DomainPresenceInfo getOrCreate(String ns, String domainUID) {
-    DomainPresenceInfo createdInfo =
-        new DomainPresenceInfo(ServerKubernetesObjectsFactory.getInstance(), ns);
+  public static DomainPresenceInfo getOrCreate(String ns, String domainUID) {
+    DomainPresenceInfo createdInfo = new DomainPresenceInfo(ns);
     DomainPresenceInfo existingInfo = domains.putIfAbsent(domainUID, createdInfo);
     return existingInfo != null ? existingInfo : createdInfo;
   }
 
-  public DomainPresenceInfo getOrCreate(Domain domain) {
-    DomainPresenceInfo createdInfo =
-        new DomainPresenceInfo(ServerKubernetesObjectsFactory.getInstance(), domain);
+  public static DomainPresenceInfo getOrCreate(Domain domain) {
+    DomainPresenceInfo createdInfo = new DomainPresenceInfo(domain);
     DomainPresenceInfo existingInfo =
         domains.putIfAbsent(domain.getSpec().getDomainUID(), createdInfo);
     return existingInfo != null ? existingInfo : createdInfo;
   }
 
-  public DomainPresenceInfo lookup(String domainUID) {
+  public static DomainPresenceInfo lookup(String domainUID) {
     return domains.get(domainUID);
   }
 
-  public DomainPresenceInfo remove(String domainUID) {
+  public static DomainPresenceInfo remove(String domainUID) {
     return domains.remove(domainUID);
   }
 
-  public Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
+  public static Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
     return Collections.unmodifiableMap(domains);
   }
 }

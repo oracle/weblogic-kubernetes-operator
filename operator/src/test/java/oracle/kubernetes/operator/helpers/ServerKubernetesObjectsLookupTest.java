@@ -33,10 +33,10 @@ public class ServerKubernetesObjectsLookupTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(
         StaticStubSupport.install(
-            DomainPresenceInfoFactory.class, "domains", new ConcurrentHashMap<>()));
+            DomainPresenceInfoManager.class, "domains", new ConcurrentHashMap<>()));
     mementos.add(
         StaticStubSupport.install(
-            ServerKubernetesObjectsFactory.class, "serverMap", new ConcurrentHashMap<>()));
+            ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
   }
 
   @After
@@ -52,23 +52,20 @@ public class ServerKubernetesObjectsLookupTest {
 
   @Test
   public void whenNoPreexistingDomains_createEmptyServerKubernetesObjectsMap() {
-    assertThat(
-        ServerKubernetesObjectsFactory.getInstance().getServerKubernetesObjects(),
-        is(anEmptyMap()));
+    assertThat(ServerKubernetesObjectsManager.getServerKubernetesObjects(), is(anEmptyMap()));
   }
 
   @Test
   public void whenK8sHasDomainWithOneServer_canLookupFromServerKubernetesObjectsFactory() {
     Domain domain = createDomain("UID1", "ns1");
-    DomainPresenceInfo info = DomainPresenceInfoFactory.getInstance().getOrCreate(domain);
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
 
-    ServerKubernetesObjects sko =
-        ServerKubernetesObjectsFactory.getInstance().getOrCreate(info, "admin");
+    ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, "admin");
 
     assertThat(info.getServers(), hasEntry(equalTo("admin"), sameInstance(sko)));
 
     assertThat(
-        ServerKubernetesObjectsFactory.getInstance().getServerKubernetesObjects(),
+        ServerKubernetesObjectsManager.getServerKubernetesObjects(),
         hasEntry(equalTo(LegalNames.toServerName("UID1", "admin")), sameInstance(sko)));
   }
 
@@ -76,17 +73,14 @@ public class ServerKubernetesObjectsLookupTest {
   public void
       whenK8sHasDomainAndServerIsRemoved_canNoLongerLookupFromServerKubernetesObjectsFactory() {
     Domain domain = createDomain("UID1", "ns1");
-    DomainPresenceInfo info = DomainPresenceInfoFactory.getInstance().getOrCreate(domain);
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
 
-    ServerKubernetesObjects sko =
-        ServerKubernetesObjectsFactory.getInstance().getOrCreate(info, "admin");
+    ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, "admin");
 
     info.getServers().remove("admin", sko);
 
     assertThat(info.getServers(), is(anEmptyMap()));
 
-    assertThat(
-        ServerKubernetesObjectsFactory.getInstance().getServerKubernetesObjects(),
-        is(anEmptyMap()));
+    assertThat(ServerKubernetesObjectsManager.getServerKubernetesObjects(), is(anEmptyMap()));
   }
 }

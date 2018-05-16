@@ -37,7 +37,6 @@ public class DomainPresenceInfo {
   private final AtomicReference<ScheduledFuture<?>> statusUpdater;
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
-  private final ServerKubernetesObjectsFactory skoFactory;
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ServerMap();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
@@ -57,8 +56,7 @@ public class DomainPresenceInfo {
    *
    * @param domain Domain
    */
-  DomainPresenceInfo(ServerKubernetesObjectsFactory skoFactory, Domain domain) {
-    this.skoFactory = skoFactory;
+  DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.serverStartupInfo = new AtomicReference<>(null);
@@ -70,8 +68,7 @@ public class DomainPresenceInfo {
    *
    * @param namespace Namespace
    */
-  DomainPresenceInfo(ServerKubernetesObjectsFactory skoFactory, String namespace) {
-    this.skoFactory = skoFactory;
+  DomainPresenceInfo(String namespace) {
     this.domain = new AtomicReference<>(null);
     this.namespace = namespace;
     this.serverStartupInfo = new AtomicReference<>(null);
@@ -164,7 +161,8 @@ public class DomainPresenceInfo {
     Domain old = this.domain.getAndSet(domain);
     if (old == null) {
       for (Map.Entry<String, ServerKubernetesObjects> entry : servers.entrySet()) {
-        skoFactory.register(domain.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
+        ServerKubernetesObjectsManager.register(
+            domain.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
       }
     }
   }
@@ -345,7 +343,7 @@ public class DomainPresenceInfo {
     public ServerKubernetesObjects put(String key, ServerKubernetesObjects value) {
       Domain d = domain.get();
       if (d != null) {
-        skoFactory.register(d.getSpec().getDomainUID(), key, value);
+        ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
       }
       return delegate.put(key, value);
     }
@@ -354,7 +352,7 @@ public class DomainPresenceInfo {
     public ServerKubernetesObjects remove(Object key) {
       Domain d = domain.get();
       if (d != null) {
-        skoFactory.unregister(d.getSpec().getDomainUID(), (String) key);
+        ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
       }
       return delegate.remove(key);
     }
@@ -364,7 +362,8 @@ public class DomainPresenceInfo {
       Domain d = domain.get();
       if (d != null) {
         for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : m.entrySet()) {
-          skoFactory.register(d.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
+          ServerKubernetesObjectsManager.register(
+              d.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
         }
       }
       delegate.putAll(m);
@@ -375,7 +374,7 @@ public class DomainPresenceInfo {
       Domain d = domain.get();
       if (d != null) {
         for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : entrySet()) {
-          skoFactory.unregister(d.getSpec().getDomainUID(), entry.getKey());
+          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), entry.getKey());
         }
       }
       delegate.clear();
@@ -402,7 +401,7 @@ public class DomainPresenceInfo {
       if (result == null) {
         Domain d = domain.get();
         if (d != null) {
-          skoFactory.register(d.getSpec().getDomainUID(), key, value);
+          ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
         }
       }
       return result;
@@ -414,7 +413,7 @@ public class DomainPresenceInfo {
       if (result) {
         Domain d = domain.get();
         if (d != null) {
-          skoFactory.unregister(d.getSpec().getDomainUID(), (String) key);
+          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
         }
       }
       return result;
@@ -427,7 +426,7 @@ public class DomainPresenceInfo {
       if (result) {
         Domain d = domain.get();
         if (d != null) {
-          skoFactory.unregister(d.getSpec().getDomainUID(), (String) key);
+          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
         }
       }
       return result;
@@ -439,7 +438,7 @@ public class DomainPresenceInfo {
       if (result == null) {
         Domain d = domain.get();
         if (d != null) {
-          skoFactory.unregister(d.getSpec().getDomainUID(), (String) key);
+          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
         }
       }
       return result;

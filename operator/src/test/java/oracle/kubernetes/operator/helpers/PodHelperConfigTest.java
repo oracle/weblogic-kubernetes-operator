@@ -70,10 +70,10 @@ public class PodHelperConfigTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(
         StaticStubSupport.install(
-            DomainPresenceInfoFactory.class, "domains", new ConcurrentHashMap<>()));
+            DomainPresenceInfoManager.class, "domains", new ConcurrentHashMap<>()));
     mementos.add(
         StaticStubSupport.install(
-            ServerKubernetesObjectsFactory.class, "serverMap", new ConcurrentHashMap<>()));
+            ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
   }
 
   @After
@@ -375,7 +375,7 @@ public class PodHelperConfigTest {
   }
 
   private static Packet newPacket(Domain domain, V1PersistentVolumeClaimList claims) {
-    DomainPresenceInfo info = DomainPresenceInfoFactory.getInstance().getOrCreate(domain);
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
     info.setClaims(claims);
     Packet packet = new Packet();
     packet
