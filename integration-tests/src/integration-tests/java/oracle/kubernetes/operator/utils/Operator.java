@@ -19,7 +19,9 @@ public class Operator {
 
   private Path opInputYamlFilePath;
   Properties opProps = new Properties();
-  private String operatorNS = "";
+  //default values as in create-weblogic-operator-inputs.yaml, 
+  //if the property is not defined here, it takes the property and its value from create-weblogic-operator-inputs.yaml
+  private String operatorNS = "weblogic-operator";
   private String externalRestOption = "NONE";
   private String externalRestHttpsPort = "31001";
   private String userProjectsDir = "";
@@ -38,7 +40,7 @@ public class Operator {
       throw new IllegalArgumentException(
           "FAILURE: " + CREATE_OPERATOR_SCRIPT + " doesn't exist or is not executable");
     }
-    operatorNS = opProps.getProperty("namespace");
+    operatorNS = opProps.getProperty("namespace", operatorNS);
     if (opProps.getProperty("externalRestOption") != null) {
       externalRestOption = opProps.getProperty("externalRestOption");
     }

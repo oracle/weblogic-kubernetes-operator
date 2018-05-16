@@ -25,7 +25,8 @@ public class Domain {
   Properties domainProps = new Properties();
 
   private String domainUid = "";
-  //default values as in create-domain-job-inputs.yaml
+  //default values as in create-weblogic-domain-inputs.yaml, 
+  //if the property is not defined here, it takes the property and its value from create-weblogic-domain-inputs.yaml
   private String domainNS = "weblogic-domain";
   private String adminServerName = "admin-server";
   private String managedServerNameBase = "managed-server";
