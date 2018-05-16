@@ -9,7 +9,7 @@ You can access most of the REST services using `GET`, for example:
 
 All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  Callers should pass in the `Accept:/application/json` header.
 
-To protect against Cross Site Request Forgery (CSRF) attacks, the Operator REST api requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as 'MyClient'. For example, when using curl:
+To protect against Cross Site Request Forgery (CSRF) attacks, the Operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as 'MyClient'. For example, when using curl:
 
 ```
 curl ... -H X-RequestedBy:MyClient ... -X POST .../scaling
