@@ -50,7 +50,7 @@ public class ServiceHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
+      ServerKubernetesObjectsManager skoFactory = c.getSPI(ServerKubernetesObjectsManager.class);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       KubernetesVersion version = packet.getSPI(KubernetesVersion.class);
@@ -695,7 +695,7 @@ public class ServiceHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
+      ServerKubernetesObjectsManager skoFactory = c.getSPI(ServerKubernetesObjectsManager.class);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);

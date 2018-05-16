@@ -8,43 +8,36 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerKubernetesObjectsFactory {
-  private static final ServerKubernetesObjectsFactory SINGLETON =
-      new ServerKubernetesObjectsFactory();
-
-  public static ServerKubernetesObjectsFactory getInstance() {
-    return SINGLETON;
-  }
-
+public class ServerKubernetesObjectsManager {
   /** A map of pod names to ServerKubernetesObjects */
   private static final Map<String, ServerKubernetesObjects> serverMap = new ConcurrentHashMap<>();
 
-  ServerKubernetesObjectsFactory() {}
+  private ServerKubernetesObjectsManager() {}
 
-  ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
+  static ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
     return getOrCreate(info, info.getDomain().getSpec().getDomainUID(), serverName);
   }
 
-  public ServerKubernetesObjects getOrCreate(
+  public static ServerKubernetesObjects getOrCreate(
       DomainPresenceInfo info, String domainUID, String serverName) {
     ServerKubernetesObjects created = new ServerKubernetesObjects();
     ServerKubernetesObjects current = info.getServers().putIfAbsent(serverName, created);
     return (current == null) ? created : current;
   }
 
-  public ServerKubernetesObjects lookup(String serverLegalName) {
+  public static ServerKubernetesObjects lookup(String serverLegalName) {
     return serverMap.get(serverLegalName);
   }
 
-  void register(String domainUID, String serverName, ServerKubernetesObjects sko) {
+  static void register(String domainUID, String serverName, ServerKubernetesObjects sko) {
     serverMap.put(LegalNames.toServerName(domainUID, serverName), sko);
   }
 
-  void unregister(String domainUID, String serverName) {
+  static void unregister(String domainUID, String serverName) {
     serverMap.remove(LegalNames.toServerName(domainUID, serverName));
   }
 
-  Map<String, ServerKubernetesObjects> getServerKubernetesObjects() {
+  static Map<String, ServerKubernetesObjects> getServerKubernetesObjects() {
     return Collections.unmodifiableMap(serverMap);
   }
 }
