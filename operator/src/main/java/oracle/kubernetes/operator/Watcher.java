@@ -87,11 +87,15 @@ abstract class Watcher<T> {
   }
 
   private void doWatch() {
-    setIsDraining(false);
+    try {
+      setIsDraining(false);
 
-    while (!isDraining()) {
-      if (isStopping()) setIsDraining(true);
-      else watchForEvents();
+      while (!isDraining()) {
+        if (isStopping()) setIsDraining(true);
+        else watchForEvents();
+      }
+    } catch (Exception e) {
+      LOGGER.warning("Exception caught in thread " + Thread.currentThread().getName(), e);
     }
   }
 

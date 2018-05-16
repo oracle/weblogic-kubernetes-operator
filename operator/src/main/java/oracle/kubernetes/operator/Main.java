@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
@@ -229,10 +230,12 @@ public class Main {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       LOGGER.info(MessageKeys.LISTING_DOMAINS);
+      Step resourceSteps = null;
       for (String ns : targetNamespaces) {
         initialized.put(ns, Boolean.TRUE);
-        runSteps(readExistingResources(namespace, ns));
+        resourceSteps = Step.chain(resourceSteps, readExistingResources(namespace, ns));
       }
+      runSteps(resourceSteps);
 
       deleteStrandedResources();
 
@@ -277,60 +280,59 @@ public class Main {
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
-    Step domainStep = listDomains(ns, new DomainListStep(ns));
-    Step ingressStep = listIngresses(ns, new IngressListStep(ns, domainStep));
-    Step serviceStep = listServices(ns, new ServiceListStep(ns, ingressStep));
-    Step eventStep = listEvents(ns, new EventListStep(ns, serviceStep));
-    Step podStep = listPods(ns, new PodListStep(ns, eventStep));
-    Step configMapStep = createConfigMapStep(ns, podStep);
-
-    return ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns, configMapStep);
+    return Step.chain(
+        ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
+        createConfigMapStep(ns),
+        readExistingPods(ns),
+        readExistingEvents(ns),
+        readExistingServices(ns),
+        readExistingIngresses(ns),
+        readExistingDomains(ns));
   }
 
-  private static Step listDomains(String ns, ResponseStep<DomainList> responseStep) {
-    return callBuilderFactory.create().listDomainAsync(ns, responseStep);
+  private static Step readExistingDomains(String ns) {
+    return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
   }
 
-  private static Step listIngresses(String ns, ResponseStep<V1beta1IngressList> responseStep) {
+  private static Step readExistingIngresses(String ns) {
     return Main.callBuilderFactory
         .create()
         .with(
             $ ->
                 $.labelSelector =
                     LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(ns, responseStep);
+        .listIngressAsync(ns, new IngressListStep(ns));
   }
 
-  private static Step listServices(String ns, ResponseStep<V1ServiceList> responseStep) {
+  private static Step readExistingServices(String ns) {
     return Main.callBuilderFactory
         .create()
         .with(
             $ ->
                 $.labelSelector =
                     LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listServiceAsync(ns, responseStep);
+        .listServiceAsync(ns, new ServiceListStep(ns));
   }
 
-  private static Step listEvents(String ns, ResponseStep<V1EventList> eventListResponseStep1) {
+  private static Step readExistingEvents(String ns) {
     return Main.callBuilderFactory
         .create()
         .with($ -> $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
-        .listEventAsync(ns, eventListResponseStep1);
+        .listEventAsync(ns, new EventListStep(ns));
   }
 
-  private static Step listPods(String ns, ResponseStep<V1PodList> podListResponseStep) {
+  private static Step readExistingPods(String ns) {
     return callBuilderFactory
         .create()
         .with(
             $ ->
                 $.labelSelector =
                     LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listPodAsync(ns, podListResponseStep);
+        .listPodAsync(ns, new PodListStep(ns));
   }
 
-  private static ConfigMapAfterStep createConfigMapStep(String ns, Step nextStep) {
-    return new ConfigMapAfterStep(
-        ns, configMapWatchers, stopping, Main::dispatchConfigMapWatch, nextStep);
+  private static ConfigMapAfterStep createConfigMapStep(String ns) {
+    return new ConfigMapAfterStep(ns, configMapWatchers, stopping, Main::dispatchConfigMapWatch);
   }
 
   // -----------------------------------------------------------------------------
@@ -984,7 +986,7 @@ public class Main {
         case "DELETED":
           runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                  getOperatorNamespace(), c.getMetadata().getNamespace(), null));
+                  getOperatorNamespace(), c.getMetadata().getNamespace()));
           break;
 
         case "ERROR":
@@ -1033,26 +1035,20 @@ public class Main {
   private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
     private final String ns;
 
-    IngressListStep(String ns, Step nextStep) {
-      super(nextStep);
+    IngressListStep(String ns) {
       this.ns = ns;
     }
 
     @Override
-    public NextAction onFailure(
-        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      if (statusCode == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, null, statusCode, responseHeaders);
-      }
-      return super.onFailure(packet, e, statusCode, responseHeaders);
+    public NextAction onFailure(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
-    public NextAction onSuccess(
-        Packet packet,
-        V1beta1IngressList result,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
+    public NextAction onSuccess(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
+      V1beta1IngressList result = callResponse.getResult();
       if (result != null) {
         for (V1beta1Ingress ingress : result.getItems()) {
           String domainUID = IngressWatcher.getIngressDomainUID(ingress);
@@ -1064,11 +1060,12 @@ public class Main {
           }
         }
       }
-      ingressWatchers.put(
-          ns,
-          createIngressWatcher(
-              ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      ingressWatchers.put(ns, createIngressWatcher(ns, getInitialResourceVersion(result)));
       return doNext(packet);
+    }
+
+    private String getInitialResourceVersion(V1beta1IngressList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
 
@@ -1076,32 +1073,25 @@ public class Main {
     private final String ns;
 
     DomainListStep(String ns) {
-      super(null);
       this.ns = ns;
     }
 
     @Override
-    public NextAction onFailure(
-        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      if (statusCode == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, null, statusCode, responseHeaders);
-      }
-      return super.onFailure(packet, e, statusCode, responseHeaders);
+    public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
-    public NextAction onSuccess(
-        Packet packet,
-        DomainList result,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
-      if (result != null) {
-        for (Domain dom : result.getItems()) {
+    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
+      if (callResponse.getResult() != null) {
+        for (Domain dom : callResponse.getResult().getItems()) {
           doCheckAndCreateDomainPresence(dom);
         }
       }
 
-      domainWatchers.put(ns, createDomainWatcher(ns, getResourceVersion(result)));
+      domainWatchers.put(ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
       return doNext(packet);
     }
 
@@ -1119,26 +1109,20 @@ public class Main {
   private static class ServiceListStep extends ResponseStep<V1ServiceList> {
     private final String ns;
 
-    ServiceListStep(String ns, Step nextStep) {
-      super(nextStep);
+    ServiceListStep(String ns) {
       this.ns = ns;
     }
 
     @Override
-    public NextAction onFailure(
-        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      if (statusCode == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, null, statusCode, responseHeaders);
-      }
-      return super.onFailure(packet, e, statusCode, responseHeaders);
+    public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
-    public NextAction onSuccess(
-        Packet packet,
-        V1ServiceList result,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
+    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
+      V1ServiceList result = callResponse.getResult();
       if (result != null) {
         for (V1Service service : result.getItems()) {
           String domainUID = ServiceWatcher.getServiceDomainUID(service);
@@ -1156,72 +1140,63 @@ public class Main {
           }
         }
       }
-      serviceWatchers.put(
-          ns,
-          createServiceWatcher(
-              ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
       return doNext(packet);
+    }
+
+    private String getInitialResourceVersion(V1ServiceList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
 
   private static class EventListStep extends ResponseStep<V1EventList> {
     private final String ns;
 
-    EventListStep(String ns, Step nextStep) {
-      super(nextStep);
+    EventListStep(String ns) {
       this.ns = ns;
     }
 
     @Override
-    public NextAction onFailure(
-        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      if (statusCode == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, null, statusCode, responseHeaders);
-      }
-      return super.onFailure(packet, e, statusCode, responseHeaders);
+    public NextAction onFailure(Packet packet, CallResponse<V1EventList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
-    public NextAction onSuccess(
-        Packet packet,
-        V1EventList result,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
+    public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
+      V1EventList result = callResponse.getResult();
       if (result != null) {
         for (V1Event event : result.getItems()) {
           onEvent(event);
         }
       }
-      eventWatchers.put(
-          ns,
-          createEventWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
       return doNext(packet);
+    }
+
+    private String getInitialResourceVersion(V1EventList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
 
   private static class PodListStep extends ResponseStep<V1PodList> {
     private final String ns;
 
-    PodListStep(String ns, Step nextStep) {
-      super(nextStep);
+    PodListStep(String ns) {
       this.ns = ns;
     }
 
     @Override
-    public NextAction onFailure(
-        Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      if (statusCode == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, null, statusCode, responseHeaders);
-      }
-      return super.onFailure(packet, e, statusCode, responseHeaders);
+    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
-    public NextAction onSuccess(
-        Packet packet,
-        V1PodList result,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
+    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+      V1PodList result = callResponse.getResult();
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
           String domainUID = PodWatcher.getPodDomainUID(pod);
@@ -1234,10 +1209,12 @@ public class Main {
           }
         }
       }
-      podWatchers.put(
-          ns,
-          createPodWatcher(ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+      podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
       return doNext(packet);
+    }
+
+    private String getInitialResourceVersion(V1PodList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
 
