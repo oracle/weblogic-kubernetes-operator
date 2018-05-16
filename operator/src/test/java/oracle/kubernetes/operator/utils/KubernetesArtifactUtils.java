@@ -57,9 +57,14 @@ import io.kubernetes.client.models.V1beta1Subject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import oracle.kubernetes.weblogic.domain.v1.Cluster;
+import oracle.kubernetes.weblogic.domain.v1.ClusterParams;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.ClusteredServer;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.NonClusteredServer;
+import oracle.kubernetes.weblogic.domain.v1.Server;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -282,6 +287,26 @@ public class KubernetesArtifactUtils {
     return new DomainSpec();
   }
 
+  public static Cluster newCluster() {
+    return new Cluster();
+  }
+
+  public static ClusterParams newClusterParams() {
+    return new ClusterParams();
+  }
+
+  public static ClusteredServer newClusteredServer() {
+    return new ClusteredServer();
+  }
+
+  public static NonClusteredServer newNonClusteredServer() {
+    return new NonClusteredServer();
+  }
+
+  public static Server newServer() {
+    return new Server();
+  }
+
   public static V1ServiceSpec newServiceSpec() {
     return new V1ServiceSpec();
   }
@@ -328,6 +353,10 @@ public class KubernetesArtifactUtils {
 
   public static FluentArrayList<ClusterStartup> newClusterStartupList() {
     return newFluentArrayList(ClusterStartup.class);
+  }
+
+  public static FluentArrayList<V1LocalObjectReference> newLocalObjectReferenceList() {
+    return newFluentArrayList(V1LocalObjectReference.class);
   }
 
   public static <E> FluentArrayList<E> newFluentArrayList(Class<E> type) {
