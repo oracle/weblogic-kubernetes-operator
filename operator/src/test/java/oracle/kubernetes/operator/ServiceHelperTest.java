@@ -14,6 +14,7 @@ import java.util.Map;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Engine;
@@ -84,7 +85,7 @@ public class ServiceHelperTest {
     Step s = ServiceHelper.createForServerStep(null);
     Engine e = new Engine("ServiceHelperTest");
     Packet p = new Packet();
-    DomainPresenceInfo info = new DomainPresenceInfo(dom);
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
     p.getComponents().put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info));
     p.put(ProcessingConstants.SERVER_NAME, "admin");
     p.put(ProcessingConstants.PORT, Integer.valueOf(7001));

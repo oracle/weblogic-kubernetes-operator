@@ -20,7 +20,9 @@ namespace: weblogic-operator
 targetNamespaces: default
 
 # The docker image containing the operator code.
-weblogicOperatorImage: container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest
+# Ensure that the image is built or published to an appropriate registry
+# See https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/installation.md
+weblogicOperatorImage: weblogic-kubernetes-operator:1.0
 
 # The image pull policy for the operator docker image.
 weblogicOperatorImagePullPolicy: IfNotPresent
