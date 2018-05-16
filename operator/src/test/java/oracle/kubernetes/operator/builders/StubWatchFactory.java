@@ -74,9 +74,9 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
       Class<?> responseBodyType,
       BiFunction<ApiClient, CallParams, Call> function)
       throws ApiException {
-    getRecordedParameters().add(recordedParams(callParams));
-
     try {
+      getRecordedParameters().add(recordedParams(callParams));
+
       if (nothingToDo()) return new WatchStub<>(Collections.emptyList());
       else if (exceptionOnNext == null) return new WatchStub<T>((List) calls.remove(0));
       else

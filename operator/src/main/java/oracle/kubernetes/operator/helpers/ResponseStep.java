@@ -29,6 +29,9 @@ public abstract class ResponseStep<T> extends Step {
 
   private Step previousStep = null;
 
+  /** Constructor specifying no next step */
+  public ResponseStep() {}
+
   /**
    * Constructor specifying next step
    *
@@ -49,17 +52,11 @@ public abstract class ResponseStep<T> extends Step {
     @SuppressWarnings("unchecked")
     CallResponse<T> callResponse = packet.getSPI(CallResponse.class);
     if (callResponse != null) {
-      if (callResponse.result != null) {
-        // success
-        nextAction =
-            onSuccess(
-                packet, callResponse.result, callResponse.statusCode, callResponse.responseHeaders);
+      if (callResponse.getResult() != null) {
+        nextAction = onSuccess(packet, callResponse);
       }
-      if (callResponse.e != null) {
-        // exception
-        nextAction =
-            onFailure(
-                packet, callResponse.e, callResponse.statusCode, callResponse.responseHeaders);
+      if (callResponse.isFailure()) {
+        nextAction = onFailure(packet, callResponse);
       }
     }
 
@@ -124,6 +121,22 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   /**
+   * Callback for API server call failure. The ApiException, HTTP status code and response headers
+   * are provided in callResponse; however, these will be null or 0 when the client timed-out.
+   *
+   * @param packet Packet
+   * @param callResponse the result of the call
+   * @return Next action for fiber processing, which may be a retry
+   */
+  public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
+    return onFailure(
+        packet,
+        callResponse.getE(),
+        callResponse.getStatusCode(),
+        callResponse.getResponseHeaders());
+  }
+
+  /**
    * Callback for API server call failure. The ApiException and HTTP status code and response
    * headers are provided; however, these will be null or 0 when the client simply timed-out.
    *
@@ -172,11 +185,30 @@ public abstract class ResponseStep<T> extends Step {
    * Callback for API server call success.
    *
    * @param packet Packet
+   * @param callResponse the result of the call
+   * @return Next action for fiber processing
+   */
+  public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+    return onSuccess(
+        packet,
+        callResponse.getResult(),
+        callResponse.getStatusCode(),
+        callResponse.getResponseHeaders());
+  }
+
+  /**
+   * Callback for API server call success.
+   *
+   * @deprecated use {@link #onSuccess(Packet, CallResponse)} instead
+   * @param packet Packet
    * @param result Result value
    * @param statusCode HTTP status code
    * @param responseHeaders HTTP response headers
    * @return Next action for fiber processing
    */
-  public abstract NextAction onSuccess(
-      Packet packet, T result, int statusCode, Map<String, List<String>> responseHeaders);
+  @Deprecated
+  public NextAction onSuccess(
+      Packet packet, T result, int statusCode, Map<String, List<String>> responseHeaders) {
+    throw new IllegalStateException("Should be overriden if called");
+  }
 }

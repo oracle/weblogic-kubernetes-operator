@@ -5,7 +5,11 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
+import io.kubernetes.client.models.V1Status;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +17,7 @@ import java.util.Map;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -629,10 +634,7 @@ public class ServiceHelper {
 
                     @Override
                     public NextAction onSuccess(
-                        Packet packet,
-                        V1Status result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
+                        Packet packet, CallResponse<V1Status> callResponse) {
                       Step create =
                           factory
                               .create()
