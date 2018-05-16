@@ -76,7 +76,6 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
       TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
 
       // Compute the desired pod configuration for the admin server
@@ -95,7 +94,7 @@ public class PodHelper {
       boolean isExplicitRestartThisServer =
           info.getExplicitRestartAdmin().get() || info.getExplicitRestartServers().contains(asName);
 
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, asName);
+      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, asName);
 
       // First, verify existing Pod
       Step read =
@@ -569,7 +568,6 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
       TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
 
       // Compute the desired pod configuration for the managed server
@@ -591,7 +589,8 @@ public class PodHelper {
               || (weblogicClusterName != null
                   && info.getExplicitRestartClusters().contains(weblogicClusterName));
 
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, weblogicServerName);
+      ServerKubernetesObjects sko =
+          ServerKubernetesObjectsManager.getOrCreate(info, weblogicServerName);
 
       // First, verify there existing Pod
       Step read =

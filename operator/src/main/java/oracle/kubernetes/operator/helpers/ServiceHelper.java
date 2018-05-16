@@ -50,7 +50,6 @@ public class ServiceHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       KubernetesVersion version = packet.getSPI(KubernetesVersion.class);
@@ -110,7 +109,7 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
+      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, serverName);
 
       // First, verify existing Service
       Step read =
@@ -695,7 +694,6 @@ public class ServiceHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
@@ -745,7 +743,7 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
+      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, serverName);
 
       // First, verify existing Service
       Step read =

@@ -44,7 +44,9 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.ClientFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
@@ -105,7 +107,12 @@ public class DomainPresenceTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StaticStubSupport.install(Main.class, "domains", new ConcurrentHashMap<>()));
+    mementos.add(
+        StaticStubSupport.install(
+            DomainPresenceInfoManager.class, "domains", new ConcurrentHashMap<>()));
+    mementos.add(
+        StaticStubSupport.install(
+            ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
@@ -253,7 +260,7 @@ public class DomainPresenceTest {
 
   @Test
   public void afterCancelDomainStatusUpdating_statusUpdaterIsNull() throws Exception {
-    DomainPresenceInfo info = new DomainPresenceInfo("namespace");
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate("namespace", "domainUID");
     info.getStatusUpdater().getAndSet(createStub(ScheduledFuture.class));
 
     DomainPresenceControl.cancelDomainStatusUpdating(info);
