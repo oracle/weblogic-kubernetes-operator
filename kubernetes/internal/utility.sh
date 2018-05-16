@@ -317,7 +317,29 @@ function copyInputsFileToOutputDirectory {
 
 # uninstall voyager and delete namespace
 function deleteVoyagerController {
-  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
-      | bash -s -- --provider=baremetal --namespace=voyager --uninstall --purge
-  kubectl delete namespace voyager
+  local vnamespace=voyager
+  kubectl delete apiservice -l app=voyager
+  # delete voyager operator
+  kubectl delete deployment -l app=voyager --namespace $vnamespace
+  kubectl delete service -l app=voyager --namespace $vnamespace
+  kubectl delete secret -l app=voyager --namespace $vnamespace
+  # delete RBAC objects, if --rbac flag was used.
+  kubectl delete serviceaccount -l app=voyager --namespace $vnamespace
+  kubectl delete clusterrolebindings -l app=voyager
+  kubectl delete clusterrole -l app=voyager
+  kubectl delete rolebindings -l app=voyager --namespace $vnamespace
+  kubectl delete role -l app=voyager --namespace $vnamespace
+
+  echo "waiting for voyager operator pod to stop running"
+  local maxwaitsecs=100
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    pods=($(kubectl get pods --all-namespaces -l app=voyager -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+    total=${#pods[*]}
+    if [ $total -eq 0 ] ; then
+      break
+    fi
+    sleep 2
+  done
 }
