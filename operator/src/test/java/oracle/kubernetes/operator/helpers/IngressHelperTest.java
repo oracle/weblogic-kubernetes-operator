@@ -72,7 +72,7 @@ public class IngressHelperTest {
     spec.setDomainUID(domainUID);
     domain.setSpec(spec);
 
-    info = new DomainPresenceInfo(domain);
+    info = DomainPresenceInfoFactory.getInstance().getOrCreate(domain);
 
     // Create scan
     WlsDomainConfig scan = new WlsDomainConfig(null);
