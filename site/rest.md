@@ -7,7 +7,16 @@ You can access most of the REST services using `GET`, for example:
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`.
 * To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`.
 
-All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  The `X-Requested-By` header is not required.  Callers should pass in the `Accept:/application/json` header.
+All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  Callers should pass in the `Accept:/application/json` header.
+
+To protect against Cross Site Request Forgery (CSRF) attacks, the Operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as 'MyClient'. For example, when using curl:
+
+```
+curl ... -H X-RequestedBy:MyClient ... -X POST .../scaling
+```
+
+If you do not pass in the X-Requested-By header, then you'll get a 400 (bad request) response without any details explaining why the request is bad.
+The X-Requested-By header is not needed for requests that only read, for example when you GET any of the Operator's REST endpoints.
 
 If using `curl`, you can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`).
 

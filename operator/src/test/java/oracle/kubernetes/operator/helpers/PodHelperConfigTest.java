@@ -11,13 +11,17 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.utils.YamlUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Pod;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.PodTuning;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
@@ -25,6 +29,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /** Test that PodHelper computes the correct admin and managed server pod configurations */
@@ -56,6 +62,24 @@ public class PodHelperConfigTest {
   private static final String MANAGED_OPTION3_VALUE = "ManagedOption3Value";
   private static final String MANAGED_OPTION4_NAME = "ManagedOption4Name";
   private static final String MANAGED_OPTION4_VALUE = "ManagedOption4Value";
+
+  private List<Memento> mementos = new ArrayList<>();
+
+  @Before
+  public void setUp() throws Exception {
+    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(
+        StaticStubSupport.install(
+            DomainPresenceInfoManager.class, "domains", new ConcurrentHashMap<>()));
+    mementos.add(
+        StaticStubSupport.install(
+            ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    for (Memento memento : mementos) memento.revert();
+  }
 
   @Test
   public void computedAdminServerPodConfigForDefaults_isCorrect() throws Exception {
@@ -351,7 +375,7 @@ public class PodHelperConfigTest {
   }
 
   private static Packet newPacket(Domain domain, V1PersistentVolumeClaimList claims) {
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
     info.setClaims(claims);
     Packet packet = new Packet();
     packet
