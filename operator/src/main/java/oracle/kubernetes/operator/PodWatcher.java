@@ -93,9 +93,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         Boolean isReady = isReady(pod);
         String podName = pod.getMetadata().getName();
         Container c = ContainerResolver.getInstance().getContainer();
-        ServerKubernetesObjectsManager skoFactory =
-            c != null ? c.getSPI(ServerKubernetesObjectsManager.class) : null;
-        ServerKubernetesObjects sko = skoFactory != null ? skoFactory.lookup(podName) : null;
+        ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(podName);
         if (sko != null) {
           sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
         }
