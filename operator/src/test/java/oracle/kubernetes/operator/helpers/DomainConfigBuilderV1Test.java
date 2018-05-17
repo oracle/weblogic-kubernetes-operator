@@ -37,7 +37,7 @@ public class DomainConfigBuilderV1Test {
   private static final String IMAGE1_LATEST = "image1:latest";
 
   private static List<V1EnvVar> ENV1 =
-      newEnvVarList().addElement(newEnvVar().name("name2").value("value2"));
+      newEnvVarList().addElement(newEnvVar().name("name1").value("value1"));
   private static List<V1EnvVar> ENV2 =
       newEnvVarList().addElement(newEnvVar().name("name2").value("value2"));
   private static List<V1EnvVar> EMPTY_ENV = newEnvVarList();
