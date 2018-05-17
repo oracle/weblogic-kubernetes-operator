@@ -2,6 +2,7 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
   name: voyager-operator
   namespace: voyager
@@ -69,6 +70,7 @@ metadata:
   name: voyager-apiserver-cert
   namespace: voyager
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 type: kubernetes.io/tls
 data:
@@ -82,6 +84,7 @@ metadata:
   name: voyager-operator
   namespace: voyager
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 spec:
   ports:
@@ -103,6 +106,7 @@ kind: APIService
 metadata:
   name: v1beta1.admission.voyager.appscode.com
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 spec:
   caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN1RENDQWFDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFOTVFzd0NRWURWUVFERXdKallUQWUKRncweE9EQTFNVFl3TXpRMU1UVmFGdzB5T0RBMU1UTXdNelExTVRWYU1BMHhDekFKQmdOVkJBTVRBbU5oTUlJQgpJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBcS9HL2xtUlZvTXNyKy82VTIrWjloZE1oCjZINU1aSkZnT3pNaWtHZEFxTnVnNnZKRklhNld4clloVVcvVnRybkRETVkyRjVkYTZuTTI3cVdpdXJla2YvTGkKOFJXRnltTmVrNXpGV1NSUGttYXlOVzRCNmRDNmE0V1VxSmtVbUNKOC9WdnI2QkRqVkZWemNIV3JPeDJQU1g2UgovY0tEcytsYzVYbVB3V0hta1ZMWmhmOERMcURhRXV1SUFDTlE2dkFxT3dyVklwQVFsOHpJN0FQVHY4M0NzWjVqCk1XQmZVNXBsRnlNNmZGYnVqKzdtSWtqa01QM2JjaXdQV0FQcTB4VHdjU0NMeU9DQ1Rhd3BsUHhIRTRiYVpReEEKTnZNUmxEVEMvTUdUMGFaMFIremNXcHkwZ3RtcXAzblhTWTRLTW5qY2xDYjhYZGp6SUExTU8vaWR1SEw1cHdJRApBUUFCb3lNd0lUQU9CZ05WSFE4QkFmOEVCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBTkJna3Foa2lHCjl3MEJBUXNGQUFPQ0FRRUFwaHU2eHVXQVVvNXkxdW9Gdkt6Y2tyOXA1MWpxWkJGdXAxV2JMOFkveXJUTVpRZkIKbUU3U240QVVCUS9xOEpFc1ZCcVJoRjFodHJtbzdUaDBDNVZNNmFZNnRaZDZuYWV5ZDlJaUt6ZkJyVnB5M08vUQpJaEZlZkNCTExienZlbnBwWnBkdUxKdEQ2VXRVb0FFTGdHNmR0Y2R4SUV6bzUxd0g4aVRKejBsQlBpY0prWjRkCnBXWUMyaFFOOFpRRU5aM29TTno5QWQrTkJXbWdXendsMXk4NmhxTTZHUkVKSCtpK3BZeWpkTk9qR3orbGVxU1AKa1lnbjZZVlA3TnZkcElYKzlzby9JUGF3RTJoRDAzOERtZVhscTFYRnhnc1FBVTRFd3JoSmU3WHMzWHZ3aFZlTwowYjBZWGVPNENkemtZNmtxNlpFci93Z0JxWEZjc3MwaHJ2WWZBUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K

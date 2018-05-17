@@ -757,10 +757,10 @@ function setupVoyagerLoadBalancer {
 
   echo Checking Voyager Ingress resource
   local maxwaitsecs=100
-  local mstart=`date +%s`
+  local mstart=$(date +%s)
   while : ; do
-    local mnow=`date +%s`
-    local vdep=`kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
+    local mnow=$(date +%s)
+    local vdep=$(kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } ')
     if [ "$vdep" = "1" ]; then
       echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
       break
@@ -773,10 +773,10 @@ function setupVoyagerLoadBalancer {
 
   echo Checking HAProxy pod is running
   local maxwaitsecs=100
-  local mstart=`date +%s`
+  local mstart=$(date +%s)
   while : ; do
-    local mnow=`date +%s`
-    local st=`kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } '`
+    local mnow=$(date +%s)
+    local st=$(kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } ')
     if [ "$st" = "Running" ]; then
       echo "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is created successfully."
       break
@@ -794,7 +794,7 @@ function setupVoyagerLoadBalancer {
     local mnow=`date +%s`
     local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
     if [ "$vscv" = "1" ]; then
-      echo 'The service ${domainUID}-voyager-stats is created successfully.'
+      echo "The service ${domainUID}-voyager-stats is created successfully."
       break
     fi
     if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then

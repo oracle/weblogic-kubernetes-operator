@@ -4,6 +4,7 @@ metadata:
   name: voyager-operator
   namespace: voyager
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 ---
 
@@ -13,6 +14,7 @@ metadata:
   name: voyager-operator
   namespace: voyager
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 rules:
 - apiGroups:
@@ -93,6 +95,7 @@ metadata:
   name: voyager-operator
   namespace: voyager
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -111,6 +114,7 @@ metadata:
   name: voyager-apiserver-extension-server-authentication-reader
   namespace: kube-system
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
 roleRef:
   kind: Role
@@ -144,6 +148,7 @@ kind: ClusterRole
 metadata:
   name: appscode:voyager:edit
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
 rules:
@@ -167,6 +172,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: appscode:voyager:view
   labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
     rbac.authorization.k8s.io/aggregate-to-view: "true"
 rules:
 - apiGroups:
