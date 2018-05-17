@@ -31,6 +31,7 @@ spec:
         - --ingress-class=
         - --restrict-to-operator-namespace=false
         - --docker-registry=appscode
+        - --haproxy-image-tag=1.7.10-6.0.0
         - --secure-port=8443
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
