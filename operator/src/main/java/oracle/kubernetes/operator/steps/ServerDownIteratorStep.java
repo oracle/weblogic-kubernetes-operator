@@ -58,6 +58,6 @@ public class ServerDownIteratorStep extends Step {
     if (startDetails.isEmpty()) {
       return doNext(packet);
     }
-    return doForkJoin(next, packet, startDetails);
+    return doForkJoin(getNext(), packet, startDetails);
   }
 }

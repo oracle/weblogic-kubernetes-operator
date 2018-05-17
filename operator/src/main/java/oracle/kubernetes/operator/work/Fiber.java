@@ -330,21 +330,28 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       throw new CancellationException();
     }
     if (s == NOT_COMPLETE) {
-      lock.lock();
-      try {
-        // check again under lock
-        s = status.get();
-        if (s == CANCELLED) {
-          throw new CancellationException();
-        }
-        if (s == NOT_COMPLETE) {
-          condition.await();
+      while (true) {
+        lock.lock();
+        try {
+          // check again under lock
+          s = status.get();
           if (s == CANCELLED) {
             throw new CancellationException();
           }
+          if (s == NOT_COMPLETE) {
+            condition.await();
+            s = status.get();
+            if (s == CANCELLED) {
+              throw new CancellationException();
+            }
+          }
+        } finally {
+          lock.unlock();
         }
-      } finally {
-        lock.unlock();
+
+        if (s == DONE) {
+          break;
+        }
       }
     }
 
@@ -358,22 +365,32 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       throw new CancellationException();
     }
     if (s == NOT_COMPLETE) {
-      if (!lock.tryLock() && !lock.tryLock(timeout, unit)) {
-        throw new TimeoutException();
-      }
-      try {
-        // check again under lock
-        s = status.get();
-        if (s == CANCELLED) {
-          throw new CancellationException();
+      while (true) {
+        if (!lock.tryLock() && !lock.tryLock(timeout, unit)) {
+          throw new TimeoutException();
         }
-        if (s == NOT_COMPLETE) {
-          if (!condition.await(timeout, unit)) {
-            throw new TimeoutException();
+        try {
+          // check again under lock
+          s = status.get();
+          if (s == CANCELLED) {
+            throw new CancellationException();
           }
+          if (s == NOT_COMPLETE) {
+            if (!condition.await(timeout, unit)) {
+              throw new TimeoutException();
+            }
+            s = status.get();
+            if (s == CANCELLED) {
+              throw new CancellationException();
+            }
+          }
+        } finally {
+          lock.unlock();
         }
-      } finally {
-        lock.unlock();
+
+        if (s == DONE) {
+          break;
+        }
       }
     }
 
@@ -488,14 +505,17 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         if (LOGGER.isFineEnabled()) {
           LOGGER.fine("{0} completed", getName());
         }
-        boolean isDone = status.compareAndSet(NOT_COMPLETE, DONE);
-        condition.signalAll();
-        if (isDone && completionCallback != null) {
-          if (applyThrowable != null) {
-            completionCallback.onThrowable(packet, applyThrowable);
-          } else {
-            completionCallback.onCompletion(packet);
+        try {
+          if (s == NOT_COMPLETE && completionCallback != null) {
+            if (applyThrowable != null) {
+              completionCallback.onThrowable(packet, applyThrowable);
+            } else {
+              completionCallback.onCompletion(packet);
+            }
           }
+        } finally {
+          status.compareAndSet(NOT_COMPLETE, DONE);
+          condition.signalAll();
         }
       }
     } finally {

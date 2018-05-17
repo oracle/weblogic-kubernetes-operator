@@ -20,7 +20,7 @@ public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final ClientPool SINGLETON = new ClientPool();
 
-  private static final DefaultClientFactory FACTORY = new DefaultClientFactory();
+  private static final ClientFactory FACTORY = new DefaultClientFactory();
 
   public static ClientPool getInstance() {
     return SINGLETON;

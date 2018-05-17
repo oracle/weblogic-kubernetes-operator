@@ -5,8 +5,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.LabelConstants.*;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.helpers.VersionHelper.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 

@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.hasEntry;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -42,13 +41,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   }
 
   @Override
-  protected DomainWatcher createWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return DomainWatcher.create(
-        Executors.defaultThreadFactory(),
-        nameSpace,
-        Integer.toString(initialResourceVersion),
-        this,
-        stopping);
+  protected DomainWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
+    return DomainWatcher.create(this, ns, Integer.toString(rv), this, stopping);
   }
 }
