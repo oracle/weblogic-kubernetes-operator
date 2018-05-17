@@ -575,7 +575,7 @@ function create_image_pull_secret_wercker {
     --docker-server=index.docker.io/v1/ \
     --docker-username=$DOCKER_USERNAME \
     --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL 
+    --docker-email=$DOCKER_EMAIL \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -589,7 +589,7 @@ function create_image_pull_secret_wercker {
     --docker-server=$REPO_REGISTRY \
     --docker-username=$REPO_USERNAME \
     --docker-password=$REPO_PASSWORD \
-    --docker-email=$REPO_EMAIL 
+    --docker-email=$REPO_EMAIL \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
