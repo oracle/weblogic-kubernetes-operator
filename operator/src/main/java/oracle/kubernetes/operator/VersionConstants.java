@@ -10,6 +10,7 @@ public interface VersionConstants {
   public static final String CREATE_WEBLOGIC_DOMAIN_INPUTS_V1 = "create-weblogic-domain-inputs-v1";
   public static final String OPERATOR_V1 = "operator-v1";
   public static final String DOMAIN_V1 = "domain-v1";
+  public static final String DOMAIN_V1DOT1 = "domain-v1.1";
   public static final String VOYAGER_LOAD_BALANCER_V1 = "voyager-load-balancer-v1";
   public static final String APACHE_LOAD_BALANCER_V1 = "apache-load-balancer-v1";
   public static final String TRAEFIK_LOAD_BALANCER_V1 = "traefik-load-balancer-v1";
