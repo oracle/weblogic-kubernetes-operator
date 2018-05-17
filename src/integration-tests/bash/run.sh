@@ -2720,6 +2720,8 @@ function test_suite {
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
 
     # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
     declare_test_pass
