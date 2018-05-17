@@ -90,23 +90,6 @@ public class CallBuilder {
     return this;
   }
 
-  /**
-   * Converts value to nearest DNS-1123 legal name, which can be used as a Kubernetes identifier
-   *
-   * @param value Input value
-   * @return nearest DNS-1123 legal name
-   */
-  public static String toDNS1123LegalName(String value) {
-    if (value != null) {
-      value = value.toLowerCase();
-
-      // replace '_'
-      value = value.replace('_', '-');
-    }
-
-    return value;
-  }
-
   /* Version */
 
   /**

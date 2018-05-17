@@ -314,3 +314,10 @@ function copyInputsFileToOutputDirectory {
     cp ${from} ${to}
   fi
 }
+
+# uninstall voyager and delete namespace
+function deleteVoyagerController {
+  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+      | bash -s -- --provider=baremetal --namespace=voyager --uninstall --purge
+  kubectl delete namespace voyager
+}

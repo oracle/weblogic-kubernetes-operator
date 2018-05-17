@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.ConfigMapWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 
 public class ConfigMapAfterStep extends Step {
   private final String ns;
@@ -46,8 +46,7 @@ public class ConfigMapAfterStep extends Step {
   }
 
   private ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
-    ThreadFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(ThreadFactory.class);
+    ThreadFactory factory = ThreadFactorySingleton.getInstance();
 
     return ConfigMapWatcher.create(factory, namespace, initialResourceVersion, listener, stopping);
   }

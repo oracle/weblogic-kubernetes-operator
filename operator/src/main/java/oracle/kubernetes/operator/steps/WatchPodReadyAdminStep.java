@@ -32,6 +32,6 @@ public class WatchPodReadyAdminStep extends Step {
         .getComponents()
         .put(ProcessingConstants.PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
 
-    return doNext(pw.waitForReady(adminPod, next), packet);
+    return doNext(pw.waitForReady(adminPod, getNext()), packet);
   }
 }

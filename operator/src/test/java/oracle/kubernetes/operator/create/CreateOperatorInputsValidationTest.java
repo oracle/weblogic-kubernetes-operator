@@ -4,11 +4,16 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.CreateOperatorInputs.*;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.errorRegexp;
-import static oracle.kubernetes.operator.create.ExecResultMatcher.failsAndPrints;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.*;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.errorRegexp;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import oracle.kubernetes.operator.utils.CreateOperatorInputs;
+import oracle.kubernetes.operator.utils.ExecCreateOperator;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.GeneratedOperatorYamlFiles;
+import oracle.kubernetes.operator.utils.UserProjects;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

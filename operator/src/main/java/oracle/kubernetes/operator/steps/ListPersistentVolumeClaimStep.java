@@ -49,7 +49,7 @@ public class ListPersistentVolumeClaimStep extends Step {
                 })
             .listPersistentVolumeClaimAsync(
                 namespace,
-                new ResponseStep<V1PersistentVolumeClaimList>(next) {
+                new ResponseStep<V1PersistentVolumeClaimList>(getNext()) {
                   @Override
                   public NextAction onFailure(
                       Packet packet,

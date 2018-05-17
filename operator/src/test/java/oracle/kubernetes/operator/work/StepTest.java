@@ -8,16 +8,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,6 +46,20 @@ public class StepTest {
 
   private Engine engine = null;
 
+  private static final Logger UNDERLYING_LOGGER =
+      LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+  private List<Handler> savedhandlers;
+
+  @Before
+  public void disableConsoleLogging() {
+    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+  }
+
+  @After
+  public void restoreConsoleLogging() {
+    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+  }
+
   @Before
   public void setup() {
     engine = new Engine("StepTest");
@@ -46,12 +67,12 @@ public class StepTest {
 
   @Test
   public void test() throws InterruptedException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Semaphore signal = new Semaphore(0);
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -90,9 +111,31 @@ public class StepTest {
     assertTrue(throwables.isEmpty());
   }
 
+  /**
+   * Simplifies creation of stepline. Steps will be connected following the list ordering of their
+   * classes
+   *
+   * @param steps List of step classes
+   * @return Head step
+   */
+  private static Step createStepline(List<Class<? extends Step>> steps) {
+    try {
+      Step s = null;
+      ListIterator<Class<? extends Step>> it = steps.listIterator(steps.size());
+      while (it.hasPrevious()) {
+        Class<? extends Step> c = it.previous();
+        Constructor<? extends Step> construct = c.getConstructor(Step.class);
+        s = construct.newInstance(s);
+      }
+      return s;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   @Test
   public void testRetry() throws InterruptedException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -102,8 +145,8 @@ public class StepTest {
     p.put(NA, commandMap);
 
     Semaphore signal = new Semaphore(0);
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -146,7 +189,7 @@ public class StepTest {
 
   @Test
   public void testThrow() throws InterruptedException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -154,8 +197,8 @@ public class StepTest {
     p.put(NA, commandMap);
 
     Semaphore signal = new Semaphore(0);
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -196,7 +239,7 @@ public class StepTest {
 
   @Test
   public void testSuspendAndThrow() throws InterruptedException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -210,7 +253,7 @@ public class StepTest {
     p.put(Step2.class.getName() + ACQUIRE_SEMAPHORE_SUFFIX, acquireSemaphore);
 
     Semaphore signal = new Semaphore(0);
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Throwable> throwables = new ArrayList<>();
 
     engine
         .createFiber()
@@ -248,7 +291,7 @@ public class StepTest {
 
   @Test
   public void testMany() throws InterruptedException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
 
     List<Semaphore> sems = new ArrayList<>();
     List<List<Step>> calls = new ArrayList<>();
@@ -258,8 +301,8 @@ public class StepTest {
       Packet p = new Packet();
 
       Semaphore signal = new Semaphore(0);
-      List<Step> called = new ArrayList<Step>();
-      List<Throwable> throwables = new ArrayList<Throwable>();
+      List<Step> called = new ArrayList<>();
+      List<Throwable> throwables = new ArrayList<>();
 
       sems.add(signal);
       calls.add(called);
@@ -311,11 +354,11 @@ public class StepTest {
 
   @Test
   public void testFuture() throws InterruptedException, ExecutionException, TimeoutException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
-    List<Step> called = new ArrayList<Step>();
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Step> called = new ArrayList<>();
+    List<Throwable> throwables = new ArrayList<>();
 
     Fiber f = engine.createFiber();
     f.start(
@@ -353,7 +396,7 @@ public class StepTest {
 
   @Test
   public void testCancel() throws InterruptedException {
-    Step stepline = Step.createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -366,7 +409,7 @@ public class StepTest {
     p.put(Step2.class.getName() + ACQUIRE_SEMAPHORE_SUFFIX, acquireSemaphore);
 
     Semaphore signal = new Semaphore(0);
-    List<Throwable> throwables = new ArrayList<Throwable>();
+    List<Throwable> throwables = new ArrayList<>();
 
     Fiber f = engine.createFiber();
     f.start(
@@ -466,7 +509,7 @@ public class StepTest {
       @SuppressWarnings({"rawtypes", "unchecked"})
       List<Step> called = (List) packet.get(MARK);
       if (called == null) {
-        called = new ArrayList<Step>();
+        called = new ArrayList<>();
         packet.put(MARK, called);
       }
       called.add(this);
