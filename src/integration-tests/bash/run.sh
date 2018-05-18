@@ -575,7 +575,7 @@ function create_image_pull_secret_wercker {
     --docker-server=index.docker.io/v1/ \
     --docker-username=$DOCKER_USERNAME \
     --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL 
+    --docker-email=$DOCKER_EMAIL \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -589,7 +589,7 @@ function create_image_pull_secret_wercker {
     --docker-server=$REPO_REGISTRY \
     --docker-username=$REPO_USERNAME \
     --docker-password=$REPO_PASSWORD \
-    --docker-email=$REPO_EMAIL 
+    --docker-email=$REPO_EMAIL \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -2720,6 +2720,8 @@ function test_suite {
     # TODO have the op_define commands themselves create target namespace if it doesn't already exist, or test if the namespace creation is needed in the first place, and if so, ask MikeG to create them as part of domain create job
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
 
     # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
     declare_test_pass
