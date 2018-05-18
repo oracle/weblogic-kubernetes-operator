@@ -520,10 +520,11 @@ public class Main {
     DomainPresenceControl.normalizeDomainSpec(spec);
     String domainUID = spec.getDomainUID();
 
+    boolean existingDomain = DomainPresenceInfoManager.lookup(domainUID) != null;
     DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
     // Has the spec actually changed? We will get watch events for status updates
     Domain current = info.getDomain();
-    if (current != null) {
+    if (existingDomain && current != null) {
       if (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec())) {
         // nothing in the spec has changed
         LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
