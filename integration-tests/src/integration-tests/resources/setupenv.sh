@@ -22,7 +22,7 @@ export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | se
 export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
 
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-export PROJECT_ROOT="$SCRIPTPATH/../../../../i"
+export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 cd $PROJECT_ROOT
 if [ $? -ne 0 ]; then
     echo "Couldn't change to $PROJECT_ROOT dir"
