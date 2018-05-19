@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.utils;
 
 import java.io.File;
@@ -8,7 +12,6 @@ import java.util.logging.Logger;
 /**
  * Operator class with all the utility methods for Operator.
  *
- * @author Vanajakshi Mukkara
  */
 public class Operator {
   public static final String CREATE_OPERATOR_SCRIPT = "../kubernetes/create-weblogic-operator.sh";
@@ -61,6 +64,15 @@ public class Operator {
         opProps.put("externalRestHttpsPort", externalRestHttpsPort);
       }
     }
+    
+    if(System.getenv("IMAGE_NAME_OPERATOR") != null && System.getenv("IMAGE_TAG_OPERATOR") != null) {
+    	opProps.put("weblogicOperatorImage",
+    			System.getenv("IMAGE_NAME_OPERATOR")+":"+ System.getenv("IMAGE_TAG_OPERATOR"));
+    } else {
+    	opProps.put("weblogicOperatorImage",
+    			"wlsldi-v2.docker.oraclecorp.com/weblogic-operator"+
+    					":test_"+TestUtils.getGitBranchName().replaceAll("/", "_") );
+    }
 
     String opInputYamlFileName = operatorNS + "-inputs.yaml";
     opInputYamlFilePath =
@@ -89,7 +101,6 @@ public class Operator {
     //TODo: Add check for the image name from the Pod as in run.sh
 
     if (!outputStr.contains(createScriptMessage)) {
-      //use logger
       return false;
     } else {
       return true;

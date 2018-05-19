@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.utils;
 
 import java.io.BufferedReader;
@@ -132,7 +136,7 @@ public class TestUtils {
     //check for admin pod
     while (i < MAX_ITERATIONS_POD) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
-      logger.fine("Output for " + cmd + "\n" + outputStr);
+      logger.info("Output for " + cmd + "\n" + outputStr);
       if (!outputStr.contains("Running")) {
         //check for last iteration
         if (i == (MAX_ITERATIONS_POD - 1)) {
@@ -224,7 +228,7 @@ public class TestUtils {
         String key = (String) enuKeys.nextElement();
         //if a line starts with the props key then replace
         //the line with key:value in the file
-        if (line.startsWith(key) || line.startsWith("#" + key)) {
+        if (line.startsWith(key+":") || line.startsWith("#" + key+":")) {
           changedLines.append(key).append(":").append(props.getProperty(key)).append("\n");
           isLineChanged = true;
           break;
@@ -540,5 +544,9 @@ public class TestUtils {
     /*if(!cmdResult.contains("Exiting with status 0")){
     	throw new RuntimeException("FAILURE: Couldn't create domain PV directory "+cmdResult);
     }*/
+  }
+  
+  public static String getGitBranchName() {
+	  return executeCommand(new String[] {"/bin/sh", "-c", "git branch | grep \\* | cut -d ' ' -f2-"}).trim();
   }
 }
