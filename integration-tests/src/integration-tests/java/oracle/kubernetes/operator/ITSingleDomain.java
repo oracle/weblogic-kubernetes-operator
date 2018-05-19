@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -12,7 +16,6 @@ import org.junit.Test;
  * <p>This test is used for creating Operator and a single domain which the Operator manages and
  * verifies both.
  *
- * @author Vanajakshi Mukkara
  */
 public class ITSingleDomain extends BaseTest {
 
@@ -72,13 +75,6 @@ public class ITSingleDomain extends BaseTest {
       if (new Boolean(domainProps.getProperty("exposeAdminT3Channel")).booleanValue()) {
         domain.deployWebAppViaWLST(
             TESTWEBAPP, "../src/integration-tests/apps/testwebapp.war", username, password);
-        /*}else if(domainProps.getProperty("exposeAdminNodePort")!=null) {
-        boolean adminNodeport = new Boolean(
-        		domainProps.getProperty("exposeAdminNodePort")).booleanValue();
-        if(adminNodeport) {
-        	domain.deployWebAppViaREST(TESTWEBAPP,
-        			"src/integration-tests/apps/testwebapp.war",username, password);
-        } */
       }
     }
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
@@ -181,8 +177,5 @@ public class ITSingleDomain extends BaseTest {
     logger.info("SUCCESS");
   }
 
-  //@Test
-  public void testElkIntegration() {
-    //TODO in run.sh
-  }
+
 }

@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import java.io.File;
@@ -18,8 +22,6 @@ import oracle.kubernetes.operator.utils.TestUtils;
 /**
  * Base class which contains common methods to create/shutdown operator and domain. IT tests can
  * extend this class.
- *
- * @author Vanajakshi Mukkara
  */
 public class BaseTest {
   protected static final String TESTWEBAPP = "testwebapp";
@@ -52,13 +54,11 @@ public class BaseTest {
   protected static String domainNS = "";
 
   public static void setup() throws Exception {
-    boolean createOpDomain = true; //this flag will be removed later, its here for testing
-
     //check file exists
     File f = new File(BaseTest.class.getClassLoader().getResource(appPropsFile).getFile());
     if (!f.exists()) {
       throw new IllegalArgumentException(
-          "FAILURE: Invalid operator appp properties file " + appPropsFile);
+          "FAILURE: Invalid operator app properties file " + appPropsFile);
     }
 
     //load props
@@ -78,9 +78,7 @@ public class BaseTest {
     pvRoot = resultRoot;
 
     //create resultRoot, PVRoot, etc
-    if (createOpDomain) {
-      createDirectories();
-    }
+    createDirectories();
 
     //check file exists
     f = new File(BaseTest.class.getClassLoader().getResource(opPropsFile).getFile());
@@ -98,10 +96,8 @@ public class BaseTest {
     //create op
     operator = new Operator(opProps, userProjectsDir);
 
-    if (createOpDomain) {
-      if (!operator.run()) {
-        throw new RuntimeException("FAILURE: Create Operator Script failed..");
-      }
+    if (!operator.run()) {
+      throw new RuntimeException("FAILURE: Create Operator Script failed..");
     }
 
     logger.info("Check Operator status");
@@ -122,25 +118,22 @@ public class BaseTest {
     domainNS = domainProps.getProperty("namespace");
     domainUid = domainProps.getProperty("domainUID");
 
-    if (createOpDomain) {
-      pvDir = resultRoot + "/acceptance_test_pv/persistentVolume-" + domainUid;
-      //k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
-      domainProps.setProperty("weblogicDomainStoragePath", pvDir);
-      pv = new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
-      secret =
-          new Secret(
-              domainProps.getProperty("namespace"),
-              domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
-              username,
-              password);
+    pvDir = resultRoot + "/acceptance_test_pv/persistentVolume-" + domainUid;
+    //k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
+    domainProps.setProperty("weblogicDomainStoragePath", pvDir);
+    pv = new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
+    secret =
+        new Secret(
+            domainProps.getProperty("namespace"),
+            domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
+            username,
+            password);
 
-      logger.info("Creating domain, waiting for the script " + "to complete execution");
-    }
+    logger.info("Creating domain, waiting for the script " + "to complete execution");
+
     domain = new Domain(domainProps, userProjectsDir);
-    if (createOpDomain) {
-      if (!domain.run()) {
-        throw new RuntimeException("FAILURE: Create domain Script failed..");
-      }
+    if (!domain.run()) {
+      throw new RuntimeException("FAILURE: Create domain Script failed..");
     }
 
     domain.verifyDomainCreated();
