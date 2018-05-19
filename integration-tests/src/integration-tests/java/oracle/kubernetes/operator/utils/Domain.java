@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.utils;
 
 import java.io.File;
@@ -10,8 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * Domain class with all the utility methods for a Domain.
- *
- * @author Vanajakshi Mukkara
+ * 
  */
 public class Domain {
   public static final String CREATE_DOMAIN_SCRIPT = "../kubernetes/create-weblogic-domain.sh";
