@@ -75,6 +75,7 @@ public class CreateDomainInputs {
   private String loadBalancerDashboardPort = "";
   private String loadBalancerVolumePath = "";
   private String loadBalancerAppPrepath = "";
+  private String loadBalancerExposeAdminPort = "";
   private String javaOptions = "";
   private String version = "";
 
@@ -519,6 +520,19 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs loadBalancerAppPrepath(String loadBalancerAppPrepath) {
     setLoadBalancerAppPrepath(loadBalancerAppPrepath);
+    return this;
+  }
+
+  public String getLoadBalancerExposeAdminPort() {
+    return loadBalancerExposeAdminPort;
+  }
+
+  public void setLoadBalancerExposeAdminPort(String loadBalancerExposeAdminPort) {
+    this.loadBalancerExposeAdminPort = convertNullToEmptyString(loadBalancerExposeAdminPort);
+  }
+
+  public CreateDomainInputs loadBalancerExposeAdminPort(String loadBalancerExposeAdminPort) {
+    setLoadBalancerExposeAdminPort(loadBalancerExposeAdminPort);
     return this;
   }
 
