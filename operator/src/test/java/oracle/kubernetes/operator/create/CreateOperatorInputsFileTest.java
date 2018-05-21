@@ -44,28 +44,26 @@ public class CreateOperatorInputsFileTest {
   @Test
   public void defaultInputsFile_hasCorrectContents() throws Exception {
     assertThat(
-        readDefaultInputsFile(),
-        yamlEqualTo(
-            (new CreateOperatorInputs())
-                .version(CREATE_WEBLOGIC_OPERATOR_INPUTS_V1)
-                .elkIntegrationEnabled("false")
-                .externalDebugHttpPort("30999")
-                .externalOperatorCert("")
-                .externalOperatorKey("")
-                .externalRestOption(EXTERNAL_REST_OPTION_NONE)
-                .externalRestHttpsPort("31001")
-                .externalSans("")
-                .remoteDebugNodePortEnabled("false")
-                .weblogicOperatorImage(
-                    "container-registry.oracle.com/middleware/weblogic-kubernetes-operator:latest")
-                .weblogicOperatorImagePullPolicy("IfNotPresent")
-                .weblogicOperatorImagePullSecretName("")
-                .internalDebugHttpPort("30999")
-                .javaLoggingLevel(JAVA_LOGGING_LEVEL_INFO)
-                .namespace("weblogic-operator")
-                .remoteDebugNodePortEnabled("false")
-                .serviceAccount("weblogic-operator")
-                .targetNamespaces("default")));
+      readDefaultInputsFile(),
+      yamlEqualTo((new CreateOperatorInputs())
+        .version(CREATE_WEBLOGIC_OPERATOR_INPUTS_V1)
+        .elkIntegrationEnabled("false")
+        .externalDebugHttpPort("30999")
+        .externalOperatorCert("")
+        .externalOperatorKey("")
+        .externalRestOption(EXTERNAL_REST_OPTION_NONE)
+        .externalRestHttpsPort("31001")
+        .externalSans("")
+        .remoteDebugNodePortEnabled("false")
+        .weblogicOperatorImage("weblogic-kubernetes-operator:1.0")
+        .weblogicOperatorImagePullPolicy("IfNotPresent")
+        .weblogicOperatorImagePullSecretName("")
+        .internalDebugHttpPort("30999")
+        .javaLoggingLevel(JAVA_LOGGING_LEVEL_INFO)
+        .namespace("weblogic-operator")
+        .remoteDebugNodePortEnabled("false")
+        .serviceAccount("weblogic-operator")
+        .targetNamespaces("default")));
   }
 
   @Test
