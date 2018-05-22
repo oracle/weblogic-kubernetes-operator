@@ -184,6 +184,14 @@ integration-test:
 
       # integration tests
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
+      RUN_SH_RC=$?
+
+      if [ "$RUN_SH_RC" = "0" ]; then 
+        echo "run.sh finished successfully"
+      else
+        echo "run.sh failed with return code ${RUN_SH_RC}"
+        exit $RUN_SH_RC
+      fi
     
       cleanup_and_store
 
