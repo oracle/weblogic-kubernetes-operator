@@ -64,17 +64,6 @@ loadBalancerAppPrepath: /weblogic
 
 Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>`.
 
-It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, you can customize exposure of the WebLogic Administration Server host and port by `loadBalancerExposeAdminPort property` in the `create-weblogic-domain-inputs.yaml` file.
-
-```
-
-# Boolean to indicate if the admin port is going to be exposed via APACHE load balancer. By default, it is false.
-loadBalancerExposeAdminPort: false
-```
-
-If the `loadBalancerExposeAdminPort` is set to `true`, an adminstrator can access the Administration Console using `http://<host>:30305/console`.
-
-
 The generated Kubernetes YAML files look like the following, given the `domainUID`, "`domain1`", by default.
 
 Sample `weblogic-domain-apache.yaml` file for Apache HTTP Server deployment.
@@ -401,6 +390,16 @@ domain1-apache-webtier                                    2h
 
 ```
 
+
+It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, you can customize exposure of the WebLogic Administration Server host and port by `loadBalancerExposeAdminPort property` in the `create-weblogic-domain-inputs.yaml` file.
+
+```
+
+# Boolean to indicate if the admin port is going to be exposed via APACHE load balancer. By default, it is false.
+loadBalancerExposeAdminPort: false
+```
+
+If the domain is created with the `loadBalancerExposeAdminPort` set to `true`, an adminstrator can access the Administration Console using `http://<host>:30305/console`.
 
 ### Use your own plugin WL module configuration
 
