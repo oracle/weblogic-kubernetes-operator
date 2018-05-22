@@ -217,7 +217,7 @@ function renewLease {
   if [ ! "$LEASE_ID" = "" ]; then
     # RESULT_DIR may not have been created yet, so use /tmp
     local outfile=/tmp/acc_test_renew_lease.out
-    $SCRIPTPATH/lease.sh -r "$LEASE_ID" > $outfile 2>&1
+    $SCRIPTPATH/lease.sh -r "$LEASE_ID" 2>&1 | tee $outfile
     if [ $? -ne 0 ]; then
       trace "Lease renew error:"
       echo "" >> $outfile
@@ -409,8 +409,8 @@ function state_dump {
   #   get domains is in its own command since this can fail if domain CRD undefined
 
   trace Dumping kubectl gets to kgetmany.out and kgetdomains.out in ${DUMP_DIR}
-  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetmany.out 2>&1
-  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetdomains.out 2>&1
+  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 | tee ${DUMP_DIR}/kgetmany.out
+  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 | tee ${DUMP_DIR}/kgetdomains.out
 
   # Get all pod logs and redirect/copy to files 
 
@@ -428,15 +428,15 @@ function state_dump {
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      kubectl log $pod -n $namespace > $logfile 2>&1
-      kubectl describe pod $pod -n $namespace > $descfile 2>&1
+      kubectl log $pod -n $namespace 2>&1 | tee $logfile
+      kubectl describe pod $pod -n $namespace 2>&1 | tee $descfile
     done
   done
 
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
   trace "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" > ${outfile} 2>&1
+  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
   if [ "$?" = "0" ]; then
      trace Job complete.
   else
@@ -445,7 +445,7 @@ function state_dump {
 
   if [ ! "$LEASE_ID" = "" ]; then
     # release the lease if we own it
-    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" > ${RESULT_DIR}/release_lease.out 2>&1
+    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | tee ${RESULT_DIR}/release_lease.out
     if [ "$?" = "0" ]; then
       trace Lease released.
     else
@@ -683,7 +683,7 @@ function deploy_operator {
 
     local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
     trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | tee ${outfile}
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
        cat ${outfile} | sed 's/^/+/g'
@@ -917,7 +917,7 @@ function run_create_domain_job {
 
     # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
     # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
-    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" > ${outfile} 2>&1
+    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" 2>&1 | tee ${outfile}
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
        trace Job complete.  Directory created on k8s cluster.
@@ -929,7 +929,7 @@ function run_create_domain_job {
     local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
     trace "Run the script to create the domain, see \"$outfile\" for tracing."
 
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | tee ${outfile}
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -1670,14 +1670,14 @@ function test_mvn_integration_local {
     [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    mvn -P integration-tests clean install > $RESULT_DIR/mvn.out 2>&1
+    mvn -P integration-tests clean install 2>&1 | tee $RESULT_DIR/mvn.out
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
     confirm_mvn_build $RESULT_DIR/mvn.out
 
-    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . > $RESULT_DIR/docker_build_tag.out 2>&1
+    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . 2>&1 | tee $RESULT_DIR/docker_build_tag.out
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image, see $RESULT_DIR/docker_build_tag.out".
 
     declare_test_pass
@@ -1810,7 +1810,7 @@ function run_wlst_script {
 
     cat << EOF > $TMP_DIR/empty.py
 EOF
-    java weblogic.WLST $TMP_DIR/empty.py > $TMP_DIR/empty.py.out 2>&1
+    java weblogic.WLST $TMP_DIR/empty.py 2>&1 | tee $TMP_DIR/empty.py.out
     if [ "$?" = "0" ]; then
       # We're running WLST locally.  No need to do anything fancy.
       local mycommand="java weblogic.WLST ${pyfile_lcl} ${username} ${password} ${t3url_lcl}"
@@ -1876,7 +1876,7 @@ EOF
   local maxwaitsecs=180
   local failedonce="false"
   while : ; do
-    eval "$mycommand ""$@" > ${pyfile_lcl}.out 2>&1
+    eval "$mycommand ""$@" 2>&1 | tee ${pyfile_lcl}.out
     local result="$?"
 
     # '+' marks verbose tracing
@@ -2234,7 +2234,7 @@ function verify_domain_deleted {
 
     kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
 
-    kubectl get domains  -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get domains -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
     trace 'checking if the domain is deleted'
     local count=`kubectl get domain $DOMAIN_UID -n $NAMESPACE | egrep $DOMAIN_UID | wc -l `
