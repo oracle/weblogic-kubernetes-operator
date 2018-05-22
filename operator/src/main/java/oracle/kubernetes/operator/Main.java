@@ -4,6 +4,20 @@
 
 package oracle.kubernetes.operator;
 
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.JSON;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1EventList;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.models.V1beta1Ingress;
+import io.kubernetes.client.models.V1beta1IngressList;
+import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -23,21 +37,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1EventList;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
-import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CRDHelper;
@@ -841,7 +840,11 @@ public class Main {
   private static ServiceWatcher createServiceWatcher(
       String namespace, String initialResourceVersion) {
     return ServiceWatcher.create(
-        getThreadFactory(), namespace, initialResourceVersion, Main::dispatchServiceWatch, stopping);
+        getThreadFactory(),
+        namespace,
+        initialResourceVersion,
+        Main::dispatchServiceWatch,
+        stopping);
   }
 
   private static void dispatchServiceWatch(Watch.Response<V1Service> item) {
@@ -941,7 +944,11 @@ public class Main {
   private static IngressWatcher createIngressWatcher(
       String namespace, String initialResourceVersion) {
     return IngressWatcher.create(
-        getThreadFactory(), namespace, initialResourceVersion, Main::dispatchIngressWatch, stopping);
+        getThreadFactory(),
+        namespace,
+        initialResourceVersion,
+        Main::dispatchIngressWatch,
+        stopping);
   }
 
   private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
@@ -1105,7 +1112,11 @@ public class Main {
     private static DomainWatcher createDomainWatcher(
         String namespace, String initialResourceVersion) {
       return DomainWatcher.create(
-          getThreadFactory(), namespace, initialResourceVersion, Main::dispatchDomainWatch, stopping);
+          getThreadFactory(),
+          namespace,
+          initialResourceVersion,
+          Main::dispatchDomainWatch,
+          stopping);
     }
   }
 
