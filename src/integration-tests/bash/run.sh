@@ -586,7 +586,7 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Registry Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-    --docker-server=$REPO_REGISTRY \
+    --docker-server=$REPO_SERVER \
     --docker-username=$REPO_USERNAME \
     --docker-password=$REPO_PASSWORD \
     --docker-email=$REPO_EMAIL \
