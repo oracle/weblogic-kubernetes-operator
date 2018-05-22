@@ -4,14 +4,15 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.create.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1PersistentVolume;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.junit.BeforeClass;
 

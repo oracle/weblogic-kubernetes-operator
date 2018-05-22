@@ -173,7 +173,7 @@ public class HttpClient {
     public NextAction apply(Packet packet) {
       Step readSecret =
           SecretHelper.getSecretData(
-              SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, next);
+              SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, getNext());
       return doNext(readSecret, packet);
     }
   }

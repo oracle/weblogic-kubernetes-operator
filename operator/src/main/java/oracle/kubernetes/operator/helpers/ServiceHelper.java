@@ -50,7 +50,6 @@ public class ServiceHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       KubernetesVersion version = packet.getSPI(KubernetesVersion.class);
@@ -66,7 +65,7 @@ public class ServiceHelper {
       String weblogicDomainUID = spec.getDomainUID();
       String weblogicDomainName = spec.getDomainName();
 
-      String name = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + serverName);
+      String name = LegalNames.toServerServiceName(weblogicDomainUID, serverName);
 
       V1Service service = new V1Service();
 
@@ -110,7 +109,7 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
+      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, serverName);
 
       // First, verify existing Service
       Step read =
@@ -119,7 +118,7 @@ public class ServiceHelper {
               .readServiceAsync(
                   name,
                   namespace,
-                  new ResponseStep<V1Service>(next) {
+                  new ResponseStep<V1Service>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -145,7 +144,7 @@ public class ServiceHelper {
                                 .createServiceAsync(
                                     namespace,
                                     service,
-                                    new ResponseStep<V1Service>(next) {
+                                    new ResponseStep<V1Service>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -204,7 +203,7 @@ public class ServiceHelper {
                                 weblogicDomainUID,
                                 serverName,
                                 sko,
-                                next);
+                                getNext());
                         return doNext(replace, packet);
                       }
                     }
@@ -252,7 +251,7 @@ public class ServiceHelper {
                 .deleteServiceAsync(
                     oldService.getMetadata().getName(),
                     namespace,
-                    new ResponseStep<V1Status>(next) {
+                    new ResponseStep<V1Status>(getNext()) {
                       @Override
                       public NextAction onFailure(
                           Packet packet,
@@ -271,7 +270,7 @@ public class ServiceHelper {
                           V1Status result,
                           int statusCode,
                           Map<String, List<String>> responseHeaders) {
-                        return doNext(next, packet);
+                        return doNext(getNext(), packet);
                       }
                     }),
             packet);
@@ -309,7 +308,7 @@ public class ServiceHelper {
       String weblogicDomainUID = spec.getDomainUID();
       String weblogicDomainName = spec.getDomainName();
 
-      String name = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-cluster-" + clusterName);
+      String name = LegalNames.toClusterServiceName(weblogicDomainUID, clusterName);
 
       V1Service service = new V1Service();
 
@@ -351,7 +350,7 @@ public class ServiceHelper {
               .readServiceAsync(
                   name,
                   namespace,
-                  new ResponseStep<V1Service>(next) {
+                  new ResponseStep<V1Service>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -377,7 +376,7 @@ public class ServiceHelper {
                                 .createServiceAsync(
                                     namespace,
                                     service,
-                                    new ResponseStep<V1Service>(next) {
+                                    new ResponseStep<V1Service>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -425,7 +424,7 @@ public class ServiceHelper {
                                 .deleteServiceAsync(
                                     name,
                                     namespace,
-                                    new ResponseStep<V1Status>(next) {
+                                    new ResponseStep<V1Status>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -456,7 +455,7 @@ public class ServiceHelper {
                                                 .createServiceAsync(
                                                     namespace,
                                                     service,
-                                                    new ResponseStep<V1Service>(next) {
+                                                    new ResponseStep<V1Service>(getNext()) {
                                                       @Override
                                                       public NextAction onFailure(
                                                           Packet packet,
@@ -615,7 +614,7 @@ public class ServiceHelper {
               .deleteServiceAsync(
                   serviceName,
                   namespace,
-                  new ResponseStep<V1Status>(next) {
+                  new ResponseStep<V1Status>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -640,7 +639,7 @@ public class ServiceHelper {
                               .createServiceAsync(
                                   namespace,
                                   newService,
-                                  new ResponseStep<V1Service>(next) {
+                                  new ResponseStep<V1Service>(getNext()) {
                                     @Override
                                     public NextAction onFailure(
                                         Packet packet,
@@ -695,7 +694,6 @@ public class ServiceHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
 
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
@@ -710,9 +708,7 @@ public class ServiceHelper {
       String weblogicDomainUID = spec.getDomainUID();
       String weblogicDomainName = spec.getDomainName();
 
-      String name =
-          CallBuilder.toDNS1123LegalName(
-              weblogicDomainUID + "-" + serverName + "-extchannel-" + networkAccessPoint.getName());
+      String name = LegalNames.toNAPName(weblogicDomainUID, serverName, networkAccessPoint);
 
       V1Service service = new V1Service();
 
@@ -747,7 +743,7 @@ public class ServiceHelper {
 
       // Verify if Kubernetes api server has a matching Service
       // Create or replace, if necessary
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, serverName);
+      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, serverName);
 
       // First, verify existing Service
       Step read =
@@ -756,7 +752,7 @@ public class ServiceHelper {
               .readServiceAsync(
                   name,
                   namespace,
-                  new ResponseStep<V1Service>(next) {
+                  new ResponseStep<V1Service>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -783,7 +779,7 @@ public class ServiceHelper {
                                 .createServiceAsync(
                                     namespace,
                                     service,
-                                    new ResponseStep<V1Service>(next) {
+                                    new ResponseStep<V1Service>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -844,7 +840,7 @@ public class ServiceHelper {
                                 serverName,
                                 sko,
                                 networkAccessPoint.getName(),
-                                next);
+                                getNext());
                         return doNext(replace, packet);
                       }
                     }
