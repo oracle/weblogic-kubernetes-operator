@@ -391,7 +391,7 @@ domain1-apache-webtier                                    2h
 ```
 
 
-It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, you can customize exposure of the WebLogic Administration Server host and port by `loadBalancerExposeAdminPort property` in the `create-weblogic-domain-inputs.yaml` file.
+It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, you can customize the exposure of the WebLogic Administration Server host and port by using the `loadBalancerExposeAdminPort` property in the `create-weblogic-domain-inputs.yaml` file.
 
 ```
 
