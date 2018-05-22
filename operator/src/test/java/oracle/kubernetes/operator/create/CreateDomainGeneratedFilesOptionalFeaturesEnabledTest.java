@@ -34,6 +34,7 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTest
             .weblogicImagePullSecretName("test-weblogic-image-pull-secret-name")
             .loadBalancer(LOAD_BALANCER_APACHE)
             .loadBalancerAppPrepath("/loadBalancerAppPrePath")
+            .loadBalancerExposeAdminPort("false")
             .weblogicDomainStorageType(STORAGE_TYPE_NFS)
             .productionModeEnabled("true"));
   }
