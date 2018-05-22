@@ -689,10 +689,6 @@ function deploy_operator {
        cat ${outfile} | sed 's/^/+/g'
        trace Script complete.
     else
-       # TEST
-       trace TEST
-       cat $TMP_DIR/weblogic-operator.yaml
-
        cat ${outfile}
        fail Script failed.
     fi
