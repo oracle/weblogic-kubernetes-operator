@@ -4,25 +4,16 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_READY_STATE;
-import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasValue;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
@@ -36,13 +27,6 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.ClientFactory;
@@ -53,13 +37,26 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_READY_STATE;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class DomainPresenceTest extends ThreadFactoryTestBase {
@@ -73,24 +70,31 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private final V1PodList pods = createEmptyPodList();
   private final V1ConfigMap domainConfigMap = createEmptyConfigMap();
 
-  private AtomicBoolean stopping;
   private List<Memento> mementos = new ArrayList<>();
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
 
   @Before
   public void setUp() throws Exception {
+    getDomainPresenceInfoMap().clear();
+    
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(
-        StaticStubSupport.install(
-            DomainPresenceInfoManager.class, "domains", new ConcurrentHashMap<>()));
-    mementos.add(
-        StaticStubSupport.install(
-            ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
+    mementos.add(installStub(ServerKubernetesObjectsManager.class, "serverMap", new HashMap<>()));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
+    mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
 
-    stopping = getStoppingVariable();
+    AtomicBoolean stopping = getStoppingVariable();
+    stopping.set(true);
+  }
+
+  private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
+    Memento domains = StaticStubSupport.preserve(DomainPresenceInfoManager.class, "domains");
+    return domains.getOriginalValue();
+  }
+
+  static Memento installStub(Class<?> containingClass, String fieldName, Object newValue) throws NoSuchFieldException {
+    return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
   private AtomicBoolean getStoppingVariable() throws NoSuchFieldException {
@@ -100,7 +104,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @After
   public void tearDown() throws Exception {
-    stopping.set(true);
     shutDownThreads();
 
     for (Memento memento : mementos) memento.revert();
@@ -335,7 +338,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   static class ClientFactoryStub implements ClientFactory {
 
     static Memento install() throws NoSuchFieldException {
-      return StaticStubSupport.install(ClientPool.class, "FACTORY", new ClientFactoryStub());
+      return installStub(ClientPool.class, "FACTORY", new ClientFactoryStub());
     }
 
     @Override

@@ -30,7 +30,7 @@ public class ThreadFactoryTestBase implements ThreadFactory {
     return thread;
   }
 
-  protected void shutDownThreads() {
+  void shutDownThreads() {
     for (Thread thread : threads) shutDown(thread);
   }
 

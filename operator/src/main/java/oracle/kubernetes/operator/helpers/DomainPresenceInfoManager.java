@@ -7,12 +7,11 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 
 public class DomainPresenceInfoManager {
   /** A map of domainUID to DomainPresenceInfo */
-  private static final ConcurrentMap<String, DomainPresenceInfo> domains =
+  private static final Map<String, DomainPresenceInfo> domains =
       new ConcurrentHashMap<>();
 
   private DomainPresenceInfoManager() {}
@@ -24,9 +23,13 @@ public class DomainPresenceInfoManager {
   }
 
   public static DomainPresenceInfo getOrCreate(Domain domain) {
+    DomainPresenceInfo oldInfo = lookup(domain.getSpec().getDomainUID());
+    DomainPresenceInfo oldInfo2 = domains.get(domain.getSpec().getDomainUID());
     DomainPresenceInfo createdInfo = new DomainPresenceInfo(domain);
     DomainPresenceInfo existingInfo =
         domains.putIfAbsent(domain.getSpec().getDomainUID(), createdInfo);
+    if (existingInfo == null && oldInfo != null)
+      System.out.println("This can't be");
     return existingInfo != null ? existingInfo : createdInfo;
   }
 
