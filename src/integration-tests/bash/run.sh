@@ -776,6 +776,13 @@ function dom_define {
     # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
 
+    # we only test loadBalancerExposeAdminPort=true for Apache on domain1
+    if [ "$LB_TYPE" == "APACHE" ] && [ "$4" == "domain1" ] ; then
+      export DOM_${DOM_KEY}_LOAD_BALANCER_EXPOSE_ADMIN_PORT="true"
+    else 
+      export DOM_${DOM_KEY}_LOAD_BALANCER_EXPOSE_ADMIN_PORT="false"
+    fi
+
     #verbose tracing starts with a +
     dom_echo_all $1 | sed 's/^/+/'
 
@@ -809,6 +816,7 @@ function run_create_domain_job {
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
     # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
@@ -889,6 +897,7 @@ function run_create_domain_job {
       local load_balancer_app_prepath="/weblogic"
       sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
       sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+      sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputs
     fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
@@ -1330,6 +1339,75 @@ function verify_admin_server_ext_service {
     trace 'done'
 }
 
+function verify_admin_console_via_loadbalancer {
+
+    # Pre-requisite: requires admin server to be already up and running and able to service requests
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
+    fi 
+
+    # We only perform this verification when the load balancer type is APACHE
+    if [ "$LB_TYPE" != "APACHE" ]; then
+      return
+    fi 
+
+    trace "verify that admin console is accessible via Apache load balancer from outside of the kubernetes cluster"
+
+    local DOM_KEY="$1"
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
+
+    local ADMIN_SERVER_LB_NODEPORT_SERVICE="$DOMAIN_UID-apache-webtier"
+
+    local get_service_nodePort="kubectl get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$ADMIN_SERVER_LB_NODEPORT_SERVICE\")].spec.ports[0].nodePort}'"
+   
+    trace get_service_nodePort
+
+    set +x     
+    local nodePort=`eval $get_service_nodePort`
+    set -x     
+
+    if [ -z ${nodePort} ]; then
+      fail "nodePort not found in domain $DOMAIN_UID"
+    fi
+
+    local TEST_CONSOLE_URL="http://${NODEPORT_HOST}:${nodePort}/console/login/LoginForm.jsp"
+    local CONSOLE_RESPONSE_BODY="$TMP_DIR/testconsole.response.body"
+
+    trace "console test url: $TEST_CONSOLE_URL "
+    echo "NO_DATA" > $CONSOLE_RESPONSE_BODY
+
+    set +x
+    local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_CONSOLE_URL} \
+      --write-out "%{http_code}" \
+      -o ${CONSOLE_RESPONSE_BODY} \
+    )
+    set -x
+
+    trace "console test response: $HTTP_RESPONSE "
+
+    if [ "$LOAD_BALANCER_EXPOSE_ADMIN_PORT" == "false" ]; then
+      if [ "${HTTP_RESPONSE}" == "200" ]; then
+        cat $CONSOLE_RESPONSE_BODY
+        fail "accessing admin console via load balancer returned status code ${HTTP_RESPONSE} unexpectedly"
+      fi
+    else 
+      if [ "${HTTP_RESPONSE}" != "200" ]; then
+        cat $CONSOLE_RESPONSE_BODY
+        fail "accessing admin console via load balancer did not return 200 status code, got ${HTTP_RESPONSE}"
+      fi
+    fi
+
+    trace 'done'
+
+}
+
 function test_domain_creation {
     declare_new_test 1 "$@"
     if [ "$#" != 1 ] ; then
@@ -1348,6 +1426,8 @@ function test_domain_creation {
 
     verify_admin_server_ext_service $DOM_KEY
 
+    verify_admin_console_via_loadbalancer $DOM_KEY
+    
     extra_weblogic_checks
     declare_test_pass
 }
