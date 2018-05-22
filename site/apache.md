@@ -64,7 +64,7 @@ loadBalancerAppPrepath: /weblogic
 
 Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>`.
 
-The generated Kubernetes YAML files look like the following, given the `domainUID`, "`domain1`", by default.
+The generated Kubernetes YAML files look like the following, given the `domainUID`, "`domain1`".
 
 Sample `weblogic-domain-apache.yaml` file for Apache HTTP Server deployment.
 

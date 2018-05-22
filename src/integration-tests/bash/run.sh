@@ -1347,7 +1347,12 @@ function verify_admin_console_via_loadbalancer {
       fail "requires 1 parameter: domainKey"
     fi 
 
-    trace "verify that admin console are accessible via Apache load balancer from outside of the kubernetes cluster"
+    # We only perform this verification when the load balancer type is APACHE
+    if [ "$LB_TYPE" != "APACHE" ]; then
+      return
+    fi 
+
+    trace "verify that admin console is accessible via Apache load balancer from outside of the kubernetes cluster"
 
     local DOM_KEY="$1"
 
@@ -1358,15 +1363,7 @@ function verify_admin_console_via_loadbalancer {
     local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
     local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
 
-    if [ "$LB_TYPE" != "APACHE" ]; then
-      return
-    fi 
-
-    if [ "$LB_TYPE" == "APACHE" ] ; then
-      local lb_name="apache-webtier"
-    fi
-    
-    local ADMIN_SERVER_LB_NODEPORT_SERVICE="$DOMAIN_UID-${lb_name}"
+    local ADMIN_SERVER_LB_NODEPORT_SERVICE="$DOMAIN_UID-apache-webtier"
 
     local get_service_nodePort="kubectl get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$ADMIN_SERVER_LB_NODEPORT_SERVICE\")].spec.ports[0].nodePort}'"
    
@@ -1393,7 +1390,7 @@ function verify_admin_console_via_loadbalancer {
     )
     set -x
 
-    trace "console test: $HTTP_RESPONSE "
+    trace "console test response: $HTTP_RESPONSE "
 
     if [ "$LOAD_BALANCER_EXPOSE_ADMIN_PORT" == "false" ]; then
       if [ "${HTTP_RESPONSE}" == "200" ]; then
