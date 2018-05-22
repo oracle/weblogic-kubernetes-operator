@@ -572,10 +572,10 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server=index.docker.io/v1/ \
-    --docker-username=$DOCKER_USERNAME \
-    --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL \
+    --docker-server='index.docker.io/v1/' \
+    --docker-username='$DOCKER_USERNAME' \
+    --docker-password='$DOCKER_PASSWORD' \
+    --docker-email='$DOCKER_EMAIL' \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -586,10 +586,10 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Registry Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-    --docker-server=$REPO_REGISTRY \
-    --docker-username=$REPO_USERNAME \
-    --docker-password=$REPO_PASSWORD \
-    --docker-email=$REPO_EMAIL \
+    --docker-server='$REPO_SERVER' \
+    --docker-username='$REPO_USERNAME' \
+    --docker-password='$REPO_PASSWORD' \
+    --docker-email='$REPO_EMAIL' \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
