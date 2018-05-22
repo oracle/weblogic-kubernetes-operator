@@ -586,7 +586,7 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Registry Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-    --docker-server=$REPO_SERVER \
+    --docker-server=$REPO_REGISTRY \
     --docker-username=$REPO_USERNAME \
     --docker-password=$REPO_PASSWORD \
     --docker-email=$REPO_EMAIL \
@@ -697,6 +697,10 @@ function deploy_operator {
     echo 'weblogic-operator.yaml contents:' 2>&1 | sed 's/^/+/' 2>&1
     cat $TMP_DIR/weblogic-operator.yaml 2>&1 | sed 's/^/+/' 2>&1
     echo 2>&1 | sed 's/^/+/' 2>&1
+
+    # TEST
+    trace TEST
+    cat $TMP_DIR/weblogic-operator.yaml
 
     trace "Checking the operator pods"
     #TODO It looks like this code isn't checking if REPLICA_SET, POD_TEMPLATE, and POD have expected values, is that intentional?
