@@ -575,7 +575,7 @@ function createYamlFiles {
  
     echo Generating ${apacheOutput}
 
-    # This part needs to be done before substution of %DOMAIN_UID%, %ADMIN_SERVER_NAME% and %ADMIN_PORT%
+    # This part needs to be done before substitution of %DOMAIN_UID%, %ADMIN_SERVER_NAME% and %ADMIN_PORT%
     if [ "${loadBalancerExposeAdminPort}" = "true" ]; then
       sed -i -e "s|# - name: WEBLOGIC_HOST|  - name: WEBLOGIC_HOST|g" ${apacheOutput}
       sed -i -e "s|#   value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'|    value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'|g" ${apacheOutput}
