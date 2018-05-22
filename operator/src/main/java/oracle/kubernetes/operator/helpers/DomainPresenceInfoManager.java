@@ -11,8 +11,7 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 
 public class DomainPresenceInfoManager {
   /** A map of domainUID to DomainPresenceInfo */
-  private static final Map<String, DomainPresenceInfo> domains =
-      new ConcurrentHashMap<>();
+  private static final Map<String, DomainPresenceInfo> domains = new ConcurrentHashMap<>();
 
   private DomainPresenceInfoManager() {}
 
@@ -28,8 +27,7 @@ public class DomainPresenceInfoManager {
     DomainPresenceInfo createdInfo = new DomainPresenceInfo(domain);
     DomainPresenceInfo existingInfo =
         domains.putIfAbsent(domain.getSpec().getDomainUID(), createdInfo);
-    if (existingInfo == null && oldInfo != null)
-      System.out.println("This can't be");
+    if (existingInfo == null && oldInfo != null) System.out.println("This can't be");
     return existingInfo != null ? existingInfo : createdInfo;
   }
 

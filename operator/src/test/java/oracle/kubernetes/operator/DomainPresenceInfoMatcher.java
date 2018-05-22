@@ -4,10 +4,8 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-
 import javax.annotation.Nonnull;
-
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -72,7 +70,9 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   }
 
   private boolean missingIngress(Description description, String ingressClusterName) {
-    description.appendText("DomainPresenceInfo with ingress for cluster ").appendValue(ingressClusterName);
+    description
+        .appendText("DomainPresenceInfo with ingress for cluster ")
+        .appendValue(ingressClusterName);
     return false;
   }
 
