@@ -136,7 +136,7 @@ public class HttpClient {
         responseString = String.valueOf(response.readEntity(String.class));
       }
     } else {
-      LOGGER.warning(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
+      LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
       if (throwOnFailure) {
         throw new HTTPException(status);
       }
