@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static org.hamcrest.Matchers.both;
@@ -55,11 +56,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
     assertThat(
         StubWatchFactory.getRecordedParameters().get(0),
         both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
-            .and(
-                hasEntry(
-                    "labelSelector",
-                    asList(
-                        LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL))));
+            .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
 
   private String asList(String... selectors) {
@@ -73,10 +70,8 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Override
-  protected PodWatcher createWatcher(
-      String nameSpace, AtomicBoolean stopping, int initialResourceVersion) {
-    return PodWatcher.create(
-        this, nameSpace, Integer.toString(initialResourceVersion), this, stopping);
+  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
+    return PodWatcher.create(this, ns, Integer.toString(rv), this, stopping);
   }
 
   @Test

@@ -3,7 +3,6 @@ package oracle.kubernetes.operator.work;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 
-import io.kubernetes.client.ApiException;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Iterator;
@@ -76,8 +75,9 @@ public class FiberTestSupport {
    *
    * @param step the first step to run
    */
-  public void runStep(Step step) {
+  public Packet runSteps(Step step) {
     fiber.start(step, packet, completionCallback);
+    return packet;
   }
 
   /**
@@ -87,7 +87,7 @@ public class FiberTestSupport {
    *
    * @param throwableClass the class of the excepted throwable
    */
-  public void verifyCompletionThrowable(Class<ApiException> throwableClass) {
+  public void verifyCompletionThrowable(Class<? extends Throwable> throwableClass) {
     completionCallback.verifyThrowable(throwableClass);
   }
 
@@ -189,17 +189,13 @@ public class FiberTestSupport {
   }
 
   static class CompletionCallbackStub implements Fiber.CompletionCallback {
-    private Packet packet;
     private Throwable throwable;
 
     @Override
-    public void onCompletion(Packet packet) {
-      this.packet = packet;
-    }
+    public void onCompletion(Packet packet) {}
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      this.packet = packet;
       this.throwable = throwable;
     }
 

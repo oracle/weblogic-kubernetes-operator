@@ -52,6 +52,6 @@ public class ManagedServerUpAfterStep extends Step {
       return doNext(packet);
     }
 
-    return doNext(RollingHelper.rollServers(rolling, next), packet);
+    return doNext(RollingHelper.rollServers(rolling, getNext()), packet);
   }
 }

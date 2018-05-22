@@ -44,7 +44,7 @@ public class DeleteIngressListStepTest {
 
   private void runDeleteStep(V1beta1Ingress... ingresses) {
     this.ingresses.addAll(Arrays.asList(ingresses));
-    testSupport.runStep(new DeleteIngressListStep(this.ingresses, terminalStep));
+    testSupport.runSteps(new DeleteIngressListStep(this.ingresses, terminalStep));
   }
 
   @Test

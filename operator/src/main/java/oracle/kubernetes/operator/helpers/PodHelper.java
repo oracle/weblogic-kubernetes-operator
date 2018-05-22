@@ -76,7 +76,6 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
       TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
 
       // Compute the desired pod configuration for the admin server
@@ -95,7 +94,7 @@ public class PodHelper {
       boolean isExplicitRestartThisServer =
           info.getExplicitRestartAdmin().get() || info.getExplicitRestartServers().contains(asName);
 
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, asName);
+      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, asName);
 
       // First, verify existing Pod
       Step read =
@@ -104,7 +103,7 @@ public class PodHelper {
               .readPodAsync(
                   podName,
                   namespace,
-                  new ResponseStep<V1Pod>(next) {
+                  new ResponseStep<V1Pod>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -132,7 +131,7 @@ public class PodHelper {
                                 .createPodAsync(
                                     namespace,
                                     adminPod,
-                                    new ResponseStep<V1Pod>(next) {
+                                    new ResponseStep<V1Pod>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -184,7 +183,7 @@ public class PodHelper {
                                 asName,
                                 info,
                                 sko,
-                                next);
+                                getNext());
                         return doNext(replace, packet);
                       }
                     }
@@ -206,7 +205,7 @@ public class PodHelper {
       String weblogicDomainName = spec.getDomainName();
 
       // Create local admin server Pod object
-      String podName = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + spec.getAsName());
+      String podName = LegalNames.toPodName(weblogicDomainUID, spec.getAsName());
 
       String imageName = spec.getImage();
       if (imageName == null || imageName.length() == 0) {
@@ -416,7 +415,7 @@ public class PodHelper {
                   podName,
                   namespace,
                   deleteOptions,
-                  new ResponseStep<V1Status>(next) {
+                  new ResponseStep<V1Status>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -445,7 +444,7 @@ public class PodHelper {
                               .createPodAsync(
                                   namespace,
                                   newPod,
-                                  new ResponseStep<V1Pod>(next) {
+                                  new ResponseStep<V1Pod>(getNext()) {
                                     @Override
                                     public NextAction onFailure(
                                         Packet packet,
@@ -469,7 +468,7 @@ public class PodHelper {
                                       }
 
                                       PodWatcher pw = packet.getSPI(PodWatcher.class);
-                                      return doNext(pw.waitForReady(result, next), packet);
+                                      return doNext(pw.waitForReady(result, getNext()), packet);
                                     }
                                   });
                       return doNext(create, packet);
@@ -569,7 +568,6 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       Container c = ContainerResolver.getInstance().getContainer();
       CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      ServerKubernetesObjectsFactory skoFactory = c.getSPI(ServerKubernetesObjectsFactory.class);
       TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
 
       // Compute the desired pod configuration for the managed server
@@ -591,7 +589,8 @@ public class PodHelper {
               || (weblogicClusterName != null
                   && info.getExplicitRestartClusters().contains(weblogicClusterName));
 
-      ServerKubernetesObjects sko = skoFactory.getOrCreate(info, weblogicServerName);
+      ServerKubernetesObjects sko =
+          ServerKubernetesObjectsManager.getOrCreate(info, weblogicServerName);
 
       // First, verify there existing Pod
       Step read =
@@ -600,7 +599,7 @@ public class PodHelper {
               .readPodAsync(
                   podName,
                   namespace,
-                  new ResponseStep<V1Pod>(next) {
+                  new ResponseStep<V1Pod>(getNext()) {
                     @Override
                     public NextAction onFailure(
                         Packet packet,
@@ -627,7 +626,7 @@ public class PodHelper {
                                 .createPodAsync(
                                     namespace,
                                     pod,
-                                    new ResponseStep<V1Pod>(next) {
+                                    new ResponseStep<V1Pod>(getNext()) {
                                       @Override
                                       public NextAction onFailure(
                                           Packet packet,
@@ -685,7 +684,7 @@ public class PodHelper {
                                 weblogicServerName,
                                 info,
                                 sko,
-                                next);
+                                getNext());
                         synchronized (packet) {
                           @SuppressWarnings("unchecked")
                           Map<String, StepAndPacket> rolling =
@@ -731,7 +730,7 @@ public class PodHelper {
       String weblogicServerName = scan.getName();
 
       // Create local managed server Pod object
-      String podName = CallBuilder.toDNS1123LegalName(weblogicDomainUID + "-" + weblogicServerName);
+      String podName = LegalNames.toPodName(weblogicDomainUID, weblogicServerName);
 
       String weblogicClusterName = null;
       if (cluster != null) weblogicClusterName = cluster.getClusterName();
@@ -955,7 +954,7 @@ public class PodHelper {
                     oldPod.getMetadata().getName(),
                     namespace,
                     deleteOptions,
-                    new ResponseStep<V1Status>(next) {
+                    new ResponseStep<V1Status>(getNext()) {
                       @Override
                       public NextAction onFailure(
                           Packet packet,
@@ -974,7 +973,7 @@ public class PodHelper {
                           V1Status result,
                           int statusCode,
                           Map<String, List<String>> responseHeaders) {
-                        return doNext(next, packet);
+                        return doNext(getNext(), packet);
                       }
                     }),
             packet);

@@ -210,7 +210,7 @@ public class ManagedServersUpStep extends Step {
             scaleDownIfNecessary(
                 info,
                 servers,
-                new ClusterServicesStep(info, new ManagedServerUpIteratorStep(ssic, next))),
+                new ClusterServicesStep(info, new ManagedServerUpIteratorStep(ssic, getNext()))),
             packet);
       case StartupControlConstants.ADMIN_STARTUPCONTROL:
       case StartupControlConstants.NONE_STARTUPCONTROL:
@@ -218,7 +218,7 @@ public class ManagedServersUpStep extends Step {
         info.setServerStartupInfo(null);
         LOGGER.exiting();
         return doNext(
-            scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next)), packet);
+            scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, getNext())), packet);
     }
   }
 

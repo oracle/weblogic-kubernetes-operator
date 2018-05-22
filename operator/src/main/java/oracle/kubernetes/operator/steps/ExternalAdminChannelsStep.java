@@ -34,7 +34,7 @@ public class ExternalAdminChannelsStep extends Step {
     Collection<NetworkAccessPoint> validChannels =
         adminChannelsToCreate(info.getScan(), info.getDomain());
     if (validChannels != null && !validChannels.isEmpty()) {
-      return doNext(new ExternalAdminChannelIteratorStep(info, validChannels, next), packet);
+      return doNext(new ExternalAdminChannelIteratorStep(info, validChannels, getNext()), packet);
     }
 
     return doNext(packet);

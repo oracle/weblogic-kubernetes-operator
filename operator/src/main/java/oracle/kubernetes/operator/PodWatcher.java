@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsFactory;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -93,9 +93,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         Boolean isReady = isReady(pod);
         String podName = pod.getMetadata().getName();
         Container c = ContainerResolver.getInstance().getContainer();
-        ServerKubernetesObjectsFactory skoFactory =
-            c != null ? c.getSPI(ServerKubernetesObjectsFactory.class) : null;
-        ServerKubernetesObjects sko = skoFactory != null ? skoFactory.lookup(podName) : null;
+        ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(podName);
         if (sko != null) {
           sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
         }

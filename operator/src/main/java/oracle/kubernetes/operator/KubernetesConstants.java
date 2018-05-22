@@ -9,6 +9,7 @@ public interface KubernetesConstants {
   public static final String DEFAULT_IMAGE = "store/oracle/weblogic:12.2.1.3";
   public static final String ALWAYS_IMAGEPULLPOLICY = "Always";
   public static final String IFNOTPRESENT_IMAGEPULLPOLICY = "IfNotPresent";
+  public static final String NEVER_IMAGEPULLPOLICY = "Never";
   public static final String LATEST_IMAGE_SUFFIX = ":latest";
 
   public static final String EXTENSIONS_API_VERSION = "extensions/v1beta1";

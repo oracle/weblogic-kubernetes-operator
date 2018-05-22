@@ -131,7 +131,7 @@ public class RollingHelper {
       }
 
       if (!work.isEmpty()) {
-        return doForkJoin(next, packet, work);
+        return doForkJoin(getNext(), packet, work);
       }
 
       return doNext(packet);
@@ -149,7 +149,7 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doForkJoin(next, packet, serversThatCanRestartNow);
+      return doForkJoin(getNext(), packet, serversThatCanRestartNow);
     }
   }
 
