@@ -727,81 +727,8 @@ function createDomain {
 # Deploy Voyager/HAProxy load balancer
 #
 function setupVoyagerLoadBalancer {
-  local vnamespace=voyager
-  # only deploy Voyager Operator once
-  if [ "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc -l)" == 0 ]; then
-    if [ "$(kubectl get namespace $vnamespace --ignore-not-found | wc -l)" = 0 ]; then
-      kubectl create namespace $vnamespace
-    fi
-    kubectl apply -f $voyagerSecurityOutput # TODO: use 'kubectl auth reconcile' instead
-    kubectl apply -f $voyagerOperatorOutput
-  fi
-
-  # verify Voyager Operator is ready
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    if [ "$(kubectl -n $vnamespace get pod  --ignore-not-found | grep voyager-operator | awk ' { print $2; } ')" = "1/1" ]; then
-      echo "The Voyager Operator is ready."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The Voyager Operator is not ready."
-    fi
-    sleep 2
-  done
-
-  # deploy Voyager Ingress resource
-  kubectl apply -f ${voyagerIngressOutput}
-
-  echo Checking Voyager Ingress resource
-  local maxwaitsecs=100
-  local mstart=$(date +%s)
-  while : ; do
-    local mnow=$(date +%s)
-    local vdep=$(kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } ')
-    if [ "$vdep" = "1" ]; then
-      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
-    fi
-    sleep 5
-  done
-
-  echo Checking HAProxy pod is running
-  local maxwaitsecs=100
-  local mstart=$(date +%s)
-  while : ; do
-    local mnow=$(date +%s)
-    local st=$(kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } ')
-    if [ "$st" = "Running" ]; then
-      echo "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager  was not created or running."
-    fi
-    sleep 5
-  done
-
-  echo Checking Voyager service
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
-    if [ "$vscv" = "1" ]; then
-      echo "The service ${domainUID}-voyager-stats is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The service ${domainUID}-voyager-stats was not created."
-    fi
-    sleep 5
-  done
+  createVoyagerOperator ${voyagerSecurityOutput} ${voyagerOperatorOutput}
+  createVoyagerIngress ${voyagerIngressOutput}
 }
 
 #
