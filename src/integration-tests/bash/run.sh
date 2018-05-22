@@ -689,6 +689,10 @@ function deploy_operator {
        cat ${outfile} | sed 's/^/+/g'
        trace Script complete.
     else
+       # TEST
+       trace TEST
+       cat $TMP_DIR/weblogic-operator.yaml
+
        cat ${outfile}
        fail Script failed.
     fi
@@ -697,10 +701,6 @@ function deploy_operator {
     echo 'weblogic-operator.yaml contents:' 2>&1 | sed 's/^/+/' 2>&1
     cat $TMP_DIR/weblogic-operator.yaml 2>&1 | sed 's/^/+/' 2>&1
     echo 2>&1 | sed 's/^/+/' 2>&1
-
-    # TEST
-    trace TEST
-    cat $TMP_DIR/weblogic-operator.yaml
 
     trace "Checking the operator pods"
     #TODO It looks like this code isn't checking if REPLICA_SET, POD_TEMPLATE, and POD have expected values, is that intentional?
