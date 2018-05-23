@@ -673,8 +673,8 @@ function deploy_operator {
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1SELF_SIGNED_CERT|g" $inputs
     sed -i -e "s|\(externalSans:\).*|\1DNS:${NODEPORT_HOST}|g" $inputs
-    trace 'customize the inputs yaml file to set the java logging level to FINER'
-    sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
+    trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
+    sed -i -e "s|\(javaLoggingLevel:\).*|\1$LOGLEVEL_OPERATOR|g" $inputs
     sed -i -e "s|\(externalRestHttpsPort:\).*|\1${EXTERNAL_REST_HTTPSPORT}|g" $inputs
     trace 'customize the inputs yaml file to add test namespace' 
     sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
@@ -2637,6 +2637,7 @@ function test_suite_init {
     export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
     export WEBLOGIC_IMAGE_PULL_SECRET_NAME=${WEBLOGIC_IMAGE_PULL_SECRET_NAME}
+    export LOGLEVEL_OPERATOR=${LOGLEVEL_OPERATOR:-INFO}
 
     # Show custom env vars after defaults were substituted as needed.
 
