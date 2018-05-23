@@ -40,7 +40,9 @@ public class HttpClient {
   private static final String SERVICE_URL =
       System.getProperty("oracle.kubernetes.operator.http.HttpClient.SERVICE_URL");
 
-  private HttpClient(Client httpClient, String encodedCredentials) {
+  // Please use one of the factory methods to get an instance of HttpClient.
+  // Constructor is package access for unit testing
+  HttpClient(Client httpClient, String encodedCredentials) {
     this.httpClient = httpClient;
     this.encodedCredentials = encodedCredentials;
   }

@@ -12,9 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.utils.LoggingFacadeStub;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -29,15 +32,18 @@ public class WlsClusterConfigTest {
   private static final Logger UNDERLYING_LOGGER =
       LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
   private List<Handler> savedhandlers;
+  private LoggingFacadeStub loggingFacadeStub;
 
   @Before
-  public void disableConsoleLogging() {
+  public void setup() throws Exception {
     savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+    loggingFacadeStub = LoggingFacadeStub.install(WlsClusterConfig.class);
   }
 
   @After
-  public void restoreConsoleLogging() {
+  public void tearDown() throws Exception {
     TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+    loggingFacadeStub.uninstall();
   }
 
   @Test
@@ -163,17 +169,9 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupWarnsIfNoServersInCluster() throws Exception {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
-    TestUtil.LogHandlerImpl handler = null;
-    try {
-      handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null);
-      assertTrue(
-          "Message logged: " + handler.getAllFormattedMessage(),
-          handler.hasWarningMessageWithSubString(
-              "No servers configured in WebLogic cluster with name cluster1"));
-    } finally {
-      TestUtil.removeLogHandler(wlsClusterConfig, handler);
-    }
+    wlsClusterConfig.validateClusterStartup(cs, null);
+    loggingFacadeStub.assertContains(
+        Level.WARNING, MessageKeys.NO_WLS_SERVER_IN_CLUSTER, "cluster1");
   }
 
   @Test
@@ -181,17 +179,14 @@ public class WlsClusterConfigTest {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
-    TestUtil.LogHandlerImpl handler = null;
-    try {
-      handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null);
-      assertTrue(
-          "Message logged: " + handler.getAllFormattedMessage(),
-          handler.hasWarningMessageWithSubString(
-              "Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
-    } finally {
-      TestUtil.removeLogHandler(wlsClusterConfig, handler);
-    }
+    wlsClusterConfig.validateClusterStartup(cs, null);
+    loggingFacadeStub.assertContains(
+        Level.WARNING,
+        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
+        "clusterStartup",
+        "cluster1",
+        2,
+        1);
   }
 
   @Test
@@ -211,17 +206,14 @@ public class WlsClusterConfigTest {
         createDynamicServersConfig(1, 1, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
-    TestUtil.LogHandlerImpl handler = null;
-    try {
-      handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null);
-      assertTrue(
-          "Message logged: " + handler.getAllFormattedMessage(),
-          handler.hasWarningMessageWithSubString(
-              "Replicas in clusterStartup for cluster cluster1 is specified with a value of 2 which is larger than the number of configured WLS servers in the cluster: 1"));
-    } finally {
-      TestUtil.removeLogHandler(wlsClusterConfig, handler);
-    }
+    wlsClusterConfig.validateClusterStartup(cs, null);
+    loggingFacadeStub.assertContains(
+        Level.WARNING,
+        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
+        "clusterStartup",
+        "cluster1",
+        2,
+        1);
   }
 
   @Test
@@ -231,17 +223,14 @@ public class WlsClusterConfigTest {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(3);
-    TestUtil.LogHandlerImpl handler = null;
-    try {
-      handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null);
-      assertTrue(
-          "Message logged: " + handler.getAllFormattedMessage(),
-          handler.hasWarningMessageWithSubString(
-              "Replicas in clusterStartup for cluster cluster1 is specified with a value of 3 which is larger than the number of configured WLS servers in the cluster: 2"));
-    } finally {
-      TestUtil.removeLogHandler(wlsClusterConfig, handler);
-    }
+    wlsClusterConfig.validateClusterStartup(cs, null);
+    loggingFacadeStub.assertContains(
+        Level.WARNING,
+        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
+        "clusterStartup",
+        "cluster1",
+        3,
+        2);
   }
 
   @Test
@@ -252,16 +241,8 @@ public class WlsClusterConfigTest {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(2);
-    TestUtil.LogHandlerImpl handler = null;
-    try {
-      handler = TestUtil.setupLogHandler(wlsClusterConfig);
-      wlsClusterConfig.validateClusterStartup(cs, null);
-      assertFalse(
-          "No message should be logged, but found: " + handler.getAllFormattedMessage(),
-          handler.hasWarningMessageLogged());
-    } finally {
-      TestUtil.removeLogHandler(wlsClusterConfig, handler);
-    }
+    wlsClusterConfig.validateClusterStartup(cs, null);
+    loggingFacadeStub.assertNoMessagesLogged(Level.WARNING);
   }
 
   @Test
@@ -287,7 +268,6 @@ public class WlsClusterConfigTest {
         createDynamicServersConfig(1, 2, "ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ClusterStartup cs = new ClusterStartup().withClusterName("cluster1").withReplicas(1);
-    TestUtil.LogHandlerImpl handler = null;
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsClusterConfig.validateClusterStartup(cs, suggestedConfigUpdates);
     assertEquals(0, suggestedConfigUpdates.size());
