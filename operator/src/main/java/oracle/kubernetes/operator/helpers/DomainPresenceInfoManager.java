@@ -22,12 +22,9 @@ public class DomainPresenceInfoManager {
   }
 
   public static DomainPresenceInfo getOrCreate(Domain domain) {
-    DomainPresenceInfo oldInfo = lookup(domain.getSpec().getDomainUID());
-    DomainPresenceInfo oldInfo2 = domains.get(domain.getSpec().getDomainUID());
     DomainPresenceInfo createdInfo = new DomainPresenceInfo(domain);
     DomainPresenceInfo existingInfo =
         domains.putIfAbsent(domain.getSpec().getDomainUID(), createdInfo);
-    if (existingInfo == null && oldInfo != null) System.out.println("This can't be");
     return existingInfo != null ? existingInfo : createdInfo;
   }
 
