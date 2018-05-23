@@ -170,21 +170,26 @@ public class AuthorizationProxy {
       Scope scope,
       String namespaceName) {
     LOGGER.entering();
-    V1SelfSubjectAccessReview subjectAccessReview =
-        prepareSelfSubjectAccessReview(operation, resource, resourceName, scope, namespaceName);
-    try {
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      subjectAccessReview = factory.create().createSelfSubjectAccessReview(subjectAccessReview);
-    } catch (ApiException e) {
-      LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
-      LOGGER.exiting(Boolean.FALSE);
-      return Boolean.FALSE;
-    }
-    V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
-    Boolean result = subjectAccessReviewStatus.isAllowed();
+
+    Boolean result =
+        createSelfSubjectAccessReview(
+            prepareSelfSubjectAccessReview(
+                operation, resource, resourceName, scope, namespaceName));
+
     LOGGER.exiting(result);
     return result;
+  }
+
+  private Boolean createSelfSubjectAccessReview(V1SelfSubjectAccessReview subjectAccessReview) {
+    try {
+      CallBuilderFactory factory = new CallBuilderFactory();
+      subjectAccessReview = factory.create().createSelfSubjectAccessReview(subjectAccessReview);
+      V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
+      return subjectAccessReviewStatus.isAllowed();
+    } catch (ApiException e) {
+      LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
+      return false;
+    }
   }
 
   /**
