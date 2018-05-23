@@ -3,6 +3,8 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator.http;
 
+import static org.junit.Assert.fail;
+
 import com.meterware.simplestub.Stub;
 import java.util.logging.Level;
 import javax.ws.rs.client.Client;
@@ -45,6 +47,30 @@ public class HttpClientTest {
 
     httpClient.executePostUrlOnServiceClusterIP(
         requestURL, serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload(), false);
+
+    loggingFacadeStub.assertContains(
+        Level.FINE,
+        MessageKeys.HTTP_METHOD_FAILED,
+        "POST",
+        serviceURL + requestURL,
+        Status.NOT_FOUND.getStatusCode());
+  }
+
+  @Test
+  public void messageLogged_when_executePostUrlOnServiceClusterIP_failsAndThrows() {
+    ClientStub clientStub = Stub.createStub(ClientStub.class);
+    HttpClient httpClient = new HttpClient(clientStub, "");
+    mockResponse = Stub.createStub(ResponseStub.class, Status.NOT_FOUND, null);
+    final String serviceURL = "fake/service/url";
+    final String requestURL = "fake/request/url";
+
+    try {
+      httpClient.executePostUrlOnServiceClusterIP(
+          requestURL, serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload(), true);
+      fail("Expected exception not thrown");
+    } catch (HTTPException e) {
+      // expected exception
+    }
 
     loggingFacadeStub.assertContains(
         Level.FINE,
