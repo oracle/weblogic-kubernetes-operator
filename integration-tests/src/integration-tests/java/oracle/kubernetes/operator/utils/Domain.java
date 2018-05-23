@@ -4,32 +4,28 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Domain class with all the utility methods for a Domain.
- * 
- */
+import oracle.kubernetes.operator.BaseTest;
+
+/** Domain class with all the utility methods for a Domain. */
 public class Domain {
-  public static final String CREATE_DOMAIN_SCRIPT = "../kubernetes/create-weblogic-domain.sh";
-  public static final String createDomainJobMessage =
-      "Domain base_domain was created and will be " + "started by the WebLogic Kubernetes Operator";
-  public static String domainInputTemplateFile = "../kubernetes/create-weblogic-domain-inputs.yaml";
+  public static final String CREATE_DOMAIN_JOB_MESSAGE =
+      "Domain base_domain was created and will be started by the WebLogic Kubernetes Operator";
 
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  private Path domainInputYamlFilePath;
-  Properties domainProps = new Properties();
+  private Properties domainProps = new Properties();
 
+  //attributes from domain properties
   private String domainUid = "";
-  //default values as in create-weblogic-domain-inputs.yaml, 
-  //if the property is not defined here, it takes the property and its value from create-weblogic-domain-inputs.yaml
+  //default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the customized property values
   private String domainNS = "weblogic-domain";
   private String adminServerName = "admin-server";
   private String managedServerNameBase = "managed-server";
@@ -40,79 +36,29 @@ public class Domain {
   private String loadBalancer = "TRAEFIK";
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
-  public static final int MAX_ITERATIONS_POD = 50; //50 * 5 = 250 seconds
+  private String projectRoot = "";
 
-  public static final int WAIT_TIME_POD = 5;
+  private String createDomainScript = "";
+  private String inputTemplateFile = "";
+  private String generatedInputYamlFile;
 
   /**
-   * Takes domain properties and generates a domain input yaml file.
+   * Takes domain properties which should be customized while generating domain input yaml file.
    *
    * @param inputProps
    * @throws Exception
    */
-  public Domain(Properties inputProps, String userProjectsDir) throws Exception {
+  public Domain(Properties inputProps) throws Exception {
     this.domainProps = inputProps;
-    this.userProjectsDir = userProjectsDir;
-    domainNS = domainProps.getProperty("namespace", domainNS);
-    domainUid = domainProps.getProperty("domainUID");
-    adminServerName = domainProps.getProperty("adminServerName", adminServerName);
-    managedServerNameBase = domainProps.getProperty("managedServerNameBase", managedServerNameBase);
-    initialManagedServerReplicas =
-        new Integer(
-                domainProps.getProperty(
-                    "initialManagedServerReplicas", initialManagedServerReplicas + ""))
-            .intValue();
-    exposeAdminT3Channel =
-        new Boolean(
-                domainProps.getProperty(
-                    "exposeAdminT3Channel", new Boolean(exposeAdminT3Channel).toString()))
-            .booleanValue();
-    t3ChannelPort =
-        new Integer(domainProps.getProperty("t3ChannelPort", t3ChannelPort + "")).intValue();
-    clusterName = domainProps.getProperty("clusterName", clusterName);
-    loadBalancer = domainProps.getProperty("loadBalancer", loadBalancer);
-    loadBalancerWebPort =
-        new Integer(domainProps.getProperty("loadBalancerWebPort", loadBalancerWebPort + ""))
-            .intValue();
 
-    File d = new File(CREATE_DOMAIN_SCRIPT);
-    if (!d.exists() || !d.canExecute()) {
-      throw new IllegalArgumentException(
-          CREATE_DOMAIN_SCRIPT + " doesn't exist or is not executable");
-    }
-
-    if (exposeAdminT3Channel && inputProps.getProperty("t3PublicAddress") == null) {
-      inputProps.put("t3PublicAddress", TestUtils.getHostName());
-    }
-    String domainInputYamlFileName = domainUid + "-inputs.yaml";
-    domainInputYamlFilePath =
-        new File(
-                this.getClass().getClassLoader().getResource(".").getFile()
-                    + "/../"
-                    + domainInputYamlFileName)
-            .toPath();
-    TestUtils.createInputFile(domainProps, domainInputTemplateFile, domainInputYamlFilePath);
+    initialize();
+    createPV();
+    createSecret();
+    generateInputYaml();
+    callCreateDomainScript();
   }
 
-  /**
-   * Creates the domain and saves the domain yaml files at the given location
-   *
-   * @param userProjectsDir
-   * @return
-   */
-  public boolean run() {
-    StringBuffer cmd = new StringBuffer(CREATE_DOMAIN_SCRIPT);
-    cmd.append(" -i ").append(domainInputYamlFilePath).append(" -o ").append(userProjectsDir);
-    logger.info("Running " + cmd);
-    String outputStr = TestUtils.executeCommand(cmd.toString());
-    logger.info("run " + outputStr);
-    if (!outputStr.contains(createDomainJobMessage)) {
-      logger.log(Level.INFO, outputStr);
-      return false;
-    }
-    return true;
-  }
-
+  
   /** Verifies the required pods are created, services are created and the servers are ready. */
   public void verifyDomainCreated() {
     StringBuffer command = new StringBuffer();
@@ -245,7 +191,7 @@ public class Domain {
         .append("/management/weblogic/latest/edit/appDeployments")
         .append(" --write-out %{http_code} -o /dev/null");
     logger.fine("Command to deploy webapp " + cmd);
-    String output = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmd.toString()});
+    String output = TestUtils.executeCommandStrArray(cmd.toString());
     if (!output.contains("202")) {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
     }
@@ -260,9 +206,10 @@ public class Domain {
    */
   public void deployWebAppViaWLST(
       String webappName, String webappLocation, String username, String password) {
-    StringBuffer cmdTocpwar =
-        new StringBuffer("kubectl cp ../src/integration-tests/apps/testwebapp.war ");
+    StringBuffer cmdTocpwar = new StringBuffer("kubectl cp ");
     cmdTocpwar
+        .append(webappLocation)
+        .append(" ")
         .append(domainNS)
         .append("/")
         .append(domainUid)
@@ -271,14 +218,15 @@ public class Domain {
         .append(":/shared/applications/testwebapp.war");
 
     logger.info("Command to copy war file " + cmdTocpwar);
-    String output = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmdTocpwar.toString()});
+    String output = TestUtils.executeCommandStrArray(cmdTocpwar.toString());
     if (!output.trim().equals("")) {
       throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
     }
 
-    StringBuffer cmdTocppy =
-        new StringBuffer("kubectl cp src/integration-tests/resources/deploywebapp.py ");
+    StringBuffer cmdTocppy = new StringBuffer("kubectl cp ");
     cmdTocppy
+        .append(projectRoot)
+        .append("/integration-tests/src/integration-tests/resources/deploywebapp.py ")
         .append(domainNS)
         .append("/")
         .append(domainUid)
@@ -287,14 +235,15 @@ public class Domain {
         .append(":/shared/deploywebapp.py");
 
     logger.info("Command to copy py file " + cmdTocppy);
-    output = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmdTocppy.toString()});
+    output = TestUtils.executeCommandStrArray(cmdTocppy.toString());
     if (!output.trim().equals("")) {
       throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
     }
 
-    StringBuffer cmdTocpsh =
-        new StringBuffer("kubectl cp src/integration-tests/resources/calldeploywebapp.sh ");
+    StringBuffer cmdTocpsh = new StringBuffer("kubectl cp ");
     cmdTocpsh
+        .append(projectRoot)
+        .append("/integration-tests/src/integration-tests/resources/calldeploywebapp.sh ")
         .append(domainNS)
         .append("/")
         .append(domainUid)
@@ -303,7 +252,7 @@ public class Domain {
         .append(":/shared/calldeploywebapp.py");
 
     logger.info("Command to copy sh file " + cmdTocpsh);
-    output = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmdTocpsh.toString()});
+    output = TestUtils.executeCommandStrArray(cmdTocpsh.toString());
     if (!output.trim().equals("")) {
       throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
     }
@@ -410,7 +359,7 @@ public class Domain {
   }
 
   /** startup the domain */
-  public void startup() {
+  public void create() {
     TestUtils.executeCommand(
         "kubectl create -f "
             + userProjectsDir
@@ -421,7 +370,7 @@ public class Domain {
   }
 
   /** shutdown the domain */
-  public void shutdown() {
+  public void destroy() {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     TestUtils.executeCommand(
         "kubectl delete -f "
@@ -459,20 +408,92 @@ public class Domain {
     }
   }
 
+  public Properties getDomainProps() {
+    return domainProps;
+  }
+
+  private void createPV() {
+    //k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
+    new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
+
+    //set pv path
+    domainProps.setProperty(
+        "weblogicDomainStoragePath",
+        BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
+  }
+
+  private void createSecret() {
+	    new Secret(
+	            domainNS,
+	            domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
+	            BaseTest.getUsername(),
+	            BaseTest.getPassword());
+  }
+  private void generateInputYaml() throws Exception {
+	    Path parentDir =
+	            Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
+	        generatedInputYamlFile = parentDir + "/" + domainUid + "-inputs.yaml";
+	        TestUtils.createInputFile(domainProps, inputTemplateFile, generatedInputYamlFile);
+
+  }
+  
+
+  private void callCreateDomainScript() {
+    StringBuffer cmd = new StringBuffer(createDomainScript);
+    cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
+    logger.info("Running " + cmd);
+    String outputStr = TestUtils.executeCommand(cmd.toString());
+    logger.info("run " + outputStr);
+    if (!outputStr.contains(CREATE_DOMAIN_JOB_MESSAGE)) {
+    	throw new RuntimeException("FAILURE: Create domain Script failed..");
+    }
+    
+  }
+  
+  private void initialize() {
+    this.userProjectsDir = BaseTest.getUserProjectsDir();
+    this.projectRoot = BaseTest.getProjectRoot();
+
+    createDomainScript = projectRoot + "/kubernetes/create-weblogic-domain.sh";
+    inputTemplateFile = projectRoot + "/kubernetes/create-weblogic-domain-inputs.yaml";
+    domainUid = domainProps.getProperty("domainUID");
+    //Customize the create domain job inputs
+    domainNS = domainProps.getProperty("namespace", domainNS);
+    adminServerName = domainProps.getProperty("adminServerName", adminServerName);
+    managedServerNameBase = domainProps.getProperty("managedServerNameBase", managedServerNameBase);
+    initialManagedServerReplicas =
+        new Integer(
+                domainProps.getProperty(
+                    "initialManagedServerReplicas", initialManagedServerReplicas + ""))
+            .intValue();
+    exposeAdminT3Channel =
+        new Boolean(
+                domainProps.getProperty(
+                    "exposeAdminT3Channel", new Boolean(exposeAdminT3Channel).toString()))
+            .booleanValue();
+    t3ChannelPort =
+        new Integer(domainProps.getProperty("t3ChannelPort", t3ChannelPort + "")).intValue();
+    clusterName = domainProps.getProperty("clusterName", clusterName);
+    loadBalancer = domainProps.getProperty("loadBalancer", loadBalancer);
+    loadBalancerWebPort =
+        new Integer(domainProps.getProperty("loadBalancerWebPort", loadBalancerWebPort + ""))
+            .intValue();
+    if (exposeAdminT3Channel && domainProps.getProperty("t3PublicAddress") == null) {
+      domainProps.put("t3PublicAddress", TestUtils.getHostName());
+    }
+  }
+
   private String getNodeHost() {
-    String c[] =
-        new String[] {
-          "/bin/sh",
-          "-c",
-          "kubectl describe pod "
-              + domainUid
-              + "-"
-              + adminServerName
-              + " -n "
-              + domainNS
-              + " | grep Node:"
-        };
-    String nodePortHost = TestUtils.executeCommand(c);
+    String cmd =
+        "kubectl describe pod "
+            + domainUid
+            + "-"
+            + adminServerName
+            + " -n "
+            + domainNS
+            + " | grep Node:";
+
+    String nodePortHost = TestUtils.executeCommandStrArray(cmd);
     //logger.info("nodePortHost "+nodePortHost);
     if (nodePortHost.contains(":") && nodePortHost.contains("/")) {
       return nodePortHost
@@ -490,7 +511,7 @@ public class Domain {
         .append(" -n ")
         .append(domainNS)
         .append(" | grep \"Node Port:\"");
-    String output = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmd.toString()});
+    String output = TestUtils.executeCommandStrArray(cmd.toString());
     if (output.contains("Node Port")) {
       return output.substring(output.indexOf(":") + 1).trim();
     } else {

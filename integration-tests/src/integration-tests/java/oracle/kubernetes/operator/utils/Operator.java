@@ -4,108 +4,55 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-/**
- * Operator class with all the utility methods for Operator.
- *
- */
-public class Operator {
-  public static final String CREATE_OPERATOR_SCRIPT = "../kubernetes/create-weblogic-operator.sh";
-  public static final String createScriptMessage =
-      "The Oracle WebLogic Server Kubernetes Operator is deployed";
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
-  public static String opInputTemplateFile = "../kubernetes/create-weblogic-operator-inputs.yaml";
+import oracle.kubernetes.operator.BaseTest;
 
-  private Path opInputYamlFilePath;
-  Properties opProps = new Properties();
-  //default values as in create-weblogic-operator-inputs.yaml, 
+/** Operator class with all the utility methods for Operator. */
+public class Operator {
+
+  public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
+      "The Oracle WebLogic Server Kubernetes Operator is deployed";
+
+  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
+  private Properties operatorProps = new Properties();
+
+  //default values as in create-weblogic-operator-inputs.yaml,
   //if the property is not defined here, it takes the property and its value from create-weblogic-operator-inputs.yaml
   private String operatorNS = "weblogic-operator";
   private String externalRestOption = "NONE";
   private String externalRestHttpsPort = "31001";
   private String userProjectsDir = "";
 
+  private String createOperatorScript = "";
+  private String inputTemplateFile = "";
+  private String generatedInputYamlFile;
+
+  private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); //50 * 5 = 250 seconds
+  private static int waitTimeOp = BaseTest.getWaitTimePod();
+
   /**
-   * Takes operator input properties and generates a operator input yaml file.
+   * Takes operator input properties which needs to be customized and generates a operator input
+   * yaml file.
    *
    * @param inputProps
    * @throws Exception
    */
-  public Operator(Properties inputProps, String userProjectsDir) throws Exception {
-    this.opProps = inputProps;
-    this.userProjectsDir = userProjectsDir;
-    File d = new File(CREATE_OPERATOR_SCRIPT);
-    if (!d.exists() || !d.canExecute()) {
-      throw new IllegalArgumentException(
-          "FAILURE: " + CREATE_OPERATOR_SCRIPT + " doesn't exist or is not executable");
-    }
-    operatorNS = opProps.getProperty("namespace", operatorNS);
-    if (opProps.getProperty("externalRestOption") != null) {
-      externalRestOption = opProps.getProperty("externalRestOption");
-    }
-    externalRestOption = opProps.getProperty("externalRestOption");
-    if (externalRestOption != null && externalRestOption.equals("SELF_SIGNED_CERT")) {
-      if (opProps.getProperty("externalSans") == null) {
-        opProps.put("externalSans", "DNS:" + TestUtils.getHostName());
-      }
-      if (opProps.getProperty("externalRestHttpsPort") != null) {
-        externalRestHttpsPort = opProps.getProperty("externalRestHttpsPort");
-        try {
-          new Integer(externalRestHttpsPort).intValue();
-        } catch (NumberFormatException nfe) {
-          throw new IllegalArgumentException(
-              "FAILURE: Invalid value for " + "externalRestHttpsPort " + externalRestHttpsPort);
-        }
-      } else {
-        opProps.put("externalRestHttpsPort", externalRestHttpsPort);
-      }
-    }
-    
-    if(System.getenv("IMAGE_NAME_OPERATOR") != null && System.getenv("IMAGE_TAG_OPERATOR") != null) {
-    	opProps.put("weblogicOperatorImage",
-    			System.getenv("IMAGE_NAME_OPERATOR")+":"+ System.getenv("IMAGE_TAG_OPERATOR"));
-    } else {
-    	opProps.put("weblogicOperatorImage",
-    			"wlsldi-v2.docker.oraclecorp.com/weblogic-operator"+
-    					":test_"+TestUtils.getGitBranchName().replaceAll("/", "_") );
-    }
+  public Operator(Properties inputProps) throws Exception {
+    this.operatorProps = inputProps;
 
-    String opInputYamlFileName = operatorNS + "-inputs.yaml";
-    opInputYamlFilePath =
-        new File(
-                this.getClass().getClassLoader().getResource(".").getFile()
-                    + "/../"
-                    + opInputYamlFileName)
-            .toPath();
+    initialize();
 
-    TestUtils.createInputFile(opProps, opInputTemplateFile, opInputYamlFilePath);
+    generateInputYaml();
+
+    callCreateOperatorScript();
   }
 
-  /**
-   * Creates the operator and saves the operator yaml files at the given location
-   *
-   * @param userProjectsDir
-   * @return
-   */
-  public boolean run() {
-    StringBuffer cmd = new StringBuffer(CREATE_OPERATOR_SCRIPT);
-    cmd.append(" -i ").append(opInputYamlFilePath).append(" -o ").append(userProjectsDir);
-    logger.info("Running " + cmd);
-    String outputStr = TestUtils.executeCommand(cmd.toString());
-    logger.info("run " + outputStr);
-
-    //TODo: Add check for the image name from the Pod as in run.sh
-
-    if (!outputStr.contains(createScriptMessage)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
   /** verifies operator is created */
   public void verifyPodCreated() {
     logger.info("Checking if Operator pod is Running");
@@ -121,7 +68,7 @@ public class Operator {
   }
 
   /** Start operator and makes sure it is deployed and ready */
-  public void startup() {
+  public void create() {
     logger.info("Starting Operator");
     TestUtils.executeCommand(
         "kubectl create -f "
@@ -135,18 +82,17 @@ public class Operator {
         "kubectl get deploy weblogic-operator -n "
             + operatorNS
             + " -o jsonpath='{.status.availableReplicas}'";
-    int maxIterations = 30;
-    for (int i = 0; i < maxIterations; i++) {
-      String availableReplica =
-          TestUtils.executeCommand(new String[] {"/bin/sh", "-c", availableReplicaCmd}).trim();
+    for (int i = 0; i < maxIterationsOp; i++) {
+      String availableReplica = TestUtils.executeCommandStrArray(availableReplicaCmd).trim();
       if (!availableReplica.equals("1")) {
-        if (i == maxIterations - 1) {
+        if (i == maxIterationsOp - 1) {
           throw new RuntimeException(
               "FAILURE: The WebLogic operator deployment is not available, after waiting 300 seconds");
         }
-        logger.info("status is " + availableReplica + ", iteration " + i + " of " + maxIterations);
+        logger.info(
+            "status is " + availableReplica + ", iteration " + i + " of " + maxIterationsOp);
         try {
-          Thread.sleep(10 * 1000);
+          Thread.sleep(waitTimeOp * 1000);
         } catch (InterruptedException ignore) {
         }
       } else {
@@ -165,9 +111,12 @@ public class Operator {
       String restCmd =
           "kubectl get services -n "
               + operatorNS
-              + " -o jsonpath='{.items[?(@.metadata.name == \"external-weblogic-operator-service\")]}'";
-      String restService = TestUtils.executeCommand(restCmd).trim();
-      if (restService.equals("")) {
+              + " -o jsonpath='{.items[?(@.metadata.name == \"external-weblogic-operator-svc\")]}'";
+      logger.info("Cmd to check REST service " + restCmd);
+      String restService = TestUtils.executeCommandStrArray(restCmd).trim();
+
+      logger.info("cmd result for REST service " + restService);
+      if (restService.equals("") || !restService.contains("name:external-weblogic-operator-svc")) {
         throw new RuntimeException("FAILURE: operator rest service was not created");
       }
     } else {
@@ -175,7 +124,7 @@ public class Operator {
     }
   }
 
-  public void shutdown() {
+  public void destroy() {
     TestUtils.executeCommand(
         "kubectl delete -f "
             + userProjectsDir
@@ -185,19 +134,18 @@ public class Operator {
 
     logger.info("Checking REST service is deleted");
     String serviceCmd =
-        "kubectl get services -n " + operatorNS + " | egrep weblogic-operator-service | wc -l";
-    int maxIterations = 30;
-    for (int i = 0; i < maxIterations; i++) {
+        "kubectl get services -n " + operatorNS + " | egrep weblogic-operator-src | wc -l";
 
-      String servicenum =
-          TestUtils.executeCommand(new String[] {"/bin/sh", "-c", serviceCmd}).trim();
+    for (int i = 0; i < maxIterationsOp; i++) {
+
+      String servicenum = TestUtils.executeCommandStrArray(serviceCmd).trim();
       if (!servicenum.contains("No resources found.")) {
-        if (i == maxIterations - 1) {
+        if (i == maxIterationsOp - 1) {
           throw new RuntimeException("FAILURE: Operator fail to be deleted");
         }
-        logger.info("status is " + servicenum + ", iteration " + i + " of " + maxIterations);
+        logger.info("status is " + servicenum + ", iteration " + i + " of " + maxIterationsOp);
         try {
-          Thread.sleep(10 * 1000);
+          Thread.sleep(waitTimeOp * 1000);
         } catch (InterruptedException ignore) {
         }
       } else {
@@ -207,16 +155,16 @@ public class Operator {
 
     String getAllCmd = "kubectl get all -n " + operatorNS;
 
-    for (int i = 0; i < maxIterations; i++) {
+    for (int i = 0; i < maxIterationsOp; i++) {
 
-      String getAll = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", getAllCmd}).trim();
+      String getAll = TestUtils.executeCommandStrArray(getAllCmd).trim();
       if (!getAll.contains("No resources found.")) {
-        if (i == maxIterations - 1) {
+        if (i == maxIterationsOp - 1) {
           throw new RuntimeException("FAILURE: Operator shutdown failed.." + getAll);
         }
-        logger.info("status is " + getAll + ", iteration " + i + " of " + maxIterations);
+        logger.info("status is " + getAll + ", iteration " + i + " of " + maxIterationsOp);
         try {
-          Thread.sleep(10 * 1000);
+          Thread.sleep(waitTimeOp * 1000);
         } catch (InterruptedException ignore) {
         }
       } else {
@@ -267,5 +215,71 @@ public class Operator {
             .append("/operator/latest/domains/")
             .append(domainUid);
     TestUtils.makeOperatorGetRestCall(operatorNS, myOpRestApiUrl.toString(), userProjectsDir);
+  }
+
+  public Properties getOperatorProps() {
+    return operatorProps;
+  }
+
+  private void callCreateOperatorScript() {
+    StringBuffer cmd = new StringBuffer(createOperatorScript);
+    cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
+    logger.info("Running " + cmd);
+    String outputStr = TestUtils.executeCommand(cmd.toString());
+    logger.info("run " + outputStr);
+
+    if (!outputStr.contains(CREATE_OPERATOR_SCRIPT_MESSAGE)) {
+      throw new RuntimeException("FAILURE: Create Operator Script failed..");
+    }
+  }
+
+  private void generateInputYaml() throws Exception {
+    Path parentDir =
+        Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-operators/" + operatorNS));
+    generatedInputYamlFile = parentDir + "/" + operatorNS + "-inputs.yaml";
+    TestUtils.createInputFile(operatorProps, inputTemplateFile, generatedInputYamlFile);
+  }
+
+  private void initialize() {
+    userProjectsDir = BaseTest.getUserProjectsDir();
+    createOperatorScript = BaseTest.getProjectRoot() + "/kubernetes/create-weblogic-operator.sh";
+    inputTemplateFile =
+        BaseTest.getProjectRoot() + "/kubernetes/create-weblogic-operator-inputs.yaml";
+    operatorNS = operatorProps.getProperty("namespace", operatorNS);
+
+    //customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port
+    if (operatorProps.getProperty("externalRestOption") != null) {
+      externalRestOption = operatorProps.getProperty("externalRestOption");
+    }
+    externalRestOption = operatorProps.getProperty("externalRestOption");
+    if (externalRestOption != null && externalRestOption.equals("SELF_SIGNED_CERT")) {
+      if (operatorProps.getProperty("externalSans") == null) {
+        operatorProps.put("externalSans", "DNS:" + TestUtils.getHostName());
+      }
+      if (operatorProps.getProperty("externalRestHttpsPort") != null) {
+        externalRestHttpsPort = operatorProps.getProperty("externalRestHttpsPort");
+        try {
+          new Integer(externalRestHttpsPort).intValue();
+        } catch (NumberFormatException nfe) {
+          throw new IllegalArgumentException(
+              "FAILURE: Invalid value for " + "externalRestHttpsPort " + externalRestHttpsPort);
+        }
+      } else {
+        operatorProps.put("externalRestHttpsPort", externalRestHttpsPort);
+      }
+    }
+    //customize the inputs yaml file to use our pre-built docker image
+    if (System.getenv("IMAGE_NAME_OPERATOR") != null
+        && System.getenv("IMAGE_TAG_OPERATOR") != null) {
+      operatorProps.put(
+          "weblogicOperatorImage",
+          System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
+    } else {
+      operatorProps.put(
+          "weblogicOperatorImage",
+          "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
+              + ":test_"
+              + TestUtils.getGitBranchName().replaceAll("/", "_"));
+    }
   }
 }
