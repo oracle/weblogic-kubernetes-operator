@@ -7,58 +7,25 @@ package oracle.kubernetes;
 import static com.meterware.simplestub.Stub.createStub;
 
 import com.meterware.simplestub.Memento;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
 
 public class TestUtils {
-  private static Boolean kubernetesStatus;
-
-  /** Returns true if Kubernetes-dependent tests should run */
-  public static boolean isKubernetesAvailable() { // assume it is available when running on Linux
-    if (kubernetesStatus == null) kubernetesStatus = checkKubernetes();
-    return kubernetesStatus;
-  }
-
-  private static Boolean checkKubernetes() {
-    PrintStream savedOut = System.out;
-    System.setOut(new PrintStream(new ByteArrayOutputStream()));
-    try {
-      CommandLine cmdLine = CommandLine.parse("kubectl cluster-info dump");
-      DefaultExecutor executor = new DefaultExecutor();
-      executor.execute(cmdLine);
-      return true;
-    } catch (IOException e) {
-      return false;
-    } finally {
-      System.setOut(savedOut);
-    }
-  }
-
-  /**
-   * Returns true if the current system is running Linux
-   *
-   * @return a boolean indicating the operating system match
-   */
-  public static boolean isLinux() {
-    return System.getProperty("os.name").toLowerCase().contains("linux");
-  }
 
   /**
    * Removes the console handlers from the specified logger, in order to silence them during a test.
    *
    * @return a collection of the removed handlers
    */
-  public static ExceptionFilteringMemento silenceOperatorLogger() {
+  public static ConsoleHandlerMemento silenceOperatorLogger() {
     Logger logger = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
     List<Handler> savedHandlers = new ArrayList<>();
     for (Handler handler : logger.getHandlers()) {
@@ -78,11 +45,14 @@ public class TestUtils {
   abstract static class TestLogHandler extends Handler {
     private Throwable throwable;
     private List<Throwable> ignoredExceptions = new ArrayList<>();
+    private Collection<LogRecord> logRecords = new ArrayList<>();
+    private List<String> messagesToTrack = new ArrayList<>();
 
     @Override
     public void publish(LogRecord record) {
       if (record.getThrown() != null && !ignoredExceptions.contains(record.getThrown()))
         throwable = record.getThrown();
+      if (messagesToTrack.contains(record.getMessage())) logRecords.add(record);
     }
 
     void throwLoggedThrowable() {
@@ -96,6 +66,22 @@ public class TestUtils {
 
     void ignoreLoggedException(Throwable t) {
       ignoredExceptions.add(t);
+    }
+
+    void collectLogMessages(Collection<LogRecord> collection, String[] messages) {
+      this.logRecords = collection;
+      this.messagesToTrack = new ArrayList<>();
+      this.messagesToTrack.addAll(Arrays.asList(messages));
+    }
+
+    void throwUncheckedLogMessages() {
+      if (logRecords.isEmpty()) return;
+
+      SimpleFormatter formatter = new SimpleFormatter();
+      List<String> messageKeys = new ArrayList<>();
+      for (LogRecord record : logRecords) messageKeys.add(formatter.format(record));
+
+      throw new AssertionError("Unexpected log messages " + messageKeys);
     }
   }
 
@@ -128,11 +114,7 @@ public class TestUtils {
     }
   }
 
-  public interface ExceptionFilteringMemento extends Memento {
-    ExceptionFilteringMemento ignoringLoggedExceptions(Throwable... throwables);
-  }
-
-  private static class ConsoleHandlerMemento implements ExceptionFilteringMemento {
+  public static class ConsoleHandlerMemento implements Memento {
     private Logger logger;
     private TestLogHandler testHandler;
     private List<Handler> savedHandlers;
@@ -143,10 +125,19 @@ public class TestUtils {
       this.savedHandlers = savedHandlers;
     }
 
-    @Override
-    public ExceptionFilteringMemento ignoringLoggedExceptions(Throwable... throwables) {
+    public ConsoleHandlerMemento ignoringLoggedExceptions(Throwable... throwables) {
       for (Throwable throwable : throwables) testHandler.ignoreLoggedException(throwable);
       return this;
+    }
+
+    public ConsoleHandlerMemento collectLogMessages(
+        Collection<LogRecord> collection, String... messages) {
+      testHandler.collectLogMessages(collection, messages);
+      return this;
+    }
+
+    public void ignoreMessage(String message) {
+      testHandler.messagesToTrack.remove(message);
     }
 
     @Override
@@ -155,6 +146,7 @@ public class TestUtils {
       restoreConsoleHandlers(logger, savedHandlers);
 
       testHandler.throwLoggedThrowable();
+      testHandler.throwUncheckedLogMessages();
     }
 
     @Override
