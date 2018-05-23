@@ -106,15 +106,11 @@ public class PodHelper {
                   namespace,
                   new ResponseStep<V1Pod>(getNext()) {
                     @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
+                    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+                      if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, callResponse);
                       }
-                      return super.onFailure(packet, e, statusCode, responseHeaders);
+                      return super.onFailure(packet, callResponse);
                     }
 
                     @Override
@@ -416,14 +412,11 @@ public class PodHelper {
                   new ResponseStep<V1Status>(getNext()) {
                     @Override
                     public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
+                        Packet packet, CallResponse<V1Status> callResponses) {
+                      if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, callResponses);
                       }
-                      return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+                      return super.onFailure(conflictStep, packet, callResponses);
                     }
 
                     @Override
