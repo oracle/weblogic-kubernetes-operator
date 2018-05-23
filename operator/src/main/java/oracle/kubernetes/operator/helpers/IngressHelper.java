@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -129,10 +130,8 @@ public class IngressHelper {
 
                       @Override
                       public NextAction onSuccess(
-                          Packet packet,
-                          V1beta1Ingress result,
-                          int statusCode,
-                          Map<String, List<String>> responseHeaders) {
+                          Packet packet, CallResponse<V1beta1Ingress> callResponse) {
+                        V1beta1Ingress result = callResponse.getResult();
                         if (result == null) {
                           return doNext(
                               factory

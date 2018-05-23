@@ -46,6 +46,35 @@ public class StepChainTest {
     assertThat(NamedStep.getNames(packet), contains("one", "two", "three", "four", "five", "six"));
   }
 
+  @Test
+  public void ignoreNullFirstSteps() throws Exception {
+    Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
+    Step group3 = new NamedStep("six");
+
+    Step chain = Step.chain(null, group2, group3);
+
+    Packet packet = testSupport.runSteps(chain);
+
+    assertThat(NamedStep.getNames(packet), contains("three", "four", "five", "six"));
+  }
+
+  @Test
+  public void ignoreNullMiddleSteps() throws Exception {
+    Step group1 = new NamedStep("one", new NamedStep("two"));
+    Step group3 = new NamedStep("six");
+
+    Step chain = Step.chain(group1, null, group3);
+
+    Packet packet = testSupport.runSteps(chain);
+
+    assertThat(NamedStep.getNames(packet), contains("one", "two", "six"));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void whenNoNonNullSteps_throwException() throws Exception {
+    Step.chain();
+  }
+
   private static class NamedStep extends Step {
     private static final String NAMES = "names";
     private String name;

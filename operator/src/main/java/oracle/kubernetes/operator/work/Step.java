@@ -10,19 +10,23 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
 /** Individual step in a processing flow */
 public abstract class Step {
   private Step next;
 
+  /** Create a step with no next step. */
+  protected Step() {
+    this(null);
+  }
+
   /**
    * Create a step with the indicated next step.
    *
    * @param next The next step, use null to indicate a terminal step
    */
-  public Step(Step next) {
+  protected Step(Step next) {
     this.next = next;
   }
 
@@ -32,11 +36,21 @@ public abstract class Step {
    * @param stepGroups multiple groups of steps
    * @return the first step of the resultant chain
    */
-  public static Step chain(@Nonnull Step... stepGroups) {
-    for (int i = 0; i < stepGroups.length - 1; i++) {
-      addLink(stepGroups[i], stepGroups[i + 1]);
+  public static Step chain(Step... stepGroups) {
+    int start = getFirstNonNullIndex(stepGroups);
+    if (start >= stepGroups.length)
+      throw new IllegalArgumentException("No non-Null steps specified");
+
+    for (int i = start + 1; i < stepGroups.length; i++) {
+      addLink(stepGroups[start], stepGroups[i]);
     }
-    return stepGroups[0];
+    return stepGroups[start];
+  }
+
+  private static int getFirstNonNullIndex(Step[] stepGroups) {
+    for (int i = 0; i < stepGroups.length; i++) if (stepGroups[i] != null) return i;
+
+    return stepGroups.length;
   }
 
   private static void addLink(Step stepGroup1, Step stepGroup2) {
