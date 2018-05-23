@@ -217,7 +217,7 @@ function renewLease {
   if [ ! "$LEASE_ID" = "" ]; then
     # RESULT_DIR may not have been created yet, so use /tmp
     local outfile=/tmp/acc_test_renew_lease.out
-    $SCRIPTPATH/lease.sh -r "$LEASE_ID" > $outfile 2>&1
+    $SCRIPTPATH/lease.sh -r "$LEASE_ID" 2>&1 | tee $outfile
     if [ $? -ne 0 ]; then
       trace "Lease renew error:"
       echo "" >> $outfile
@@ -409,8 +409,8 @@ function state_dump {
   #   get domains is in its own command since this can fail if domain CRD undefined
 
   trace Dumping kubectl gets to kgetmany.out and kgetdomains.out in ${DUMP_DIR}
-  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetmany.out 2>&1
-  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetdomains.out 2>&1
+  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 | tee ${DUMP_DIR}/kgetmany.out
+  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 | tee ${DUMP_DIR}/kgetdomains.out
 
   # Get all pod logs and redirect/copy to files 
 
@@ -428,15 +428,15 @@ function state_dump {
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      kubectl log $pod -n $namespace > $logfile 2>&1
-      kubectl describe pod $pod -n $namespace > $descfile 2>&1
+      kubectl log $pod -n $namespace 2>&1 | tee $logfile
+      kubectl describe pod $pod -n $namespace 2>&1 | tee $descfile
     done
   done
 
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
   trace "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" > ${outfile} 2>&1
+  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
   if [ "$?" = "0" ]; then
      trace Job complete.
   else
@@ -445,7 +445,7 @@ function state_dump {
 
   if [ ! "$LEASE_ID" = "" ]; then
     # release the lease if we own it
-    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" > ${RESULT_DIR}/release_lease.out 2>&1
+    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | tee ${RESULT_DIR}/release_lease.out
     if [ "$?" = "0" ]; then
       trace Lease released.
     else
@@ -572,10 +572,10 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server=index.docker.io/v1/ \
-    --docker-username=$DOCKER_USERNAME \
-    --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL \
+    --docker-server='index.docker.io/v1/' \
+    --docker-username='$DOCKER_USERNAME' \
+    --docker-password='$DOCKER_PASSWORD' \
+    --docker-email='$DOCKER_EMAIL' \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -586,10 +586,10 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Registry Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-    --docker-server=$REPO_REGISTRY \
-    --docker-username=$REPO_USERNAME \
-    --docker-password=$REPO_PASSWORD \
-    --docker-email=$REPO_EMAIL \
+    --docker-server='$REPO_SERVER' \
+    --docker-username='$REPO_USERNAME' \
+    --docker-password='$REPO_PASSWORD' \
+    --docker-email='$REPO_EMAIL' \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -673,8 +673,8 @@ function deploy_operator {
     trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
     sed -i -e "s|\(externalRestOption:\).*|\1SELF_SIGNED_CERT|g" $inputs
     sed -i -e "s|\(externalSans:\).*|\1DNS:${NODEPORT_HOST}|g" $inputs
-    trace 'customize the inputs yaml file to set the java logging level to FINER'
-    sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
+    trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
+    sed -i -e "s|\(javaLoggingLevel:\).*|\1$LOGLEVEL_OPERATOR|g" $inputs
     sed -i -e "s|\(externalRestHttpsPort:\).*|\1${EXTERNAL_REST_HTTPSPORT}|g" $inputs
     trace 'customize the inputs yaml file to add test namespace' 
     sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
@@ -683,7 +683,7 @@ function deploy_operator {
 
     local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
     trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | tee ${outfile}
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
        cat ${outfile} | sed 's/^/+/g'
@@ -776,6 +776,13 @@ function dom_define {
     # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
 
+    # we only test loadBalancerExposeAdminPort=true for Apache on domain1
+    if [ "$LB_TYPE" == "APACHE" ] && [ "$4" == "domain1" ] ; then
+      export DOM_${DOM_KEY}_LOAD_BALANCER_EXPOSE_ADMIN_PORT="true"
+    else 
+      export DOM_${DOM_KEY}_LOAD_BALANCER_EXPOSE_ADMIN_PORT="false"
+    fi
+
     #verbose tracing starts with a +
     dom_echo_all $1 | sed 's/^/+/'
 
@@ -809,6 +816,7 @@ function run_create_domain_job {
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
     # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
@@ -889,6 +897,7 @@ function run_create_domain_job {
       local load_balancer_app_prepath="/weblogic"
       sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
       sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+      sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputs
     fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
@@ -908,7 +917,7 @@ function run_create_domain_job {
 
     # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
     # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
-    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" > ${outfile} 2>&1
+    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" 2>&1 | tee ${outfile}
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
        trace Job complete.  Directory created on k8s cluster.
@@ -920,7 +929,7 @@ function run_create_domain_job {
     local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
     trace "Run the script to create the domain, see \"$outfile\" for tracing."
 
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
+    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | tee ${outfile}
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -1330,6 +1339,75 @@ function verify_admin_server_ext_service {
     trace 'done'
 }
 
+function verify_admin_console_via_loadbalancer {
+
+    # Pre-requisite: requires admin server to be already up and running and able to service requests
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
+    fi 
+
+    # We only perform this verification when the load balancer type is APACHE
+    if [ "$LB_TYPE" != "APACHE" ]; then
+      return
+    fi 
+
+    trace "verify that admin console is accessible via Apache load balancer from outside of the kubernetes cluster"
+
+    local DOM_KEY="$1"
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
+
+    local ADMIN_SERVER_LB_NODEPORT_SERVICE="$DOMAIN_UID-apache-webtier"
+
+    local get_service_nodePort="kubectl get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$ADMIN_SERVER_LB_NODEPORT_SERVICE\")].spec.ports[0].nodePort}'"
+   
+    trace get_service_nodePort
+
+    set +x     
+    local nodePort=`eval $get_service_nodePort`
+    set -x     
+
+    if [ -z ${nodePort} ]; then
+      fail "nodePort not found in domain $DOMAIN_UID"
+    fi
+
+    local TEST_CONSOLE_URL="http://${NODEPORT_HOST}:${nodePort}/console/login/LoginForm.jsp"
+    local CONSOLE_RESPONSE_BODY="$TMP_DIR/testconsole.response.body"
+
+    trace "console test url: $TEST_CONSOLE_URL "
+    echo "NO_DATA" > $CONSOLE_RESPONSE_BODY
+
+    set +x
+    local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_CONSOLE_URL} \
+      --write-out "%{http_code}" \
+      -o ${CONSOLE_RESPONSE_BODY} \
+    )
+    set -x
+
+    trace "console test response: $HTTP_RESPONSE "
+
+    if [ "$LOAD_BALANCER_EXPOSE_ADMIN_PORT" == "false" ]; then
+      if [ "${HTTP_RESPONSE}" == "200" ]; then
+        cat $CONSOLE_RESPONSE_BODY
+        fail "accessing admin console via load balancer returned status code ${HTTP_RESPONSE} unexpectedly"
+      fi
+    else 
+      if [ "${HTTP_RESPONSE}" != "200" ]; then
+        cat $CONSOLE_RESPONSE_BODY
+        fail "accessing admin console via load balancer did not return 200 status code, got ${HTTP_RESPONSE}"
+      fi
+    fi
+
+    trace 'done'
+
+}
+
 function test_domain_creation {
     declare_new_test 1 "$@"
     if [ "$#" != 1 ] ; then
@@ -1348,6 +1426,8 @@ function test_domain_creation {
 
     verify_admin_server_ext_service $DOM_KEY
 
+    verify_admin_console_via_loadbalancer $DOM_KEY
+    
     extra_weblogic_checks
     declare_test_pass
 }
@@ -1590,14 +1670,14 @@ function test_mvn_integration_local {
     [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    mvn -P integration-tests clean install > $RESULT_DIR/mvn.out 2>&1
+    mvn -P integration-tests clean install 2>&1 | tee $RESULT_DIR/mvn.out
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
     confirm_mvn_build $RESULT_DIR/mvn.out
 
-    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . > $RESULT_DIR/docker_build_tag.out 2>&1
+    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . 2>&1 | tee $RESULT_DIR/docker_build_tag.out
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image, see $RESULT_DIR/docker_build_tag.out".
 
     declare_test_pass
@@ -1730,7 +1810,7 @@ function run_wlst_script {
 
     cat << EOF > $TMP_DIR/empty.py
 EOF
-    java weblogic.WLST $TMP_DIR/empty.py > $TMP_DIR/empty.py.out 2>&1
+    java weblogic.WLST $TMP_DIR/empty.py 2>&1 | tee $TMP_DIR/empty.py.out
     if [ "$?" = "0" ]; then
       # We're running WLST locally.  No need to do anything fancy.
       local mycommand="java weblogic.WLST ${pyfile_lcl} ${username} ${password} ${t3url_lcl}"
@@ -1796,7 +1876,7 @@ EOF
   local maxwaitsecs=180
   local failedonce="false"
   while : ; do
-    eval "$mycommand ""$@" > ${pyfile_lcl}.out 2>&1
+    eval "$mycommand ""$@" 2>&1 | tee ${pyfile_lcl}.out
     local result="$?"
 
     # '+' marks verbose tracing
@@ -2154,7 +2234,7 @@ function verify_domain_deleted {
 
     kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
 
-    kubectl get domains  -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get domains -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
     trace 'checking if the domain is deleted'
     local count=`kubectl get domain $DOMAIN_UID -n $NAMESPACE | egrep $DOMAIN_UID | wc -l `
@@ -2557,6 +2637,7 @@ function test_suite_init {
     export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
     export WEBLOGIC_IMAGE_PULL_SECRET_NAME=${WEBLOGIC_IMAGE_PULL_SECRET_NAME}
+    export LOGLEVEL_OPERATOR=${LOGLEVEL_OPERATOR:-INFO}
 
     # Show custom env vars after defaults were substituted as needed.
 

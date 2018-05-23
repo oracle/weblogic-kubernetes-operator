@@ -46,12 +46,10 @@ public class ConfigMapHelper {
    *
    * @param operatorNamespace the operator's namespace
    * @param domainNamespace the domain's namespace
-   * @param next Next processing step
    * @return Step for creating config map containing scripts
    */
-  public static Step createScriptConfigMapStep(
-      String operatorNamespace, String domainNamespace, Step next) {
-    return new ScriptConfigMapStep(operatorNamespace, domainNamespace, next);
+  public static Step createScriptConfigMapStep(String operatorNamespace, String domainNamespace) {
+    return new ScriptConfigMapStep(operatorNamespace, domainNamespace, null);
   }
 
   // Make this public so that it can be unit tested
@@ -59,8 +57,7 @@ public class ConfigMapHelper {
     private final String operatorNamespace;
     private final String domainNamespace;
 
-    public ScriptConfigMapStep(String operatorNamespace, String domainNamespace, Step next) {
-      super(next);
+    ScriptConfigMapStep(String operatorNamespace, String domainNamespace, Step next) {
       this.operatorNamespace = operatorNamespace;
       this.domainNamespace = domainNamespace;
     }

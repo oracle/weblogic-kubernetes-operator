@@ -61,7 +61,7 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   }
 
   private boolean mismatchedNamespace(Description description, String actualNamespace) {
-    description.appendText("domain with namespace ").appendValue(actualNamespace);
+    description.appendText("DomainPresenceInfo with namespace ").appendValue(actualNamespace);
     return false;
   }
 
@@ -70,14 +70,16 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   }
 
   private boolean missingIngress(Description description, String ingressClusterName) {
-    description.appendText("domain with ingress for cluster ").appendValue(ingressClusterName);
+    description
+        .appendText("DomainPresenceInfo with ingress for cluster ")
+        .appendValue(ingressClusterName);
     return false;
   }
 
   @Override
   public void describeTo(Description description) {
     description
-        .appendText("domain with UID ")
+        .appendText("DomainPresenceInfo with UID ")
         .appendValue(expectedUID)
         .appendText(" and namespace ")
         .appendValue(expectedNamespace);

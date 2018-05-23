@@ -53,10 +53,10 @@ spec:
             value: '%DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%:%MANAGED_SERVER_PORT%'
           - name: LOCATION
             value: '%WEB_APP_PREPATH%'
-          #- name: WEBLOGIC_HOST
-          #  value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
-          #- name: WEBLOGIC_PORT
-          #  value: '%ADMIN_PORT%'
+        # - name: WEBLOGIC_HOST
+        #   value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
+        # - name: WEBLOGIC_PORT
+        #   value: '%ADMIN_PORT%'
         readinessProbe:
           tcpSocket:
             port: 80
