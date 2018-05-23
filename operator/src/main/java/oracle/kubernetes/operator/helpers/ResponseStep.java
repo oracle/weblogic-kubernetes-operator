@@ -182,6 +182,32 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   /**
+   * Callback for API server call failure. The ApiException and HTTP status code and response
+   * headers are provided; however, these will be null or 0 when the client simply timed-out.
+   *
+   * <p>The default implementation tests if the request could be retried and, if not, ends fiber
+   * processing.
+   *
+   * @param conflictStep Conflict step
+   * @param packet Packet
+   * @param callResponse the result of the call
+   * @return Next action for fiber processing, which may be a retry
+   */
+  public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
+    NextAction nextAction =
+        doPotentialRetry(
+            conflictStep,
+            packet,
+            callResponse.getE(),
+            callResponse.getStatusCode(),
+            callResponse.getResponseHeaders());
+    if (nextAction == null) {
+      nextAction = doTerminate(callResponse.getE(), packet);
+    }
+    return nextAction;
+  }
+
+  /**
    * Callback for API server call success.
    *
    * @param packet Packet

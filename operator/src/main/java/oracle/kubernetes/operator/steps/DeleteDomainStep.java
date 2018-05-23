@@ -94,14 +94,11 @@ public class DeleteDomainStep extends Step {
                 new ResponseStep<V1ServiceList>(deletePods) {
                   @Override
                   public NextAction onFailure(
-                      Packet packet,
-                      ApiException e,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
-                    if (statusCode == CallBuilder.NOT_FOUND) {
-                      return onSuccess(packet, null, statusCode, responseHeaders);
+                      Packet packet, CallResponse<V1ServiceList> callResponse) {
+                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                      return onSuccess(packet, callResponse);
                     }
-                    return super.onFailure(packet, e, statusCode, responseHeaders);
+                    return super.onFailure(packet, callResponse);
                   }
 
                   @Override
