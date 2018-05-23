@@ -6,16 +6,18 @@ package oracle.kubernetes.operator.utils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyStore;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.security.KeyStore;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -25,15 +27,16 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.MultivaluedMap;
 
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
+
+import oracle.kubernetes.operator.BaseTest;
 
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  public static final int MAX_ITERATIONS_POD = 50; //50 * 5 = 250 seconds
-  public static final int WAIT_TIME_POD = 5;
+  private static int maxIterationsPod = BaseTest.getMaxIterationsPod(); //50 * 5 = 250 seconds
+  private static int waitTimePod = BaseTest.getWaitTimePod();
 
   public static String executeCommand(String command) {
     StringBuffer output = new StringBuffer();
@@ -60,11 +63,11 @@ public class TestUtils {
     return output.toString();
   }
 
-  public static String executeCommand(String commandArgs[]) {
+  public static String executeCommandStrArray(String command) {
     StringBuffer output = new StringBuffer();
     Process p;
     try {
-      p = Runtime.getRuntime().exec(commandArgs);
+      p = Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", command});
       p.waitFor();
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -97,11 +100,11 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
-    while (i < MAX_ITERATIONS_POD) {
+    while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
       if (!outputStr.contains("1/1")) {
         //check for last iteration
-        if (i == (MAX_ITERATIONS_POD - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException(
               "FAILURE: pod " + podName + " is not running and ready, exiting!");
         }
@@ -111,12 +114,12 @@ public class TestUtils {
                 + " is not Ready Ite ["
                 + i
                 + "/"
-                + MAX_ITERATIONS_POD
+                + maxIterationsPod
                 + "], sleeping "
-                + WAIT_TIME_POD
+                + waitTimePod
                 + " seconds more");
         try {
-          Thread.sleep(WAIT_TIME_POD * 1000);
+          Thread.sleep(waitTimePod * 1000);
         } catch (InterruptedException ignore) {
         }
         i++;
@@ -134,12 +137,12 @@ public class TestUtils {
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     //check for admin pod
-    while (i < MAX_ITERATIONS_POD) {
+    while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
       logger.info("Output for " + cmd + "\n" + outputStr);
       if (!outputStr.contains("Running")) {
         //check for last iteration
-        if (i == (MAX_ITERATIONS_POD - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: pod " + podName + " is not running, exiting!");
         }
         logger.info(
@@ -148,12 +151,12 @@ public class TestUtils {
                 + " is not Running Ite ["
                 + i
                 + "/"
-                + MAX_ITERATIONS_POD
+                + maxIterationsPod
                 + "], sleeping "
-                + WAIT_TIME_POD
+                + waitTimePod
                 + " seconds more");
         try {
-          Thread.sleep(WAIT_TIME_POD * 1000);
+          Thread.sleep(waitTimePod * 1000);
         } catch (InterruptedException ignore) {
         }
 
@@ -172,24 +175,24 @@ public class TestUtils {
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
 
     //check for service
-    while (i < MAX_ITERATIONS_POD) {
+    while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
       logger.fine("Output for " + cmd + "\n" + outputStr);
       if (outputStr.equals("")) {
         //check for last iteration
-        if (i == (MAX_ITERATIONS_POD - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
         logger.info(
             "Service is not created Ite ["
                 + i
                 + "/"
-                + MAX_ITERATIONS_POD
+                + maxIterationsPod
                 + "], sleeping "
-                + WAIT_TIME_POD
+                + waitTimePod
                 + " seconds more");
         try {
-          Thread.sleep(WAIT_TIME_POD * 1000);
+          Thread.sleep(waitTimePod * 1000);
         } catch (InterruptedException ignore) {
         }
 
@@ -200,25 +203,25 @@ public class TestUtils {
       }
     }
   }
+
   /**
    * @param propsFile - input props file
    * @param inputFileTemplate - operator/domain inputs template file
-   * @param inputYamlFilePath - output file with replaced values
+   * @param generatedInputYamlFile - output file with replaced values
    * @throws Exception
    */
   public static void createInputFile(
-      Properties props, String inputFileTemplate, Path inputYamlFilePath) throws Exception {
-    logger.info("Creating input yaml file at " + inputYamlFilePath);
+      Properties props, String inputFileTemplate, String generatedInputYamlFile) throws Exception {
+    logger.info("Creating input yaml file at " + generatedInputYamlFile);
 
-    //copy create-operator-inputs.yaml and modify it
+    //copy input template file and modify it
     Files.copy(
         new File(inputFileTemplate).toPath(),
-        inputYamlFilePath,
+        Paths.get(generatedInputYamlFile),
         StandardCopyOption.REPLACE_EXISTING);
-    inputYamlFilePath.toFile().setWritable(true);
 
-    //read each line in input template file and replace with op props
-    BufferedReader reader = new BufferedReader(new FileReader(inputYamlFilePath.toString()));
+    //read each line in input template file and replace only customized props
+    BufferedReader reader = new BufferedReader(new FileReader(generatedInputYamlFile));
     String line = "";
     StringBuffer changedLines = new StringBuffer();
     boolean isLineChanged = false;
@@ -228,7 +231,7 @@ public class TestUtils {
         String key = (String) enuKeys.nextElement();
         //if a line starts with the props key then replace
         //the line with key:value in the file
-        if (line.startsWith(key+":") || line.startsWith("#" + key+":")) {
+        if (line.startsWith(key + ":") || line.startsWith("#" + key + ":")) {
           changedLines.append(key).append(":").append(props.getProperty(key)).append("\n");
           isLineChanged = true;
           break;
@@ -241,13 +244,11 @@ public class TestUtils {
     }
     reader.close();
     //writing to the file
-    FileWriter writer = new FileWriter(inputYamlFilePath.toString());
-    writer.write(changedLines.toString());
-    writer.close();
+    Files.write(Paths.get(generatedInputYamlFile), changedLines.toString().getBytes());
   }
 
   public static String getHostName() {
-    return executeCommand(new String[] {"/bin/sh", "-c", "hostname | awk -F. '{print $1}'"}).trim();
+    return executeCommandStrArray("hostname | awk -F. '{print $1}'").trim();
   }
 
   public static int getClusterReplicas(String domainUid, String clusterName, String domainNS) {
@@ -260,7 +261,7 @@ public class TestUtils {
         .append(clusterName)
         .append("\")].replicas }'");
     logger.fine("getClusterReplicas cmd =" + cmd);
-    String output = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmd.toString()});
+    String output = TestUtils.executeCommandStrArray(cmd.toString());
     int replicas = 0;
     if (output != "") {
       try {
@@ -285,12 +286,12 @@ public class TestUtils {
         .append(" \" | wc -l");
 
     //check for admin pod
-    while (i < MAX_ITERATIONS_POD) {
-      String outputStr = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmd.toString()});
+    while (i < maxIterationsPod) {
+      String outputStr = TestUtils.executeCommandStrArray(cmd.toString());
       //logger.info("Output for "+cmd + "\n"+outputStr);
       if (!outputStr.trim().contains("\"" + podName + "\" not found")) {
         //check for last iteration
-        if (i == (MAX_ITERATIONS_POD - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: Pod " + podName + " is not deleted, exiting!");
         }
         logger.info(
@@ -299,12 +300,12 @@ public class TestUtils {
                 + " still exists, Ite ["
                 + i
                 + "/"
-                + MAX_ITERATIONS_POD
+                + maxIterationsPod
                 + "], sleeping "
-                + WAIT_TIME_POD
+                + waitTimePod
                 + " seconds more");
         try {
-          Thread.sleep(WAIT_TIME_POD * 1000);
+          Thread.sleep(waitTimePod * 1000);
         } catch (InterruptedException ignore) {
         }
 
@@ -326,24 +327,24 @@ public class TestUtils {
         .append(domainUid)
         .append(" | wc -l");
 
-    while (i < MAX_ITERATIONS_POD) {
-      String outputStr = TestUtils.executeCommand(new String[] {"/bin/sh", "-c", cmd.toString()});
+    while (i < maxIterationsPod) {
+      String outputStr = TestUtils.executeCommandStrArray(cmd.toString());
       //logger.info("Output for "+cmd + "\n"+outputStr);
       if (!outputStr.trim().contains("\"" + domainUid + "\" not found")) {
         //check for last iteration
-        if (i == (MAX_ITERATIONS_POD - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: domain still exists, exiting!");
         }
         logger.info(
             "Domain still exists, Ite ["
                 + i
                 + "/"
-                + MAX_ITERATIONS_POD
+                + maxIterationsPod
                 + "], sleeping "
-                + WAIT_TIME_POD
+                + waitTimePod
                 + " seconds more");
         try {
-          Thread.sleep(WAIT_TIME_POD * 1000);
+          Thread.sleep(waitTimePod * 1000);
         } catch (InterruptedException ignore) {
         }
 
@@ -443,8 +444,7 @@ public class TestUtils {
     StringBuffer secretCmd = new StringBuffer("kubectl get serviceaccount weblogic-operator ");
     secretCmd.append(" -n ").append(operatorNS).append(" -o jsonpath='{.secrets[0].name}'");
 
-    String secretName =
-        TestUtils.executeCommand(new String[] {"/bin/sh", "-c", secretCmd.toString()}).trim();
+    String secretName = TestUtils.executeCommandStrArray(secretCmd.toString()).trim();
     String token = "";
     if (!secretName.equals("")) {
       StringBuffer etokenCmd = new StringBuffer("kubectl get secret ");
@@ -453,14 +453,10 @@ public class TestUtils {
           .append(" -n ")
           .append(operatorNS)
           .append(" -o jsonpath='{.data.token}'");
-      String etoken =
-          TestUtils.executeCommand(new String[] {"/bin/sh", "-c", etokenCmd.toString()}).trim();
+      String etoken = TestUtils.executeCommandStrArray(etokenCmd.toString()).trim();
 
       if (!etoken.equals("")) {
-        token =
-            TestUtils.executeCommand(
-                    new String[] {"/bin/sh", "-c", "echo " + etoken + " | base64 --decode"})
-                .trim();
+        token = TestUtils.executeCommandStrArray("echo " + etoken + " | base64 --decode").trim();
         //logger.info("Token is "+token);
         return token;
       } else {
@@ -488,8 +484,7 @@ public class TestUtils {
         .append("/weblogic-operator.yaml | awk '{ print $2 }'");
 
     //logger.info("opCertCmd ="+opCertCmd);
-    String opCert =
-        TestUtils.executeCommand(new String[] {"/bin/sh", "-c", opCertCmd.toString()}).trim();
+    String opCert = TestUtils.executeCommandStrArray(opCertCmd.toString()).trim();
     //logger.info("opCert ="+opCert);
 
     if (opCert.trim().equals("")) {
@@ -502,8 +497,7 @@ public class TestUtils {
         .append(" | base64 --decode > ")
         .append(certFile.getAbsolutePath());
 
-    String decodedOpCert =
-        TestUtils.executeCommand(new String[] {"/bin/sh", "-c", opCertDecodeCmd.toString()});
+    String decodedOpCert = TestUtils.executeCommandStrArray(opCertDecodeCmd.toString());
     return certFile.getAbsolutePath();
   }
 
@@ -519,8 +513,7 @@ public class TestUtils {
         .append(operatorNS)
         .append("/weblogic-operator.yaml | awk '{ print $2 }'");
 
-    String opKey =
-        TestUtils.executeCommand(new String[] {"/bin/sh", "-c", opKeyCmd.toString()}).trim();
+    String opKey = TestUtils.executeCommandStrArray(opKeyCmd.toString()).trim();
     //logger.info("opKey ="+opKey);
 
     if (opKey.trim().equals("")) {
@@ -530,23 +523,59 @@ public class TestUtils {
     StringBuffer opKeyDecodeCmd = new StringBuffer("echo ");
     opKeyDecodeCmd.append(opKey).append(" | base64 --decode > ").append(keyFile.getAbsolutePath());
 
-    String decodedOpKey =
-        TestUtils.executeCommand(new String[] {"/bin/sh", "-c", opKeyDecodeCmd.toString()});
+    String decodedOpKey = TestUtils.executeCommandStrArray(opKeyDecodeCmd.toString());
     return keyFile.getAbsolutePath();
   }
 
-  public static void cleanupAll() {
-    String cmdResult =
-        TestUtils.executeCommand(
-            new String[] {"/bin/sh", "-c", "../src/integration-tests/bash/cleanup.sh"});
-    //logger.info("cleanup.sh result "+cmdResult);
-    //check if cmd executed successfully
-    /*if(!cmdResult.contains("Exiting with status 0")){
-    	throw new RuntimeException("FAILURE: Couldn't create domain PV directory "+cmdResult);
-    }*/
+  public static void cleanupAll(String projectRoot) {
+    //cleanup.sh - This script does a best-effort delete of acceptance test k8s artifacts, the
+    //local test tmp directory, and the potentially remote domain pv directories.
+    TestUtils.executeCommandStrArray(projectRoot + "/src/integration-tests/bash/cleanup.sh");
   }
-  
+
   public static String getGitBranchName() {
-	  return executeCommand(new String[] {"/bin/sh", "-c", "git branch | grep \\* | cut -d ' ' -f2-"}).trim();
+    return executeCommandStrArray("git branch | grep \\* | cut -d ' ' -f2-").trim();
+  }
+
+  public static Operator createOperator(String opPropsFile) throws Exception {
+    //load operator props defined
+    Properties operatorProps = loadProps(opPropsFile);
+    //create op
+    Operator operator = new Operator(operatorProps);
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady();
+    operator.verifyExternalRESTService();
+
+    return operator;
+  }
+
+  public static Domain createDomain(String domainPropsFile) throws Exception {
+    Properties domainProps = loadProps(domainPropsFile);
+    return createDomain(domainProps);
+  }
+
+  public static Domain createDomain(Properties domainProps) throws Exception {
+    logger.info("Creating domain, waiting for the script to complete execution");
+    Domain domain = new Domain(domainProps);
+    domain.verifyDomainCreated();
+    return domain;
+  }
+
+  public static Properties loadProps(String propsFile) throws Exception {
+    Properties props = new Properties();
+    //check file exists
+    File f = new File(TestUtils.class.getClassLoader().getResource(propsFile).getFile());
+    if (!f.exists()) {
+      throw new IllegalArgumentException("FAILURE: Invalid properties file " + propsFile);
+    }
+
+    //load props
+    FileInputStream inStream = new FileInputStream(f);
+    props.load(inStream);
+    inStream.close();
+
+    return props;
   }
 }
