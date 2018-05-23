@@ -2637,7 +2637,7 @@ function test_suite_init {
     export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
     export WEBLOGIC_IMAGE_PULL_SECRET_NAME=${WEBLOGIC_IMAGE_PULL_SECRET_NAME}
-    export LOGLEVEL_OPERATOR=${LOGLEVEL_OPERATOR:-FINE}
+    export LOGLEVEL_OPERATOR=${LOGLEVEL_OPERATOR:-INFO}
 
     # Show custom env vars after defaults were substituted as needed.
 
