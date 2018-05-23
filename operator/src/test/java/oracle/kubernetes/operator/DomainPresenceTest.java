@@ -17,7 +17,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
@@ -38,8 +37,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.helpers.ClientFactory;
-import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -90,7 +87,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return domains.getOriginalValue();
   }
 
-  static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
+  private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
       throws NoSuchFieldException {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
@@ -331,17 +328,5 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private V1ObjectMeta createObjectMetaData() {
     return new V1ObjectMeta().resourceVersion("1");
-  }
-
-  static class ClientFactoryStub implements ClientFactory {
-
-    static Memento install() throws NoSuchFieldException {
-      return installStub(ClientPool.class, "FACTORY", new ClientFactoryStub());
-    }
-
-    @Override
-    public ApiClient get() {
-      return new ApiClient();
-    }
   }
 }
