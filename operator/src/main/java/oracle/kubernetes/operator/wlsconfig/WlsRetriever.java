@@ -93,14 +93,14 @@ public class WlsRetriever {
   }
 
   private static final String START_TIME = "WlsRetriever-startTime";
-  private static final String RETRY_COUNT = "WlsRetriever-retryCount";
+  static final String RETRY_COUNT = "WlsRetriever-retryCount";
   private static final Random R = new Random();
   private static final int HIGH = 50;
   private static final int LOW = 10;
   private static final int SCALE = 100;
   private static final int MAX = 10000;
 
-  private enum RequestType {
+  enum RequestType {
     CONFIG,
     HEALTH
   }
@@ -237,7 +237,7 @@ public class WlsRetriever {
     }
   }
 
-  private static final class WithHttpClientStep extends Step {
+  static final class WithHttpClientStep extends Step {
     private final RequestType requestType;
     private final V1Service service;
 
