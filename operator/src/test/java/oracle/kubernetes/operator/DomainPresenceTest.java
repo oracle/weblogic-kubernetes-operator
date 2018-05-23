@@ -11,22 +11,20 @@ import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasValue;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
+import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_READY_STATE;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
@@ -36,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
@@ -46,8 +43,10 @@ import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -57,9 +56,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
-public class DomainPresenceTest {
+public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
+  private static final String UID = "UID1";
   private final DomainList domains = createEmptyDomainList();
   private final V1beta1IngressList ingresses = createEmptyIngressList();
   private final V1ServiceList services = createEmptyServiceList();
@@ -67,57 +67,32 @@ public class DomainPresenceTest {
   private final V1PodList pods = createEmptyPodList();
   private final V1ConfigMap domainConfigMap = createEmptyConfigMap();
 
-  private AtomicBoolean stopping;
-
-  private DomainList createEmptyDomainList() {
-    return new DomainList().withMetadata(createListMetadata());
-  }
-
-  private V1ListMeta createListMetadata() {
-    return new V1ListMeta().resourceVersion("1");
-  }
-
-  private V1beta1IngressList createEmptyIngressList() {
-    return new V1beta1IngressList().metadata(createListMetadata());
-  }
-
-  private V1ServiceList createEmptyServiceList() {
-    return new V1ServiceList().metadata(createListMetadata());
-  }
-
-  private V1EventList createEmptyEventList() {
-    return new V1EventList().metadata(createListMetadata());
-  }
-
-  private V1PodList createEmptyPodList() {
-    return new V1PodList().metadata(createListMetadata());
-  }
-
-  private V1ConfigMap createEmptyConfigMap() {
-    return new V1ConfigMap().metadata(createObjectMetaData()).data(new HashMap<>());
-  }
-
-  private V1ObjectMeta createObjectMetaData() {
-    return new V1ObjectMeta().resourceVersion("1");
-  }
-
   private List<Memento> mementos = new ArrayList<>();
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
 
   @Before
   public void setUp() throws Exception {
+    getDomainPresenceInfoMap().clear();
+
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(
-        StaticStubSupport.install(
-            DomainPresenceInfoManager.class, "domains", new ConcurrentHashMap<>()));
-    mementos.add(
-        StaticStubSupport.install(
-            ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
+    mementos.add(installStub(ServerKubernetesObjectsManager.class, "serverMap", new HashMap<>()));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
+    mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
 
-    stopping = getStoppingVariable();
+    AtomicBoolean stopping = getStoppingVariable();
+    stopping.set(true);
+  }
+
+  private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
+    Memento domains = StaticStubSupport.preserve(DomainPresenceInfoManager.class, "domains");
+    return domains.getOriginalValue();
+  }
+
+  static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
+      throws NoSuchFieldException {
+    return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
   private AtomicBoolean getStoppingVariable() throws NoSuchFieldException {
@@ -127,7 +102,7 @@ public class DomainPresenceTest {
 
   @After
   public void tearDown() throws Exception {
-    stopping.set(true);
+    shutDownThreads();
 
     for (Memento memento : mementos) memento.revert();
 
@@ -148,14 +123,14 @@ public class DomainPresenceTest {
 
   @Test
   public void whenK8sHasOneDomainWithAssociatedIngress_readIt() throws Exception {
-    addDomainResource("UID1", "ns1");
-    addIngressResource("UID1", "cluster1");
+    addDomainResource(UID, NS);
+    addIngressResource(UID, "cluster1");
 
     readExistingResources();
 
     assertThat(
         Main.getDomainPresenceInfos(),
-        hasValue(domain("UID1").withNamespace("ns1").withIngressForCluster("cluster1")));
+        hasValue(domain(UID).withNamespace(NS).withIngressForCluster("cluster1")));
   }
 
   private void addDomainResource(String uid, String namespace) {
@@ -190,14 +165,19 @@ public class DomainPresenceTest {
 
   @Test
   public void whenK8sHasOneDomainWithChannelService_createSkoEntry() throws Exception {
-    addDomainResource("UID1", "ns1");
-    V1Service serviceResource = addServiceResource("UID1", "admin", "channel1");
+    addDomainResource(UID, NS);
+    V1Service serviceResource = addServiceResource(UID, "admin", "channel1");
 
     readExistingResources();
 
+    String serverName = "admin";
     assertThat(
-        Main.getKubernetesObjects(LegalNames.toServerName("UID1", "admin")).getChannels(),
+        getServerKubernetesObjects(UID, serverName).getChannels(),
         hasEntry(equalTo("channel1"), sameInstance(serviceResource)));
+  }
+
+  private ServerKubernetesObjects getServerKubernetesObjects(String uid, String serverName) {
+    return Main.getDomainPresenceInfos().get(uid).getServers().get(serverName);
   }
 
   private V1Service addServiceResource(String uid, String serverName, String channelName) {
@@ -207,26 +187,24 @@ public class DomainPresenceTest {
   }
 
   private V1Service createService(String uid, String serverName, String channelName) {
-    V1ObjectMeta metadata = createServiceMetadata(uid, serverName);
+    V1ObjectMeta metadata = createServerMetadata(uid, serverName);
     metadata.putLabelsItem(CHANNELNAME_LABEL, channelName);
     return new V1Service().metadata(metadata);
   }
 
-  private V1ObjectMeta createServiceMetadata(String uid, String serverName) {
+  private V1ObjectMeta createServerMetadata(String uid, String serverName) {
     return new V1ObjectMeta().labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, serverName));
   }
 
   @Test
-  @Ignore("running into a problem with the map")
   public void whenK8sHasOneDomainWithoutChannelService_createSkoEntry() throws Exception {
-    addDomainResource("UID1", "ns1");
-    V1Service serviceResource = addServiceResource("UID1", "admin");
+    addDomainResource(UID, NS);
+    V1Service serviceResource = addServiceResource(UID, "admin");
 
     readExistingResources();
 
     assertThat(
-        Main.getKubernetesObjects(LegalNames.toServerName("UID1", "admin")).getService(),
-        equalTo(serviceResource));
+        getServerKubernetesObjects(UID, "admin").getService().get(), equalTo(serviceResource));
   }
 
   private V1Service addServiceResource(String uid, String serverName) {
@@ -236,7 +214,62 @@ public class DomainPresenceTest {
   }
 
   private V1Service createService(String uid, String serverName) {
-    return new V1Service().metadata(createServiceMetadata(uid, serverName));
+    return new V1Service().metadata(createServerMetadata(uid, serverName));
+  }
+
+  @Test
+  public void whenK8sHasOneDomainWithPod_createSkoEntry() throws Exception {
+    addDomainResource(UID, NS);
+    V1Pod podResource = addPodResource(UID, "admin");
+
+    readExistingResources();
+
+    assertThat(getServerKubernetesObjects(UID, "admin").getPod().get(), equalTo(podResource));
+  }
+
+  private V1Pod addPodResource(String uid, String serverName) {
+    V1Pod pod = createPodResource(uid, serverName);
+    pods.getItems().add(pod);
+    return pod;
+  }
+
+  private V1Pod createPodResource(String uid, String serverName) {
+    return new V1Pod().metadata(createServerMetadata(uid, serverName));
+  }
+
+  @Test
+  @Ignore("Don't process events during read of existing resources")
+  public void whenK8sHasOneDomainWithNotReadyEvent_updateLastKnownStatus() throws Exception {
+    addDomainResource(UID, NS);
+    addPodResource(UID, "admin");
+    addEventResource(UID, "admin", READINESS_PROBE_NOT_READY_STATE + "do something!");
+
+    readExistingResources();
+
+    assertThat(
+        getServerKubernetesObjects(UID, "admin").getLastKnownStatus().get(),
+        equalTo("do something!"));
+  }
+
+  @Test
+  public void whenK8sHasOneDomainWithOtherEvent_ignoreIt() throws Exception {
+    addDomainResource(UID, NS);
+    addPodResource(UID, "admin");
+    addEventResource(UID, "admin", "ignore this event");
+
+    readExistingResources();
+
+    assertThat(getServerKubernetesObjects(UID, "admin").getLastKnownStatus().get(), nullValue());
+  }
+
+  private void addEventResource(String uid, String serverName, String message) {
+    events.getItems().add(createEventResource(uid, serverName, message));
+  }
+
+  private V1Event createEventResource(String uid, String serverName, String message) {
+    return new V1Event()
+        .involvedObject(new V1ObjectReference().name(LegalNames.toServerName(uid, serverName)))
+        .message(message);
   }
 
   @SuppressWarnings("unchecked")
@@ -268,10 +301,42 @@ public class DomainPresenceTest {
     assertThat(info.getStatusUpdater().get(), nullValue());
   }
 
+  private DomainList createEmptyDomainList() {
+    return new DomainList().withMetadata(createListMetadata());
+  }
+
+  private V1ListMeta createListMetadata() {
+    return new V1ListMeta().resourceVersion("1");
+  }
+
+  private V1beta1IngressList createEmptyIngressList() {
+    return new V1beta1IngressList().metadata(createListMetadata());
+  }
+
+  private V1ServiceList createEmptyServiceList() {
+    return new V1ServiceList().metadata(createListMetadata());
+  }
+
+  private V1EventList createEmptyEventList() {
+    return new V1EventList().metadata(createListMetadata());
+  }
+
+  private V1PodList createEmptyPodList() {
+    return new V1PodList().metadata(createListMetadata());
+  }
+
+  private V1ConfigMap createEmptyConfigMap() {
+    return new V1ConfigMap().metadata(createObjectMetaData()).data(new HashMap<>());
+  }
+
+  private V1ObjectMeta createObjectMetaData() {
+    return new V1ObjectMeta().resourceVersion("1");
+  }
+
   static class ClientFactoryStub implements ClientFactory {
 
     static Memento install() throws NoSuchFieldException {
-      return StaticStubSupport.install(ClientPool.class, "FACTORY", new ClientFactoryStub());
+      return installStub(ClientPool.class, "FACTORY", new ClientFactoryStub());
     }
 
     @Override

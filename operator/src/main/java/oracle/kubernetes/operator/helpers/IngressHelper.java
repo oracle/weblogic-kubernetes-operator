@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -116,23 +117,17 @@ public class IngressHelper {
                     new ResponseStep<V1beta1Ingress>(getNext()) {
                       @Override
                       public NextAction onFailure(
-                          Packet packet,
-                          ApiException e,
-                          int statusCode,
-                          Map<String, List<String>> responseHeaders) {
-                        if (statusCode == CallBuilder.NOT_FOUND) {
-                          return onSuccess(packet, null, statusCode, responseHeaders);
+                          Packet packet, CallResponse<V1beta1Ingress> callResponse) {
+                        if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                          return onSuccess(packet, callResponse);
                         }
-                        return super.onFailure(
-                            CreateClusterStep.this, packet, e, statusCode, responseHeaders);
+                        return super.onFailure(CreateClusterStep.this, packet, callResponse);
                       }
 
                       @Override
                       public NextAction onSuccess(
-                          Packet packet,
-                          V1beta1Ingress result,
-                          int statusCode,
-                          Map<String, List<String>> responseHeaders) {
+                          Packet packet, CallResponse<V1beta1Ingress> callResponse) {
+                        V1beta1Ingress result = callResponse.getResult();
                         if (result == null) {
                           return doNext(
                               factory

@@ -572,7 +572,17 @@ function createYamlFiles {
   if [ "${loadBalancer}" = "APACHE" ]; then
     # Apache file
     cp ${apacheInput} ${apacheOutput}
+ 
     echo Generating ${apacheOutput}
+
+    # This part needs to be done before substitution of %DOMAIN_UID%, %ADMIN_SERVER_NAME% and %ADMIN_PORT%
+    if [ "${loadBalancerExposeAdminPort}" = "true" ]; then
+      sed -i -e "s|# - name: WEBLOGIC_HOST|  - name: WEBLOGIC_HOST|g" ${apacheOutput}
+      sed -i -e "s|#   value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'|    value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'|g" ${apacheOutput}
+      sed -i -e "s|# - name: WEBLOGIC_PORT|  - name: WEBLOGIC_PORT|g" ${apacheOutput}
+      sed -i -e "s|#   value: '%ADMIN_PORT%'|    value: '%ADMIN_PORT%'|g" ${apacheOutput}
+    fi
+
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheOutput}
