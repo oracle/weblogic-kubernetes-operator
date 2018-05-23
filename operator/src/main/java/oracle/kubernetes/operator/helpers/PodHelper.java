@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -117,11 +118,8 @@ public class PodHelper {
                     }
 
                     @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1Pod result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
+                    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+                      V1Pod result = callResponse.getResult();
                       if (result == null) {
                         info.getExplicitRestartAdmin().set(false);
                         info.getExplicitRestartServers().remove(asName);
@@ -430,10 +428,7 @@ public class PodHelper {
 
                     @Override
                     public NextAction onSuccess(
-                        Packet packet,
-                        V1Status result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
+                        Packet packet, CallResponse<V1Status> callResponses) {
                       if (conflictStep instanceof AdminPodStep) {
                         info.getExplicitRestartAdmin().set(false);
                       }

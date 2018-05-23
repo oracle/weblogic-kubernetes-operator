@@ -26,9 +26,7 @@ public class ConfigMapAfterStep extends Step {
       String ns,
       Map<String, ConfigMapWatcher> configMapWatchers,
       AtomicBoolean stopping,
-      WatchListener<V1ConfigMap> listener,
-      Step next) {
-    super(next);
+      WatchListener<V1ConfigMap> listener) {
     this.ns = ns;
     this.configMapWatchers = configMapWatchers;
     this.stopping = stopping;
