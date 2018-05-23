@@ -1609,7 +1609,7 @@ function test_mvn_integration_wercker {
     trace "Running mvn -P integration-tests install.  Output in $RESULT_DIR/mvn.out"
 
     local mstart=`date +%s`
-    mvn -P integration-tests install > $RESULT_DIR/mvn.out 2>&1
+    mvn -P integration-tests install 2>&1 | tee $RESULT_DIR/mvn.out
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
