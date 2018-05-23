@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Logger;
 
+import oracle.kubernetes.operator.BaseTest;
+
 public class PersistentVolume {
 
   private String dirPath;
@@ -16,10 +18,11 @@ public class PersistentVolume {
     this.dirPath = dirPath;
 
     String cmdResult =
-        TestUtils.executeCommand(
-            new String[] {
-              "/bin/sh", "-c", "../src/integration-tests/bash/job.sh \"mkdir -p " + dirPath + "\""
-            });
+        TestUtils.executeCommandStrArray(
+            BaseTest.getProjectRoot()
+                + "/src/integration-tests/bash/job.sh \"mkdir -p "
+                + dirPath
+                + "\"");
     //logger.info("job.sh result "+cmdResult);
     //check if cmd executed successfully
     if (!cmdResult.contains("Exiting with status 0")) {

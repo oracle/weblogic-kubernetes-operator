@@ -4,23 +4,46 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.operator.utils.TestUtils;
+import java.util.Properties;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.TestUtils;
 
 /**
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for creating Operator and a single domain which the Operator manages and
  * verifies both.
- *
  */
 public class ITSingleDomain extends BaseTest {
+  public static final String TESTWEBAPP = "testwebapp";
 
+  //property file used to customize operator properties for operator inputs yaml
+  private static String opPropsFile = "ITSingleDomain_op.properties";
+
+  //property file used to customize domain properties for domain inputs yaml
+  private static String domainPropsFile = "ITSingleDomain_domain.properties";
+
+  //property file used to configure constants for integration tests
+  private static String appPropsFile = "OperatorIT.properties";
+
+  private static Operator operator;
+  private static Domain domain;
+
+  //properties of operator/domain to use in the test methods
+  private static Properties operatorProps;
+  private static Properties domainProps;
+
+  private static String domainUid, domainNS;
   /**
-   * Create Operator and domain
+   * This method gets called only once before any of the test methods are executed. It does the
+   * initialization of the integration test properties defined in OperatorIT.properties and setting
+   * the resultRoot, pvRoot and projectRoot attributes. It also creates the Operator and domain.
    *
    * @throws Exception
    */
@@ -30,12 +53,21 @@ public class ITSingleDomain extends BaseTest {
     logger.info("BEGIN");
     logger.info("Run once, Creating Operator & " + "waiting for the script to complete execution");
 
-    opPropsFile = "ITSingleDomain_op.properties";
-    domainPropsFile = "ITSingleDomain_domain.properties";
-    appPropsFile = "OperatorIT.properties";
-    //setup creates operator and domain and verifies they are up
-    setup();
+    //initialize test properties and create the directories
+    initialize(appPropsFile);
 
+    //create operator
+    operator = TestUtils.createOperator(opPropsFile);
+    operatorProps = operator.getOperatorProps();
+
+    //create domain
+    domain = TestUtils.createDomain(domainPropsFile);
+    domainProps = domain.getDomainProps();
+
+    //initialize attributes to use in the tests
+    domainUid = domainProps.getProperty("domainUID");
+    domainNS = domainProps.getProperty("namespace");
+    //logger.info("Domain props "+domainProps);
     logger.info("SUCCESS");
   }
 
@@ -50,32 +82,38 @@ public class ITSingleDomain extends BaseTest {
     logger.info("BEGIN");
     logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
     //shutdown operator, domain and cleanup all artifacts and pv dir
-    shutdownAndCleanup();
+    try {
+      if (domain != null) domain.destroy();
+      if (operator != null) operator.destroy();
+    } finally {
+      TestUtils.cleanupAll(getProjectRoot());
+    }
     logger.info("SUCCESS");
   }
 
   /** Access Operator REST endpoint using admin node host and node port */
   @Test
   public void testAdminServerExternalService() {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    domain.verifyAdminServerExternalService(username, password);
+    logTestBegin();
+    domain.verifyAdminServerExternalService(getUsername(), getPassword());
     logger.info("SUCCESS");
   }
 
   /** Verify t3channel port by deploying webapp using the port */
   @Test
   public void testAdminT3Channel() {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    if (domainProps.getProperty("exposeAdminT3Channel") == null
-        || !(new Boolean(domainProps.getProperty("exposeAdminT3Channel")).booleanValue())) {
-      throw new RuntimeException("FAILURE: exposeAdminT3Channel is not set or false");
+    logTestBegin();
+    //check if the property is set to true
+    Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
+
+    if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
+      domain.deployWebAppViaWLST(
+          TESTWEBAPP,
+          getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
+          getUsername(),
+          getPassword());
     } else {
-      if (new Boolean(domainProps.getProperty("exposeAdminT3Channel")).booleanValue()) {
-        domain.deployWebAppViaWLST(
-            TESTWEBAPP, "../src/integration-tests/apps/testwebapp.war", username, password);
-      }
+      throw new RuntimeException("FAILURE: exposeAdminT3Channel is not set or false");
     }
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     logger.info("SUCCESS");
@@ -89,15 +127,14 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testDomainLifecyle() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    domain.shutdown();
-    domain.startup();
+    logTestBegin();
+    domain.destroy();
+    domain.create();
     operator.verifyExternalRESTService();
     operator.verifyDomainExists(domainUid);
     domain.verifyDomainCreated();
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
-    domain.verifyAdminServerExternalService(username, password);
+    domain.verifyAdminServerExternalService(BaseTest.getUsername(), BaseTest.getPassword());
     logger.info("SUCCESS");
   }
 
@@ -109,15 +146,14 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testClusterScaling() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
+    logTestBegin();
     String managedServerNameBase = domainProps.getProperty("managedServerNameBase");
-    int scaleNum = 3;
-    String podName = domainUid + "-" + managedServerNameBase + scaleNum;
+    int replicas = 3;
+    String podName = domainUid + "-" + managedServerNameBase + replicas;
     String clusterName = domainProps.getProperty("clusterName");
 
-    logger.info("Scale Up to " + scaleNum + " managed servers");
-    operator.scale(domainUid, domainProps.getProperty("clusterName"), scaleNum);
+    logger.info("Scale domain " + domainUid + " Up to " + replicas + " managed servers");
+    operator.scale(domainUid, domainProps.getProperty("clusterName"), replicas);
 
     logger.info("Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
@@ -129,31 +165,31 @@ public class ITSingleDomain extends BaseTest {
     TestUtils.checkServiceCreated(podName, domainNS);
 
     int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    if (replicaCnt != scaleNum) {
+    if (replicaCnt != replicas) {
       throw new RuntimeException(
           "FAILURE: Cluster replica doesn't match with scaled up size "
               + replicaCnt
               + "/"
-              + scaleNum);
+              + replicas);
     }
 
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
-    scaleNum = 2;
-    podName = domainUid + "-" + managedServerNameBase + (scaleNum + 1);
-    logger.info("Scale down to " + scaleNum + " managed servers");
-    operator.scale(domainUid, clusterName, scaleNum);
+    replicas = 2;
+    podName = domainUid + "-" + managedServerNameBase + (replicas + 1);
+    logger.info("Scale down to " + replicas + " managed servers");
+    operator.scale(domainUid, clusterName, replicas);
 
     logger.info("Checking if managed pod(" + podName + ") is deleted");
     TestUtils.checkPodDeleted(podName, domainNS);
 
     replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    if (replicaCnt != scaleNum) {
+    if (replicaCnt != replicas) {
       throw new RuntimeException(
           "FAILURE: Cluster replica doesn't match with scaled down size "
               + replicaCnt
               + "/"
-              + scaleNum);
+              + replicas);
     }
 
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
@@ -167,15 +203,12 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testOperatorLifecycle() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    operator.shutdown();
-    operator.startup();
+    logTestBegin();
+    operator.destroy();
+    operator.create();
     operator.verifyExternalRESTService();
     operator.verifyDomainExists(domainUid);
     domain.verifyDomainCreated();
     logger.info("SUCCESS");
   }
-
-
 }
