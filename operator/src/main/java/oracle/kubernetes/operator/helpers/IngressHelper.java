@@ -117,15 +117,11 @@ public class IngressHelper {
                     new ResponseStep<V1beta1Ingress>(getNext()) {
                       @Override
                       public NextAction onFailure(
-                          Packet packet,
-                          ApiException e,
-                          int statusCode,
-                          Map<String, List<String>> responseHeaders) {
-                        if (statusCode == CallBuilder.NOT_FOUND) {
-                          return onSuccess(packet, null, statusCode, responseHeaders);
+                          Packet packet, CallResponse<V1beta1Ingress> callResponse) {
+                        if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                          return onSuccess(packet, callResponse);
                         }
-                        return super.onFailure(
-                            CreateClusterStep.this, packet, e, statusCode, responseHeaders);
+                        return super.onFailure(CreateClusterStep.this, packet, callResponse);
                       }
 
                       @Override
