@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Logger;
-
 import oracle.kubernetes.operator.BaseTest;
 
 public class PersistentVolume {
@@ -23,8 +22,8 @@ public class PersistentVolume {
                 + "/src/integration-tests/bash/job.sh \"mkdir -p "
                 + dirPath
                 + "\"");
-    //logger.info("job.sh result "+cmdResult);
-    //check if cmd executed successfully
+    // logger.info("job.sh result "+cmdResult);
+    // check if cmd executed successfully
     if (!cmdResult.contains("Exiting with status 0")) {
       throw new RuntimeException("FAILURE: Couldn't create domain PV directory " + cmdResult);
     }

@@ -23,7 +23,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
 import javax.xml.bind.DatatypeConverter;
 
 public class PEMImporter {
@@ -42,16 +41,16 @@ public class PEMImporter {
     // Import certificate pem file
     final X509Certificate[] cert = createCertificates(certificatePem);
 
-    //Create a Keystore obj if the type "JKS"
+    // Create a Keystore obj if the type "JKS"
     final KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
 
-    //Make an empty store
+    // Make an empty store
     keystore.load(null);
 
-    //Import private key
+    // Import private key
     final PrivateKey key = createPrivateKey(privateKeyPem);
 
-    //Load cert and key files into the Keystore obj and create it
+    // Load cert and key files into the Keystore obj and create it
     keystore.setKeyEntry(privateKeyPem.getName(), key, password.toCharArray(), cert);
 
     return keystore;
@@ -74,7 +73,7 @@ public class PEMImporter {
         break;
       }
 
-      if (line == null) { //reach EOF
+      if (line == null) { // reach EOF
         bufferedReader.close();
         throw new IllegalArgumentException(errormsg);
       }
