@@ -326,7 +326,7 @@ function createVoyagerOperator() {
   if [ "$#" != 2 ] ; then
     fail "requires 2 parameter: voyagerSecurityYaml voyagerOperatorYaml"
   fi
-
+  
   local vnamespace=voyager
   # only deploy Voyager Operator once
   if test "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc -l)" == 0; then
@@ -392,18 +392,63 @@ function createVoyagerOperator() {
 }
 
 #
+# delete voyager operator
+#
+function deleteVoyagerOperator {
+  local vnamespace=voyager
+  if test "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc -l)" == 0; then
+    echo "Voyager operator has already been deleted."
+    return
+  fi
+
+  echo "Deleting Voyager opreator resources"
+  kubectl delete apiservice -l app=voyager
+  # delete voyager operator
+  kubectl delete deployment -l app=voyager --namespace $vnamespace
+  kubectl delete service -l app=voyager --namespace $vnamespace
+  kubectl delete secret -l app=voyager --namespace $vnamespace
+  # delete RBAC objects
+  kubectl delete serviceaccount -l app=voyager --namespace $vnamespace
+  kubectl delete clusterrolebindings -l app=voyager
+  kubectl delete clusterrole -l app=voyager
+  kubectl delete rolebindings -l app=voyager --namespace $vnamespace
+  kubectl delete role -l app=voyager --namespace $vnamespace
+
+  echo "Wait until voyager operator pod stopped..."
+  local maxwaitsecs=100
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    pods=($(kubectl get pods --all-namespaces -l app=voyager -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+    total=${#pods[*]}
+    if [ $total -eq 0 ] ; then
+      echo "Voyager operator pod is stopped."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "Voyager operator pod is NOT stopped."
+    fi
+    sleep 5
+  done
+  echo
+  #TODO purge CRDs
+}
+
+#
 # Usage:
-# createVoyagerIngress voyagerIngressYaml
-# 
-# Note: Pls define following variables before call this method: 
-# namespace, domainUID
+# createVoyagerIngress voyagerIngressYaml namespace domainUID
 #
 function createVoyagerIngress {
-  if [ "$#" != 1 ] ; then
-    fail "requires 1 parameter: voyagerIngressYaml"
+  if [ "$#" != 3 ] ; then
+    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
   fi
+
   # deploy Voyager Ingress resource
   kubectl apply -f $1
+
+  local namespace=$2
+  local domainUID=$3
+  
 
   echo "Checking Voyager Ingress resource..."
   local maxwaitsecs=100
@@ -457,16 +502,16 @@ function createVoyagerIngress {
 
 #
 # Usage:
-# deleteVoyagerIngress voyagerIngressYaml
-# Note: Pls define following variables before call this method: 
-# namespace, domainUID
+# deleteVoyagerIngress voyagerIngressYaml namespace domainUID
 #
 function deleteVoyagerIngress {
-  if [ "$#" != 1 ] ; then
-    fail "requires 1 parameter: voyagerIngressYaml"
+  if [ "$#" != 3 ] ; then
+    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
   fi
 
   kubectl delete -f $1
+  local namespace=$2
+  local domainUID=$3
 
   echo "Wait until HAProxy pod stoped..."
   local maxwaitsecs=100
@@ -483,47 +528,4 @@ function deleteVoyagerIngress {
     sleep 5
   done
   echo
-}
-
-#
-# delete voyager operator
-#
-function deleteVoyagerOperator {
-  local vnamespace=voyager
-  if test "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc -l)" == 0; then
-    echo "Voyager operator has already been deleted."
-    return
-  fi
-
-  echo "Deleting Voyager opreator resources"
-  kubectl delete apiservice -l app=voyager
-  # delete voyager operator
-  kubectl delete deployment -l app=voyager --namespace $vnamespace
-  kubectl delete service -l app=voyager --namespace $vnamespace
-  kubectl delete secret -l app=voyager --namespace $vnamespace
-  # delete RBAC objects
-  kubectl delete serviceaccount -l app=voyager --namespace $vnamespace
-  kubectl delete clusterrolebindings -l app=voyager
-  kubectl delete clusterrole -l app=voyager
-  kubectl delete rolebindings -l app=voyager --namespace $vnamespace
-  kubectl delete role -l app=voyager --namespace $vnamespace
-
-  echo "Wait until voyager operator pod stopped..."
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    pods=($(kubectl get pods --all-namespaces -l app=voyager -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
-    total=${#pods[*]}
-    if [ $total -eq 0 ] ; then
-      echo "Voyager operator pod is stopped."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "Voyager operator pod is NOT stopped."
-    fi
-    sleep 5
-  done
-  echo
-  #TODO purge CRDs
 }

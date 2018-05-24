@@ -728,7 +728,7 @@ function createDomain {
 #
 function setupVoyagerLoadBalancer {
   createVoyagerOperator ${voyagerSecurityOutput} ${voyagerOperatorOutput}
-  createVoyagerIngress ${voyagerIngressOutput}
+  createVoyagerIngress ${voyagerIngressOutput} ${namespace} ${domainUID}
 }
 
 #
