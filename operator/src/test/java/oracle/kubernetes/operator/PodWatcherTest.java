@@ -49,12 +49,11 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector()
-      throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
-        StubWatchFactory.getRecordedParameters().get(0),
+        StubWatchFactory.getRequestParameters().get(0),
         both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
             .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }
@@ -75,26 +74,26 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodHasNoStatus_reportNotReady() throws Exception {
+  public void whenPodHasNoStatus_reportNotReady() {
     assertThat(PodWatcher.isReady(pod), is(false));
   }
 
   @Test
-  public void whenPodPhaseNotRunning_reportNotReady() throws Exception {
+  public void whenPodPhaseNotRunning_reportNotReady() {
     pod.status(new V1PodStatus());
 
     assertThat(PodWatcher.isReady(pod), is(false));
   }
 
   @Test
-  public void whenPodRunningButNoConditionsDefined_reportNotReady() throws Exception {
+  public void whenPodRunningButNoConditionsDefined_reportNotReady() {
     pod.status(new V1PodStatus().phase("Running"));
 
     assertThat(PodWatcher.isReady(pod), is(false));
   }
 
   @Test
-  public void whenPodRunningButNoReadyConditionsDefined_reportNotReady() throws Exception {
+  public void whenPodRunningButNoReadyConditionsDefined_reportNotReady() {
     List<V1PodCondition> conditions = Collections.singletonList(new V1PodCondition().type("Huge"));
     pod.status(new V1PodStatus().phase("Running").conditions(conditions));
 
@@ -102,7 +101,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() throws Exception {
+  public void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() {
     List<V1PodCondition> conditions =
         Collections.singletonList(new V1PodCondition().type("Ready").status("False"));
     pod.status(new V1PodStatus().phase("Running").conditions(conditions));
@@ -111,7 +110,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodRunningAndReadyConditionIsTrue_reportReady() throws Exception {
+  public void whenPodRunningAndReadyConditionIsTrue_reportReady() {
     makePodReady(pod);
 
     assertThat(PodWatcher.isReady(pod), is(true));
@@ -124,50 +123,50 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodHasNoStatus_reportNotFailed() throws Exception {
+  public void whenPodHasNoStatus_reportNotFailed() {
     assertThat(PodWatcher.isFailed(pod), is(false));
   }
 
   @Test
-  public void whenPodPhaseNotFailed_reportNotFailed() throws Exception {
+  public void whenPodPhaseNotFailed_reportNotFailed() {
     pod.status(new V1PodStatus().phase("Running"));
 
     assertThat(PodWatcher.isFailed(pod), is(false));
   }
 
   @Test
-  public void whenPodPhaseIsFailed_reportFailed() throws Exception {
+  public void whenPodPhaseIsFailed_reportFailed() {
     pod.status(new V1PodStatus().phase("Failed"));
 
     assertThat(PodWatcher.isFailed(pod), is(true));
   }
 
   @Test
-  public void whenPodHasNoDomainUid_returnNull() throws Exception {
+  public void whenPodHasNoDomainUid_returnNull() {
     assertThat(PodWatcher.getPodDomainUID(pod), nullValue());
   }
 
   @Test
-  public void whenPodHasDomainUid_returnIt() throws Exception {
+  public void whenPodHasDomainUid_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1"));
 
     assertThat(PodWatcher.getPodDomainUID(pod), equalTo("domain1"));
   }
 
   @Test
-  public void whenPodHasNoServerName_returnNull() throws Exception {
+  public void whenPodHasNoServerName_returnNull() {
     assertThat(PodWatcher.getPodServerName(pod), nullValue());
   }
 
   @Test
-  public void whenPodHasServerName_returnIt() throws Exception {
+  public void whenPodHasServerName_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver"));
 
     assertThat(PodWatcher.getPodServerName(pod), equalTo("myserver"));
   }
 
   @Test
-  public void waitForReady_returnsAStep() throws Exception {
+  public void waitForReady_returnsAStep() {
     AtomicBoolean stopping = new AtomicBoolean(true);
     PodWatcher watcher =
         PodWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
@@ -176,7 +175,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void WhenWaitForReadyAppliedToReadyPod_performNextStep() throws Exception {
+  public void WhenWaitForReadyAppliedToReadyPod_performNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher =
         PodWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), this, stopping);
