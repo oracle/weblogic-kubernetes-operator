@@ -38,7 +38,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
-        StubWatchFactory.getRecordedParameters().get(0),
+        StubWatchFactory.getRequestParameters().get(0),
         both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
             .and(hasEntry("labelSelector", asList(DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL))));
   }

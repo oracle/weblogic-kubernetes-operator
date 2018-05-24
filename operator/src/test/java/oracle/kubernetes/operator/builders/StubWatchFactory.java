@@ -8,10 +8,8 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,8 +27,9 @@ import oracle.kubernetes.operator.helpers.Pool;
  */
 public class StubWatchFactory implements WatchBuilder.WatchFactory {
 
+  private static final int MAX_TEST_REQUESTS = 100;
   private static StubWatchFactory factory;
-  private static List<Map<String, String>> recordedParameters;
+  private static List<Map<String, String>> requestParameters;
   private static RuntimeException exceptionOnNext;
   private static AllWatchesClosedListener listener;
 
@@ -39,8 +38,9 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
 
   public static Memento install() throws NoSuchFieldException {
     factory = new StubWatchFactory();
-    recordedParameters = new ArrayList<>();
+    requestParameters = new ArrayList<>();
     exceptionOnNext = null;
+
     return StaticStubSupport.install(WatchBuilder.class, "FACTORY", factory);
   }
 
@@ -62,8 +62,8 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     StubWatchFactory.listener = listener;
   }
 
-  public static List<Map<String, String>> getRecordedParameters() {
-    return recordedParameters;
+  public static List<Map<String, String>> getRequestParameters() {
+    return requestParameters;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -72,10 +72,10 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
       Pool<ApiClient> pool,
       CallParams callParams,
       Class<?> responseBodyType,
-      BiFunction<ApiClient, CallParams, Call> function)
-      throws ApiException {
+      BiFunction<ApiClient, CallParams, Call> function) {
     try {
-      getRecordedParameters().add(recordedParams(callParams));
+      Map<String, String> recordedParams = recordedParams(callParams);
+      addRecordedParameters(recordedParams);
 
       if (nothingToDo()) return new WatchStub<>(Collections.emptyList());
       else if (exceptionOnNext == null) return new WatchStub<T>((List) calls.remove(0));
@@ -91,7 +91,14 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     }
   }
 
-  public boolean nothingToDo() {
+  private void addRecordedParameters(Map<String, String> recordedParams) {
+    if (requestParameters.size() > MAX_TEST_REQUESTS) {
+      return;
+    }
+    requestParameters.add(recordedParams);
+  }
+
+  private boolean nothingToDo() {
     return calls.isEmpty() && exceptionOnNext == null;
   }
 
@@ -125,7 +132,7 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
       numCloseCalls++;
       if (calls.size() == 0 && listener != null) listener.allWatchesClosed();
     }
