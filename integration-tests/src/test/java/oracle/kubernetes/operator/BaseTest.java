@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.logging.Logger;
-
 import oracle.kubernetes.operator.utils.TestUtils;
 
 /**
@@ -20,7 +19,7 @@ public class BaseTest {
 
   private static String resultRoot = "";
   private static String pvRoot = "";
-  //private static String resultDir = "";
+  // private static String resultDir = "";
   private static String userProjectsDir = "";
   private static String projectRoot = "";
   private static String username = "weblogic";
@@ -32,10 +31,10 @@ public class BaseTest {
 
   public static void initialize(String appPropsFile) throws Exception {
 
-    //load app props defined
+    // load app props defined
     appProps = TestUtils.loadProps(appPropsFile);
 
-    //check app props
+    // check app props
     String baseDir = appProps.getProperty("baseDir");
     if (baseDir == null) {
       throw new IllegalArgumentException("FAILURE: baseDir is not set");
@@ -45,18 +44,18 @@ public class BaseTest {
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
-    //PV dir in domain props is ignored
+    // PV dir in domain props is ignored
     resultRoot = baseDir + "/" + System.getProperty("user.name") + "/wl_k8s_test_results";
-    //resultDir = resultRoot + "/acceptance_test_tmp";
+    // resultDir = resultRoot + "/acceptance_test_tmp";
     userProjectsDir = resultRoot + "/acceptance_test_tmp/user-projects";
     pvRoot = resultRoot;
     projectRoot = System.getProperty("user.dir") + "/..";
-    logger.info("RESULT_ROOT ="+resultRoot);
-    logger.info("PV_ROOT ="+pvRoot);
-    logger.info("userProjectsDir ="+userProjectsDir);
-    logger.info("projectRoot ="+projectRoot);
+    logger.info("RESULT_ROOT =" + resultRoot);
+    logger.info("PV_ROOT =" + pvRoot);
+    logger.info("userProjectsDir =" + userProjectsDir);
+    logger.info("projectRoot =" + projectRoot);
 
-    //create resultRoot, PVRoot, etc
+    // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
 
     String output = TestUtils.executeCommand("chmod 777 " + pvRoot);
@@ -64,7 +63,7 @@ public class BaseTest {
       throw new RuntimeException("FAILURE: Couldn't change permissions for PVROOT " + output);
     }
 
-    //Files.createDirectories(Paths.get(resultDir));
+    // Files.createDirectories(Paths.get(resultDir));
 
     Files.createDirectories(Paths.get(userProjectsDir));
   }

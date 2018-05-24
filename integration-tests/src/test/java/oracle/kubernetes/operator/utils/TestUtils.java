@@ -8,17 +8,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.logging.Logger;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -27,15 +24,13 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.jsonp.JsonProcessingFeature;
-
 import oracle.kubernetes.operator.BaseTest;
+import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  private static int maxIterationsPod = BaseTest.getMaxIterationsPod(); //50 * 5 = 250 seconds
+  private static int maxIterationsPod = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimePod = BaseTest.getWaitTimePod();
 
   public static String executeCommand(String command) {
@@ -47,7 +42,7 @@ public class TestUtils {
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-      //in some cases u may want to read process error stream as well
+      // in some cases u may want to read process error stream as well
       String line = "";
       while ((line = reader.readLine()) != null) {
         output.append(line + "\n");
@@ -72,7 +67,7 @@ public class TestUtils {
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-      //in some cases u may want to read process error stream as well
+      // in some cases u may want to read process error stream as well
       String line = "";
       while ((line = reader.readLine()) != null) {
         output.append(line + "\n");
@@ -103,7 +98,7 @@ public class TestUtils {
     while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
       if (!outputStr.contains("1/1")) {
-        //check for last iteration
+        // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException(
               "FAILURE: pod " + podName + " is not running and ready, exiting!");
@@ -136,12 +131,12 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
-    //check for admin pod
+    // check for admin pod
     while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
       logger.info("Output for " + cmd + "\n" + outputStr);
       if (!outputStr.contains("Running")) {
-        //check for last iteration
+        // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: pod " + podName + " is not running, exiting!");
         }
@@ -174,12 +169,12 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
 
-    //check for service
+    // check for service
     while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommand(cmd.toString());
       logger.fine("Output for " + cmd + "\n" + outputStr);
       if (outputStr.equals("")) {
-        //check for last iteration
+        // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
@@ -214,13 +209,13 @@ public class TestUtils {
       Properties props, String inputFileTemplate, String generatedInputYamlFile) throws Exception {
     logger.info("Creating input yaml file at " + generatedInputYamlFile);
 
-    //copy input template file and modify it
+    // copy input template file and modify it
     Files.copy(
         new File(inputFileTemplate).toPath(),
         Paths.get(generatedInputYamlFile),
         StandardCopyOption.REPLACE_EXISTING);
 
-    //read each line in input template file and replace only customized props
+    // read each line in input template file and replace only customized props
     BufferedReader reader = new BufferedReader(new FileReader(generatedInputYamlFile));
     String line = "";
     StringBuffer changedLines = new StringBuffer();
@@ -229,8 +224,8 @@ public class TestUtils {
       Enumeration enuKeys = props.keys();
       while (enuKeys.hasMoreElements()) {
         String key = (String) enuKeys.nextElement();
-        //if a line starts with the props key then replace
-        //the line with key:value in the file
+        // if a line starts with the props key then replace
+        // the line with key:value in the file
         if (line.startsWith(key + ":") || line.startsWith("#" + key + ":")) {
           changedLines.append(key).append(":").append(props.getProperty(key)).append("\n");
           isLineChanged = true;
@@ -243,7 +238,7 @@ public class TestUtils {
       isLineChanged = false;
     }
     reader.close();
-    //writing to the file
+    // writing to the file
     Files.write(Paths.get(generatedInputYamlFile), changedLines.toString().getBytes());
   }
 
@@ -285,12 +280,12 @@ public class TestUtils {
         .append(podName)
         .append(" \" | wc -l");
 
-    //check for admin pod
+    // check for admin pod
     while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommandStrArray(cmd.toString());
-      //logger.info("Output for "+cmd + "\n"+outputStr);
+      // logger.info("Output for "+cmd + "\n"+outputStr);
       if (!outputStr.trim().contains("\"" + podName + "\" not found")) {
-        //check for last iteration
+        // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: Pod " + podName + " is not deleted, exiting!");
         }
@@ -329,9 +324,9 @@ public class TestUtils {
 
     while (i < maxIterationsPod) {
       String outputStr = TestUtils.executeCommandStrArray(cmd.toString());
-      //logger.info("Output for "+cmd + "\n"+outputStr);
+      // logger.info("Output for "+cmd + "\n"+outputStr);
       if (!outputStr.trim().contains("\"" + domainUid + "\" not found")) {
-        //check for last iteration
+        // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: domain still exists, exiting!");
         }
@@ -367,16 +362,16 @@ public class TestUtils {
 
   private static int makeOperatorRestCall(
       String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
-    //get access token
+    // get access token
     String token = getAccessToken(operatorNS);
 
-    //get operator external certificate from weblogic-operator.yaml
+    // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operatorNS, userProjectsDir);
-    //logger.info("opExternalCertificateFile ="+opExtCertFile);
+    // logger.info("opExternalCertificateFile ="+opExtCertFile);
 
-    //get operator external key from weblogic-operator.yaml
+    // get operator external key from weblogic-operator.yaml
     String opExtKeyFile = getExternalOperatorKey(operatorNS, userProjectsDir);
-    //logger.info("opExternalKeyFile ="+opExtKeyFile);
+    // logger.info("opExternalKeyFile ="+opExtKeyFile);
 
     if (!new File(opExtCertFile).exists()) {
       throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
@@ -385,7 +380,7 @@ public class TestUtils {
       throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
     }
     logger.info("opExtCertFile " + opExtCertFile);
-    //Create a java Keystore obj and verify it's not null
+    // Create a java Keystore obj and verify it's not null
     KeyStore myKeyStore =
         PEMImporter.createKeyStore(
             new File(opExtKeyFile), new File(opExtCertFile), "temp_password");
@@ -393,7 +388,7 @@ public class TestUtils {
       throw new RuntimeException("Keystore Obj is null");
     }
 
-    //Create REST Client obj and verify it's not null
+    // Create REST Client obj and verify it's not null
     Client javaClient =
         ClientBuilder.newBuilder()
             .trustStore(myKeyStore)
@@ -404,11 +399,11 @@ public class TestUtils {
       throw new RuntimeException("Client Obj is null");
     }
 
-    //Create a resource target identified by Operator ext REST API URL
+    // Create a resource target identified by Operator ext REST API URL
     WebTarget target = javaClient.target(url.toString());
     logger.info("Invoking OP REST API URL: " + target.getUri().toString());
 
-    //Obtain a client request invocation builder
+    // Obtain a client request invocation builder
     Builder request = target.request(MediaType.APPLICATION_JSON);
     request
         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -417,7 +412,7 @@ public class TestUtils {
         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 
     Response response = null;
-    //Post scaling request to Operator
+    // Post scaling request to Operator
     if (jsonObjStr != null) {
       response = request.post(Entity.json(jsonObjStr));
     } else {
@@ -426,7 +421,7 @@ public class TestUtils {
     logger.info("response: " + response.toString());
 
     int returnCode = response.getStatus();
-    //Verify
+    // Verify
     if (returnCode == 204 || returnCode == 200) {
       logger.info("response code is " + returnCode);
       logger.info("Response is " + response.readEntity(String.class));
@@ -457,7 +452,7 @@ public class TestUtils {
 
       if (!etoken.equals("")) {
         token = TestUtils.executeCommandStrArray("echo " + etoken + " | base64 --decode").trim();
-        //logger.info("Token is "+token);
+        // logger.info("Token is "+token);
         return token;
       } else {
         throw new RuntimeException(
@@ -483,9 +478,9 @@ public class TestUtils {
         .append(operatorNS)
         .append("/weblogic-operator.yaml | awk '{ print $2 }'");
 
-    //logger.info("opCertCmd ="+opCertCmd);
+    // logger.info("opCertCmd ="+opCertCmd);
     String opCert = TestUtils.executeCommandStrArray(opCertCmd.toString()).trim();
-    //logger.info("opCert ="+opCert);
+    // logger.info("opCert ="+opCert);
 
     if (opCert.trim().equals("")) {
       throw new RuntimeException("externalOperatorCert is not set");
@@ -514,7 +509,7 @@ public class TestUtils {
         .append("/weblogic-operator.yaml | awk '{ print $2 }'");
 
     String opKey = TestUtils.executeCommandStrArray(opKeyCmd.toString()).trim();
-    //logger.info("opKey ="+opKey);
+    // logger.info("opKey ="+opKey);
 
     if (opKey.trim().equals("")) {
       throw new RuntimeException("externalOperatorKey is not set");
@@ -528,8 +523,8 @@ public class TestUtils {
   }
 
   public static void cleanupAll(String projectRoot) {
-    //cleanup.sh - This script does a best-effort delete of acceptance test k8s artifacts, the
-    //local test tmp directory, and the potentially remote domain pv directories.
+    // cleanup.sh - This script does a best-effort delete of acceptance test k8s artifacts, the
+    // local test tmp directory, and the potentially remote domain pv directories.
     TestUtils.executeCommandStrArray(projectRoot + "/src/integration-tests/bash/cleanup.sh");
   }
 
@@ -538,9 +533,9 @@ public class TestUtils {
   }
 
   public static Operator createOperator(String opPropsFile) throws Exception {
-    //load operator props defined
+    // load operator props defined
     Properties operatorProps = loadProps(opPropsFile);
-    //create op
+    // create op
     Operator operator = new Operator(operatorProps);
 
     logger.info("Check Operator status");
@@ -565,13 +560,13 @@ public class TestUtils {
 
   public static Properties loadProps(String propsFile) throws Exception {
     Properties props = new Properties();
-    //check file exists
+    // check file exists
     File f = new File(TestUtils.class.getClassLoader().getResource(propsFile).getFile());
     if (!f.exists()) {
       throw new IllegalArgumentException("FAILURE: Invalid properties file " + propsFile);
     }
 
-    //load props
+    // load props
     FileInputStream inStream = new FileInputStream(f);
     props.load(inStream);
     inStream.close();

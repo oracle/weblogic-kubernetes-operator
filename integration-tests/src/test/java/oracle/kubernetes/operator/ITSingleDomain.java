@@ -5,14 +5,12 @@
 package oracle.kubernetes.operator;
 
 import java.util.Properties;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -23,19 +21,19 @@ import oracle.kubernetes.operator.utils.TestUtils;
 public class ITSingleDomain extends BaseTest {
   public static final String TESTWEBAPP = "testwebapp";
 
-  //property file used to customize operator properties for operator inputs yaml
+  // property file used to customize operator properties for operator inputs yaml
   private static String opPropsFile = "ITSingleDomain_op.properties";
 
-  //property file used to customize domain properties for domain inputs yaml
+  // property file used to customize domain properties for domain inputs yaml
   private static String domainPropsFile = "ITSingleDomain_domain.properties";
 
-  //property file used to configure constants for integration tests
+  // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
 
   private static Operator operator;
   private static Domain domain;
 
-  //properties of operator/domain to use in the test methods
+  // properties of operator/domain to use in the test methods
   private static Properties operatorProps;
   private static Properties domainProps;
 
@@ -51,23 +49,23 @@ public class ITSingleDomain extends BaseTest {
   public static void staticPrepare() throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
-    logger.info("Run once, Creating Operator & " + "waiting for the script to complete execution");
 
-    //initialize test properties and create the directories
+    // initialize test properties and create the directories
     initialize(appPropsFile);
 
-    //create operator
+    logger.info("Run once, Creating Operator & " + "waiting for the script to complete execution");
+    // create operator
     operator = TestUtils.createOperator(opPropsFile);
     operatorProps = operator.getOperatorProps();
 
-    //create domain
+    // create domain
     domain = TestUtils.createDomain(domainPropsFile);
     domainProps = domain.getDomainProps();
 
-    //initialize attributes to use in the tests
+    // initialize attributes to use in the tests
     domainUid = domainProps.getProperty("domainUID");
     domainNS = domainProps.getProperty("namespace");
-    //logger.info("Domain props "+domainProps);
+    // logger.info("Domain props "+domainProps);
     logger.info("SUCCESS");
   }
 
@@ -81,7 +79,7 @@ public class ITSingleDomain extends BaseTest {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
-    //shutdown operator, domain and cleanup all artifacts and pv dir
+    // shutdown operator, domain and cleanup all artifacts and pv dir
     try {
       if (domain != null) domain.destroy();
       if (operator != null) operator.destroy();
@@ -103,7 +101,7 @@ public class ITSingleDomain extends BaseTest {
   @Test
   public void testAdminT3Channel() {
     logTestBegin();
-    //check if the property is set to true
+    // check if the property is set to true
     Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
 
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
