@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -105,23 +106,16 @@ public class PodHelper {
                   namespace,
                   new ResponseStep<V1Pod>(getNext()) {
                     @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
+                    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+                      if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, callResponse);
                       }
-                      return super.onFailure(packet, e, statusCode, responseHeaders);
+                      return super.onFailure(packet, callResponse);
                     }
 
                     @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1Pod result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
+                    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+                      V1Pod result = callResponse.getResult();
                       if (result == null) {
                         info.getExplicitRestartAdmin().set(false);
                         info.getExplicitRestartServers().remove(asName);
@@ -418,22 +412,16 @@ public class PodHelper {
                   new ResponseStep<V1Status>(getNext()) {
                     @Override
                     public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
+                        Packet packet, CallResponse<V1Status> callResponses) {
+                      if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
+                        return onSuccess(packet, callResponses);
                       }
-                      return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+                      return super.onFailure(conflictStep, packet, callResponses);
                     }
 
                     @Override
                     public NextAction onSuccess(
-                        Packet packet,
-                        V1Status result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
+                        Packet packet, CallResponse<V1Status> callResponses) {
                       if (conflictStep instanceof AdminPodStep) {
                         info.getExplicitRestartAdmin().set(false);
                       }

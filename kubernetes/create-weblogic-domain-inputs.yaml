@@ -105,6 +105,9 @@ loadBalancerAppPrepath: /
 # path and put your own custom_mod_wl_apache.conf file under this path.
 loadBalancerVolumePath:
 
+# Boolean to indicate if the admin port is going to be exposed for APACHE. By default, it is false.
+loadBalancerExposeAdminPort: false
+
 # Load balancer web port
 loadBalancerWebPort: 30305
 

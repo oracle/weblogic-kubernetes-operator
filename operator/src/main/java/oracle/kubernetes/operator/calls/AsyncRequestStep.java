@@ -79,9 +79,9 @@ public class AsyncRequestStep<T> extends Step {
     if (oldResponse != null) {
       @SuppressWarnings("unchecked")
       CallResponse<T> old = oldResponse.getSPI(CallResponse.class);
-      if (old != null && old.result != null) {
+      if (old != null && old.getResult() != null) {
         // called again, access continue value, if available
-        cont = accessContinue(old.result);
+        cont = accessContinue(old.getResult());
       }
 
       retry = oldResponse.getSPI(RetryStrategy.class);

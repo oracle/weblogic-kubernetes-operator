@@ -11,6 +11,7 @@ import io.kubernetes.client.models.V1beta1IngressList;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -93,22 +94,17 @@ public class DeleteDomainStep extends Step {
                 new ResponseStep<V1ServiceList>(deletePods) {
                   @Override
                   public NextAction onFailure(
-                      Packet packet,
-                      ApiException e,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
-                    if (statusCode == CallBuilder.NOT_FOUND) {
-                      return onSuccess(packet, null, statusCode, responseHeaders);
+                      Packet packet, CallResponse<V1ServiceList> callResponse) {
+                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                      return onSuccess(packet, callResponse);
                     }
-                    return super.onFailure(packet, e, statusCode, responseHeaders);
+                    return super.onFailure(packet, callResponse);
                   }
 
                   @Override
                   public NextAction onSuccess(
-                      Packet packet,
-                      V1ServiceList result,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
+                      Packet packet, CallResponse<V1ServiceList> callResponse) {
+                    V1ServiceList result = callResponse.getResult();
                     if (result != null) {
                       return doNext(
                           new DeleteServiceListStep(result.getItems(), deletePods), packet);

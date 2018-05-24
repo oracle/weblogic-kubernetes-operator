@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -249,12 +250,31 @@ public class HealthCheckHelper {
 
   /** Major and minor version of Kubernetes API Server */
   public static class KubernetesVersion {
-    public final int major;
-    public final int minor;
+    final int major;
+    final int minor;
 
     public KubernetesVersion(int major, int minor) {
       this.major = major;
       this.minor = minor;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);
+    }
+
+    private boolean equals(KubernetesVersion o) {
+      return major == o.major && minor == o.minor;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(major, minor);
+    }
+
+    @Override
+    public String toString() {
+      return "KubernetesVersion{" + "major=" + major + ", minor=" + minor + '}';
     }
   }
 
