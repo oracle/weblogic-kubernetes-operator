@@ -27,12 +27,11 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector()
-      throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
-        StubWatchFactory.getRecordedParameters().get(0),
+        StubWatchFactory.getRequestParameters().get(0),
         both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
             .and(hasEntry("labelSelector", LabelConstants.CREATEDBYOPERATOR_LABEL)));
   }
