@@ -65,6 +65,7 @@ public class CreateDomainInputsFileTest {
                 .loadBalancerWebPort("30305")
                 .loadBalancerVolumePath("")
                 .loadBalancerAppPrepath("/")
+                .loadBalancerExposeAdminPort("false")
                 .configuredManagedServerCount("2")
                 .managedServerNameBase("managed-server")
                 .managedServerPort("8001")

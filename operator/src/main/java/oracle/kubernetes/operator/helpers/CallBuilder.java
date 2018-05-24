@@ -1051,7 +1051,7 @@ public class CallBuilder {
       throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new AuthorizationV1Api(client).createSelfSubjectAccessReview(body, pretty);
+      return CALL_FACTORY.createSelfSubjectAccessReview(client, body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -1100,7 +1100,6 @@ public class CallBuilder {
       throws ApiException {
     ApiClient client = helper.take();
     try {
-      String pretty = this.pretty;
       return CALL_FACTORY.createSelfSubjectRulesReview(client, body, pretty);
     } finally {
       helper.recycle(client);
@@ -1413,6 +1412,12 @@ public class CallBuilder {
     public V1SelfSubjectRulesReview createSelfSubjectRulesReview(
         ApiClient client, V1SelfSubjectRulesReview body, String pretty) throws ApiException {
       return new AuthorizationV1Api(client).createSelfSubjectRulesReview(body, pretty);
+    }
+
+    @Override
+    public V1SelfSubjectAccessReview createSelfSubjectAccessReview(
+        ApiClient client, V1SelfSubjectAccessReview body, String pretty) throws ApiException {
+      return new AuthorizationV1Api(client).createSelfSubjectAccessReview(body, pretty);
     }
 
     @Override
