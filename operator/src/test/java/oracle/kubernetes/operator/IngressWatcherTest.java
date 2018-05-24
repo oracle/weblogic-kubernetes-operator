@@ -32,12 +32,11 @@ public class IngressWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector()
-      throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
-        StubWatchFactory.getRecordedParameters().get(0),
+        StubWatchFactory.getRequestParameters().get(0),
         both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
             .and(
                 hasEntry(
@@ -50,14 +49,14 @@ public class IngressWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Test
-  public void whenIngressHasNoDomainUid_returnNull() throws Exception {
+  public void whenIngressHasNoDomainUid_returnNull() {
     V1beta1Ingress ingress = new V1beta1Ingress().metadata(new V1ObjectMeta());
 
     assertThat(IngressWatcher.getIngressDomainUID(ingress), nullValue());
   }
 
   @Test
-  public void whenIngressHasDomainUid_returnIt() throws Exception {
+  public void whenIngressHasDomainUid_returnIt() {
     V1beta1Ingress ingress =
         new V1beta1Ingress()
             .metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
@@ -66,14 +65,14 @@ public class IngressWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Test
-  public void whenIngressHasNoClusterName_returnNull() throws Exception {
+  public void whenIngressHasNoClusterName_returnNull() {
     V1beta1Ingress ingress = new V1beta1Ingress().metadata(new V1ObjectMeta());
 
     assertThat(IngressWatcher.getIngressClusterName(ingress), nullValue());
   }
 
   @Test
-  public void whenIngressHasClusterName_returnIt() throws Exception {
+  public void whenIngressHasClusterName_returnIt() {
     V1beta1Ingress ingress =
         new V1beta1Ingress()
             .metadata(new V1ObjectMeta().labels(ImmutableMap.of(CLUSTERNAME_LABEL, "mycluster")));
