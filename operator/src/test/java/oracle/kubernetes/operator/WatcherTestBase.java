@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /** Tests behavior of the Watcher class. */
+@SuppressWarnings("SameParameterValue")
 public abstract class WatcherTestBase extends ThreadFactoryTestBase
     implements StubWatchFactory.AllWatchesClosedListener {
   private static final int NEXT_RESOURCE_VERSION = 123456;
@@ -62,7 +63,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     shutDownThreads();
     for (Memento memento : mementos) memento.revert();
   }
@@ -81,7 +82,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   protected abstract <T> T createObjectWithMetaData(V1ObjectMeta metaData);
 
   @Test
-  public void afterInitialRequest_watchIsClosed() throws Exception {
+  public void afterInitialRequest_watchIsClosed() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(1));
@@ -105,7 +106,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
-  public void receivedEvents_areSentToListeners() throws Exception {
+  public void receivedEvents_areSentToListeners() {
     Object object = createObjectWithMetaData();
     StubWatchFactory.addCallResponses(createAddResponse(object), createModifyResponse(object));
 
@@ -116,7 +117,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Test
-  public void afterFirstSetOfEvents_nextRequestSendsLastResourceVersion() throws Exception {
+  public void afterFirstSetOfEvents_nextRequestSendsLastResourceVersion() {
     Object object1 = createObjectWithMetaData();
     Object object2 = createObjectWithMetaData();
     Watch.Response[] firstSet = {createAddResponse(object1), createModifyResponse(object2)};
@@ -127,13 +128,13 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(
-        StubWatchFactory.getRecordedParameters().get(1),
+        StubWatchFactory.getRequestParameters().get(1),
         hasEntry("resourceVersion", Integer.toString(resourceAfterFirstSet)));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
-  public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() throws Exception {
+  public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
     try {
       StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
       StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
@@ -141,7 +142,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
       createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
       assertThat(
-          StubWatchFactory.getRecordedParameters().get(1),
+          StubWatchFactory.getRequestParameters().get(1),
           hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
     } catch (Throwable t) {
       t.printStackTrace();
@@ -150,20 +151,20 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
-  public void afterDelete_nextRequestSendsIncrementedResourceVersion() throws Exception {
+  public void afterDelete_nextRequestSendsIncrementedResourceVersion() {
     StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
     StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(
-        StubWatchFactory.getRecordedParameters().get(1),
+        StubWatchFactory.getRequestParameters().get(1),
         hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION + 1)));
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void afterExceptionDuringNext_closeWatchAndTryAgain() throws Exception {
+  public void afterExceptionDuringNext_closeWatchAndTryAgain() {
     StubWatchFactory.throwExceptionOnNext(hasNextException);
     StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
 
