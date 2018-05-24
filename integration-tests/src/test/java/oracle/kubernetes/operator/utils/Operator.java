@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.logging.Logger;
-
 import oracle.kubernetes.operator.BaseTest;
 
 /** Operator class with all the utility methods for Operator. */
@@ -22,8 +21,9 @@ public class Operator {
 
   private Properties operatorProps = new Properties();
 
-  //default values as in create-weblogic-operator-inputs.yaml,
-  //if the property is not defined here, it takes the property and its value from create-weblogic-operator-inputs.yaml
+  // default values as in create-weblogic-operator-inputs.yaml,
+  // if the property is not defined here, it takes the property and its value from
+  // create-weblogic-operator-inputs.yaml
   private String operatorNS = "weblogic-operator";
   private String externalRestOption = "NONE";
   private String externalRestHttpsPort = "31001";
@@ -33,7 +33,7 @@ public class Operator {
   private String inputTemplateFile = "";
   private String generatedInputYamlFile;
 
-  private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); //50 * 5 = 250 seconds
+  private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimeOp = BaseTest.getWaitTimePod();
 
   /**
@@ -56,14 +56,14 @@ public class Operator {
   /** verifies operator is created */
   public void verifyPodCreated() {
     logger.info("Checking if Operator pod is Running");
-    //empty string for pod name as there is only one pod
+    // empty string for pod name as there is only one pod
     TestUtils.checkPodCreated("", operatorNS);
   }
 
   /** verifies operator is ready */
   public void verifyOperatorReady() {
     logger.info("Checking if Operator pod is Ready");
-    //empty string for pod name as there is only one pod
+    // empty string for pod name as there is only one pod
     TestUtils.checkPodReady("", operatorNS);
   }
 
@@ -182,7 +182,7 @@ public class Operator {
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
     String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
 
-    //Operator REST external API URL to scale
+    // Operator REST external API URL to scale
     StringBuffer myOpRestApiUrl =
         new StringBuffer("https://")
             .append(TestUtils.getHostName())
@@ -196,7 +196,7 @@ public class Operator {
 
     TestUtils.makeOperatorPostRestCall(
         operatorNS, myOpRestApiUrl.toString(), myJsonObjStr, userProjectsDir);
-    //give sometime to complete
+    // give sometime to complete
     logger.info("Wait 30 sec for scaling to complete...");
     try {
       Thread.sleep(30 * 1000);
@@ -206,7 +206,7 @@ public class Operator {
   }
 
   public void verifyDomainExists(String domainUid) throws Exception {
-    //Operator REST external API URL to scale
+    // Operator REST external API URL to scale
     StringBuffer myOpRestApiUrl =
         new StringBuffer("https://")
             .append(TestUtils.getHostName())
@@ -247,7 +247,8 @@ public class Operator {
         BaseTest.getProjectRoot() + "/kubernetes/create-weblogic-operator-inputs.yaml";
     operatorNS = operatorProps.getProperty("namespace", operatorNS);
 
-    //customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port
+    // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
+    // https port
     if (operatorProps.getProperty("externalRestOption") != null) {
       externalRestOption = operatorProps.getProperty("externalRestOption");
     }
@@ -268,7 +269,7 @@ public class Operator {
         operatorProps.put("externalRestHttpsPort", externalRestHttpsPort);
       }
     }
-    //customize the inputs yaml file to use our pre-built docker image
+    // customize the inputs yaml file to use our pre-built docker image
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorProps.put(

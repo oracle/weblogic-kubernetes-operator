@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
-
 import oracle.kubernetes.operator.BaseTest;
 
 /** Domain class with all the utility methods for a Domain. */
@@ -23,9 +22,10 @@ public class Domain {
 
   private Properties domainProps = new Properties();
 
-  //attributes from domain properties
+  // attributes from domain properties
   private String domainUid = "";
-  //default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the customized property values
+  // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
+  // customized property values
   private String domainNS = "weblogic-domain";
   private String adminServerName = "admin-server";
   private String managedServerNameBase = "managed-server";
@@ -58,7 +58,6 @@ public class Domain {
     callCreateDomainScript();
   }
 
-  
   /** Verifies the required pods are created, services are created and the servers are ready. */
   public void verifyDomainCreated() {
     StringBuffer command = new StringBuffer();
@@ -74,11 +73,11 @@ public class Domain {
 
   /** verify pods are created */
   public void verifyPodsCreated() {
-    //check admin pod
+    // check admin pod
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
-    //check managed server pods
+    // check managed server pods
     for (int i = 1; i <= initialManagedServerReplicas; i++) {
       logger.info(
           "Checking if managed pod("
@@ -93,7 +92,7 @@ public class Domain {
 
   /** verify services are created */
   public void verifyServicesCreated() {
-    //check admin service
+    // check admin service
     logger.info("Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
     TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS);
 
@@ -108,7 +107,7 @@ public class Domain {
           domainUid + "-" + adminServerName + "-extchannel-t3channel", domainNS);
     }
 
-    //check managed server services
+    // check managed server services
     for (int i = 1; i <= initialManagedServerReplicas; i++) {
       logger.info(
           "Checking if managed service("
@@ -123,11 +122,11 @@ public class Domain {
 
   /** verify servers are ready */
   public void verifyServersReady() {
-    //check admin pod
+    // check admin pod
     logger.info("Checking if admin server is Running");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
 
-    //check managed server pods
+    // check managed server pods
     for (int i = 1; i <= initialManagedServerReplicas; i++) {
       logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
       TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
@@ -141,7 +140,7 @@ public class Domain {
    */
   public void verifyAdminServerExternalService(String username, String password) {
 
-    //logger.info("Inside verifyAdminServerExternalService");
+    // logger.info("Inside verifyAdminServerExternalService");
     String nodePortHost = getNodeHost();
     String nodePort = getNodePort();
     logger.fine("nodePortHost " + nodePortHost + " nodePort " + nodePort);
@@ -226,7 +225,7 @@ public class Domain {
     StringBuffer cmdTocppy = new StringBuffer("kubectl cp ");
     cmdTocppy
         .append(projectRoot)
-        .append("/integration-tests/src/integration-tests/resources/deploywebapp.py ")
+        .append("/integration-tests/src/test/resources/deploywebapp.py ")
         .append(domainNS)
         .append("/")
         .append(domainUid)
@@ -243,7 +242,7 @@ public class Domain {
     StringBuffer cmdTocpsh = new StringBuffer("kubectl cp ");
     cmdTocpsh
         .append(projectRoot)
-        .append("/integration-tests/src/integration-tests/resources/calldeploywebapp.sh ")
+        .append("/integration-tests/src/test/resources/calldeploywebapp.sh ")
         .append(domainNS)
         .append("/")
         .append(domainUid)
@@ -289,7 +288,7 @@ public class Domain {
    */
   public void verifyWebAppLoadBalancing(String webappName) {
     if (!loadBalancer.equals("NONE")) {
-      //url
+      // url
       StringBuffer testAppUrl = new StringBuffer("http://");
       testAppUrl
           .append(TestUtils.getHostName())
@@ -299,11 +298,11 @@ public class Domain {
           .append(webappName)
           .append("/");
 
-      //curl cmd
+      // curl cmd
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
       curlCmd.append(TestUtils.getHostName()).append(" ").append(testAppUrl.toString());
 
-      //curl cmd to get response code
+      // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
 
@@ -329,17 +328,17 @@ public class Domain {
         }
       }
 
-      //map with server names and boolean values
+      // map with server names and boolean values
       HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
       }
 
-      //logger.info("curlCmd "+curlCmd);
-      //execute curl and look for the managed server name in response
+      // logger.info("curlCmd "+curlCmd);
+      // execute curl and look for the managed server name in response
       for (int i = 0; i < 20; i++) {
         String response = TestUtils.executeCommand(curlCmd.toString());
-        //logger.info("response "+ response);
+        // logger.info("response "+ response);
         for (String key : managedServers.keySet()) {
           if (response.contains(key)) {
             managedServers.put(key, new Boolean(true));
@@ -348,7 +347,7 @@ public class Domain {
         }
       }
       logger.info("ManagedServers " + managedServers);
-      //error if any managedserver value is false
+      // error if any managedserver value is false
       for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
         if (!entry.getValue().booleanValue()) {
           throw new RuntimeException(
@@ -413,30 +412,29 @@ public class Domain {
   }
 
   private void createPV() {
-    //k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
+    // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
 
-    //set pv path
+    // set pv path
     domainProps.setProperty(
         "weblogicDomainStoragePath",
         BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
   }
 
   private void createSecret() {
-	    new Secret(
-	            domainNS,
-	            domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
-	            BaseTest.getUsername(),
-	            BaseTest.getPassword());
+    new Secret(
+        domainNS,
+        domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
+        BaseTest.getUsername(),
+        BaseTest.getPassword());
   }
-  private void generateInputYaml() throws Exception {
-	    Path parentDir =
-	            Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
-	        generatedInputYamlFile = parentDir + "/" + domainUid + "-inputs.yaml";
-	        TestUtils.createInputFile(domainProps, inputTemplateFile, generatedInputYamlFile);
 
+  private void generateInputYaml() throws Exception {
+    Path parentDir =
+        Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
+    generatedInputYamlFile = parentDir + "/" + domainUid + "-inputs.yaml";
+    TestUtils.createInputFile(domainProps, inputTemplateFile, generatedInputYamlFile);
   }
-  
 
   private void callCreateDomainScript() {
     StringBuffer cmd = new StringBuffer(createDomainScript);
@@ -445,11 +443,10 @@ public class Domain {
     String outputStr = TestUtils.executeCommand(cmd.toString());
     logger.info("run " + outputStr);
     if (!outputStr.contains(CREATE_DOMAIN_JOB_MESSAGE)) {
-    	throw new RuntimeException("FAILURE: Create domain Script failed..");
+      throw new RuntimeException("FAILURE: Create domain Script failed..");
     }
-    
   }
-  
+
   private void initialize() {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
@@ -457,7 +454,7 @@ public class Domain {
     createDomainScript = projectRoot + "/kubernetes/create-weblogic-domain.sh";
     inputTemplateFile = projectRoot + "/kubernetes/create-weblogic-domain-inputs.yaml";
     domainUid = domainProps.getProperty("domainUID");
-    //Customize the create domain job inputs
+    // Customize the create domain job inputs
     domainNS = domainProps.getProperty("namespace", domainNS);
     adminServerName = domainProps.getProperty("adminServerName", adminServerName);
     managedServerNameBase = domainProps.getProperty("managedServerNameBase", managedServerNameBase);
@@ -494,7 +491,7 @@ public class Domain {
             + " | grep Node:";
 
     String nodePortHost = TestUtils.executeCommandStrArray(cmd);
-    //logger.info("nodePortHost "+nodePortHost);
+    // logger.info("nodePortHost "+nodePortHost);
     if (nodePortHost.contains(":") && nodePortHost.contains("/")) {
       return nodePortHost
           .substring(nodePortHost.indexOf(":") + 1, nodePortHost.indexOf("/"))
