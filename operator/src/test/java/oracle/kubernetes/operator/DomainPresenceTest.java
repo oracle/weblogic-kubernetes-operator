@@ -9,10 +9,18 @@ import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_READY_STATE;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasValue;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
@@ -27,6 +35,7 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
 import java.util.ArrayList;
@@ -77,6 +86,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
+    mementos.add(installStub(Main.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
     AtomicBoolean stopping = getStoppingVariable();
     stopping.set(true);
@@ -107,7 +117,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() throws Exception {
+  public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
     readExistingResources();
 
     assertThat(Main.getDomainPresenceInfos(), is(anEmptyMap()));
@@ -119,9 +129,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenK8sHasOneDomainWithAssociatedIngress_readIt() throws Exception {
+  public void whenK8sHasOneDomainWithAssociatedIngress_readIt() {
     addDomainResource(UID, NS);
-    addIngressResource(UID, "cluster1");
+    addIngressResource(UID, NS, "cluster1");
 
     readExistingResources();
 
@@ -140,16 +150,18 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withMetadata(new V1ObjectMeta().namespace(namespace));
   }
 
-  private void addIngressResource(String uid, String clusterName) {
-    ingresses.getItems().add(createIngress(uid, clusterName));
+  private void addIngressResource(String uid, String namespace, String clusterName) {
+    ingresses.getItems().add(createIngress(uid, namespace, clusterName));
   }
 
-  private V1beta1Ingress createIngress(String uid, String clusterName) {
-    return new V1beta1Ingress().metadata(createIngressMetaData(uid, clusterName));
+  private V1beta1Ingress createIngress(String uid, String namespace, String clusterName) {
+    return new V1beta1Ingress().metadata(createIngressMetaData(uid, namespace, clusterName));
   }
 
-  private V1ObjectMeta createIngressMetaData(String uid, String clusterName) {
+  private V1ObjectMeta createIngressMetaData(String uid, String namespace, String clusterName) {
     return new V1ObjectMeta()
+        .name("TEST-" + clusterName)
+        .namespace(namespace)
         .labels(createMap(DOMAINUID_LABEL, uid, CLUSTERNAME_LABEL, clusterName));
   }
 
@@ -161,9 +173,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenK8sHasOneDomainWithChannelService_createSkoEntry() throws Exception {
+  public void whenK8sHasOneDomainWithChannelService_createSkoEntry() {
     addDomainResource(UID, NS);
-    V1Service serviceResource = addServiceResource(UID, "admin", "channel1");
+    V1Service serviceResource = addServiceResource(UID, NS, "admin", "channel1");
 
     readExistingResources();
 
@@ -177,26 +189,31 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return Main.getDomainPresenceInfos().get(uid).getServers().get(serverName);
   }
 
-  private V1Service addServiceResource(String uid, String serverName, String channelName) {
-    V1Service service = createService(uid, serverName, channelName);
+  private V1Service addServiceResource(
+      String uid, String namespace, String serverName, String channelName) {
+    V1Service service = createService(uid, namespace, serverName, channelName);
     services.getItems().add(service);
     return service;
   }
 
-  private V1Service createService(String uid, String serverName, String channelName) {
-    V1ObjectMeta metadata = createServerMetadata(uid, serverName);
+  private V1Service createService(
+      String uid, String namespace, String serverName, String channelName) {
+    V1ObjectMeta metadata = createServerMetadata(uid, namespace, serverName);
     metadata.putLabelsItem(CHANNELNAME_LABEL, channelName);
     return new V1Service().metadata(metadata);
   }
 
-  private V1ObjectMeta createServerMetadata(String uid, String serverName) {
-    return new V1ObjectMeta().labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, serverName));
+  private V1ObjectMeta createServerMetadata(String uid, String namespace, String serverName) {
+    return new V1ObjectMeta()
+        .namespace(namespace)
+        .name(serverName)
+        .labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, serverName));
   }
 
   @Test
-  public void whenK8sHasOneDomainWithoutChannelService_createSkoEntry() throws Exception {
+  public void whenK8sHasOneDomainWithoutChannelService_createSkoEntry() {
     addDomainResource(UID, NS);
-    V1Service serviceResource = addServiceResource(UID, "admin");
+    V1Service serviceResource = addServiceResource(UID, NS, "admin");
 
     readExistingResources();
 
@@ -204,41 +221,41 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         getServerKubernetesObjects(UID, "admin").getService().get(), equalTo(serviceResource));
   }
 
-  private V1Service addServiceResource(String uid, String serverName) {
-    V1Service service = createService(uid, serverName);
+  private V1Service addServiceResource(String uid, String namespace, String serverName) {
+    V1Service service = createService(uid, namespace, serverName);
     services.getItems().add(service);
     return service;
   }
 
-  private V1Service createService(String uid, String serverName) {
-    return new V1Service().metadata(createServerMetadata(uid, serverName));
+  private V1Service createService(String uid, String namespace, String serverName) {
+    return new V1Service().metadata(createServerMetadata(uid, namespace, serverName));
   }
 
   @Test
-  public void whenK8sHasOneDomainWithPod_createSkoEntry() throws Exception {
+  public void whenK8sHasOneDomainWithPod_createSkoEntry() {
     addDomainResource(UID, NS);
-    V1Pod podResource = addPodResource(UID, "admin");
+    V1Pod podResource = addPodResource(UID, NS, "admin");
 
     readExistingResources();
 
     assertThat(getServerKubernetesObjects(UID, "admin").getPod().get(), equalTo(podResource));
   }
 
-  private V1Pod addPodResource(String uid, String serverName) {
-    V1Pod pod = createPodResource(uid, serverName);
+  private V1Pod addPodResource(String uid, String namespace, String serverName) {
+    V1Pod pod = createPodResource(uid, namespace, serverName);
     pods.getItems().add(pod);
     return pod;
   }
 
-  private V1Pod createPodResource(String uid, String serverName) {
-    return new V1Pod().metadata(createServerMetadata(uid, serverName));
+  private V1Pod createPodResource(String uid, String namespace, String serverName) {
+    return new V1Pod().metadata(createServerMetadata(uid, namespace, serverName));
   }
 
   @Test
   @Ignore("Don't process events during read of existing resources")
-  public void whenK8sHasOneDomainWithNotReadyEvent_updateLastKnownStatus() throws Exception {
+  public void whenK8sHasOneDomainWithNotReadyEvent_updateLastKnownStatus() {
     addDomainResource(UID, NS);
-    addPodResource(UID, "admin");
+    addPodResource(UID, NS, "admin");
     addEventResource(UID, "admin", READINESS_PROBE_NOT_READY_STATE + "do something!");
 
     readExistingResources();
@@ -249,9 +266,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenK8sHasOneDomainWithOtherEvent_ignoreIt() throws Exception {
+  public void whenK8sHasOneDomainWithOtherEvent_ignoreIt() {
     addDomainResource(UID, NS);
-    addPodResource(UID, "admin");
+    addPodResource(UID, NS, "admin");
     addEventResource(UID, "admin", "ignore this event");
 
     readExistingResources();
@@ -272,10 +289,26 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   @SuppressWarnings("unchecked")
   private void createCannedListDomainResponses() {
     testSupport.createCannedResponse("listDomain").withNamespace(NS).returning(domains);
-    testSupport.createCannedResponse("listIngress").withNamespace(NS).returning(ingresses);
-    testSupport.createCannedResponse("listService").withNamespace(NS).returning(services);
-    testSupport.createCannedResponse("listEvent").withNamespace(NS).returning(events);
-    testSupport.createCannedResponse("listPod").withNamespace(NS).returning(pods);
+    testSupport
+        .createCannedResponse("listIngress")
+        .withNamespace(NS)
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
+        .returning(ingresses);
+    testSupport
+        .createCannedResponse("listService")
+        .withNamespace(NS)
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
+        .returning(services);
+    testSupport
+        .createCannedResponse("listEvent")
+        .withNamespace(NS)
+        .withFieldSelector(Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
+        .returning(events);
+    testSupport
+        .createCannedResponse("listPod")
+        .withNamespace(NS)
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
+        .returning(pods);
     testSupport
         .createCannedResponse("readConfigMap")
         .withNamespace(NS)
@@ -289,7 +322,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void afterCancelDomainStatusUpdating_statusUpdaterIsNull() throws Exception {
+  public void afterCancelDomainStatusUpdating_statusUpdaterIsNull() {
     DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate("namespace", "domainUID");
     info.getStatusUpdater().getAndSet(createStub(ScheduledFuture.class));
 
@@ -328,5 +361,58 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private V1ObjectMeta createObjectMetaData() {
     return new V1ObjectMeta().resourceVersion("1");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void whenStrandedPodsExist_removeThem() {
+    addIngressResource(UID, NS, "cluster1");
+    addIngressResource(UID, NS, "cluster2");
+    addServiceResource(UID, NS, "admin");
+    addServiceResource(UID, NS, "ms1", "channel1");
+
+    readExistingResources();
+
+    testSupport
+        .createCannedResponse("deleteCollection")
+        .withNamespace(NS)
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(new V1Status());
+
+    testSupport
+        .createCannedResponse("listService")
+        .withNamespace(NS)
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(services);
+    testSupport
+        .createCannedResponse("deleteService")
+        .withNamespace(NS)
+        .withName("admin")
+        .returning(new V1Status());
+    testSupport
+        .createCannedResponse("deleteService")
+        .withNamespace(NS)
+        .withName("ms1")
+        .returning(new V1Status());
+
+    testSupport
+        .createCannedResponse("listIngress")
+        .withNamespace(NS)
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(ingresses);
+    testSupport
+        .createCannedResponse("deleteIngress")
+        .withNamespace(NS)
+        .withName("TEST-cluster1")
+        .returning(new V1Status());
+    testSupport
+        .createCannedResponse("deleteIngress")
+        .withNamespace(NS)
+        .withName("TEST-cluster2")
+        .returning(new V1Status());
+
+    Main.deleteStrandedResources();
+
+    testSupport.verifyAllDefinedResponsesInvoked();
   }
 }

@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -72,7 +71,30 @@ public class AsyncCallTestSupport extends FiberTestSupport {
         String fieldSelector,
         String labelSelector,
         String resourceVersion) {
-      return new CannedResponseStep<>(next, getMatchingResponse(requestParams, null));
+      return new CannedResponseStep<>(
+          next, getMatchingResponse(requestParams, additionalParams(fieldSelector, labelSelector)));
+    }
+
+    private AdditionalParams additionalParams(String fieldSelector, String labelSelector) {
+      return new AdditionalParams(fieldSelector, labelSelector);
+    }
+  }
+
+  private class AdditionalParams {
+    private String fieldSelector;
+    private String labelSelector;
+
+    AdditionalParams(String fieldSelector, String labelSelector) {
+      this.fieldSelector = fieldSelector;
+      this.labelSelector = labelSelector;
+    }
+
+    String getFieldSelector() {
+      return fieldSelector;
+    }
+
+    String getLabelSelector() {
+      return labelSelector;
     }
   }
 
@@ -93,22 +115,25 @@ public class AsyncCallTestSupport extends FiberTestSupport {
 
   @SuppressWarnings({"unchecked", "SameParameterValue"})
   private <T> CannedResponse<T> getMatchingResponse(
-      RequestParams requestParams, CallParams callParams) {
+      RequestParams requestParams, AdditionalParams params) {
     for (CannedResponse cannedResponse : cannedResponses.keySet())
-      if (cannedResponse.matches(requestParams, callParams)) return afterMarking(cannedResponse);
+      if (cannedResponse.matches(requestParams, params)) return afterMarking(cannedResponse);
 
-    throw new AssertionError("Unexpected request for " + toString(requestParams, callParams));
+    throw new AssertionError("Unexpected request for " + toString(requestParams, params));
   }
 
   private CannedResponse afterMarking(CannedResponse cannedResponse) {
+    cannedResponse.validate();
     cannedResponses.put(cannedResponse, true);
     return cannedResponse;
   }
 
-  private String toString(RequestParams requestParams, CallParams callParams) {
+  private String toString(RequestParams requestParams, AdditionalParams additionalParams) {
     ErrorFormatter formatter = new ErrorFormatter(requestParams.call);
     formatter.addDescriptor("namespace", requestParams.namespace);
     formatter.addDescriptor("name", requestParams.name);
+    formatter.addDescriptor("fieldSelector", additionalParams.fieldSelector);
+    formatter.addDescriptor("labelSelector", additionalParams.labelSelector);
     return formatter.toString();
   }
 
@@ -162,6 +187,12 @@ public class AsyncCallTestSupport extends FiberTestSupport {
    * @param <T> the type of value to be returned in the step, if it succeeds
    */
   public static class CannedResponse<T> {
+    private static final String NAMESPACE = "namespace";
+    private static final String NAME = "name";
+    private static final String LABEL_SELECTOR = "labelSelector";
+    private static final String FIELD_SELECTOR = "fieldSelector";
+    private static final String MISFORMED_RESPONSE =
+        "%s not defined with returning() or failingWithStatus()";
     private String methodName;
     private Map<String, String> requestParamExpectations = new HashMap<>();
     private T result;
@@ -178,14 +209,19 @@ public class AsyncCallTestSupport extends FiberTestSupport {
         return new CallResponse<>(result, null, HttpURLConnection.HTTP_OK, Collections.emptyMap());
     }
 
-    private boolean matches(@Nonnull RequestParams requestParams, CallParams callParams) {
-      return matches(requestParams);
+    private boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {
+      return matches(requestParams) && matches(params);
     }
 
     private boolean matches(RequestParams requestParams) {
       return Objects.equals(requestParams.call, methodName)
-          && Objects.equals(requestParams.name, requestParamExpectations.get("name"))
-          && Objects.equals(requestParams.namespace, requestParamExpectations.get("namespace"));
+          && Objects.equals(requestParams.name, requestParamExpectations.get(NAME))
+          && Objects.equals(requestParams.namespace, requestParamExpectations.get(NAMESPACE));
+    }
+
+    private boolean matches(AdditionalParams params) {
+      return Objects.equals(params.fieldSelector, requestParamExpectations.get(FIELD_SELECTOR))
+          && Objects.equals(params.labelSelector, requestParamExpectations.get(LABEL_SELECTOR));
     }
 
     /**
@@ -195,7 +231,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
      * @return the updated response
      */
     public CannedResponse withNamespace(String namespace) {
-      requestParamExpectations.put("namespace", namespace);
+      requestParamExpectations.put(NAMESPACE, namespace);
       return this;
     }
 
@@ -206,7 +242,17 @@ public class AsyncCallTestSupport extends FiberTestSupport {
      * @return the updated response
      */
     public CannedResponse withName(String name) {
-      requestParamExpectations.put("name", name);
+      requestParamExpectations.put(NAME, name);
+      return this;
+    }
+
+    public CannedResponse<T> withLabelSelectors(String... selectors) {
+      requestParamExpectations.put(LABEL_SELECTOR, String.join(",", selectors));
+      return this;
+    }
+
+    public CannedResponse<T> withFieldSelector(String fieldSelector) {
+      requestParamExpectations.put(FIELD_SELECTOR, fieldSelector);
       return this;
     }
 
@@ -235,6 +281,12 @@ public class AsyncCallTestSupport extends FiberTestSupport {
         formatter.addDescriptor(entry.getKey(), entry.getValue());
 
       return formatter.toString();
+    }
+
+    void validate() {
+      if (status == 0 && result == null) {
+        throw new IllegalStateException(String.format(MISFORMED_RESPONSE, this));
+      }
     }
   }
 
