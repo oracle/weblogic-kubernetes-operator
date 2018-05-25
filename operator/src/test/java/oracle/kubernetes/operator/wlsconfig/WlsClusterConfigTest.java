@@ -9,6 +9,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CL
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
 import static org.junit.Assert.*;
 
+import com.meterware.simplestub.Memento;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ public class WlsClusterConfigTest {
   };
 
   private List<LogRecord> logRecords = new ArrayList<>();
-  private TestUtils.ConsoleHandlerMemento consoleControl;
+  private Memento consoleControl;
 
   @Before
   public void setup() {
