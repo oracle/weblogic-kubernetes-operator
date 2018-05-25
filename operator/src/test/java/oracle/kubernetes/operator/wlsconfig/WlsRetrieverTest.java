@@ -10,6 +10,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.WLS_CONFIGURATION_R
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.models.V1Service;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class WlsRetrieverTest {
   private static final String[] LOG_KEYS = {WLS_CONFIGURATION_READ_FAILED, WLS_HEALTH_READ_FAILED};
 
   private List<LogRecord> logRecords = new ArrayList<>();
-  private TestUtils.ConsoleHandlerMemento consoleControl;
+  private Memento consoleControl;
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
 
   @Before

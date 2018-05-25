@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.http;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 import com.meterware.simplestub.Stub;
 import java.util.ArrayList;
@@ -28,66 +27,62 @@ import org.junit.Test;
 
 public class HttpClientTest {
 
-  private static Response mockResponse;
-
-  // The log messages to be checked during this test
-  private static final String[] LOG_KEYS = {HTTP_METHOD_FAILED};
-
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
+  static final String FAKE_URL = "fake/url";
 
   @Before
   public void setup() {
     consoleControl =
         TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, LOG_KEYS)
+            .collectLogMessages(logRecords, HTTP_METHOD_FAILED)
             .withLogLevel(Level.FINE);
   }
 
   @After
   public void tearDown() throws Exception {
     consoleControl.revert();
-    mockResponse = null;
   }
 
   @Test
   public void messageLogged_when_executePostUrlOnServiceClusterIP_fails() throws HTTPException {
-    ClientStub clientStub = Stub.createStub(ClientStub.class);
-    HttpClient httpClient = new HttpClient(clientStub, "");
-    mockResponse = Stub.createStub(ResponseStub.class, Status.NOT_FOUND, null);
-    final String serviceURL = "fake/service/url";
-    final String requestURL = "fake/request/url";
-
-    httpClient.executePostUrlOnServiceClusterIP(
-        requestURL, serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload(), false);
-
+    executePostUrl(false);
     assertThat(logRecords, containsFine(HTTP_METHOD_FAILED, Status.NOT_FOUND.getStatusCode()));
   }
 
-  @Test
-  public void messageLogged_when_executePostUrlOnServiceClusterIP_failsAndThrows() {
-    ClientStub clientStub = Stub.createStub(ClientStub.class);
+  @Test(expected = HTTPException.class)
+  public void throws_when_executePostUrlOnServiceClusterIP_withThrowOnFailure_fails()
+      throws HTTPException {
+    ignoreMessage(HTTP_METHOD_FAILED);
+    executePostUrl(true);
+  }
+
+  private void executePostUrl(boolean throwOnFailure) throws HTTPException {
+    ClientStub clientStub =
+        Stub.createStub(ClientStub.class)
+            .withResponse(Stub.createStub(ResponseStub.class, Status.NOT_FOUND, null));
     HttpClient httpClient = new HttpClient(clientStub, "");
-    mockResponse = Stub.createStub(ResponseStub.class, Status.NOT_FOUND, null);
-    final String serviceURL = "fake/service/url";
-    final String requestURL = "fake/request/url";
 
-    try {
-      httpClient.executePostUrlOnServiceClusterIP(
-          requestURL, serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload(), true);
-      fail("Expected exception not thrown");
-    } catch (HTTPException e) {
-      // expected exception
-    }
+    httpClient.executePostUrlOnServiceClusterIP(
+        FAKE_URL, FAKE_URL, WlsDomainConfig.getRetrieveServersSearchPayload(), throwOnFailure);
+  }
 
-    assertThat(logRecords, containsFine(HTTP_METHOD_FAILED, Status.NOT_FOUND.getStatusCode()));
+  private void ignoreMessage(String message) {
+    consoleControl.ignoreMessage(message);
   }
 
   abstract static class ClientStub implements Client {
 
+    private static Response mockResponse;
+
     @Override
     public WebTarget target(String uri) {
       return Stub.createStub(WebTargetStub.class);
+    }
+
+    public ClientStub withResponse(Response mockResponse) {
+      ClientStub.mockResponse = mockResponse;
+      return this;
     }
   }
 
@@ -113,7 +108,7 @@ public class HttpClientTest {
 
     @Override
     public Response post(Entity<?> entity) {
-      return HttpClientTest.mockResponse;
+      return ClientStub.mockResponse;
     }
   }
 
