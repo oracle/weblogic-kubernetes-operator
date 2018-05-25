@@ -42,6 +42,9 @@ public class Domain {
   private String inputTemplateFile = "";
   private String generatedInputYamlFile;
 
+  private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
+  private static int waitTime = BaseTest.getWaitTimePod();
+
   /**
    * Takes domain properties which should be customized while generating domain input yaml file.
    *
@@ -58,8 +61,12 @@ public class Domain {
     callCreateDomainScript();
   }
 
-  /** Verifies the required pods are created, services are created and the servers are ready. */
-  public void verifyDomainCreated() {
+  /**
+   * Verifies the required pods are created, services are created and the servers are ready.
+   *
+   * @throws Exception
+   */
+  public void verifyDomainCreated() throws Exception {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
     String outputStr = TestUtils.executeCommand(command.toString());
@@ -71,8 +78,12 @@ public class Domain {
     verifyServersReady();
   }
 
-  /** verify pods are created */
-  public void verifyPodsCreated() {
+  /**
+   * verify pods are created
+   *
+   * @throws Exception
+   */
+  public void verifyPodsCreated() throws Exception {
     // check admin pod
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
@@ -90,8 +101,12 @@ public class Domain {
     }
   }
 
-  /** verify services are created */
-  public void verifyServicesCreated() {
+  /**
+   * verify services are created
+   *
+   * @throws Exception
+   */
+  public void verifyServicesCreated() throws Exception {
     // check admin service
     logger.info("Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
     TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS);
@@ -120,8 +135,12 @@ public class Domain {
     }
   }
 
-  /** verify servers are ready */
-  public void verifyServersReady() {
+  /**
+   * verify servers are ready
+   *
+   * @throws Exception
+   */
+  public void verifyServersReady() throws Exception {
     // check admin pod
     logger.info("Checking if admin server is Running");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
@@ -205,82 +224,20 @@ public class Domain {
    */
   public void deployWebAppViaWLST(
       String webappName, String webappLocation, String username, String password) {
-    StringBuffer cmdTocpwar = new StringBuffer("kubectl cp ");
-    cmdTocpwar
-        .append(webappLocation)
-        .append(" ")
-        .append(domainNS)
-        .append("/")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(":/shared/applications/testwebapp.war");
 
-    logger.info("Command to copy war file " + cmdTocpwar);
-    String output = TestUtils.executeCommandStrArray(cmdTocpwar.toString());
-    if (!output.trim().equals("")) {
-      throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
-    }
+    copyFileToAdminPod(webappLocation, "/shared/applications/testwebapp.war");
 
-    StringBuffer cmdTocppy = new StringBuffer("kubectl cp ");
-    cmdTocppy
-        .append(projectRoot)
-        .append("/integration-tests/src/test/resources/deploywebapp.py ")
-        .append(domainNS)
-        .append("/")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(":/shared/deploywebapp.py");
+    copyFileToAdminPod(
+        projectRoot + "/integration-tests/src/test/resources/deploywebapp.py",
+        "/shared/deploywebapp.py");
 
-    logger.info("Command to copy py file " + cmdTocppy);
-    output = TestUtils.executeCommandStrArray(cmdTocppy.toString());
-    if (!output.trim().equals("")) {
-      throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
-    }
+    copyFileToAdminPod(
+        projectRoot + "/integration-tests/src/test/resources/calldeploywebapp.sh",
+        "/shared/calldeploywebapp.sh");
 
-    StringBuffer cmdTocpsh = new StringBuffer("kubectl cp ");
-    cmdTocpsh
-        .append(projectRoot)
-        .append("/integration-tests/src/test/resources/calldeploywebapp.sh ")
-        .append(domainNS)
-        .append("/")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(":/shared/calldeploywebapp.py");
-
-    logger.info("Command to copy sh file " + cmdTocpsh);
-    output = TestUtils.executeCommandStrArray(cmdTocpsh.toString());
-    if (!output.trim().equals("")) {
-      throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
-    }
-
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(" /shared/calldeploywebapp.sh /shared/deploywebapp.py ")
-        .append(username)
-        .append(" ")
-        .append(password)
-        .append(" t3://")
-        .append(TestUtils.getHostName())
-        .append(":")
-        .append(t3ChannelPort)
-        .append(" ")
-        .append(webappName)
-        .append(" /shared/applications/testwebapp.war ")
-        .append(clusterName);
-    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    output = TestUtils.executeCommand(cmdKubectlSh.toString());
-    if (!output.contains("Deployment State : completed")) {
-      throw new RuntimeException("Failure: webapp deployment failed." + output);
-    }
+    callShellScriptByExecToPod(username, password, webappName);
   }
+
   /**
    * Test http load balancing using loadBalancerWebPort
    *
@@ -298,7 +255,7 @@ public class Domain {
           .append(webappName)
           .append("/");
 
-      // curl cmd
+      // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
       curlCmd.append(TestUtils.getHostName()).append(" ").append(testAppUrl.toString());
 
@@ -306,77 +263,46 @@ public class Domain {
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
 
-      int maxIterations = 30;
-      for (int i = 0; i < maxIterations; i++) {
-        String responseCode = TestUtils.executeCommand(curlCmdResCode.toString()).trim();
-        if (!responseCode.equals("200")) {
-          logger.info(
-              "testwebapp did not return 200 status code, got "
-                  + responseCode
-                  + ", iteration "
-                  + i
-                  + " of "
-                  + maxIterations);
-          if (i == (maxIterations - 1)) {
-            throw new RuntimeException(
-                "FAILURE: testwebapp did not return 200 status code, got " + responseCode);
-          }
-          try {
-            Thread.sleep(5 * 1000);
-          } catch (InterruptedException ignore) {
-          }
-        }
-      }
+      // call webapp iteratively till its deployed/ready
+      callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
-      // map with server names and boolean values
-      HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
-      for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
-      }
-
-      // logger.info("curlCmd "+curlCmd);
       // execute curl and look for the managed server name in response
-      for (int i = 0; i < 20; i++) {
-        String response = TestUtils.executeCommand(curlCmd.toString());
-        // logger.info("response "+ response);
-        for (String key : managedServers.keySet()) {
-          if (response.contains(key)) {
-            managedServers.put(key, new Boolean(true));
-            break;
-          }
-        }
-      }
-      logger.info("ManagedServers " + managedServers);
-      // error if any managedserver value is false
-      for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
-        if (!entry.getValue().booleanValue()) {
-          throw new RuntimeException(
-              "FAILURE: Load balancer can not reach server " + entry.getKey());
-        }
-      }
+      callWebAppAndCheckForServerNameInResponse(curlCmd.toString());
+      // logger.info("curlCmd "+curlCmd);
+
     }
   }
 
-  /** startup the domain */
-  public void create() {
-    TestUtils.executeCommand(
-        "kubectl create -f "
-            + userProjectsDir
-            + "/weblogic-domains/"
-            + domainUid
-            + "/domain-custom-resource.yaml");
+  /**
+   * startup the domain
+   *
+   * @throws Exception
+   */
+  public void create() throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl create -f ");
+    cmd.append(userProjectsDir)
+        .append("/weblogic-domains/")
+        .append(domainUid)
+        .append("/domain-custom-resource.yaml");
+    String output = TestUtils.executeCommand(cmd.toString());
+    logger.info("command to create domain " + cmd + " \n returned " + output);
     verifyDomainCreated();
   }
 
-  /** shutdown the domain */
-  public void destroy() {
+  /**
+   * shutdown the domain
+   *
+   * @throws Exception
+   */
+  public void destroy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    TestUtils.executeCommand(
-        "kubectl delete -f "
-            + userProjectsDir
-            + "/weblogic-domains/"
-            + domainUid
-            + "/domain-custom-resource.yaml");
+    StringBuffer cmd = new StringBuffer("kubectl delete -f ");
+    cmd.append(userProjectsDir)
+        .append("/weblogic-domains/")
+        .append(domainUid)
+        .append("/domain-custom-resource.yaml");
+    String output = TestUtils.executeCommand(cmd.toString());
+    logger.info("command to delete domain " + cmd + " \n returned " + output);
     verifyDomainDeleted(replicas);
   }
 
@@ -384,8 +310,9 @@ public class Domain {
    * verify domain is deleted
    *
    * @param replicas
+   * @throws Exception
    */
-  public void verifyDomainDeleted(int replicas) {
+  public void verifyDomainDeleted(int replicas) throws Exception {
     logger.info("Inside verifyDomainDeleted, replicas " + replicas);
     TestUtils.checkDomainDeleted(domainUid, domainNS);
     TestUtils.checkPodDeleted(domainUid + "-" + adminServerName, domainNS);
@@ -444,6 +371,103 @@ public class Domain {
     logger.info("run " + outputStr);
     if (!outputStr.contains(CREATE_DOMAIN_JOB_MESSAGE)) {
       throw new RuntimeException("FAILURE: Create domain Script failed..");
+    }
+  }
+
+  private void callShellScriptByExecToPod(String username, String password, String webappName) {
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(domainUid)
+        .append("-")
+        .append(adminServerName)
+        .append(" /shared/calldeploywebapp.sh /shared/deploywebapp.py ")
+        .append(username)
+        .append(" ")
+        .append(password)
+        .append(" t3://")
+        .append(TestUtils.getHostName())
+        .append(":")
+        .append(t3ChannelPort)
+        .append(" ")
+        .append(webappName)
+        .append(" /shared/applications/testwebapp.war ")
+        .append(clusterName);
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    String output = TestUtils.executeCommand(cmdKubectlSh.toString());
+    if (!output.contains("Deployment State : completed")) {
+      throw new RuntimeException("Failure: webapp deployment failed." + output);
+    }
+  }
+
+  private void callWebAppAndWaitTillReady(String curlCmd) {
+    for (int i = 0; i < maxIterations; i++) {
+      String responseCode = TestUtils.executeCommand(curlCmd.toString()).trim();
+      if (!responseCode.equals("200")) {
+        logger.info(
+            "testwebapp did not return 200 status code, got "
+                + responseCode
+                + ", iteration "
+                + i
+                + " of "
+                + maxIterations);
+        if (i == (maxIterations - 1)) {
+          throw new RuntimeException(
+              "FAILURE: testwebapp did not return 200 status code, got " + responseCode);
+        }
+        try {
+          Thread.sleep(waitTime * 1000);
+        } catch (InterruptedException ignore) {
+        }
+      }
+    }
+  }
+
+  private void callWebAppAndCheckForServerNameInResponse(String curlCmd) {
+    // map with server names and boolean values
+    HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
+    for (int i = 1; i <= initialManagedServerReplicas; i++) {
+      managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
+    }
+
+    for (int i = 0; i < 20; i++) {
+      String response = TestUtils.executeCommand(curlCmd.toString());
+      // logger.info("response "+ response);
+      for (String key : managedServers.keySet()) {
+        if (response.contains(key)) {
+          managedServers.put(key, new Boolean(true));
+          break;
+        }
+      }
+    }
+    logger.info("ManagedServers " + managedServers);
+    // error if any managedserver value is false
+    for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
+      if (!entry.getValue().booleanValue()) {
+        throw new RuntimeException("FAILURE: Load balancer can not reach server " + entry.getKey());
+      }
+    }
+  }
+
+  private void copyFileToAdminPod(String srcFileOnHost, String destLocationInPod) {
+    StringBuffer cmdTocp = new StringBuffer("kubectl cp ");
+    cmdTocp
+        .append(srcFileOnHost)
+        .append(" ")
+        .append(domainNS)
+        .append("/")
+        .append(domainUid)
+        .append("-")
+        .append(adminServerName)
+        .append(":")
+        .append(destLocationInPod);
+
+    logger.info("Command to copy file " + cmdTocp);
+    String output = TestUtils.executeCommandStrArray(cmdTocp.toString());
+    if (!output.trim().equals("")) {
+      throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
     }
   }
 
