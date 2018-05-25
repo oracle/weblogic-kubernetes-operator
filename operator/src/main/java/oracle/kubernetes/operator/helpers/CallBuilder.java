@@ -15,8 +15,30 @@ import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EventList;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SelfSubjectAccessReview;
+import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1SubjectAccessReview;
+import io.kubernetes.client.models.V1TokenReview;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.models.V1beta1Ingress;
+import io.kubernetes.client.models.V1beta1IngressList;
+import io.kubernetes.client.models.VersionInfo;
+import java.util.Optional;
 import java.util.function.Consumer;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallFactory;
@@ -34,33 +56,50 @@ public class CallBuilder {
 
   /** HTTP status code for "Not Found" */
   public static final int NOT_FOUND = 404;
-  /** HTTP status code for "Conflict" */
-  public static final int CONFLICT = 409;
 
-  public String pretty = "false";
-  public String fieldSelector = "";
-  public Boolean includeUninitialized = Boolean.FALSE;
-  public String labelSelector = "";
-  public Integer limit = 500;
-  public String resourceVersion = "";
-  public Integer timeoutSeconds = 5;
-  public Integer maxRetryCount = 10;
-  public Boolean watch = Boolean.FALSE;
-  public Boolean exact = Boolean.FALSE;
-  public Boolean export = Boolean.FALSE;
+  private String pretty = "false";
+  private String fieldSelector;
+  private Boolean includeUninitialized = Boolean.FALSE;
+  private String labelSelector;
+  private Integer limit = 500;
+  private String resourceVersion = "";
+  private Integer timeoutSeconds = 5;
+  private Integer maxRetryCount = 10;
+  private Boolean watch = Boolean.FALSE;
+  private Boolean exact = Boolean.FALSE;
+  private Boolean export = Boolean.FALSE;
 
-  // less common
-  public Integer gracePeriodSeconds = null;
-  public Boolean orphanDependents = null;
-  public String propagationPolicy = null;
+  private Integer gracePeriodSeconds = null;
+  private Boolean orphanDependents = null;
+  private String propagationPolicy = null;
 
   private final ClientPool helper;
 
-  CallBuilder(CallBuilderTuning tuning, ClientPool helper) {
+  public CallBuilder() {
+    this(getCallBuilderTuning(), ClientPool.getInstance());
+  }
+
+  private static CallBuilderTuning getCallBuilderTuning() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+        .map(TuningParameters::getCallBuilderTuning)
+        .orElse(null);
+  }
+
+  private CallBuilder(CallBuilderTuning tuning, ClientPool helper) {
     if (tuning != null) {
       tuning(tuning.callRequestLimit, tuning.callTimeoutSeconds, tuning.callMaxRetryCount);
     }
     this.helper = helper;
+  }
+
+  public CallBuilder withLabelSelectors(String... selectors) {
+    this.labelSelector = String.join(",", selectors);
+    return this;
+  }
+
+  public CallBuilder withFieldSelector(String fieldSelector) {
+    this.fieldSelector = fieldSelector;
+    return this;
   }
 
   private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {

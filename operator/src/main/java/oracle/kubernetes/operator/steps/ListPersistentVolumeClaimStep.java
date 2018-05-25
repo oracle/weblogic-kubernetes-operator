@@ -4,17 +4,16 @@
 
 package oracle.kubernetes.operator.steps;
 
+import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -28,9 +27,6 @@ public class ListPersistentVolumeClaimStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    CallBuilderFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
     Domain dom = info.getDomain();
@@ -41,12 +37,8 @@ public class ListPersistentVolumeClaimStep extends Step {
     String domainUID = spec.getDomainUID();
 
     Step list =
-        factory
-            .create()
-            .with(
-                $ -> {
-                  $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID;
-                })
+        new CallBuilder()
+            .withLabelSelectors(forDomainUid(domainUID))
             .listPersistentVolumeClaimAsync(
                 namespace,
                 new ResponseStep<V1PersistentVolumeClaimList>(getNext()) {
