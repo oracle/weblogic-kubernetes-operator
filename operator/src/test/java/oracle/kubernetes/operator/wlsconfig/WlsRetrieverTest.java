@@ -4,13 +4,21 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_CONFIGURATION_READ_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.models.V1Service;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.http.HttpClient;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.utils.LoggingFacadeStub;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever.RequestType;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever.WithHttpClientStep;
 import oracle.kubernetes.operator.work.NextAction;
@@ -22,47 +30,51 @@ import org.junit.Test;
 
 public class WlsRetrieverTest {
 
-  LoggingFacadeStub loggingFacadeStub;
+  // The log messages to be checked during this test
+  private static final String[] LOG_KEYS = {WLS_CONFIGURATION_READ_FAILED, WLS_HEALTH_READ_FAILED};
+
+  private List<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleControl;
+  private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
 
   @Before
-  public void setup() throws Exception {
-    loggingFacadeStub = LoggingFacadeStub.install(WlsRetriever.class);
+  public void setup() {
+    consoleControl =
+        TestUtils.silenceOperatorLogger()
+            .collectLogMessages(logRecords, LOG_KEYS)
+            .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
+            .withLogLevel(Level.FINE);
   }
 
   @After
-  public void tearDown() throws Exception {
-    loggingFacadeStub.uninstall();
+  public void tearDown() {
+    consoleControl.revert();
   }
 
   @Test
   public void withHttpClientStep_Config_logIfFailed() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
-    Packet packet = new Packet();
-    packet.put(HttpClient.KEY, "Not HttpClient to cause ClassCastException");
+    Packet packet = Stub.createStub(PacketStub.class);
 
     WithHttpClientStep withHttpClientStep =
         new WithHttpClientStep(RequestType.CONFIG, service, next);
     withHttpClientStep.apply(packet);
 
-    loggingFacadeStub.assertNumMessageLogged(1);
-    loggingFacadeStub.assertContains(
-        Level.WARNING, MessageKeys.WLS_CONFIGURATION_READ_FAILED, getClassCastException(packet));
+    assertThat(logRecords, containsWarning(WLS_CONFIGURATION_READ_FAILED));
   }
 
   @Test
   public void withHttpClientStep_Config_nologIfFailedOnRetry() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
-    Packet packet = new Packet();
-    packet.put(HttpClient.KEY, "Not HttpClient to cause ClassCastException");
-    packet.put(WlsRetriever.RETRY_COUNT, 1);
+    Packet packet = Stub.createStub(PacketStub.class).withRetryCount(1);
 
     WithHttpClientStep withHttpClientStep =
         new WithHttpClientStep(RequestType.CONFIG, service, next);
     withHttpClientStep.apply(packet);
 
-    loggingFacadeStub.assertNoMessagesLogged();
+    assert (logRecords.isEmpty());
   }
 
   @Test
@@ -70,44 +82,55 @@ public class WlsRetrieverTest {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
     final String SERVER_NAME = "admin-server";
-    Packet packet = new Packet();
-    packet.put(HttpClient.KEY, "Not HttpClient to cause ClassCastException");
-    packet.put(ProcessingConstants.SERVER_NAME, SERVER_NAME);
+    Packet packet = Stub.createStub(PacketStub.class).withServerName(SERVER_NAME);
 
     WithHttpClientStep withHttpClientStep =
         new WithHttpClientStep(RequestType.HEALTH, service, next);
     withHttpClientStep.apply(packet);
 
-    loggingFacadeStub.assertNumMessageLogged(1);
-    loggingFacadeStub.assertContains(
-        Level.FINE,
-        MessageKeys.WLS_HEALTH_READ_FAILED,
-        SERVER_NAME,
-        getClassCastException(packet).toString());
+    assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
   }
 
   @Test
   public void withHttpClientStep_Health_nologIfFailedOnRetry() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
-    Packet packet = new Packet();
-    packet.put(HttpClient.KEY, "Not HttpClient to cause ClassCastException");
-    packet.put(WlsRetriever.RETRY_COUNT, 1);
+    Packet packet = Stub.createStub(PacketStub.class).withRetryCount(1);
 
     WithHttpClientStep withHttpClientStep =
         new WithHttpClientStep(RequestType.HEALTH, service, next);
     withHttpClientStep.apply(packet);
 
-    loggingFacadeStub.assertNoMessagesLogged();
+    assert (logRecords.isEmpty());
   }
 
-  private ClassCastException getClassCastException(Packet packet) {
-    try {
-      HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
-    } catch (ClassCastException e) {
-      return e;
+  abstract static class PacketStub extends Packet {
+
+    Integer retryCount;
+    String serverName;
+
+    PacketStub withRetryCount(int retryCount) {
+      this.retryCount = retryCount;
+      return this;
     }
-    return null;
+
+    PacketStub withServerName(String serverName) {
+      this.serverName = serverName;
+      return this;
+    }
+
+    @Override
+    public Object get(Object key) {
+      if (HttpClient.KEY.equals(key)) {
+        throw WlsRetrieverTest
+            .CLASSCAST_EXCEPTION; // to go to catch clause in WithHttpClientStep.apply() method
+      } else if (WlsRetriever.RETRY_COUNT.equals(key)) {
+        return retryCount;
+      } else if (ProcessingConstants.SERVER_NAME.equals(key)) {
+        return serverName;
+      }
+      return super.get(key);
+    }
   }
 
   public abstract static class V1ServiceStub extends V1Service {}

@@ -4,23 +4,26 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_REPLICAS_IGNORED;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
+import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.utils.LoggingFacadeStub;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
@@ -30,27 +33,32 @@ import org.junit.Test;
 /** Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved. */
 public class WlsDomainConfigTest {
 
-  private static final Logger UNDERLYING_LOGGER =
-      LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
-  private List<Handler> savedhandlers;
   private DomainSpec domainSpec;
   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
-  private LoggingFacadeStub loggingFacadeStub;
+
+  // The log messages to be checked during this test
+  private static final String[] LOG_KEYS = {
+    DOMAIN_REPLICAS_IGNORED, NO_WLS_SERVER_IN_CLUSTER, REPLICA_MORE_THAN_WLS_SERVERS
+  };
+
+  private List<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleControl;
 
   @Before
-  public void setup() throws Exception {
-    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
-    loggingFacadeStub = LoggingFacadeStub.install(WlsDomainConfig.class);
+  public void setup() {
+    consoleControl =
+        TestUtils.silenceOperatorLogger()
+            .collectLogMessages(logRecords, LOG_KEYS)
+            .withLogLevel(Level.WARNING);
   }
 
   @After
-  public void tearDown() throws Exception {
-    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
-    loggingFacadeStub.uninstall();
+  public void tearDown() {
+    consoleControl.revert();
   }
 
   @Test
-  public void verifyDomainNameLoadedFromJsonString() throws Exception {
+  public void verifyDomainNameLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     assertEquals("base_domain", wlsDomainConfig.getName());
@@ -61,7 +69,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyServersLoadedFromJsonString() throws Exception {
+  public void verifyServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     Map<String, WlsClusterConfig> wlsClusterConfigList = wlsDomainConfig.getClusterConfigs();
     assertEquals(1, wlsClusterConfigList.size());
@@ -81,7 +89,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyDynamicServersLoadedFromJsonString() throws Exception {
+  public void verifyDynamicServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
@@ -118,7 +126,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyMachinesLoadedFromJsonString() throws Exception {
+  public void verifyMachinesLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     Map<String, WlsMachineConfig> wlsMachineConfigList = wlsDomainConfig.getMachineConfigs();
     assertEquals(2, wlsMachineConfigList.size());
@@ -137,14 +145,14 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyGetServerConfigsDoesNotIncludeDynamicServers() throws Exception {
+  public void verifyGetServerConfigsDoesNotIncludeDynamicServers() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
 
     assertEquals(6, wlsDomainConfig.getServerConfigs().size());
   }
 
   @Test
-  public void verifyNetworkAccessPointsInDynamicServersLoadedFromJsonString() throws Exception {
+  public void verifyNetworkAccessPointsInDynamicServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
@@ -180,7 +188,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyServerWithNoChannelLoadedFromJsonString() throws Exception {
+  public void verifyServerWithNoChannelLoadedFromJsonString() {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-1");
@@ -188,7 +196,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyNetworkAccessPointsLoadedFromJsonString() throws Exception {
+  public void verifyNetworkAccessPointsLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-0");
@@ -222,7 +230,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifySSLConfigsLoadedFromJsonString() throws Exception {
+  public void verifySSLConfigsLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-0");
@@ -235,7 +243,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyMultipleClustersLoadedFromJsonString() throws Exception {
+  public void verifyMultipleClustersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     Map<String, WlsClusterConfig> wlsClusterConfigList = wlsDomainConfig.getClusterConfigs();
     assertEquals(2, wlsClusterConfigList.size());
@@ -253,7 +261,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyGetClusterConfigsDoesNotReturnNull() throws Exception {
+  public void verifyGetClusterConfigsDoesNotReturnNull() {
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertNotNull(wlsClusterConfig);
     assertEquals(0, wlsClusterConfig.getClusterSize());
@@ -264,40 +272,33 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyGetServerConfigsReturnNullIfNotFound() throws Exception {
+  public void verifyGetServerConfigsReturnNullIfNotFound() {
     assertNull(wlsDomainConfig.getServerConfig("noSuchServer"));
   }
 
   @Test
-  public void verifyGetMachineConfigsReturnNullIfNotFound() throws Exception {
+  public void verifyGetMachineConfigsReturnNullIfNotFound() {
     assertNull(wlsDomainConfig.getMachineConfig("noSuchMachine"));
   }
 
   @Test
-  public void verifyUpdateDomainSpecWarnsIfNoServersInClusterStartupCluster() throws Exception {
+  public void verifyUpdateDomainSpecWarnsIfNoServersInClusterStartupCluster() {
     defineDomainSpec()
         .withClusterStartup(
             Collections.singletonList(new ClusterStartup().withClusterName("noSuchCluster")));
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertContains(
-        Level.WARNING, MessageKeys.NO_WLS_SERVER_IN_CLUSTER, "noSuchCluster");
+    assertThat(logRecords, containsWarning(NO_WLS_SERVER_IN_CLUSTER, "noSuchCluster"));
   }
 
   @Test
-  public void verifyUpdateDomainSpecWarnsIfReplicasTooLarge() throws Exception {
+  public void verifyUpdateDomainSpecWarnsIfReplicasTooLarge() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     defineDomainSpec()
         .withClusterStartup(
             Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
         .withReplicas(10);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertContains(
-        Level.WARNING,
-        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
-        "domainSpec",
-        "DockerCluster",
-        10,
-        5);
+    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
   }
 
   private DomainSpec defineDomainSpec() {
@@ -305,50 +306,53 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyUpdateDomainSpecInfoIfReplicasAndZeroClusters() throws Exception {
+  public void verifyUpdateDomainSpecInfoIfReplicasAndZeroClusters() {
     defineDomainSpec()
         .withClusterStartup(
             Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
         .withReplicas(10);
+    consoleControl.withLogLevel(Level.INFO);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertContains(Level.INFO, MessageKeys.DOMAIN_REPLICAS_IGNORED);
+    assertThat(logRecords, containsInfo(DOMAIN_REPLICAS_IGNORED));
+    assertThat(logRecords, containsWarning(NO_WLS_SERVER_IN_CLUSTER));
   }
 
   @Test
-  public void verifyUpdateDomainSpecInfoIfReplicasAndTwoClusters() throws Exception {
+  public void verifyUpdateDomainSpecInfoIfReplicasAndTwoClusters() {
+    createDomainConfig(JSON_STRING_2_CLUSTERS);
+    defineDomainSpec()
+        .withClusterStartup(
+            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
+        .withReplicas(10);
+    consoleControl.withLogLevel(Level.INFO);
+    wlsDomainConfig.validate(domainSpec);
+    assertThat(logRecords, containsInfo(DOMAIN_REPLICAS_IGNORED));
+  }
+
+  @Test
+  public void verifyUpdateDomainSpecReplicasNotValidatedWithMoreThan1Clusters() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     defineDomainSpec()
         .withClusterStartup(
             Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
         .withReplicas(10);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertContains(Level.INFO, MessageKeys.DOMAIN_REPLICAS_IGNORED);
+    assertTrue(logRecords.isEmpty());
   }
 
   @Test
-  public void verifyUpdateDomainSpecReplicasNotValidatedWithMoreThan1Clusters() throws Exception {
-    createDomainConfig(JSON_STRING_2_CLUSTERS);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
-        .withReplicas(10);
-    wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertNoMessagesLogged(Level.WARNING);
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecNoWarningIfReplicasOK() throws Exception {
+  public void verifyUpdateDomainSpecNoWarningIfReplicasOK() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     defineDomainSpec()
         .withClusterStartup(
             Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
         .withReplicas(5);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertNoMessagesLogged(Level.WARNING);
+    assertTrue(logRecords.isEmpty());
   }
 
   @Test
-  public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge() throws Exception {
+  public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     defineDomainSpec()
         .withClusterStartup(
@@ -356,18 +360,11 @@ public class WlsDomainConfigTest {
                 new ClusterStartup().withClusterName("DockerCluster2").withReplicas(3)))
         .withReplicas(5);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertContains(
-        Level.WARNING,
-        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
-        "clusterStartup",
-        "DockerCluster2",
-        3,
-        2);
+    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
   }
 
   @Test
-  public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge_2clusters()
-      throws Exception {
+  public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge_2clusters() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     ClusterStartup dockerCluster =
         new ClusterStartup().withClusterName("DockerCluster").withReplicas(10);
@@ -375,24 +372,12 @@ public class WlsDomainConfigTest {
         new ClusterStartup().withClusterName("DockerCluster2").withReplicas(10);
     defineDomainSpec().withClusterStartup(Arrays.asList(dockerCluster, dockerCluster2));
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertContains(
-        Level.WARNING,
-        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
-        "clusterStartup",
-        "DockerCluster",
-        10,
-        3);
-    loggingFacadeStub.assertContains(
-        Level.WARNING,
-        MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
-        "clusterStartup",
-        "DockerCluster2",
-        10,
-        2);
+    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
+    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
   }
 
   @Test
-  public void verifyUpdateDomainSpecNoWarningIfClusterStatupReplicasOK() throws Exception {
+  public void verifyUpdateDomainSpecNoWarningIfClusterStatupReplicasOK() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     defineDomainSpec()
         .withClusterStartup(
@@ -400,11 +385,11 @@ public class WlsDomainConfigTest {
                 new ClusterStartup().withClusterName("DockerCluster2").withReplicas(2)))
         .withReplicas(5);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertNoMessagesLogged(Level.WARNING);
+    assertTrue(logRecords.isEmpty());
   }
 
   @Test
-  public void verifyUpdateDomainSpecNoWarningIfClusterStatupOnDynamicCluster() throws Exception {
+  public void verifyUpdateDomainSpecNoWarningIfClusterStatupOnDynamicCluster() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
     defineDomainSpec()
         .withClusterStartup(
@@ -412,7 +397,7 @@ public class WlsDomainConfigTest {
                 new ClusterStartup().withClusterName("DockerCluster").withReplicas(10)))
         .withReplicas(10);
     wlsDomainConfig.validate(domainSpec);
-    loggingFacadeStub.assertNoMessagesLogged(Level.WARNING);
+    assertTrue(logRecords.isEmpty());
   }
 
   private boolean containsServer(WlsClusterConfig wlsClusterConfig, String serverName) {

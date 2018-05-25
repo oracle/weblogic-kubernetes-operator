@@ -3,10 +3,16 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator.http;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 import com.meterware.simplestub.Stub;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -14,8 +20,7 @@ import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.utils.LoggingFacadeStub;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -24,16 +29,24 @@ import org.junit.Test;
 public class HttpClientTest {
 
   private static Response mockResponse;
-  private LoggingFacadeStub loggingFacadeStub;
+
+  // The log messages to be checked during this test
+  private static final String[] LOG_KEYS = {HTTP_METHOD_FAILED};
+
+  private List<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleControl;
 
   @Before
-  public void setup() throws Exception {
-    loggingFacadeStub = LoggingFacadeStub.install(HttpClient.class);
+  public void setup() {
+    consoleControl =
+        TestUtils.silenceOperatorLogger()
+            .collectLogMessages(logRecords, LOG_KEYS)
+            .withLogLevel(Level.FINE);
   }
 
   @After
   public void tearDown() throws Exception {
-    loggingFacadeStub.uninstall();
+    consoleControl.revert();
     mockResponse = null;
   }
 
@@ -48,12 +61,7 @@ public class HttpClientTest {
     httpClient.executePostUrlOnServiceClusterIP(
         requestURL, serviceURL, WlsDomainConfig.getRetrieveServersSearchPayload(), false);
 
-    loggingFacadeStub.assertContains(
-        Level.FINE,
-        MessageKeys.HTTP_METHOD_FAILED,
-        "POST",
-        serviceURL + requestURL,
-        Status.NOT_FOUND.getStatusCode());
+    assertThat(logRecords, containsFine(HTTP_METHOD_FAILED, Status.NOT_FOUND.getStatusCode()));
   }
 
   @Test
@@ -72,12 +80,7 @@ public class HttpClientTest {
       // expected exception
     }
 
-    loggingFacadeStub.assertContains(
-        Level.FINE,
-        MessageKeys.HTTP_METHOD_FAILED,
-        "POST",
-        serviceURL + requestURL,
-        Status.NOT_FOUND.getStatusCode());
+    assertThat(logRecords, containsFine(HTTP_METHOD_FAILED, Status.NOT_FOUND.getStatusCode()));
   }
 
   abstract static class ClientStub implements Client {

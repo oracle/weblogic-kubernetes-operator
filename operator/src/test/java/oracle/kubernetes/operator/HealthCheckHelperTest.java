@@ -6,11 +6,11 @@ package oracle.kubernetes.operator;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.util.Collections.singletonList;
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.HealthCheckHelperTest.AccessReviewCallFactoryStub.expectAccessCheck;
 import static oracle.kubernetes.operator.HealthCheckHelperTest.AccessReviewCallFactoryStub.setMayAccessCluster;
 import static oracle.kubernetes.operator.HealthCheckHelperTest.AccessReviewCallFactoryStub.setMayAccessNamespace;
-import static oracle.kubernetes.operator.HealthCheckHelperTest.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.HealthCheckHelperTest.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
@@ -48,13 +48,11 @@ import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import oracle.kubernetes.TestUtils;
@@ -65,7 +63,6 @@ import oracle.kubernetes.operator.helpers.SynchronousCallFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -628,49 +625,6 @@ public class HealthCheckHelperTest {
 
     private List<String> toVerbs(List<Operation> operations) {
       return operations.stream().map(Enum::name).collect(Collectors.toList());
-    }
-  }
-
-  static class LogMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<
-          java.util.Collection<java.util.logging.LogRecord>> {
-    private String expectedMessage;
-    private Level expectedLevel;
-
-    private LogMatcher(Level expectedLevel, String expectedMessage) {
-      this.expectedMessage = expectedMessage;
-      this.expectedLevel = expectedLevel;
-    }
-
-    static LogMatcher containsInfo(String expectedMessage) {
-      return new LogMatcher(Level.INFO, expectedMessage);
-    }
-
-    static LogMatcher containsWarning(String expectedMessage) {
-      return new LogMatcher(Level.WARNING, expectedMessage);
-    }
-
-    @Override
-    protected boolean matchesSafely(
-        Collection<LogRecord> logRecords, Description mismatchDescription) {
-      return logRecords.removeIf(this::matches) || noLogMessageFound(mismatchDescription);
-    }
-
-    private boolean matches(LogRecord item) {
-      return item.getLevel() == expectedLevel && item.getMessage().equals(expectedMessage);
-    }
-
-    private boolean noLogMessageFound(Description mismatchDescription) {
-      mismatchDescription.appendText("no matching log message was found");
-      return false;
-    }
-
-    @Override
-    public void describeTo(Description description) {
-      description
-          .appendValue(expectedLevel)
-          .appendText(" log message with value ")
-          .appendValue(expectedMessage);
     }
   }
 }
