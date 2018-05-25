@@ -88,83 +88,33 @@ public class TestUtils {
     if (output.contains(resultString)) return true;
     else return false;
   }
-  /** @param cmd - kubectl get pod <podname> -n namespace */
-  public static void checkPodReady(String podName, String domainNS) {
-
-    int i = 0;
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
-
-    while (i < maxIterationsPod) {
-      String outputStr = TestUtils.executeCommand(cmd.toString());
-      if (!outputStr.contains("1/1")) {
-        // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
-          throw new RuntimeException(
-              "FAILURE: pod " + podName + " is not running and ready, exiting!");
-        }
-        logger.info(
-            "Pod "
-                + podName
-                + " is not Ready Ite ["
-                + i
-                + "/"
-                + maxIterationsPod
-                + "], sleeping "
-                + waitTimePod
-                + " seconds more");
-        try {
-          Thread.sleep(waitTimePod * 1000);
-        } catch (InterruptedException ignore) {
-        }
-        i++;
-      } else {
-        logger.info("Pod " + podName + " is Ready");
-        break;
-      }
-    }
-  }
-
-  /** @param cmd - kubectl get pod <podname> -n namespace */
-  public static void checkPodCreated(String podName, String domainNS) {
-    int i = 0;
+  /**
+   * @param cmd - kubectl get pod <podname> -n namespace
+   * @throws Exception
+   */
+  public static void checkPodReady(String podName, String domainNS) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for admin pod
-    while (i < maxIterationsPod) {
-      String outputStr = TestUtils.executeCommand(cmd.toString());
-      logger.info("Output for " + cmd + "\n" + outputStr);
-      if (!outputStr.contains("Running")) {
-        // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
-          throw new RuntimeException("FAILURE: pod " + podName + " is not running, exiting!");
-        }
-        logger.info(
-            "Pod "
-                + podName
-                + " is not Running Ite ["
-                + i
-                + "/"
-                + maxIterationsPod
-                + "], sleeping "
-                + waitTimePod
-                + " seconds more");
-        try {
-          Thread.sleep(waitTimePod * 1000);
-        } catch (InterruptedException ignore) {
-        }
-
-        i++;
-      } else {
-        logger.info("Pod " + podName + " is Running");
-        break;
-      }
-    }
+    checkCmdInLoop(cmd.toString(), "1/1", podName);
   }
 
-  /** @param cmd - kubectl get service <servicename> -n namespace */
-  public static void checkServiceCreated(String serviceName, String domainNS) {
+  /** @param cmd - kubectl get pod <podname> -n namespace */
+  public static void checkPodCreated(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Running", podName);
+  }
+
+  /**
+   * @param cmd - kubectl get service <servicename> -n namespace
+   * @throws Exception
+   */
+  public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
@@ -186,11 +136,7 @@ public class TestUtils {
                 + "], sleeping "
                 + waitTimePod
                 + " seconds more");
-        try {
-          Thread.sleep(waitTimePod * 1000);
-        } catch (InterruptedException ignore) {
-        }
-
+        Thread.sleep(waitTimePod * 1000);
         i++;
       } else {
         logger.info("Service " + serviceName + " is Created");
@@ -269,7 +215,7 @@ public class TestUtils {
     return replicas;
   }
 
-  public static void checkPodDeleted(String podName, String domainNS) {
+  public static void checkPodDeleted(String podName, String domainNS) throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl -n ")
@@ -299,10 +245,8 @@ public class TestUtils {
                 + "], sleeping "
                 + waitTimePod
                 + " seconds more");
-        try {
-          Thread.sleep(waitTimePod * 1000);
-        } catch (InterruptedException ignore) {
-        }
+
+        Thread.sleep(waitTimePod * 1000);
 
         i++;
       } else {
@@ -311,7 +255,7 @@ public class TestUtils {
     }
   }
 
-  public static void checkDomainDeleted(String domainUid, String domainNS) {
+  public static void checkDomainDeleted(String domainUid, String domainNS) throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get domain ")
@@ -338,10 +282,7 @@ public class TestUtils {
                 + "], sleeping "
                 + waitTimePod
                 + " seconds more");
-        try {
-          Thread.sleep(waitTimePod * 1000);
-        } catch (InterruptedException ignore) {
-        }
+        Thread.sleep(waitTimePod * 1000);
 
         i++;
       } else {
@@ -365,51 +306,9 @@ public class TestUtils {
     // get access token
     String token = getAccessToken(operatorNS);
 
-    // get operator external certificate from weblogic-operator.yaml
-    String opExtCertFile = getExternalOperatorCertificate(operatorNS, userProjectsDir);
-    // logger.info("opExternalCertificateFile ="+opExtCertFile);
+    KeyStore myKeyStore = createKeyStore(operatorNS, userProjectsDir);
 
-    // get operator external key from weblogic-operator.yaml
-    String opExtKeyFile = getExternalOperatorKey(operatorNS, userProjectsDir);
-    // logger.info("opExternalKeyFile ="+opExtKeyFile);
-
-    if (!new File(opExtCertFile).exists()) {
-      throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
-    }
-    if (!new File(opExtKeyFile).exists()) {
-      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
-    }
-    logger.info("opExtCertFile " + opExtCertFile);
-    // Create a java Keystore obj and verify it's not null
-    KeyStore myKeyStore =
-        PEMImporter.createKeyStore(
-            new File(opExtKeyFile), new File(opExtCertFile), "temp_password");
-    if (myKeyStore == null) {
-      throw new RuntimeException("Keystore Obj is null");
-    }
-
-    // Create REST Client obj and verify it's not null
-    Client javaClient =
-        ClientBuilder.newBuilder()
-            .trustStore(myKeyStore)
-            .register(JsonProcessingFeature.class)
-            .build();
-
-    if (javaClient == null) {
-      throw new RuntimeException("Client Obj is null");
-    }
-
-    // Create a resource target identified by Operator ext REST API URL
-    WebTarget target = javaClient.target(url.toString());
-    logger.info("Invoking OP REST API URL: " + target.getUri().toString());
-
-    // Obtain a client request invocation builder
-    Builder request = target.request(MediaType.APPLICATION_JSON);
-    request
-        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-        .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-        .header("X-Requested-By", "MyJavaClient")
-        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+    Builder request = createRESTRequest(myKeyStore, url, token);
 
     Response response = null;
     // Post scaling request to Operator
@@ -430,7 +329,7 @@ public class TestUtils {
     }
 
     response.close();
-    javaClient.close();
+    // javaClient.close();
 
     return returnCode;
   }
@@ -572,5 +471,91 @@ public class TestUtils {
     inStream.close();
 
     return props;
+  }
+
+  private static Builder createRESTRequest(KeyStore myKeyStore, String url, String token) {
+    // Create REST Client obj and verify it's not null
+    Client javaClient =
+        ClientBuilder.newBuilder()
+            .trustStore(myKeyStore)
+            .register(JsonProcessingFeature.class)
+            .build();
+
+    if (javaClient == null) {
+      throw new RuntimeException("Client Obj is null");
+    }
+
+    // Create a resource target identified by Operator ext REST API URL
+    WebTarget target = javaClient.target(url.toString());
+    logger.info("Invoking OP REST API URL: " + target.getUri().toString());
+
+    // Obtain a client request invocation builder
+    Builder request = target.request(MediaType.APPLICATION_JSON);
+    request
+        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+        .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+        .header("X-Requested-By", "MyJavaClient")
+        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+    return request;
+  }
+
+  private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
+      throws Exception {
+    // get operator external certificate from weblogic-operator.yaml
+    String opExtCertFile = getExternalOperatorCertificate(operatorNS, userProjectsDir);
+    // logger.info("opExternalCertificateFile ="+opExtCertFile);
+
+    // get operator external key from weblogic-operator.yaml
+    String opExtKeyFile = getExternalOperatorKey(operatorNS, userProjectsDir);
+    // logger.info("opExternalKeyFile ="+opExtKeyFile);
+
+    if (!new File(opExtCertFile).exists()) {
+      throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
+    }
+    if (!new File(opExtKeyFile).exists()) {
+      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
+    }
+    logger.info("opExtCertFile " + opExtCertFile);
+    // Create a java Keystore obj and verify it's not null
+    KeyStore myKeyStore =
+        PEMImporter.createKeyStore(
+            new File(opExtKeyFile), new File(opExtCertFile), "temp_password");
+    if (myKeyStore == null) {
+      throw new RuntimeException("Keystore Obj is null");
+    }
+    return myKeyStore;
+  }
+
+  private static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
+      throws Exception {
+    int i = 0;
+    while (i < maxIterationsPod) {
+      String outputStr = TestUtils.executeCommand(cmd);
+      logger.info("Output for " + cmd + "\n" + outputStr);
+
+      if (!outputStr.contains(matchStr)) {
+        // check for last iteration
+        if (i == (maxIterationsPod - 1)) {
+          throw new RuntimeException(
+              "FAILURE: pod " + k8sObjName + " is not running/ready, exiting!");
+        }
+        logger.info(
+            "Pod "
+                + k8sObjName
+                + " is not Running Ite ["
+                + i
+                + "/"
+                + maxIterationsPod
+                + "], sleeping "
+                + waitTimePod
+                + " seconds more");
+
+        Thread.sleep(waitTimePod * 1000);
+        i++;
+      } else {
+        logger.info("Pod " + k8sObjName + " is Running");
+        break;
+      }
+    }
   }
 }

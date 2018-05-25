@@ -45,30 +45,39 @@ public class Operator {
    */
   public Operator(Properties inputProps) throws Exception {
     this.operatorProps = inputProps;
-
     initialize();
-
     generateInputYaml();
-
     callCreateOperatorScript();
   }
 
-  /** verifies operator is created */
-  public void verifyPodCreated() {
+  /**
+   * verifies operator is created
+   *
+   * @throws Exception
+   */
+  public void verifyPodCreated() throws Exception {
     logger.info("Checking if Operator pod is Running");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodCreated("", operatorNS);
   }
 
-  /** verifies operator is ready */
-  public void verifyOperatorReady() {
+  /**
+   * verifies operator is ready
+   *
+   * @throws Exception
+   */
+  public void verifyOperatorReady() throws Exception {
     logger.info("Checking if Operator pod is Ready");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodReady("", operatorNS);
   }
 
-  /** Start operator and makes sure it is deployed and ready */
-  public void create() {
+  /**
+   * Start operator and makes sure it is deployed and ready
+   *
+   * @throws Exception
+   */
+  public void create() throws Exception {
     logger.info("Starting Operator");
     TestUtils.executeCommand(
         "kubectl create -f "
@@ -124,7 +133,7 @@ public class Operator {
     }
   }
 
-  public void destroy() {
+  public void destroy() throws Exception {
     TestUtils.executeCommand(
         "kubectl delete -f "
             + userProjectsDir
@@ -133,44 +142,9 @@ public class Operator {
             + "/weblogic-operator.yaml");
 
     logger.info("Checking REST service is deleted");
-    String serviceCmd =
-        "kubectl get services -n " + operatorNS + " | egrep weblogic-operator-src | wc -l";
-
-    for (int i = 0; i < maxIterationsOp; i++) {
-
-      String servicenum = TestUtils.executeCommandStrArray(serviceCmd).trim();
-      if (!servicenum.contains("No resources found.")) {
-        if (i == maxIterationsOp - 1) {
-          throw new RuntimeException("FAILURE: Operator fail to be deleted");
-        }
-        logger.info("status is " + servicenum + ", iteration " + i + " of " + maxIterationsOp);
-        try {
-          Thread.sleep(waitTimeOp * 1000);
-        } catch (InterruptedException ignore) {
-        }
-      } else {
-        break;
-      }
-    }
-
-    String getAllCmd = "kubectl get all -n " + operatorNS;
-
-    for (int i = 0; i < maxIterationsOp; i++) {
-
-      String getAll = TestUtils.executeCommandStrArray(getAllCmd).trim();
-      if (!getAll.contains("No resources found.")) {
-        if (i == maxIterationsOp - 1) {
-          throw new RuntimeException("FAILURE: Operator shutdown failed.." + getAll);
-        }
-        logger.info("status is " + getAll + ", iteration " + i + " of " + maxIterationsOp);
-        try {
-          Thread.sleep(waitTimeOp * 1000);
-        } catch (InterruptedException ignore) {
-        }
-      } else {
-        break;
-      }
-    }
+    runCommandInLoop(
+        "kubectl get services -n " + operatorNS + " | egrep weblogic-operator-src | wc -l");
+    runCommandInLoop("kubectl get all -n " + operatorNS);
   }
 
   public void cleanup(String userProjectsDir) {
@@ -198,11 +172,7 @@ public class Operator {
         operatorNS, myOpRestApiUrl.toString(), myJsonObjStr, userProjectsDir);
     // give sometime to complete
     logger.info("Wait 30 sec for scaling to complete...");
-    try {
-      Thread.sleep(30 * 1000);
-    } catch (InterruptedException ignore) {
-
-    }
+    Thread.sleep(30 * 1000);
   }
 
   public void verifyDomainExists(String domainUid) throws Exception {
@@ -238,6 +208,22 @@ public class Operator {
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-operators/" + operatorNS));
     generatedInputYamlFile = parentDir + "/" + operatorNS + "-inputs.yaml";
     TestUtils.createInputFile(operatorProps, inputTemplateFile, generatedInputYamlFile);
+  }
+
+  private void runCommandInLoop(String command) throws Exception {
+    for (int i = 0; i < maxIterationsOp; i++) {
+
+      String output = TestUtils.executeCommandStrArray(command).trim();
+      if (!output.contains("No resources found.")) {
+        if (i == maxIterationsOp - 1) {
+          throw new RuntimeException("FAILURE: Operator fail to be deleted");
+        }
+        logger.info("status is " + output + ", iteration " + i + " of " + maxIterationsOp);
+        Thread.sleep(waitTimeOp * 1000);
+      } else {
+        break;
+      }
+    }
   }
 
   private void initialize() {
