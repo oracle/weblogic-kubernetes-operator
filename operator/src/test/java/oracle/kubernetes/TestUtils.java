@@ -13,13 +13,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
 public class TestUtils {
-
   /**
    * Removes the console handlers from the specified logger, in order to silence them during a test.
    *
@@ -118,6 +118,9 @@ public class TestUtils {
     private Logger logger;
     private TestLogHandler testHandler;
     private List<Handler> savedHandlers;
+    private Level savedLogLevel;
+    // log level could be null, so need a boolean to indicate if we have saved it
+    private boolean loggerLevelSaved;
 
     ConsoleHandlerMemento(Logger logger, TestLogHandler testHandler, List<Handler> savedHandlers) {
       this.logger = logger;
@@ -136,6 +139,15 @@ public class TestUtils {
       return this;
     }
 
+    public ConsoleHandlerMemento withLogLevel(Level logLevel) {
+      if (!loggerLevelSaved) {
+        savedLogLevel = logger.getLevel();
+        loggerLevelSaved = true;
+      }
+      logger.setLevel(logLevel);
+      return this;
+    }
+
     public void ignoreMessage(String message) {
       testHandler.messagesToTrack.remove(message);
     }
@@ -144,6 +156,9 @@ public class TestUtils {
     public void revert() {
       logger.removeHandler(testHandler);
       restoreConsoleHandlers(logger, savedHandlers);
+      if (loggerLevelSaved) {
+        logger.setLevel(savedLogLevel);
+      }
 
       testHandler.throwLoggedThrowable();
       testHandler.throwUncheckedLogMessages();
