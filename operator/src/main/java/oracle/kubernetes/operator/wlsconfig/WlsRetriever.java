@@ -93,14 +93,14 @@ public class WlsRetriever {
   }
 
   private static final String START_TIME = "WlsRetriever-startTime";
-  private static final String RETRY_COUNT = "WlsRetriever-retryCount";
+  static final String RETRY_COUNT = "WlsRetriever-retryCount";
   private static final Random R = new Random();
   private static final int HIGH = 50;
   private static final int LOW = 10;
   private static final int SCALE = 100;
   private static final int MAX = 10000;
 
-  private enum RequestType {
+  enum RequestType {
     CONFIG,
     HEALTH
   }
@@ -237,7 +237,7 @@ public class WlsRetriever {
     }
   }
 
-  private static final class WithHttpClientStep extends Step {
+  static final class WithHttpClientStep extends Step {
     private final RequestType requestType;
     private final V1Service service;
 
@@ -359,17 +359,18 @@ public class WlsRetriever {
 
         return doNext(packet);
       } catch (Throwable t) {
-        if (RequestType.CONFIG.equals(requestType)) {
-          LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
-        } else {
-          LOGGER.warning(
-              MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
-        }
-
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
           retryCount = 0;
+          // Log warning if this is the first try. Do not log for retries to prevent
+          // filling up the log repeatedly  with same log message
+          if (RequestType.CONFIG.equals(requestType)) {
+            LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
+          } else {
+            LOGGER.fine(
+                MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
+          }
         }
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         packet.put(RETRY_COUNT, retryCount);

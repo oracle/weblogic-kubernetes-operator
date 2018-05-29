@@ -40,7 +40,9 @@ public class HttpClient {
   private static final String SERVICE_URL =
       System.getProperty("oracle.kubernetes.operator.http.HttpClient.SERVICE_URL");
 
-  private HttpClient(Client httpClient, String encodedCredentials) {
+  // Please use one of the factory methods to get an instance of HttpClient.
+  // Constructor is package access for unit testing
+  HttpClient(Client httpClient, String encodedCredentials) {
     this.httpClient = httpClient;
     this.encodedCredentials = encodedCredentials;
   }
@@ -136,7 +138,7 @@ public class HttpClient {
         responseString = String.valueOf(response.readEntity(String.class));
       }
     } else {
-      LOGGER.warning(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
+      LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
       if (throwOnFailure) {
         throw new HTTPException(status);
       }
