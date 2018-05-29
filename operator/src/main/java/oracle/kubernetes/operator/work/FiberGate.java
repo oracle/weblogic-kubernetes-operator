@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.work;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -31,6 +32,10 @@ public class FiberGate {
   public FiberGate(Engine engine) {
     this.engine = engine;
     this.PLACEHOLDER = engine.createFiber();
+  }
+
+  public ScheduledExecutorService getExecutor() {
+    return engine.getExecutor();
   }
 
   /**

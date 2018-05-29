@@ -123,7 +123,7 @@ public class Main {
   }
 
   private static final Engine engine = new Engine(wrappedExecutorService);
-  private static final FiberGate domainUpdaters = new FiberGate(engine);
+  private static final FiberGate FIBER_GATE = new FiberGate(engine);
 
   private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
   private static final AtomicBoolean stopping = new AtomicBoolean(false);
@@ -139,7 +139,7 @@ public class Main {
   private static Map<String, IngressWatcher> ingressWatchers = new HashMap<>();
   private static KubernetesVersion version = null;
 
-  private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
+  static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
   static Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
@@ -237,9 +237,7 @@ public class Main {
         initialized.put(ns, Boolean.TRUE);
         resourceSteps = Step.chain(resourceSteps, readExistingResources(namespace, ns));
       }
-      runSteps(resourceSteps);
-
-      deleteStrandedResources();
+      runSteps(resourceSteps, Main::deleteStrandedResources);
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
@@ -258,7 +256,7 @@ public class Main {
     }
   }
 
-  private static void deleteStrandedResources() {
+  static void deleteStrandedResources() {
     for (Map.Entry<String, DomainPresenceInfo> entry :
         DomainPresenceInfoManager.getDomainPresenceInfos().entrySet()) {
       String domainUID = entry.getKey();
@@ -270,7 +268,15 @@ public class Main {
   }
 
   private static void runSteps(Step firstStep) {
-    engine.createFiber().start(firstStep, new Packet(), new NullCompletionCallback());
+    runSteps(firstStep, null);
+  }
+
+  private static void runSteps(Step firstStep, Runnable completionAction) {
+    engine.createFiber().start(firstStep, new Packet(), andThenDo(completionAction));
+  }
+
+  private static NullCompletionCallback andThenDo(Runnable completionAction) {
+    return new NullCompletionCallback(completionAction);
   }
 
   private static Runnable updateDomainPresenceInfos(Collection<DomainPresenceInfo> infos) {
@@ -297,39 +303,26 @@ public class Main {
   }
 
   private static Step readExistingIngresses(String ns) {
-    return Main.callBuilderFactory
-        .create()
-        .with(
-            $ ->
-                $.labelSelector =
-                    LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+    return new CallBuilder()
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listIngressAsync(ns, new IngressListStep(ns));
   }
 
   private static Step readExistingServices(String ns) {
-    return Main.callBuilderFactory
-        .create()
-        .with(
-            $ ->
-                $.labelSelector =
-                    LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+    return new CallBuilder()
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listServiceAsync(ns, new ServiceListStep(ns));
   }
 
   private static Step readExistingEvents(String ns) {
-    return Main.callBuilderFactory
-        .create()
-        .with($ -> $.fieldSelector = Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
+    return new CallBuilder()
+        .withFieldSelector(Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
         .listEventAsync(ns, new EventListStep(ns));
   }
 
   private static Step readExistingPods(String ns) {
-    return callBuilderFactory
-        .create()
-        .with(
-            $ ->
-                $.labelSelector =
-                    LabelConstants.DOMAINUID_LABEL + "," + LabelConstants.CREATEDBYOPERATOR_LABEL)
+    return new CallBuilder()
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listPodAsync(ns, new PodListStep(ns));
   }
 
@@ -595,7 +588,7 @@ public class Main {
             public void onThrowable(Packet packet, Throwable throwable) {
               LOGGER.severe(MessageKeys.EXCEPTION, throwable);
 
-              domainUpdaters.startFiberIfLastFiberMatches(
+              FIBER_GATE.startFiberIfLastFiberMatches(
                   domainUID,
                   Fiber.getCurrentIfSet(),
                   DomainStatusUpdater.createFailedStep(throwable, null),
@@ -612,19 +605,19 @@ public class Main {
                     }
                   });
 
-              engine
+              FIBER_GATE
                   .getExecutor()
                   .schedule(
                       () -> checkAndCreateDomainPresence(info, false),
-                      tuningAndConfig.getMainTuning().domainPresenceFailureRetrySeconds,
+                      DomainPresence.getDomainPresenceFailureRetrySeconds(),
                       TimeUnit.SECONDS);
             }
           };
 
       if (isCausedByWatch) {
-        domainUpdaters.startFiber(domainUID, strategy, p, cc);
+        FIBER_GATE.startFiber(domainUID, strategy, p, cc);
       } else {
-        domainUpdaters.startFiberIfNoCurrentFiber(domainUID, strategy, p, cc);
+        FIBER_GATE.startFiberIfNoCurrentFiber(domainUID, strategy, p, cc);
       }
 
       scheduleDomainStatusUpdating(info);
@@ -666,7 +659,7 @@ public class Main {
     if (info != null) {
       DomainPresenceControl.cancelDomainStatusUpdating(info);
     }
-    domainUpdaters.startFiber(
+    FIBER_GATE.startFiber(
         domainUID,
         new DeleteDomainStep(namespace, domainUID),
         new Packet(),
@@ -1234,9 +1227,15 @@ public class Main {
   }
 
   private static class NullCompletionCallback implements CompletionCallback {
+    private Runnable completionAction;
+
+    NullCompletionCallback(Runnable completionAction) {
+      this.completionAction = completionAction;
+    }
+
     @Override
     public void onCompletion(Packet packet) {
-      // no-op
+      if (completionAction != null) completionAction.run();
     }
 
     @Override

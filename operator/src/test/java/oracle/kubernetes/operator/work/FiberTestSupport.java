@@ -34,6 +34,11 @@ public class FiberTestSupport {
   private Fiber fiber = engine.createFiber();
   private Packet packet = new Packet();
 
+  /** Creates a single-threaded FiberGate instance. */
+  public FiberGate createFiberGateStub() {
+    return new FiberGate(engine);
+  }
+
   /**
    * Schedules a runnable to run immediately. In practice, it will run as soon as all previously
    * queued runnables have complete.
