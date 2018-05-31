@@ -1,7 +1,7 @@
 {
     "type": "object",
     "javaType": "oracle.kubernetes.weblogic.domain.v1.ClusterStartup",
-    "description": "ClusterStarup describes the desired startup state and passed environment variables for a specific cluster.",
+    "description": "ClusterStartup describes the desired startup state and passed environment variables for a specific cluster server.  Deprecated.  Use the DomainSpec's clusters and clusterDefaults properties.",
     "required": [
      "clusterName"
     ],

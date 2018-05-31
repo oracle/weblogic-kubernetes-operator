@@ -1,12 +1,12 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -19,10 +19,11 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 public class ServerDownIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   private final Collection<Map.Entry<String, ServerKubernetesObjects>> c;
 
-  public ServerDownIteratorStep(Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
+  public ServerDownIteratorStep(
+      Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
     super(next);
     this.c = serversToStop;
   }
@@ -32,7 +33,9 @@ public class ServerDownIteratorStep extends Step {
     Collection<StepAndPacket> startDetails = new ArrayList<>();
 
     for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
-      startDetails.add(new StepAndPacket(new ServerDownStep(entry.getKey(), entry.getValue(), null), packet.clone()));
+      startDetails.add(
+          new StepAndPacket(
+              new ServerDownStep(entry.getKey(), entry.getValue(), null), packet.clone()));
     }
 
     if (LOGGER.isFineEnabled()) {
@@ -45,12 +48,16 @@ public class ServerDownIteratorStep extends Step {
       for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
         stopList.add(entry.getKey());
       }
-      LOGGER.fine("Stopping servers for domain with UID: " + spec.getDomainUID() + ", stop list: " + stopList);
+      LOGGER.fine(
+          "Stopping servers for domain with UID: "
+              + spec.getDomainUID()
+              + ", stop list: "
+              + stopList);
     }
 
     if (startDetails.isEmpty()) {
       return doNext(packet);
     }
-    return doForkJoin(next, packet, startDetails);
+    return doForkJoin(getNext(), packet, startDetails);
   }
 }

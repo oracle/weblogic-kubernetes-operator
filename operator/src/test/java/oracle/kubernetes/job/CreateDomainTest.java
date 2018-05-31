@@ -1,28 +1,24 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.job;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-/**
- * Tests for the create domain kubernetes job
- */
+/** Tests for the create domain kubernetes job */
 @Ignore
 public class CreateDomainTest {
 
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
-
+  @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   @Test
   public void createDomainJobTest() {
@@ -58,13 +54,12 @@ public class CreateDomainTest {
       p.waitFor();
       Assert.assertTrue(p.exitValue() == 0);
 
-      File createDomainJob = new File(dstDir.toString() + File.separator + "create-domain-job.yaml");
+      File createDomainJob =
+          new File(dstDir.toString() + File.separator + "create-domain-job.yaml");
       Assert.assertTrue(createDomainJob.exists());
 
     } catch (Exception e) {
       Assert.fail(e.getMessage());
     }
-
-
   }
 }

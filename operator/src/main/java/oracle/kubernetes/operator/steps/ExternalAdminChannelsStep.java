@@ -1,12 +1,12 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -22,7 +22,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 public class ExternalAdminChannelsStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   public ExternalAdminChannelsStep(Step next) {
     super(next);
   }
@@ -31,26 +31,25 @@ public class ExternalAdminChannelsStep extends Step {
   public NextAction apply(Packet packet) {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-    Collection<NetworkAccessPoint> validChannels = adminChannelsToCreate(info.getScan(), info.getDomain());
+    Collection<NetworkAccessPoint> validChannels =
+        adminChannelsToCreate(info.getScan(), info.getDomain());
     if (validChannels != null && !validChannels.isEmpty()) {
-      return doNext(new ExternalAdminChannelIteratorStep(info, validChannels, next), packet);
+      return doNext(new ExternalAdminChannelIteratorStep(info, validChannels, getNext()), packet);
     }
 
     return doNext(packet);
   }
 
   /**
-   * This method checks the domain spec against any configured network access
-   * points defined for the domain. This implementation only handles T3 protocol
-   * for externalization.
+   * This method checks the domain spec against any configured network access points defined for the
+   * domain. This implementation only handles T3 protocol for externalization.
    *
-   * @param scan
-   *          WlsDomainConfig from discovery containing configuration
-   * @param dom
-   *          Domain containing Domain resource information
+   * @param scan WlsDomainConfig from discovery containing configuration
+   * @param dom Domain containing Domain resource information
    * @return Validated collection of network access points
    */
-  public static Collection<NetworkAccessPoint> adminChannelsToCreate(WlsDomainConfig scan, Domain dom) {
+  public static Collection<NetworkAccessPoint> adminChannelsToCreate(
+      WlsDomainConfig scan, Domain dom) {
     LOGGER.entering();
 
     // The following hard-coded values for the nodePort min/max ranges are
@@ -103,9 +102,15 @@ public class ExternalAdminChannelsStep extends Step {
       }
 
       // Make sure configured port is within NodePort range.
-      if (nap.getListenPort().compareTo(nodePortMin) < 0 || nap.getListenPort().compareTo(nodePortMax) > 0) {
+      if (nap.getListenPort().compareTo(nodePortMin) < 0
+          || nap.getListenPort().compareTo(nodePortMax) > 0) {
         // port setting is outside the NodePort range limits
-        LOGGER.warning(MessageKeys.EXCH_OUTSIDE_RANGE, nap.getName(), nap.getPublicPort(), nodePortMin, nodePortMax);
+        LOGGER.warning(
+            MessageKeys.EXCH_OUTSIDE_RANGE,
+            nap.getName(),
+            nap.getPublicPort(),
+            nodePortMin,
+            nodePortMax);
         continue;
       }
 

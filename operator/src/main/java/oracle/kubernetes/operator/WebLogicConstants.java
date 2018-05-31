@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -18,9 +19,15 @@ public interface WebLogicConstants {
   public static final String FORCE_SUSPENDING_STATE = "FORCE_SUSPENDING";
   public static final String FAILED_NOT_RESTARTABLE_STATE = "FAILED_NOT_RESTARTABLE";
 
-  public static final Set<String> STATES_SUPPORTING_REST = new HashSet<>(Arrays.asList(
-    STANDBY_STATE, ADMIN_STATE, RESUMING_STATE, RUNNING_STATE, SUSPENDING_STATE, FORCE_SUSPENDING_STATE));
+  public static final Set<String> STATES_SUPPORTING_REST =
+      new HashSet<>(
+          Arrays.asList(
+              STANDBY_STATE,
+              ADMIN_STATE,
+              RESUMING_STATE,
+              RUNNING_STATE,
+              SUSPENDING_STATE,
+              FORCE_SUSPENDING_STATE));
 
   public static final String READINESS_PROBE_NOT_READY_STATE = "Not ready: WebLogic Server state: ";
-  
 }

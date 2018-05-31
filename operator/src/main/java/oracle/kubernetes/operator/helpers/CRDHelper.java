@@ -1,32 +1,29 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
-
-import java.util.Collections;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import java.util.Collections;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
-/**
- * Helper class to ensure Domain CRD is created
- *
- */
+/** Helper class to ensure Domain CRD is created */
 public class CRDHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   private CRDHelper() {}
 
   /**
-   * Validates and, if necessary, created domains.weblogic.oracle CRD.  No need
-   * to be async as operator can not begin processing until CRD exists
+   * Validates and, if necessary, created domains.weblogic.oracle CRD. No need to be async as
+   * operator can not begin processing until CRD exists
    */
   public static void checkAndCreateCustomResourceDefinition() {
     LOGGER.entering();
@@ -52,8 +49,7 @@ public class CRDHelper {
     CallBuilderFactory factory = new CallBuilderFactory();
     V1beta1CustomResourceDefinition existingCRD = null;
     try {
-      existingCRD = factory.create().readCustomResourceDefinition(
-          crd.getMetadata().getName());
+      existingCRD = factory.create().readCustomResourceDefinition(crd.getMetadata().getName());
 
     } catch (ApiException e) {
       if (e.getCode() != CallBuilder.NOT_FOUND) {
