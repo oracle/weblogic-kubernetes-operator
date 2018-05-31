@@ -1,8 +1,10 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
+import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
@@ -10,9 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import io.kubernetes.client.models.V1ObjectMeta;
-
 import javax.annotation.Nonnull;
 
 public abstract class InMemoryDatabase<T, L> {
@@ -21,14 +20,16 @@ public abstract class InMemoryDatabase<T, L> {
 
   public void create(T item, Map<String, String> keys) {
     T t = contents.get(new DatabaseKey(keys, item));
-    if (t != null) throw new InMemoryDatabaseException(HttpURLConnection.HTTP_CONFLICT, "Item already exists");
-    
+    if (t != null)
+      throw new InMemoryDatabaseException(HttpURLConnection.HTTP_CONFLICT, "Item already exists");
+
     contents.put(new DatabaseKey(keys, item), item);
   }
 
   void delete(Map<String, String> keys) {
     T removed = contents.remove(new DatabaseKey(keys));
-    if (removed == null) throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
+    if (removed == null)
+      throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
   }
 
   @SuppressWarnings("unchecked")
@@ -42,7 +43,8 @@ public abstract class InMemoryDatabase<T, L> {
 
   T read(Map<String, String> keys) {
     T t = contents.get(new DatabaseKey(keys));
-    if (t == null) throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
+    if (t == null)
+      throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
     return t;
   }
 
@@ -52,11 +54,11 @@ public abstract class InMemoryDatabase<T, L> {
   void replace(T item, Map<String, String> keys) {
     DatabaseKey databaseKey = new DatabaseKey(keys, item);
     T t = contents.get(databaseKey);
-    if (t == null) throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
+    if (t == null)
+      throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
 
     contents.put(databaseKey, item);
   }
-
 
   private static class DatabaseKey {
     private Map<String, String> keys;
@@ -73,7 +75,7 @@ public abstract class InMemoryDatabase<T, L> {
 
     private String getName(Object o) {
       try {
-        V1ObjectMeta meta =  (V1ObjectMeta) o.getClass().getMethod("getMetadata").invoke(o);
+        V1ObjectMeta meta = (V1ObjectMeta) o.getClass().getMethod("getMetadata").invoke(o);
         return meta.getName();
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
         return null;

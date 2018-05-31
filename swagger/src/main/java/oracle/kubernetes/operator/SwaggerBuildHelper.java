@@ -1,5 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -31,16 +32,21 @@ public class SwaggerBuildHelper {
 
       // Open the target file
       File targetFile = new File("docs/swagger/index.html");
-      String targetContent = new String(Files.readAllBytes(Paths.get(targetFile.getAbsolutePath())));
+      String targetContent =
+          new String(Files.readAllBytes(Paths.get(targetFile.getAbsolutePath())));
 
       // replace old content
       // the (?is) in the pattern will match multi-line strings
-      String updatedContent = targetContent.replaceAll("(?is)SWAGGER_INSERT_START.+?SWAGGER_INSERT_END",
-          "SWAGGER_INSERT_START\n  spec: "
-              // need to call quoteReplacement() to make sure the text is correctly quoted as a regex
-              // otherwise parts of the text might be incorrectly interpreted as a regex group reference, etc.
-              + Matcher.quoteReplacement(newContent)
-              + ",\n   // SWAGGER_INSERT_END");
+      String updatedContent =
+          targetContent.replaceAll(
+              "(?is)SWAGGER_INSERT_START.+?SWAGGER_INSERT_END",
+              "SWAGGER_INSERT_START\n  spec: "
+                  // need to call quoteReplacement() to make sure the text is correctly quoted as a
+                  // regex
+                  // otherwise parts of the text might be incorrectly interpreted as a regex group
+                  // reference, etc.
+                  + Matcher.quoteReplacement(newContent)
+                  + ",\n   // SWAGGER_INSERT_END");
 
       // write data out to the target file
       fileWriter = new FileWriter(targetFile, false); // false means overwrite existing content
@@ -50,7 +56,5 @@ public class SwaggerBuildHelper {
     } catch (Exception e) {
       e.printStackTrace();
     }
-
   }
-
 }
