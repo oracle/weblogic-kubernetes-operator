@@ -64,7 +64,8 @@ public class DeleteIngressListStepTest {
     return testSupport
         .createCannedResponse("deleteIngress")
         .withNamespace(namespace)
-        .withName(name);
+        .withName(name)
+        .ignoringBody();
   }
 
   @Test

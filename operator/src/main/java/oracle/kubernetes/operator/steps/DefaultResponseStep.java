@@ -15,10 +15,10 @@ import oracle.kubernetes.operator.work.Step;
  * A response step which treats a NOT_FOUND status as success with a null result. By default, does
  * nothing on success. Subclasses must override #doSuccess to take action.
  */
-class DefaultResponseStep<T> extends ResponseStep<T> {
-  DefaultResponseStep() {}
+public class DefaultResponseStep<T> extends ResponseStep<T> {
+  protected DefaultResponseStep() {}
 
-  DefaultResponseStep(Step nextStep) {
+  protected DefaultResponseStep(Step nextStep) {
     super(nextStep);
   }
 

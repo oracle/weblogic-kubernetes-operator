@@ -58,8 +58,7 @@ public class LogMatcher
     return item.getLevel() == expectedLevel
         && item.getMessage().equals(expectedMessage)
         && (expectedParameter == null
-            ? true
-            : Arrays.stream(item.getParameters()).anyMatch(expectedParameter::equals));
+            || Arrays.stream(item.getParameters()).anyMatch(expectedParameter::equals));
   }
 
   private boolean noLogMessageFound(Description mismatchDescription) {
