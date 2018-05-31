@@ -318,6 +318,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .createCannedResponse("replaceConfigMap")
         .withNamespace(NS)
         .withName(DOMAIN_CONFIG_MAP_NAME)
+        .ignoringBody()
         .returning(domainConfigMap);
   }
 
@@ -388,11 +389,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .createCannedResponse("deleteService")
         .withNamespace(NS)
         .withName("admin")
+        .ignoringBody()
         .returning(new V1Status());
     testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
         .withName("ms1")
+        .ignoringBody()
         .returning(new V1Status());
 
     testSupport
@@ -404,11 +407,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .createCannedResponse("deleteIngress")
         .withNamespace(NS)
         .withName("TEST-cluster1")
+        .ignoringBody()
         .returning(new V1Status());
     testSupport
         .createCannedResponse("deleteIngress")
         .withNamespace(NS)
         .withName("TEST-cluster2")
+        .ignoringBody()
         .returning(new V1Status());
 
     Main.deleteStrandedResources();
