@@ -189,7 +189,8 @@ public class Main {
     // read the operator configuration
     String namespace = getOperatorNamespace();
 
-    Collection<String> targetNamespaces = getTargetNamespaces(namespace);
+    Collection<String> targetNamespaces =
+        getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
 
     String serviceAccountName = tuningAndConfig.get("serviceaccount");
     if (serviceAccountName == null) {
@@ -683,14 +684,13 @@ public class Main {
    *
    * @return the collection of target namespace names
    */
-  private static Collection<String> getTargetNamespaces(String namespace) {
+  private static Collection<String> getTargetNamespaces(String tnValue, String namespace) {
     Collection<String> targetNamespaces = new ArrayList<>();
 
-    String tnValue = tuningAndConfig.get("targetNamespaces");
     if (tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {
-        targetNamespaces.add(st.nextToken());
+        targetNamespaces.add(st.nextToken().trim());
       }
     }
 
