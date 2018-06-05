@@ -277,7 +277,11 @@ integration-test-java:
 
       echo "Integration test suite against the test image which is:"
       echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
-
+      
+  - script:
+    name: Install pre-reqs
+    code: |
+      yum -y install tar gzip procps
       
   - wercker/maven:
     goals: test-compile integration-test
