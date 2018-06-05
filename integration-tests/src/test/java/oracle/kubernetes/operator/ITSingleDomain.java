@@ -52,6 +52,8 @@ public class ITSingleDomain extends BaseTest {
 
     // initialize test properties and create the directories
     initialize(appPropsFile);
+    // renew lease at the begining for every test method, leaseId is set only for Wercker
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     logger.info("Run once, Creating Operator & " + "waiting for the script to complete execution");
     // create operator
@@ -84,22 +86,38 @@ public class ITSingleDomain extends BaseTest {
       if (domain != null) domain.destroy();
       if (operator != null) operator.destroy();
     } finally {
-      TestUtils.cleanupAll(getProjectRoot());
+      // TestUtils.cleanupAll(getProjectRoot());
+      TestUtils.executeCommandStrArray(
+          "export RESULT_ROOT="
+              + getResultRoot()
+              + " export PV_ROOT="
+              + getPvRoot()
+              + " && "
+              + getProjectRoot()
+              + "/src/integration-tests/bash/cleanup.sh");
     }
     logger.info("SUCCESS");
   }
 
-  /** Access Operator REST endpoint using admin node host and node port */
+  /**
+   * Access Operator REST endpoint using admin node host and node port
+   *
+   * @throws Exception
+   */
   @Test
-  public void testAdminServerExternalService() {
+  public void testAdminServerExternalService() throws Exception {
     logTestBegin();
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     logger.info("SUCCESS");
   }
 
-  /** Verify t3channel port by deploying webapp using the port */
+  /**
+   * Verify t3channel port by deploying webapp using the port
+   *
+   * @throws Exception
+   */
   @Test
-  public void testAdminT3Channel() {
+  public void testAdminT3Channel() throws Exception {
     logTestBegin();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
