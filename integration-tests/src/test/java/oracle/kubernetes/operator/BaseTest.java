@@ -26,6 +26,7 @@ public class BaseTest {
   private static String password = "welcome1";
   private static int maxIterationsPod = 50;
   private static int waitTimePod = 5;
+  private static String leaseId = "";
 
   private static Properties appProps;
 
@@ -44,16 +45,38 @@ public class BaseTest {
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
-    // PV dir in domain props is ignored
-    resultRoot = baseDir + "/" + System.getProperty("user.name") + "/wl_k8s_test_results";
+    if (System.getenv("RESULT_ROOT") != null) {
+      resultRoot = System.getenv("RESULT_ROOT");
+    } else {
+      resultRoot = baseDir + "/" + System.getProperty("user.name") + "/wl_k8s_test_results";
+    }
+    if (System.getenv("PV_ROOT") != null) {
+      pvRoot = System.getenv("PV_ROOT");
+    } else {
+      pvRoot = resultRoot;
+    }
+    if (System.getenv("LEASE_ID") != null) {
+      leaseId = System.getenv("LEASE_ID");
+    }
     // resultDir = resultRoot + "/acceptance_test_tmp";
     userProjectsDir = resultRoot + "/acceptance_test_tmp/user-projects";
-    pvRoot = resultRoot;
     projectRoot = System.getProperty("user.dir") + "/..";
     logger.info("RESULT_ROOT =" + resultRoot);
     logger.info("PV_ROOT =" + pvRoot);
     logger.info("userProjectsDir =" + userProjectsDir);
     logger.info("projectRoot =" + projectRoot);
+
+    logger.info("Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
+    logger.info("Env var PV_ROOT " + System.getenv("PV_ROOT"));
+    logger.info("Env var K8S_NODEPORT_HOST " + System.getenv("K8S_NODEPORT_HOST"));
+    logger.info("Env var IMAGE_NAME_OPERATOR= " + System.getenv("IMAGE_NAME_OPERATOR"));
+    logger.info("Env var IMAGE_TAG_OPERATOR " + System.getenv("IMAGE_TAG_OPERATOR"));
+    logger.info(
+        "Env var IMAGE_PULL_POLICY_OPERATOR " + System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+    logger.info(
+        "Env var IMAGE_PULL_SECRET_OPERATOR " + System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+    logger.info(
+        "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
 
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
@@ -104,8 +127,14 @@ public class BaseTest {
     return appProps;
   }
 
-  protected void logTestBegin() {
+  public static String getLeaseId() {
+    return leaseId;
+  }
+
+  protected void logTestBegin() throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
+    // renew lease at the begining for every test method, leaseId is set only for Wercker
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 }

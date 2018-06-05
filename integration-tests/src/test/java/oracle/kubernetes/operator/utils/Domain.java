@@ -342,7 +342,7 @@ public class Domain {
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
 
-    // set pv path
+    // set pv path, weblogicDomainStoragePath in domain props file is ignored
     domainProps.setProperty(
         "weblogicDomainStoragePath",
         BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
@@ -501,6 +501,9 @@ public class Domain {
             .intValue();
     if (exposeAdminT3Channel && domainProps.getProperty("t3PublicAddress") == null) {
       domainProps.put("t3PublicAddress", TestUtils.getHostName());
+    }
+    if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
+      domainProps.put("weblogicImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
     }
   }
 

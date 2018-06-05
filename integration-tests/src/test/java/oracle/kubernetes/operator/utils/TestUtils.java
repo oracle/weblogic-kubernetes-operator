@@ -42,7 +42,7 @@ public class TestUtils {
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-      // in some cases u may want to read process error stream as well
+      // return string contains both input and err stream
       String line = "";
       while ((line = reader.readLine()) != null) {
         output.append(line + "\n");
@@ -67,7 +67,7 @@ public class TestUtils {
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-      // in some cases u may want to read process error stream as well
+      // return string contains both input and err stream
       String line = "";
       while ((line = reader.readLine()) != null) {
         output.append(line + "\n");
@@ -189,7 +189,11 @@ public class TestUtils {
   }
 
   public static String getHostName() {
-    return executeCommandStrArray("hostname | awk -F. '{print $1}'").trim();
+    if (System.getenv("K8S_NODEPORT_HOST") != null) {
+      return System.getenv("K8S_NODEPORT_HOST");
+    } else {
+      return executeCommandStrArray("hostname | awk -F. '{print $1}'").trim();
+    }
   }
 
   public static int getClusterReplicas(String domainUid, String clusterName, String domainNS) {
@@ -471,6 +475,38 @@ public class TestUtils {
     inStream.close();
 
     return props;
+  }
+
+  public static void renewK8sClusterLease(String projectRoot, String leaseId) throws Exception {
+    if (leaseId != "") {
+      logger.info("Renewing lease for leaseId " + leaseId);
+      String command = projectRoot + "/src/integration-tests/bash/lease.sh -r " + leaseId;
+      ExecResult execResult = ExecCommand.exec(command);
+      if (execResult.exitValue() != 0) {
+        logger.info(
+            "ERROR: Could not renew lease on k8s cluster for LEASE_ID="
+                + leaseId
+                + "Used "
+                + projectRoot
+                + "/src/integration-tests/bash/lease.sh -r "
+                + leaseId
+                + " to try renew the lease. "
+                + "Some of the potential reasons for this failure are that another run"
+                + "may have obtained the lease, the lease may have been externally "
+                + "deleted, or the caller of run.sh may have forgotten to obtain the"
+                + "lease before calling run.sh (using 'lease.sh -o \"$LEASE_ID\"'). "
+                + "To force delete a lease no matter who owns the lease,"
+                + "call 'lease.sh -f' or 'kubernetes delete cm acceptance-test-lease'"
+                + "(this should only be done when sure there's no current run.sh "
+                + "that owns the lease).  To view the current lease holder,"
+                + "use 'lease.sh -s'.  To disable this lease check, do not set"
+                + "the LEASE_ID environment variable.");
+
+        throw new RuntimeException("Could not renew lease on k8s cluster");
+      } else {
+        logger.info("Renewed lease for leaseId " + leaseId);
+      }
+    }
   }
 
   private static Builder createRESTRequest(KeyStore myKeyStore, String url, String token) {
