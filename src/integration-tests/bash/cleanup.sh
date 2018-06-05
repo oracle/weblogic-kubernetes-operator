@@ -170,7 +170,7 @@ function deleteWithLabels {
 
   echo @@ Deleting voyager controller.
   if [ "$HANDLE_VOYAGER" = "true" ]; then
-    deleteVoyagerController
+    deleteVoyagerOperator
   fi
 }
 
