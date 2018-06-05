@@ -268,5 +268,14 @@ public class Operator {
               + ":test_"
               + TestUtils.getGitBranchName().replaceAll("/", "_"));
     }
+
+    if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
+      operatorProps.put(
+          "weblogicOperatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+    }
+    if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
+      operatorProps.put(
+          "weblogicOperatorImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+    }
   }
 }

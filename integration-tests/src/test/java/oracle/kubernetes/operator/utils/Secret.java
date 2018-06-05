@@ -38,4 +38,20 @@ public class Secret {
       throw new IllegalArgumentException("Couldn't create secret \n" + cmdResult);
     }
   }
+
+  public String getSecretName() {
+    return secretName;
+  }
+
+  public String getNamespace() {
+    return namespace;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public String getPassword() {
+    return password;
+  }
 }
