@@ -272,8 +272,8 @@ integration-test-java:
         export IMAGE_TAG_OPERATOR="latest"
       fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
-      export IMAGE_PULL_SECRET_OPERATOR="ocir-registry1"
-      export IMAGE_PULL_SECRET_WEBLOGIC="docker-store1"
+      export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
+      export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
 
       echo "Integration test suite against the test image which is:"
       echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
