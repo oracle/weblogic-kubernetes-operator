@@ -535,6 +535,33 @@ public class TestUtils {
     return request;
   }
 
+  public static void createDockerRegistrySecret(
+      String secretName,
+      String dockerServer,
+      String dockerUser,
+      String dockerPassword,
+      String dockerEmail,
+      String namespace)
+      throws Exception {
+    String command =
+        "kubectl create secret docker-registry "
+            + secretName
+            + " --docker-server="
+            + dockerServer
+            + " --docker-username="
+            + dockerUser
+            + " --docker-password="
+            + dockerPassword
+            + " --docker-email="
+            + dockerEmail
+            + " -n "
+            + namespace;
+    ExecResult result = ExecCommand.exec(command);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("Couldn't create secret " + result.stderr());
+    }
+  }
+
   private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
       throws Exception {
     // get operator external certificate from weblogic-operator.yaml
