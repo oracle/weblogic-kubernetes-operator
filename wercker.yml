@@ -286,7 +286,7 @@ integration-test-java:
   - wercker/maven:
     goals: test-compile integration-test
     version: 3.5.2
-    profiles: java-integration-test
+    profiles: java-integration-tests
     
   - script:
     name: cleanup and store
