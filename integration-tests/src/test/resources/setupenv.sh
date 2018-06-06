@@ -5,8 +5,8 @@ if [ "$WERCKER" = "true" ]; then
 
 	echo "Test Suite is running locally on Wercker and k8s is running on remote nodes."
 
-	export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
-	export IMAGE_PULL_SECRET_WEBLOGIC=${IMAGE_PULL_SECRET_WEBLOGIC}
+	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
+	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
 
     echo "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
