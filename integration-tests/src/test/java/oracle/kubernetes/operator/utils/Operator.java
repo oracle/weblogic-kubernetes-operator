@@ -273,6 +273,9 @@ public class Operator {
       operatorProps.put(
           "weblogicOperatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     }
+    
+    ExecCommand.exec("kubectl create namespace "+operatorNS);
+    
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
       operatorProps.put(
           "weblogicOperatorImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
