@@ -17,7 +17,7 @@ if [ "$WERCKER" = "true" ]; then
     -n default 2>&1 | sed 's/^/+' 2>&1
 
     echo "Checking Secret"
-    local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+    SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
     if [ "$SECRET" != "1" ]; then
         echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
         exit 1
@@ -32,7 +32,7 @@ if [ "$WERCKER" = "true" ]; then
     -n default 2>&1 | sed 's/^/+' 2>&1
 
     echo "Checking Secret"
-    local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
+    SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
     if [ "$SECRET" != "1" ]; then
         echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
         exit 1
