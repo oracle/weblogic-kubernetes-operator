@@ -276,15 +276,14 @@ public class Operator {
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
       operatorProps.put(
           "weblogicOperatorImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
-      //create docker registry secrets
-      TestUtils.createDockerRegistrySecret(System.getenv("IMAGE_PULL_SECRET_OPERATOR"),
-    		  System.getenv("REPO_REGISTRY"),
-    		  System.getenv("REPO_USERNAME"),
-    		  System.getenv("REPO_PASSWORD"),
-    		  System.getenv("REPO_EMAIL"),
-    		  operatorNS);
+      // create docker registry secrets
+      TestUtils.createDockerRegistrySecret(
+          System.getenv("IMAGE_PULL_SECRET_OPERATOR"),
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
+          operatorNS);
     }
-    
-
   }
 }
