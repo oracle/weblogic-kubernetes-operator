@@ -104,7 +104,7 @@ public class ITSingleDomain extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testAdminServerExternalService() throws Exception {
     logTestBegin();
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
@@ -141,7 +141,7 @@ public class ITSingleDomain extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainLifecyle() throws Exception {
     logTestBegin();
     domain.destroy();
@@ -160,7 +160,7 @@ public class ITSingleDomain extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testClusterScaling() throws Exception {
     logTestBegin();
     String managedServerNameBase = domainProps.getProperty("managedServerNameBase");
@@ -217,7 +217,7 @@ public class ITSingleDomain extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testOperatorLifecycle() throws Exception {
     logTestBegin();
     operator.destroy();
