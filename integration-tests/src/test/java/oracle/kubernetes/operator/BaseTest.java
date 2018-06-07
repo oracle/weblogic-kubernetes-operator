@@ -81,17 +81,14 @@ public class BaseTest {
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
 
-    if (System.getenv("JENKINS") == null) {
+    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       String output = TestUtils.executeCommand("chmod 777 " + pvRoot);
       if (!output.trim().equals("")) {
-        // throw new RuntimeException("FAILURE: Couldn't change permissions for PVROOT " + output);
-        logger.info("FAILURE: Couldn't change permissions for PVROOT " + output);
+        throw new RuntimeException("FAILURE: Couldn't change permissions for PVROOT " + output);
       }
     }
-
-    logger.info("Output for ls -ltr / " + TestUtils.executeCommand("ls -ltr /"));
 
     // Files.createDirectories(Paths.get(resultDir));
 
