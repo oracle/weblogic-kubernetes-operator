@@ -69,8 +69,12 @@ public class Domain {
   public void verifyDomainCreated() throws Exception {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
-    String outputStr = TestUtils.executeCommand(command.toString());
-    if (!outputStr.contains(domainUid))
+    ExecResult result = ExecCommand.exec(command.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILED: command to get domain " + command + " failed with " + result.stderr());
+    }
+    if (!result.stdout().contains(domainUid))
       throw new RuntimeException("FAILURE: domain not found, exiting!");
 
     verifyPodsCreated();
@@ -156,8 +160,9 @@ public class Domain {
    *
    * @param username
    * @param password
+   * @throws Exception
    */
-  public void verifyAdminServerExternalService(String username, String password) {
+  public void verifyAdminServerExternalService(String username, String password) throws Exception {
 
     // logger.info("Inside verifyAdminServerExternalService");
     String nodePortHost = getNodeHost();
@@ -178,18 +183,27 @@ public class Domain {
         .append(password)
         .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
     logger.fine("cmd for curl " + cmd);
-    String output = TestUtils.executeCommand(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
     logger.fine("output " + output);
-    if (!output.trim().equals("200")) {
+    if (!output.equals("200")) {
       throw new RuntimeException(
           "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
               + output);
     }
   }
 
-  /** deploy webapp using nodehost and nodeport */
+  /**
+   * deploy webapp using nodehost and nodeport
+   *
+   * @throws Exception
+   */
   public void deployWebAppViaREST(
-      String webappName, String webappLocation, String username, String password) {
+      String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("curl --noproxy '*' --silent  --user ")
         .append(username)
@@ -209,7 +223,12 @@ public class Domain {
         .append("/management/weblogic/latest/edit/appDeployments")
         .append(" --write-out %{http_code} -o /dev/null");
     logger.fine("Command to deploy webapp " + cmd);
-    String output = TestUtils.executeCommandStrArray(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
     if (!output.contains("202")) {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
     }
@@ -221,9 +240,10 @@ public class Domain {
    * @param webappLocation
    * @param username
    * @param password
+   * @throws Exception
    */
   public void deployWebAppViaWLST(
-      String webappName, String webappLocation, String username, String password) {
+      String webappName, String webappLocation, String username, String password) throws Exception {
 
     copyFileToAdminPod(webappLocation, "/shared/applications/testwebapp.war");
 
@@ -242,8 +262,9 @@ public class Domain {
    * Test http load balancing using loadBalancerWebPort
    *
    * @param webappName
+   * @throws Exception
    */
-  public void verifyWebAppLoadBalancing(String webappName) {
+  public void verifyWebAppLoadBalancing(String webappName) throws Exception {
     if (!loadBalancer.equals("NONE")) {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
@@ -284,7 +305,12 @@ public class Domain {
         .append("/weblogic-domains/")
         .append(domainUid)
         .append("/domain-custom-resource.yaml");
-    String output = TestUtils.executeCommand(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
     logger.info("command to create domain " + cmd + " \n returned " + output);
     verifyDomainCreated();
   }
@@ -301,7 +327,12 @@ public class Domain {
         .append("/weblogic-domains/")
         .append(domainUid)
         .append("/domain-custom-resource.yaml");
-    String output = TestUtils.executeCommand(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
     logger.info("command to delete domain " + cmd + " \n returned " + output);
     verifyDomainDeleted(replicas);
   }
@@ -322,23 +353,11 @@ public class Domain {
     }
   }
 
-  /**
-   * cleanup the domain
-   *
-   * @param userProjectsDir
-   */
-  public void cleanup(String userProjectsDir) {
-    TestUtils.executeCommand("../kubernetes/delete-weblogic-domain-resources.sh -d " + domainUid);
-    if (!domainUid.trim().equals("")) {
-      TestUtils.executeCommand("rm -rf " + userProjectsDir + "/weblogic-domains/" + domainUid);
-    }
-  }
-
   public Properties getDomainProps() {
     return domainProps;
   }
 
-  private void createPV() {
+  private void createPV() throws Exception {
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
 
@@ -348,7 +367,7 @@ public class Domain {
         BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
   }
 
-  private void createSecret() {
+  private void createSecret() throws Exception {
     new Secret(
         domainNS,
         domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
@@ -363,18 +382,24 @@ public class Domain {
     TestUtils.createInputFile(domainProps, inputTemplateFile, generatedInputYamlFile);
   }
 
-  private void callCreateDomainScript() {
+  private void callCreateDomainScript() throws Exception {
     StringBuffer cmd = new StringBuffer(createDomainScript);
     cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
     logger.info("Running " + cmd);
-    String outputStr = TestUtils.executeCommand(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
     logger.info("run " + outputStr);
     if (!outputStr.contains(CREATE_DOMAIN_JOB_MESSAGE)) {
       throw new RuntimeException("FAILURE: Create domain Script failed..");
     }
   }
 
-  private void callShellScriptByExecToPod(String username, String password, String webappName) {
+  private void callShellScriptByExecToPod(String username, String password, String webappName)
+      throws Exception {
 
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -399,15 +424,25 @@ public class Domain {
         .append(" /shared/applications/testwebapp.war ")
         .append(clusterName);
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    String output = TestUtils.executeCommand(cmdKubectlSh.toString());
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
     if (!output.contains("Deployment State : completed")) {
       throw new RuntimeException("Failure: webapp deployment failed." + output);
     }
   }
 
-  private void callWebAppAndWaitTillReady(String curlCmd) {
+  private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      String responseCode = TestUtils.executeCommand(curlCmd.toString()).trim();
+      ExecResult result = ExecCommand.exec(curlCmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+      }
+      String responseCode = result.stdout().trim();
       if (!responseCode.equals("200")) {
         logger.info(
             "testwebapp did not return 200 status code, got "
@@ -428,7 +463,7 @@ public class Domain {
     }
   }
 
-  private void callWebAppAndCheckForServerNameInResponse(String curlCmd) {
+  private void callWebAppAndCheckForServerNameInResponse(String curlCmd) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
     for (int i = 1; i <= initialManagedServerReplicas; i++) {
@@ -436,7 +471,12 @@ public class Domain {
     }
 
     for (int i = 0; i < 20; i++) {
-      String response = TestUtils.executeCommand(curlCmd.toString());
+      ExecResult result = ExecCommand.exec(curlCmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+      }
+      String response = result.stdout().trim();
       // logger.info("response "+ response);
       for (String key : managedServers.keySet()) {
         if (response.contains(key)) {
@@ -454,7 +494,7 @@ public class Domain {
     }
   }
 
-  private void copyFileToAdminPod(String srcFileOnHost, String destLocationInPod) {
+  private void copyFileToAdminPod(String srcFileOnHost, String destLocationInPod) throws Exception {
     StringBuffer cmdTocp = new StringBuffer("kubectl cp ");
     cmdTocp
         .append(srcFileOnHost)
@@ -468,13 +508,14 @@ public class Domain {
         .append(destLocationInPod);
 
     logger.info("Command to copy file " + cmdTocp);
-    String output = TestUtils.executeCommandStrArray(cmdTocp.toString());
-    if (!output.trim().equals("")) {
-      throw new RuntimeException("FAILURE: kubectl cp command failed." + output.trim());
+    ExecResult result = ExecCommand.exec(cmdTocp.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: kubectl cp command " + cmdTocp + " failed, returned " + result.stderr());
     }
   }
 
-  private void initialize() {
+  private void initialize() throws Exception {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
@@ -510,7 +551,7 @@ public class Domain {
     }
   }
 
-  private String getNodeHost() {
+  private String getNodeHost() throws Exception {
     String cmd =
         "kubectl describe pod "
             + domainUid
@@ -520,7 +561,12 @@ public class Domain {
             + domainNS
             + " | grep Node:";
 
-    String nodePortHost = TestUtils.executeCommandStrArray(cmd);
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String nodePortHost = result.stdout();
     // logger.info("nodePortHost "+nodePortHost);
     if (nodePortHost.contains(":") && nodePortHost.contains("/")) {
       return nodePortHost
@@ -531,14 +577,19 @@ public class Domain {
     }
   }
 
-  private String getNodePort() {
+  private String getNodePort() throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl describe domain ")
         .append(domainUid)
         .append(" -n ")
         .append(domainNS)
         .append(" | grep \"Node Port:\"");
-    String output = TestUtils.executeCommandStrArray(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout();
     if (output.contains("Node Port")) {
       return output.substring(output.indexOf(":") + 1).trim();
     } else {

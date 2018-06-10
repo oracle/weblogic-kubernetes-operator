@@ -13,7 +13,8 @@ public class Secret {
   private String password;
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  public Secret(String namespace, String secretName, String username, String password) {
+  public Secret(String namespace, String secretName, String username, String password)
+      throws Exception {
     this.namespace = namespace;
     this.secretName = secretName;
     this.username = username;
@@ -21,7 +22,7 @@ public class Secret {
 
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
     logger.info("Running " + command);
-    TestUtils.executeCommand("kubectl -n " + namespace + " delete secret " + secretName);
+    ExecCommand.exec(command);
     command =
         "kubectl -n "
             + this.namespace
@@ -33,10 +34,12 @@ public class Secret {
             + " --from-literal=password="
             + this.password;
     logger.info("Running " + command);
-    String cmdResult = TestUtils.executeCommand(command);
-    if (!cmdResult.contains("created")) {
-      throw new IllegalArgumentException("Couldn't create secret \n" + cmdResult);
+    ExecResult result = ExecCommand.exec(command);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create secret " + command + " failed, returned " + result.stderr());
     }
+    logger.info("command result " + result.stdout().trim());
   }
 
   public String getSecretName() {

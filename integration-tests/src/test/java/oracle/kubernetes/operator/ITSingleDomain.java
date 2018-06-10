@@ -6,6 +6,8 @@ package oracle.kubernetes.operator;
 
 import java.util.Properties;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -86,15 +88,18 @@ public class ITSingleDomain extends BaseTest {
       if (domain != null) domain.destroy();
       if (operator != null) operator.destroy();
     } finally {
-      // TestUtils.cleanupAll(getProjectRoot());
-      TestUtils.executeCommandStrArray(
+      String cmd =
           "export RESULT_ROOT="
               + getResultRoot()
               + " export PV_ROOT="
               + getPvRoot()
               + " && "
               + getProjectRoot()
-              + "/src/integration-tests/bash/cleanup.sh");
+              + "/src/integration-tests/bash/cleanup.sh";
+      ExecResult result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        logger.info("FAILED: command to call cleanup script failed " + cmd + result.stderr());
+      }
     }
     logger.info("SUCCESS");
   }
@@ -106,7 +111,7 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testAdminServerExternalService() throws Exception {
-    logTestBegin();
+    logTestBegin("testAdminServerExternalService");
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     logger.info("SUCCESS");
   }
@@ -118,7 +123,7 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testAdminT3Channel() throws Exception {
-    logTestBegin();
+    logTestBegin("testAdminT3Channel");
     // check if the property is set to true
     Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
 
@@ -143,7 +148,7 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testDomainLifecyle() throws Exception {
-    logTestBegin();
+    logTestBegin("testDomainLifecyle");
     domain.destroy();
     domain.create();
     operator.verifyExternalRESTService();
@@ -162,7 +167,7 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testClusterScaling() throws Exception {
-    logTestBegin();
+    logTestBegin("testClusterScaling");
     String managedServerNameBase = domainProps.getProperty("managedServerNameBase");
     int replicas = 3;
     String podName = domainUid + "-" + managedServerNameBase + replicas;
@@ -219,7 +224,7 @@ public class ITSingleDomain extends BaseTest {
    */
   @Test
   public void testOperatorLifecycle() throws Exception {
-    logTestBegin();
+    logTestBegin("testOperatorLifecycle");
     operator.destroy();
     operator.create();
     operator.verifyExternalRESTService();
