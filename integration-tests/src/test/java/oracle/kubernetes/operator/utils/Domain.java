@@ -466,7 +466,7 @@ public class Domain {
   private void callWebAppAndCheckForServerNameInResponse(String curlCmd) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
+    for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
       managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
     }
 
