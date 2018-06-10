@@ -453,9 +453,9 @@ public class TestUtils {
             + dockerServer
             + " --docker-username="
             + dockerUser
-            + " --docker-password="
+            + " --docker-password=\""
             + dockerPassword
-            + " --docker-email="
+            + "\" --docker-email="
             + dockerEmail
             + " -n "
             + namespace;
