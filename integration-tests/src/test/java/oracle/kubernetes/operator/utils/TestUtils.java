@@ -459,7 +459,7 @@ public class TestUtils {
             + dockerEmail
             + " -n "
             + namespace;
-    logger.info("Running command "+command);
+    logger.info("Running command " + command);
     ExecResult result = ExecCommand.exec(command);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
