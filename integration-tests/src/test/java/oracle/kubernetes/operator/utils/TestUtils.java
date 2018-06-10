@@ -8,7 +8,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -33,61 +32,6 @@ public class TestUtils {
   private static int maxIterationsPod = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimePod = BaseTest.getWaitTimePod();
 
-  public static String executeCommand(String command) {
-    StringBuffer output = new StringBuffer();
-    Process p;
-    try {
-      p = Runtime.getRuntime().exec(command);
-      p.waitFor();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-      BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-      // return string contains both input and err stream
-      String line = "";
-      while ((line = reader.readLine()) != null) {
-        output.append(line + "\n");
-      }
-
-      while ((line = errReader.readLine()) != null) {
-        output.append(line + "\n");
-      }
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return output.toString();
-  }
-
-  public static String executeCommandStrArray(String command) {
-    StringBuffer output = new StringBuffer();
-    Process p;
-    try {
-      p = Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", command});
-      p.waitFor();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-      BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-      // return string contains both input and err stream
-      String line = "";
-      while ((line = reader.readLine()) != null) {
-        output.append(line + "\n");
-      }
-
-      while ((line = errReader.readLine()) != null) {
-        output.append(line + "\n");
-      }
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return output.toString();
-  }
-
-  public static boolean executeCommand(String command, String resultString) {
-    String output = executeCommand(command);
-    if (output.contains(resultString)) return true;
-    else return false;
-  }
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
    * @throws Exception
@@ -121,9 +65,13 @@ public class TestUtils {
 
     // check for service
     while (i < maxIterationsPod) {
-      String outputStr = TestUtils.executeCommand(cmd.toString());
-      logger.fine("Output for " + cmd + "\n" + outputStr);
-      if (outputStr.equals("")) {
+      ExecResult result = ExecCommand.exec(cmd.toString());
+
+      // service might not have been created
+      if (result.exitValue() != 0
+          || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
+        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+
         // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
@@ -188,15 +136,17 @@ public class TestUtils {
     Files.write(Paths.get(generatedInputYamlFile), changedLines.toString().getBytes());
   }
 
-  public static String getHostName() {
+  public static String getHostName() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
-      return executeCommandStrArray("hostname | awk -F. '{print $1}'").trim();
+      ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      return result.stdout().trim();
     }
   }
 
-  public static int getClusterReplicas(String domainUid, String clusterName, String domainNS) {
+  public static int getClusterReplicas(String domainUid, String clusterName, String domainNS)
+      throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get domain ")
         .append(domainUid)
@@ -206,21 +156,22 @@ public class TestUtils {
         .append(clusterName)
         .append("\")].replicas }'");
     logger.fine("getClusterReplicas cmd =" + cmd);
-    String output = TestUtils.executeCommandStrArray(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
     int replicas = 0;
-    if (output != "") {
+    if (result.exitValue() == 0) {
       try {
-        replicas = new Integer(output.trim()).intValue();
+        replicas = new Integer(result.stdout().trim()).intValue();
       } catch (NumberFormatException nfe) {
         throw new RuntimeException(
             "FAILURE: Kubectl command " + cmd + " returned non-integer value " + replicas);
       }
+    } else {
+      throw new RuntimeException("FAILURE: Kubectl command " + cmd + " failed " + result.stderr());
     }
     return replicas;
   }
 
   public static void checkPodDeleted(String podName, String domainNS) throws Exception {
-    int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl -n ")
         .append(domainNS)
@@ -229,38 +180,11 @@ public class TestUtils {
         .append(" | grep \"^")
         .append(podName)
         .append(" \" | wc -l");
-
-    // check for admin pod
-    while (i < maxIterationsPod) {
-      String outputStr = TestUtils.executeCommandStrArray(cmd.toString());
-      // logger.info("Output for "+cmd + "\n"+outputStr);
-      if (!outputStr.trim().contains("\"" + podName + "\" not found")) {
-        // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
-          throw new RuntimeException("FAILURE: Pod " + podName + " is not deleted, exiting!");
-        }
-        logger.info(
-            "Pod "
-                + podName
-                + " still exists, Ite ["
-                + i
-                + "/"
-                + maxIterationsPod
-                + "], sleeping "
-                + waitTimePod
-                + " seconds more");
-
-        Thread.sleep(waitTimePod * 1000);
-
-        i++;
-      } else {
-        break;
-      }
-    }
+    checkCmdInLoopForDelete(cmd.toString(), "\"" + podName + "\" not found", podName);
   }
 
   public static void checkDomainDeleted(String domainUid, String domainNS) throws Exception {
-    int i = 0;
+
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get domain ")
         .append(domainUid)
@@ -270,29 +194,7 @@ public class TestUtils {
         .append(domainUid)
         .append(" | wc -l");
 
-    while (i < maxIterationsPod) {
-      String outputStr = TestUtils.executeCommandStrArray(cmd.toString());
-      // logger.info("Output for "+cmd + "\n"+outputStr);
-      if (!outputStr.trim().contains("\"" + domainUid + "\" not found")) {
-        // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
-          throw new RuntimeException("FAILURE: domain still exists, exiting!");
-        }
-        logger.info(
-            "Domain still exists, Ite ["
-                + i
-                + "/"
-                + maxIterationsPod
-                + "], sleeping "
-                + waitTimePod
-                + " seconds more");
-        Thread.sleep(waitTimePod * 1000);
-
-        i++;
-      } else {
-        break;
-      }
-    }
+    checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
   }
 
   public static int makeOperatorPostRestCall(
@@ -309,6 +211,7 @@ public class TestUtils {
       String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
     // get access token
     String token = getAccessToken(operatorNS);
+    logger.info("token =" + token);
 
     KeyStore myKeyStore = createKeyStore(operatorNS, userProjectsDir);
 
@@ -338,37 +241,34 @@ public class TestUtils {
     return returnCode;
   }
 
-  public static String getAccessToken(String operatorNS) {
+  public static String getAccessToken(String operatorNS) throws Exception {
     StringBuffer secretCmd = new StringBuffer("kubectl get serviceaccount weblogic-operator ");
     secretCmd.append(" -n ").append(operatorNS).append(" -o jsonpath='{.secrets[0].name}'");
 
-    String secretName = TestUtils.executeCommandStrArray(secretCmd.toString()).trim();
-    String token = "";
-    if (!secretName.equals("")) {
-      StringBuffer etokenCmd = new StringBuffer("kubectl get secret ");
-      etokenCmd
-          .append(secretName)
-          .append(" -n ")
-          .append(operatorNS)
-          .append(" -o jsonpath='{.data.token}'");
-      String etoken = TestUtils.executeCommandStrArray(etokenCmd.toString()).trim();
-
-      if (!etoken.equals("")) {
-        token = TestUtils.executeCommandStrArray("echo " + etoken + " | base64 --decode").trim();
-        // logger.info("Token is "+token);
-        return token;
-      } else {
-        throw new RuntimeException(
-            "FAILURE: Invalid secret token for Operator, " + "secret token can't be empty string");
-      }
-
-    } else {
+    ExecResult result = ExecCommand.exec(secretCmd.toString());
+    if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: Invalid secret name for Operator, " + "secret name can't be empty string");
+          "FAILED: command " + secretCmd + " failed to get the secret name for Operator");
     }
+    // String secretName = TestUtils.executeCommandStrArray(secretCmd.toString()).trim();
+    String secretName = result.stdout().trim();
+    StringBuffer etokenCmd = new StringBuffer("kubectl get secret ");
+    etokenCmd
+        .append(secretName)
+        .append(" -n ")
+        .append(operatorNS)
+        .append(" -o jsonpath='{.data.token}'");
+    result = ExecCommand.exec(etokenCmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILED: command " + etokenCmd + " failed to get secret token for Operator");
+    }
+    String etoken = result.stdout().trim();
+    return ExecCommand.exec("echo " + etoken + " | base64 --decode").stdout().trim();
   }
 
-  public static String getExternalOperatorCertificate(String operatorNS, String userProjectsDir) {
+  public static String getExternalOperatorCertificate(String operatorNS, String userProjectsDir)
+      throws Exception {
 
     File certFile =
         new File(
@@ -381,13 +281,15 @@ public class TestUtils {
         .append(operatorNS)
         .append("/weblogic-operator.yaml | awk '{ print $2 }'");
 
-    // logger.info("opCertCmd ="+opCertCmd);
-    String opCert = TestUtils.executeCommandStrArray(opCertCmd.toString()).trim();
-    // logger.info("opCert ="+opCert);
-
-    if (opCert.trim().equals("")) {
-      throw new RuntimeException("externalOperatorCert is not set");
+    ExecResult result = ExecCommand.exec(opCertCmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILED: command to get externalOperatorCert " + opCertCmd + " failed.");
     }
+
+    // logger.info("opCertCmd ="+opCertCmd);
+    String opCert = result.stdout().trim();
+    // logger.info("opCert ="+opCert);
 
     StringBuffer opCertDecodeCmd = new StringBuffer("echo ");
     opCertDecodeCmd
@@ -395,11 +297,12 @@ public class TestUtils {
         .append(" | base64 --decode > ")
         .append(certFile.getAbsolutePath());
 
-    String decodedOpCert = TestUtils.executeCommandStrArray(opCertDecodeCmd.toString());
+    String decodedOpCert = ExecCommand.exec(opCertDecodeCmd.toString()).stdout().trim();
     return certFile.getAbsolutePath();
   }
 
-  public static String getExternalOperatorKey(String operatorNS, String userProjectsDir) {
+  public static String getExternalOperatorKey(String operatorNS, String userProjectsDir)
+      throws Exception {
     File keyFile =
         new File(
             TestUtils.class.getClassLoader().getResource(".").getFile() + "/../operator.key.pem");
@@ -411,28 +314,28 @@ public class TestUtils {
         .append(operatorNS)
         .append("/weblogic-operator.yaml | awk '{ print $2 }'");
 
-    String opKey = TestUtils.executeCommandStrArray(opKeyCmd.toString()).trim();
-    // logger.info("opKey ="+opKey);
-
-    if (opKey.trim().equals("")) {
-      throw new RuntimeException("externalOperatorKey is not set");
+    ExecResult result = ExecCommand.exec(opKeyCmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILED: command to get externalOperatorKey " + opKeyCmd + " failed.");
     }
+    String opKey = result.stdout().trim();
+    // logger.info("opKey ="+opKey);
 
     StringBuffer opKeyDecodeCmd = new StringBuffer("echo ");
     opKeyDecodeCmd.append(opKey).append(" | base64 --decode > ").append(keyFile.getAbsolutePath());
 
-    String decodedOpKey = TestUtils.executeCommandStrArray(opKeyDecodeCmd.toString());
+    String decodedOpKey = ExecCommand.exec(opKeyDecodeCmd.toString()).stdout().trim();
     return keyFile.getAbsolutePath();
   }
 
-  public static void cleanupAll(String projectRoot) {
-    // cleanup.sh - This script does a best-effort delete of acceptance test k8s artifacts, the
-    // local test tmp directory, and the potentially remote domain pv directories.
-    TestUtils.executeCommandStrArray(projectRoot + "/src/integration-tests/bash/cleanup.sh");
-  }
-
-  public static String getGitBranchName() {
-    return executeCommandStrArray("git branch | grep \\* | cut -d ' ' -f2-").trim();
+  public static String getGitBranchName() throws Exception {
+    String cmd = "git branch | grep \\* | cut -d ' ' -f2-";
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("FAILED: command " + cmd + " failed");
+    }
+    return result.stdout().trim();
   }
 
   public static Operator createOperator(String opPropsFile) throws Exception {
@@ -566,11 +469,11 @@ public class TestUtils {
       throws Exception {
     // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operatorNS, userProjectsDir);
-    // logger.info("opExternalCertificateFile ="+opExtCertFile);
+    // logger.info("opExtCertFile =" + opExtCertFile);
 
     // get operator external key from weblogic-operator.yaml
     String opExtKeyFile = getExternalOperatorKey(operatorNS, userProjectsDir);
-    // logger.info("opExternalKeyFile ="+opExtKeyFile);
+    // logger.info("opExternalKeyFile =" + opExtKeyFile);
 
     if (!new File(opExtCertFile).exists()) {
       throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
@@ -593,10 +496,12 @@ public class TestUtils {
       throws Exception {
     int i = 0;
     while (i < maxIterationsPod) {
-      String outputStr = TestUtils.executeCommand(cmd);
-      logger.info("Output for " + cmd + "\n" + outputStr);
+      ExecResult result = ExecCommand.exec(cmd);
 
-      if (!outputStr.contains(matchStr)) {
+      // pod might not have been created or if created loop till condition
+      if (result.exitValue() != 0
+          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException(
@@ -617,6 +522,41 @@ public class TestUtils {
         i++;
       } else {
         logger.info("Pod " + k8sObjName + " is Running");
+        break;
+      }
+    }
+  }
+
+  private static void checkCmdInLoopForDelete(String cmd, String matchStr, String k8sObjName)
+      throws Exception {
+    int i = 0;
+    while (i < maxIterationsPod) {
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+      }
+      if (result.exitValue() == 0 && !result.stdout().trim().equals("0")) {
+        logger.info("Command " + cmd + " returned " + result.stdout());
+        // check for last iteration
+        if (i == (maxIterationsPod - 1)) {
+          throw new RuntimeException(
+              "FAILURE: K8s Object " + k8sObjName + " is not deleted, exiting!");
+        }
+        logger.info(
+            "K8s object "
+                + k8sObjName
+                + " still exists, Ite ["
+                + i
+                + "/"
+                + maxIterationsPod
+                + "], sleeping "
+                + waitTimePod
+                + " seconds more");
+
+        Thread.sleep(waitTimePod * 1000);
+
+        i++;
+      } else {
         break;
       }
     }

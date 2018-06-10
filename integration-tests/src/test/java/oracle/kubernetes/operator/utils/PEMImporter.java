@@ -61,21 +61,12 @@ public class PEMImporter {
 
     String errormsg = "===== No PRIVATE KEY found";
 
-    if (bufferedReader == null) {
-      throw new IllegalArgumentException(errormsg);
-    }
-
     final StringBuilder stringBuilder = new StringBuilder();
     String line = bufferedReader.readLine();
 
     while (line != null) {
       if (line.contains("BEGIN PRIVATE KEY")) {
         break;
-      }
-
-      if (line == null) { // reach EOF
-        bufferedReader.close();
-        throw new IllegalArgumentException(errormsg);
       }
 
       line = bufferedReader.readLine();
@@ -106,10 +97,6 @@ public class PEMImporter {
     final List<X509Certificate> result = new ArrayList<X509Certificate>();
     final BufferedReader bufferedReader = new BufferedReader(new FileReader(certificatePem));
     String errormsg = "===== No CERTIFICATE found";
-
-    if (bufferedReader == null) {
-      throw new IllegalArgumentException(errormsg);
-    }
 
     String line = bufferedReader.readLine();
 

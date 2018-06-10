@@ -200,7 +200,7 @@ command-timeout: 60
 integration-test-java:
   steps:
   - script:
-    name: obtain lease on k8s cluster and export environment variables
+    name: obtain lease on k8s cluster 
     code: |
       #!/bin/bash
       

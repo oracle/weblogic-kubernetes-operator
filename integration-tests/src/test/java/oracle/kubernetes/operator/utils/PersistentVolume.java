@@ -13,20 +13,22 @@ public class PersistentVolume {
 
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  public PersistentVolume(String dirPath) {
+  public PersistentVolume(String dirPath) throws Exception {
     this.dirPath = dirPath;
-
-    String cmdResult =
-        TestUtils.executeCommandStrArray(
-            BaseTest.getProjectRoot()
-                + "/src/integration-tests/bash/job.sh \"mkdir -p "
-                + dirPath
-                + "\"");
-    // logger.info("job.sh result "+cmdResult);
-    // check if cmd executed successfully
-    if (!cmdResult.contains("Exiting with status 0")) {
-      throw new RuntimeException("FAILURE: Couldn't create domain PV directory " + cmdResult);
+    String cmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/job.sh \"mkdir -p "
+            + dirPath
+            + "\"";
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create domain PV directory "
+              + cmd
+              + " failed, returned "
+              + result.stderr());
     }
+    logger.info("command result " + result.stdout().trim());
   }
 
   public String getDirPath() {
