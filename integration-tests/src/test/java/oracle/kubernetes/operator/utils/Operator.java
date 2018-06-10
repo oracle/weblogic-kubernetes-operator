@@ -79,12 +79,17 @@ public class Operator {
    */
   public void create() throws Exception {
     logger.info("Starting Operator");
-    TestUtils.executeCommand(
-        "kubectl create -f "
-            + userProjectsDir
-            + "/weblogic-operators/"
-            + operatorNS
-            + "/weblogic-operator.yaml");
+    StringBuffer cmd = new StringBuffer("kubectl create -f ");
+    cmd.append(userProjectsDir)
+        .append("/weblogic-operators/")
+        .append(operatorNS)
+        .append("/weblogic-operator.yaml");
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+
     logger.info("Checking Operator deployment");
 
     String availableReplicaCmd =
@@ -92,7 +97,15 @@ public class Operator {
             + operatorNS
             + " -o jsonpath='{.status.availableReplicas}'";
     for (int i = 0; i < maxIterationsOp; i++) {
-      String availableReplica = TestUtils.executeCommandStrArray(availableReplicaCmd).trim();
+      ExecResult replicaResult = ExecCommand.exec(availableReplicaCmd);
+      if (replicaResult.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command "
+                + availableReplicaCmd
+                + " failed, returned "
+                + replicaResult.stderr());
+      }
+      String availableReplica = replicaResult.stdout().trim();
       if (!availableReplica.equals("1")) {
         if (i == maxIterationsOp - 1) {
           throw new RuntimeException(
@@ -100,10 +113,8 @@ public class Operator {
         }
         logger.info(
             "status is " + availableReplica + ", iteration " + i + " of " + maxIterationsOp);
-        try {
-          Thread.sleep(waitTimeOp * 1000);
-        } catch (InterruptedException ignore) {
-        }
+        Thread.sleep(waitTimeOp * 1000);
+
       } else {
         break;
       }
@@ -114,7 +125,7 @@ public class Operator {
     verifyExternalRESTService();
   }
 
-  public void verifyExternalRESTService() {
+  public void verifyExternalRESTService() throws Exception {
     if (!externalRestOption.equals("NONE")) {
       logger.info("Checking REST service is running");
       String restCmd =
@@ -122,10 +133,14 @@ public class Operator {
               + operatorNS
               + " -o jsonpath='{.items[?(@.metadata.name == \"external-weblogic-operator-svc\")]}'";
       logger.info("Cmd to check REST service " + restCmd);
-      String restService = TestUtils.executeCommandStrArray(restCmd).trim();
-
+      ExecResult result = ExecCommand.exec(restCmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + restCmd + " failed, returned " + result.stderr());
+      }
+      String restService = result.stdout().trim();
       logger.info("cmd result for REST service " + restService);
-      if (restService.equals("") || !restService.contains("name:external-weblogic-operator-svc")) {
+      if (!restService.contains("name:external-weblogic-operator-svc")) {
         throw new RuntimeException("FAILURE: operator rest service was not created");
       }
     } else {
@@ -134,23 +149,19 @@ public class Operator {
   }
 
   public void destroy() throws Exception {
-    TestUtils.executeCommand(
+    String cmd =
         "kubectl delete -f "
             + userProjectsDir
             + "/weblogic-operators/"
             + operatorNS
-            + "/weblogic-operator.yaml");
-
-    logger.info("Checking REST service is deleted");
-    runCommandInLoop(
-        "kubectl get services -n " + operatorNS + " | egrep weblogic-operator-src | wc -l");
-    runCommandInLoop("kubectl get all -n " + operatorNS);
-  }
-
-  public void cleanup(String userProjectsDir) {
-    if (!operatorNS.trim().equals("")) {
-      TestUtils.executeCommand("rm -rf " + userProjectsDir + "/weblogic-operators/" + operatorNS);
+            + "/weblogic-operator.yaml";
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
+    logger.info("Checking REST service is deleted");
+    runCommandInLoop("kubectl get services -n " + operatorNS + " | egrep weblogic-operator-svc ");
   }
 
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
@@ -191,12 +202,17 @@ public class Operator {
     return operatorProps;
   }
 
-  private void callCreateOperatorScript() {
+  private void callCreateOperatorScript() throws Exception {
     StringBuffer cmd = new StringBuffer(createOperatorScript);
     cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
     logger.info("Running " + cmd);
-    String outputStr = TestUtils.executeCommand(cmd.toString());
-    logger.info("run " + outputStr);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
 
     if (!outputStr.contains(CREATE_OPERATOR_SCRIPT_MESSAGE)) {
       throw new RuntimeException("FAILURE: Create Operator Script failed..");
@@ -213,12 +229,13 @@ public class Operator {
   private void runCommandInLoop(String command) throws Exception {
     for (int i = 0; i < maxIterationsOp; i++) {
 
-      String output = TestUtils.executeCommandStrArray(command).trim();
-      if (!output.contains("No resources found.")) {
+      ExecResult result = ExecCommand.exec(command);
+      if (result.exitValue() == 0) {
+
         if (i == maxIterationsOp - 1) {
           throw new RuntimeException("FAILURE: Operator fail to be deleted");
         }
-        logger.info("status is " + output + ", iteration " + i + " of " + maxIterationsOp);
+        logger.info("status is " + result.stdout() + ", iteration " + i + " of " + maxIterationsOp);
         Thread.sleep(waitTimeOp * 1000);
       } else {
         break;

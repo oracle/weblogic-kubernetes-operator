@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.logging.Logger;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.TestUtils;
 
 /**
@@ -84,9 +86,10 @@ public class BaseTest {
     if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
-      String output = TestUtils.executeCommand("chmod 777 " + pvRoot);
-      if (!output.trim().equals("")) {
-        throw new RuntimeException("FAILURE: Couldn't change permissions for PVROOT " + output);
+      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
       }
     }
 
@@ -135,10 +138,10 @@ public class BaseTest {
     return leaseId;
   }
 
-  protected void logTestBegin() throws Exception {
+  protected void logTestBegin(String testName) throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    // renew lease at the begining for every test method, leaseId is set only for Wercker
+    logger.info("BEGIN " + testName);
+    // renew lease at the beginning for every test method, leaseId is set only for Wercker
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 }

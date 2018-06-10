@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class ExecCommand {
 
   public static ExecResult exec(String command) throws Exception {
-    Process p = Runtime.getRuntime().exec(command);
+    Process p = Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", command});
     try {
       p.waitFor();
       return new ExecResult(p.exitValue(), read(p.getInputStream()), read(p.getErrorStream()));
