@@ -165,7 +165,7 @@ public class Domain {
   public void verifyAdminServerExternalService(String username, String password) throws Exception {
 
     // logger.info("Inside verifyAdminServerExternalService");
-    String nodePortHost = getNodeHost();
+    String nodePortHost = TestUtils.getHostName();
     String nodePort = getNodePort();
     logger.fine("nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
