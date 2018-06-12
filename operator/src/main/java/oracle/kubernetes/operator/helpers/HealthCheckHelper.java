@@ -75,7 +75,6 @@ public class HealthCheckHelper {
 
   private static final String DOMAIN_UID_LABEL = "weblogic.domainUID";
   private static final String MINIMUM_K8S_VERSION = "v1.7.5";
-  private static final String DOMAIN_IMAGE = "store/oracle/weblogic:12.2.1.3";
   private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   /**
@@ -138,9 +137,8 @@ public class HealthCheckHelper {
    * Verify Access.
    *
    * @param version Kubernetes version
-   * @throws ApiException exception for k8s API
    */
-  public void performSecurityChecks(KubernetesVersion version) throws ApiException {
+  public void performSecurityChecks(KubernetesVersion version) {
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
@@ -258,6 +256,10 @@ public class HealthCheckHelper {
       this.minor = minor;
     }
 
+    boolean isPublishNotReadyAddressesSupported() {
+      return this.major > 1 || (this.major == 1 && this.minor >= 8);
+    }
+
     @Override
     public boolean equals(Object o) {
       return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);
@@ -282,14 +284,13 @@ public class HealthCheckHelper {
    * Verify the k8s version.
    *
    * @return Major and minor version information
-   * @throws ApiException exception for k8s API
    */
-  public KubernetesVersion performK8sVersionCheck() throws ApiException {
+  public KubernetesVersion performK8sVersionCheck() {
 
     // k8s version must be 1.7.5 or greater
     LOGGER.info(MessageKeys.VERIFY_K8S_MIN_VERSION);
     boolean k8sMinVersion = true;
-    VersionInfo info = null;
+    VersionInfo info;
 
     int major = 0;
     int minor = 0;
@@ -419,12 +420,8 @@ public class HealthCheckHelper {
     }
   }
 
-  /**
-   * Perform health checks against a running Admin server.
-   *
-   * @throws ApiException exception for k8s API
-   */
-  private void verifyAdminServer(HashMap<String, Domain> domainUIDMap) throws ApiException {
+  /** Perform health checks against a running Admin server. */
+  private void verifyAdminServer(HashMap<String, Domain> domainUIDMap) {
 
     for (Domain domain : domainUIDMap.values()) {
       if (isAdminServerRunning(domain)) {
