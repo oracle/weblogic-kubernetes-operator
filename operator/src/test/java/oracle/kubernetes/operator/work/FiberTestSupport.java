@@ -16,7 +16,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 
 /**
  * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to
@@ -90,6 +92,18 @@ public class FiberTestSupport {
 
   public FiberTestSupport addDomainPresenceInfo(DomainPresenceInfo info) {
     packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    return this;
+  }
+
+  public FiberTestSupport addRetryStrategy(RetryStrategy retryStrategy) {
+    packet.getComponents().put("retry", Component.createFor(RetryStrategy.class, retryStrategy));
+    return this;
+  }
+
+  public FiberTestSupport addVersion(KubernetesVersion kubernetesVersion) {
+    packet
+        .getComponents()
+        .put("version", Component.createFor(KubernetesVersion.class, kubernetesVersion));
     return this;
   }
 
