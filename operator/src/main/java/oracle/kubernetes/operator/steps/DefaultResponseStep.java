@@ -16,9 +16,9 @@ import oracle.kubernetes.operator.work.Step;
  * nothing on success. Subclasses must override #doSuccess to take action.
  */
 public class DefaultResponseStep<T> extends ResponseStep<T> {
-  protected DefaultResponseStep() {}
+  DefaultResponseStep() {}
 
-  protected DefaultResponseStep(Step nextStep) {
+  public DefaultResponseStep(Step nextStep) {
     super(nextStep);
   }
 
