@@ -4,16 +4,24 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.ApiException;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
+
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -21,16 +29,13 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
-import oracle.kubernetes.operator.work.Container;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
+@SuppressWarnings("deprecation")
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -46,175 +51,306 @@ public class ServiceHelper {
     return new ForServerStep(next);
   }
 
-  private static class ForServerStep extends Step {
-    public ForServerStep(Step next) {
+  private static class ForServerStep extends ServiceHelperStep {
+    ForServerStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    protected ServiceStepContext createContext(Packet packet) {
+      return new ForServerStepContext(this, packet);
+    }
+  }
+
+  private abstract static class ServiceHelperStep extends Step {
+    ServiceHelperStep(Step next) {
       super(next);
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      Container c = ContainerResolver.getInstance().getContainer();
-      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
+      return doVerifyService(getNext(), packet);
+    }
 
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      KubernetesVersion version = packet.getSPI(KubernetesVersion.class);
-      String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-      Integer port = (Integer) packet.get(ProcessingConstants.PORT);
-      Integer nodePort = (Integer) packet.get(ProcessingConstants.NODE_PORT);
+    private NextAction doVerifyService(Step next, Packet packet) {
+      return doNext(createContext(packet).verifyService(next), packet);
+    }
 
-      Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
-      DomainSpec spec = dom.getSpec();
-      String namespace = meta.getNamespace();
+    protected abstract ServiceStepContext createContext(Packet packet);
+  }
 
-      String weblogicDomainUID = spec.getDomainUID();
-      String weblogicDomainName = spec.getDomainName();
+  private static class ForServerStepContext extends ServerServiceStepContext {
+    private final KubernetesVersion version;
+    private final Integer port;
+    private final Integer nodePort;
 
-      String name = LegalNames.toServerServiceName(weblogicDomainUID, serverName);
+    ForServerStepContext(Step conflictStep, Packet packet) {
+      super(conflictStep, packet);
+      version = packet.getSPI(KubernetesVersion.class);
+      port = (Integer) packet.get(ProcessingConstants.PORT);
+      nodePort = (Integer) packet.get(ProcessingConstants.NODE_PORT);
+    }
 
-      V1Service service = new V1Service();
-
-      V1ObjectMeta metadata = new V1ObjectMeta();
-      metadata.setName(name);
-      metadata.setNamespace(namespace);
-
-      metadata.putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-
-      Map<String, String> labels = new HashMap<>();
-      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
-      labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
-      labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
-      labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
-      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      metadata.setLabels(labels);
-      service.setMetadata(metadata);
-
-      V1ServiceSpec serviceSpec = new V1ServiceSpec();
-      serviceSpec.setType(nodePort == null ? "ClusterIP" : "NodePort");
-
-      Map<String, String> selector = new HashMap<>();
-      selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
-      selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
-      selector.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      serviceSpec.setSelector(selector);
-
-      if (version != null && (version.major > 1 || (version.major == 1 && version.minor >= 8))) {
+    @Override
+    protected V1ServiceSpec createServiceSpec() {
+      V1ServiceSpec serviceSpec = super.createServiceSpec();
+      if (isPublishNotReadyAddressesSupported()) {
         serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
       }
+      return serviceSpec;
+    }
 
-      List<V1ServicePort> ports = new ArrayList<>();
-      V1ServicePort servicePort = new V1ServicePort();
-      servicePort.setPort(port);
+    @Override
+    protected V1ServicePort createServicePort() {
+      V1ServicePort servicePort = new V1ServicePort().port(port);
       if (nodePort != null) {
         servicePort.setNodePort(nodePort);
       }
-      ports.add(servicePort);
-      serviceSpec.setPorts(ports);
-      service.setSpec(serviceSpec);
+      return servicePort;
+    }
 
-      // Verify if Kubernetes api server has a matching Service
-      // Create or replace, if necessary
-      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, serverName);
+    @Override
+    protected String getSpecType() {
+      return nodePort == null ? "ClusterIP" : "NodePort";
+    }
 
-      // First, verify existing Service
-      Step read =
-          factory
-              .create()
-              .readServiceAsync(
-                  name,
-                  namespace,
-                  new ResponseStep<V1Service>(getNext()) {
-                    @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
-                      }
-                      return super.onFailure(packet, e, statusCode, responseHeaders);
-                    }
+    private boolean isPublishNotReadyAddressesSupported() {
+      return version != null && version.isPublishNotReadyAddressesSupported();
+    }
 
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1Service result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result == null) {
-                        Step create =
-                            factory
-                                .create()
-                                .createServiceAsync(
-                                    namespace,
-                                    service,
-                                    new ResponseStep<V1Service>(getNext()) {
-                                      @Override
-                                      public NextAction onFailure(
-                                          Packet packet,
-                                          ApiException e,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
-                                        return super.onFailure(
-                                            ForServerStep.this,
-                                            packet,
-                                            e,
-                                            statusCode,
-                                            responseHeaders);
-                                      }
+    @Override
+    protected V1ObjectMeta createMetadata() {
+      return super.createMetadata()
+          .putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
+    }
 
-                                      @Override
-                                      public NextAction onSuccess(
-                                          Packet packet,
-                                          V1Service result,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
+    @Override
+    protected String createServiceName() {
+      return LegalNames.toServerServiceName(getDomainUID(), getServerName());
+    }
 
-                                        LOGGER.info(
-                                            serverName.equals(spec.getAsName())
-                                                ? MessageKeys.ADMIN_SERVICE_CREATED
-                                                : MessageKeys.MANAGED_SERVICE_CREATED,
-                                            weblogicDomainUID,
-                                            serverName);
-                                        if (result != null) {
-                                          sko.getService().set(result);
-                                        }
-                                        return doNext(packet);
-                                      }
-                                    });
-                        return doNext(create, packet);
-                      } else if (validateCurrentService(service, result)) {
-                        // existing Service has correct spec
-                        LOGGER.fine(
-                            serverName.equals(spec.getAsName())
-                                ? MessageKeys.ADMIN_SERVICE_EXISTS
-                                : MessageKeys.MANAGED_SERVICE_EXISTS,
-                            weblogicDomainUID,
-                            serverName);
-                        sko.getService().set(result);
-                        return doNext(packet);
-                      } else {
-                        // we need to update the Service
-                        Step replace =
-                            new CycleServiceStep(
-                                ForServerStep.this,
-                                name,
-                                namespace,
-                                service,
-                                serverName.equals(spec.getAsName())
-                                    ? MessageKeys.ADMIN_SERVICE_REPLACED
-                                    : MessageKeys.MANAGED_SERVICE_REPLACED,
-                                weblogicDomainUID,
-                                serverName,
-                                sko,
-                                getNext());
-                        return doNext(replace, packet);
-                      }
-                    }
-                  });
+    @Override
+    protected void addServiceToRecord(@Nonnull V1Service service) {
+      sko.getService().set(service);
+    }
 
-      return doNext(read, packet);
+    @Override
+    protected void removeServiceFromRecord() {
+      sko.getService().set(null);
+    }
+  }
+
+  private abstract static class ServerServiceStepContext extends ServiceStepContext {
+    protected final String serverName;
+    protected final ServerKubernetesObjects sko;
+
+    ServerServiceStepContext(Step conflictStep, Packet packet) {
+      super(conflictStep, packet);
+      serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
+      sko = ServerKubernetesObjectsManager.getOrCreate(info, getServerName());
+    }
+
+    @Override
+    protected V1ServiceSpec createServiceSpec() {
+      return super.createServiceSpec()
+          .putSelectorItem(LabelConstants.SERVERNAME_LABEL, getServerName());
+    }
+
+    @Override
+    protected V1ObjectMeta createMetadata() {
+      return super.createMetadata().putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName());
+    }
+
+    String getServerName() {
+      return serverName;
+    }
+
+    @Override
+    protected void logServiceExists() {
+      LOGGER.fine(getServiceExistsMessageKey(), getDomainUID(), getServerName());
+    }
+
+    private String getServiceExistsMessageKey() {
+      return isForAdminServer() ? ADMIN_SERVICE_EXISTS : MANAGED_SERVICE_EXISTS;
+    }
+
+    @Override
+    protected void logServiceCreated(String messageKey) {
+      LOGGER.info(messageKey, getDomainUID(), getServerName());
+    }
+
+    @Override
+    protected String getServiceReplaceMessageKey() {
+      return isForAdminServer() ? ADMIN_SERVICE_REPLACED : MANAGED_SERVICE_REPLACED;
+    }
+
+    private boolean isForAdminServer() {
+      return getServerName().equals(getAsName());
+    }
+
+    private String getAsName() {
+      return info.getDomain().getSpec().getAsName();
+    }
+
+    @Override
+    protected String getServiceCreatedMessageKey() {
+      return isForAdminServer() ? ADMIN_SERVICE_CREATED : MANAGED_SERVICE_CREATED;
+    }
+  }
+
+  private abstract static class ServiceStepContext {
+    private Step conflictStep;
+    DomainPresenceInfo info;
+
+    ServiceStepContext(Step conflictStep, Packet packet) {
+      this.conflictStep = conflictStep;
+      info = packet.getSPI(DomainPresenceInfo.class);
+    }
+
+    Step getConflictStep() {
+      return conflictStep;
+    }
+
+    V1Service createModel() {
+      return new V1Service().spec(createServiceSpec()).metadata(createMetadata());
+    }
+
+    protected V1ServiceSpec createServiceSpec() {
+      return new V1ServiceSpec()
+          .type(getSpecType())
+          .putSelectorItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+          .putSelectorItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+          .ports(Collections.singletonList(createServicePort()));
+    }
+
+    protected V1ObjectMeta createMetadata() {
+      return new V1ObjectMeta()
+          .name(createServiceName())
+          .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+          .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    }
+
+    String getDomainName() {
+      return info.getDomain().getSpec().getDomainName();
+    }
+
+    String getDomainUID() {
+      return info.getDomain().getSpec().getDomainUID();
+    }
+
+    String getNamespace() {
+      return info.getNamespace();
+    }
+
+    protected abstract String createServiceName();
+
+    protected abstract void logServiceCreated(String messageKey);
+
+    protected abstract String getSpecType();
+
+    protected abstract V1ServicePort createServicePort();
+
+    protected abstract void addServiceToRecord(V1Service service);
+
+    protected abstract void removeServiceFromRecord();
+
+    Step verifyService(Step next) {
+      return new CallBuilder()
+          .readServiceAsync(createServiceName(), getNamespace(), new VerifyServiceResponse(next));
+    }
+
+    private class VerifyServiceResponse extends DefaultResponseStep<V1Service> {
+      VerifyServiceResponse(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
+        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+            ? onSuccess(packet, callResponse)
+            : onFailure(getConflictStep(), packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+        V1Service service = callResponse.getResult();
+        if (service == null) {
+          return doNext(createNewService(getNext()), packet);
+        } else if (validateCurrentService(createModel(), service)) {
+          logServiceExists();
+          addServiceToRecord(service);
+          return doNext(packet);
+        } else {
+          removeServiceFromRecord();
+          return doNext(deleteAndReplaceService(getNext()), packet);
+        }
+      }
+    }
+
+    protected abstract void logServiceExists();
+
+    private Step createNewService(Step next) {
+      return createService(getServiceCreatedMessageKey(), next);
+    }
+
+    protected abstract String getServiceCreatedMessageKey();
+
+    private Step deleteAndReplaceService(Step next) {
+      return new CallBuilder()
+          .deleteServiceAsync(createServiceName(), getNamespace(), new DeleteServiceResponse(next));
+    }
+
+    private class DeleteServiceResponse extends ResponseStep<V1Status> {
+      DeleteServiceResponse(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponse) {
+        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+            ? onSuccess(packet, callResponse)
+            : onFailure(getConflictStep(), packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponse) {
+        return doNext(createReplacementService(getNext()), packet);
+      }
+    }
+
+    private Step createReplacementService(Step next) {
+      return createService(getServiceReplaceMessageKey(), next);
+    }
+
+    protected abstract String getServiceReplaceMessageKey();
+
+    private Step createService(String messageKey, Step next) {
+      return new CallBuilder()
+          .createServiceAsync(getNamespace(), createModel(), new CreateResponse(messageKey, next));
+    }
+
+    private class CreateResponse extends ResponseStep<V1Service> {
+      private String messageKey;
+
+      CreateResponse(String messageKey, Step next) {
+        super(next);
+        this.messageKey = messageKey;
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
+        return onFailure(getConflictStep(), packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
+        logServiceCreated(messageKey);
+        addServiceToRecord(callResponse.getResult());
+        return doNext(packet);
+      }
     }
   }
 
@@ -232,7 +368,7 @@ public class ServiceHelper {
   private static class DeleteServiceStep extends Step {
     private final ServerKubernetesObjects sko;
 
-    public DeleteServiceStep(ServerKubernetesObjects sko, Step next) {
+    DeleteServiceStep(ServerKubernetesObjects sko, Step next) {
       super(next);
       this.sko = sko;
     }
@@ -240,47 +376,23 @@ public class ServiceHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      V1Service oldService = removeServiceFromRecord();
 
-      Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
-      String namespace = meta.getNamespace();
-
-      // Set service to null so that watcher doesn't try to recreate service
-      V1Service oldService = sko.getService().getAndSet(null);
       if (oldService != null) {
-        CallBuilderFactory factory =
-            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
         return doNext(
-            factory
-                .create()
-                .deleteServiceAsync(
-                    oldService.getMetadata().getName(),
-                    namespace,
-                    new ResponseStep<V1Status>(getNext()) {
-                      @Override
-                      public NextAction onFailure(
-                          Packet packet,
-                          ApiException e,
-                          int statusCode,
-                          Map<String, List<String>> responseHeaders) {
-                        if (statusCode == CallBuilder.NOT_FOUND) {
-                          return onSuccess(packet, null, statusCode, responseHeaders);
-                        }
-                        return super.onFailure(packet, e, statusCode, responseHeaders);
-                      }
-
-                      @Override
-                      public NextAction onSuccess(
-                          Packet packet,
-                          V1Status result,
-                          int statusCode,
-                          Map<String, List<String>> responseHeaders) {
-                        return doNext(getNext(), packet);
-                      }
-                    }),
-            packet);
+            deleteService(oldService.getMetadata().getName(), info.getNamespace()), packet);
       }
       return doNext(packet);
+    }
+
+    Step deleteService(String name, String namespace) {
+      return new CallBuilder()
+          .deleteServiceAsync(name, namespace, new DefaultResponseStep<>(getNext()));
+    }
+
+    // Set service to null so that watcher doesn't try to recreate service
+    private V1Service removeServiceFromRecord() {
+      return sko.getService().getAndSet(null);
     }
   }
 
@@ -294,216 +406,78 @@ public class ServiceHelper {
     return new ForClusterStep(next);
   }
 
-  private static class ForClusterStep extends Step {
-    public ForClusterStep(Step next) {
+  private static class ForClusterStep extends ServiceHelperStep {
+    ForClusterStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      Integer port = (Integer) packet.get(ProcessingConstants.PORT);
+    protected ServiceStepContext createContext(Packet packet) {
+      return new ClusterStepContext(this, packet);
+    }
+  }
 
-      Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
-      DomainSpec spec = dom.getSpec();
-      String namespace = meta.getNamespace();
+  private static class ClusterStepContext extends ServiceStepContext {
+    private final String clusterName;
+    private final Integer port;
 
-      String weblogicDomainUID = spec.getDomainUID();
-      String weblogicDomainName = spec.getDomainName();
+    ClusterStepContext(Step conflictStep, Packet packet) {
+      super(conflictStep, packet);
+      clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
+      port = (Integer) packet.get(ProcessingConstants.PORT);
+    }
 
-      String name = LegalNames.toClusterServiceName(weblogicDomainUID, clusterName);
+    protected V1ServiceSpec createServiceSpec() {
+      return super.createServiceSpec()
+          .putSelectorItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+    }
 
-      V1Service service = new V1Service();
+    @Override
+    protected String getSpecType() {
+      return "ClusterIP";
+    }
 
-      V1ObjectMeta metadata = new V1ObjectMeta();
-      metadata.setName(name);
-      metadata.setNamespace(namespace);
+    protected V1ObjectMeta createMetadata() {
+      return super.createMetadata().putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+    }
 
-      Map<String, String> labels = new HashMap<>();
-      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
-      labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
-      labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
-      labels.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
-      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      metadata.setLabels(labels);
-      service.setMetadata(metadata);
+    @Override
+    protected V1ServicePort createServicePort() {
+      return new V1ServicePort().port(port);
+    }
 
-      V1ServiceSpec serviceSpec = new V1ServiceSpec();
-      serviceSpec.setType("ClusterIP");
+    protected String createServiceName() {
+      return LegalNames.toClusterServiceName(getDomainUID(), clusterName);
+    }
 
-      Map<String, String> selector = new HashMap<>();
-      selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
-      selector.put(LabelConstants.CLUSTERNAME_LABEL, clusterName);
-      selector.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      serviceSpec.setSelector(selector);
+    @Override
+    protected void addServiceToRecord(@Nonnull V1Service service) {
+      info.getClusters().put(clusterName, service);
+    }
 
-      List<V1ServicePort> ports = new ArrayList<>();
-      V1ServicePort servicePort = new V1ServicePort();
-      servicePort.setPort(port);
-      ports.add(servicePort);
-      serviceSpec.setPorts(ports);
-      service.setSpec(serviceSpec);
+    @Override
+    protected void removeServiceFromRecord() {
+      info.getClusters().remove(clusterName);
+    }
 
-      // First, verify existing Service
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      Step read =
-          factory
-              .create()
-              .readServiceAsync(
-                  name,
-                  namespace,
-                  new ResponseStep<V1Service>(getNext()) {
-                    @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
-                      }
-                      return super.onFailure(packet, e, statusCode, responseHeaders);
-                    }
+    @Override
+    protected void logServiceCreated(String messageKey) {
+      LOGGER.info(messageKey, getDomainUID(), clusterName);
+    }
 
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1Service result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result == null) {
-                        Step create =
-                            factory
-                                .create()
-                                .createServiceAsync(
-                                    namespace,
-                                    service,
-                                    new ResponseStep<V1Service>(getNext()) {
-                                      @Override
-                                      public NextAction onFailure(
-                                          Packet packet,
-                                          ApiException e,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
-                                        return super.onFailure(
-                                            ForClusterStep.this,
-                                            packet,
-                                            e,
-                                            statusCode,
-                                            responseHeaders);
-                                      }
+    @Override
+    protected void logServiceExists() {
+      LOGGER.fine(CLUSTER_SERVICE_EXISTS, getDomainUID(), clusterName);
+    }
 
-                                      @Override
-                                      public NextAction onSuccess(
-                                          Packet packet,
-                                          V1Service result,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
+    @Override
+    protected String getServiceCreatedMessageKey() {
+      return CLUSTER_SERVICE_CREATED;
+    }
 
-                                        LOGGER.info(
-                                            MessageKeys.CLUSTER_SERVICE_CREATED,
-                                            weblogicDomainUID,
-                                            clusterName);
-                                        if (result != null) {
-                                          info.getClusters().put(clusterName, result);
-                                        }
-                                        return doNext(packet);
-                                      }
-                                    });
-                        return doNext(create, packet);
-                      } else if (validateCurrentService(service, result)) {
-                        // existing Service has correct spec
-                        LOGGER.fine(
-                            MessageKeys.CLUSTER_SERVICE_EXISTS, weblogicDomainUID, clusterName);
-                        info.getClusters().put(clusterName, result);
-                        return doNext(packet);
-                      } else {
-                        // we need to cycle the Service
-                        info.getClusters().remove(clusterName);
-                        Step delete =
-                            factory
-                                .create()
-                                .deleteServiceAsync(
-                                    name,
-                                    namespace,
-                                    new ResponseStep<V1Status>(getNext()) {
-                                      @Override
-                                      public NextAction onFailure(
-                                          Packet packet,
-                                          ApiException e,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
-                                        if (statusCode == CallBuilder.NOT_FOUND) {
-                                          return onSuccess(
-                                              packet, null, statusCode, responseHeaders);
-                                        }
-                                        return super.onFailure(
-                                            ForClusterStep.this,
-                                            packet,
-                                            e,
-                                            statusCode,
-                                            responseHeaders);
-                                      }
-
-                                      @Override
-                                      public NextAction onSuccess(
-                                          Packet packet,
-                                          V1Status result,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
-                                        Step create =
-                                            factory
-                                                .create()
-                                                .createServiceAsync(
-                                                    namespace,
-                                                    service,
-                                                    new ResponseStep<V1Service>(getNext()) {
-                                                      @Override
-                                                      public NextAction onFailure(
-                                                          Packet packet,
-                                                          ApiException e,
-                                                          int statusCode,
-                                                          Map<String, List<String>>
-                                                              responseHeaders) {
-                                                        return super.onFailure(
-                                                            ForClusterStep.this,
-                                                            packet,
-                                                            e,
-                                                            statusCode,
-                                                            responseHeaders);
-                                                      }
-
-                                                      @Override
-                                                      public NextAction onSuccess(
-                                                          Packet packet,
-                                                          V1Service result,
-                                                          int statusCode,
-                                                          Map<String, List<String>>
-                                                              responseHeaders) {
-
-                                                        LOGGER.info(
-                                                            MessageKeys.CLUSTER_SERVICE_REPLACED,
-                                                            weblogicDomainUID,
-                                                            clusterName);
-                                                        if (result != null) {
-                                                          info.getClusters()
-                                                              .put(clusterName, result);
-                                                        }
-                                                        return doNext(packet);
-                                                      }
-                                                    });
-                                        return doNext(create, packet);
-                                      }
-                                    });
-                        return doNext(delete, packet);
-                      }
-                    }
-                  });
-
-      return doNext(read, packet);
+    @Override
+    protected String getServiceReplaceMessageKey() {
+      return CLUSTER_SERVICE_REPLACED;
     }
   }
 
@@ -516,9 +490,6 @@ public class ServiceHelper {
     }
 
     String buildType = buildSpec.getType();
-    if (buildType == null) {
-      buildType = "ClusterIP";
-    }
     String currentType = currentSpec.getType();
     if (currentType == null) {
       currentType = "ClusterIP";
@@ -547,133 +518,6 @@ public class ServiceHelper {
     return true;
   }
 
-  private static class CycleServiceStep extends Step {
-    private final Step conflictStep;
-    private final String serviceName;
-    private final String namespace;
-    private final V1Service newService;
-    private final String messageKey;
-    private final String weblogicDomainUID;
-    private final String serverName;
-    private final ServerKubernetesObjects sko;
-    private final String channelName;
-
-    public CycleServiceStep(
-        Step conflictStep,
-        String serviceName,
-        String namespace,
-        V1Service newService,
-        String messageKey,
-        String weblogicDomainUID,
-        String serverName,
-        ServerKubernetesObjects sko,
-        Step next) {
-      this(
-          conflictStep,
-          serviceName,
-          namespace,
-          newService,
-          messageKey,
-          weblogicDomainUID,
-          serverName,
-          sko,
-          null,
-          next);
-    }
-
-    public CycleServiceStep(
-        Step conflictStep,
-        String serviceName,
-        String namespace,
-        V1Service newService,
-        String messageKey,
-        String weblogicDomainUID,
-        String serverName,
-        ServerKubernetesObjects sko,
-        String channelName,
-        Step next) {
-      super(next);
-      this.conflictStep = conflictStep;
-      this.serviceName = serviceName;
-      this.namespace = namespace;
-      this.newService = newService;
-      this.messageKey = messageKey;
-      this.weblogicDomainUID = weblogicDomainUID;
-      this.serverName = serverName;
-      this.sko = sko;
-      this.channelName = channelName;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      if (channelName != null) {
-        sko.getChannels().remove(channelName);
-      } else {
-        sko.getService().set(null);
-      }
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      Step delete =
-          factory
-              .create()
-              .deleteServiceAsync(
-                  serviceName,
-                  namespace,
-                  new ResponseStep<V1Status>(getNext()) {
-                    @Override
-                    public NextAction onFailure(
-                        Packet packet, CallResponse<V1Status> callResponse) {
-                      if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, callResponse);
-                      }
-                      return super.onFailure(conflictStep, packet, callResponse);
-                    }
-
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet, CallResponse<V1Status> callResponse) {
-                      Step create =
-                          factory
-                              .create()
-                              .createServiceAsync(
-                                  namespace,
-                                  newService,
-                                  new ResponseStep<V1Service>(getNext()) {
-                                    @Override
-                                    public NextAction onFailure(
-                                        Packet packet,
-                                        ApiException e,
-                                        int statusCode,
-                                        Map<String, List<String>> responseHeaders) {
-                                      return super.onFailure(
-                                          conflictStep, packet, e, statusCode, responseHeaders);
-                                    }
-
-                                    @Override
-                                    public NextAction onSuccess(
-                                        Packet packet,
-                                        V1Service result,
-                                        int statusCode,
-                                        Map<String, List<String>> responseHeaders) {
-
-                                      LOGGER.info(messageKey, weblogicDomainUID, serverName);
-                                      if (result != null) {
-                                        if (channelName != null) {
-                                          sko.getChannels().put(channelName, result);
-                                        } else {
-                                          sko.getService().set(result);
-                                        }
-                                      }
-                                      return doNext(packet);
-                                    }
-                                  });
-                      return doNext(create, packet);
-                    }
-                  });
-      return doNext(delete, packet);
-    }
-  }
-
   /**
    * Create asynchronous step for external channel
    *
@@ -684,168 +528,57 @@ public class ServiceHelper {
     return new ForExternalChannelStep(next);
   }
 
-  private static class ForExternalChannelStep extends Step {
-    public ForExternalChannelStep(Step next) {
+  private static class ForExternalChannelStep extends ServiceHelperStep {
+    ForExternalChannelStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      Container c = ContainerResolver.getInstance().getContainer();
-      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
+    protected ServiceStepContext createContext(Packet packet) {
+      return new ExternalStepContext(this, packet);
+    }
+  }
 
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-      NetworkAccessPoint networkAccessPoint =
+  private static class ExternalStepContext extends ServerServiceStepContext {
+    private final NetworkAccessPoint networkAccessPoint;
+
+    ExternalStepContext(Step conflictStep, Packet packet) {
+      super(conflictStep, packet);
+      networkAccessPoint =
           (NetworkAccessPoint) packet.get(ProcessingConstants.NETWORK_ACCESS_POINT);
+    }
 
-      Domain dom = info.getDomain();
-      V1ObjectMeta meta = dom.getMetadata();
-      DomainSpec spec = dom.getSpec();
-      String namespace = meta.getNamespace();
+    protected String getSpecType() {
+      return "NodePort";
+    }
 
-      String weblogicDomainUID = spec.getDomainUID();
-      String weblogicDomainName = spec.getDomainName();
+    protected V1ServicePort createServicePort() {
+      return new V1ServicePort()
+          .port(networkAccessPoint.getListenPort())
+          .nodePort(networkAccessPoint.getPublicPort());
+    }
 
-      String name = LegalNames.toNAPName(weblogicDomainUID, serverName, networkAccessPoint);
+    protected V1ObjectMeta createMetadata() {
+      return super.createMetadata()
+          .putLabelsItem(LabelConstants.CHANNELNAME_LABEL, getChannelName());
+    }
 
-      V1Service service = new V1Service();
+    private String getChannelName() {
+      return networkAccessPoint.getName();
+    }
 
-      V1ObjectMeta metadata = new V1ObjectMeta();
-      metadata.setName(name);
-      metadata.setNamespace(namespace);
+    @Override
+    protected String createServiceName() {
+      return LegalNames.toNAPName(getDomainUID(), getServerName(), networkAccessPoint);
+    }
 
-      Map<String, String> labels = new HashMap<>();
-      labels.put(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1);
-      labels.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
-      labels.put(LabelConstants.DOMAINNAME_LABEL, weblogicDomainName);
-      labels.put(LabelConstants.SERVERNAME_LABEL, serverName);
-      labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      labels.put(LabelConstants.CHANNELNAME_LABEL, networkAccessPoint.getName());
-      metadata.setLabels(labels);
-      service.setMetadata(metadata);
+    protected void addServiceToRecord(@Nonnull V1Service service) {
+      sko.getChannels().put(getChannelName(), service);
+    }
 
-      V1ServiceSpec serviceSpec = new V1ServiceSpec();
-      serviceSpec.setType("NodePort");
-      Map<String, String> selector = new HashMap<>();
-      selector.put(LabelConstants.DOMAINUID_LABEL, weblogicDomainUID);
-      selector.put(LabelConstants.SERVERNAME_LABEL, serverName);
-      selector.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-      serviceSpec.setSelector(selector);
-      List<V1ServicePort> ports = new ArrayList<>();
-      V1ServicePort servicePort = new V1ServicePort();
-      servicePort.setNodePort(networkAccessPoint.getPublicPort());
-      servicePort.setPort(networkAccessPoint.getListenPort());
-      ports.add(servicePort);
-      serviceSpec.setPorts(ports);
-      service.setSpec(serviceSpec);
-
-      // Verify if Kubernetes api server has a matching Service
-      // Create or replace, if necessary
-      ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, serverName);
-
-      // First, verify existing Service
-      Step read =
-          factory
-              .create()
-              .readServiceAsync(
-                  name,
-                  namespace,
-                  new ResponseStep<V1Service>(getNext()) {
-                    @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
-                      }
-                      return super.onFailure(
-                          ForExternalChannelStep.this, packet, e, statusCode, responseHeaders);
-                    }
-
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1Service result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result == null) {
-                        Step create =
-                            factory
-                                .create()
-                                .createServiceAsync(
-                                    namespace,
-                                    service,
-                                    new ResponseStep<V1Service>(getNext()) {
-                                      @Override
-                                      public NextAction onFailure(
-                                          Packet packet,
-                                          ApiException e,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
-                                        return super.onFailure(
-                                            ForExternalChannelStep.this,
-                                            packet,
-                                            e,
-                                            statusCode,
-                                            responseHeaders);
-                                      }
-
-                                      @Override
-                                      public NextAction onSuccess(
-                                          Packet packet,
-                                          V1Service result,
-                                          int statusCode,
-                                          Map<String, List<String>> responseHeaders) {
-
-                                        LOGGER.info(
-                                            serverName.equals(spec.getAsName())
-                                                ? MessageKeys.ADMIN_SERVICE_CREATED
-                                                : MessageKeys.MANAGED_SERVICE_CREATED,
-                                            weblogicDomainUID,
-                                            serverName);
-                                        if (result != null) {
-                                          sko.getChannels()
-                                              .put(networkAccessPoint.getName(), result);
-                                        }
-                                        return doNext(packet);
-                                      }
-                                    });
-                        return doNext(create, packet);
-                      } else if (validateCurrentService(service, result)) {
-                        // existing Service has correct spec
-                        LOGGER.fine(
-                            serverName.equals(spec.getAsName())
-                                ? MessageKeys.ADMIN_SERVICE_EXISTS
-                                : MessageKeys.MANAGED_SERVICE_EXISTS,
-                            weblogicDomainUID,
-                            serverName);
-                        sko.getChannels().put(networkAccessPoint.getName(), result);
-                        return doNext(packet);
-                      } else {
-                        // we need to update the Service
-                        Step replace =
-                            new CycleServiceStep(
-                                ForExternalChannelStep.this,
-                                name,
-                                namespace,
-                                service,
-                                serverName.equals(spec.getAsName())
-                                    ? MessageKeys.ADMIN_SERVICE_REPLACED
-                                    : MessageKeys.MANAGED_SERVICE_REPLACED,
-                                weblogicDomainUID,
-                                serverName,
-                                sko,
-                                networkAccessPoint.getName(),
-                                getNext());
-                        return doNext(replace, packet);
-                      }
-                    }
-                  });
-
-      return doNext(read, packet);
+    @Override
+    protected void removeServiceFromRecord() {
+      sko.getChannels().remove(getChannelName());
     }
   }
 }
