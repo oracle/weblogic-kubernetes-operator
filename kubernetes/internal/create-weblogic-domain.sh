@@ -583,6 +583,16 @@ function createYamlFiles {
       sed -i -e "s|#   value: '%ADMIN_PORT%'|    value: '%ADMIN_PORT%'|g" ${apacheOutput}
     fi
 
+    if [ ! -z "${loadBalancerVolumePath}" ]; then
+      sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
+      sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
+      sed -i -e "s|# - name: %DOMAIN_UID%-apache-webtier|- name: %DOMAIN_UID%-apache-webtier|g" ${apacheOutput}
+      sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
+      sed -i -e "s:#     path:    path:g" ${apacheOutput}
+      sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
+      sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
+    fi
+
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheOutput}
@@ -592,17 +602,6 @@ function createYamlFiles {
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${apacheOutput}
     sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${apacheOutput}
     sed -i -e "s:%WEB_APP_PREPATH%:$loadBalancerAppPrepath:g" ${apacheOutput}
-
-    if [ ! -z "${loadBalancerVolumePath}" ]; then
-      sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
-      sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
-      sed -i -e "s:# - name:- name:g" ${apacheOutput}
-      sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
-      sed -i -e "s:#     path:    path:g" ${apacheOutput}
-      sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
-      sed -i -e "s:# - name:- name:g" ${apacheOutput}
-      sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
-    fi
  
     # Apache security file
     cp ${apacheSecurityInput} ${apacheSecurityOutput}
