@@ -275,7 +275,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: create-weblogic-domain-job
-          image: store/oracle/weblogic:12.2.1.3
+          image: %WEBLOGIC_IMAGE%
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7001
