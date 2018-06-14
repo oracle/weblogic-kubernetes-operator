@@ -24,6 +24,10 @@ box:
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
   steps:
+  - mbrevda/github-status:
+    token: $GITHUB_TOKEN
+    context: wercker/build
+    msg: Wercker build in progress
   - script:
     name: Hello
     code: |
@@ -67,11 +71,22 @@ build:
     working-dir: "/operator"
     cmd: "operator.sh"
     env: "PATH=$PATH:/operator"
-
+  after-steps:
+  - mbrevda/github-status:
+    token: $GITHUB_TOKEN
+    context: My App
+    msg: Wercker build completed
+    fail: Wercker build failed
+    url: https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs/build/$WERCKER_RUN_ID
+    
 # This pipeline runs the integration tests against a k8s cluster on OCI.
 command-timeout: 60
 integration-test:
   steps:
+  - mbrevda/github-status:
+    token: $GITHUB_TOKEN
+    context: wercker/$WERCKER_DEPLOYTARGET_NAME
+    msg: Wercker $WERCKER_DEPLOYTARGET_NAME in progress
   - script:
     name: Run integration tests
     code: |
@@ -194,6 +209,13 @@ integration-test:
       fi
     
       cleanup_and_store
+  after-steps:
+  - mbrevda/github-status:
+    token: $GITHUB_TOKEN
+    context: My App
+    msg: Wercker $WERCKER_DEPLOYTARGET_NAME completed
+    fail: Wercker $WERCKER_DEPLOYTARGET_NAME failed
+    url: https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs/$WERCKER_DEPLOYTARGET_NAME/$WERCKER_RUN_ID
 
 # This pipeline runs quality checks 
 quality:
