@@ -37,26 +37,26 @@ spec:
     spec:
       serviceAccountName: %DOMAIN_UID%-apache-webtier
       terminationGracePeriodSeconds: 60
-      # volumes:
-      # - name: %DOMAIN_UID%-apache-webtier
-      #   hostPath:
-      #     path: %LOAD_BALANCER_VOLUME_PATH%
+      %ENABLE_LOAD_BALANCER_VOLUME_PATH%volumes:
+      %ENABLE_LOAD_BALANCER_VOLUME_PATH%- name: %DOMAIN_UID%-apache-webtier
+      %ENABLE_LOAD_BALANCER_VOLUME_PATH%  hostPath:
+      %ENABLE_LOAD_BALANCER_VOLUME_PATH%    path: %LOAD_BALANCER_VOLUME_PATH%
       containers:
       - name: %DOMAIN_UID%-apache-webtier
         image: store/oracle/apache:12.2.1.3
         imagePullPolicy: Never
-        # volumeMounts:
-        # - name: %DOMAIN_UID%-apache-webtier
-        #   mountPath: "/config"
+        %ENABLE_LOAD_BALANCER_VOLUME_PATH%volumeMounts:
+        %ENABLE_LOAD_BALANCER_VOLUME_PATH%- name: %DOMAIN_UID%-apache-webtier
+        %ENABLE_LOAD_BALANCER_VOLUME_PATH%  mountPath: "/config"
         env:
           - name: WEBLOGIC_CLUSTER
             value: '%DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%:%MANAGED_SERVER_PORT%'
           - name: LOCATION
             value: '%WEB_APP_PREPATH%'
-        # - name: WEBLOGIC_HOST
-        #   value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
-        # - name: WEBLOGIC_PORT
-        #   value: '%ADMIN_PORT%'
+          %ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%- name: WEBLOGIC_HOST
+          %ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%  value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'
+          %ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%- name: WEBLOGIC_PORT
+          %ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%  value: '%ADMIN_PORT%'
         readinessProbe:
           tcpSocket:
             port: 80
