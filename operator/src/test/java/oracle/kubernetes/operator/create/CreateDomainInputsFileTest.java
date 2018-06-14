@@ -55,6 +55,7 @@ public class CreateDomainInputsFileTest {
                 .clusterName("cluster-1")
                 .clusterType("DYNAMIC")
                 .domainName("base_domain")
+                .weblogicImage("store/oracle/weblogic:12.2.1.3")
                 .domainUID("")
                 .exposeAdminNodePort("false")
                 .exposeAdminT3Channel("false")

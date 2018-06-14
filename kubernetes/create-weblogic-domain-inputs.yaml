@@ -40,6 +40,9 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
+# WebLogic Docker image
+weblogicImage: store/oracle/weblogic:12.2.1.3
+
 # Persistent volume type for the domain's storage.
 # The value must be 'HOST_PATH' or 'NFS'. 
 # If using 'NFS', weblogicDomainStorageNFSServer must be specified.

@@ -78,6 +78,7 @@ public class CreateDomainInputs {
   private String loadBalancerExposeAdminPort = "";
   private String javaOptions = "";
   private String version = "";
+  private String weblogicImage = "";
 
   public static CreateDomainInputs newInputs() throws Exception {
     return readDefaultInputsFile()
@@ -87,6 +88,7 @@ public class CreateDomainInputs {
         .clusterName("TestCluster")
         .clusterType(CLUSTER_TYPE_DYNAMIC)
         .domainName("TestDomain")
+        .weblogicImage("store/oracle/weblogic:12.2.1.3")
         .domainUID("test-domain-uid")
         .javaOptions("TestJavaOptions")
         .loadBalancerDashboardPort("31315")
@@ -154,6 +156,19 @@ public class CreateDomainInputs {
 
   public CreateDomainInputs adminServerName(String adminServerName) {
     setAdminServerName(adminServerName);
+    return this;
+  }
+
+  public String getWeblogicImage() {
+    return weblogicImage;
+  }
+
+  public void setWeblogicImage(String weblogicImage) {
+    this.weblogicImage = convertNullToEmptyString(weblogicImage);
+  }
+
+  public CreateDomainInputs weblogicImage(String weblogicImage) {
+    setWeblogicImage(weblogicImage);
     return this;
   }
 
