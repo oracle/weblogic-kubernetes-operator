@@ -21,7 +21,7 @@ spec:
   # The WebLogic Domain Name
   domainName: %DOMAIN_NAME%
   # The Operator currently does not support other images
-  image: "store/oracle/weblogic:12.2.1.3"
+  image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
