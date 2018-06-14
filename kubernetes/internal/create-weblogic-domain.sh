@@ -575,24 +575,21 @@ function createYamlFiles {
  
     echo Generating ${apacheOutput}
 
-    # This part needs to be done before substitution of %DOMAIN_UID%, %ADMIN_SERVER_NAME% and %ADMIN_PORT%
     if [ "${loadBalancerExposeAdminPort}" = "true" ]; then
-      sed -i -e "s|# - name: WEBLOGIC_HOST|  - name: WEBLOGIC_HOST|g" ${apacheOutput}
-      sed -i -e "s|#   value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'|    value: '%DOMAIN_UID%-%ADMIN_SERVER_NAME%'|g" ${apacheOutput}
-      sed -i -e "s|# - name: WEBLOGIC_PORT|  - name: WEBLOGIC_PORT|g" ${apacheOutput}
-      sed -i -e "s|#   value: '%ADMIN_PORT%'|    value: '%ADMIN_PORT%'|g" ${apacheOutput}
+      enableLoadBalancerExposeAdminPortPrefix="${enabledPrefix}"
+    else
+      enableLoadBalancerExposeAdminPortPrefix="${disabledPrefix}"
     fi
 
     if [ ! -z "${loadBalancerVolumePath}" ]; then
+      enableLoadBalancerVolumePathPrefix="${enabledPrefix}"
       sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
-      sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
-      sed -i -e "s|# - name: %DOMAIN_UID%-apache-webtier|- name: %DOMAIN_UID%-apache-webtier|g" ${apacheOutput}
-      sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
-      sed -i -e "s:#     path:    path:g" ${apacheOutput}
-      sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
-      sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
+    else
+      enableLoadBalancerVolumePathPrefix="${disabledPrefix}"
     fi
 
+    sed -i -e "s:%ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%:${enableLoadBalancerExposeAdminPortPrefix}:g" ${apacheOutput}
+    sed -i -e "s:%ENABLE_LOAD_BALANCER_VOLUME_PATH%:${enableLoadBalancerVolumePathPrefix}:g" ${apacheOutput}
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheOutput}
