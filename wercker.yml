@@ -195,6 +195,114 @@ integration-test:
     
       cleanup_and_store
 
+# This pipeline runs java integration tests against a k8s cluster on OCI.
+command-timeout: 60
+integration-test-java:
+  steps:
+  - script:
+    name: obtain lease on k8s cluster 
+    code: |
+      #!/bin/bash
+      
+      cp /etc/hosts $WERCKER_PIPELINE_DIR/hosts
+      sed -i "$ a ${OCI_K8S_WORKER0_IP} ${OCI_K8S_WORKER0_HOSTNAME}" $WERCKER_PIPELINE_DIR/hosts
+      cp $WERCKER_PIPELINE_DIR/hosts /etc/hosts
+
+      # Update KUBECONFIG for K8S cluster
+      export K8S_NODEPORT_HOST="${OCI_K8S_WORKER0_HOSTNAME}"
+      sed -i -e "s,%ADDRESS%,https://$OCI_K8S_MASTER_IP:443,g" $WERCKER_SOURCE_DIR/build/kube.config
+      sed -i -e "s,%CLIENT_CERT_DATA%,$OCI_K8S_CLIENT_CERT_DATA,g" $WERCKER_SOURCE_DIR/build/kube.config
+      sed -i -e "s,%CLIENT_KEY_DATA%,$OCI_K8S_CLIENT_KEY_DATA,g" $WERCKER_SOURCE_DIR/build/kube.config
+      export KUBECONFIG="$WERCKER_SOURCE_DIR/build/kube.config"
+
+      # running on Wercker
+      export WERCKER="true"
+
+      # install kubectl
+      curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      chmod +x ./kubectl
+      mv ./kubectl /usr/local/bin/kubectl
+
+      # install maven, includes java as dependency
+      curl -LO http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
+      mv epel-apache-maven.repo /etc/yum.repos.d/
+      yum install -y apache-maven
+      export M2_HOME="/usr/share/apache-maven"
+      export PATH=$M2_HOME/bin:$PATH
+
+      # install opensll
+      yum install -y openssl
+
+      echo @@ "Calling 'kubectl version'"
+      kubectl version
+
+      # obtain an exclusive k8s cluster lease using the 'lease.sh' helper script
+      #   - first set LEASE_ID to a unique value
+      #   - then try obtain the lease, block up to 100 minutes (wercker pipeline should timeout before then)
+      #   - finally, run.sh will periodically try renew the lease as it runs (using $LEASE_ID)
+      #   - if run.sh fails when it tries to renew the lease (as something else took it, etc), it will exit early
+      #   - when run.sh exits, it will try release the lease if it's still the owner...
+      export LEASE_ID="${WERCKER_STEP_ID}-pid$$"
+      echo @@
+      echo @@ "Obtaining lease!"
+      echo @@
+      echo @@ "About to block up to the 100 minutes trying to get exclusive access to the kubernetes cluster."
+      echo @@ "If this blocks unexpectedly and you are sure that the kubernetes cluster isn't in use by "
+      echo @@ "another Wercker pipeline, you can force the lease to free up via 'kubectl delete cm acceptance-test-lease'."
+      echo @@ "See LEASE_ID in run.sh for details about this heuristic."
+      echo @@ "LEASE_ID=$LEASE_ID host=$HOST date=`date` user=$USER."
+      echo @@
+      echo @@ "Current lease owner (if any):"
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
+      echo @@
+      echo @@ "About to try obtain lease:"
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
+      echo @@
+
+      export HOST_PATH="/scratch"
+      export PV_ROOT=$HOST_PATH
+      export RESULT_ROOT="$WERCKER_OUTPUT_DIR/k8s_dir"
+      mkdir -m 777 -p $RESULT_ROOT
+      export PROJECT_ROOT="${WERCKER_SOURCE_DIR}"
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh
+
+      export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
+      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
+      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR="latest"
+      fi
+      export IMAGE_PULL_POLICY_OPERATOR="Always"
+      export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
+      export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
+
+      echo "Integration test suite against the test image which is:"
+      echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
+      
+  - script:
+    name: Install pre-reqs
+    code: |
+      yum -y install tar gzip procps
+      
+  - wercker/maven:
+    goals: test-compile integration-test
+    version: 3.5.2
+    profiles: java-integration-tests
+    
+  - script:
+    name: cleanup and store
+    code: |
+      #!/bin/bash
+      function cleanup_and_store {
+        # clean up
+        yum clean all
+
+        # store the artifacts so we can download them easily 
+        tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
+      }
+      
+      cleanup_and_store
+      
+      
 # This pipeline runs quality checks 
 quality:
   steps:
