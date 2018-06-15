@@ -2901,6 +2901,11 @@ function test_suite {
 
 # entry point
 
+if [ "$JENKINS" = "true" ]; then
+  mvn test-compile integration-test -P java-integration-tests
+  exit "$?"
+fi
+
 if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
   if [ "${VERBOSE:-false}" = "true" ]; then
     test_suite 2>&1 
