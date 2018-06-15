@@ -45,6 +45,9 @@ else
 	docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
 	docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 	
+	docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
+    docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
+	
 	#docker rmi -f $(docker images -q -f dangling=true)
 	docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
 	
