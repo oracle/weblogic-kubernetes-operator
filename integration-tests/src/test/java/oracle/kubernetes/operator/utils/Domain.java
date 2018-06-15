@@ -389,10 +389,15 @@ public class Domain {
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
     }
     String outputStr = result.stdout().trim();
-    logger.info("run " + outputStr);
+    logger.info("Command returned " + outputStr);
     if (!outputStr.contains(CREATE_DOMAIN_JOB_MESSAGE)) {
       throw new RuntimeException("FAILURE: Create domain Script failed..");
     }

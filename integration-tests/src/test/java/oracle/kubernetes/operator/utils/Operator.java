@@ -209,7 +209,12 @@ public class Operator {
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
