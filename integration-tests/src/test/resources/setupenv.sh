@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -60,6 +61,11 @@ function create_image_pull_secret_jenkins {
 
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
+export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
+export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
+echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
+export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
+    
 if [ -z "$BRANCH_NAME" ]; then
   export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
   if [ ! "$?" = "0" ] ; then
