@@ -259,7 +259,7 @@ integration-test-java:
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
       echo @@
 
-      export HOST_PATH="/scratch/wl_k8s_java_test_results"
+      export HOST_PATH="/scratch"
       export PV_ROOT=$HOST_PATH
       export RESULT_ROOT="$WERCKER_OUTPUT_DIR/k8s_dir"
       mkdir -m 777 -p $RESULT_ROOT
