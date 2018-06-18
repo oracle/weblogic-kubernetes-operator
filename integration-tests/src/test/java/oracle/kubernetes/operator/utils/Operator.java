@@ -279,7 +279,7 @@ public class Operator {
     }
     logger.info("IMAGE_NAME_OPERATOR=" + System.getenv("IMAGE_NAME_OPERATOR"));
     logger.info("IMAGE_TAG_OPERATOR=" + System.getenv("IMAGE_TAG_OPERATOR"));
-    logger.info("Git branch "+TestUtils.getGitBranchName());
+    logger.info("Git branch " + TestUtils.getGitBranchName());
     // customize the inputs yaml file to use our pre-built docker image
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
