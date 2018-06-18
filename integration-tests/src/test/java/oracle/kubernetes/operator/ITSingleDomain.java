@@ -98,8 +98,9 @@ public class ITSingleDomain extends BaseTest {
               + "/src/integration-tests/bash/cleanup.sh";
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
-        logger.info("FAILED: command to call cleanup script failed " + cmd + result.stderr());
+        logger.info("FAILED: command to call cleanup script " + cmd + " failed " + result.stderr());
       }
+      logger.info("Command " + cmd + " returned " + result.stdout() + "\n" + result.stderr());
     }
     logger.info("SUCCESS");
   }
