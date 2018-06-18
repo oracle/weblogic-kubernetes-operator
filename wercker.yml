@@ -113,6 +113,8 @@ integration-test:
       cp $WERCKER_PIPELINE_DIR/hosts /etc/hosts
       
       echo "OCI_K8S_WORKER0_IP =$OCI_K8S_WORKER0_IP"
+      
+      echo "$OCI_K8S_SSHKEY $OCI_K8S_SSHKEY"
 
       # Update KUBECONFIG for K8S cluster
       export K8S_NODEPORT_HOST="${OCI_K8S_WORKER0_HOSTNAME}"
