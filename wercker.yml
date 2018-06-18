@@ -111,6 +111,8 @@ integration-test:
       cp /etc/hosts $WERCKER_PIPELINE_DIR/hosts
       sed -i "$ a ${OCI_K8S_WORKER0_IP} ${OCI_K8S_WORKER0_HOSTNAME}" $WERCKER_PIPELINE_DIR/hosts
       cp $WERCKER_PIPELINE_DIR/hosts /etc/hosts
+      
+      echo "OCI_K8S_WORKER0_IP =$OCI_K8S_WORKER0_IP"
 
       # Update KUBECONFIG for K8S cluster
       export K8S_NODEPORT_HOST="${OCI_K8S_WORKER0_HOSTNAME}"
