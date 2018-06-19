@@ -289,7 +289,7 @@ public class Operator {
           "weblogicOperatorImage",
           "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
-              + BaseTest.getBranchName());
+              + BaseTest.getBranchName().replaceAll("/", "_"));
     }
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
