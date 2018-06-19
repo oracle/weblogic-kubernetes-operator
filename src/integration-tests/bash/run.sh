@@ -2902,7 +2902,8 @@ function test_suite {
 # entry point
 
 if [ "$JENKINS" = "true" ]; then
-  echo "`git branch`"
+  echo "git branch `git branch`"
+  echo "BRANCH_NAME ${BRANCH_NAME}"
   mvn test-compile integration-test -P java-integration-tests
   exit "$?"
 fi
