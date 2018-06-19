@@ -67,7 +67,7 @@ public class BaseTest {
     if (System.getenv("BRANCH_NAME") != null) {
       branchName = System.getenv("BRANCH_NAME");
     } else {
-      branchName = TestUtils.getGitBranchName().replaceAll("/", "_");
+      branchName = TestUtils.getGitBranchName();
     }
 
     logger.info("RESULT_ROOT =" + resultRoot);
