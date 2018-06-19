@@ -4,12 +4,12 @@
 
 function clean_jenkins {
     echo "Cleaning."
-    /usr/local/packages/aime/ias/run_as_root "${SCRIPTPATH}/clean_docker_k8s.sh -y"
+    /usr/local/packages/aime/ias/run_as_root "${PROJECT_ROOT}/src/integration-tests/bash/clean_docker_k8s.sh -y"
 }
 
 function setup_jenkins {
     echo "Setting up."
-    /usr/local/packages/aime/ias/run_as_root "sh ${SCRIPTPATH}/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
+    /usr/local/packages/aime/ias/run_as_root "sh ${PROJECT_ROOT}/src/integration-tests/bash/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
     set +x
     . ~/.dockerk8senv
     set -x
