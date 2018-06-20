@@ -736,13 +736,22 @@ function setupVoyagerLoadBalancer {
     | bash -s -- --provider=baremetal --namespace=voyager
   fi
 
-  # verify Voyager controller pod is ready
-  local ready=`kubectl -n voyager get pod | grep voyager-operator | awk ' { print $2; } '`
-  if [ "${ready}" != "1/1" ] ; then
-    fail "Voyager Ingress Controller is not ready"
-  fi
+  echo Checking voyager controller pod is ready
+  local maxwaitsecs=30
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    local ready=`kubectl -n voyager get pod | grep voyager-operator | awk ' { print $2; } '`
+    if [ "${ready}" = "1/1" ] ; then
+      echo "Voyager Ingress Controller is ready"
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The Voyager Ingress Controller is not ready."
+    fi
+    sleep 1
+  done
 
-  # deploy Voyager Ingress resource
   kubectl apply -f ${voyagerOutput}
 
   echo Checking Voyager Ingress resource
