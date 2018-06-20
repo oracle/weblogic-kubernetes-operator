@@ -64,8 +64,8 @@ public class BaseTest {
     // resultDir = resultRoot + "/acceptance_test_tmp";
     userProjectsDir = resultRoot + "/acceptance_test_tmp/user-projects";
     projectRoot = System.getProperty("user.dir") + "/..";
-    
-    //BRANCH_NAME var is used in Jenkins job
+
+    // BRANCH_NAME var is used in Jenkins job
     if (System.getenv("BRANCH_NAME") != null) {
       branchName = System.getenv("BRANCH_NAME");
     } else {
