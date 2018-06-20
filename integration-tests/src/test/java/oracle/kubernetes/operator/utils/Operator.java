@@ -209,7 +209,12 @@ public class Operator {
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
@@ -272,7 +277,9 @@ public class Operator {
         operatorProps.put("externalRestHttpsPort", externalRestHttpsPort);
       }
     }
+
     // customize the inputs yaml file to use our pre-built docker image
+    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for wercker
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorProps.put(
@@ -283,7 +290,7 @@ public class Operator {
           "weblogicOperatorImage",
           "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
-              + TestUtils.getGitBranchName().replaceAll("/", "_"));
+              + BaseTest.getBranchName().replaceAll("/", "_"));
     }
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
