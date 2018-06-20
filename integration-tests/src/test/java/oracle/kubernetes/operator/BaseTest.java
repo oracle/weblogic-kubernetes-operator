@@ -29,6 +29,7 @@ public class BaseTest {
   private static int maxIterationsPod = 50;
   private static int waitTimePod = 5;
   private static String leaseId = "";
+  private static String branchName = "";
 
   private static Properties appProps;
 
@@ -63,10 +64,19 @@ public class BaseTest {
     // resultDir = resultRoot + "/acceptance_test_tmp";
     userProjectsDir = resultRoot + "/acceptance_test_tmp/user-projects";
     projectRoot = System.getProperty("user.dir") + "/..";
+
+    // BRANCH_NAME var is used in Jenkins job
+    if (System.getenv("BRANCH_NAME") != null) {
+      branchName = System.getenv("BRANCH_NAME");
+    } else {
+      branchName = TestUtils.getGitBranchName();
+    }
+
     logger.info("RESULT_ROOT =" + resultRoot);
     logger.info("PV_ROOT =" + pvRoot);
     logger.info("userProjectsDir =" + userProjectsDir);
     logger.info("projectRoot =" + projectRoot);
+    logger.info("branchName =" + branchName);
 
     logger.info("Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
     logger.info("Env var PV_ROOT " + System.getenv("PV_ROOT"));
@@ -79,6 +89,7 @@ public class BaseTest {
         "Env var IMAGE_PULL_SECRET_OPERATOR " + System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
     logger.info(
         "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+    logger.info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
 
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
@@ -136,6 +147,10 @@ public class BaseTest {
 
   public static String getLeaseId() {
     return leaseId;
+  }
+
+  public static String getBranchName() {
+    return branchName;
   }
 
   protected void logTestBegin(String testName) throws Exception {
