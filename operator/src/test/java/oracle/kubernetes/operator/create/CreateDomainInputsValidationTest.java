@@ -501,6 +501,11 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_loadBalanceTypeVoyager_succeeds() throws Exception {
+    createDomain_with_validLoadBalancer_succeeds(LOAD_BALANCER_VOYAGER);
+  }
+
+  @Test
   public void createDomain_with_missingLoadBalancer_failsAndReturnsError() throws Exception {
     assertThat(
         execCreateDomain(newInputs().loadBalancer("")),

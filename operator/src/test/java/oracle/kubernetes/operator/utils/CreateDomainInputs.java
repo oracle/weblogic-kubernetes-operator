@@ -30,6 +30,7 @@ public class CreateDomainInputs {
   public static final String LOAD_BALANCER_NONE = "NONE";
   public static final String LOAD_BALANCER_TRAEFIK = "TRAEFIK";
   public static final String LOAD_BALANCER_APACHE = "APACHE";
+  public static final String LOAD_BALANCER_VOYAGER = "VOYAGER";
   public static final String STORAGE_TYPE_HOST_PATH = "HOST_PATH";
   public static final String STORAGE_TYPE_NFS = "NFS";
   public static final String STORAGE_RECLAIM_POLICY_RETAIN = "Retain";

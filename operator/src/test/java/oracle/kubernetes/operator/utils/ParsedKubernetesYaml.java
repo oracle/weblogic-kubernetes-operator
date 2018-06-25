@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.utils;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
+import com.appscode.voyager.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Job;
@@ -17,6 +18,7 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1beta1APIService;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
@@ -38,11 +40,13 @@ public class ParsedKubernetesYaml {
   @SuppressWarnings("rawtypes")
   protected ParsedKubernetesYaml(Path path) throws Exception {
     // create handlers for all the supported k8s types
+    kindToHandler.put(KIND_API_SERVICE, new APIServiceHandler());
     kindToHandler.put(KIND_CONFIG_MAP, new ConfigMapHandler());
     kindToHandler.put(KIND_CLUSTER_ROLE, new ClusterRoleHandler());
     kindToHandler.put(KIND_CLUSTER_ROLE_BINDING, new ClusterRoleBindingHandler());
     kindToHandler.put(KIND_DEPLOYMENT, new DeploymentHandler());
     kindToHandler.put(KIND_DOMAIN, new DomainHandler());
+    kindToHandler.put(KIND_INGRESS, new IngressHandler());
     kindToHandler.put(KIND_JOB, new JobHandler());
     kindToHandler.put(KIND_NAMESPACE, new NamespaceHandler());
     kindToHandler.put(KIND_PERSISTENT_VOLUME, new PersistentVolumeHandler());
@@ -108,6 +112,11 @@ public class ParsedKubernetesYaml {
   */
 
   @SuppressWarnings("unchecked")
+  public TypeHandler<V1beta1APIService> getAPIServices() {
+    return (TypeHandler<V1beta1APIService>) getHandler(KIND_API_SERVICE);
+  }
+
+  @SuppressWarnings("unchecked")
   public TypeHandler<V1ConfigMap> getConfigMaps() {
     return (TypeHandler<V1ConfigMap>) getHandler(KIND_CONFIG_MAP);
   }
@@ -130,6 +139,11 @@ public class ParsedKubernetesYaml {
   @SuppressWarnings("unchecked")
   public TypeHandler<Domain> getDomains() {
     return (TypeHandler<Domain>) getHandler(KIND_DOMAIN);
+  }
+
+  @SuppressWarnings("unchecked")
+  public TypeHandler<V1beta1Ingress> getIngresses() {
+    return (TypeHandler<V1beta1Ingress>) getHandler(KIND_INGRESS);
   }
 
   @SuppressWarnings("unchecked")
@@ -250,6 +264,46 @@ public class ParsedKubernetesYaml {
     }
   }
 
+  private static class APIServiceHandler extends TypeHandler<V1beta1APIService> {
+    private APIServiceHandler() {
+      super(V1beta1APIService.class);
+    }
+
+    @Override
+    protected V1ObjectMeta getMetadata(V1beta1APIService instance) {
+      return instance.getMetadata();
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public void add(Map objectAsMap) {
+      convertCaBundleFromBase64EncodedStringToByteArray(objectAsMap);
+      super.add(objectAsMap);
+    }
+
+    /**
+     * The kubernetes server expects that the caBundle in yaml is a base64 encoded string. On the
+     * other hand, the kubernetes APIServiceSpec class expects that the caBundle in yaml is a byte
+     * array. Convert from a base64 encoded string to a byte array so that the yaml can be parsed
+     * into the kubernetes APIServiceSpec class. YUCK! I'm assuming that at some point in the
+     * future, the kubernetes APIServiceSpec class will catch up and expect base64 encoded strings
+     * too.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void convertCaBundleFromBase64EncodedStringToByteArray(Map objectAsMap) {
+      Map specAsMap = (Map) objectAsMap.get("spec");
+      if (specAsMap == null) {
+        return;
+      }
+      String caBundleValueAsBase64EncodedString = (String) specAsMap.get("caBundle");
+      if (caBundleValueAsBase64EncodedString == null) {
+        return;
+      }
+      byte[] caBundleAsBytes = Base64.decodeBase64(caBundleValueAsBase64EncodedString);
+      specAsMap.put("caBundle", caBundleAsBytes);
+    }
+  }
+
   private static class ConfigMapHandler extends TypeHandler<V1ConfigMap> {
     private ConfigMapHandler() {
       super(V1ConfigMap.class);
@@ -301,6 +355,17 @@ public class ParsedKubernetesYaml {
 
     @Override
     protected V1ObjectMeta getMetadata(Domain instance) {
+      return instance.getMetadata();
+    }
+  }
+
+  private static class IngressHandler extends TypeHandler<V1beta1Ingress> {
+    private IngressHandler() {
+      super(V1beta1Ingress.class);
+    }
+
+    @Override
+    protected V1ObjectMeta getMetadata(V1beta1Ingress instance) {
       return instance.getMetadata();
     }
   }
