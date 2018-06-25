@@ -262,8 +262,9 @@
         </dependency>
         <dependency>
             <groupId>com.appscode.voyager</groupId>
-            <artifactId>client-java-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>client-java</artifactId>
+            <version>0.1.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javax</groupId>
