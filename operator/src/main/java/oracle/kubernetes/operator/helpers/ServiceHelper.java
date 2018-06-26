@@ -97,7 +97,9 @@ public class ServiceHelper {
       if (isPublishNotReadyAddressesSupported()) {
         serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
       }
-      serviceSpec.clusterIP("None");
+      if (nodePort == null) {
+        serviceSpec.clusterIP("None");
+      }
       return serviceSpec;
     }
 
