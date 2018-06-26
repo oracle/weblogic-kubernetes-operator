@@ -57,6 +57,18 @@ public class DomainFiles {
     return getWeblogicDomainPath().resolve("weblogic-domain-apache-security.yaml");
   }
 
+  public Path getVoyagerOperatorYamlPath() {
+    return getWeblogicDomainPath().resolve("voyager-operator.yaml");
+  }
+
+  public Path getVoyagerOperatorSecurityYamlPath() {
+    return getWeblogicDomainPath().resolve("voyager-operator-security.yaml");
+  }
+
+  public Path getVoyagerIngressYamlPath() {
+    return getWeblogicDomainPath().resolve("weblogic-domain-voyager-ingress.yaml");
+  }
+
   public Path getTraefikYamlPath() {
     return getWeblogicDomainPath()
         .resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");

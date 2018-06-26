@@ -24,6 +24,9 @@ import oracle.kubernetes.operator.utils.ParsedDeleteWeblogicDomainJobYaml;
 import oracle.kubernetes.operator.utils.ParsedDomainCustomResourceYaml;
 import oracle.kubernetes.operator.utils.ParsedTraefikSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedTraefikYaml;
+import oracle.kubernetes.operator.utils.ParsedVoyagerIngressYaml;
+import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorSecurityYaml;
+import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -81,6 +84,18 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
 
   protected ParsedApacheYaml getApacheYaml() {
     return getGeneratedFiles().getApacheYaml();
+  }
+
+  protected ParsedVoyagerIngressYaml getVoyagerIngressYaml() {
+    return getGeneratedFiles().getVoyagerIngressYaml();
+  }
+
+  protected ParsedVoyagerOperatorSecurityYaml getVoyagerOperatorSecurityYaml() {
+    return getGeneratedFiles().getVoyagerOperatorSecurityYaml();
+  }
+
+  protected ParsedVoyagerOperatorYaml getVoyagerOperatorYaml() {
+    return getGeneratedFiles().getVoyagerOperatorYaml();
   }
 
   protected ParsedWeblogicDomainPersistentVolumeClaimYaml
@@ -489,6 +504,20 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()));
   }
 
+  protected V1ServiceAccount getActualVoyagerServiceAccount() {
+    return getVoyagerOperatorSecurityYaml().getVoyagerServiceAccount();
+  }
+
+  protected V1ServiceAccount getExpectedVoyagerServiceAccount() {
+    return newServiceAccount()
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()));
+  }
+
   @Test
   public void generatesCorrect_loadBalancerDeployment() throws Exception {
     assertThat(getActualTraefikDeployment(), yamlEqualTo(getExpectedTraefikDeployment()));
@@ -660,6 +689,88 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                                                 .name(getTraefikScope() + "-cm"))))));
   }
 
+  protected ExtensionsV1beta1Deployment getActualVoyagerDeployment() {
+    return getVoyagerOperatorYaml().getVoyagerOperatorDeployment();
+  }
+
+  protected ExtensionsV1beta1Deployment getExpectedVoyagerDeployment() {
+    return newDeployment()
+        .apiVersion(API_VERSION_APPS_V1BETA1)
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .spec(
+            newDeploymentSpec()
+                .replicas(1)
+                .selector(newLabelSelector().putMatchLabelsItem(APP_LABEL, getVoyagerName()))
+                .template(
+                    newPodTemplateSpec()
+                        .metadata(
+                            newObjectMeta()
+                                .putLabelsItem(APP_LABEL, getVoyagerName())
+                                .putAnnotationsItem(
+                                    "scheduler.alpha.kubernetes.io/critical-pod", ""))
+                        .spec(
+                            newPodSpec()
+                                .serviceAccountName(getVoyagerOperatorName())
+                                .imagePullSecrets(newLocalObjectReferenceList())
+                                .addContainersItem(
+                                    newContainer()
+                                        .name(getVoyagerName())
+                                        .addArgsItem("run")
+                                        .addArgsItem("--v=3")
+                                        .addArgsItem("--rbac=true")
+                                        .addArgsItem("--cloud-provider=")
+                                        .addArgsItem("--cloud-config=")
+                                        .addArgsItem("--ingress-class=")
+                                        .addArgsItem("--restrict-to-operator-namespace=false")
+                                        .addArgsItem("--docker-registry=appscode")
+                                        .addArgsItem("--haproxy-image-tag=1.7.10-6.0.0")
+                                        .addArgsItem("--secure-port=8443")
+                                        .addArgsItem("--audit-log-path=-")
+                                        .addArgsItem("--tls-cert-file=/var/serving-cert/tls.crt")
+                                        .addArgsItem(
+                                            "--tls-private-key-file=/var/serving-cert/tls.key")
+                                        .image("appscode/voyager:6.0.0")
+                                        .addPortsItem(newContainerPort().containerPort(8443))
+                                        .addPortsItem(newContainerPort().containerPort(56790))
+                                        .addPortsItem(newContainerPort().containerPort(56791))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .mountPath("/etc/kubernetes")
+                                                .name("cloudconfig")
+                                                .readOnly(true))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .mountPath("/var/serving-cert")
+                                                .name("serving-cert"))
+                                        .readinessProbe(
+                                            newProbe()
+                                                .httpGet(
+                                                    newHTTPGetAction()
+                                                        .path("/healthz")
+                                                        .port(newIntOrString(8443))
+                                                        .scheme("HTTPS"))))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .hostPath(newHostPathVolumeSource().path("/etc/kubernetes"))
+                                        .name("cloudconfig"))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("serving-cert")
+                                        .secret(
+                                            newSecretVolumeSource()
+                                                .defaultMode(420)
+                                                .secretName(getVoyagerName() + "-apiserver-cert")))
+                                .addTolerationsItem(
+                                    newToleration()
+                                        .key("CriticalAddonsOnly")
+                                        .operator("Exists")))));
+  }
+
   @Test
   public void generatesCorrect_loadBalancerConfigMap() throws Exception {
     // The config map contains a 'traefik.toml' property that has a lot of text
@@ -768,6 +879,29 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                         .nodePort(Integer.parseInt(getInputs().getLoadBalancerWebPort()))));
   }
 
+  protected V1Service getActualVoyagerService() {
+    return getVoyagerOperatorYaml().getVoyagerOperatorService();
+  }
+
+  protected V1Service getExpectedVoyagerService() {
+    return newService()
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .spec(
+            newServiceSpec()
+                .putSelectorItem(APP_LABEL, getVoyagerName())
+                .addPortsItem(
+                    newServicePort().name("admission").port(443).targetPort(newIntOrString(8443)))
+                .addPortsItem(
+                    newServicePort().name("ops").port(56790).targetPort(newIntOrString(56790)))
+                .addPortsItem(
+                    newServicePort().name("acme").port(56791).targetPort(newIntOrString(56791))));
+  }
+
   @Test
   public void generatesCorrect_loadBalancerDashboardService() throws Exception {
     assertThat(
@@ -855,6 +989,97 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .verbs(asList("get", "list", "watch")));
   }
 
+  protected V1beta1ClusterRole getActualVoyagerClusterRole() {
+    return getVoyagerOperatorSecurityYaml().getVoyagerClusterRole();
+  }
+
+  protected V1beta1ClusterRole getExpectedVoyagerClusterRole() {
+    return newClusterRole()
+        .apiVersion(API_VERSION_RBAC_V1)
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("apiextensions.k8s.io")
+                .addResourcesItem("customresourcedefinitions")
+                .addVerbsItem("*"))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("extensions")
+                .addResourcesItem("thirdpartyresources")
+                .addVerbsItem("*"))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("voyager.appscode.com")
+                .resources(asList("*"))
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("monitoring.coreos.com")
+                .addResourcesItem("servicemonitors")
+                .verbs(asList("get", "list", "watch", "create", "update", "patch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("apps")
+                .addResourcesItem("deployments")
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("extensions")
+                .addResourcesItem("deployments")
+                .addResourcesItem("daemonsets")
+                .addResourcesItem("ingresses")
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("replicationcontrollers")
+                .addResourcesItem("services")
+                .addResourcesItem("endpoints")
+                .addResourcesItem("configmaps")
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("secrets")
+                .verbs(asList("get", "list", "watch", "create", "update", "patch")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("namespaces")
+                .verbs(asList("get", "list", "watch")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("events")
+                .verbs(asList("create")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("pods")
+                .verbs(asList("list", "watch", "delete", "deletecollection")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("nodes")
+                .verbs(asList("list", "watch", "get")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("serviceaccounts")
+                .verbs(asList("get", "create", "delete", "patch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem(API_GROUP_RBAC)
+                .addResourcesItem("rolebindings")
+                .addResourcesItem("roles")
+                .verbs(asList("get", "create", "delete", "patch")));
+  }
+
   @Test
   public void generatesCorrect_loadBalancerClusterRoleBinding() throws Exception {
     assertThat(
@@ -876,10 +1101,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
         .addSubjectsItem(
             newSubject()
-                .kind("ServiceAccount")
+                .kind(KIND_SERVICE_ACCOUNT)
                 .name(getApacheName())
                 .namespace(getInputs().getNamespace()))
-        .roleRef(newRoleRef().name(getApacheName()).apiGroup("rbac.authorization.k8s.io"));
+        .roleRef(newRoleRef().name(getApacheName()).apiGroup(API_GROUP_RBAC));
   }
 
   protected V1beta1ClusterRoleBinding getActualTraefikDashboardClusterRoleBinding() {
@@ -897,10 +1122,35 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .addSubjectsItem(
             newSubject()
-                .kind("ServiceAccount")
+                .kind(KIND_SERVICE_ACCOUNT)
                 .name(getTraefikScope())
                 .namespace(getInputs().getNamespace()))
-        .roleRef(newRoleRef().name(getTraefikScope()).apiGroup("rbac.authorization.k8s.io"));
+        .roleRef(newRoleRef().name(getTraefikScope()).apiGroup(API_GROUP_RBAC));
+  }
+
+  protected V1beta1ClusterRoleBinding getActualVoyagerClusterRoleBinding() {
+    return getVoyagerOperatorSecurityYaml().getVoyagerClusterRoleBinding();
+  }
+
+  protected V1beta1ClusterRoleBinding getExpectedVoyagerClusterRoleBinding() {
+    return newClusterRoleBinding()
+        .apiVersion(API_VERSION_RBAC_V1)
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .roleRef(
+            newRoleRef()
+                .apiGroup(API_GROUP_RBAC)
+                .kind(KIND_CLUSTER_ROLE)
+                .name(getVoyagerOperatorName()))
+        .addSubjectsItem(
+            newSubject()
+                .kind(KIND_SERVICE_ACCOUNT)
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName()));
   }
 
   @Test
@@ -980,5 +1230,13 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
 
   protected String getApacheAppName() {
     return "apache-webtier";
+  }
+
+  protected String getVoyagerName() {
+    return "voyager";
+  }
+
+  protected String getVoyagerOperatorName() {
+    return getVoyagerName() + "-operator";
   }
 }

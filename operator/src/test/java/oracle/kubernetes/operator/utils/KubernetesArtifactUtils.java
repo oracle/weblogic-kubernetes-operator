@@ -4,6 +4,12 @@
 
 package oracle.kubernetes.operator.utils;
 
+import com.appscode.voyager.client.models.V1beta1HTTPIngressBackend;
+import com.appscode.voyager.client.models.V1beta1HTTPIngressPath;
+import com.appscode.voyager.client.models.V1beta1HTTPIngressRuleValue;
+import com.appscode.voyager.client.models.V1beta1Ingress;
+import com.appscode.voyager.client.models.V1beta1IngressRule;
+import com.appscode.voyager.client.models.V1beta1IngressSpec;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
@@ -16,6 +22,7 @@ import io.kubernetes.client.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1EnvVarSource;
 import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Job;
@@ -46,13 +53,17 @@ import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1TCPSocketAction;
+import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.V1beta1APIService;
+import io.kubernetes.client.models.V1beta1APIServiceSpec;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1PolicyRule;
 import io.kubernetes.client.models.V1beta1RoleBinding;
 import io.kubernetes.client.models.V1beta1RoleRef;
+import io.kubernetes.client.models.V1beta1ServiceReference;
 import io.kubernetes.client.models.V1beta1Subject;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,22 +83,30 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 /** Utilities to help construct and manage kubernetes artifacts */
 public class KubernetesArtifactUtils {
 
+  public static final String API_GROUP_RBAC = "rbac.authorization.k8s.io";
+
   public static final String API_VERSION_APPS_V1BETA1 = "apps/v1beta1";
   public static final String API_VERSION_BATCH_V1 = "batch/v1";
   public static final String API_VERSION_EXTENSIONS_V1BETA1 = "extensions/v1beta1";
-  public static final String API_VERSION_RBAC_V1BETA1 = "rbac.authorization.k8s.io/v1beta1";
+  public static final String API_VERSION_REGISTRATION_V1BETA1 = "apiregistration.k8s.io/v1beta1";
+  public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
+  public static final String API_VERSION_RBAC_V1BETA1 = API_GROUP_RBAC + "/v1beta1";
   public static final String API_VERSION_ORACLE_V1 = "weblogic.oracle/v1";
   public static final String API_VERSION_V1 = "v1";
+  public static final String API_VERSION_VOYAGER_V1BETA1 = "voyager.appscode.com/v1beta1";
 
+  public static final String KIND_API_SERVICE = "APIService";
   public static final String KIND_CONFIG_MAP = "ConfigMap";
   public static final String KIND_CLUSTER_ROLE = "ClusterRole";
   public static final String KIND_CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
   public static final String KIND_DOMAIN = "Domain";
   public static final String KIND_JOB = "Job";
   public static final String KIND_DEPLOYMENT = "Deployment";
+  public static final String KIND_INGRESS = "Ingress";
   public static final String KIND_NAMESPACE = "Namespace";
   public static final String KIND_PERSISTENT_VOLUME = "PersistentVolume";
   public static final String KIND_PERSISTENT_VOLUME_CLAIM = "PersistentVolumeClaim";
+  public static final String KIND_ROLE = "Role";
   public static final String KIND_ROLE_BINDING = "RoleBinding";
   public static final String KIND_SECRET = "Secret";
   public static final String KIND_SERVICE = "Service";
@@ -143,6 +162,44 @@ public class KubernetesArtifactUtils {
 
   public static V1Secret newSecret() {
     return (new V1Secret()).apiVersion(API_VERSION_V1).kind(KIND_SECRET);
+  }
+
+  public static V1beta1APIService newAPIService() {
+    return (new V1beta1APIService())
+        .apiVersion(API_VERSION_REGISTRATION_V1BETA1)
+        .kind(KIND_API_SERVICE);
+  }
+
+  public static V1beta1APIServiceSpec newAPIServiceSpec() {
+    return new V1beta1APIServiceSpec();
+  }
+
+  public static V1beta1ServiceReference newServiceReference() {
+    return new V1beta1ServiceReference();
+  }
+
+  public static V1beta1Ingress newIngress() {
+    return (new V1beta1Ingress()).apiVersion(API_VERSION_VOYAGER_V1BETA1).kind(KIND_INGRESS);
+  }
+
+  public static V1beta1HTTPIngressBackend newHTTPIngressBackend() {
+    return new V1beta1HTTPIngressBackend();
+  }
+
+  public static V1beta1HTTPIngressPath newHTTPIngressPath() {
+    return new V1beta1HTTPIngressPath();
+  }
+
+  public static V1beta1HTTPIngressRuleValue newHTTPIngressRuleValue() {
+    return new V1beta1HTTPIngressRuleValue();
+  }
+
+  public static V1beta1IngressRule newIngressRule() {
+    return new V1beta1IngressRule();
+  }
+
+  public static V1beta1IngressSpec newIngressSpec() {
+    return new V1beta1IngressSpec();
   }
 
   public static V1beta1ClusterRole newClusterRole() {
@@ -335,8 +392,16 @@ public class KubernetesArtifactUtils {
     return new V1LabelSelector();
   }
 
+  public static V1HTTPGetAction newHTTPGetAction() {
+    return new V1HTTPGetAction();
+  }
+
   public static V1TCPSocketAction newTCPSocketAction() {
     return new V1TCPSocketAction();
+  }
+
+  public static V1Toleration newToleration() {
+    return new V1Toleration();
   }
 
   public static V1Handler newHandler() {
