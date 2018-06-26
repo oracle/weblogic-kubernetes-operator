@@ -371,9 +371,19 @@ function initialize {
     validationError "The template file ${apacheInput} for generating the apache-webtier deployment was not found"
   fi
   
-  voyagerInput="${scriptDir}/voyager-ingress-template.yaml"
-  if [ ! -f ${voyagerInput} ]; then
-    validationError "The template file ${voyagerInput} for generating the Voyager Ingress was not found"
+  voyagerOperatorInput="${scriptDir}/voyager-operator.yaml"
+  if [ ! -f ${voyagerOperatorInput} ]; then
+    validationError "The file ${voyagerOperatorInput} for Voyager Operator was not found"
+  fi
+
+  voyagerSecurityInput="${scriptDir}/voyager-operator-security.yaml"
+  if [ ! -f ${voyagerSecurityInput} ]; then
+    validationError "The file ${voyagerSecurityInput} for generating the Voyager RBAC was not found"
+  fi
+
+  voyagerIngressInput="${scriptDir}/weblogic-domain-voyager-ingress-template.yaml"
+  if [ ! -f ${voyagerIngressInput} ]; then
+    validationError "The template file ${voyagerIngressInput} for generating the Voyager Ingress was not found"
   fi
 
   failIfValidationErrors
@@ -449,7 +459,9 @@ function createYamlFiles {
   traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
   apacheOutput="${domainOutputDir}/weblogic-domain-apache.yaml"
   apacheSecurityOutput="${domainOutputDir}/weblogic-domain-apache-security.yaml"
-  voyagerOutput="${domainOutputDir}/voyager-ingress.yaml"
+  voyagerSecurityOutput="${domainOutputDir}/voyager-operator-security.yaml"
+  voyagerOperatorOutput="${domainOutputDir}/voyager-operator.yaml"
+  voyagerIngressOutput="${domainOutputDir}/weblogic-domain-voyager-ingress.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -620,17 +632,21 @@ function createYamlFiles {
   fi
 
   if [ "${loadBalancer}" = "VOYAGER" ]; then
+    # Voyager Operator Security yaml file
+    cp ${voyagerSecurityInput} ${voyagerSecurityOutput}
+    # Voyager Operator yaml file
+    cp ${voyagerOperatorInput} ${voyagerOperatorOutput}
     # Voyager Ingress file
-    cp ${voyagerInput} ${voyagerOutput}
-    echo Generating ${voyagerOutput}
-    sed -i -e "s:%NAMESPACE%:$namespace:g" ${voyagerOutput}
-    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerOutput}
-    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerOutput}
-    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerOutput}
-    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${voyagerOutput}
-    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerOutput}
-    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerOutput}
-    sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${voyagerOutput}
+    cp ${voyagerIngressInput} ${voyagerIngressOutput}
+    echo Generating ${voyagerIngressOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${voyagerIngressOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerIngressOutput}
+    sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${voyagerIngressOutput}
   fi
 
   # Remove any "...yaml-e" files left over from running sed
@@ -728,79 +744,8 @@ function createDomain {
 # Deploy Voyager/HAProxy load balancer
 #
 function setupVoyagerLoadBalancer {
-  # only deploy Voyager Ingress Controller the first time
-  local vpod=`kubectl get pod -n voyager | grep voyager | wc -l`
-  if [ "$vpod" == "0" ]; then
-    kubectl create namespace voyager
-    curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
-    | bash -s -- --provider=baremetal --namespace=voyager
-  fi
-
-  echo Checking voyager controller pod is ready
-  local maxwaitsecs=30
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local ready=`kubectl -n voyager get pod | grep voyager-operator | awk ' { print $2; } '`
-    if [ "${ready}" = "1/1" ] ; then
-      echo "Voyager Ingress Controller is ready"
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The Voyager Ingress Controller is not ready."
-    fi
-    sleep 1
-  done
-
-  kubectl apply -f ${voyagerOutput}
-
-  echo Checking Voyager Ingress resource
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local vdep=`kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
-    if [ "$vdep" = "1" ]; then
-      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
-    fi
-    sleep 5
-  done
-
-  echo Checking HAProxy pod is running
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local st=`kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } '`
-    if [ "$st" = "Running" ]; then
-      echo "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager  was not created or running."
-    fi
-    sleep 5
-  done
-
-  echo Checking Voyager service
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
-    if [ "$vscv" = "1" ]; then
-      echo 'The service ${domainUID}-voyager-stats is created successfully.'
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The service ${domainUID}-voyager-stats was not created."
-    fi
-    sleep 5
-  done
+  createVoyagerOperator ${voyagerSecurityOutput} ${voyagerOperatorOutput}
+  createVoyagerIngress ${voyagerIngressOutput} ${namespace} ${domainUID}
 }
 
 #
@@ -966,7 +911,9 @@ function outputJobSummary {
     echo "  ${apacheSecurityOutput}"
     echo "  ${apacheOutput}"
   elif [ "${loadBalancer}" = "VOYAGER" ]; then
-    echo "  ${voyagerOutput}"
+    echo "  ${voyagerOperatorOutput}"
+    echo "  ${voyagerSecurityOutput}"
+    echo "  ${voyagerIngressOutput}"
   fi
 }
 
