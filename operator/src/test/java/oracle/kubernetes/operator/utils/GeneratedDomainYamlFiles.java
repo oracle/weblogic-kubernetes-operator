@@ -27,6 +27,9 @@ public class GeneratedDomainYamlFiles {
   private ParsedTraefikSecurityYaml traefikSecurityYaml;
   private ParsedApacheYaml apacheYaml;
   private ParsedApacheSecurityYaml apacheSecurityYaml;
+  private ParsedVoyagerOperatorYaml voyagerOperatorYaml;
+  private ParsedVoyagerOperatorSecurityYaml voyagerOperatorSecurityYaml;
+  private ParsedVoyagerIngressYaml voyagerIngressYaml;
   private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
   private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
@@ -57,6 +60,14 @@ public class GeneratedDomainYamlFiles {
         apacheYaml = new ParsedApacheYaml(domainFiles.getApacheYamlPath(), inputs);
         apacheSecurityYaml =
             new ParsedApacheSecurityYaml(domainFiles.getApacheSecurityYamlPath(), inputs);
+      } else if (CreateDomainInputs.LOAD_BALANCER_VOYAGER.equals(inputs.getLoadBalancer())) {
+        voyagerOperatorYaml =
+            new ParsedVoyagerOperatorYaml(domainFiles.getVoyagerOperatorYamlPath(), inputs);
+        voyagerOperatorSecurityYaml =
+            new ParsedVoyagerOperatorSecurityYaml(
+                domainFiles.getVoyagerOperatorSecurityYamlPath(), inputs);
+        voyagerIngressYaml =
+            new ParsedVoyagerIngressYaml(domainFiles.getVoyagerIngressYamlPath(), inputs);
       }
       weblogicDomainPersistentVolumeYaml =
           new ParsedWeblogicDomainPersistentVolumeYaml(
@@ -106,6 +117,18 @@ public class GeneratedDomainYamlFiles {
 
   public ParsedApacheSecurityYaml getApacheSecurityYaml() {
     return apacheSecurityYaml;
+  }
+
+  public ParsedVoyagerOperatorYaml getVoyagerOperatorYaml() {
+    return voyagerOperatorYaml;
+  }
+
+  public ParsedVoyagerOperatorSecurityYaml getVoyagerOperatorSecurityYaml() {
+    return voyagerOperatorSecurityYaml;
+  }
+
+  public ParsedVoyagerIngressYaml getVoyagerIngressYaml() {
+    return voyagerIngressYaml;
   }
 
   public ParsedWeblogicDomainPersistentVolumeYaml getWeblogicDomainPersistentVolumeYaml() {
