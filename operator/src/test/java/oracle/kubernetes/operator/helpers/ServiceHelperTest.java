@@ -530,7 +530,7 @@ public class ServiceHelperTest {
   }
 
   private V1ServiceSpec createServerServiceSpec() {
-    return createUntypedServerServiceSpec().type("ClusterIP");
+    return createUntypedServerServiceSpec().type("ClusterIP").clusterIP("None");
   }
 
   private V1ServiceSpec createUntypedServerServiceSpec() {
