@@ -442,7 +442,7 @@ public class ServiceHelperTest {
   }
 
   private V1Service withNodePort(V1Service service, int nodePort) {
-    service.getSpec().setType("NodePort");
+    service.getSpec().type("NodePort").clusterIP(null);
     service
         .getSpec()
         .getPorts()
@@ -530,7 +530,7 @@ public class ServiceHelperTest {
   }
 
   private V1ServiceSpec createServerServiceSpec() {
-    return createUntypedServerServiceSpec().type("ClusterIP");
+    return createUntypedServerServiceSpec().type("ClusterIP").clusterIP("None");
   }
 
   private V1ServiceSpec createUntypedServerServiceSpec() {
