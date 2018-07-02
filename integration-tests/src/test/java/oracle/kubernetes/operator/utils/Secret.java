@@ -37,7 +37,12 @@ public class Secret {
     ExecResult result = ExecCommand.exec(command);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: command to create secret " + command + " failed, returned " + result.stderr());
+          "FAILURE: command to create secret "
+              + command
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
     }
     logger.info("command result " + result.stdout().trim());
   }
