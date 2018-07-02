@@ -40,7 +40,7 @@
 			<id>oss-sonatype</id>
 			<name>oss-sonatype</name>
 			<url>https://oss.sonatype.org/content/repositories/releases/</url>
-			<!-- For if we need to work with kubernetes-client/java snapshot releases 
+			<!-- For if we need to work with kubernetes-client/java snapshot releases
 				<snapshots> <enabled>true</enabled> </snapshots> -->
 		</repository>
 	</repositories>
@@ -262,7 +262,7 @@
 		<junit-version>4.12</junit-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jersey-version>2.26</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
-		<jackson-version>2.9.2</jackson-version>
+		<jackson-version>2.9.6</jackson-version>
 		<root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
 		<src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
 		<domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
