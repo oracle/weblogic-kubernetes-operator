@@ -3,7 +3,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-  
+
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
     <version>1.0</version>
@@ -68,7 +68,7 @@
 		            <doctitle>Oracle WebLogic Server Kubernetes Operator v1.0 API</doctitle>
 		        </configuration>
 		    </plugin>
-      
+
         </plugins>
     </build>
 
@@ -251,7 +251,7 @@
         <junit-version>4.12</junit-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jersey-version>2.26</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
-        <jackson-version>2.9.2</jackson-version>
+        <jackson-version>2.9.6</jackson-version>
         <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
         <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
         <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
