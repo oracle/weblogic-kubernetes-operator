@@ -373,6 +373,7 @@ public class Domain {
         domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
         BaseTest.getUsername(),
         BaseTest.getPassword());
+    domainProps.setProperty("weblogicCredentialsSecretName", domainUid + "-weblogic-credentials");
   }
 
   private void generateInputYaml() throws Exception {
@@ -553,6 +554,14 @@ public class Domain {
     }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainProps.put("weblogicImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+      // create docker registry secrets
+      TestUtils.createDockerRegistrySecret(
+          System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
+          "index.docker.io/v1/",
+          System.getenv("DOCKER_USERNAME"),
+          System.getenv("DOCKER_PASSWORD"),
+          System.getenv("DOCKER_EMAIL"),
+          domainNS);
     }
   }
 

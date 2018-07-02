@@ -26,6 +26,7 @@ public class PersistentVolume {
           "FAILURE: command to create domain PV directory "
               + cmd
               + " failed, returned "
+              + result.stdout()
               + result.stderr());
     }
     logger.info("command result " + result.stdout().trim());
