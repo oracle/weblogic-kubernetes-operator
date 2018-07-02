@@ -446,6 +446,8 @@ public class TestUtils {
       String dockerEmail,
       String namespace)
       throws Exception {
+
+    ExecCommand.exec("kubectl delete secret " + secretName + " -n " + namespace);
     String command =
         "kubectl create secret docker-registry "
             + secretName
