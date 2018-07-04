@@ -123,7 +123,10 @@ integration-test:
       export WERCKER="true"
 
       # install kubectl
-      curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      # export K8S_CLIENT_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"   #latest version
+      export K8S_CLIENT_VERSION="v1.10.5"
+      curl -LO https://storage.googleapis.com/kubernetes-release/release/${K8S_CLIENT_VERSION}/bin/linux/amd64/kubectl
+
       chmod +x ./kubectl
       mv ./kubectl /usr/local/bin/kubectl
 
@@ -219,7 +222,9 @@ integration-test-java:
       export WERCKER="true"
 
       # install kubectl
-      curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      # export K8S_CLIENT_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"   #latest version
+      export K8S_CLIENT_VERSION="v1.10.5"
+      curl -LO https://storage.googleapis.com/kubernetes-release/release/${K8S_CLIENT_VERSION}/bin/linux/amd64/kubectl
       chmod +x ./kubectl
       mv ./kubectl /usr/local/bin/kubectl
 
