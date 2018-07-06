@@ -8,6 +8,7 @@ import java.util.Properties;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,6 +40,9 @@ public class ITThirdDomain extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    Assume.assumeTrue(
+        System.getenv("QUICK_TEST") == null
+            || System.getenv("QUICK_TEST").equalsIgnoreCase("false"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
 
