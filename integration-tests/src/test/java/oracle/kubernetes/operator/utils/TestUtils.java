@@ -412,6 +412,16 @@ public class TestUtils {
     }
   }
 
+  public static void releaseLease(String projectRoot, String leaseId) throws Exception {
+    String cmd = projectRoot + "/src/integration-tests/bash/lease.sh -d " + leaseId;
+    ExecResult leaseResult = ExecCommand.exec(cmd);
+    if (leaseResult.exitValue() != 0) {
+      logger.info("FAILED: command to release lease " + cmd + " failed " + leaseResult.stderr());
+    }
+    logger.info(
+        "Command " + cmd + " returned " + leaseResult.stdout() + "\n" + leaseResult.stderr());
+  }
+
   private static Builder createRESTRequest(KeyStore myKeyStore, String url, String token) {
     // Create REST Client obj and verify it's not null
     Client javaClient =

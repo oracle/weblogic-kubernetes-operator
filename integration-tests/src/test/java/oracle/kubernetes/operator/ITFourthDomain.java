@@ -6,8 +6,12 @@ package oracle.kubernetes.operator;
 
 import java.util.Properties;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,6 +50,9 @@ public class ITFourthDomain extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    Assume.assumeTrue(
+        System.getenv("QUICK_TEST") == null
+            || System.getenv("QUICK_TEST").equalsIgnoreCase("false"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
 
@@ -70,6 +77,41 @@ public class ITFourthDomain extends BaseTest {
     logger.info("SUCCESS");
   }
 
+  /**
+   * Shutdown operator and domain
+   *
+   * @throws Exception
+   */
+  @AfterClass
+  public static void staticUnPrepare() throws Exception {
+    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    logger.info("BEGIN");
+    logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
+    // shutdown operator, domain and cleanup all artifacts and pv dir
+    try {
+      if (domain != null) domain.destroy();
+      if (operator != null) operator.destroy();
+    } finally {
+      logger.info("Release the k8s cluster lease");
+      if (getLeaseId() != "") {
+        TestUtils.releaseLease(getProjectRoot(), getLeaseId());
+      }
+      String cmd =
+          "export RESULT_ROOT="
+              + getResultRoot()
+              + " export PV_ROOT="
+              + getPvRoot()
+              + " && "
+              + getProjectRoot()
+              + "/src/integration-tests/bash/cleanup.sh";
+      ExecResult result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        logger.info("FAILED: command to call cleanup script " + cmd + " failed " + result.stderr());
+      }
+      logger.info("Command " + cmd + " returned " + result.stdout() + "\n" + result.stderr());
+    }
+    logger.info("SUCCESS");
+  }
   /**
    * verify domain1 is unaffected
    *
