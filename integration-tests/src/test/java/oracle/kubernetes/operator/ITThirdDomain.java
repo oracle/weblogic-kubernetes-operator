@@ -41,8 +41,7 @@ public class ITThirdDomain extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     Assume.assumeTrue(
-        System.getenv("QUICKTEST") == null
-            || System.getenv("QUICKTEST").equalsIgnoreCase("false"));
+        System.getenv("QUICKTEST") == null || System.getenv("QUICKTEST").equalsIgnoreCase("false"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
 
