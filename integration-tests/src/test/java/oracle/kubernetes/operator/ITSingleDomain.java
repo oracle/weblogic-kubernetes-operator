@@ -82,8 +82,8 @@ public class ITSingleDomain extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     Assume.assumeTrue(
-        System.getenv("QUICK_TEST") != null
-            && System.getenv("QUICK_TEST").equalsIgnoreCase("true"));
+        System.getenv("QUICKTEST") != null
+            && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
