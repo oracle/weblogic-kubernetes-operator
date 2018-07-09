@@ -21,14 +21,14 @@ import org.junit.Test;
  * <p>This test is used for creating Operator and a single domain which the Operator manages and
  * verifies both.
  */
-public class ITSingleDomain extends BaseTest {
+public class ITFirstDomain extends BaseTest {
   public static final String TESTWEBAPP = "testwebapp";
 
   // property file used to customize operator properties for operator inputs yaml
-  private static String opPropsFile = "ITSingleDomain_op.properties";
+  private static String opPropsFile = "ITFirstOperator.properties";
 
   // property file used to customize domain properties for domain inputs yaml
-  private static String domainPropsFile = "ITSingleDomain_domain.properties";
+  private static String domainPropsFile = "ITFirstDomain.properties";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -82,8 +82,7 @@ public class ITSingleDomain extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     Assume.assumeTrue(
-        System.getenv("QUICKTEST") != null
-            && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
