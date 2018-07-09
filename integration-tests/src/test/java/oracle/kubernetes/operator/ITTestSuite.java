@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  ITSingleDomain.class,
+  ITFirstDomain.class,
   ITSecondDomain.class,
   ITThirdDomain.class,
   ITFourthDomain.class

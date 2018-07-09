@@ -51,8 +51,7 @@ public class ITFourthDomain extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     Assume.assumeTrue(
-        System.getenv("QUICKTEST") == null
-            || System.getenv("QUICKTEST").equalsIgnoreCase("false"));
+        System.getenv("QUICKTEST") == null || System.getenv("QUICKTEST").equalsIgnoreCase("false"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
 
@@ -118,7 +117,7 @@ public class ITFourthDomain extends BaseTest {
    * @throws Exception
    */
   public void verifyDomain1() throws Exception {
-    ITSingleDomain.getDomain().verifyDomainCreated();
+    ITFirstDomain.getDomain().verifyDomainCreated();
   }
 
   /**
@@ -214,7 +213,7 @@ public class ITFourthDomain extends BaseTest {
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
     // verfiy scaling has no impact on domains1
-    ITSingleDomain.getDomain().verifyDomainCreated();
+    ITFirstDomain.getDomain().verifyDomainCreated();
     logger.info("SUCCESS");
   }
 
@@ -226,7 +225,7 @@ public class ITFourthDomain extends BaseTest {
   @Test
   public void testDeleteAndRecreteDomain1() throws Exception {
 
-    Domain domain1 = ITSingleDomain.getDomain();
+    Domain domain1 = ITFirstDomain.getDomain();
     domain1.destroy();
     domain1.create();
 
