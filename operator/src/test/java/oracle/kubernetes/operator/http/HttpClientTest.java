@@ -6,8 +6,13 @@ package oracle.kubernetes.operator.http;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -69,6 +74,38 @@ public class HttpClientTest {
 
   private void ignoreMessage(String message) {
     consoleControl.ignoreMessage(message);
+  }
+
+  @Test
+  public void getServiceURL_returnsUrlUsingClusterIP() {
+    final String CLUSTER_IP = "123.123.123.133";
+    final int PORT = 7101;
+
+    List<V1ServicePort> ports = new ArrayList<>();
+    ports.add(new V1ServicePort().port(PORT));
+    V1Service service =
+        new V1Service().spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports));
+    String url = HttpClient.getServiceURL(service);
+    assertEquals("http://" + CLUSTER_IP + ":" + PORT, url);
+  }
+
+  @Test
+  public void getServiceURL_returnsUrlUsingDNS_ifNoneClusterIP() {
+    final String CLUSTER_IP = "None";
+    final int PORT = 7101;
+    final String NAMESPACE = "domain1";
+    final String SERVICE_NAME = "admin-server";
+
+    List<V1ServicePort> ports = new ArrayList<>();
+    ports.add(new V1ServicePort().port(PORT));
+
+    V1Service service =
+        new V1Service()
+            .spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports))
+            .metadata(new V1ObjectMeta().namespace(NAMESPACE).name(SERVICE_NAME));
+
+    String url = HttpClient.getServiceURL(service);
+    assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".svc.cluster.local:" + PORT, url);
   }
 
   abstract static class ClientStub implements Client {

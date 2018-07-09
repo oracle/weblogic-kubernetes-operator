@@ -279,7 +279,13 @@ public class HttpClient {
     if (service != null) {
       V1ServiceSpec spec = service.getSpec();
       if (spec != null) {
-        String portalIP = spec.getClusterIP();
+        String portalIP =
+            "None".equalsIgnoreCase(spec.getClusterIP())
+                ? service.getMetadata().getName()
+                    + "."
+                    + service.getMetadata().getNamespace()
+                    + ".svc.cluster.local"
+                : spec.getClusterIP();
         int port = spec.getPorts().iterator().next().getPort();
         portalIP += ":" + port;
         String serviceURL = HTTP_PROTOCOL + portalIP;
