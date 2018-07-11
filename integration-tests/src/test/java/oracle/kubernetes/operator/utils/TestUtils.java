@@ -405,7 +405,7 @@ public class TestUtils {
                 + "use 'lease.sh -s'.  To disable this lease check, do not set"
                 + "the LEASE_ID environment variable.");
 
-        throw new RuntimeException("Could not renew lease on k8s cluster");
+        throw new RuntimeException("Could not renew lease on k8s cluster " + execResult.stderr());
       } else {
         logger.info("Renewed lease for leaseId " + leaseId);
       }
