@@ -49,16 +49,12 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -675,24 +671,5 @@ public class ServiceHelperTest {
 
   private AsyncCallTestSupport.CannedResponse expectReadService(String serviceName) {
     return testSupport.createCannedResponse("readService").withNamespace(NS).withName(serviceName);
-  }
-
-  abstract static class RetryStrategyStub implements RetryStrategy {
-    private Step conflictStep;
-
-    Step getConflictStep() {
-      return conflictStep;
-    }
-
-    @Override
-    public NextAction doPotentialRetry(
-        Step conflictStep,
-        Packet packet,
-        ApiException e,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
-      this.conflictStep = conflictStep;
-      return null;
-    }
   }
 }
