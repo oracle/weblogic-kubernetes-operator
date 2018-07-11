@@ -56,13 +56,15 @@ public class ITFirstDomain extends BaseTest {
     initialize(appPropsFile);
 
     // delete k8s artifacts created if any, delete PV directories
-    ExecResult result = cleanup();
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILED: Command to call cleanup script failed " + result.stderr());
+    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) { 
+	    ExecResult result = cleanup();
+	    if (result.exitValue() != 0) {
+	      throw new RuntimeException(
+	          "FAILED: Command to call cleanup script failed " + result.stderr());
+	    }
+	    logger.info(
+	        "Command to call cleanup script returned " + result.stdout() + "\n" + result.stderr());
     }
-    logger.info(
-        "Command to call cleanup script returned " + result.stdout() + "\n" + result.stderr());
 
     // renew lease at the begining for every test method, leaseId is set only for Wercker
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
