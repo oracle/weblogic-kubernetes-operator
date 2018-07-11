@@ -52,13 +52,15 @@ import oracle.kubernetes.operator.utils.YamlUtils;
 @SuppressWarnings("unused")
 public class AsyncCallTestSupport extends FiberTestSupport {
 
+  private final RequestStepFactory requestStepFactory = new RequestStepFactory();
+
   /**
    * Installs a factory into CallBuilder to use canned responses.
    *
    * @return a memento which can be used to restore the production factory
    */
   public Memento installRequestStepFactory() throws NoSuchFieldException {
-    return StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", new RequestStepFactory());
+    return StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", requestStepFactory);
   }
 
   private class RequestStepFactory implements AsyncRequestStepFactory {
@@ -206,7 +208,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
     private static final String FIELD_SELECTOR = "fieldSelector";
     private static final String MISFORMED_RESPONSE =
         "%s not defined with returning() or failingWithStatus()";
-    protected static final Object WILD_CARD = new Object();
+    private static final BodyMatcher WILD_CARD = actualBody -> true;
     private String methodName;
     private Map<String, Object> requestParamExpectations = new HashMap<>();
     private T result;
@@ -231,24 +233,23 @@ public class AsyncCallTestSupport extends FiberTestSupport {
       return Objects.equals(requestParams.call, methodName)
           && Objects.equals(requestParams.name, requestParamExpectations.get(NAME))
           && Objects.equals(requestParams.namespace, requestParamExpectations.get(NAMESPACE))
-          && matchesBody(requestParams);
+          && matchesBody(requestParams.body, requestParamExpectations.get(BODY));
     }
 
-    private boolean matchesBody(RequestParams requestParams) {
-      return requestParamExpectations.get(BODY) == WILD_CARD
-          || equalBodies(requestParams.body, requestParamExpectations.get(BODY));
+    private boolean matchesBody(Object actualBody, Object expectedBody) {
+      return expectedBody instanceof BodyMatcher && ((BodyMatcher) expectedBody).matches(actualBody)
+          || equalBodies(actualBody, expectedBody);
     }
 
-    // This is a hack to get around a bug in the 1.0 K8s client code:
-    //    the IntOrString class does not define equals(), meaning that any classes which depend on
-    // it
-    //    require special handling.
     private static boolean equalBodies(Object actual, Object expected) {
       return useYamlComparison(actual)
           ? yamlEquals(actual, expected)
           : Objects.equals(actual, expected);
     }
 
+    // This is a hack to get around a bug in the 1.0 K8s client code:
+    //    the IntOrString class does not define equals(), meaning that any classes which depend on
+    //    it require special handling.
     private static boolean useYamlComparison(Object actual) {
       return INTORSTRING_BAD_EQUALS && actual instanceof V1beta1Ingress;
     }

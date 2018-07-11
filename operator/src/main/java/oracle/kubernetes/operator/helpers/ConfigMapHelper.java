@@ -38,6 +38,7 @@ public class ConfigMapHelper {
 
   private static final String SCRIPTS = "scripts";
   private static final String SCRIPT_LOCATION = "/" + SCRIPTS;
+  private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
   private ConfigMapHelper() {}
 
@@ -128,7 +129,7 @@ public class ConfigMapHelper {
                         return doNext(create, packet);
                       } else if (VersionHelper.matchesResourceVersion(
                               result.getMetadata(), VersionConstants.DOMAIN_V1)
-                          && result.getData().entrySet().containsAll(cm.getData().entrySet())) {
+                          && COMPARATOR.containsAll(result, cm)) {
                         // existing config map has correct data
                         LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
                         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, result);
@@ -246,6 +247,18 @@ public class ConfigMapHelper {
         LOGGER.warning(MessageKeys.EXCEPTION, io);
       }
       return null;
+    }
+  }
+
+  interface ConfigMapComparator {
+    /** Returns true if the actual map contains all of the entries from the expected map. */
+    boolean containsAll(V1ConfigMap actual, V1ConfigMap expected);
+  }
+
+  static class ConfigMapComparatorImpl implements ConfigMapComparator {
+    @Override
+    public boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
+      return actual.getData().entrySet().containsAll(expected.getData().entrySet());
     }
   }
 }
