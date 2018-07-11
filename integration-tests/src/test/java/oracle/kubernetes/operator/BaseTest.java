@@ -153,6 +153,19 @@ public class BaseTest {
     return branchName;
   }
 
+  public static ExecResult cleanup() throws Exception {
+    String cmd =
+        "export RESULT_ROOT="
+            + getResultRoot()
+            + " export PV_ROOT="
+            + getPvRoot()
+            + " && "
+            + getProjectRoot()
+            + "/src/integration-tests/bash/cleanup.sh";
+    logger.info("Command to call cleanup script " + cmd);
+    return ExecCommand.exec(cmd);
+  }
+
   protected void logTestBegin(String testName) throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN " + testName);
