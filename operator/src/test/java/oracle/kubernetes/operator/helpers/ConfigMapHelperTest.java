@@ -43,7 +43,7 @@ import org.junit.Test;
 public class ConfigMapHelperTest {
   private static final String DOMAIN_NS = "namespace";
   private static final String OPERATOR_NS = "operator";
-  private static final String[] SCRIPT_NAMES = {
+  static final String[] SCRIPT_NAMES = {
     "livenessProbe.sh",
     "readinessProbe.sh",
     "readState.sh",
