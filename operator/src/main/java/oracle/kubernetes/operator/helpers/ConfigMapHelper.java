@@ -7,21 +7,9 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -36,9 +24,10 @@ import oracle.kubernetes.operator.work.Step;
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final String SCRIPTS = "scripts";
-  private static final String SCRIPT_LOCATION = "/" + SCRIPTS;
+  private static final String SCRIPT_LOCATION = "/scripts";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
+
+  private static FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 
   private ConfigMapHelper() {}
 
@@ -198,56 +187,20 @@ public class ConfigMapHelper {
       metadata.setLabels(labels);
 
       cm.setMetadata(metadata);
-      cm.setData(loadScripts(domainNamespace));
+      cm.setData(loadScriptsFromClasspath());
 
       return cm;
     }
 
-    private static synchronized Map<String, String> loadScripts(String domainNamespace) {
-      URI uri;
-      try {
-        uri = ScriptConfigMapStep.class.getResource(SCRIPT_LOCATION).toURI();
-      } catch (URISyntaxException e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-        throw new RuntimeException(e);
-      }
-
-      try {
-        if ("jar".equals(uri.getScheme())) {
-          try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
-            return walkScriptsPath(fileSystem.getPath(SCRIPTS), domainNamespace);
-          }
-        } else {
-          return walkScriptsPath(Paths.get(uri), domainNamespace);
-        }
-      } catch (IOException e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-        throw new RuntimeException(e);
-      }
+    private synchronized Map<String, String> loadScriptsFromClasspath() {
+      Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
+      LOGGER.info(MessageKeys.SCRIPT_LOADED, domainNamespace);
+      return scripts;
     }
+  }
 
-    private static Map<String, String> walkScriptsPath(Path scriptsDir, String domainNamespace)
-        throws IOException {
-      try (Stream<Path> walk = Files.walk(scriptsDir, 1)) {
-        Map<String, String> data =
-            walk.filter(i -> !Files.isDirectory(i))
-                .collect(
-                    Collectors.toMap(
-                        i -> i.getFileName().toString(),
-                        i -> new String(read(i), StandardCharsets.UTF_8)));
-        LOGGER.info(MessageKeys.SCRIPT_LOADED, domainNamespace);
-        return data;
-      }
-    }
-
-    private static byte[] read(Path path) {
-      try {
-        return Files.readAllBytes(path);
-      } catch (IOException io) {
-        LOGGER.warning(MessageKeys.EXCEPTION, io);
-      }
-      return null;
-    }
+  static FileGroupReader getScriptReader() {
+    return scriptReader;
   }
 
   interface ConfigMapComparator {
