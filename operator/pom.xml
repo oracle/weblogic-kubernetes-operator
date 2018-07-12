@@ -10,9 +10,7 @@
     <version>1.0</version>
   </parent>
 
-    <groupId>oracle.kubernetes</groupId>
     <artifactId>weblogic-kubernetes-operator</artifactId>
-    <version>1.0</version>
 
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>operator-runtime</name>
@@ -130,6 +128,19 @@
                         <arg>-Xpkginfo:always</arg>
                     </compilerArgs>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.22.0</version>
+                <executions>
+                  <execution>
+                    <goals>
+                      <goal>integration-test</goal>
+                      <goal>verify</goal>
+                    </goals>
+                  </execution>
+                </executions>
             </plugin>
 
 			<plugin>
@@ -331,18 +342,5 @@
         </dependency>
 
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>default</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <surefireArgLine></surefireArgLine>
-                <failsafeArgLine></failsafeArgLine>
-            </properties>
-        </profile>
-    </profiles>
 
 </project>
