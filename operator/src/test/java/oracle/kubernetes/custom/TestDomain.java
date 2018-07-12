@@ -1,24 +1,25 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.custom;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.kubernetes.client.models.V1ObjectMeta;
-
 import java.util.Map;
 
-/**
- * Example Custom Resource class
- */
+/** Example Custom Resource class */
 public class TestDomain {
 
   @JsonProperty("apiVersion")
   private String apiVersion;
+
   @JsonProperty("kind")
   private String kind;
+
   @JsonProperty("metadata")
   private V1ObjectMeta metadata;
+
   @JsonProperty("spec")
   private Map<String, String> spec;
 
@@ -63,8 +64,14 @@ public class TestDomain {
 
   @Override
   public String toString() {
-    return kind + "." + apiVersion + "." + metadata.getName() +
-        " resourceVersion=" + metadata.getResourceVersion() +
-        ", spec: " + spec.toString();
+    return kind
+        + "."
+        + apiVersion
+        + "."
+        + metadata.getName()
+        + " resourceVersion="
+        + metadata.getResourceVersion()
+        + ", spec: "
+        + spec.toString();
   }
 }

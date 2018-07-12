@@ -19,11 +19,11 @@
       "type": "string"
      },
      "image": {
-      "description": "WebLogic Docker image.  Defaults to store/oracle/weblogic:12.2.1.3",
+      "description": "The WebLogic Docker image. <p>Defaults to store/oracle/weblogic:12.2.1.3. <p>Deprecated. Use the Server image property.",
       "type": "string"
      },
      "imagePullPolicy": {
-      "description": "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
+      "description": "The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise. <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images <p>Deprecated. Use the Server imagePullPolicy property.",
       "type": "string"
      },
      "adminSecret": {
@@ -47,27 +47,54 @@
       }
      },
      "startupControl": {
-      "description": "Controls which managed servers will be started.  Legal values are NONE, ADMIN, ALL, SPECIFIED or AUTO.  Defaults to AUTO.  NONE indicates that no servers, including the administration server, will be started.  ADMIN indicates that only the administration server is started.  ALL indicates that all servers in the domain will be started.  SPECIFIED indicates that the administration server is started and then additionally only those servers listed under serverStartup or managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas field will be started.  AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.",
+      "description": "Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED and AUTO. <ul><li>NONE indicates that no servers, including the administration server, will be started. <li>ADMIN indicates that only the administration server will be started. <li>ALL indicates that all servers in the domain will be started. <li>SPECIFIED indicates that the administration server will be started and then additionally only those servers listed under serverStartup or managed servers belonging to cluster listed under clusterStartup up to the cluster's replicas field will be started. <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.</ul> <p>Defaults to AUTO. <p>Deprecated. Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and serverDefaults properties.",
       "type": "string"
      },
      "serverStartup": {
-      "description": "List of server startup details for selected servers.",
+      "description": "List of server startup details for selected servers. <p>Deprecated. Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and serverDefaults properties.",
       "type": "array",
       "items": {
        "$ref": "serverstartup.json"
       }
      },
      "clusterStartup": {
-      "description": "List of server startup details for selected clusters",
+      "description": "List of server startup details for selected clusters. <p>Deprecated. Use the clusters and clusterDefaults properties.",
       "type": "array",
       "items": {
        "$ref": "clusterstartup.json"
       }
      },
      "replicas": {
-      "description": "Replicas is the desired number of managed servers running in each WebLogic cluster that is not configured under clusterStartup.  Provided so that administrators can scale the Domain resource.  Ignored if startupControl is not AUTO.",
+      "description": "The desired number of running managed servers in each WebLogic cluster that is not explicitly configured in clusterStartup.  <p>Deprecated. Use the clusterDefaults property's replicas property.",
       "type": "integer",
       "format": "int32"
+     },
+     "serverDefaults": {
+       "description": "The default desired state of servers.",
+       "${ref}": "server.json"
+     },
+     "nonClusteredServerDefaults": {
+       "description": "The default desired state of non-clustered servers.",
+       "${ref}": "nonclustered-server.json"
+     },
+     "servers": {
+      "description": "Maps the name of a non-clustered server to its desired state. <p>The server property values use the following defaulting rules: <ol><li>If there is an entry for the server in nonClusteredServers property, and the property has been specified on that server, then use its value. <li>If not, and the property has been specified on the nonClusteredServerDefaults property, then use its value. <li>If not, and the property value has been specified on the serverDefaults property, then use its value. <li>If not, then use the default value for the property.</ol>",
+      "type": "object",
+      "additionalProperties": {
+       "$ref": "nonclustered-server.json"
+      }
+     },
+     "clusterDefaults": {
+       "description": "Default desired state of clusters.",
+       "${ref}": "cluster-params.json"
+     },
+     "clusters": {
+      "description": "Maps the name of a cluster to its desired state. <p>The cluster property values use the following defaulting rules: <ol><li>If there is an entry for the cluster in the clusters property, and the property has been specified on that cluster, then use its value. <li>If not, and the property has been specified on the clusterDefaults property, then use its value. <li>If not, then use the default value for the property.</ol>",
+      "type": "object",
+      "additionalProperties": {
+       "$ref": "cluster.json"
+      }
      }
     }
- }
+}
+

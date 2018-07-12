@@ -132,6 +132,20 @@
                 </configuration>
             </plugin>
 
+			<plugin>
+				<groupId>com.coveo</groupId>
+				<artifactId>fmt-maven-plugin</artifactId>
+				<version>2.4.0</version>
+				<executions>
+					<execution>
+						<phase>test</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
         </plugins>
     </build>
 
@@ -245,6 +259,12 @@
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.appscode.voyager</groupId>
+            <artifactId>client-java</artifactId>
+            <version>0.1.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javax</groupId>

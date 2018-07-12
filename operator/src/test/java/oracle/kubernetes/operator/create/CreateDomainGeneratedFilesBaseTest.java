@@ -1,28 +1,42 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
 
 import static java.util.Arrays.asList;
+import static oracle.kubernetes.operator.LabelConstants.*;
+import static oracle.kubernetes.operator.VersionConstants.*;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.readInputsYamlFile;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.*;
-
-import static oracle.kubernetes.operator.LabelConstants.*;
-import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.create.CreateDomainInputs.readInputsYamlFile;
-import static oracle.kubernetes.operator.create.KubernetesArtifactUtils.*;
-import static oracle.kubernetes.operator.create.YamlUtils.yamlEqualTo;
+import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
+import oracle.kubernetes.operator.utils.ParsedApacheSecurityYaml;
+import oracle.kubernetes.operator.utils.ParsedApacheYaml;
+import oracle.kubernetes.operator.utils.ParsedCreateWeblogicDomainJobYaml;
+import oracle.kubernetes.operator.utils.ParsedDeleteWeblogicDomainJobYaml;
+import oracle.kubernetes.operator.utils.ParsedDomainCustomResourceYaml;
+import oracle.kubernetes.operator.utils.ParsedTraefikSecurityYaml;
+import oracle.kubernetes.operator.utils.ParsedTraefikYaml;
+import oracle.kubernetes.operator.utils.ParsedVoyagerIngressYaml;
+import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorSecurityYaml;
+import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
+import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
+import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import org.junit.AfterClass;
 import org.junit.Test;
 
 /**
- * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh
- * creates are correct when the admin node port is disabled, the t3 channel is disabled,
- * there is no weblogic domain image pull secret, and production mode is disabled.
+ * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh creates are correct
+ * when the admin node port is disabled, the t3 channel is disabled, there is no weblogic domain
+ * image pull secret, and production mode is disabled.
  */
 public abstract class CreateDomainGeneratedFilesBaseTest {
 
@@ -48,6 +62,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return getGeneratedFiles().getCreateWeblogicDomainJobYaml();
   }
 
+  protected ParsedDeleteWeblogicDomainJobYaml getDeleteWeblogicDomainJobYaml() {
+    return getGeneratedFiles().getDeleteWeblogicDomainJobYaml();
+  }
+
   protected ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() {
     return getGeneratedFiles().getDomainCustomResourceYaml();
   }
@@ -68,7 +86,20 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return getGeneratedFiles().getApacheYaml();
   }
 
-  protected ParsedWeblogicDomainPersistentVolumeClaimYaml getWeblogicDomainPersistentVolumeClaimYaml() {
+  protected ParsedVoyagerIngressYaml getVoyagerIngressYaml() {
+    return getGeneratedFiles().getVoyagerIngressYaml();
+  }
+
+  protected ParsedVoyagerOperatorSecurityYaml getVoyagerOperatorSecurityYaml() {
+    return getGeneratedFiles().getVoyagerOperatorSecurityYaml();
+  }
+
+  protected ParsedVoyagerOperatorYaml getVoyagerOperatorYaml() {
+    return getGeneratedFiles().getVoyagerOperatorYaml();
+  }
+
+  protected ParsedWeblogicDomainPersistentVolumeClaimYaml
+      getWeblogicDomainPersistentVolumeClaimYaml() {
     return getGeneratedFiles().getWeblogicDomainPersistentVolumeClaimYaml();
   }
 
@@ -91,110 +122,138 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   @Test
   public void generatedCorrect_weblogicDomainInputsYaml() throws Exception {
     assertThat(
-      readInputsYamlFile(generatedFiles.getDomainFiles().getCreateWeblogicDomainInputsYamlPath()),
-      yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
+        readInputsYamlFile(generatedFiles.getDomainFiles().getCreateWeblogicDomainInputsYamlPath()),
+        yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
   }
 
   @Test
   public void createWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
-      getCreateWeblogicDomainJobYaml().getObjectCount(),
-      is(getCreateWeblogicDomainJobYaml().getExpectedObjectCount()));
+        getCreateWeblogicDomainJobYaml().getObjectCount(),
+        is(getCreateWeblogicDomainJobYaml().getExpectedObjectCount()));
+  }
+
+  @Test
+  public void deleteWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
+    assertThat(
+        getDeleteWeblogicDomainJobYaml().getObjectCount(),
+        is(getDeleteWeblogicDomainJobYaml().getExpectedObjectCount()));
   }
 
   @Test
   public void domainCustomResourceYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
-      getDomainCustomResourceYaml().getObjectCount(),
-      is(getDomainCustomResourceYaml().getExpectedObjectCount()));
+        getDomainCustomResourceYaml().getObjectCount(),
+        is(getDomainCustomResourceYaml().getExpectedObjectCount()));
   }
 
   @Test
   public void loadBalancerSecurityYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
-      getTraefikSecurityYaml().getObjectCount(),
-      is(getTraefikSecurityYaml().getExpectedObjectCount()));
+        getTraefikSecurityYaml().getObjectCount(),
+        is(getTraefikSecurityYaml().getExpectedObjectCount()));
   }
 
   @Test
   public void loadBalancerYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-      getTraefikYaml().getObjectCount(),
-      is(getTraefikYaml().getExpectedObjectCount()));
+    assertThat(getTraefikYaml().getObjectCount(), is(getTraefikYaml().getExpectedObjectCount()));
   }
 
   @Test
   public void weblogicDomainPersistentVolumeClaimYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
-      getWeblogicDomainPersistentVolumeClaimYaml().getObjectCount(),
-      is(getWeblogicDomainPersistentVolumeClaimYaml().getExpectedObjectCount()));
+        getWeblogicDomainPersistentVolumeClaimYaml().getObjectCount(),
+        is(getWeblogicDomainPersistentVolumeClaimYaml().getExpectedObjectCount()));
   }
 
   @Test
   public void weblogicDomainPersistentVolumeYaml_hasCorrectNumberOfObjects() throws Exception {
     assertThat(
-      getWeblogicDomainPersistentVolumeYaml().getObjectCount(),
-      is(getWeblogicDomainPersistentVolumeYaml().getExpectedObjectCount()));
+        getWeblogicDomainPersistentVolumeYaml().getObjectCount(),
+        is(getWeblogicDomainPersistentVolumeYaml().getExpectedObjectCount()));
   }
 
   @Test
   public void generatesCorrect_createWeblogicDomainJob() throws Exception {
     assertThat(
-      getActualCreateWeblogicDomainJob(),
-      yamlEqualTo(getExpectedCreateWeblogicDomainJob()));
+        getActualCreateWeblogicDomainJob(), yamlEqualTo(getExpectedCreateWeblogicDomainJob()));
   }
 
   protected V1Job getActualCreateWeblogicDomainJob() {
     return getCreateWeblogicDomainJobYaml().getCreateWeblogicDomainJob();
   }
 
+  protected V1Job getActualDeleteWeblogicDomainJob() {
+    return getDeleteWeblogicDomainJobYaml().getDeleteWeblogicDomainJob();
+  }
+
   protected V1Job getExpectedCreateWeblogicDomainJob() {
-    return
-      newJob()
-        .metadata(newObjectMeta()
-          .name(getInputs().getDomainUID() + "-create-weblogic-domain-job")
-          .namespace(getInputs().getNamespace()))
-        .spec(newJobSpec()
-          .template(newPodTemplateSpec()
-            .metadata(newObjectMeta()
-          .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
-              .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-              .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-              .putLabelsItem(APP_LABEL, getInputs().getDomainUID() + "-create-weblogic-domain-job"))
-            .spec(newPodSpec()
-              .restartPolicy("Never")
-              .addContainersItem(newContainer()
-                .name("create-weblogic-domain-job")
-                .image("store/oracle/weblogic:12.2.1.3")
-                .imagePullPolicy("IfNotPresent")
-                .addCommandItem("/bin/sh")
-                .addArgsItem("/u01/weblogic/create-domain-job.sh")
-                .addEnvItem(newEnvVar()
-                  .name("SHARED_PATH")
-                  .value("/shared"))
-                .addPortsItem(newContainerPort()
-                  .containerPort(7001))
-                .addVolumeMountsItem(newVolumeMount()
-                  .name("create-weblogic-domain-job-cm-volume")
-                  .mountPath("/u01/weblogic"))
-                .addVolumeMountsItem(newVolumeMount()
-                  .name("weblogic-domain-storage-volume")
-                  .mountPath("/shared"))
-                .addVolumeMountsItem(newVolumeMount()
-                  .name("weblogic-credentials-volume")
-                  .mountPath("/weblogic-operator/secrets")))
-              .addVolumesItem(newVolume()
-                .name("create-weblogic-domain-job-cm-volume")
-                  .configMap(newConfigMapVolumeSource()
-                    .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")))
-              .addVolumesItem(newVolume()
-                .name("weblogic-domain-storage-volume")
-                .persistentVolumeClaim(newPersistentVolumeClaimVolumeSource()
-                  .claimName(getInputs().getWeblogicDomainPersistentVolumeClaimName())))
-              .addVolumesItem(newVolume()
-                .name("weblogic-credentials-volume")
-                  .secret(newSecretVolumeSource()
-                    .secretName(getInputs().getWeblogicCredentialsSecretName()))))));
+    return newJob()
+        .metadata(
+            newObjectMeta()
+                .name(getInputs().getDomainUID() + "-create-weblogic-domain-job")
+                .namespace(getInputs().getNamespace()))
+        .spec(
+            newJobSpec()
+                .template(
+                    newPodTemplateSpec()
+                        .metadata(
+                            newObjectMeta()
+                                .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                                .putLabelsItem(
+                                    APP_LABEL,
+                                    getInputs().getDomainUID() + "-create-weblogic-domain-job"))
+                        .spec(
+                            newPodSpec()
+                                .restartPolicy("Never")
+                                .addContainersItem(
+                                    newContainer()
+                                        .name("create-weblogic-domain-job")
+                                        .image("store/oracle/weblogic:12.2.1.3")
+                                        .imagePullPolicy("IfNotPresent")
+                                        .addCommandItem("/bin/sh")
+                                        .addArgsItem("/u01/weblogic/create-domain-job.sh")
+                                        .addEnvItem(
+                                            newEnvVar().name("SHARED_PATH").value("/shared"))
+                                        .addPortsItem(newContainerPort().containerPort(7001))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("create-weblogic-domain-job-cm-volume")
+                                                .mountPath("/u01/weblogic"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("weblogic-domain-storage-volume")
+                                                .mountPath("/shared"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .name("weblogic-credentials-volume")
+                                                .mountPath("/weblogic-operator/secrets")))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("create-weblogic-domain-job-cm-volume")
+                                        .configMap(
+                                            newConfigMapVolumeSource()
+                                                .name(
+                                                    getInputs().getDomainUID()
+                                                        + "-create-weblogic-domain-job-cm")))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("weblogic-domain-storage-volume")
+                                        .persistentVolumeClaim(
+                                            newPersistentVolumeClaimVolumeSource()
+                                                .claimName(
+                                                    getInputs()
+                                                        .getWeblogicDomainPersistentVolumeClaimName())))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("weblogic-credentials-volume")
+                                        .secret(
+                                            newSecretVolumeSource()
+                                                .secretName(
+                                                    getInputs()
+                                                        .getWeblogicCredentialsSecretName()))))));
   }
 
   @Test
@@ -213,12 +272,16 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     // Since all the other test don't use getActualCreateWeblogicDomainJobConfigMap(),
     // it's currently safe to not clone it.
     String actualUtilitySh = getThenEmptyConfigMapDataValue(actual, PROPERTY_UTILITY_SH);
-    String actualCreateDomainJobSh = getThenEmptyConfigMapDataValue(actual, PROPERTY_CREATE_DOMAIN_JOB_SH);
-    String actualReadDomainSecretPy = getThenEmptyConfigMapDataValue(actual, PROPERTY_READ_DOMAIN_SECRET_PY);
-    String actualCreateDomainScriptSh = getThenEmptyConfigMapDataValue(actual, PROPERTY_CREATE_DOMAIN_SCRIPT_SH);
+    String actualCreateDomainJobSh =
+        getThenEmptyConfigMapDataValue(actual, PROPERTY_CREATE_DOMAIN_JOB_SH);
+    String actualReadDomainSecretPy =
+        getThenEmptyConfigMapDataValue(actual, PROPERTY_READ_DOMAIN_SECRET_PY);
+    String actualCreateDomainScriptSh =
+        getThenEmptyConfigMapDataValue(actual, PROPERTY_CREATE_DOMAIN_SCRIPT_SH);
     String actualCreateDomainPy = getThenEmptyConfigMapDataValue(actual, PROPERTY_CREATE_DOMAIN_PY);
 
-    // don't allOf since we want to make sure the later assertThats are only called if the first one passes
+    // don't allOf since we want to make sure the later assertThats are only called if the first one
+    // passes
     assertThat(actual, yamlEqualTo(getExpectedCreateWeblogicDomainJobConfigMap()));
 
     assertThatActualUtilityShIsCorrect(actualUtilitySh);
@@ -233,14 +296,14 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1ConfigMap getExpectedCreateWeblogicDomainJobConfigMap() {
-    return
-      newConfigMap()
-        .metadata(newObjectMeta()
-          .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+    return newConfigMap()
+        .metadata(
+            newObjectMeta()
+                .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
         .putDataItem(PROPERTY_UTILITY_SH, "")
         .putDataItem(PROPERTY_CREATE_DOMAIN_JOB_SH, "")
         .putDataItem(PROPERTY_READ_DOMAIN_SECRET_PY, "")
@@ -258,10 +321,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         script='%CREATE_DOMAIN_SCRIPT%'
         domainFolder=${SHARED_PATH}/domain/%DOMAIN_NAME%
     */
-    assertThat(
-      actualCreateDomainJobSh,
-      containsRegexps(
-        getInputs().getDomainName()));
+    assertThat(actualCreateDomainJobSh, containsRegexps(getInputs().getDomainName()));
   }
 
   protected void assertThatActualReadDomainSecretPyIsCorrect(String actualReadDomainSecretPy) {
@@ -285,10 +345,10 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         echo "Successfully Completed"
     */
     assertThat(
-      actualCreateDomainScriptSh,
-      containsRegexps(
-        getInputs().getDomainName(),
-        "wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py"));
+        actualCreateDomainScriptSh,
+        containsRegexps(
+            getInputs().getDomainName(),
+            "wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py"));
   }
 
   protected void assertThatActualCreateDomainPyIsCorrect(String actualCreateDomainPy) {
@@ -324,22 +384,22 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         set('ServerNamePrefix', '%MANAGED_SERVER_NAME_BASE%")
     */
     assertThat(
-      actualCreateDomainPy,
-      containsRegexps(
-        getInputs().getDomainName(),
-        getInputs().getClusterName(),
-        getInputs().getClusterType(),
-        getInputs().getAdminServerName(),
-        getInputs().getManagedServerNameBase(),
-        getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
-        "setProductionModeEnabled\\(" + getInputs().getProductionModeEnabled() + "\\)",
-        "server_port *= " + getInputs().getManagedServerPort(),
-        "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
-        "set\\('ListenPort', " + getInputs().getAdminPort() + "\\)",
-        "set\\('PublicPort', " + getInputs().getT3ChannelPort() + "\\)",
-        "set\\('PublicAddress', '" + getInputs().getT3PublicAddress() + "'\\)",
-        "set\\('ServerNamePrefix', \"" + getInputs().getManagedServerNameBase() + "\"\\)"));
-     // TBD should we check anything else?
+        actualCreateDomainPy,
+        containsRegexps(
+            getInputs().getDomainName(),
+            getInputs().getClusterName(),
+            getInputs().getClusterType(),
+            getInputs().getAdminServerName(),
+            getInputs().getManagedServerNameBase(),
+            getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
+            "setProductionModeEnabled\\(" + getInputs().getProductionModeEnabled() + "\\)",
+            "server_port *= " + getInputs().getManagedServerPort(),
+            "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
+            "set\\('ListenPort', " + getInputs().getAdminPort() + "\\)",
+            "set\\('PublicPort', " + getInputs().getT3ChannelPort() + "\\)",
+            "set\\('PublicAddress', '" + getInputs().getT3PublicAddress() + "'\\)",
+            "set\\('ServerNamePrefix', \"" + getInputs().getManagedServerNameBase() + "\"\\)"));
+    // TBD should we check anything else?
   }
 
   @Test
@@ -352,55 +412,64 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected Domain getExpectedDomain() {
-    return
-      newDomain()
+    return newDomain()
         .withMetadata(
-          newObjectMeta()
-            .name(getInputs().getDomainUID())
-            .namespace(getInputs().getNamespace())
-            .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
-            .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-            .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .withSpec(newDomainSpec()
-          .withDomainUID(getInputs().getDomainUID())
-          .withDomainName(getInputs().getDomainName())
-          .withImage("store/oracle/weblogic:12.2.1.3")
-          .withImagePullPolicy("IfNotPresent")
-          .withAdminSecret(newSecretReference()
-            .name(getInputs().getWeblogicCredentialsSecretName()))
-          .withAsName(getInputs().getAdminServerName())
-          .withAsPort(Integer.parseInt(getInputs().getAdminPort()))
-          .withStartupControl(getInputs().getStartupControl())
-          .withServerStartup(newServerStartupList()
-            .addElement(newServerStartup()
-          .withDesiredState("RUNNING")
-          .withServerName(getInputs().getAdminServerName())
-          .withEnv(newEnvVarList()
-            .addElement(newEnvVar()
-              .name("JAVA_OPTIONS")
-              .value(getInputs().getJavaOptions()))
-            .addElement(newEnvVar()
-              .name("USER_MEM_ARGS")
-              .value("-Xms64m -Xmx256m ")))))
-          .withClusterStartup(newClusterStartupList()
-            .addElement(newClusterStartup()
-              .withDesiredState("RUNNING")
-              .withClusterName(getInputs().getClusterName())
-              .withReplicas(Integer.parseInt(getInputs().getInitialManagedServerReplicas()))
-              .withEnv(newEnvVarList()
-                .addElement(newEnvVar()
-                  .name("JAVA_OPTIONS")
-                  .value(getInputs().getJavaOptions()))
-                .addElement(newEnvVar()
-                  .name("USER_MEM_ARGS")
-                  .value("-Xms64m -Xmx256m "))))));
+            newObjectMeta()
+                .name(getInputs().getDomainUID())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+        .withSpec(
+            newDomainSpec()
+                .withDomainUID(getInputs().getDomainUID())
+                .withDomainName(getInputs().getDomainName())
+                .withImage("store/oracle/weblogic:12.2.1.3")
+                .withImagePullPolicy("IfNotPresent")
+                .withAdminSecret(
+                    newSecretReference().name(getInputs().getWeblogicCredentialsSecretName()))
+                .withAsName(getInputs().getAdminServerName())
+                .withAsPort(Integer.parseInt(getInputs().getAdminPort()))
+                .withStartupControl(getInputs().getStartupControl())
+                .withServerStartup(
+                    newServerStartupList()
+                        .addElement(
+                            newServerStartup()
+                                .withDesiredState("RUNNING")
+                                .withServerName(getInputs().getAdminServerName())
+                                .withEnv(
+                                    newEnvVarList()
+                                        .addElement(
+                                            newEnvVar()
+                                                .name("JAVA_OPTIONS")
+                                                .value(getInputs().getJavaOptions()))
+                                        .addElement(
+                                            newEnvVar()
+                                                .name("USER_MEM_ARGS")
+                                                .value("-Xms64m -Xmx256m ")))))
+                .withClusterStartup(
+                    newClusterStartupList()
+                        .addElement(
+                            newClusterStartup()
+                                .withDesiredState("RUNNING")
+                                .withClusterName(getInputs().getClusterName())
+                                .withReplicas(
+                                    Integer.parseInt(getInputs().getInitialManagedServerReplicas()))
+                                .withEnv(
+                                    newEnvVarList()
+                                        .addElement(
+                                            newEnvVar()
+                                                .name("JAVA_OPTIONS")
+                                                .value(getInputs().getJavaOptions()))
+                                        .addElement(
+                                            newEnvVar()
+                                                .name("USER_MEM_ARGS")
+                                                .value("-Xms64m -Xmx256m "))))));
   }
 
   @Test
   public void generatesCorrect_loadBalancerServiceAccount() throws Exception {
-    assertThat(
-      getActualTraefikServiceAccount(),
-      yamlEqualTo(getExpectedTraefikServiceAccount()));
+    assertThat(getActualTraefikServiceAccount(), yamlEqualTo(getExpectedTraefikServiceAccount()));
   }
 
   protected V1ServiceAccount getActualApacheServiceAccount() {
@@ -408,39 +477,50 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1ServiceAccount getExpectedApacheServiceAccount() {
-    return
-      newServiceAccount()
-        .metadata(newObjectMeta()
-          .name(getApacheName())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(APP_LABEL, getApacheAppName()));
+    return newServiceAccount()
+        .metadata(
+            newObjectMeta()
+                .name(getApacheName())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(APP_LABEL, getApacheAppName()));
   }
-
 
   protected V1ServiceAccount getActualTraefikServiceAccount() {
     return getTraefikYaml().getTraefikServiceAccount();
   }
 
   protected V1ServiceAccount getExpectedTraefikServiceAccount() {
-    return
-      newServiceAccount()
-        .metadata(newObjectMeta()
-          .name(getTraefikScope())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()));
+    return newServiceAccount()
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()));
+  }
+
+  protected V1ServiceAccount getActualVoyagerServiceAccount() {
+    return getVoyagerOperatorSecurityYaml().getVoyagerServiceAccount();
+  }
+
+  protected V1ServiceAccount getExpectedVoyagerServiceAccount() {
+    return newServiceAccount()
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()));
   }
 
   @Test
   public void generatesCorrect_loadBalancerDeployment() throws Exception {
-    assertThat(
-      getActualTraefikDeployment(),
-      yamlEqualTo(getExpectedTraefikDeployment()));
+    assertThat(getActualTraefikDeployment(), yamlEqualTo(getExpectedTraefikDeployment()));
   }
 
   protected ExtensionsV1beta1Deployment getActualApacheDeployment() {
@@ -448,67 +528,79 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected ExtensionsV1beta1Deployment getExpectedApacheDeployment() {
-    return
-      newDeployment()
+    return newDeployment()
         .apiVersion(API_VERSION_EXTENSIONS_V1BETA1) // TBD - why is apache using this older version?
-        .metadata(newObjectMeta()
-          .name(getApacheName())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(APP_LABEL, getApacheAppName()))
-        .spec(newDeploymentSpec()
-          .replicas(1)
-          .selector(newLabelSelector()
-            .putMatchLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-            .putMatchLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-            .putMatchLabelsItem(APP_LABEL, getApacheAppName()))
-          .template(newPodTemplateSpec()
-            .metadata(newObjectMeta()
-              .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
-              .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-              .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-              .putLabelsItem(APP_LABEL, getApacheAppName()))
-            .spec(newPodSpec()
-              .serviceAccountName(getApacheName())
-              .terminationGracePeriodSeconds(60L)
-              .addContainersItem(newContainer()
+        .metadata(
+            newObjectMeta()
                 .name(getApacheName())
-                .image("store/oracle/apache:12.2.1.3")
-                .imagePullPolicy("Never")
-                .addEnvItem(newEnvVar()
-                  .name("WEBLOGIC_CLUSTER")
-                  .value(getInputs().getDomainUID() + "-cluster-" + getClusterNameLC() + ":" + getInputs().getManagedServerPort()))
-                .addEnvItem(newEnvVar()
-                  .name("LOCATION")
-                  .value(getInputs().getLoadBalancerAppPrepath()))
-                // .addEnvItem(newEnvVar()
-                //  .name("WEBLOGIC_HOST")
-                //  .value(getInputs().getDomainUID() + "-" + getInputs().getAdminServerName()))
-                // .addEnvItem(newEnvVar()
-                //  .name("WEBLOGIC_PORT")
-                //  .value(getInputs().getAdminPort()))
-                .readinessProbe(newProbe()
-                  .tcpSocket(newTCPSocketAction()
-                    .port(newIntOrString(80)))
-                  .failureThreshold(1)
-                  .initialDelaySeconds(10)
-                  .periodSeconds(10)
-                  .successThreshold(1)
-                  .timeoutSeconds(2))
-                .livenessProbe(newProbe()
-                  .tcpSocket(newTCPSocketAction()
-                    .port(newIntOrString(80)))
-                  .failureThreshold(3)
-                  .initialDelaySeconds(10)
-                  .periodSeconds(10)
-                  .successThreshold(1)
-                  .timeoutSeconds(2))
-              )
-            )
-          )
-        );
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(APP_LABEL, getApacheAppName()))
+        .spec(
+            newDeploymentSpec()
+                .replicas(1)
+                .selector(
+                    newLabelSelector()
+                        .putMatchLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                        .putMatchLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                        .putMatchLabelsItem(APP_LABEL, getApacheAppName()))
+                .template(
+                    newPodTemplateSpec()
+                        .metadata(
+                            newObjectMeta()
+                                .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
+                                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                                .putLabelsItem(APP_LABEL, getApacheAppName()))
+                        .spec(
+                            newPodSpec()
+                                .serviceAccountName(getApacheName())
+                                .terminationGracePeriodSeconds(60L)
+                                .addContainersItem(
+                                    newContainer()
+                                        .name(getApacheName())
+                                        .image("store/oracle/apache:12.2.1.3")
+                                        .imagePullPolicy("Never")
+                                        .addEnvItem(
+                                            newEnvVar()
+                                                .name("WEBLOGIC_CLUSTER")
+                                                .value(
+                                                    getInputs().getDomainUID()
+                                                        + "-cluster-"
+                                                        + getClusterNameLC()
+                                                        + ":"
+                                                        + getInputs().getManagedServerPort()))
+                                        .addEnvItem(
+                                            newEnvVar()
+                                                .name("LOCATION")
+                                                .value(getInputs().getLoadBalancerAppPrepath()))
+                                        // .addEnvItem(newEnvVar()
+                                        //  .name("WEBLOGIC_HOST")
+                                        //  .value(getInputs().getDomainUID() + "-" +
+                                        // getInputs().getAdminServerName()))
+                                        // .addEnvItem(newEnvVar()
+                                        //  .name("WEBLOGIC_PORT")
+                                        //  .value(getInputs().getAdminPort()))
+                                        .readinessProbe(
+                                            newProbe()
+                                                .tcpSocket(
+                                                    newTCPSocketAction().port(newIntOrString(80)))
+                                                .failureThreshold(1)
+                                                .initialDelaySeconds(10)
+                                                .periodSeconds(10)
+                                                .successThreshold(1)
+                                                .timeoutSeconds(2))
+                                        .livenessProbe(
+                                            newProbe()
+                                                .tcpSocket(
+                                                    newTCPSocketAction().port(newIntOrString(80)))
+                                                .failureThreshold(3)
+                                                .initialDelaySeconds(10)
+                                                .periodSeconds(10)
+                                                .successThreshold(1)
+                                                .timeoutSeconds(2))))));
   }
 
   protected ExtensionsV1beta1Deployment getActualTraefikDeployment() {
@@ -516,70 +608,167 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected ExtensionsV1beta1Deployment getExpectedTraefikDeployment() {
-    return
-      newDeployment()
-        .apiVersion(API_VERSION_EXTENSIONS_V1BETA1) // TBD - why is traefik using this older version?
-        .metadata(newObjectMeta()
-          .name(getTraefikScope())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-        .spec(newDeploymentSpec()
-          .replicas(1)
-          .selector(newLabelSelector()
-            .putMatchLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-            .putMatchLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-          .template(newPodTemplateSpec()
-            .metadata(newObjectMeta()
-              .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-              .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-              .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-              .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-            .spec(newPodSpec()
-              .serviceAccountName(getTraefikScope())
-              .terminationGracePeriodSeconds(60L)
-              .addContainersItem(newContainer()
-                .name("traefik")
-                .image("traefik:1.4.5")
-                .resources(newResourceRequirements()
-                  .putRequestsItem("cpu", Quantity.fromString("100m"))
-                  .putRequestsItem("memory", Quantity.fromString("20Mi"))
-                  .putLimitsItem("cpu", Quantity.fromString("100m"))
-                  .putLimitsItem("memory", Quantity.fromString("30Mi")))
-                .readinessProbe(newProbe()
-                  .tcpSocket(newTCPSocketAction()
-                    .port(newIntOrString(80)))
-                  .failureThreshold(1)
-                  .initialDelaySeconds(10)
-                  .periodSeconds(10)
-                  .successThreshold(1)
-                  .timeoutSeconds(2))
-                .livenessProbe(newProbe()
-                  .tcpSocket(newTCPSocketAction()
-                    .port(newIntOrString(80)))
-                  .failureThreshold(3)
-                  .initialDelaySeconds(10)
-                  .periodSeconds(10)
-                  .successThreshold(1)
-                  .timeoutSeconds(2))
-                .addVolumeMountsItem(newVolumeMount()
-                  .name("config")
-                  .mountPath("/config"))
-                .addPortsItem(newContainerPort()
-                  .name("http")
-                  .containerPort(80)
-                  .protocol("TCP"))
-                .addPortsItem(newContainerPort()
-                  .name("dash")
-                  .containerPort(8080)
-                  .protocol("TCP"))
-                .addArgsItem("--configfile=/config/traefik.toml"))
-              .addVolumesItem(newVolume()
-                .name("config")
-                  .configMap(newConfigMapVolumeSource()
-                    .name(getTraefikScope() + "-cm"))))));
+    return newDeployment()
+        .apiVersion(
+            API_VERSION_EXTENSIONS_V1BETA1) // TBD - why is traefik using this older version?
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+        .spec(
+            newDeploymentSpec()
+                .replicas(1)
+                .selector(
+                    newLabelSelector()
+                        .putMatchLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                        .putMatchLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+                .template(
+                    newPodTemplateSpec()
+                        .metadata(
+                            newObjectMeta()
+                                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+                        .spec(
+                            newPodSpec()
+                                .serviceAccountName(getTraefikScope())
+                                .terminationGracePeriodSeconds(60L)
+                                .addContainersItem(
+                                    newContainer()
+                                        .name("traefik")
+                                        .image("traefik:1.4.5")
+                                        .resources(
+                                            newResourceRequirements()
+                                                .putRequestsItem("cpu", Quantity.fromString("100m"))
+                                                .putRequestsItem(
+                                                    "memory", Quantity.fromString("20Mi"))
+                                                .putLimitsItem("cpu", Quantity.fromString("100m"))
+                                                .putLimitsItem(
+                                                    "memory", Quantity.fromString("30Mi")))
+                                        .readinessProbe(
+                                            newProbe()
+                                                .tcpSocket(
+                                                    newTCPSocketAction().port(newIntOrString(80)))
+                                                .failureThreshold(1)
+                                                .initialDelaySeconds(10)
+                                                .periodSeconds(10)
+                                                .successThreshold(1)
+                                                .timeoutSeconds(2))
+                                        .livenessProbe(
+                                            newProbe()
+                                                .tcpSocket(
+                                                    newTCPSocketAction().port(newIntOrString(80)))
+                                                .failureThreshold(3)
+                                                .initialDelaySeconds(10)
+                                                .periodSeconds(10)
+                                                .successThreshold(1)
+                                                .timeoutSeconds(2))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount().name("config").mountPath("/config"))
+                                        .addPortsItem(
+                                            newContainerPort()
+                                                .name("http")
+                                                .containerPort(80)
+                                                .protocol("TCP"))
+                                        .addPortsItem(
+                                            newContainerPort()
+                                                .name("dash")
+                                                .containerPort(8080)
+                                                .protocol("TCP"))
+                                        .addArgsItem("--configfile=/config/traefik.toml"))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("config")
+                                        .configMap(
+                                            newConfigMapVolumeSource()
+                                                .name(getTraefikScope() + "-cm"))))));
+  }
+
+  protected ExtensionsV1beta1Deployment getActualVoyagerDeployment() {
+    return getVoyagerOperatorYaml().getVoyagerOperatorDeployment();
+  }
+
+  protected ExtensionsV1beta1Deployment getExpectedVoyagerDeployment() {
+    return newDeployment()
+        .apiVersion(API_VERSION_APPS_V1BETA1)
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .spec(
+            newDeploymentSpec()
+                .replicas(1)
+                .selector(newLabelSelector().putMatchLabelsItem(APP_LABEL, getVoyagerName()))
+                .template(
+                    newPodTemplateSpec()
+                        .metadata(
+                            newObjectMeta()
+                                .putLabelsItem(APP_LABEL, getVoyagerName())
+                                .putAnnotationsItem(
+                                    "scheduler.alpha.kubernetes.io/critical-pod", ""))
+                        .spec(
+                            newPodSpec()
+                                .serviceAccountName(getVoyagerOperatorName())
+                                .imagePullSecrets(newLocalObjectReferenceList())
+                                .addContainersItem(
+                                    newContainer()
+                                        .name(getVoyagerName())
+                                        .addArgsItem("run")
+                                        .addArgsItem("--v=3")
+                                        .addArgsItem("--rbac=true")
+                                        .addArgsItem("--cloud-provider=")
+                                        .addArgsItem("--cloud-config=")
+                                        .addArgsItem("--ingress-class=")
+                                        .addArgsItem("--restrict-to-operator-namespace=false")
+                                        .addArgsItem("--docker-registry=appscode")
+                                        .addArgsItem("--haproxy-image-tag=1.7.10-6.0.0")
+                                        .addArgsItem("--secure-port=8443")
+                                        .addArgsItem("--audit-log-path=-")
+                                        .addArgsItem("--tls-cert-file=/var/serving-cert/tls.crt")
+                                        .addArgsItem(
+                                            "--tls-private-key-file=/var/serving-cert/tls.key")
+                                        .image("appscode/voyager:6.0.0")
+                                        .addPortsItem(newContainerPort().containerPort(8443))
+                                        .addPortsItem(newContainerPort().containerPort(56790))
+                                        .addPortsItem(newContainerPort().containerPort(56791))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .mountPath("/etc/kubernetes")
+                                                .name("cloudconfig")
+                                                .readOnly(true))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
+                                                .mountPath("/var/serving-cert")
+                                                .name("serving-cert"))
+                                        .readinessProbe(
+                                            newProbe()
+                                                .httpGet(
+                                                    newHTTPGetAction()
+                                                        .path("/healthz")
+                                                        .port(newIntOrString(8443))
+                                                        .scheme("HTTPS"))))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .hostPath(newHostPathVolumeSource().path("/etc/kubernetes"))
+                                        .name("cloudconfig"))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("serving-cert")
+                                        .secret(
+                                            newSecretVolumeSource()
+                                                .defaultMode(420)
+                                                .secretName(getVoyagerName() + "-apiserver-cert")))
+                                .addTolerationsItem(
+                                    newToleration()
+                                        .key("CriticalAddonsOnly")
+                                        .operator("Exists")))));
   }
 
   @Test
@@ -594,7 +783,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     // expansion of the input properties.
     V1ConfigMap actual = getActualTraefikConfigMap();
     String actualTraefikToml = getThenEmptyConfigMapDataValue(actual, PROPERTY_TRAEFIK_TOML);
-    // don't allOf since we want to make sure the second assertThat is only called if the first one passes
+    // don't allOf since we want to make sure the second assertThat is only called if the first one
+    // passes
     assertThat(actual, yamlEqualTo(getExpectedTraefikConfigMap()));
     assertThatActualTraefikTomlIsCorrect(actualTraefikToml);
   }
@@ -604,29 +794,36 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1ConfigMap getExpectedTraefikConfigMap() {
-    return
-      newConfigMap()
-        .metadata(newObjectMeta()
-          .name(getTraefikScope() + "-cm")
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+    return newConfigMap()
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope() + "-cm")
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
         .putDataItem(PROPERTY_TRAEFIK_TOML, "");
   }
 
   protected void assertThatActualTraefikTomlIsCorrect(String actualTraefikToml) {
     assertThat(
-      actualTraefikToml,
-      containsString("labelselector = \"" + DOMAINUID_LABEL + "=" + getInputs().getDomainUID() + "," + CLUSTERNAME_LABEL + "=" + getInputs().getClusterName() + "\""));
+        actualTraefikToml,
+        containsString(
+            "labelselector = \""
+                + DOMAINUID_LABEL
+                + "="
+                + getInputs().getDomainUID()
+                + ","
+                + CLUSTERNAME_LABEL
+                + "="
+                + getInputs().getClusterName()
+                + "\""));
   }
 
   @Test
   public void generatesCorrect_loadBalancerService() throws Exception {
-    assertThat(
-      getActualTraefikService(),
-      yamlEqualTo(getExpectedTraefikService()));
+    assertThat(getActualTraefikService(), yamlEqualTo(getExpectedTraefikService()));
   }
 
   protected V1Service getActualApacheService() {
@@ -634,23 +831,25 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1Service getExpectedApacheService() {
-    return
-      newService()
-        .metadata(newObjectMeta()
-          .name(getApacheName())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .spec(newServiceSpec()
-          .type("NodePort")
-          .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putSelectorItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putSelectorItem(APP_LABEL, getApacheAppName())
-          .addPortsItem(newServicePort()
-            .name("rest-https")
-            .port(80)
-            .nodePort(Integer.parseInt(getInputs().getLoadBalancerWebPort()))));
+    return newService()
+        .metadata(
+            newObjectMeta()
+                .name(getApacheName())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+        .spec(
+            newServiceSpec()
+                .type("NodePort")
+                .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putSelectorItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putSelectorItem(APP_LABEL, getApacheAppName())
+                .addPortsItem(
+                    newServicePort()
+                        .name("rest-https")
+                        .port(80)
+                        .nodePort(Integer.parseInt(getInputs().getLoadBalancerWebPort()))));
   }
 
   protected V1Service getActualTraefikService() {
@@ -658,31 +857,55 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1Service getExpectedTraefikService() {
-    return
-      newService()
-        .metadata(newObjectMeta()
-          .name(getTraefikScope())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-        .spec(newServiceSpec()
-          .type("NodePort")
-          .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putSelectorItem(CLUSTERNAME_LABEL, getInputs().getClusterName())
-          .addPortsItem(newServicePort()
-            .name("http")
-            .targetPort(newIntOrString("http"))
-            .port(80)
-            .nodePort(Integer.parseInt(getInputs().getLoadBalancerWebPort()))));
+    return newService()
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+        .spec(
+            newServiceSpec()
+                .type("NodePort")
+                .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putSelectorItem(CLUSTERNAME_LABEL, getInputs().getClusterName())
+                .addPortsItem(
+                    newServicePort()
+                        .name("http")
+                        .targetPort(newIntOrString("http"))
+                        .port(80)
+                        .nodePort(Integer.parseInt(getInputs().getLoadBalancerWebPort()))));
+  }
+
+  protected V1Service getActualVoyagerService() {
+    return getVoyagerOperatorYaml().getVoyagerOperatorService();
+  }
+
+  protected V1Service getExpectedVoyagerService() {
+    return newService()
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .spec(
+            newServiceSpec()
+                .putSelectorItem(APP_LABEL, getVoyagerName())
+                .addPortsItem(
+                    newServicePort().name("admission").port(443).targetPort(newIntOrString(8443)))
+                .addPortsItem(
+                    newServicePort().name("ops").port(56790).targetPort(newIntOrString(56790)))
+                .addPortsItem(
+                    newServicePort().name("acme").port(56791).targetPort(newIntOrString(56791))));
   }
 
   @Test
   public void generatesCorrect_loadBalancerDashboardService() throws Exception {
     assertThat(
-      getActualTraefikDashboardService(),
-      yamlEqualTo(getExpectedTraefikDashboardService()));
+        getActualTraefikDashboardService(), yamlEqualTo(getExpectedTraefikDashboardService()));
   }
 
   protected V1Service getActualTraefikDashboardService() {
@@ -690,31 +913,31 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1Service getExpectedTraefikDashboardService() {
-    return
-      newService()
-        .metadata(newObjectMeta()
-          .name(getTraefikScope() + "-dashboard")
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-        .spec(newServiceSpec()
-          .type("NodePort")
-          .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putSelectorItem(CLUSTERNAME_LABEL, getInputs().getClusterName())
-          .addPortsItem(newServicePort()
-            .name("dash")
-            .targetPort(newIntOrString("dash"))
-            .port(8080)
-            .nodePort(Integer.parseInt(getInputs().getLoadBalancerDashboardPort()))));
+    return newService()
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope() + "-dashboard")
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+        .spec(
+            newServiceSpec()
+                .type("NodePort")
+                .putSelectorItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putSelectorItem(CLUSTERNAME_LABEL, getInputs().getClusterName())
+                .addPortsItem(
+                    newServicePort()
+                        .name("dash")
+                        .targetPort(newIntOrString("dash"))
+                        .port(8080)
+                        .nodePort(Integer.parseInt(getInputs().getLoadBalancerDashboardPort()))));
   }
 
   @Test
   public void generatesCorrect_loadBalancerClusterRole() throws Exception {
-    assertThat(
-      getActualTraefikClusterRole(),
-      yamlEqualTo(getExpectedTraefikClusterRole()));
+    assertThat(getActualTraefikClusterRole(), yamlEqualTo(getExpectedTraefikClusterRole()));
   }
 
   protected V1beta1ClusterRole getActualApacheClusterRole() {
@@ -722,21 +945,23 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1beta1ClusterRole getExpectedApacheClusterRole() {
-    return
-      newClusterRole()
-        .metadata(newObjectMeta()
-          .name(getApacheName())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .addRulesItem(newPolicyRule()
-          .addApiGroupsItem("")
-          .resources(asList("pods", "services", "endpoints", "secrets"))
-          .verbs(asList("get", "list", "watch")))
-        .addRulesItem(newPolicyRule()
-          .addApiGroupsItem("extensions")
-          .addResourcesItem("ingresses")
-          .verbs(asList("get", "list", "watch")));
+    return newClusterRole()
+        .metadata(
+            newObjectMeta()
+                .name(getApacheName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(asList("pods", "services", "endpoints", "secrets"))
+                .verbs(asList("get", "list", "watch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("extensions")
+                .addResourcesItem("ingresses")
+                .verbs(asList("get", "list", "watch")));
   }
 
   protected V1beta1ClusterRole getActualTraefikClusterRole() {
@@ -744,29 +969,122 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1beta1ClusterRole getExpectedTraefikClusterRole() {
-    return
-      newClusterRole()
-        .metadata(newObjectMeta()
-          .name(getTraefikScope())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-        .addRulesItem(newPolicyRule()
-          .addApiGroupsItem("")
-          .resources(asList("pods", "services", "endpoints", "secrets"))
-          .verbs(asList("get", "list", "watch")))
-        .addRulesItem(newPolicyRule()
-          .addApiGroupsItem("extensions")
-          .addResourcesItem("ingresses")
-          .verbs(asList("get", "list", "watch")));
+    return newClusterRole()
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(asList("pods", "services", "endpoints", "secrets"))
+                .verbs(asList("get", "list", "watch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("extensions")
+                .addResourcesItem("ingresses")
+                .verbs(asList("get", "list", "watch")));
+  }
+
+  protected V1beta1ClusterRole getActualVoyagerClusterRole() {
+    return getVoyagerOperatorSecurityYaml().getVoyagerClusterRole();
+  }
+
+  protected V1beta1ClusterRole getExpectedVoyagerClusterRole() {
+    return newClusterRole()
+        .apiVersion(API_VERSION_RBAC_V1)
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("apiextensions.k8s.io")
+                .addResourcesItem("customresourcedefinitions")
+                .addVerbsItem("*"))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("extensions")
+                .addResourcesItem("thirdpartyresources")
+                .addVerbsItem("*"))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("voyager.appscode.com")
+                .resources(asList("*"))
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("monitoring.coreos.com")
+                .addResourcesItem("servicemonitors")
+                .verbs(asList("get", "list", "watch", "create", "update", "patch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("apps")
+                .addResourcesItem("deployments")
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("extensions")
+                .addResourcesItem("deployments")
+                .addResourcesItem("daemonsets")
+                .addResourcesItem("ingresses")
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("replicationcontrollers")
+                .addResourcesItem("services")
+                .addResourcesItem("endpoints")
+                .addResourcesItem("configmaps")
+                .verbs(asList("*")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("secrets")
+                .verbs(asList("get", "list", "watch", "create", "update", "patch")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("namespaces")
+                .verbs(asList("get", "list", "watch")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("events")
+                .verbs(asList("create")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("pods")
+                .verbs(asList("list", "watch", "delete", "deletecollection")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("nodes")
+                .verbs(asList("list", "watch", "get")))
+        .addRulesItem(
+            newPolicyRule()
+                .apiGroups(asList(""))
+                .addResourcesItem("serviceaccounts")
+                .verbs(asList("get", "create", "delete", "patch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem(API_GROUP_RBAC)
+                .addResourcesItem("rolebindings")
+                .addResourcesItem("roles")
+                .verbs(asList("get", "create", "delete", "patch")));
   }
 
   @Test
   public void generatesCorrect_loadBalancerClusterRoleBinding() throws Exception {
     assertThat(
-      getActualTraefikDashboardClusterRoleBinding(),
-      yamlEqualTo(getExpectedTraefikDashboardClusterRoleBinding()));
+        getActualTraefikDashboardClusterRoleBinding(),
+        yamlEqualTo(getExpectedTraefikDashboardClusterRoleBinding()));
   }
 
   protected V1beta1ClusterRoleBinding getActualApacheClusterRoleBinding() {
@@ -774,20 +1092,19 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1beta1ClusterRoleBinding getExpectedApacheClusterRoleBinding() {
-    return
-      newClusterRoleBinding()
-        .metadata(newObjectMeta()
-          .name(getApacheName())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .addSubjectsItem(newSubject()
-          .kind("ServiceAccount")
-          .name(getApacheName())
-          .namespace(getInputs().getNamespace()))
-        .roleRef(newRoleRef()
-          .name(getApacheName())
-          .apiGroup("rbac.authorization.k8s.io"));
+    return newClusterRoleBinding()
+        .metadata(
+            newObjectMeta()
+                .name(getApacheName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, APACHE_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+        .addSubjectsItem(
+            newSubject()
+                .kind(KIND_SERVICE_ACCOUNT)
+                .name(getApacheName())
+                .namespace(getInputs().getNamespace()))
+        .roleRef(newRoleRef().name(getApacheName()).apiGroup(API_GROUP_RBAC));
   }
 
   protected V1beta1ClusterRoleBinding getActualTraefikDashboardClusterRoleBinding() {
@@ -795,28 +1112,52 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1beta1ClusterRoleBinding getExpectedTraefikDashboardClusterRoleBinding() {
-    return
-      newClusterRoleBinding()
-        .metadata(newObjectMeta()
-          .name(getTraefikScope())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
-          .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
-        .addSubjectsItem(newSubject()
-          .kind("ServiceAccount")
-          .name(getTraefikScope())
-          .namespace(getInputs().getNamespace()))
-        .roleRef(newRoleRef()
-          .name(getTraefikScope())
-          .apiGroup("rbac.authorization.k8s.io"));
+    return newClusterRoleBinding()
+        .metadata(
+            newObjectMeta()
+                .name(getTraefikScope())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, TRAEFIK_LOAD_BALANCER_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName())
+                .putLabelsItem(CLUSTERNAME_LABEL, getInputs().getClusterName()))
+        .addSubjectsItem(
+            newSubject()
+                .kind(KIND_SERVICE_ACCOUNT)
+                .name(getTraefikScope())
+                .namespace(getInputs().getNamespace()))
+        .roleRef(newRoleRef().name(getTraefikScope()).apiGroup(API_GROUP_RBAC));
+  }
+
+  protected V1beta1ClusterRoleBinding getActualVoyagerClusterRoleBinding() {
+    return getVoyagerOperatorSecurityYaml().getVoyagerClusterRoleBinding();
+  }
+
+  protected V1beta1ClusterRoleBinding getExpectedVoyagerClusterRoleBinding() {
+    return newClusterRoleBinding()
+        .apiVersion(API_VERSION_RBAC_V1)
+        .metadata(
+            newObjectMeta()
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VOYAGER_LOAD_BALANCER_V1)
+                .putLabelsItem(APP_LABEL, getVoyagerName()))
+        .roleRef(
+            newRoleRef()
+                .apiGroup(API_GROUP_RBAC)
+                .kind(KIND_CLUSTER_ROLE)
+                .name(getVoyagerOperatorName()))
+        .addSubjectsItem(
+            newSubject()
+                .kind(KIND_SERVICE_ACCOUNT)
+                .name(getVoyagerOperatorName())
+                .namespace(getVoyagerName()));
   }
 
   @Test
   public void generatesCorrect_weblogicDomainPersistentVolume() throws Exception {
     assertThat(
-      getActualWeblogicDomainPersistentVolume(),
-      yamlEqualTo(getExpectedWeblogicDomainPersistentVolume()));
+        getActualWeblogicDomainPersistentVolume(),
+        yamlEqualTo(getExpectedWeblogicDomainPersistentVolume()));
   }
 
   protected V1PersistentVolume getActualWeblogicDomainPersistentVolume() {
@@ -824,25 +1165,27 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1PersistentVolume getExpectedWeblogicDomainPersistentVolume() {
-    return
-      newPersistentVolume()
-        .metadata(newObjectMeta()
-          .name(getInputs().getWeblogicDomainPersistentVolumeName())
-        .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .spec(newPersistentVolumeSpec()
-          .storageClassName(getInputs().getWeblogicDomainStorageClass())
-          .putCapacityItem("storage", Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))
-          .addAccessModesItem("ReadWriteMany")
-          .persistentVolumeReclaimPolicy("Retain"));
+    return newPersistentVolume()
+        .metadata(
+            newObjectMeta()
+                .name(getInputs().getWeblogicDomainPersistentVolumeName())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+        .spec(
+            newPersistentVolumeSpec()
+                .storageClassName(getInputs().getWeblogicDomainStorageClass())
+                .putCapacityItem(
+                    "storage", Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))
+                .addAccessModesItem("ReadWriteMany")
+                .persistentVolumeReclaimPolicy("Retain"));
   }
 
   @Test
   public void generatesCorrect_weblogicDomainPersistentVolumeClaim() throws Exception {
     assertThat(
-      getActualWeblogicDomainPersistentVolume(),
-      yamlEqualTo(getExpectedWeblogicDomainPersistentVolume()));
+        getActualWeblogicDomainPersistentVolume(),
+        yamlEqualTo(getExpectedWeblogicDomainPersistentVolume()));
   }
 
   protected V1PersistentVolumeClaim getActualWeblogicDomainPersistentVolumeClaim() {
@@ -850,19 +1193,23 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected V1PersistentVolumeClaim getExpectedWeblogicDomainPersistentVolumeClaim() {
-    return
-      newPersistentVolumeClaim()
-        .metadata(newObjectMeta()
-          .name(getInputs().getWeblogicDomainPersistentVolumeClaimName())
-          .namespace(getInputs().getNamespace())
-          .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
-          .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-          .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .spec(newPersistentVolumeClaimSpec()
-          .storageClassName(getInputs().getWeblogicDomainStorageClass())
-          .addAccessModesItem("ReadWriteMany")
-          .resources(newResourceRequirements()
-            .putRequestsItem("storage", Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))));
+    return newPersistentVolumeClaim()
+        .metadata(
+            newObjectMeta()
+                .name(getInputs().getWeblogicDomainPersistentVolumeClaimName())
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+        .spec(
+            newPersistentVolumeClaimSpec()
+                .storageClassName(getInputs().getWeblogicDomainStorageClass())
+                .addAccessModesItem("ReadWriteMany")
+                .resources(
+                    newResourceRequirements()
+                        .putRequestsItem(
+                            "storage",
+                            Quantity.fromString(getInputs().getWeblogicDomainStorageSize()))));
   }
 
   protected String getTraefikScope() {
@@ -877,7 +1224,19 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return getInputs().getClusterName().toLowerCase();
   }
 
-  protected String getApacheName() { return getInputs().getDomainUID() + "-" + getApacheAppName(); }
+  protected String getApacheName() {
+    return getInputs().getDomainUID() + "-" + getApacheAppName();
+  }
 
-  protected String getApacheAppName() { return "apache-webtier";}
+  protected String getApacheAppName() {
+    return "apache-webtier";
+  }
+
+  protected String getVoyagerName() {
+    return "voyager";
+  }
+
+  protected String getVoyagerOperatorName() {
+    return getVoyagerName() + "-operator";
+  }
 }

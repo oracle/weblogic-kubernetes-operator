@@ -1,7 +1,7 @@
 {
     "type": "object",
     "javaType": "oracle.kubernetes.weblogic.domain.v1.ServerStartup",
-    "description": "ServerStarup describes the desired startup state and passed environment variables for a specific managed server.",
+    "description": "ServerStartup describes the desired startup state and passed environment variables for a specific managed server.  Deprecated.  Use the DomainSpec's servers, clusters, clusterDefaults, nonClusteredServerDefaults and serverDefaults properties.",
     "required": [
      "serverName"
     ],

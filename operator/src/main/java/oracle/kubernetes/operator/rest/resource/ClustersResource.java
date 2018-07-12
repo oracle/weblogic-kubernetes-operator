@@ -1,12 +1,8 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
-
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.model.ClusterModel;
-import oracle.kubernetes.operator.rest.model.CollectionModel;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -14,11 +10,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.model.ClusterModel;
+import oracle.kubernetes.operator.rest.model.CollectionModel;
 
 /**
  * ClustersResource is a jaxrs resource that implements the REST api for the
- * /operator/{version}/domains/{domainUID}/clusters path.
- * It can be used to list a WebLogic domain's clusters.
+ * /operator/{version}/domains/{domainUID}/clusters path. It can be used to list a WebLogic domain's
+ * clusters.
  */
 public class ClustersResource extends BaseResource {
 
@@ -26,6 +26,7 @@ public class ClustersResource extends BaseResource {
 
   /**
    * Construct a ClustersResource.
+   *
    * @param parent - the jaxrs resource that parents this resource.
    * @param pathSegment - the last path segment in the url to this resource.
    */
@@ -35,6 +36,7 @@ public class ClustersResource extends BaseResource {
 
   /**
    * List a WebLogic domain's clusters.
+   *
    * @return a collection of ClusterModels describing the clusters.
    */
   @GET
@@ -55,9 +57,9 @@ public class ClustersResource extends BaseResource {
 
   /**
    * Construct and return a 'cluster' jaxrs child resource.
+   *
    * @param cluster - the name of the WebLogic cluster.
-   * @return the cluster sub resource, throws a WebApplicationException if
-   * cluster does not exist.
+   * @return the cluster sub resource, throws a WebApplicationException if cluster does not exist.
    */
   @Path("{clusters}")
   public ClusterResource getClusterResource(@PathParam("clusters") String cluster) {

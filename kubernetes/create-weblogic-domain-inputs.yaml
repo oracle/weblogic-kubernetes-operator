@@ -40,6 +40,9 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
+# WebLogic Docker image
+weblogicImage: store/oracle/weblogic:12.2.1.3
+
 # Persistent volume type for the domain's storage.
 # The value must be 'HOST_PATH' or 'NFS'. 
 # If using 'NFS', weblogicDomainStorageNFSServer must be specified.
@@ -104,6 +107,9 @@ loadBalancerAppPrepath: /
 # Use this to provide your own Apache plugin configuration as needed; simply define this 
 # path and put your own custom_mod_wl_apache.conf file under this path.
 loadBalancerVolumePath:
+
+# Boolean to indicate if the admin port is going to be exposed for APACHE. By default, it is false.
+loadBalancerExposeAdminPort: false
 
 # Load balancer web port
 loadBalancerWebPort: 30305

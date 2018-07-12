@@ -1,20 +1,18 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
-
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.backend.RestBackend;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.backend.RestBackend;
 
-/**
- * RestConfigImpl provides the WebLogic Operator REST api configuration.
- */
+/** RestConfigImpl provides the WebLogic Operator REST api configuration. */
 public class RestConfigImpl implements RestConfig {
 
   private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -24,8 +22,9 @@ public class RestConfigImpl implements RestConfig {
 
   /**
    * Constructs a RestConfigImpl.
-   * @param principal is the name of the Kubernetes User or Service Account to use when calling
-   * the Kubernetes REST API.
+   *
+   * @param principal is the name of the Kubernetes User or Service Account to use when calling the
+   *     Kubernetes REST API.
    * @param targetNamespaces is a list of the Kubernetes Namespaces covered by this Operator.
    */
   public RestConfigImpl(String principal, Collection<String> targetNamespaces) {
@@ -35,97 +34,73 @@ public class RestConfigImpl implements RestConfig {
     LOGGER.exiting();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getHost() {
     return "0.0.0.0";
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public int getExternalHttpsPort() {
     return 8081;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public int getInternalHttpsPort() {
     return 8082;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateData() {
     return getCertificate("externalOperatorCert");
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateData() {
     return getCertificate("internalOperatorCert");
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateFile() {
     return null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateFile() {
     return null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyData() {
     return null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyData() {
     return null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyFile() {
     return getKey("externalOperatorKey");
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyFile() {
     return getKey("internalOperatorKey");
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public RestBackend getBackend(String accessToken) {
     LOGGER.entering();
@@ -136,7 +111,10 @@ public class RestConfigImpl implements RestConfig {
 
   private String getCertificate(String property) {
     LOGGER.entering(property);
-    String path = "config/" + property; // a file containing a base64 encoded string containing the operator's cert in pem format
+    String path =
+        "config/"
+            + property; // a file containing a base64 encoded string containing the operator's cert
+    // in pem format
     String result = null;
     if (checkFileExists(path)) {
       try {
