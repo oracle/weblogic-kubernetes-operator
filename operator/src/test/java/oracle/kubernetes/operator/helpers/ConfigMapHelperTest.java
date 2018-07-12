@@ -112,6 +112,17 @@ public class ConfigMapHelperTest {
   }
 
   @Test
+  public void whenUnableToReadConfigMap_reportFailure() {
+    testSupport.addRetryStrategy(retryStrategy);
+    expectReadConfigMap().failingWithStatus(401);
+
+    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS);
+    testSupport.runSteps(scriptConfigMapStep);
+
+    testSupport.verifyCompletionThrowable(ApiException.class);
+  }
+
+  @Test
   public void whenNoConfigMap_createIt() {
     expectReadConfigMap().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     expectSuccessfulCreateConfigMap(defaultConfigMap);
