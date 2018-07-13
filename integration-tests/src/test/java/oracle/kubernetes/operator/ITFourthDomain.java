@@ -83,26 +83,13 @@ public class ITFourthDomain extends BaseTest {
   public static void staticUnPrepare() throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
-    // logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
+    logger.info("Run once, release cluster lease");
 
     if (getLeaseId() != "") {
       logger.info("Release the k8s cluster lease");
       TestUtils.releaseLease(getProjectRoot(), getLeaseId());
     }
 
-    // shutdown operator, domain and cleanup all artifacts and pv dir
-    /* try {
-      if (domain != null) domain.destroy();
-      if (operator != null) operator.destroy();
-    } finally {
-        //delete k8s artifacts created if any, delete PV directories
-        ExecResult result = cleanup();
-        if (result.exitValue() != 0) {
-          throw new RuntimeException("FAILED: Command to call cleanup script failed " + result.stderr());
-        }
-        logger.info("Command to call cleanup script returned " + result.stdout() + "\n" + result.stderr());
-
-    } */
     logger.info("SUCCESS");
   }
   /**

@@ -96,20 +96,7 @@ public class ITFirstDomain extends BaseTest {
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
-    // logger.info("Run once, shutdown/deleting operator, domain, pv, etc");
-
-    // shutdown operator, domain and cleanup all artifacts and pv dir
-    /*try {
-      if (domain != null) domain.destroy();
-      if (operator != null) operator.destroy();
-    } finally {
-
-      ExecResult result = cleanup();
-      if (result.exitValue() != 0) {
-        logger.info("FAILED: Command to call cleanup script failed " + result.stderr());
-      }
-      logger.info("Command to call cleanup script returned " + result.stdout() + "\n" + result.stderr());
-    } */
+    logger.info("Run once, release cluster lease");
 
     if (getLeaseId() != "") {
       logger.info("Release the k8s cluster lease");
