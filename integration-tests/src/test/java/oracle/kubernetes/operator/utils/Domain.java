@@ -167,7 +167,7 @@ public class Domain {
     // logger.info("Inside verifyAdminServerExternalService");
     String nodePortHost = TestUtils.getHostName();
     String nodePort = getNodePort();
-    logger.fine("nodePortHost " + nodePortHost + " nodePort " + nodePort);
+    logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
     StringBuffer cmd = new StringBuffer();
     cmd.append("curl --silent --show-error --noproxy ")
@@ -182,14 +182,14 @@ public class Domain {
         .append(":")
         .append(password)
         .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
-    logger.fine("cmd for curl " + cmd);
+    logger.info("cmd for curl " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
     String output = result.stdout().trim();
-    logger.fine("output " + output);
+    logger.info("output " + output);
     if (!output.equals("200")) {
       throw new RuntimeException(
           "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
@@ -373,6 +373,7 @@ public class Domain {
         domainProps.getProperty("secretName", domainUid + "-weblogic-credentials"),
         BaseTest.getUsername(),
         BaseTest.getPassword());
+    domainProps.setProperty("weblogicCredentialsSecretName", domainUid + "-weblogic-credentials");
   }
 
   private void generateInputYaml() throws Exception {
@@ -553,6 +554,14 @@ public class Domain {
     }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainProps.put("weblogicImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+      // create docker registry secrets
+      TestUtils.createDockerRegistrySecret(
+          System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
+          "index.docker.io/v1/",
+          System.getenv("DOCKER_USERNAME"),
+          System.getenv("DOCKER_PASSWORD"),
+          System.getenv("DOCKER_EMAIL"),
+          domainNS);
     }
   }
 
