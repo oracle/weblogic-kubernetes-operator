@@ -92,10 +92,12 @@ class ProcessedChart {
 
   private List<Map<String, String>> getDocuments() throws Exception {
     List<Map<String, String>> charts = new ArrayList<>();
-    new Yaml().loadAll(getProcess().getInputStream()).forEach(
-        (document) -> {
-          if (document != null) charts.add((Map<String, String>) document);
-        });
+    new Yaml()
+        .loadAll(getProcess().getInputStream())
+        .forEach(
+            (document) -> {
+              if (document != null) charts.add((Map<String, String>) document);
+            });
 
     return charts;
   }
