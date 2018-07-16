@@ -405,11 +405,21 @@ public class TestUtils {
                 + "use 'lease.sh -s'.  To disable this lease check, do not set"
                 + "the LEASE_ID environment variable.");
 
-        throw new RuntimeException("Could not renew lease on k8s cluster");
+        throw new RuntimeException("Could not renew lease on k8s cluster " + execResult.stderr());
       } else {
         logger.info("Renewed lease for leaseId " + leaseId);
       }
     }
+  }
+
+  public static void releaseLease(String projectRoot, String leaseId) throws Exception {
+    String cmd = projectRoot + "/src/integration-tests/bash/lease.sh -d " + leaseId;
+    ExecResult leaseResult = ExecCommand.exec(cmd);
+    if (leaseResult.exitValue() != 0) {
+      logger.info("FAILED: command to release lease " + cmd + " failed " + leaseResult.stderr());
+    }
+    logger.info(
+        "Command " + cmd + " returned " + leaseResult.stdout() + "\n" + leaseResult.stderr());
   }
 
   private static Builder createRESTRequest(KeyStore myKeyStore, String url, String token) {
@@ -446,6 +456,8 @@ public class TestUtils {
       String dockerEmail,
       String namespace)
       throws Exception {
+
+    ExecCommand.exec("kubectl delete secret " + secretName + " -n " + namespace);
     String command =
         "kubectl create secret docker-registry "
             + secretName
