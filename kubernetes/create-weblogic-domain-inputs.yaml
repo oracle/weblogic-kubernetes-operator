@@ -102,10 +102,13 @@ loadBalancer: TRAEFIK
 # This defines the /location in the built-in Apache plugin configuration module for WebLogic
 loadBalancerAppPrepath: /
 
-# Docker volume path for APACHE. By default, it is empty, which causes the volume mount be 
-# disabled and, thereforem the built-in Apache plugin config be used.
-# Use this to provide your own Apache plugin configuration as needed; simply define this 
-# path and put your own custom_mod_wl_apache.conf file under this path.
+# Docker volume path for APACHE.
+# By default, the path is empty, and therefore, the built-in default Apache plugin
+# configuration is used.
+# Use this to provide your own Apache plugin configuration as needed; simply define
+# this path and put your own custom_mod_wl_apache.conf file under this path.
+# If specified path does not exist, or customer_mod_wl_apache.conf file is missing 
+# under the specified path, the create domain script will fail with a validation error.
 loadBalancerVolumePath:
 
 # Boolean to indicate if the admin port is going to be exposed for APACHE. By default, it is false.
