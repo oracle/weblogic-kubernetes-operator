@@ -1,0 +1,23 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+setupKubernetesCluster: true
+createOperator: true
+createOperatorNamespace: true
+operatorNamespace: weblogic-operator
+operatorServiceAccount: weblogic-operator
+createDomainsNamespace: true
+domainsNamespaces: {}
+operatorImage: weblogic-kubernetes-operator:1.0
+operatorImagePullPolicy: IfNotPresent
+#internalOperatorCert: ...
+#internalOperatorKey: ...
+externalRestEnabled: false
+externalRestHttpsPort: 31001
+#externalOperatorCert: ...
+#externalOperatorKey: ...
+remoteDebugNodePortEnabled: false
+internalDebugHttpPort: 30999
+externalDebugHttpPort: 30999
+javaLoggingLevel: INFO
+elkIntegrationEnabled: false
