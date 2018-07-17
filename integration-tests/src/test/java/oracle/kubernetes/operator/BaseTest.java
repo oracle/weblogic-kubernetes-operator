@@ -7,7 +7,9 @@ package oracle.kubernetes.operator;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -21,7 +23,7 @@ public class BaseTest {
 
   private static String resultRoot = "";
   private static String pvRoot = "";
-  // private static String resultDir = "";
+  private static String resultDir = "";
   private static String userProjectsDir = "";
   private static String projectRoot = "";
   private static String username = "weblogic";
@@ -61,8 +63,8 @@ public class BaseTest {
     if (System.getenv("LEASE_ID") != null) {
       leaseId = System.getenv("LEASE_ID");
     }
-    // resultDir = resultRoot + "/acceptance_test_tmp";
-    userProjectsDir = resultRoot + "/acceptance_test_tmp/user-projects";
+    resultDir = resultRoot + "/acceptance_test_tmp";
+    userProjectsDir = resultDir + "/user-projects";
     projectRoot = System.getProperty("user.dir") + "/..";
 
     // BRANCH_NAME var is used in Jenkins job
@@ -70,6 +72,44 @@ public class BaseTest {
       branchName = System.getenv("BRANCH_NAME");
     } else {
       branchName = TestUtils.getGitBranchName();
+    }
+
+    // for manual/local run, do cleanup
+    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+
+      // delete k8s artifacts created if any, delete PV directories
+      ExecResult clnResult = cleanup();
+      if (clnResult.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILED: Command to call cleanup script failed " + clnResult.stderr());
+      }
+      logger.info(
+          "Command to call cleanup script returned "
+              + clnResult.stdout()
+              + "\n"
+              + clnResult.stderr());
+    }
+    // create resultRoot, PVRoot, etc
+    Files.createDirectories(Paths.get(resultRoot));
+    Files.createDirectories(Paths.get(resultDir));
+    Files.createDirectories(Paths.get(userProjectsDir));
+
+    // create file handler
+    FileHandler fh = new FileHandler(resultDir + "/java_test_suite.out");
+    SimpleFormatter formatter = new SimpleFormatter();
+    fh.setFormatter(formatter);
+    logger.addHandler(fh);
+    logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
+
+    // for manual/local run, create file handler, create PVROOT
+    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+      logger.info("Creating PVROOT " + pvRoot);
+      Files.createDirectories(Paths.get(pvRoot));
+      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
+      }
     }
 
     logger.info("RESULT_ROOT =" + resultRoot);
@@ -90,23 +130,6 @@ public class BaseTest {
     logger.info(
         "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
     logger.info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
-
-    // create resultRoot, PVRoot, etc
-    Files.createDirectories(Paths.get(resultRoot));
-
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
-      logger.info("Creating PVROOT " + pvRoot);
-      Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
-      }
-    }
-
-    // Files.createDirectories(Paths.get(resultDir));
-
-    Files.createDirectories(Paths.get(userProjectsDir));
   }
 
   public static String getResultRoot() {
