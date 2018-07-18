@@ -11,7 +11,7 @@
     <version>1.0</version>
   </parent>
 
-  <artifactId>helm-charts-test</artifactId>
+  <artifactId>installation-tests</artifactId>
 
   <description>Oracle Weblogic Server Kubernetes Operator</description>
   <name>helm-chart-tests</name>

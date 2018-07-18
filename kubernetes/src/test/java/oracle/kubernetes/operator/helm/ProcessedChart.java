@@ -110,7 +110,7 @@ class ProcessedChart {
   }
 
   private Process processChart(String chartName, UpdateValues updateValues) throws Exception {
-    File chartsDir = getChartsDir(chartName);
+    File chartsDir = getChartDir(chartName);
     File baseValuesFile = new File(chartsDir, "values.yaml");
     Map<String, String> values = new Yaml().load(new FileReader(baseValuesFile));
 
@@ -134,8 +134,16 @@ class ProcessedChart {
     return valuesFile;
   }
 
-  private File getChartsDir(String chartName) throws URISyntaxException {
-    return new File(getTargetDir(getClass()).getParentFile(), chartName);
+  private File getChartDir(String chartName) throws URISyntaxException {
+    return new File(getChartsParentDir(), chartName);
+  }
+
+  private File getChartsParentDir() throws URISyntaxException {
+    return new File(getModuleDir(), "charts");
+  }
+
+  private File getModuleDir() throws URISyntaxException {
+    return getTargetDir(getClass()).getParentFile();
   }
 
   private File getTargetDir(Class<?> aClass) throws URISyntaxException {
