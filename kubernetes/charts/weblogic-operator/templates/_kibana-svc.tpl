@@ -4,17 +4,17 @@
 {{- define "operator.kibanaService" }}
 {{- if .elkIntegrationEnabled }}
 ---
-apiVersion: v1
-kind: Service
+apiVersion: "v1"
+kind: "Service"
 metadata: 
-  name: kibana
+  name: "kibana"
   labels: 
-    app: kibana
+    app: "kibana"
 spec: 
-  type: NodePort
+  type: "NodePort"
   ports:
     - port: 5601
   selector: 
-    app: kibana
+    app: "kibana"
 {{- end }}
 {{- end }}
