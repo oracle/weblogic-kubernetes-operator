@@ -3,24 +3,24 @@
 
 {{- define "operator.operatorConfigMap" }}
 ---
-apiVersion: v1
+apiVersion: "v1"
 data:
-  internalOperatorCert: {{ .internalOperatorCert }}
+  internalOperatorCert: {{ .internalOperatorCert | quote }}
   {{- if .externalRestEnabled }}
-  externalOperatorCert: {{ .externalOperatorCert }}
+  externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
-  serviceaccount: {{ .operatorServiceAccount }}
+  serviceaccount: {{ .operatorServiceAccount | quote }}
 {{- $domainsNamespaces := merge (dict) .domainsNamespaces -}}
 {{- $len := len $domainsNamespaces -}}
 {{- if eq $len 0 -}}
 {{-   $ignore := set $domainsNamespaces "default" (dict) -}}
 {{- end }}
-  targetNamespaces: {{ join "," (keys $domainsNamespaces) }}
-kind: ConfigMap
+  targetNamespaces: {{ keys $domainsNamespaces | join "," }}
+kind: "ConfigMap"
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace }}
-    weblogic.resourceVersion: operator-v1
-  name: weblogic-operator-cm
-  namespace: {{ .operatorNamespace }}
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.resourceVersion: "operator-v1"
+  name: "weblogic-operator-cm"
+  namespace: {{ .operatorNamespace | quote }}
 {{- end }}

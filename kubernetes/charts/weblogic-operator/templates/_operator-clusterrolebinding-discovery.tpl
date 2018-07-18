@@ -3,19 +3,19 @@
 
 {{- define "operator.clusterRoleBindingDiscovery" }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+apiVersion: "rbac.authorization.k8s.io/v1"
+kind: "ClusterRoleBinding"
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace }}
-    weblogic.resourceVersion: operator-v1
-  name: {{ .operatorNamespace }}-operator-rolebinding-discovery
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.resourceVersion: "operator-v1"
+  name: {{ list .operatorNamespace "operator-rolebinding-discovery" | join "-" | quote }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:discovery
+  apiGroup: "rbac.authorization.k8s.io"
+  kind: "ClusterRole"
+  name: "system:discovery"
 subjects:
-- kind: ServiceAccount
-  name: {{ .operatorServiceAccount }}
-  namespace: {{ .operatorNamespace }}
+- kind: "ServiceAccount"
+  name: {{ .operatorServiceAccount | quote }}
+  namespace: {{ .operatorNamespace | quote }}
 {{- end }}
