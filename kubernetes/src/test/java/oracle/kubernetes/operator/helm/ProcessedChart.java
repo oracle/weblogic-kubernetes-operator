@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.helm;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -28,18 +28,18 @@ import org.yaml.snakeyaml.Yaml;
 @SuppressWarnings({"unchecked", "SameParameterValue"})
 class ProcessedChart {
   private final String chartName;
-  private final UpdateValues updateValues;
+  private Map<String, Object> valueOverrides;
   private String error;
   private List<Map<String, String>> documents;
   private Process process;
 
-  ProcessedChart(String chartName, UpdateValues updateValues) {
+  ProcessedChart(String chartName, Map<String, Object> valueOverrides) {
     this.chartName = chartName;
-    this.updateValues = updateValues;
+    this.valueOverrides = valueOverrides;
   }
 
-  boolean matches(String chartName, UpdateValues updater) {
-    return this.chartName.equals(chartName) && this.updateValues == updater;
+  boolean matches(String chartName, Map<String, Object> valueOverrides) {
+    return this.chartName.equals(chartName) && Objects.equals(valueOverrides, this.valueOverrides);
   }
 
   /**
@@ -104,17 +104,16 @@ class ProcessedChart {
 
   private Process getProcess() throws Exception {
     if (process == null) {
-      process = processChart(chartName, updateValues);
+      process = processChart(chartName, valueOverrides);
     }
     return process;
   }
 
-  private Process processChart(String chartName, UpdateValues updateValues) throws Exception {
+  private Process processChart(String chartName, Map<String, Object> valueOverrides)
+      throws Exception {
     File chartsDir = getChartDir(chartName);
-    File baseValuesFile = new File(chartsDir, "values.yaml");
-    Map<String, String> values = new Yaml().load(new FileReader(baseValuesFile));
 
-    Path valuesFile = createUpdatedValuesFile(updateValues, values);
+    Path valuesFile = writeValuesOverride(valueOverrides);
 
     ProcessBuilder pb = new ProcessBuilder(createCommandLine(chartsDir, valuesFile));
     return pb.start();
@@ -124,9 +123,7 @@ class ProcessedChart {
     return new String[] {"helm", "template", chart.getAbsolutePath(), "-f", valuesPath.toString()};
   }
 
-  private Path createUpdatedValuesFile(UpdateValues updateValues, Map<String, String> values)
-      throws IOException {
-    updateValues.update(values);
+  private Path writeValuesOverride(Map<String, Object> values) throws IOException {
     Path valuesFile = Files.createTempFile("Value", ".yaml");
     try (BufferedWriter writer = Files.newBufferedWriter(valuesFile, Charset.forName("UTF-8"))) {
       new Yaml().dump(values, writer);

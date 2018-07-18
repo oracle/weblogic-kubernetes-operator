@@ -9,47 +9,39 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasSize;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class OperatorChartIT extends ChartITBase {
 
-  private static final NullUpdate NULL_UPDATE = new NullUpdate();
-  private static final AddCertificates ADD_CERTIFICATES = new AddCertificates();
   private static final String OPERATOR_CHART = "weblogic-operator";
+  private static final Map<String, Object> CERTIFICATES =
+      ImmutableMap.<String, Object>builder()
+          .put("internalOperatorCert", "dummy.cert")
+          .put("internalOperatorKey", "dummy.key")
+          .build();
 
   @Test
   public void whenNoCertificateSpecified_helmReportsFailure() throws Exception {
-    ProcessedChart chart = getChart(OPERATOR_CHART, NULL_UPDATE);
+    ProcessedChart chart = getChart(OPERATOR_CHART);
 
     assertThat(chart.getError(), containsString("property internalOperatorCert must be specified"));
   }
 
   @Test
   public void whenCertificateSpecified_noErrorOccurs() throws Exception {
-    ProcessedChart chart = getChart(OPERATOR_CHART, ADD_CERTIFICATES);
+    ProcessedChart chart = getChart(OPERATOR_CHART, CERTIFICATES);
 
     assertThat(chart.getError(), emptyOrNullString());
   }
 
   @Test
   public void whenChartsGenerated_haveOneRoleBinding() throws Exception {
-    ProcessedChart chart = getChart(OPERATOR_CHART, ADD_CERTIFICATES);
+    ProcessedChart chart = getChart(OPERATOR_CHART, CERTIFICATES);
 
     assertThat(chart.getDocuments("RoleBinding"), hasSize(1));
   }
 
-  private static class NullUpdate implements UpdateValues {
-    @Override
-    public void update(Map<String, String> values) {}
-  }
-
-  private static class AddCertificates implements UpdateValues {
-    @Override
-    public void update(Map<String, String> values) {
-      values.put("internalOperatorCert", "dummy.cert");
-      values.put("internalOperatorKey", "dummy.key");
-    }
-  }
 }
