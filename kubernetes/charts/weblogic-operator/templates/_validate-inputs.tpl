@@ -3,37 +3,52 @@
 
 {{- define "operator.validateInputs" -}}
 {{- $scope := . -}}
-{{- include "operator.verifyBooleanInput" (list . "setupKubernetesCluster") -}}
-{{- include "operator.verifyBooleanInput" (list . "createOperator") -}}
-{{- if (or .setupKubernetesCluster .createOperator) }}
-{{-   include "operator.verifyBooleanInput" (list . "elkIntegrationEnabled") -}}
+{{- if include "operator.verifyBooleanInput" (list $scope "setupKubernetesCluster") -}}
+{{-   if $scope.setupKubernetesCluster }}
+{{-     $ignore := include "operator.verifyBooleanInput" (list $scope "elkIntegrationEnabled") -}}
+{{-   end }}
 {{- end }}
-{{- if .createOperator }}
-{{-   include "operator.verifyBooleanInput" (list . "createOperatorNamespace") -}}
-{{-   include "operator.verifyStringInput"  (list . "operatorNamespace") -}}
-{{-   include "operator.verifyStringInput"  (list . "operatorServiceAccount") -}}
-{{-   include "operator.verifyStringInput"  (list . "operatorImage") -}}
-{{-   include "operator.verifyEnumInput"    (list . "operatorImagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
-{{-   include "operator.verifyStringInput"  (list . "internalOperatorCert") -}}
-{{-   include "operator.verifyStringInput"  (list . "internalOperatorKey") -}}
-{{-   include "operator.verifyBooleanInput" (list . "externalRestEnabled") -}}
-{{-   include "operator.verifyBooleanInput" (list . "remoteDebugNodePortEnabled") -}}
-{{-   include "operator.verifyEnumInput"    (list . "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
-{{-   include "operator.verifyObjectInput"  (list . "domainsNamespaces") -}}
-{{-   if .externalRestEnabled -}}
-{{-     include "operator.verifyIntegerInput" (list . "externalRestHttpsPort") -}}
-{{-     include "operator.verifyStringInput"  (list . "externalOperatorCert") -}}
-{{-     include "operator.verifyStringInput"  (list . "externalOperatorKey") -}}
-{{-   end -}}
-{{-   if .remoteDebugNodePortEnabled -}}
-{{-     include "operator.verifyIntegerInput" (list . "internalDebugHttpPort") -}}
-{{-     include "operator.verifyIntegerInput" (list . "externalDebugHttpPort") -}}
-{{-   end -}}
-{{-   $domainsNamespaces := .domainsNamespaces -}}
-{{-   range $key, $element := .domainsNamespaces -}}
-{{-     include "operator.verifyObjectInput" (list $domainsNamespaces $key) -}}
-{{-     $s := merge (dict) $element $scope -}}
-{{-     include "operator.verifyBooleanInput" (list $s "createDomainsNamespace") -}}
+{{- if include "operator.verifyBooleanInput" (list $scope "createOperator") -}}
+{{-   if .createOperator }}
+{{-     $ignore := include "operator.verifyBooleanInput" (list $scope "elkIntegrationEnabled") -}}
+{{-     $ignore := include "operator.verifyBooleanInput" (list $scope "createOperatorNamespace") -}}
+{{-     $ignore := include "operator.verifyStringInput"  (list $scope "operatorNamespace") -}}
+{{-     $ignore := include "operator.verifyStringInput"  (list $scope "operatorServiceAccount") -}}
+{{-     $ignore := include "operator.verifyStringInput"  (list $scope "operatorImage") -}}
+{{-     $ignore := include "operator.verifyEnumInput"    (list $scope "operatorImagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
+{{-     $ignore := include "operator.verifyEnumInput"    (list $scope "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
+{{-     $ignore := include "operator.verifyStringInput"  (list $scope "internalOperatorCert") -}}
+{{-     $ignore := include "operator.verifyStringInput"  (list $scope "internalOperatorKey") -}}
+{{-     if include "operator.verifyBooleanInput" (list $scope "externalRestEnabled") -}}
+{{-       if $scope.externalRestEnabled -}}
+{{-         $ignore := include "operator.verifyIntegerInput" (list $scope "externalRestHttpsPort") -}}
+{{-         $ignore := include "operator.verifyStringInput"  (list $scope "externalOperatorCert") -}}
+{{-         $ignore := include "operator.verifyStringInput"  (list $scope "externalOperatorKey") -}}
+{{-       end -}}
+{{-     end -}}
+{{-     if include "operator.verifyBooleanInput" (list $scope "remoteDebugNodePortEnabled") -}}
+{{-       if $scope.remoteDebugNodePortEnabled -}}
+{{-         $ignore := include "operator.verifyIntegerInput" (list $scope "internalDebugHttpPort") -}}
+{{-         $ignore := include "operator.verifyIntegerInput" (list $scope "externalDebugHttpPort") -}}
+{{-       end -}}
+{{-     end -}}
+{{-     if include "operator.verifyObjectInput" (list $scope "domainsNamespaces") -}}
+{{-       $domainsNamespaces := $scope.domainsNamespaces -}}
+{{-       range $key, $element := $domainsNamespaces -}}
+{{-         if include "operator.verifyObjectInput" (list $domainsNamespaces $key) -}}
+{{-           $s := merge (dict) $element $scope -}}
+{{-           if include "operator.verifyBooleanInput" (list $s "createDomainsNamespace") -}}
+{{-             if eq $key "default" -}}
+{{-               if $s.createDomainsNamespace -}}
+{{-                 $errorMsg := cat "The effective createDomainsNamespace value for the 'default' domainsNamespace must be set to false." -}}
+{{-                 $ignore := include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-               end -}}
+{{-             end -}}
+{{-           end -}}
+{{-         end -}}
+{{-       end -}}
+{{-     end -}}
 {{-   end -}}
 {{- end -}}
+{{- include "operator.reportValidationErrors" $scope -}}
 {{- end -}}
