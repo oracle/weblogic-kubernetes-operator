@@ -3,19 +3,19 @@
 
 {{- define "operator.operatorInternalService" }}
 ---
-apiVersion: v1
-kind: Service
+apiVersion: "v1"
+kind: "Service"
 metadata:
-  name: internal-weblogic-operator-svc
-  namespace: {{ .operatorNamespace }}
+  name: "internal-weblogic-operator-svc"
+  namespace: {{ .operatorNamespace | quote }}
   labels:
-    weblogic.resourceVersion: operator-v1
-    weblogic.operatorName: {{ .operatorNamespace }}
+    weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
 spec:
-  type: ClusterIP
+  type: "ClusterIP"
   selector:
-    app: weblogic-operator
+    app: "weblogic-operator"
   ports:
     - port: 8082
-      name: rest
+      name: "rest"
 {{- end }}

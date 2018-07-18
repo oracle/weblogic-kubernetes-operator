@@ -3,19 +3,19 @@
 
 {{- define "operator.clusterRoleBindingNonResource" }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+apiVersion: "rbac.authorization.k8s.io/v1"
+kind: "ClusterRoleBinding"
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace }}
-    weblogic.resourceVersion: operator-v1
-  name: {{ .operatorNamespace }}-operator-rolebinding-nonresource
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.resourceVersion: "operator-v1"
+  name: {{ list .operatorNamespace "operator-rolebinding-nonresource" | join "-" | quote }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: weblogic-operator-cluster-role-nonresource
+  apiGroup: "rbac.authorization.k8s.io"
+  kind: "ClusterRole"
+  name: "weblogic-operator-cluster-role-nonresource"
 subjects:
-- kind: ServiceAccount
-  name: {{ .operatorServiceAccount }}
-  namespace: {{ .operatorNamespace }}
+- kind: "ServiceAccount"
+  name: {{ .operatorServiceAccount | quote }}
+  namespace: {{ .operatorNamespace | quote }}
 {{- end }}

@@ -4,11 +4,11 @@
 {{- define "operator.operatorNamespace" }}
 {{- if (and (.createOperatorNamespace) (not (eq .operatorNamespace "default"))) }}
 ---
-apiVersion: v1
-kind: Namespace
+apiVersion: "v1"
+kind: "Namespace"
 metadata:
   labels:
-    weblogic.resourceVersion: operator-v1
-  name: {{ .operatorNamespace }}
+    weblogic.resourceVersion: "operator-v1"
+  name: {{ .operatorNamespace | quote }}
 {{- end }}
 {{- end }}
