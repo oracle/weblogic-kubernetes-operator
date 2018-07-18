@@ -1,0 +1,94 @@
+-----------------------------------------------------------------------------------------
+scenario
+-----------------------------------------------------------------------------------------
+
+  one operator, one domains (target) namespace, one domain
+
+  domain home in persistent storage
+
+  use all operator defaults
+
+  use all domain defaults
+
+  Kubernetes cluster run on a single node
+
+-----------------------------------------------------------------------------------------
+setup
+-----------------------------------------------------------------------------------------
+
+  doublesync src122130 and devenv.sh
+    (since we're going to use WLST to create the domain)
+
+  mkdir -m 777 -p /scratch/k8s_dir/domain1
+    (i.e. the parent directory for persistent volumes)
+
+  make sure to get rid your old setup:
+  (I had problems getting stuff to run until I got rid of this stuff)
+    operator and domain namespaces
+    persistent volumes
+    cluster roles & cluster role bindings
+    maybe /scratch/k8s_dir/domain1
+
+  install helm & tiller
+    See https://github.com/kubernetes/helm/blob/master/docs/install.md
+
+  WebLogic Operator Docker image is installed in the docker repository as weblogic-kubernetes-operator:1.0
+
+-----------------------------------------------------------------------------------------
+WebLogic Operator's Helm Chart values
+-----------------------------------------------------------------------------------------
+
+  The default Operator input values are defined in kubernetes/charts/weblogic-operator/values.yaml
+  (similar to the Operator input file, create-weblogic-operator-inputs.yaml, used with the
+  create-weblogic-operator.sh script)
+
+-----------------------------------------------------------------------------------------
+To run the WebLogic Kubernetes Operator using helm
+-----------------------------------------------------------------------------------------
+
+  # Generate the SSL certificate and private key for the Operator's internal REST https interface
+  > kubernetes/generate-internal-weblogic-operator-certificate.sh > values.yaml
+
+  # Optionally, if 'externalRestEnabled' is true, then generate the SSL certificate and private key for the
+  # Operator's external REST https interface
+  > kubernetes/generate-external-weblogic-operator-certificate.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> values.yaml
+
+  # create a kubernetes secret holding that domain's admin credentials
+  > kubectl -n default create secret generic domain1-weblogic-credentials --from-literal=username=weblogic --from-literal=password=welcome1
+
+  # Create and install the Operator's kubernetes resources and run the Operator via helm
+  > helm install kubernetes/charts/weblogic-operator --name weblogic-operator --values values.yaml --wait
+
+  NOTE: The values.yaml file, supplied to the "helm install" command, is a user override file that contains values that
+  override (or added) the values defined in the chart.
+
+  # Verify the WebLogic Operator is running
+  > kubectl get po -n weblogic-operator
+
+  # Modify the create-weblogic-domain-inputs.yaml file with the following:
+
+      # Unique id identifying a domain.
+      # This id must be lowercase and unique across all domains in a Kubernetes cluster.
+      domainUID: domain1
+
+      # Type of WebLogic Cluster
+      # Legal values are "CONFIGURED" or "DYNAMIC"
+      clusterType: CONFIGURED
+
+      # Physical path of the domain's persistent storage.
+      # The following line must be uncomment and customized:
+      weblogicDomainStoragePath: /scratch/k8s_dir/domain1
+
+  # Use the scripts to install the WebLogic Domain on the persistent store and run kubernetes
+  # pods for admin-server and managed-server's
+  > cd kubernetes
+  > ./create-weblogic-domain.sh -i create-weblogic-domain-inputs.yaml -o .
+
+  # Verify the admin-server and managed pods are running
+  > kubectl get po
+
+  # Stop the admin-server and managed-server pods
+  > kubectl delete -f weblogic-domains/domain1/domain-custom-resource.yaml
+
+  # Stop and delete Operator Kubernetes resources
+  > helm delete --purge weblogic-operator
