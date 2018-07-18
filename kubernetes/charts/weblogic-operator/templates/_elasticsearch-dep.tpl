@@ -7,22 +7,22 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: elasticsearch
+  name: "elasticsearch"
   labels:
-    app: elasticsearch
+    app: "elasticsearch"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: elasticsearch
+      app: "elasticsearch"
   template:
     metadata:
       labels:
-        app: elasticsearch
+        app: "elasticsearch"
     spec:
       containers:
-      - name: elasticsearch
-        image: elasticsearch:5
+      - name: "elasticsearch"
+        image: "elasticsearch:5"
         ports:
         - containerPort: 9200
         - containerPort: 9300

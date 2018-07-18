@@ -3,21 +3,21 @@
 
 {{- define "operator.operatorRoleBinding" }}
 ---
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: "RoleBinding"
+apiVersion: "rbac.authorization.k8s.io/v1beta1"
 metadata:
-  name: weblogic-operator-rolebinding
-  namespace: {{ .domainsNamespace }}
+  name: "weblogic-operator-rolebinding"
+  namespace: {{ .domainsNamespace | quote }}
   labels:
-    weblogic.resourceVersion: operator-v1
-    weblogic.operatorName: {{ .operatorNamespace }}
+    weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
 subjects:
-- kind: ServiceAccount
-  name: {{ .operatorServiceAccount }}
-  namespace: {{ .operatorNamespace }}
+- kind: "ServiceAccount"
+  name: {{ .operatorServiceAccount | quote }}
+  namespace: {{ .operatorNamespace | quote }}
   apiGroup: ""
 roleRef:
-  kind: ClusterRole
-  name: weblogic-operator-namespace-role
+  kind: "ClusterRole"
+  name: "weblogic-operator-namespace-role"
   apiGroup: ""
 {{- end }}

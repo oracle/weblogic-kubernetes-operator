@@ -3,18 +3,18 @@
 
 {{- define "operator.operatorSecrets" }}
 ---
-apiVersion: v1
+apiVersion: "v1"
+kind: "Secret"
 data:
-  internalOperatorKey: {{ .internalOperatorKey }}
+  internalOperatorKey: {{ .internalOperatorKey | quote }}
   {{- if .externalRestEnabled }}
-  externalOperatorKey: {{ .externalOperatorKey }}
+  externalOperatorKey: {{ .externalOperatorKey | quote }}
   {{- end }}
-kind: Secret
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace }}
-    weblogic.resourceVersion: operator-v1
-  name: weblogic-operator-secrets
-  namespace:  {{ .operatorNamespace }}
-type: Opaque
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.resourceVersion: "operator-v1"
+  name: "weblogic-operator-secrets"
+  namespace:  {{ .operatorNamespace | quote }}
+type: "Opaque"
 {{- end }}

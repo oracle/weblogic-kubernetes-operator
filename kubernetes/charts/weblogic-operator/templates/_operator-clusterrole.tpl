@@ -3,12 +3,12 @@
 
 {{- define "operator.operatorClusterRole" }}
 ---
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: "ClusterRole"
+apiVersion: "rbac.authorization.k8s.io/v1beta1"
 metadata:
-  name: weblogic-operator-cluster-role
+  name: "weblogic-operator-cluster-role"
   labels:
-    weblogic.resourceVersion: operator-v1
+    weblogic.resourceVersion: "operator-v1"
 rules:
 - apiGroups: [""]
   resources: ["namespaces"]

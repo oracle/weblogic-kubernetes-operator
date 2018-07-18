@@ -4,26 +4,26 @@
 {{- define "operator.operatorExternalService" }}
 {{- if (or .externalRestEnabled .remoteDebugNodePortEnabled) }}
 ---
-apiVersion: v1
-kind: Service
+apiVersion: "v1"
+kind: "Service"
 metadata:
-  name: external-weblogic-operator-svc
-  namespace: {{ .operatorNamespace }}
+  name: "external-weblogic-operator-svc"
+  namespace: {{ .operatorNamespace | quote }}
   labels:
-    weblogic.resourceVersion: operator-v1
-    weblogic.operatorName: {{ .operatorNamespace }}
+    weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
 spec:
-  type: NodePort
+  type: "NodePort"
   selector:
-    app: weblogic-operator
+    app: "weblogic-operator"
   ports:
     {{- if .externalRestEnabled }}
-    - name: rest
+    - name: "rest"
       port: 8081
       nodePort: {{ .externalRestHttpsPort }}
     {{- end }}
     {{- if .remoteDebugNodePortEnabled }}
-    - name: debug
+    - name: "debug"
       port: {{ .internalDebugHttpPort }}
       nodePort: {{ .externalDebugHttpPort }}
     {{- end }}
