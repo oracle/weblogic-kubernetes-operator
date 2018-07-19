@@ -1,23 +1,112 @@
 # Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+# setupKubernetesCluster specifies whether or not the installation should deploy Kubernetes components
+# such as elasticsearch, kibana, operator RBAC roles, etc.
 setupKubernetesCluster: true
+
+# createOperator specifies whether or not the installation should create the operator and its resources.
 createOperator: true
+
+# createOperatorNamespace specifies whether or not the installation should create the Kubernetes
+# namespace that the operator will be deployed in.  If createOperatorNamespace is false than the
+# namespace must exist before the operator can be installed.
 createOperatorNamespace: true
-operatorNamespace: weblogic-operator
-operatorServiceAccount: weblogic-operator
+
+# operatorNamespace specifies the name of the Kubernetes namespace that the operator will be deployed in.
+# It is recommended that a namespace be created for the operator rather
+# than using the default namespace.
+# The name must be lowercase
+operatorNamespace: "weblogic-operator"
+
+# operatorServiceAccount specifies the name of the service account that the operator will use to
+# make requests to the Kubernetes API server.
+# The name must be lowercase
+operatorServiceAccount: "weblogic-operator"
+
+# createDomainsNamespace is a global variable that specifies whether or not the helm installation should create the Kubernetes
+# namespaces for the domains specified in domainsNamespaces.
 createDomainsNamespace: true
+
+# domainsNamespaces specifies a map of WebLogic Domain namespaces which the operator manages (same as targetNamespaces but in map format)
+# The names must be lowercase
+#
+# Example 1: In the configuration below, the helm installation will create the Domain namespace 'namespace2' but not 'namespace1'.
+#
+# createDomainsNamespace: true
+# domainsNamespaces:
+#   namespace1:
+#     createDomainsNamespace: false
+#   namespace2: {}
+#
+#-----------------------------------
+#
+# Example 2: In the configuration below, the helm installation will create the Domain namespace 'namespace2' but not 'namespace1'.
+#
+# createDomainsNamespace: false
+# domainsNamespaces:
+#   namespace1: {}
+#   namespace2:
+#     createDomainsNamespace: true
+#
 domainsNamespaces: {}
-operatorImage: weblogic-kubernetes-operator:1.0
-operatorImagePullPolicy: IfNotPresent
-#internalOperatorCert: ...
-#internalOperatorKey: ...
+
+# operatorImage specifies the docker image containing the operator code.
+operatorImage: "weblogic-kubernetes-operator:1.0"
+
+# operatorImagePullPolicy specifies the image pull policy for the operator docker image.
+operatorImagePullPolicy: "IfNotPresent"
+
+# externalRestEnabled specifies whether or not the operator externally exposes a REST https interface
+# (i.e. outside of the Kubernetes cluster).
 externalRestEnabled: false
+
+# externalRestHttpsPort specifies the node port that should be allocated for the external operator REST https interface.
+# This parameter is required if 'externalRestEnabled' is 'true'.
+# Otherwise, it is ignored.
 externalRestHttpsPort: 31001
-#externalOperatorCert: ...
-#externalOperatorKey: ...
+
+# remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
+# provided port and suspend execution until a remote debugger has attached.
+# The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
+# cluster and the 'externalDebugHttpPort' property controls the port number outside
+# the Kubernetes cluster.
 remoteDebugNodePortEnabled: false
+
+# internalDebugHttpPort specifes the port number inside the Kubernetes cluster for the operator's Java
+# remote debug server.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
 internalDebugHttpPort: 30999
+
+# externalDebugHttpPort specifies the node port that should be allocated for the Kubernetes cluster for the operator's
+# Java remote debug server.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
 externalDebugHttpPort: 30999
-javaLoggingLevel: INFO
+
+# javaLoggingLevel specifies the level of Java logging that should be enabled in the operator.
+# Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
+javaLoggingLevel: "INFO"
+
+# elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
+
+# extraResources specifies an arbitrary list of extra Kubernetes resources that should be
+# created (and deleted) along with this chart.  It provides an easy way for the
+# customer to attach extra Kubernetes resources to the lifecycle of this chart.
+#
+# Example: create an extra persistent volume and persistent claim when this chart is
+# installed, and remove them when this chart is deleted:
+#
+# extraResources:
+# - kind: PersistentVolume
+#   apiVersion: v1
+#   metadata: ...
+#   spec: ...
+# - kind: PersistentVolumeClaim
+#   apiVersion: v1
+#   metadata: ...
+#   spec: ...
+#
+extraResources: {}
