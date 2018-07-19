@@ -41,7 +41,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.fail;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -231,17 +231,16 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
 
   @Test
   public void generatesCorrect_externalWeblogicOperatorService() {
-    V1Service actual = getActualExternalWeblogicOperatorService();
     V1Service expected = getExpectedExternalWeblogicOperatorService();
-    if (expected == null) {
-      assertThat(actual, nullValue());
+    if (expected != null) {
+      assertThat(getGeneratedFiles().getExternalOperatorService(), yamlEqualTo(expected));
     } else {
-      assertThat(actual, yamlEqualTo(expected));
+      try {
+        getGeneratedFiles().getExternalOperatorService();
+        fail("Should not have found an external operator service yaml");
+      } catch (AssertionError ignored) {
+      }
     }
-  }
-
-  private V1Service getActualExternalWeblogicOperatorService() {
-    return getGeneratedFiles().getExternalOperatorService();
   }
 
   protected abstract V1Service getExpectedExternalWeblogicOperatorService();
