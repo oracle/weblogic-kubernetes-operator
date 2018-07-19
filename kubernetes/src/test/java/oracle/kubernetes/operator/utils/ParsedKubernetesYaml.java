@@ -4,7 +4,21 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_API_SERVICE;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_CLUSTER_ROLE;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_CLUSTER_ROLE_BINDING;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_CONFIG_MAP;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_DEPLOYMENT;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_DOMAIN;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_INGRESS;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_JOB;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_NAMESPACE;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_PERSISTENT_VOLUME;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_PERSISTENT_VOLUME_CLAIM;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_ROLE_BINDING;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SECRET;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE_ACCOUNT;
 import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
 import com.appscode.voyager.client.models.V1beta1Ingress;
@@ -22,8 +36,6 @@ import io.kubernetes.client.models.V1beta1APIService;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,14 +44,22 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.apache.commons.codec.binary.Base64;
 
 /** Holds the results of a kubernetes yaml file that has been converted to k8s typed java objects */
+@SuppressWarnings("unchecked")
 public class ParsedKubernetesYaml {
 
   private Map<String, TypeHandler<?>> kindToHandler = new HashMap<>();
   private int objectCount = 0;
 
-  @SuppressWarnings("rawtypes")
-  protected ParsedKubernetesYaml(Path path) throws Exception {
-    // create handlers for all the supported k8s types
+  public ParsedKubernetesYaml(YamlFactory factory) throws Exception {
+    defineHandlers();
+
+    for (Object document : factory.getYamlDocuments()) {
+      add((Map) document);
+    }
+  }
+
+  // create handlers for all the supported k8s types
+  private void defineHandlers() {
     kindToHandler.put(KIND_API_SERVICE, new APIServiceHandler());
     kindToHandler.put(KIND_CONFIG_MAP, new ConfigMapHandler());
     kindToHandler.put(KIND_CLUSTER_ROLE, new ClusterRoleHandler());
@@ -55,13 +75,6 @@ public class ParsedKubernetesYaml {
     kindToHandler.put(KIND_SECRET, new SecretHandler());
     kindToHandler.put(KIND_SERVICE, new ServiceHandler());
     kindToHandler.put(KIND_SERVICE_ACCOUNT, new ServiceAccountHandler());
-
-    // convert the input stream into a set of maps that represent the yaml
-    for (Object object : newYaml().loadAll(Files.newInputStream(path))) {
-      // convert each map to its corresponding k8s class
-      // printObject("", object);
-      add((Map) object);
-    }
   }
 
   public int getObjectCount() {
@@ -111,78 +124,63 @@ public class ParsedKubernetesYaml {
     }
   */
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1beta1APIService> getAPIServices() {
+  TypeHandler<V1beta1APIService> getAPIServices() {
     return (TypeHandler<V1beta1APIService>) getHandler(KIND_API_SERVICE);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1ConfigMap> getConfigMaps() {
+  TypeHandler<V1ConfigMap> getConfigMaps() {
     return (TypeHandler<V1ConfigMap>) getHandler(KIND_CONFIG_MAP);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1beta1ClusterRole> getClusterRoles() {
+  TypeHandler<V1beta1ClusterRole> getClusterRoles() {
     return (TypeHandler<V1beta1ClusterRole>) getHandler(KIND_CLUSTER_ROLE);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1beta1ClusterRoleBinding> getClusterRoleBindings() {
+  TypeHandler<V1beta1ClusterRoleBinding> getClusterRoleBindings() {
     return (TypeHandler<V1beta1ClusterRoleBinding>) getHandler(KIND_CLUSTER_ROLE_BINDING);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
+  TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
     return (TypeHandler<ExtensionsV1beta1Deployment>) getHandler(KIND_DEPLOYMENT);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<Domain> getDomains() {
+  TypeHandler<Domain> getDomains() {
     return (TypeHandler<Domain>) getHandler(KIND_DOMAIN);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1beta1Ingress> getIngresses() {
+  TypeHandler<V1beta1Ingress> getIngresses() {
     return (TypeHandler<V1beta1Ingress>) getHandler(KIND_INGRESS);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1Job> getJobs() {
+  TypeHandler<V1Job> getJobs() {
     return (TypeHandler<V1Job>) getHandler(KIND_JOB);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1Namespace> getNamespaces() {
+  TypeHandler<V1Namespace> getNamespaces() {
     return (TypeHandler<V1Namespace>) getHandler(KIND_NAMESPACE);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1PersistentVolume> getPersistentVolumes() {
+  TypeHandler<V1PersistentVolume> getPersistentVolumes() {
     return (TypeHandler<V1PersistentVolume>) getHandler(KIND_PERSISTENT_VOLUME);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1PersistentVolumeClaim> getPersistentVolumeClaims() {
+  TypeHandler<V1PersistentVolumeClaim> getPersistentVolumeClaims() {
     return (TypeHandler<V1PersistentVolumeClaim>) getHandler(KIND_PERSISTENT_VOLUME_CLAIM);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1beta1RoleBinding> getRoleBindings() {
+  TypeHandler<V1beta1RoleBinding> getRoleBindings() {
     return (TypeHandler<V1beta1RoleBinding>) getHandler(KIND_ROLE_BINDING);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1Secret> getSecrets() {
+  TypeHandler<V1Secret> getSecrets() {
     return (TypeHandler<V1Secret>) getHandler(KIND_SECRET);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1Service> getServices() {
+  TypeHandler<V1Service> getServices() {
     return (TypeHandler<V1Service>) getHandler(KIND_SERVICE);
   }
 
-  @SuppressWarnings("unchecked")
-  public TypeHandler<V1ServiceAccount> getServiceAccounts() {
+  TypeHandler<V1ServiceAccount> getServiceAccounts() {
     return (TypeHandler<V1ServiceAccount>) getHandler(KIND_SERVICE_ACCOUNT);
   }
 
@@ -194,12 +192,12 @@ public class ParsedKubernetesYaml {
     return handler;
   }
 
-  public abstract static class TypeHandler<T extends Object> {
+  public abstract static class TypeHandler<T> {
 
     private Class<?> k8sClass;
     private List<T> instances = new ArrayList<>();
 
-    protected TypeHandler(Class<?> k8sClass) {
+    TypeHandler(Class<?> k8sClass) {
       this.k8sClass = k8sClass;
     }
 

@@ -15,7 +15,7 @@ public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
 
   public ParsedCreateWeblogicDomainJobYaml(Path yamlPath, CreateDomainInputs inputs)
       throws Exception {
-    super(yamlPath);
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 

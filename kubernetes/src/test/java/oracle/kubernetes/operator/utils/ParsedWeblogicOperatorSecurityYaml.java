@@ -14,11 +14,10 @@ import java.nio.file.Path;
 /** Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
 
-  private CreateOperatorInputs inputs;
+  private OperatorValues inputs;
 
-  public ParsedWeblogicOperatorSecurityYaml(Path yamlPath, CreateOperatorInputs inputs)
-      throws Exception {
-    super(yamlPath);
+  public ParsedWeblogicOperatorSecurityYaml(Path yamlPath, OperatorValues inputs) throws Exception {
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 

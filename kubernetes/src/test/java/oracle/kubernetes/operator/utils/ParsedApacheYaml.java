@@ -15,7 +15,7 @@ public class ParsedApacheYaml extends ParsedKubernetesYaml {
   private CreateDomainInputs inputs;
 
   public ParsedApacheYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
-    super(yamlPath);
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 

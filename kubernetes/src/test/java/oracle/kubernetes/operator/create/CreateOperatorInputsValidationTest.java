@@ -4,15 +4,25 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.utils.CreateOperatorInputs.*;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.IMAGE_PULL_POLICY_ALWAYS;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.IMAGE_PULL_POLICY_IF_NOT_PRESENT;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.IMAGE_PULL_POLICY_NEVER;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_CONFIG;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_FINE;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_FINER;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_FINEST;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_INFO;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_SEVERE;
+import static oracle.kubernetes.operator.utils.CreateOperatorInputs.JAVA_LOGGING_LEVEL_WARNING;
 import static oracle.kubernetes.operator.utils.ExecResultMatcher.errorRegexp;
 import static oracle.kubernetes.operator.utils.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import oracle.kubernetes.operator.utils.CreateOperatorInputs;
 import oracle.kubernetes.operator.utils.ExecCreateOperator;
 import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.GeneratedOperatorYamlFiles;
+import oracle.kubernetes.operator.utils.OperatorValues;
+import oracle.kubernetes.operator.utils.OperatorYamlFactory;
+import oracle.kubernetes.operator.utils.ScriptedOperatorYamlFactory;
 import oracle.kubernetes.operator.utils.UserProjects;
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +65,12 @@ public class CreateOperatorInputsValidationTest {
   private static final String PARAM_EXTERNAL_DEBUG_HTTP_PORT = "externalDebugHttpPort";
   private static final String PARAM_JAVA_LOGGING_LEVEL = "javaLoggingLevel";
   private static final String PARAM_ELK_INTEGRATION_ENABLED = "elkIntegrationEnabled";
+
+  private static OperatorYamlFactory yamlFactory = new ScriptedOperatorYamlFactory();
+
+  private static OperatorValues newInputs() throws Exception {
+    return yamlFactory.newOperatorValues();
+  }
 
   @Test
   public void createOperator_with_missingVersion_failsAndReturnsError() throws Exception {
@@ -387,10 +403,9 @@ public class CreateOperatorInputsValidationTest {
     createOperator_with_validInputs_succeeds(newInputs().weblogicOperatorImagePullPolicy(policy));
   }
 
-  private void createOperator_with_validInputs_succeeds(CreateOperatorInputs inputs)
-      throws Exception {
-    // throws an error if the inputs are not valid, succeeds otherwise:
-    GeneratedOperatorYamlFiles.generateOperatorYamlFiles(inputs).remove();
+  // throws an error if the inputs are not valid, succeeds otherwise:
+  private void createOperator_with_validInputs_succeeds(OperatorValues inputs) throws Exception {
+    yamlFactory.generate(inputs);
   }
 
   private String invalidBooleanParamValueError(String param, String val) {
@@ -413,7 +428,7 @@ public class CreateOperatorInputsValidationTest {
     return errorRegexp(param + ".*lowercase.*" + val);
   }
 
-  private ExecResult execCreateOperator(CreateOperatorInputs inputs) throws Exception {
+  private ExecResult execCreateOperator(OperatorValues inputs) throws Exception {
     return ExecCreateOperator.execCreateOperator(userProjects.getPath(), inputs);
   }
 }

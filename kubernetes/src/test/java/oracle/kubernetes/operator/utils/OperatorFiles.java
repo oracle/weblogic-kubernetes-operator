@@ -19,9 +19,9 @@ public class OperatorFiles {
   private static final String WEBLOGIC_OPERATOR_SECURITY_YAML = "weblogic-operator-security.yaml";
 
   private Path userProjectsPath;
-  private CreateOperatorInputs inputs;
+  private OperatorValues inputs;
 
-  public OperatorFiles(Path userProjectsPath, CreateOperatorInputs inputs) {
+  public OperatorFiles(Path userProjectsPath, OperatorValues inputs) {
     this.userProjectsPath = userProjectsPath;
     this.inputs = inputs;
   }

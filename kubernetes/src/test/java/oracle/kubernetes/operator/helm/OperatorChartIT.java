@@ -43,5 +43,4 @@ public class OperatorChartIT extends ChartITBase {
 
     assertThat(chart.getDocuments("RoleBinding"), hasSize(1));
   }
-
 }
