@@ -217,7 +217,26 @@ public class ParsedKubernetesYaml {
           }
         }
       }
+      if (result == null) {
+        throw new AssertionError(
+            "No instance with name '"
+                + name
+                + "' for the type '"
+                + this.getClass()
+                + "' among "
+                + getInstanceNames());
+      }
       return result;
+    }
+
+    private String getInstanceNames() {
+      StringBuilder sb = new StringBuilder();
+      for (T instance : instances) {
+        sb.append(sb.length() == 0 ? "[" : ", ");
+        sb.append(getName(instance));
+      }
+      sb.append("]");
+      return sb.toString();
     }
 
     protected T find(String name, String namespace) {
