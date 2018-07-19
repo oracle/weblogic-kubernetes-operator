@@ -2,22 +2,39 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{/*
+Record a validation error (it will get reported later by operator reportValidationErrors)
+*/}}
+{{- define "operator.recordValidationError" -}}
+{{- $scope := index . 0 -}}
+{{- $errorMsg := index . 1 -}}
+{{- if hasKey $scope "validationErrors" -}}
+{{-   $newValidationErrors := cat $scope.validationErrors "\n" $errorMsg -}}
+{{-   $ignore := set $scope "validationErrors" $newValidationErrors -}}
+{{- else -}}
+{{-   $newValidationErrors := cat "\n" $errorMsg -}}
+{{-   $ignore := set $scope "validationErrors" $newValidationErrors -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Verify that an input value of a specific kind has been specified.
 */}}
 {{- define "operator.verifyInputKind" -}}
 {{- $requiredKind := index . 0 -}}
 {{- $scope := index . 1 -}}
-{{- $value := index . 1 -}}
 {{- $name := index . 2 -}}
-{{- if not ( hasKey $scope $name ) -}}
+{{- if hasKey $scope $name -}}
+{{-   $value := index $scope $name -}}
+{{-   $actualKind := kindOf $value -}}
+{{-   if eq $requiredKind $actualKind -}}
+        true
+{{-   else -}}
+{{-     $errorMsg := cat "The" $actualKind "property" $name "must be a" $requiredKind "instead." -}}
+{{-     include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-   end -}}
+{{- else -}}
 {{-   $errorMsg := cat "The" $requiredKind "property" $name "must be specified." -}}
-{{-   $ignore := required $errorMsg "" -}}
-{{- end -}}
-{{- $value := index $scope $name -}}
-{{- $actualKind := kindOf $value -}}
-{{- if not ( eq $requiredKind $actualKind ) -}}
-{{-   $errorMsg := cat "The" $actualKind "property" $name "must be a" $requiredKind "instead." -}}
-{{-   $ignore := required $errorMsg "" -}}
+{{-   include "operator.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
 {{- end -}}
 
@@ -25,28 +42,29 @@ Verify that an input value of a specific kind has been specified.
 Verify that a string input value has been specified
 */}}
 {{- define "operator.verifyStringInput" -}}
-{{- include "operator.verifyInputKind" ( list "string" ( index . 0 ) ( index . 1 ) ) -}} 
+{{- $args := . -}}
+{{- include "operator.verifyInputKind" (prepend $args "string") -}} 
 {{- end -}}
 
 {{/*
 Verify that a boolean input value has been specified
 */}}
 {{- define "operator.verifyBooleanInput" -}}
-{{- include "operator.verifyInputKind" ( list "bool" ( index . 0 ) ( index . 1 ) ) -}} 
+{{- include "operator.verifyInputKind" (prepend . "bool") -}} 
 {{- end -}}
 
 {{/*
 Verify that an integer input value has been specified
 */}}
 {{- define "operator.verifyIntegerInput" -}}
-{{- include "operator.verifyInputKind" ( list "float64" ( index . 0 ) ( index . 1 ) ) -}} 
+{{- include "operator.verifyInputKind" (prepend . "float64") -}} 
 {{- end -}}
 
 {{/*
 Verify that an object input value has been specified
 */}}
 {{- define "operator.verifyObjectInput" -}}
-{{- include "operator.verifyInputKind" ( list "map" ( index . 0 ) ( index . 1 ) ) -}} 
+{{- include "operator.verifyInputKind" (prepend . "map") -}} 
 {{- end -}}
 
 {{/*
@@ -56,10 +74,23 @@ Verify that an enum string input value has been specified
 {{- $scope := index . 0 -}}
 {{- $name := index . 1 -}}
 {{- $legalValues := index . 2 -}}
-{{- include "operator.verifyStringInput" ( list $scope $name ) -}}
-{{- $value := index $scope $name -}}
-{{- if not ( has $value $legalValues ) -}}
-{{    $errorMsg := cat "The property" $name "must be one of following values" $legalValues "instead of" $value -}}
-{{-   $ignore := required $errorMsg "" -}}
+{{- if include "operator.verifyStringInput" (list $scope $name) -}}
+{{-   $value := index $scope $name -}}
+{{-   if has $value $legalValues -}}
+      true
+{{-   else -}}
+{{      $errorMsg := cat "The property" $name "must be one of following values" $legalValues "instead of" $value -}}
+{{-     include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-   end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Report the validation errors that have been found then kill the helm chart install
+*/}}
+{{- define "operator.reportValidationErrors" -}}
+{{- if .validationErrors -}}
+{{-   $ignore := required .validationErrors "" -}}
+{{- end -}}
+{{- end -}}
+
