@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.List;
 import oracle.kubernetes.operator.utils.CreateOperatorInputs;
 import oracle.kubernetes.operator.utils.OperatorFiles;
+import oracle.kubernetes.operator.utils.OperatorValues;
 import oracle.kubernetes.operator.utils.UserProjects;
 import org.junit.After;
 import org.junit.Before;
@@ -86,7 +87,7 @@ public class CreateOperatorInputsFileTest {
           throws Exception {
     // customize the namespace name so that we can tell that it generated the yaml files based on
     // this inputs instead of the default one
-    CreateOperatorInputs inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
+    OperatorValues inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
     assertThat(execCreateOperator(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
     assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
   }
@@ -97,7 +98,7 @@ public class CreateOperatorInputsFileTest {
           throws Exception {
     // customize the namespace name so that we can tell that it generated the yaml files based on
     // this inputs instead of the default one
-    CreateOperatorInputs inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
+    OperatorValues inputs = readDefaultInputsFile().namespace("weblogic-operator-2");
     // pre-create the output directory and the inputs file in the output directory, then
     // use that inputs file to create the operator
     OperatorFiles operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);
@@ -111,7 +112,7 @@ public class CreateOperatorInputsFileTest {
     assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
   }
 
-  private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(CreateOperatorInputs inputs)
+  private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(OperatorValues inputs)
       throws Exception {
     // Make sure the generated directory has the correct list of files
     OperatorFiles operatorFiles = new OperatorFiles(userProjects.getPath(), inputs);

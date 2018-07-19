@@ -15,10 +15,10 @@ import java.nio.file.Path;
 /** Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
 
-  private CreateOperatorInputs inputs;
+  private OperatorValues inputs;
 
-  public ParsedWeblogicOperatorYaml(Path yamlPath, CreateOperatorInputs inputs) throws Exception {
-    super(yamlPath);
+  ParsedWeblogicOperatorYaml(Path yamlPath, OperatorValues inputs) throws Exception {
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 

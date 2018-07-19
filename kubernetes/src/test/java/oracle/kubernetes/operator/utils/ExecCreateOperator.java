@@ -15,13 +15,16 @@ public class ExecCreateOperator {
   public static final String CREATE_SCRIPT =
       "src/test/scripts/unit-test-create-weblogic-operator.sh";
 
-  public static ExecResult execCreateOperator(Path userProjectsPath, CreateOperatorInputs inputs)
+  public static ExecResult execCreateOperator(Path userProjectsPath, OperatorValues inputs)
       throws Exception {
     return execCreateOperator(userProjectsPath, inputs, getInputsYamlPath(userProjectsPath));
   }
-
+  // ?? if the dump uses the same names as the values file, can do this
+  // ?? but what about leaving existing defaults?
+  // ?? maybe read in values file and only write differences?
+  // ?? want values as a map... can get from this?
   public static ExecResult execCreateOperator(
-      Path userProjectsPath, CreateOperatorInputs inputs, Path inputsYamlPath) throws Exception {
+      Path userProjectsPath, OperatorValues inputs, Path inputsYamlPath) throws Exception {
     newYaml().dump(inputs, Files.newBufferedWriter(inputsYamlPath));
     return execCreateOperator(
         " -g -o " + userProjectsPath.toString() + " -i " + inputsYamlPath.toString());

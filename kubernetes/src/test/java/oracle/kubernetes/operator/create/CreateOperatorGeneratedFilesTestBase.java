@@ -5,94 +5,99 @@
 package oracle.kubernetes.operator.create;
 
 import static java.util.Arrays.asList;
-import static oracle.kubernetes.operator.LabelConstants.*;
-import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.utils.CreateOperatorInputs.readInputsYamlFile;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static java.util.Collections.singletonList;
+import static oracle.kubernetes.operator.LabelConstants.APP_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.OPERATORNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRole;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRoleBinding;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMap;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMapVolumeSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainer;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeployment;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeploymentSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVarSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newExecAction;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNamespace;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectFieldSelector;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectMeta;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodTemplateSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPolicyRule;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newProbe;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleBinding;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecret;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretVolumeSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newService;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceAccount;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServicePort;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-import io.kubernetes.client.models.*;
-import oracle.kubernetes.operator.utils.CreateOperatorInputs;
-import oracle.kubernetes.operator.utils.GeneratedOperatorYamlFiles;
-import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorSecurityYaml;
-import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorYaml;
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1ServiceSpec;
+import io.kubernetes.client.models.V1beta1ClusterRole;
+import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import io.kubernetes.client.models.V1beta1RoleBinding;
+import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
+import oracle.kubernetes.operator.utils.OperatorValues;
+import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.AfterClass;
 import org.junit.Test;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
  * generates
  */
-public abstract class CreateOperatorGeneratedFilesBaseTest {
+public abstract class CreateOperatorGeneratedFilesTestBase {
 
-  private static CreateOperatorInputs inputs;
-  private static GeneratedOperatorYamlFiles generatedFiles;
+  private static OperatorValues inputs;
+  private static GeneratedOperatorObjects generatedFiles;
 
-  protected static CreateOperatorInputs getInputs() {
+  protected static OperatorValues getInputs() {
     return inputs;
   }
 
-  protected static GeneratedOperatorYamlFiles getGeneratedFiles() {
+  private static GeneratedOperatorObjects getGeneratedFiles() {
     return generatedFiles;
   }
 
-  protected ParsedWeblogicOperatorSecurityYaml getWeblogicOperatorSecurityYaml() {
-    return getGeneratedFiles().getWeblogicOperatorSecurityYaml();
-  }
-
-  protected ParsedWeblogicOperatorYaml getWeblogicOperatorYaml() {
-    return getGeneratedFiles().getWeblogicOperatorYaml();
-  }
-
-  protected static void setup(CreateOperatorInputs val) throws Exception {
+  protected static void setup(OperatorYamlFactory factory, OperatorValues val) throws Exception {
     inputs = val;
-    generatedFiles = GeneratedOperatorYamlFiles.generateOperatorYamlFiles(getInputs());
-  }
-
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if (generatedFiles != null) {
-      generatedFiles.remove();
-    }
+    generatedFiles = factory.generate(val);
   }
 
   @Test
-  public void generatedCorrect_weblogicOperatorInputsYaml() throws Exception {
+  public void weblogicOperatorYaml_hasCorrectNumberOfObjects() {
     assertThat(
-        readInputsYamlFile(
-            generatedFiles.getOperatorFiles().getCreateWeblogicOperatorInputsYamlPath()),
-        yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
+        getGeneratedFiles().getObjectCount(), is(getGeneratedFiles().getExpectedObjectCount()));
   }
 
   @Test
-  public void weblogicOperatorYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getWeblogicOperatorYaml().getObjectCount(),
-        is(getWeblogicOperatorYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void weblogicOperatorSecurityYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getWeblogicOperatorSecurityYaml().getObjectCount(),
-        is(getWeblogicOperatorSecurityYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void generatesCorrect_operatorConfigMap() throws Exception {
+  public void generatesCorrect_operatorConfigMap() {
     assertThat(
         getActualWeblogicOperatorConfigMap(), yamlEqualTo(getExpectedWeblogicOperatorConfigMap()));
   }
 
-  protected V1ConfigMap getActualWeblogicOperatorConfigMap() {
-    return getWeblogicOperatorYaml().getOperatorConfigMap();
+  private V1ConfigMap getActualWeblogicOperatorConfigMap() {
+    return getGeneratedFiles().getOperatorConfigMap();
   }
 
-  protected V1ConfigMap getExpectedWeblogicOperatorConfigMap() {
+  private V1ConfigMap getExpectedWeblogicOperatorConfigMap() {
     return newConfigMap()
         .metadata(
             newObjectMeta()
@@ -113,16 +118,16 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   protected abstract String getExpectedExternalWeblogicOperatorCert();
 
   @Test
-  public void generatesCorrect_operatorSecrets() throws Exception {
+  public void generatesCorrect_operatorSecrets() {
     assertThat(
         getActualWeblogicOperatorSecrets(), yamlEqualTo(getExpectedWeblogicOperatorSecrets()));
   }
 
-  protected V1Secret getActualWeblogicOperatorSecrets() {
-    return getWeblogicOperatorYaml().getOperatorSecrets();
+  private V1Secret getActualWeblogicOperatorSecrets() {
+    return getGeneratedFiles().getOperatorSecrets();
   }
 
-  protected V1Secret getExpectedWeblogicOperatorSecrets() {
+  private V1Secret getExpectedWeblogicOperatorSecrets() {
     return newSecret()
         .metadata(
             newObjectMeta()
@@ -139,14 +144,14 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   protected abstract String getExpectedExternalWeblogicOperatorKey();
 
   @Test
-  public void generatesCorrect_operatorDeployment() throws Exception {
+  public void generatesCorrect_operatorDeployment() {
     assertThat(
         getActualWeblogicOperatorDeployment(),
         yamlEqualTo(getExpectedWeblogicOperatorDeployment()));
   }
 
-  protected ExtensionsV1beta1Deployment getActualWeblogicOperatorDeployment() {
-    return getWeblogicOperatorYaml().getOperatorDeployment();
+  private ExtensionsV1beta1Deployment getActualWeblogicOperatorDeployment() {
+    return getGeneratedFiles().getOperatorDeployment();
   }
 
   protected ExtensionsV1beta1Deployment getExpectedWeblogicOperatorDeployment() {
@@ -225,7 +230,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_externalWeblogicOperatorService() throws Exception {
+  public void generatesCorrect_externalWeblogicOperatorService() {
     V1Service actual = getActualExternalWeblogicOperatorService();
     V1Service expected = getExpectedExternalWeblogicOperatorService();
     if (expected == null) {
@@ -235,13 +240,13 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
     }
   }
 
-  protected V1Service getActualExternalWeblogicOperatorService() {
-    return getWeblogicOperatorYaml().getExternalOperatorService();
+  private V1Service getActualExternalWeblogicOperatorService() {
+    return getGeneratedFiles().getExternalOperatorService();
   }
 
   protected abstract V1Service getExpectedExternalWeblogicOperatorService();
 
-  protected V1Service getExpectedExternalWeblogicOperatorService(
+  V1Service getExpectedExternalWeblogicOperatorService(
       boolean debuggingEnabled, boolean externalRestEnabled) {
     if (!debuggingEnabled && !externalRestEnabled) {
       return null;
@@ -273,17 +278,17 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_internalWeblogicOperatorService() throws Exception {
+  public void generatesCorrect_internalWeblogicOperatorService() {
     assertThat(
         getActualInternalWeblogicOperatorService(),
         yamlEqualTo(getExpectedInternalWeblogicOperatorService()));
   }
 
-  protected V1Service getActualInternalWeblogicOperatorService() {
-    return getWeblogicOperatorYaml().getInternalOperatorService();
+  private V1Service getActualInternalWeblogicOperatorService() {
+    return getGeneratedFiles().getInternalOperatorService();
   }
 
-  protected V1Service getExpectedInternalWeblogicOperatorService() {
+  private V1Service getExpectedInternalWeblogicOperatorService() {
     return newService()
         .metadata(
             newObjectMeta()
@@ -299,16 +304,16 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorNamespace() throws Exception {
+  public void generatesCorrect_weblogicOperatorNamespace() {
     assertThat(
         getActualWeblogicOperatorNamespace(), yamlEqualTo(getExpectedWeblogicOperatorNamespace()));
   }
 
-  protected V1Namespace getActualWeblogicOperatorNamespace() {
-    return getWeblogicOperatorSecurityYaml().getOperatorNamespace();
+  private V1Namespace getActualWeblogicOperatorNamespace() {
+    return getGeneratedFiles().getOperatorNamespace();
   }
 
-  protected V1Namespace getExpectedWeblogicOperatorNamespace() {
+  private V1Namespace getExpectedWeblogicOperatorNamespace() {
     return newNamespace()
         .metadata(
             newObjectMeta()
@@ -318,17 +323,17 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorServiceAccount() throws Exception {
+  public void generatesCorrect_weblogicOperatorServiceAccount() {
     assertThat(
         getActualWeblogicOperatorServiceAccount(),
         yamlEqualTo(getExpectedWeblogicOperatorServiceAccount()));
   }
 
-  protected V1ServiceAccount getActualWeblogicOperatorServiceAccount() {
-    return getWeblogicOperatorSecurityYaml().getOperatorServiceAccount();
+  private V1ServiceAccount getActualWeblogicOperatorServiceAccount() {
+    return getGeneratedFiles().getOperatorServiceAccount();
   }
 
-  protected V1ServiceAccount getExpectedWeblogicOperatorServiceAccount() {
+  private V1ServiceAccount getExpectedWeblogicOperatorServiceAccount() {
     return newServiceAccount()
         .metadata(
             newObjectMeta()
@@ -339,17 +344,17 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorClusterRole() throws Exception {
+  public void generatesCorrect_weblogicOperatorClusterRole() {
     assertThat(
         getActualWeblogicOperatorClusterRole(),
         yamlEqualTo(getExpectedWeblogicOperatorClusterRole()));
   }
 
-  protected V1beta1ClusterRole getActualWeblogicOperatorClusterRole() {
-    return getWeblogicOperatorSecurityYaml().getWeblogicOperatorClusterRole();
+  private V1beta1ClusterRole getActualWeblogicOperatorClusterRole() {
+    return getGeneratedFiles().getWeblogicOperatorClusterRole();
   }
 
-  protected V1beta1ClusterRole getExpectedWeblogicOperatorClusterRole() {
+  private V1beta1ClusterRole getExpectedWeblogicOperatorClusterRole() {
     return newClusterRole()
         .metadata(
             newObjectMeta()
@@ -359,12 +364,12 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("namespaces"))
+                .resources(singletonList("namespaces"))
                 .verbs(asList("get", "list", "watch")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("persistentvolumes"))
+                .resources(singletonList("persistentvolumes"))
                 .verbs(
                     asList(
                         "get",
@@ -417,7 +422,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
             newPolicyRule()
                 .addApiGroupsItem("authentication.k8s.io")
                 .addResourcesItem("tokenreviews")
-                .verbs(asList("create")))
+                .verbs(singletonList("create")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("authorization.k8s.io")
@@ -427,21 +432,17 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
                         "localsubjectaccessreviews",
                         "subjectaccessreviews",
                         "selfsubjectrulesreviews"))
-                .verbs(asList("create")));
+                .verbs(singletonList("create")));
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorClusterRoleNonResource() throws Exception {
+  public void generatesCorrect_weblogicOperatorClusterRoleNonResource() {
     assertThat(
-        getActualWeblogicOperatorClusterRoleNonResource(),
+        getGeneratedFiles().getWeblogicOperatorClusterRoleNonResource(),
         yamlEqualTo(getExpectedWeblogicOperatorClusterRoleNonResource()));
   }
 
-  protected V1beta1ClusterRole getActualWeblogicOperatorClusterRoleNonResource() {
-    return getWeblogicOperatorSecurityYaml().getWeblogicOperatorClusterRoleNonResource();
-  }
-
-  protected V1beta1ClusterRole getExpectedWeblogicOperatorClusterRoleNonResource() {
+  private V1beta1ClusterRole getExpectedWeblogicOperatorClusterRoleNonResource() {
     return newClusterRole()
         .metadata(
             newObjectMeta()
@@ -452,9 +453,9 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBinding() throws Exception {
+  public void generatesCorrect_operatorRoleBinding() {
     assertThat(
-        getWeblogicOperatorSecurityYaml().getOperatorRoleBinding(),
+        getGeneratedFiles().getOperatorRoleBinding(),
         yamlEqualTo(
             newClusterRoleBinding()
                 .metadata(
@@ -475,17 +476,17 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBindingNonResource() throws Exception {
+  public void generatesCorrect_operatorRoleBindingNonResource() {
     assertThat(
         getActualOperatorRoleBindingNonResource(),
         yamlEqualTo(getExpectedOperatorRoleBindingNonResource()));
   }
 
-  protected V1beta1ClusterRoleBinding getActualOperatorRoleBindingNonResource() {
-    return getWeblogicOperatorSecurityYaml().getOperatorRoleBindingNonResource();
+  private V1beta1ClusterRoleBinding getActualOperatorRoleBindingNonResource() {
+    return getGeneratedFiles().getOperatorRoleBindingNonResource();
   }
 
-  protected V1beta1ClusterRoleBinding getExpectedOperatorRoleBindingNonResource() {
+  private V1beta1ClusterRoleBinding getExpectedOperatorRoleBindingNonResource() {
     return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
@@ -505,17 +506,13 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBindingDiscovery() throws Exception {
+  public void generatesCorrect_operatorRoleBindingDiscovery() {
     assertThat(
-        getActualOperatorRoleBindingDiscovery(),
+        getGeneratedFiles().getOperatorRoleBindingDiscovery(),
         yamlEqualTo(getExpectedOperatorRoleBindingDiscovery()));
   }
 
-  protected V1beta1ClusterRoleBinding getActualOperatorRoleBindingDiscovery() {
-    return getWeblogicOperatorSecurityYaml().getOperatorRoleBindingDiscovery();
-  }
-
-  protected V1beta1ClusterRoleBinding getExpectedOperatorRoleBindingDiscovery() {
+  private V1beta1ClusterRoleBinding getExpectedOperatorRoleBindingDiscovery() {
     return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
@@ -532,17 +529,13 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBindingAuthDelegator() throws Exception {
+  public void generatesCorrect_operatorRoleBindingAuthDelegator() {
     assertThat(
-        getActualOperatorRoleBindingAuthDelegator(),
+        getGeneratedFiles().getOperatorRoleBindingAuthDelegator(),
         yamlEqualTo(getExpectedOperatorRoleBindingAuthDelegator()));
   }
 
-  protected V1beta1ClusterRoleBinding getActualOperatorRoleBindingAuthDelegator() {
-    return getWeblogicOperatorSecurityYaml().getOperatorRoleBindingAuthDelegator();
-  }
-
-  protected V1beta1ClusterRoleBinding getExpectedOperatorRoleBindingAuthDelegator() {
+  private V1beta1ClusterRoleBinding getExpectedOperatorRoleBindingAuthDelegator() {
     return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
@@ -559,17 +552,13 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorNamespaceRole() throws Exception {
+  public void generatesCorrect_weblogicOperatorNamespaceRole() {
     assertThat(
-        getActualWeblogicOperatorNamespaceRole(),
+        getGeneratedFiles().getWeblogicOperatorNamespaceRole(),
         yamlEqualTo(getExpectedWeblogicOperatorNamespaceRole()));
   }
 
-  protected V1beta1ClusterRole getActualWeblogicOperatorNamespaceRole() {
-    return getWeblogicOperatorSecurityYaml().getWeblogicOperatorNamespaceRole();
-  }
-
-  protected V1beta1ClusterRole getExpectedWeblogicOperatorNamespaceRole() {
+  private V1beta1ClusterRole getExpectedWeblogicOperatorNamespaceRole() {
     return newClusterRole()
         .metadata(
             newObjectMeta()
@@ -579,7 +568,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("secrets"))
+                .resources(singletonList("secrets"))
                 .verbs(asList("get", "list", "watch")))
         .addRulesItem(
             newPolicyRule()
@@ -610,13 +599,13 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("pods/logs"))
+                .resources(singletonList("pods/logs"))
                 .verbs(asList("get", "list")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(asList("pods/exec"))
-                .verbs(asList("create")))
+                .resources(singletonList("pods/exec"))
+                .verbs(singletonList("create")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("batch")
@@ -662,20 +651,16 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatesCorrect_targetNamespaces_weblogicOperatorRoleBindings() throws Exception {
+  public void generatesCorrect_targetNamespaces_weblogicOperatorRoleBindings() {
     for (String targetNamespace : getInputs().getTargetNamespaces().split(",")) {
       String namespace = targetNamespace.trim();
       assertThat(
-          getActualWeblogicOperatorRoleBinding(namespace),
+          getGeneratedFiles().getWeblogicOperatorRoleBinding(namespace),
           yamlEqualTo(getExpectedWeblogicOperatorRoleBinding(namespace)));
     }
   }
 
-  protected V1beta1RoleBinding getActualWeblogicOperatorRoleBinding(String namespace) {
-    return getWeblogicOperatorSecurityYaml().getWeblogicOperatorRoleBinding(namespace);
-  }
-
-  protected V1beta1RoleBinding getExpectedWeblogicOperatorRoleBinding(String namespace) {
+  private V1beta1RoleBinding getExpectedWeblogicOperatorRoleBinding(String namespace) {
     return newRoleBinding()
         .metadata(
             newObjectMeta()
@@ -692,6 +677,7 @@ public abstract class CreateOperatorGeneratedFilesBaseTest {
         .roleRef(newRoleRef().name("weblogic-operator-namespace-role").apiGroup(""));
   }
 
+  @SuppressWarnings("unused")
   protected V1Service getExpectedExternalOperatorService(
       boolean debuggingEnabled, boolean externalRestEnabled) {
     V1ServiceSpec spec =

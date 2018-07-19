@@ -16,7 +16,7 @@ public class ParsedVoyagerOperatorYaml extends ParsedKubernetesYaml {
   private CreateDomainInputs inputs;
 
   public ParsedVoyagerOperatorYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
-    super(yamlPath);
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 

@@ -19,7 +19,7 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
   private CreateDomainInputs inputs;
 
   public ParsedTraefikYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
-    super(yamlPath);
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 

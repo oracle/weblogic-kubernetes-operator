@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.helm;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,12 +27,13 @@ import org.yaml.snakeyaml.Yaml;
  * An encapsulation of a helm chart, along with the processing that must be done to make it usable.
  */
 @SuppressWarnings({"unchecked", "SameParameterValue"})
-class ProcessedChart {
+public class ProcessedChart {
   private final String chartName;
   private Map<String, Object> valueOverrides;
   private String error;
   private List<Map<String, String>> documents;
   private Process process;
+  private Map<String, Object> values;
 
   ProcessedChart(String chartName, Map<String, Object> valueOverrides) {
     this.chartName = chartName;
@@ -76,12 +78,8 @@ class ProcessedChart {
    * @throws Exception if an error occurs
    */
   List<Map<String, String>> getDocuments(String kind) throws Exception {
-    if (documents == null) {
-      documents = getDocuments();
-    }
-
     List<Map<String, String>> matches = new ArrayList<>();
-    for (Map<String, String> document : documents) {
+    for (Map<String, String> document : getDocuments()) {
       if (document.get("kind").equals(kind)) {
         matches.add(document);
       }
@@ -90,16 +88,37 @@ class ProcessedChart {
     return matches;
   }
 
-  private List<Map<String, String>> getDocuments() throws Exception {
-    List<Map<String, String>> charts = new ArrayList<>();
-    new Yaml()
-        .loadAll(getProcess().getInputStream())
-        .forEach(
-            (document) -> {
-              if (document != null) charts.add((Map<String, String>) document);
-            });
+  /**
+   * Returns a list containing a maps loaded from yaml documents.
+   *
+   * @return a list of yaml documents
+   * @throws Exception if an error occurs
+   */
+  public List<Map<String, String>> getDocuments() throws Exception {
+    if (documents == null) {
+      List<Map<String, String>> documents = new ArrayList<>();
+      new Yaml()
+          .loadAll(getProcess().getInputStream())
+          .forEach(
+              (document) -> {
+                if (document != null) documents.add((Map<String, String>) document);
+              });
 
-    return charts;
+      this.documents = documents;
+    }
+
+    return documents;
+  }
+
+  /**
+   * Returns the values used to render the chart.
+   *
+   * @return a map of values
+   */
+  public Map<String, Object> getValues() {
+    assert documents != null : "Must get the documents first";
+
+    return values;
   }
 
   private Process getProcess() throws Exception {
@@ -112,11 +131,18 @@ class ProcessedChart {
   private Process processChart(String chartName, Map<String, Object> valueOverrides)
       throws Exception {
     File chartsDir = getChartDir(chartName);
+    File baseValuesFile = new File(chartsDir, "values.yaml");
+    values = new Yaml().load(new FileReader(baseValuesFile));
+    applyOverrides(valueOverrides);
 
     Path valuesFile = writeValuesOverride(valueOverrides);
 
     ProcessBuilder pb = new ProcessBuilder(createCommandLine(chartsDir, valuesFile));
     return pb.start();
+  }
+
+  private void applyOverrides(Map<String, Object> valueOverrides) {
+    values.putAll(valueOverrides);
   }
 
   private String[] createCommandLine(File chart, Path valuesPath) {

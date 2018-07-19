@@ -15,7 +15,7 @@ public class ParsedDeleteWeblogicDomainJobYaml extends ParsedKubernetesYaml {
 
   public ParsedDeleteWeblogicDomainJobYaml(Path yamlPath, CreateDomainInputs inputs)
       throws Exception {
-    super(yamlPath);
+    super(new GeneratedFileReader(yamlPath));
     this.inputs = inputs;
   }
 
