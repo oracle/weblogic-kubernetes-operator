@@ -1,6 +1,6 @@
 # Integration Tests for Operator
 
-This documentation describes the functional use cases that are covered in integration testing for Weblogic Operator. The tests are written in java(Junit tests) and driven by maven profile. Currently run.sh is used to run integration tests for Operator. All the use cases covered in run.sh will be covered in java integration tests. Currently, QUICK_TEST use cases and some of non-quick test(till domain4) use cases are covered in java tests.
+This documentation describes the functional use cases that are covered in integration testing for Weblogic Operator. The tests are written in java(Junit tests) and driven by maven profile. All the use cases covered in run.sh will be covered in java integration tests. Currently, QUICKTEST use cases and some of non-quick test(till domain4) use cases are covered in java tests.
 
 # Environments
 
@@ -12,13 +12,13 @@ The tests currently runs in three modes, "Wercker", "Jenkins", and "standalone" 
 
 # Use Cases
 
-Currently java integration tests cover only QUICK_TEST use cases from run.sh. The below are the use cases:
+Currently java integration tests cover all QUICKTEST and some non-QUICKTEST use cases from run.sh. The below are the use cases:
 
 * create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
 * create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
 * verify admin external service by accessing admin REST endpoint with nodeport in URL
 * verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
-* verify web app load balancing  – TO DO, Apache, Voyager
+* verify web app load balancing  
 * verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
 * cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
 * Operator life cycle(destroy and create) should not impact the running domain
@@ -49,16 +49,18 @@ Directory structure of source code:
 
 A new module "integration-tests" is added to the maven project weblogic-kubernetes-operator.
 
-weblogic-kubernetes-operator/integration-tests - location of module pom.xml
-weblogic-kubernetes-operator/integration-tests/src/test/java - integration test(junit) classes and utility classes
+weblogic-kubernetes-operator/integration-tests - location of module pom.xml  
+weblogic-kubernetes-operator/integration-tests/src/test/java - integration test(junit) classes and utility classes  
 weblogic-kubernetes-operator/integration-tests/src/test/resources - properties files(see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
 
 Main external env vars:
 
- | RESULT_ROOT  | Root path for local test files. |
- | PV_ROOT      | Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files |
+| Variable | Description |
+| --- | --- |
+| RESULT_ROOT  | Root path for local test files. |
+| PV_ROOT      | Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files |
 
 Defaults for RESULT_ROOT & PV_ROOT:
 
@@ -78,7 +80,8 @@ Defaults for RESULT_ROOT & PV_ROOT:
                           RESULT_ROOT/acceptance_test_tmp_archive/...
 
 'Logical' to 'Physical' K8S PV/PVC mappings:
- |   'Logical'   |  'Actual' |
+
+ |   Logical   |  Actual |
  | --- | --- |
  | job.sh job: | /scratch <--> PV_ROOT on K8S machines |
  | domain pod: | /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines |
@@ -91,11 +94,12 @@ Below configuration files are used:
 ```
 src/integration-tests/resources/OperatorIT.properties - This file is used for configuring common attributes for all integration tests
 ```
-baseDir=/scratch
-username=weblogic
-password=welcome1
-maxIterationsPod=50
-waitTimePod=5
+baseDir=/scratch  
+username=weblogic  
+password=welcome1  
+maxIterationsPod=50  
+waitTimePod=5  
+
 
 src/integration-tests/resources/ITFirstOperator.properties - customized properties for operator. Any property can be provided here from create-weblogic-operator-inputs.yaml, for all the properties that are not defined here default values in create-weblogic-operator-inputs.yaml are used while generating the operator inputs yaml file.
 
@@ -163,52 +167,32 @@ set the optional env vars described below
 
 The tests accepts optional env var overrides:
 
-| RESULT_ROOT | The root directory to use for the tests temporary files.
-                 See "Directory Configuration and Structure" below for
-                 defaults and a detailed description of test directories. |
+| Variable | Description |
+| --- | --- |
+| RESULT_ROOT | The root directory to use for the tests temporary files. See "Directory Configuration and Structure" for                  defaults and a detailed description of test directories. |
+| PV_ROOT    |  The root directory on the kubernetes cluster used for persistent volumes. See "Directory Configuration and Structure" for defaults and a detailed description of test directories. |
+| QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
+| WERCKER    | Set to true if invoking from Wercker, set to false or "" if running stand-alone or from Jenkins. Default is "". |
+| JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or from Wercker. Default is "". |
+| NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
+| BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
+| LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
 
-| PV_ROOT    |  The root directory on the kubernetes cluster
-                 used for persistent volumes.
-                 See "Directory Configuration and Structure" below for
-                 defaults and a detailed description of test directories. |
-
-| QUICKTEST  | When set to "true", limits testing to a subset of
-                 of the tests. |
-
-| WERCKER    | Set to true if invoking from Wercker, set
-                 to false or "" if running stand-alone or from Jenkins.
-                 Default is "". |
-
-| JENKINS    | Set to true if invoking from Jenkins, set
-                 to false or "" if running stand-alone or from Wercker.
-                 Default is "". |
-
-| NODEPORT_HOST | DNS name of a Kubernetes worker node.  
-                 Default is the local host's hostname. |
-
-| BRANCH_NAME  | Git branch name.
-                 Default is determined by calling 'git branch'. |
-
-| LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on
-                 the k8s cluster that indicates that no other test run
-                 should attempt to use the cluster, and (B)
-                 delete this lease when the test completes. |
-              
 The following additional overrides are currently only used when
 WERCKER=true:
 
-  IMAGE_TAG_OPERATOR   Docker image tag for operator.
-                       Default generated based off the BRANCH_NAME.
+| Variable | Description |
+| --- | --- |
+| IMAGE_TAG_OPERATOR | Docker image tag for operator. Default generated based off the BRANCH_NAME. |
+| IMAGE_NAME_OPERATOR | Docker image name for operator. Default is wlsldi-v2.docker.oraclecorp.com/weblogic-operator |
+| IMAGE_PULL_POLICY_OPERATOR | Default 'Never'. |
+| IMAGE_PULL_SECRET_OPERATOR | Default ''. |
+ | IMAGE_PULL_SECRET_WEBLOGIC | Default ''.
 
-  IMAGE_NAME_OPERATOR  Docker image name for operator.
-                       Default is wlsldi-v2.docker.oraclecorp.com/weblogic-operator
-
-  IMAGE_PULL_POLICY_OPERATOR   Default 'Never'.
-  IMAGE_PULL_SECRET_OPERATOR   Default ''.
-  IMAGE_PULL_SECRET_WEBLOGIC   Default ''.
-
+Command to run the tests:
+```
 mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
-
+```
 Successful run will have the output like below:
 ```
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 970.765 s - in oracle.kubernetes.operator.ITSingleDomain
