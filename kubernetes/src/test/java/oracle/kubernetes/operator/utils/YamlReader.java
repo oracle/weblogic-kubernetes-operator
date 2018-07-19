@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.utils;
 
-public interface YamlFactory {
+public interface YamlReader {
 
   Iterable<Object> getYamlDocuments() throws Exception;
 }

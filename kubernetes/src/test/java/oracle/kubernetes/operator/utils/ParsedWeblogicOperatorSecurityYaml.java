@@ -17,7 +17,13 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   private OperatorValues inputs;
 
   public ParsedWeblogicOperatorSecurityYaml(Path yamlPath, OperatorValues inputs) throws Exception {
-    super(new GeneratedFileReader(yamlPath));
+    super(new ScriptGeneratedYamlReader(yamlPath));
+    this.inputs = inputs;
+  }
+
+  public ParsedWeblogicOperatorSecurityYaml(YamlReader factory, OperatorValues inputs)
+      throws Exception {
+    super(factory);
     this.inputs = inputs;
   }
 

@@ -21,17 +21,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import oracle.kubernetes.operator.utils.YamlReader;
 import org.yaml.snakeyaml.Yaml;
 
 /**
  * An encapsulation of a helm chart, along with the processing that must be done to make it usable.
  */
 @SuppressWarnings({"unchecked", "SameParameterValue"})
-public class ProcessedChart {
+public class ProcessedChart implements YamlReader {
   private final String chartName;
   private Map<String, Object> valueOverrides;
   private String error;
-  private List<Map<String, String>> documents;
+  private List<Object> documents;
   private Process process;
   private Map<String, Object> values;
 
@@ -79,7 +80,8 @@ public class ProcessedChart {
    */
   List<Map<String, String>> getDocuments(String kind) throws Exception {
     List<Map<String, String>> matches = new ArrayList<>();
-    for (Map<String, String> document : getDocuments()) {
+    for (Object object : getYamlDocuments()) {
+      Map document = (Map) object;
       if (document.get("kind").equals(kind)) {
         matches.add(document);
       }
@@ -94,14 +96,14 @@ public class ProcessedChart {
    * @return a list of yaml documents
    * @throws Exception if an error occurs
    */
-  public List<Map<String, String>> getDocuments() throws Exception {
+  public Iterable<Object> getYamlDocuments() throws Exception {
     if (documents == null) {
-      List<Map<String, String>> documents = new ArrayList<>();
+      List<Object> documents = new ArrayList<>();
       new Yaml()
           .loadAll(getProcess().getInputStream())
           .forEach(
               (document) -> {
-                if (document != null) documents.add((Map<String, String>) document);
+                if (document != null) documents.add(document);
               });
 
       this.documents = documents;
@@ -115,8 +117,8 @@ public class ProcessedChart {
    *
    * @return a map of values
    */
-  public Map<String, Object> getValues() {
-    assert documents != null : "Must get the documents first";
+  public Map<String, Object> getValues() throws Exception {
+    getYamlDocuments();
 
     return values;
   }

@@ -10,10 +10,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class GeneratedFileReader implements YamlFactory {
+public class ScriptGeneratedYamlReader implements YamlReader {
   Path path;
 
-  public GeneratedFileReader(Path path) {
+  public ScriptGeneratedYamlReader(Path path) {
     this.path = path;
   }
 

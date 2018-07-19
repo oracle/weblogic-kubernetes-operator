@@ -50,7 +50,7 @@ public class ParsedKubernetesYaml {
   private Map<String, TypeHandler<?>> kindToHandler = new HashMap<>();
   private int objectCount = 0;
 
-  public ParsedKubernetesYaml(YamlFactory factory) throws Exception {
+  public ParsedKubernetesYaml(YamlReader factory) throws Exception {
     defineHandlers();
 
     for (Object document : factory.getYamlDocuments()) {
@@ -457,10 +457,15 @@ public class ParsedKubernetesYaml {
       objectAsMap.put("data", newData);
       for (Object secretName : origData.keySet()) {
         Object secret = origData.get(secretName);
-        String secretValueAsBase64EncodedString = (String) secret;
-        byte[] secretAsBytes = Base64.decodeBase64(secretValueAsBase64EncodedString);
+        byte[] secretAsBytes =
+            secret instanceof String ? decodeString((String) secret) : (byte[]) secret;
         newData.put(secretName, secretAsBytes);
       }
+    }
+
+    private static byte[] decodeString(String secret) {
+      String secretValueAsBase64EncodedString = secret;
+      return Base64.decodeBase64(secretValueAsBase64EncodedString);
     }
   }
 

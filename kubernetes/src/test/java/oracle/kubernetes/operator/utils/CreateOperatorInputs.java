@@ -26,6 +26,8 @@ import java.nio.file.Path;
  */
 public class CreateOperatorInputs extends OperatorValues {
 
+  private static final String DEFAULT_INPUTS = "../kubernetes/create-weblogic-operator-inputs.yaml";
+
   public static OperatorValues readDefaultInputsFile() throws Exception {
     return readInputsYamlFile(defaultInputsPath());
   }
