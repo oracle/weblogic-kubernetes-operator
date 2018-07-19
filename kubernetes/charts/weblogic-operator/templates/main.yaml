@@ -14,3 +14,5 @@
 {{- if .Values.createOperator }}
 {{- include "operator.operator" $scope }}
 {{- end }}
+
+{{- include "operator.extraResources" $scope }}
