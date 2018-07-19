@@ -14,7 +14,7 @@ public class ParsedWeblogicDomainPersistentVolumeClaimYaml extends ParsedKuberne
 
   public ParsedWeblogicDomainPersistentVolumeClaimYaml(Path yamlPath, CreateDomainInputs inputs)
       throws Exception {
-    super(new GeneratedFileReader(yamlPath));
+    super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }
 

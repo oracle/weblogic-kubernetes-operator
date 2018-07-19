@@ -13,7 +13,7 @@ public class ParsedDomainCustomResourceYaml extends ParsedKubernetesYaml {
   private CreateDomainInputs inputs;
 
   public ParsedDomainCustomResourceYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
-    super(new GeneratedFileReader(yamlPath));
+    super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }
 

@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.utils;
 
 import java.util.Objects;
@@ -17,8 +21,6 @@ public class OperatorValues {
   public static final String IMAGE_PULL_POLICY_IF_NOT_PRESENT = "IfNotPresent";
   public static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
   public static final String IMAGE_PULL_POLICY_NEVER = "Never";
-  protected static final String DEFAULT_INPUTS =
-      "../kubernetes/create-weblogic-operator-inputs.yaml";
   private static final String CUSTOM_CERT_PEM = "test-custom-certificate-pem";
   private static final String CUSTOM_KEY_PEM = "test-custom-private-key-pem";
   private String version = "";
