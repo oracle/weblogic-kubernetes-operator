@@ -1,49 +1,44 @@
 # Integration Tests for Operator
 
-This documentation describes the functional use cases that are covered in integration testing for Weblogic Operator. The tests are written in java(Junit tests) and driven by maven profile. Currently, run.sh is used to run integration tests for Operator. All the use cases covered in run.sh will be covered in java integration tests. Currently, QUICK_TEST use cases and some of non-quick test(till domain4) use cases are covered in java tests.
+This documentation describes the functional use cases that are covered in integration testing for Weblogic Operator. The tests are written in java(Junit tests) and driven by maven profile. Currently run.sh is used to run integration tests for Operator. All the use cases covered in run.sh will be covered in java integration tests. Currently, QUICK_TEST use cases and some of non-quick test(till domain4) use cases are covered in java tests.
 
 # Environments
 
 The tests currently runs in three modes, "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the WERCKER and JENKINS environment variables described below. The default is "standalone".
 
-"Standalone" Oracle Linux, i.e, run the tests manually with mvn command.
-Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - integration-test-java is the pipeline name
-Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/
+* "Standalone" Oracle Linux, i.e, run the tests manually with mvn command. 
+* Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - integration-test-java is the pipeline name
+* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/
 
 # Use Cases
 
 Currently java integration tests cover only QUICK_TEST use cases from run.sh. The below are the use cases:
 
-    create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
-    create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
-    verify admin external service by accessing admin REST endpoint with nodeport in URL
-    verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
-    verify web app load balancing  – TO DO, Apache, Voyager
-    verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
-    cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
-    Operator life cycle(destroy and create) should not impact the running domain
+    * create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
+    * create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
+    * verify admin external service by accessing admin REST endpoint with nodeport in URL
+    * verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
+    * verify web app load balancing  – TO DO, Apache, Voyager
+    * verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
+    * cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
+    * Operator life cycle(destroy and create) should not impact the running domain
 
 Non-quick test use cases
 
-    keep the first domain and operator running
-    create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-    destroy domain domain2
-    create another domain domain3 in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-    destroy domain domain3
-    create another operator operator2 which manages test2 namespace and verify domain1 is not affected
-    create another domain domain4 in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-    verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
-    cycle domain1 down and back up, plus verify no impact on domain4
-
-    create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage – all the remaining use cases are covered in QA functional tests, so not adding these tests or will be added later.
-
-    create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
-
-    test managed server 1 pod auto-restart in domain1
-
-    destroy domain1
-
-    test that create domain fails when its pv is already populated by a shutdown domain
+    * keep the first domain and operator running
+    * create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+    * destroy domain domain2
+    * create another domain domain3 in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+    * destroy domain domain3
+    * create another operator operator2 which manages test2 namespace and verify domain1 is not affected
+    * create another domain domain4 in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+    * verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
+    * cycle domain1 down and back up, plus verify no impact on domain4
+    * create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
+    * create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
+    * test managed server 1 pod auto-restart in domain1
+    * destroy domain1
+    * test that create domain fails when its pv is already populated by a shutdown domain
 
 
 # Directory Configuration and Structure
@@ -62,8 +57,8 @@ Directory structure used for the test run:
 
 Main external env vars:
 
-    RESULT_ROOT   Root path for local test files.
-    PV_ROOT           Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files (default UID 1000 group ???)
+    | RESULT_ROOT  | Root path for local test files. |
+    | PV_ROOT      | Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files |
 
 Defaults for RESULT_ROOT & PV_ROOT:
 
@@ -83,40 +78,39 @@ Defaults for RESULT_ROOT & PV_ROOT:
                           RESULT_ROOT/acceptance_test_tmp_archive/...
 
 'Logical' to 'Physical' K8S PV/PVC mappings:
-                 'Logical'     'Actual'
-    job.sh job:  /scratch <--> PV_ROOT on K8S machines
-    domain pod:  /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines
+              |   'Logical'   |  'Actual' |
+              | --- | --- |
+   | job.sh job: | /scratch <--> PV_ROOT on K8S machines |
+   | domain pod: | /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines |
 
 # Configuration Files
 
 A module "integration-tests" is added in maven weblogic-kubernetes-operator project.
 
 Below configuration files are used:
+```
 src/integration-tests/resources/OperatorIT.properties - This file is used for configuring common attributes for all integration tests
+```
 baseDir=/scratch
-#wls admin user
 username=weblogic
 password=welcome1
 maxIterationsPod=50
 waitTimePod=5
 
-src/integration-tests/resources/ITFirstOperator.properties - customized properties for operator
-#any property can be provided here from create-weblogic-operator-inputs.yaml
-#for all the properties that are not defined here, the default values in create-weblogic-operator-inputs.yaml
-# used while generating the operator inputs yaml file
+src/integration-tests/resources/ITFirstOperator.properties - customized properties for operator. Any property can be provided here from create-weblogic-operator-inputs.yaml, for all the properties that are not defined here default values in create-weblogic-operator-inputs.yaml are used while generating the operator inputs yaml file.
 
+```
 serviceAccount= weblogic-operator
 namespace= weblogic-operator1
 targetNamespaces= default
 #if SELF_SIGNED_CERT, externalSans value is set to the local host name if not provided here
 externalRestOption= SELF_SIGNED_CERT
 elkIntegrationEnabled= false
+```
 
-src/integration-tests/resources/ITFirstDomain.properties - customized properties for domain
-#any property can be provided here from create-weblogic-domain-inputs.yaml
-#for all the properties that are not defined here, the default values in create-weblogic-domain-inputs.yaml are
-# used while generating the domain inputs yaml file
+src/integration-tests/resources/ITFirstDomain.properties - customized properties for domain. Any property can be provided here from create-weblogic-domain-inputs.yaml. For all the properties that are not defined here, the default values in create-weblogic-domain-inputs.yaml are used while generating the domain inputs yaml file.
 
+```
 adminServerName= admin-server
 domainName= base_domain
 domainUID= domain1
@@ -133,6 +127,7 @@ exposeAdminNodePort= true
 namespace= default
 javaOptions= -Dweblogic.StdoutDebugEnabled=false
 
+```
 Certain properties like weblogicDomainStoragePath, weblogicOperatorImage, externalSans are populated at run time.
 
 
@@ -154,7 +149,6 @@ test methods - testAdminServerExternalService, testAdminT3Channel, testDomainLif
 Utility classes:
 
 Operator - contains methods to create/destroy operator, verify operator created, scale using rest api, etc
-
 Domain - contains methods to create/destroy domain, verify domain created,deploy webapp, load balancing, etc
 PersistentVolume - to create PV
 Secret - to create secret
@@ -216,7 +210,7 @@ WERCKER=true:
 mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
 
 Successful run will have the output like below:
-
+```
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 970.765 s - in oracle.kubernetes.operator.ITSingleDomain
 [INFO]
 [INFO] Results:
@@ -246,9 +240,9 @@ Successful run will have the output like below:
 [INFO] ------------------------------------------------------------------------
 bash-4.2$
 
-
+```
 Failed run will have the output
-
+```
 [ERROR] Tests run: 5, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 1,271.204 s <<< FAILURE! - in oracle.kubernetes.operator.ITSingleDomain
 [ERROR] testAdminT3Channel(oracle.kubernetes.operator.ITSingleDomain)  Time elapsed: 145.59 s  <<< ERROR!
 java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, got 404
@@ -294,7 +288,7 @@ java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, 
 [ERROR] Please refer to /scratch/vmukkara/mychanges/weblogic-kubernetes-operator/integration-tests/target/failsafe-reports for the individual test results.
 [ERROR] Please refer to dump files (if any exist) [date]-jvmRun[N].dump, [date].dumpstream and [date]-jvmRun[N].dumpstream
 
-
+```
 Junit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITSingleDomain.xml". This file shows how much time each test case took to run and the failed test results if any.
 
 # Logging/Archiving
