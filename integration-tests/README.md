@@ -14,31 +14,31 @@ The tests currently runs in three modes, "Wercker", "Jenkins", and "standalone" 
 
 Currently java integration tests cover only QUICK_TEST use cases from run.sh. The below are the use cases:
 
-    * create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
-    * create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
-    * verify admin external service by accessing admin REST endpoint with nodeport in URL
-    * verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
-    * verify web app load balancing  – TO DO, Apache, Voyager
-    * verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
-    * cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
-    * Operator life cycle(destroy and create) should not impact the running domain
+* create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
+* create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
+* verify admin external service by accessing admin REST endpoint with nodeport in URL
+* verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
+* verify web app load balancing  – TO DO, Apache, Voyager
+* verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
+* cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
+* Operator life cycle(destroy and create) should not impact the running domain
 
 Non-quick test use cases
 
-    * keep the first domain and operator running
-    * create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-    * destroy domain domain2
-    * create another domain domain3 in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-    * destroy domain domain3
-    * create another operator operator2 which manages test2 namespace and verify domain1 is not affected
-    * create another domain domain4 in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-    * verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
-    * cycle domain1 down and back up, plus verify no impact on domain4
-    * create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
-    * create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
-    * test managed server 1 pod auto-restart in domain1
-    * destroy domain1
-    * test that create domain fails when its pv is already populated by a shutdown domain
+* keep the first domain and operator running
+* create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* destroy domain domain2
+* create another domain domain3 in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* destroy domain domain3
+* create another operator operator2 which manages test2 namespace and verify domain1 is not affected
+* create another domain domain4 in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
+* cycle domain1 down and back up, plus verify no impact on domain4
+* create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
+* create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
+* test managed server 1 pod auto-restart in domain1
+* destroy domain1
+* test that create domain fails when its pv is already populated by a shutdown domain
 
 
 # Directory Configuration and Structure
@@ -57,8 +57,8 @@ Directory structure used for the test run:
 
 Main external env vars:
 
-    | RESULT_ROOT  | Root path for local test files. |
-    | PV_ROOT      | Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files |
+ | RESULT_ROOT  | Root path for local test files. |
+ | PV_ROOT      | Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files |
 
 Defaults for RESULT_ROOT & PV_ROOT:
 
@@ -78,10 +78,10 @@ Defaults for RESULT_ROOT & PV_ROOT:
                           RESULT_ROOT/acceptance_test_tmp_archive/...
 
 'Logical' to 'Physical' K8S PV/PVC mappings:
-              |   'Logical'   |  'Actual' |
-              | --- | --- |
-   | job.sh job: | /scratch <--> PV_ROOT on K8S machines |
-   | domain pod: | /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines |
+ |   'Logical'   |  'Actual' |
+ | --- | --- |
+ | job.sh job: | /scratch <--> PV_ROOT on K8S machines |
+ | domain pod: | /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines |
 
 # Configuration Files
 
@@ -163,36 +163,36 @@ set the optional env vars described below
 
 The tests accepts optional env var overrides:
 
-  RESULT_ROOT    The root directory to use for the tests temporary files.
+| RESULT_ROOT | The root directory to use for the tests temporary files.
                  See "Directory Configuration and Structure" below for
-                 defaults and a detailed description of test directories.
+                 defaults and a detailed description of test directories. |
 
-  PV_ROOT        The root directory on the kubernetes cluster
+| PV_ROOT    |  The root directory on the kubernetes cluster
                  used for persistent volumes.
                  See "Directory Configuration and Structure" below for
-                 defaults and a detailed description of test directories.
+                 defaults and a detailed description of test directories. |
 
-  QUICKTEST      When set to "true", limits testing to a subset of
-                 of the tests.
+| QUICKTEST  | When set to "true", limits testing to a subset of
+                 of the tests. |
 
-  WERCKER        Set to true if invoking from Wercker, set
+| WERCKER    | Set to true if invoking from Wercker, set
                  to false or "" if running stand-alone or from Jenkins.
-                 Default is "".
+                 Default is "". |
 
-  JENKINS        Set to true if invoking from Jenkins, set
+| JENKINS    | Set to true if invoking from Jenkins, set
                  to false or "" if running stand-alone or from Wercker.
-                 Default is "".
+                 Default is "". |
 
-  NODEPORT_HOST  DNS name of a Kubernetes worker node.  
-                 Default is the local host's hostname.
+| NODEPORT_HOST | DNS name of a Kubernetes worker node.  
+                 Default is the local host's hostname. |
 
-   BRANCH_NAME    Git branch name.
-                 Default is determined by calling 'git branch'.
+| BRANCH_NAME  | Git branch name.
+                 Default is determined by calling 'git branch'. |
 
-  LEASE_ID       Set to a unique value to (A) periodically renew a lease on
+| LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on
                  the k8s cluster that indicates that no other test run
                  should attempt to use the cluster, and (B)
-                 delete this lease when the test completes.
+                 delete this lease when the test completes. |
               
 The following additional overrides are currently only used when
 WERCKER=true:
