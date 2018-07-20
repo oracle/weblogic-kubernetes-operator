@@ -6,9 +6,10 @@ package oracle.kubernetes.operator.utils;
 
 import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
+import java.io.File;
 import java.io.Reader;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -26,7 +27,7 @@ import java.nio.file.Path;
  */
 public class CreateOperatorInputs extends OperatorValues {
 
-  private static final String DEFAULT_INPUTS = "../kubernetes/create-weblogic-operator-inputs.yaml";
+  private static final String DEFAULT_INPUTS = "create-weblogic-operator-inputs.yaml";
 
   public static OperatorValues readDefaultInputsFile() throws Exception {
     return readInputsYamlFile(defaultInputsPath());
@@ -37,7 +38,7 @@ public class CreateOperatorInputs extends OperatorValues {
     return newYaml().loadAs(r, CreateOperatorInputs.class);
   }
 
-  private static Path defaultInputsPath() {
-    return FileSystems.getDefault().getPath(DEFAULT_INPUTS);
+  private static Path defaultInputsPath() throws URISyntaxException {
+    return new File(PathUtils.getModuleDir(CreateOperatorInputs.class), DEFAULT_INPUTS).toPath();
   }
 }
