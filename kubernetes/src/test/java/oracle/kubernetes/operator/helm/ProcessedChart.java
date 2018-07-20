@@ -12,15 +12,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import oracle.kubernetes.operator.utils.PathUtils;
 import oracle.kubernetes.operator.utils.YamlReader;
 import org.yaml.snakeyaml.Yaml;
 
@@ -117,7 +116,7 @@ public class ProcessedChart implements YamlReader {
    *
    * @return a map of values
    */
-  public Map<String, Object> getValues() throws Exception {
+  Map<String, Object> getValues() throws Exception {
     getYamlDocuments();
 
     return values;
@@ -164,23 +163,6 @@ public class ProcessedChart implements YamlReader {
   }
 
   private File getChartsParentDir() throws URISyntaxException {
-    return new File(getModuleDir(), "charts");
-  }
-
-  private File getModuleDir() throws URISyntaxException {
-    return getTargetDir(getClass()).getParentFile();
-  }
-
-  private File getTargetDir(Class<?> aClass) throws URISyntaxException {
-    File dir = getPackageDir(aClass);
-    while (dir.getParent() != null && !dir.getName().equals("target")) {
-      dir = dir.getParentFile();
-    }
-    return dir;
-  }
-
-  private File getPackageDir(Class<?> aClass) throws URISyntaxException {
-    URL url = aClass.getResource(aClass.getSimpleName() + ".class");
-    return Paths.get(url.toURI()).toFile().getParentFile();
+    return new File(PathUtils.getModuleDir(getClass()), "charts");
   }
 }

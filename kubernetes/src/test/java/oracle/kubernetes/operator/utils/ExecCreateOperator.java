@@ -31,10 +31,11 @@ public class ExecCreateOperator {
   }
 
   public static ExecResult execCreateOperator(String options) throws Exception {
-    return ExecCommand.exec(CREATE_SCRIPT + options);
+    return ExecCommand.exec(
+        PathUtils.getModuleDir(ExecCreateOperator.class) + "/" + CREATE_SCRIPT + options);
   }
 
-  public static Path getInputsYamlPath(Path userProjectsPath) {
+  private static Path getInputsYamlPath(Path userProjectsPath) {
     return userProjectsPath.resolve("create-weblogic-operator-inputs.yaml");
   }
 }
