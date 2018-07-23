@@ -3,7 +3,7 @@
 
 {{- define "operator.clusterRoleBindingAuthDelegator" }}
 ---
-apiVersion: "rbac.authorization.k8s.io/v1"
+apiVersion: "rbac.authorization.k8s.io/v1beta1"
 kind: "ClusterRoleBinding"
 metadata:
   labels:
@@ -15,7 +15,8 @@ roleRef:
   kind: "ClusterRole"
   name: "system:auth-delegator"
 subjects:
-- kind: "ServiceAccount" 
+- kind: "ServiceAccount"
+  apiGroup: ""
   name: {{ .operatorServiceAccount | quote }}
   namespace: {{ .operatorNamespace | quote }}
 {{- end }}

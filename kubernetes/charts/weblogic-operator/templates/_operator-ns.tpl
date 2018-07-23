@@ -8,6 +8,7 @@ apiVersion: "v1"
 kind: "Namespace"
 metadata:
   labels:
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
     weblogic.resourceVersion: "operator-v1"
   name: {{ .operatorNamespace | quote }}
 {{- end }}

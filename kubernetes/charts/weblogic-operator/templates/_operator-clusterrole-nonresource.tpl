@@ -9,6 +9,7 @@ metadata:
   name: "weblogic-operator-cluster-role-nonresource"
   labels:
     weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
 rules:
 - nonResourceURLs: ["/version/*"]
   verbs: ["get"]

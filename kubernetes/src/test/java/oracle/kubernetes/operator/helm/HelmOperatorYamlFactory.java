@@ -32,4 +32,9 @@ public class HelmOperatorYamlFactory extends OperatorYamlFactory {
         new ParsedWeblogicOperatorYaml(chart, effectiveValues),
         new ParsedWeblogicOperatorSecurityYaml(chart, effectiveValues));
   }
+
+  @Override
+  public boolean alwaysExpectExternalCredentials() {
+    return false;
+  }
 }

@@ -66,7 +66,6 @@ public class CreateOperatorInputsFileTest {
                 .internalDebugHttpPort("30999")
                 .javaLoggingLevel(JAVA_LOGGING_LEVEL_INFO)
                 .namespace("weblogic-operator")
-                .remoteDebugNodePortEnabled("false")
                 .serviceAccount("weblogic-operator")
                 .targetNamespaces("default")));
   }
