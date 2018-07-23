@@ -1,0 +1,317 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+{{- if .Values.createWeblogicDomain }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.domainUID }}-create-weblogic-domain-job-cm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+data:
+  utility.sh: |-
+    #!/bin/bash
+    #
+
+    #
+    # Report an error and fail the job
+    # $1 - text of error
+    function fail {
+      echo ERROR: $1
+      exit 1
+    }
+
+    #
+    # Create a folder
+    # $1 - path of folder to create
+    function createFolder {
+      mkdir -m 777 -p $1
+      if [ ! -d $1 ]; then
+        fail "Unable to create folder $1"
+      fi
+    }
+
+    #
+    # Check a file exists
+    # $1 - path of file to check
+    function checkFileExists {
+      if [ ! -f $1 ]; then
+        fail "The file $1 does not exist"
+      fi
+    }
+
+  create-domain-job.sh: |-
+    #!/bin/bash
+    #
+
+    # Include common utility functions
+    source /u01/weblogic/utility.sh
+
+    # Verify the script to create the domain exists
+    script='/u01/weblogic/create-domain-script.sh'
+    if [ -f $script ]; then
+      echo The domain will be created using the script $script
+    else
+      fail "Could not locate the domain creation script ${script}"
+    fi
+
+    # Validate the domain secrets exist before proceeding.
+    if [ ! -f /weblogic-operator/secrets/username ]; then
+      fail "The domain secret /weblogic-operator/secrets/username was not found"
+    fi
+    if [ ! -f /weblogic-operator/secrets/password ]; then
+      fail "The domain secret /weblogic-operator/secrets/password was not found"
+    fi
+
+    # Do not proceed if the domain already exists
+    domainFolder=${SHARED_PATH}/domain/{{ .Values.domainName }}
+    if [ -d ${domainFolder} ]; then
+      fail "The create domain job will not overwrite an existing domain. The domain folder ${domainFolder} already exists"
+    fi
+
+    # Create the base folders
+    createFolder ${SHARED_PATH}/domain
+    createFolder ${SHARED_PATH}/applications
+    createFolder ${SHARED_PATH}/logs
+    createFolder ${SHARED_PATH}/stores
+
+    # Execute the script to create the domain
+    source $script
+
+  read-domain-secret.py: |-
+    #
+    # +++ Start of common code for reading domain secrets
+
+    # Read username secret
+    file = open('/weblogic-operator/secrets/username', 'r')
+    admin_username = file.read()
+    file.close()
+
+    # Read password secret
+    file = open('/weblogic-operator/secrets/password', 'r')
+    admin_password = file.read()
+    file.close()
+
+    # +++ End of common code for reading domain secrets
+    #
+
+  create-domain-script.sh: |-
+    #!/bin/bash
+    #
+
+    # Include common utility functions
+    source /u01/weblogic/utility.sh
+
+    export DOMAIN_HOME=${SHARED_PATH}/domain/{{ .Values.domainName }}
+
+    # Create the domain
+    wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py
+
+    echo "Successfully Completed"
+
+  create-domain.py: |-
+    # This python script is used to create a WebLogic domain
+
+    # Read the domain secrets from the common python file
+    execfile("/u01/weblogic/read-domain-secret.py")
+
+    server_port        = {{ .Values.managedServerPort }}
+    domain_path        = os.environ.get("DOMAIN_HOME")
+    cluster_name       = "{{ .Values.clusterName }}"
+    number_of_ms       = {{ .Values.configuredManagedServerCount }}
+    cluster_type       = "{{ .Values.clusterType }}"
+
+    print('domain_path        : [%s]' % domain_path);
+    print('domain_name        : [{{ .Values.domainName }}]');
+    print('admin_username     : [%s]' % admin_username);
+    print('admin_port         : [{{ .Values.adminPort }}]');
+    print('cluster_name       : [%s]' % cluster_name);
+    print('server_port        : [%s]' % server_port);
+    print('cluster_type       : [%s]' % cluster_type);
+
+    # Open default domain template
+    # ============================
+    readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
+
+    set('Name', '{{ .Values.domainName }}')
+    setOption('DomainName', '{{ .Values.domainName }}')
+    create('{{ .Values.domainName }}','Log')
+    cd('/Log/{{ .Values.domainName }}');
+    set('FileName', '/shared/logs/{{ .Values.domainName }}.log')
+
+    # Configure the Administration Server
+    # ===================================
+    cd('/Servers/AdminServer')
+    set('ListenAddress', '{{ .Values.domainUID }}-{{ .Values.adminServerName }}')
+    set('ListenPort', {{ .Values.adminPort }})
+    set('Name', '{{ .Values.adminServerName }}')
+
+    create('T3Channel', 'NetworkAccessPoint')
+    cd('/Servers/{{ .Values.adminServerName }}/NetworkAccessPoints/T3Channel')
+    set('PublicPort', {{ .Values.t3ChannelPort }})
+    set('PublicAddress', '{{ .Values.t3PublicAddress }}')
+    set('ListenAddress', '{{ .Values.domainUID }}-{{ .Values.adminServerName }}')
+    set('ListenPort', {{ .Values.t3ChannelPort }})
+
+    cd('/Servers/{{ .Values.adminServerName }}')
+    create('{{ .Values.adminServerName }}', 'Log')
+    cd('/Servers/{{ .Values.adminServerName }}/Log/{{ .Values.adminServerName }}')
+    set('FileName', '/shared/logs/{{ .Values.adminServerName }}.log')
+
+    # Set the admin user's username and password
+    # ==========================================
+    cd('/Security/{{ .Values.domainName }}/User/weblogic')
+    cmo.setName(admin_username)
+    cmo.setPassword(admin_password)
+
+    # Write the domain and close the domain template
+    # ==============================================
+    setOption('OverwriteDomain', 'true')
+
+    # Configure the node manager
+    # ==========================
+    cd('/NMProperties')
+    set('ListenAddress','0.0.0.0')
+    set('ListenPort',5556)
+    set('CrashRecoveryEnabled', 'true')
+    set('NativeVersionEnabled', 'true')
+    set('StartScriptEnabled', 'false')
+    set('SecureListener', 'false')
+    set('LogLevel', 'FINEST')
+    set('DomainsDirRemoteSharingEnabled', 'true')
+
+    # Set the Node Manager user name and password (domain name will change after writeDomain)
+    cd('/SecurityConfiguration/base_domain')
+    set('NodeManagerUsername', admin_username)
+    set('NodeManagerPasswordEncrypted', admin_password)
+
+    # Create a cluster
+    # ======================
+    cd('/')
+    cl=create(cluster_name, 'Cluster')
+
+    if cluster_type == "CONFIGURED":
+
+      # Create managed servers
+      for index in range(0, number_of_ms):
+        cd('/')
+
+        msIndex = index+1
+        name = '{{ .Values.managedServerNameBase }}%s' % msIndex
+
+        create(name, 'Server')
+        cd('/Servers/%s/' % name )
+        print('managed server name is %s' % name);
+        set('ListenAddress', '{{ .Values.domainUID }}-%s' % name)
+        set('ListenPort', server_port)
+        set('NumOfRetriesBeforeMSIMode', 0)
+        set('RetryIntervalBeforeMSIMode', 1)
+        set('Cluster', cluster_name)
+
+        create(name,'Log')
+        cd('/Servers/%s/Log/%s' % (name, name))
+        set('FileName', '/shared/logs/%s.log' % name)
+    else:
+      print('Configuring Dynamic Cluster %s' % cluster_name)
+
+      templateName = cluster_name + "-template"
+      print('Creating Server Template: %s' % templateName)
+      st1=create(templateName, 'ServerTemplate')
+      print('Done creating Server Template: %s' % templateName)
+      cd('/ServerTemplates/%s' % templateName)
+      cmo.setListenPort(server_port)
+      cmo.setListenAddress('{{ .Values.domainUID }}-{{ .Values.managedServerNameBase }}${id}')
+      cmo.setCluster(cl)
+      print('Done setting attributes for Server Template: %s' % templateName);
+
+
+      cd('/Clusters/%s' % cluster_name)
+      create(cluster_name, 'DynamicServers')
+      cd('DynamicServers/%s' % cluster_name)
+      set('ServerTemplate', st1)
+      set('ServerNamePrefix', "{{ .Values.managedServerNameBase }}")
+      set('DynamicClusterSize', number_of_ms)
+      set('MaxDynamicClusterSize', number_of_ms)
+      set('CalculatedListenPorts', false)
+      set('Id', 1)
+
+      print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
+
+    # Write Domain
+    # ============
+    writeDomain(domain_path)
+    closeTemplate()
+    print 'Domain Created'
+
+    # Update Domain
+    readDomain(domain_path)
+    cd('/')
+    cmo.setProductionModeEnabled({{ .Values.productionModeEnabled }})
+    updateDomain()
+    closeDomain()
+    print 'Domain Updated'
+    print 'Done'
+
+    # Exit WLST
+    # =========
+    exit()
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.domainUID }}-create-weblogic-domain-job
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        weblogic.resourceVersion: domain-v1
+        weblogic.domainUID: {{ .Values.domainUID }}
+        weblogic.domainName: {{ .Values.domainName }}
+        app: {{ .Values.domainUID }}-create-weblogic-domain-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: create-weblogic-domain-job
+          image: {{ .Values.weblogicImage }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7001
+          volumeMounts:
+          - mountPath: /u01/weblogic
+            name: create-weblogic-domain-job-cm-volume
+          - mountPath: /shared
+            name: weblogic-domain-storage-volume
+          - mountPath: /weblogic-operator/secrets
+            name: weblogic-credentials-volume
+          command: ["/bin/sh"]
+          args: ["/u01/weblogic/create-domain-job.sh"]
+          env:
+            - name: SHARED_PATH
+              value: "/shared"
+      volumes:
+        - name: create-weblogic-domain-job-cm-volume
+          configMap:
+            name: {{ .Values.domainUID }}-create-weblogic-domain-job-cm
+        - name: weblogic-domain-storage-volume
+          persistentVolumeClaim:
+            claimName: {{ .Values.domainUID }}-weblogic-domain-pvc
+        - name: weblogic-credentials-volume
+          secret:
+            secretName: {{ .Values.weblogicCredentialsSecretName }}
+      {{- if .Values.weblogicImagePullSecretName }}
+      imagePullSecrets:
+      - name: {{ .Values.weblogicImagePullSecretName }}
+      {{- end }}
+{{- end }}
