@@ -64,8 +64,8 @@ Defaults for RESULT_ROOT & PV_ROOT:
 
 | Test Mode  |	RESULT_ROOT |	PV_ROOT |	Where initialized |
 | --- | --- | --- | --- |
-| stand-alone	| /scratch/$USER/wl_k8s_test_results |	<--same	| test defaults |
-| Jenkins	| /scratch/k8s_dir |	<--same	 | jenkins configuration |
+| stand-alone	| /scratch/$USER/wl_k8s_test_results |	/scratch/$USER/wl_k8s_test_results	| test defaults |
+| Jenkins	| /scratch/k8s_dir |	/scratch/k8s_dir	 | jenkins configuration |
 | Wercker	| /pipeline/output/k8s_dir	| /scratch	| wercker.yml |
 
 
@@ -79,17 +79,17 @@ Defaults for RESULT_ROOT & PV_ROOT:
 
 'Logical' to 'Physical' K8S PV/PVC mappings:
 
- |   Logical   |  Actual |
- | --- | --- |
- | job.sh job: | /scratch <--> PV_ROOT on K8S machines |
- | domain pod: | /shared  <--> PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines |
+ |  | Logical   |  Actual |
+ | --- | --- | --- |
+ | job.sh job | /scratch | PV_ROOT on K8S machines |
+ | domain pod: | /shared | PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid} on K8S machines |
 
 # Configuration Files
 
 A module "integration-tests" is added in Maven weblogic-kubernetes-operator project.
 
 Below configuration files are used:
-```
+
 src/integration-tests/resources/OperatorIT.properties - This file is used for configuring common attributes for all integration tests
 ```
 baseDir=/scratch  
@@ -97,7 +97,7 @@ username=weblogic
 password=welcome1  
 maxIterationsPod=50  
 waitTimePod=5  
-
+```
 
 src/integration-tests/resources/ITFirstOperator.properties - customized properties for Operator. Any property can be provided here from create-weblogic-operator-inputs.yaml, for all the properties that are not defined here default values in create-weblogic-operator-inputs.yaml are used while generating the operator inputs yaml file.
 
@@ -160,8 +160,6 @@ Secret - to create secret
 Maven and latest Git should be in PATH
 
 export JAVA_HOME
-
-set the optional env vars described below
 
 The tests accepts optional env var overrides:
 
