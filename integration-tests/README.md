@@ -1,10 +1,10 @@
-# Integration Tests for Operator
+# Integration Tests for Oracle WebLogic Server Kubernetes Operator
 
-This documentation describes the functional use cases that are covered in integration testing for Weblogic Operator. The tests are written in java(Junit tests) and driven by maven profile. All the use cases covered in run.sh will be covered in java integration tests. Currently, QUICKTEST use cases and some of non-quick test(till domain4) use cases are covered in java tests.
+This documentation describes the functional use cases that are covered in integration testing for he Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile. All the use cases covered in run.sh will be covered in Java integration tests. Currently, QUICKTEST use cases and some of Full test(till domain4) use cases are covered in Java tests.
 
 # Environments
 
-The tests currently runs in three modes, "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the WERCKER and JENKINS environment variables described below. The default is "standalone".
+The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the WERCKER and JENKINS environment variables described below. The default is "standalone".
 
 * "Standalone" Oracle Linux, i.e, run the tests manually with mvn command. 
 * Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - integration-test-java is the pipeline name
@@ -12,7 +12,7 @@ The tests currently runs in three modes, "Wercker", "Jenkins", and "standalone" 
 
 # Use Cases
 
-Currently java integration tests cover all QUICKTEST and some non-QUICKTEST use cases from run.sh. The below are the use cases:
+Currently Java integration tests cover all QUICKTEST and some Full test use cases from run.sh. The below are the use cases:
 
 * create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
 * create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
@@ -23,7 +23,7 @@ Currently java integration tests cover all QUICKTEST and some non-QUICKTEST use 
 * cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
 * Operator life cycle(destroy and create) should not impact the running domain
 
-Non-quick test use cases
+Full test use cases
 
 * keep the first domain and operator running
 * create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
@@ -43,14 +43,12 @@ Non-quick test use cases
 
 # Directory Configuration and Structure
 
-java integration tests are in feature/java-integration-tests branch on weblogic-kubernetes-operator project. Merged to develop branch.
-
 Directory structure of source code:
 
-A new module "integration-tests" is added to the maven project weblogic-kubernetes-operator.
+A new module "integration-tests" is added to the Maven project weblogic-kubernetes-operator.
 
 weblogic-kubernetes-operator/integration-tests - location of module pom.xml  
-weblogic-kubernetes-operator/integration-tests/src/test/java - integration test(junit) classes and utility classes  
+weblogic-kubernetes-operator/integration-tests/src/test/java - integration test(JUnit) classes and utility classes  
 weblogic-kubernetes-operator/integration-tests/src/test/resources - properties files(see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
@@ -88,7 +86,7 @@ Defaults for RESULT_ROOT & PV_ROOT:
 
 # Configuration Files
 
-A module "integration-tests" is added in maven weblogic-kubernetes-operator project.
+A module "integration-tests" is added in Maven weblogic-kubernetes-operator project.
 
 Below configuration files are used:
 ```
@@ -101,7 +99,7 @@ maxIterationsPod=50
 waitTimePod=5  
 
 
-src/integration-tests/resources/ITFirstOperator.properties - customized properties for operator. Any property can be provided here from create-weblogic-operator-inputs.yaml, for all the properties that are not defined here default values in create-weblogic-operator-inputs.yaml are used while generating the operator inputs yaml file.
+src/integration-tests/resources/ITFirstOperator.properties - customized properties for Operator. Any property can be provided here from create-weblogic-operator-inputs.yaml, for all the properties that are not defined here default values in create-weblogic-operator-inputs.yaml are used while generating the operator inputs yaml file.
 
 ```
 serviceAccount= weblogic-operator
@@ -112,7 +110,7 @@ externalRestOption= SELF_SIGNED_CERT
 elkIntegrationEnabled= false
 ```
 
-src/integration-tests/resources/ITFirstDomain.properties - customized properties for domain. Any property can be provided here from create-weblogic-domain-inputs.yaml. For all the properties that are not defined here, the default values in create-weblogic-domain-inputs.yaml are used while generating the domain inputs yaml file.
+src/integration-tests/resources/ITFirstDomain.properties - customized properties for WebLogic Domain. Any property can be provided here from create-weblogic-domain-inputs.yaml. For all the properties that are not defined here, the default values in create-weblogic-domain-inputs.yaml are used while generating the domain inputs yaml file.
 
 ```
 adminServerName= admin-server
@@ -137,8 +135,8 @@ Certain properties like weblogicDomainStoragePath, weblogicOperatorImage, extern
 
 # How does it work
 
-When the tests are run manually with mvn command on hosted linux, weblogic image and server jre images are pulled from a local repository. Operator image is built with the git branch from where the mvn command is executed.
-All the tests that start with IT*.java are ran. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
+When the tests are run manually with mvn command on hosted Linux, WebLogic image and server jre images are pulled from a local repository. Operator image is built with the git branch from where the mvn command is executed.
+All the tests that start with IT*.java are run. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
 
 Integration test classes:
 
@@ -157,7 +155,7 @@ Domain - contains methods to create/destroy domain, verify domain created,deploy
 PersistentVolume - to create PV
 Secret - to create secret
 
-# How to run the java integration tests
+# How to run the Java integration tests
 
 Maven and latest Git should be in PATH
 
@@ -273,11 +271,11 @@ java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, 
 [ERROR] Please refer to dump files (if any exist) [date]-jvmRun[N].dump, [date].dumpstream and [date]-jvmRun[N].dumpstream
 
 ```
-Junit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITSingleDomain.xml". This file shows how much time each test case took to run and the failed test results if any.
+JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITSingleDomain.xml". This file shows how much time each test case took to run and the failed test results if any.
 
 # Logging/Archiving
 
-java utils logging is used, writes all the messages to console and java_test_suite.out in $RESULT_ROOT/acceptance_test_tmp directory.
+Java utils logging is used, writes all the messages to console and java_test_suite.out in $RESULT_ROOT/acceptance_test_tmp directory.
 At the end of the test run, all pods logs, describes are logged in individual files and are written to state-dump-logs directory in $RESULT_ROOT/acceptance_test_tmp.
 
 $RESULT_ROOT/acceptance_test_tmp is archived under $RESULT_ROOT/acceptance_test_tmp_archive
@@ -286,7 +284,7 @@ $PV_ROOT/acceptance_test_pv is archived under $PV_ROOT/acceptance_test_pv_archiv
 
 # How to add a new test
 
-Add a new Junit test under integration-tests/src/test/java/oracle/kubernetes/operator.
+Add a new JUnit test under integration-tests/src/test/java/oracle/kubernetes/operator.
 
 class name must start with IT(Integration Test), IT*.java
 
@@ -294,4 +292,4 @@ ITFirstDomain.java - take a look at this test for reference
 
 # Future enhancement
 
-Add non-quick test use cases - part1 done.
+Add Full test use cases - part1 done.
