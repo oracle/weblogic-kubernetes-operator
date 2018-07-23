@@ -1,0 +1,148 @@
+{{- if eq .Values.loadBalancer "TRAEFIK" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      weblogic.domainUID: {{ .Values.domainUID }}
+      weblogic.clusterName: {{ .Values.clusterName }}
+  template:
+    metadata:
+      labels:
+        weblogic.resourceVersion: traefik-load-balancer-v1
+        weblogic.domainUID: {{ .Values.domainUID }}
+        weblogic.domainName: {{ .Values.domainName }}
+        weblogic.clusterName: {{ .Values.clusterName }}
+    spec:
+      serviceAccountName: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: traefik:1.4.5
+        name: traefik
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "20Mi"
+          limits:
+            cpu: "100m"
+            memory: "30Mi"
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        volumeMounts:
+        - mountPath: /config
+          name: config
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        - name: dash
+          containerPort: 8080
+          protocol: TCP
+        args:
+        - --configfile=/config/traefik.toml
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik-cm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik-cm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+data:
+  traefik.toml: |
+    # traefik.toml
+    logLevel = "INFO"
+    defaultEntryPoints = ["http"]
+    [entryPoints]
+      [entryPoints.http]
+      address = ":80"
+      compress = true
+    [kubernetes]
+    labelselector = "weblogic.domainUID={{ .Values.domainUID }},weblogic.clusterName={{ .Values.clusterName }}"
+    [web]
+    address = ":8080"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+spec:
+  selector:
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+  ports:
+  - port: 80
+    name: http
+    targetPort: http
+    nodePort: {{ .Values.loadBalancerWebPort }}
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.domainUID }}-{{ .Values.clusterName | lower }}-traefik-dashboard
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+spec:
+  selector:
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.clusterName: {{ .Values.clusterName }}
+  ports:
+  - port: 8080
+    name: dash
+    targetPort: dash
+    nodePort: {{ .Values.loadBalancerDashboardPort }}
+  type: NodePort
+{{- end }}

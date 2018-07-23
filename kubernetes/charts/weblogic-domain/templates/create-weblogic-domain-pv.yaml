@@ -1,0 +1,31 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.domainUID }}-weblogic-domain-pv
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  storageClassName: {{ .Values.domainUID }}-weblogic-domain-storage-class
+  capacity:
+    storage: {{ .Values.weblogicDomainStorageSize }}
+  accessModes:
+    - ReadWriteMany
+  # Valid values are Retain, Delete or Recycle
+  persistentVolumeReclaimPolicy: {{ .Values.weblogicDomainStorageReclaimPolicy }}
+  {{- if ne .Values.weblogicDomainStorageType "NFS" }}
+  hostPath:
+  {{- end }}
+  {{- if eq .Values.weblogicDomainStorageType "NFS" }}
+  nfs:
+    server: {{ .Values.weblogicDomainStorageNFSServer }}
+  {{- end }}
+    path: "{{ .Values.weblogicDomainStoragePath }}"
