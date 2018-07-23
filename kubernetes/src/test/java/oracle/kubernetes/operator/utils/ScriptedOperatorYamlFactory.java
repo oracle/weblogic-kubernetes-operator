@@ -31,4 +31,9 @@ public class ScriptedOperatorYamlFactory extends OperatorYamlFactory {
         new ParsedWeblogicOperatorYaml(yamlPath, inputValues),
         new ParsedWeblogicOperatorSecurityYaml(securityYamlPath, inputValues));
   }
+
+  @Override
+  public boolean alwaysExpectExternalCredentials() {
+    return true;
+  }
 }

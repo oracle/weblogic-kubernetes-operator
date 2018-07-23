@@ -4,75 +4,180 @@
 
 package oracle.kubernetes.operator.helm;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import oracle.kubernetes.operator.utils.OperatorValues;
+import org.apache.commons.codec.binary.Base64;
 
 class HelmOperatorValues extends OperatorValues {
   HelmOperatorValues() {}
 
-  HelmOperatorValues(Map<String, Object> mappedValues) {
-    for (Map.Entry<String, Object> entry : mappedValues.entrySet()) {
-      assignToField(entry.getKey(), entry.getValue());
+  HelmOperatorValues(Map<String, Object> map) {
+    loadFromMap(map, this::setServiceAccount, "operatorServiceAccount");
+    loadFromMap(map, this::setWeblogicOperatorImage, "operatorImage");
+    loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
+    loadFromMap(map, this::setNamespace, "operatorNamespace");
+    loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
+
+    loadBooleanFromMap(map, this::setExternalRestOption, "externalRestEnabled");
+    loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
+    loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
+
+    loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
+    loadIntegerFromMap(map, this::setExternalDebugHttpPort, "externalDebugHttpPort");
+    loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
+
+    loadDomainsNamespacesFromMap(map);
+  }
+
+  private void setExternalRestOption(Boolean externalRestEnabled) {
+    if (externalRestEnabled == Boolean.TRUE) {
+      setExternalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT);
+    } else if (externalRestEnabled == Boolean.FALSE) {
+      setExternalRestOption(EXTERNAL_REST_OPTION_NONE);
     }
   }
 
-  private void assignToField(String key, Object value) {
-    try {
-      Field field = getClass().getSuperclass().getDeclaredField(key);
-      setFieldValue(field, value);
-    } catch (NoSuchFieldException | IllegalAccessException ignored) {
+  private void setRemoteDebugNodePortEnabled(Boolean enabled) {
+    if (enabled != null) {
+      setRemoteDebugNodePortEnabled(enabled.toString());
     }
   }
 
-  private void setFieldValue(Field field, Object value) throws IllegalAccessException {
-    boolean wasAccessible = field.isAccessible();
-    try {
-      field.setAccessible(true);
-      field.set(this, value.toString());
-    } finally {
-      field.setAccessible(wasAccessible);
+  private void setElkIntegrationEnabled(Boolean enabled) {
+    if (enabled != null) {
+      setElkIntegrationEnabled(enabled.toString());
+    }
+  }
+
+  private <T> void loadFromMap(Map<String, Object> map, Consumer<String> setter, String key) {
+    if (map.containsKey(key)) {
+      setter.accept((String) map.get(key));
+    }
+  }
+
+  private void loadBooleanFromMap(Map<String, Object> map, Consumer<Boolean> setter, String key) {
+    if (map.containsKey(key)) {
+      setter.accept((Boolean) map.get(key));
+    }
+  }
+
+  private void loadIntegerFromMap(Map<String, Object> map, Consumer<String> setter, String key) {
+    Integer value = (Integer) map.get(key);
+    if (value != null) {
+      setter.accept(value.toString());
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void loadDomainsNamespacesFromMap(Map<String, Object> map) {
+    Map<String, ?> domainsNamespaces = (Map<String, ?>) map.get("domainsNamespaces");
+    if (domainsNamespaces != null) {
+      String[] namespaces = domainsNamespaces.keySet().toArray(new String[0]);
+      Arrays.sort(namespaces);
+      setTargetNamespaces(String.join(",", namespaces));
     }
   }
 
   Map<String, Object> createMap() {
     HashMap<String, Object> map = new HashMap<>();
-    map.put("internalOperatorCert", "test-cert");
-    map.put("internalOperatorKey", "test-key");
+    map.put(
+        "internalOperatorCert",
+        Base64.encodeBase64String(internalOperatorSelfSignedCertPem().getBytes()));
+    map.put(
+        "internalOperatorKey",
+        Base64.encodeBase64String(internalOperatorSelfSignedKeyPem().getBytes()));
+    map.put("externalOperatorCert", externalOperatorSelfSignedCertPem());
+    map.put("externalOperatorKey", externalOperatorSelfSignedKeyPem());
+    addStringMapEntry(map, this::getServiceAccount, "operatorServiceAccount");
+    addStringMapEntry(map, this::getWeblogicOperatorImage, "operatorImage");
+    addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
+    addStringMapEntry(map, this::getNamespace, "operatorNamespace");
+    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
 
-    for (Field field : getClass().getSuperclass().getDeclaredFields()) {
-      addToMapIfNeeded(map, field);
-    }
+    addMapEntry(map, this::getExternalRestEnabled, "externalRestEnabled");
+    addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
+    addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
+
+    addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
+    addMapEntry(map, this::getExternalDebugHttpPortNum, "externalDebugHttpPort");
+    addMapEntry(map, this::getInternalDebugHttpPortNum, "internalDebugHttpPort");
+
+    addDomainsNamespaces(map);
     return map;
   }
 
-  private void addToMapIfNeeded(HashMap<String, Object> map, Field field) {
-    try {
-      Object value = getValue(field);
-      if (includeInMap(field, value)) {
-        map.put(field.getName(), value);
+  private void addDomainsNamespaces(HashMap<String, Object> map) {
+    String targetNamespaces = getTargetNamespaces();
+    if (targetNamespaces.length() > 0) {
+      Map<String, Map> namespaceEntries = new HashMap<>();
+      for (String namespace : targetNamespaces.split(",")) {
+        namespaceEntries.put(namespace, Collections.emptyMap());
       }
-    } catch (IllegalAccessException ignored) {
+      map.put("domainsNamespaces", namespaceEntries);
     }
   }
 
-  private boolean includeInMap(Field field, Object value) {
-    return !Modifier.isStatic(field.getModifiers()) && !isEmptyString(value);
+  private Boolean getExternalRestEnabled() {
+    switch (getExternalRestOption()) {
+      case EXTERNAL_REST_OPTION_NONE:
+        return false;
+      case "":
+        return null;
+      default:
+        return true;
+    }
   }
 
-  private boolean isEmptyString(Object value) {
-    return value instanceof String && ((String) value).length() == 0;
+  private Boolean isRemoteDebugNotPortEnabled() {
+    return valueOf(getRemoteDebugNodePortEnabled());
   }
 
-  private Object getValue(Field field) throws IllegalAccessException {
-    boolean wasAccessible = field.isAccessible();
-    try {
-      field.setAccessible(true);
-      return field.get(this);
-    } finally {
-      field.setAccessible(wasAccessible);
+  private Boolean isElkIntegrationEnabled() {
+    return valueOf(getElkIntegrationEnabled());
+  }
+
+  private Boolean valueOf(String stringValue) {
+    switch (stringValue) {
+      case "false":
+        return false;
+      case "true":
+        return true;
+      default:
+        return null;
+    }
+  }
+
+  private Integer getExternalRestHttpsPortNum() {
+    return integerValue(getExternalRestHttpsPort());
+  }
+
+  private Integer getExternalDebugHttpPortNum() {
+    return integerValue(getExternalDebugHttpPort());
+  }
+
+  private Integer getInternalDebugHttpPortNum() {
+    return integerValue(getInternalDebugHttpPort());
+  }
+
+  private Integer integerValue(String integerString) {
+    if (integerString.length() == 0) return null;
+    else return Integer.parseInt(integerString);
+  }
+
+  private void addStringMapEntry(HashMap<String, Object> map, Supplier<String> getter, String key) {
+    if (getter.get().length() > 0) {
+      map.put(key, getter.get());
+    }
+  }
+
+  private void addMapEntry(HashMap<String, Object> map, Supplier<Object> getter, String key) {
+    if (getter.get() != null) {
+      map.put(key, getter.get());
     }
   }
 }

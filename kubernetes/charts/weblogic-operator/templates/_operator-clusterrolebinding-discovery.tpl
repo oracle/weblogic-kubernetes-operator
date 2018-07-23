@@ -3,7 +3,7 @@
 
 {{- define "operator.clusterRoleBindingDiscovery" }}
 ---
-apiVersion: "rbac.authorization.k8s.io/v1"
+apiVersion: "rbac.authorization.k8s.io/v1beta1"
 kind: "ClusterRoleBinding"
 metadata:
   labels:
@@ -16,6 +16,7 @@ roleRef:
   name: "system:discovery"
 subjects:
 - kind: "ServiceAccount"
+  apiGroup: ""
   name: {{ .operatorServiceAccount | quote }}
   namespace: {{ .operatorNamespace | quote }}
 {{- end }}

@@ -12,4 +12,6 @@ public abstract class OperatorYamlFactory {
   public abstract OperatorValues createDefaultValues() throws Exception;
 
   public abstract GeneratedOperatorObjects generate(OperatorValues inputValues) throws Exception;
+
+  public abstract boolean alwaysExpectExternalCredentials();
 }

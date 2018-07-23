@@ -38,9 +38,9 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServic
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
+import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_NONE;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.fail;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
@@ -67,6 +67,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
 
   private static OperatorValues inputs;
   private static GeneratedOperatorObjects generatedFiles;
+  private static OperatorYamlFactory factory;
 
   protected static OperatorValues getInputs() {
     return inputs;
@@ -77,14 +78,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   protected static void setup(OperatorYamlFactory factory, OperatorValues val) throws Exception {
+    CreateOperatorGeneratedFilesTestBase.factory = factory;
     inputs = val;
     generatedFiles = factory.generate(val);
-  }
-
-  @Test
-  public void weblogicOperatorYaml_hasCorrectNumberOfObjects() {
-    assertThat(
-        getGeneratedFiles().getObjectCount(), is(getGeneratedFiles().getExpectedObjectCount()));
   }
 
   @Test
@@ -98,21 +94,26 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   private V1ConfigMap getExpectedWeblogicOperatorConfigMap() {
-    return newConfigMap()
-        .metadata(
-            newObjectMeta()
-                .name("weblogic-operator-cm")
-                .namespace(getInputs().getNamespace())
-                .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .putDataItem("serviceaccount", getInputs().getServiceAccount())
-        .putDataItem("targetNamespaces", getInputs().getTargetNamespaces())
-        .putDataItem(
-            "externalOperatorCert",
-            Base64.encodeBase64String(getExpectedExternalWeblogicOperatorCert().getBytes()))
-        .putDataItem(
-            "internalOperatorCert",
-            Base64.encodeBase64String(getInputs().internalOperatorSelfSignedCertPem().getBytes()));
+    V1ConfigMap v1ConfigMap =
+        newConfigMap()
+            .metadata(
+                newObjectMeta()
+                    .name("weblogic-operator-cm")
+                    .namespace(getInputs().getNamespace())
+                    .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
+                    .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
+            .putDataItem("serviceaccount", getInputs().getServiceAccount())
+            .putDataItem("targetNamespaces", getInputs().getTargetNamespaces())
+            .putDataItem(
+                "internalOperatorCert",
+                Base64.encodeBase64String(
+                    getInputs().internalOperatorSelfSignedCertPem().getBytes()));
+    if (expectExternalCredentials()) {
+      v1ConfigMap.putDataItem(
+          "externalOperatorCert",
+          Base64.encodeBase64String(getExpectedExternalWeblogicOperatorCert().getBytes()));
+    }
+    return v1ConfigMap;
   }
 
   protected abstract String getExpectedExternalWeblogicOperatorCert();
@@ -128,17 +129,31 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   private V1Secret getExpectedWeblogicOperatorSecrets() {
-    return newSecret()
-        .metadata(
-            newObjectMeta()
-                .name("weblogic-operator-secrets")
-                .namespace(getInputs().getNamespace())
-                .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .type("Opaque")
-        .putDataItem("externalOperatorKey", getExpectedExternalWeblogicOperatorKey().getBytes())
-        .putDataItem(
-            "internalOperatorKey", getInputs().internalOperatorSelfSignedKeyPem().getBytes());
+    V1Secret v1Secret =
+        newSecret()
+            .metadata(
+                newObjectMeta()
+                    .name("weblogic-operator-secrets")
+                    .namespace(getInputs().getNamespace())
+                    .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
+                    .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
+            .type("Opaque")
+            .putDataItem(
+                "internalOperatorKey", getInputs().internalOperatorSelfSignedKeyPem().getBytes());
+    if (expectExternalCredentials()) {
+      v1Secret.putDataItem(
+          "externalOperatorKey", getExpectedExternalWeblogicOperatorKey().getBytes());
+    }
+    return v1Secret;
+  }
+
+  private boolean expectExternalCredentials() {
+    return isExternalRestPortEnabled() || factory.alwaysExpectExternalCredentials();
+  }
+
+  private boolean isExternalRestPortEnabled() {
+    return getInputs().getExternalRestOption().length() > 0
+        && !getInputs().getExternalRestOption().equals(EXTERNAL_REST_OPTION_NONE);
   }
 
   protected abstract String getExpectedExternalWeblogicOperatorKey();

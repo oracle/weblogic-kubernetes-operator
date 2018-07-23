@@ -9,6 +9,7 @@ metadata:
   name: "weblogic-operator-namespace-role"
   labels:
     weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .operatorNamespace | quote }}
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
