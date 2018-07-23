@@ -46,14 +46,16 @@ build:
       cp operator/target/weblogic-kubernetes-operator-1.0.jar /operator/weblogic-kubernetes-operator.jar
       cp operator/target/lib/*.jar /operator/lib/
       export IMAGE_TAG_OPERATOR="${IMAGE_TAG_OPERATOR:-${WERCKER_GIT_BRANCH//[_\/]/-}}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+      if [ "$IMAGE_TAG_OPERATOR" = "develop" ]; then
         export IMAGE_TAG_OPERATOR="latest"
+      elif [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR="1.0"
       fi
   - script:
     name: Remove things we do not want in the Docker image in order to reduce size of image
     code: |
-      rpm -e --nodeps tar 
-      rpm -e --nodeps gzip 
+      rpm -e --nodeps tar
+      rpm -e --nodeps gzip
       yum clean all
       rm -rf /var/cache/yum
   # push the image to Docker using the GIT branch as the tag
@@ -85,14 +87,14 @@ integration-test:
         # clean up
         yum clean all
 
-        # store the artifacts so we can download them easily 
+        # store the artifacts so we can download them easily
         tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
       }
-      
+
       function finish {
         exit_code=$?
         export INTEGRATION_TEST_RESULT="$exit_code"
-        
+
         cleanup_and_store
         exit 0
       }
@@ -160,7 +162,7 @@ integration-test:
       echo @@ "LEASE_ID=$LEASE_ID host=$HOST date=`date` user=$USER."
       echo @@
       echo @@ "Current lease owner (if any):"
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s
       echo @@
       echo @@ "About to try obtain lease:"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
@@ -175,8 +177,10 @@ integration-test:
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+      if [ "$IMAGE_TAG_OPERATOR" = "develop" ]; then
         export IMAGE_TAG_OPERATOR="latest"
+      elif [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR="1.0"
       fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
       export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
@@ -189,13 +193,13 @@ integration-test:
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/run.sh
       RUN_SH_RC=$?
 
-      if [ "$RUN_SH_RC" = "0" ]; then 
+      if [ "$RUN_SH_RC" = "0" ]; then
         echo "run.sh finished successfully"
       else
         echo "run.sh failed with return code ${RUN_SH_RC}"
         exit $RUN_SH_RC
       fi
-    
+
       cleanup_and_store
 
 # This pipeline runs java integration tests against a k8s cluster on OCI.
@@ -203,10 +207,10 @@ command-timeout: 60
 integration-test-java:
   steps:
   - script:
-    name: obtain lease on k8s cluster 
+    name: obtain lease on k8s cluster
     code: |
       #!/bin/bash
-      
+
       cp /etc/hosts $WERCKER_PIPELINE_DIR/hosts
       sed -i "$ a ${OCI_K8S_WORKER0_IP} ${OCI_K8S_WORKER0_HOSTNAME}" $WERCKER_PIPELINE_DIR/hosts
       cp $WERCKER_PIPELINE_DIR/hosts /etc/hosts
@@ -258,7 +262,7 @@ integration-test-java:
       echo @@ "LEASE_ID=$LEASE_ID host=$HOST date=`date` user=$USER."
       echo @@
       echo @@ "Current lease owner (if any):"
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s 
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -s
       echo @@
       echo @@ "About to try obtain lease:"
       $WERCKER_SOURCE_DIR/src/integration-tests/bash/lease.sh -o "$LEASE_ID" -t $((100 * 60))
@@ -273,8 +277,10 @@ integration-test-java:
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+      if [ "$IMAGE_TAG_OPERATOR" = "develop" ]; then
         export IMAGE_TAG_OPERATOR="latest"
+      elif [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR="1.0"
       fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
       export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
@@ -282,17 +288,17 @@ integration-test-java:
 
       echo "Integration test suite against the test image which is:"
       echo "$IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
-      
+
   - script:
     name: Install pre-reqs
     code: |
       yum -y install tar gzip procps
-      
+
   - wercker/maven:
     goals: test-compile integration-test
     version: 3.5.2
     profiles: java-integration-tests
-    
+
   - script:
     name: cleanup and store
     code: |
@@ -301,27 +307,33 @@ integration-test-java:
         # clean up
         yum clean all
 
-        # store the artifacts so we can download them easily 
+        # store the artifacts so we can download them easily
         tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
       }
-      
+
       cleanup_and_store
-      
-      
-# This pipeline runs quality checks 
+
+# This pipeline runs quality checks
 quality:
   steps:
   - script:
     name: Install pre-reqs
     code: |
       yum -y install tar gzip procps
-  - wercker/maven: 
-    profiles: build-sonar 
-    maven_opts: -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASSWORD} -Dsonar.host.url=${SONAR_HOST} 
+  - wercker/maven:
+    profiles: build-sonar
+    maven_opts: -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASSWORD} -Dsonar.host.url=${SONAR_HOST}
     goals: clean install sonar:sonar
     cache_repo: true
     version: 3.5.2
 
+promote-image:
+  steps:
+  - internal/docker-push:
+    username: $REPO_USERNAME
+    password: $REPO_PASSWORD
+    repository: oracle/weblogic-kubernetes-operator
+    tag: $IMAGE_TAG_OPERATOR
 
 dev:
   steps:
