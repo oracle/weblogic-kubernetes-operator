@@ -608,10 +608,10 @@ function createYamlFiles {
     apacheConfigFileName="custom_mod_wl_apache.conf"
     if [ ! -z "${loadBalancerVolumePath}" ]; then
       if [ ! -d ${loadBalancerVolumePath} ]; then
-        echo -e "\nERROR: \nThe specified loadBalancerVolumePath $loadBalancerVolumePath does not exist! \n"
+        echo -e "\nERROR - The specified loadBalancerVolumePath $loadBalancerVolumePath does not exist! \n"
         fail "Exiting due to a validation error"
       elif [ ! -f ${loadBalancerVolumePath}/${apacheConfigFileName} ]; then
-        echo -e "\nERROR: \nThe required file ${apacheConfigFileName} does not exist under the specified loadBalancerVolumePath $loadBalancerVolumePath! \n"
+        echo -e "\nERROR - The required file ${apacheConfigFileName} does not exist under the specified loadBalancerVolumePath $loadBalancerVolumePath! \n"
         fail "Exiting due to a validation error"
       else
         enableLoadBalancerVolumePathPrefix="${enabledPrefix}"
