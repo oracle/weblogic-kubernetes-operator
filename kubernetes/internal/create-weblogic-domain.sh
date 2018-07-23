@@ -604,11 +604,20 @@ function createYamlFiles {
       enableLoadBalancerExposeAdminPortPrefix="${disabledPrefix}"
     fi
 
+    enableLoadBalancerVolumePathPrefix="${disabledPrefix}"
+    apacheConfigFileName="custom_mod_wl_apache.conf"
     if [ ! -z "${loadBalancerVolumePath}" ]; then
-      enableLoadBalancerVolumePathPrefix="${enabledPrefix}"
-      sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
-    else
-      enableLoadBalancerVolumePathPrefix="${disabledPrefix}"
+      if [ ! -d ${loadBalancerVolumePath} ]; then
+        echo -e "\nERROR - The specified loadBalancerVolumePath $loadBalancerVolumePath does not exist! \n"
+        fail "Exiting due to a validation error"
+      elif [ ! -f ${loadBalancerVolumePath}/${apacheConfigFileName} ]; then
+        echo -e "\nERROR - The required file ${apacheConfigFileName} does not exist under the specified loadBalancerVolumePath $loadBalancerVolumePath! \n"
+        fail "Exiting due to a validation error"
+      else
+        enableLoadBalancerVolumePathPrefix="${enabledPrefix}"
+        sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
+
+      fi
     fi
 
     sed -i -e "s:%ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%:${enableLoadBalancerExposeAdminPortPrefix}:g" ${apacheOutput}
