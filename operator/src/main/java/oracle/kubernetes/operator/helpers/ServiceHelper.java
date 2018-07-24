@@ -14,6 +14,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CRE
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
@@ -302,8 +303,10 @@ public class ServiceHelper {
     protected abstract String getServiceCreatedMessageKey();
 
     private Step deleteAndReplaceService(Step next) {
+      V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
-          .deleteServiceAsync(createServiceName(), getNamespace(), new DeleteServiceResponse(next));
+          .deleteServiceAsync(
+              createServiceName(), getNamespace(), deleteOptions, new DeleteServiceResponse(next));
     }
 
     private class DeleteServiceResponse extends ResponseStep<V1Status> {
@@ -389,8 +392,9 @@ public class ServiceHelper {
     }
 
     Step deleteService(String name, String namespace) {
+      V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
-          .deleteServiceAsync(name, namespace, new DefaultResponseStep<>(getNext()));
+          .deleteServiceAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(getNext()));
     }
 
     // Set service to null so that watcher doesn't try to recreate service

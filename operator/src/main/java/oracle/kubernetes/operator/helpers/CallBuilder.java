@@ -858,13 +858,19 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step deleteServiceAsync(
-      String name, String namespace, ResponseStep<V1Status> responseStep) {
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteService", namespace, name, null), DELETE_SERVICE);
+        responseStep,
+        new RequestParams("deleteService", namespace, name, deleteOptions),
+        DELETE_SERVICE);
   }
 
   /* Events */
