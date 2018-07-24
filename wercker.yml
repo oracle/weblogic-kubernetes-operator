@@ -37,27 +37,10 @@ build:
     goals: clean install
     version: 3.5.2
     cache_repo: true
-  - script:
-    name: Copy built-artifacts into the image
-    code: |
-      mkdir /operator
-      mkdir /operator/lib
-      cp -R src/scripts/* /operator/
-      cp operator/target/weblogic-kubernetes-operator-1.0.jar /operator/weblogic-kubernetes-operator.jar
-      cp operator/target/lib/*.jar /operator/lib/
-      export IMAGE_TAG_OPERATOR="${IMAGE_TAG_OPERATOR:-${WERCKER_GIT_BRANCH//[_\/]/-}}"
-      if [ "$IMAGE_TAG_OPERATOR" = "develop" ]; then
-        export IMAGE_TAG_OPERATOR="latest"
-      elif [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR="1.0"
-      fi
-  - script:
-    name: Remove things we do not want in the Docker image in order to reduce size of image
-    code: |
-      rpm -e --nodeps tar
-      rpm -e --nodeps gzip
-      yum clean all
-      rm -rf /var/cache/yum
+  - internal/docker-build:
+    dockerfile: Dockerfile
+    image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
+    no-cache: true
   # push the image to Docker using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:
@@ -177,9 +160,7 @@ integration-test:
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "develop" ]; then
-        export IMAGE_TAG_OPERATOR="latest"
-      elif [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="1.0"
       fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
@@ -277,9 +258,7 @@ integration-test-java:
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "develop" ]; then
-        export IMAGE_TAG_OPERATOR="latest"
-      elif [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="1.0"
       fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
