@@ -891,7 +891,7 @@ public class Main {
             case "DELETED":
               if (sko != null) {
                 if (channelName != null) {
-                  V1Service oldService = sko.getChannels().put(channelName, null);
+                  V1Service oldService = sko.getChannels().remove(channelName);
                   if (oldService != null) {
                     // Service was deleted, but sko still contained a non-null entry
                     LOGGER.info(
