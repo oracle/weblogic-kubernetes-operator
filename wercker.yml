@@ -29,6 +29,10 @@ build:
     code: |
       echo "Building Oracle WebLogic Server Kubernetes Operator..."
       echo "The branch and commit id are $WERCKER_GIT_BRANCH, $WERCKER_GIT_COMMIT"
+      export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
+      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
+        export IMAGE_TAG_OPERATOR="1.0"
+      fi
   - script:
     name: Install pre-reqs
     code: |
