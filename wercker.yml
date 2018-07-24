@@ -33,6 +33,7 @@ build:
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="1.0"
       fi
+      docker login -u $REPO_USERNAME -p $REPO_PASSWORD
   - script:
     name: Install pre-reqs
     code: |
