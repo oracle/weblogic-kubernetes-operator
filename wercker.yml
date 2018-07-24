@@ -295,7 +295,7 @@ integration-test-java:
       yum -y install tar gzip procps
 
   - wercker/maven:
-    goals: test-compile integration-test
+    goals: clean verify
     version: 3.5.2
     profiles: java-integration-tests
 

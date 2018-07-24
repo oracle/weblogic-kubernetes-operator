@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 
 import java.util.Properties;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -49,22 +48,11 @@ public class ITFirstDomain extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-
     // initialize test properties and create the directories
     initialize(appPropsFile);
 
-    // delete k8s artifacts created if any, delete PV directories
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
-      ExecResult result = cleanup();
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILED: Command to call cleanup script failed " + result.stderr());
-      }
-      logger.info(
-          "Command to call cleanup script returned " + result.stdout() + "\n" + result.stderr());
-    }
+    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    logger.info("BEGIN");
 
     // renew lease at the begining for every test method, leaseId is set only for Wercker
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
