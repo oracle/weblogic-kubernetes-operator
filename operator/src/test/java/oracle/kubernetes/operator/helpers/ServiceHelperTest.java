@@ -40,6 +40,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
@@ -152,7 +153,8 @@ public class ServiceHelperTest {
     return testSupport
         .createCannedResponse("deleteService")
         .withName(SERVICE_NAME)
-        .withNamespace(NS);
+        .withNamespace(NS)
+        .withBody(new V1DeleteOptions());
   }
 
   private V1Service createMinimalService() {
@@ -374,7 +376,8 @@ public class ServiceHelperTest {
     return testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
-        .withName(serviceName);
+        .withName(serviceName)
+        .withBody(new V1DeleteOptions());
   }
 
   private V1Service createClusterServiceWithBadVersion() {
