@@ -271,8 +271,7 @@ public class TestUtils {
       throws Exception {
 
     File certFile =
-        new File(
-            TestUtils.class.getClassLoader().getResource(".").getFile() + "/../operator.cert.pem");
+        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/../operator.cert.pem");
 
     StringBuffer opCertCmd = new StringBuffer("grep externalOperatorCert ");
     opCertCmd
@@ -304,8 +303,7 @@ public class TestUtils {
   public static String getExternalOperatorKey(String operatorNS, String userProjectsDir)
       throws Exception {
     File keyFile =
-        new File(
-            TestUtils.class.getClassLoader().getResource(".").getFile() + "/../operator.key.pem");
+        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/../operator.key.pem");
 
     StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey ");
     opKeyCmd

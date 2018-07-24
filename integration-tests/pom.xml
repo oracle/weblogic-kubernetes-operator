@@ -91,6 +91,16 @@
 									<executable>${resource-integration-test}/setupenv.sh</executable>
 								</configuration>
 							</execution>
+							<execution><!-- dump pod, domain, etc logs -->
+								<id>statedump</id>
+								<phase>post-integration-test</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>${resource-integration-test}/statedump.sh</executable>
+								</configuration>
+							</execution>
 						</executions>
 					</plugin>
 					<plugin>
