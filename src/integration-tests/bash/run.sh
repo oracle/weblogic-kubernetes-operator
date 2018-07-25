@@ -671,7 +671,7 @@ function create_image_pull_secret_wercker {
 
 function op_define {
     if [ "$#" != 5 ] ; then
-      fail "requires 4 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT SETUP_KUBERNETES_CLUSTER"
+      fail "requires 5 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT SETUP_KUBERNETES_CLUSTER"
     fi
     local opkey="`echo \"${1?}\" | sed 's/-/_/g'`"
     eval export OP_${opkey}_NAMESPACE="$2"
