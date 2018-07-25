@@ -567,14 +567,24 @@ function createYamlFiles {
     sed -i -e "s:%WEB_APP_PREPATH%:$loadBalancerAppPrepath:g" ${apacheOutput}
 
     if [ ! -z "${loadBalancerVolumePath}" ]; then
-      sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
-      sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
-      sed -i -e "s:# - name:- name:g" ${apacheOutput}
-      sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
-      sed -i -e "s:#     path:    path:g" ${apacheOutput}
-      sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
-      sed -i -e "s:# - name:- name:g" ${apacheOutput}
-      sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
+      apacheConfigFileName="custom_mod_wl_apache.conf"
+      if [ ! -d ${loadBalancerVolumePath} ]; then
+        echo -e "\nERROR - The specified loadBalancerVolumePath $loadBalancerVolumePath does not exist! \n"
+        fail "Exiting due to a validation error"
+      elif [ ! -f ${loadBalancerVolumePath}/${apacheConfigFileName} ]; then
+        echo -e "\nERROR - The required file ${apacheConfigFileName} does not exist under the specified loadBalancerVolumePath $loadBalancerVolumePath! \n"
+        fail "Exiting due to a validation error"
+      else
+        sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
+        sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
+        sed -i -e "s:# - name:- name:g" ${apacheOutput}
+        sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
+        sed -i -e "s:#     path:    path:g" ${apacheOutput}
+        sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
+        sed -i -e "s:# - name:- name:g" ${apacheOutput}
+        sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
+
+      fi
     fi
  
     # Apache security file
