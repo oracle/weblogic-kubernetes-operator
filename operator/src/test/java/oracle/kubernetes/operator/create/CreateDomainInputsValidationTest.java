@@ -47,6 +47,7 @@ public class CreateDomainInputsValidationTest {
   private static final String PARAM_LOAD_BALANCER = "loadBalancer";
   private static final String PARAM_LOAD_BALANCER_WEB_PORT = "loadBalancerWebPort";
   private static final String PARAM_LOAD_BALANCER_DASHBOARD_PORT = "loadBalancerDashboardPort";
+  private static final String PARAM_LOAD_BALANCER_VOLUME_PATH = "loadBalancerVolumePath";
   private static final String PARAM_JAVA_OPTIONS = "javaOptions";
   private static final String PARAM_VERSION = "version";
 
@@ -516,6 +517,25 @@ public class CreateDomainInputsValidationTest {
       failsAndPrints(invalidIntegerParamValueError(PARAM_LOAD_BALANCER_DASHBOARD_PORT, val)));
   }
 
+  @Test
+  public void createDomain_with_invalidLoadBalancerVolumePath_failsAndReturnsError()
+      throws Exception {
+    String val = "invalid-load-balancer-volume-path";
+    assertThat(
+        execCreateDomain(
+            newInputs().loadBalancer(LOAD_BALANCER_APACHE).loadBalancerVolumePath(val)),
+        failsAndPrints(missingDirectoryError(PARAM_LOAD_BALANCER_VOLUME_PATH, val)));
+  }
+
+  public void createDomain_with_invalidLoadBalancerVolumePath_missingFile_failsAndReturnsError()
+      throws Exception {
+    String val = "/";
+    assertThat(
+        execCreateDomain(
+            newInputs().loadBalancer(LOAD_BALANCER_APACHE).loadBalancerVolumePath(val)),
+        failsAndPrints(
+            missingFileError(PARAM_LOAD_BALANCER_VOLUME_PATH, val, "custom-mod-wl-apache.conf")));
+  }
   // TBD - shouldn't we allow empty java options?
   @Test
   public void createDomain_with_missingJavaOptions_failsAndReturnsError() throws Exception {
@@ -571,6 +591,15 @@ public class CreateDomainInputsValidationTest {
   private String invalidRelatedParamValueError(String param, String val, String param2, String val2) {
     return errorRegexp("Invalid.*" + param + ".*" + val + " with " + param2 + ".*" + val2);
   }
+
+  private String missingDirectoryError(String param, String val) {
+    return errorRegexp(param + ".*" + val + ".*" + "does not exist!");
+  }
+
+  private String missingFileError(String param, String val, String dir) {
+    return errorRegexp(param + ".*" + val + ".*" + "does not exist under" + ".*" + dir + ".*");
+  }
+
 
   private String paramMissingError(String param) {
     return errorRegexp(param + ".*missing");
