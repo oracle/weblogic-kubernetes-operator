@@ -48,7 +48,7 @@ cd kubernetes/charts
 To install the chart with the release `my-release`, namespace `my-namespace` and secret `my-secret' without creating a weblogic domain (such as when a WebLogic domain already exists):
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --set secretName=my-secret --set createWeblogicDomain=false
+helm install weblogic-domain --name my-release --namespace my-namespace --set weblogicCredentialsSecretName=my-secret --set createWeblogicDomain=false
 ```
 
 The command deploys weblogic-domain on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists
