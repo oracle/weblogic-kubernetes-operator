@@ -33,12 +33,12 @@ public class GeneratedDomainYamlFiles {
   private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
   private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
-  public static GeneratedDomainYamlFiles generateDomainYamlFiles(CreateDomainInputs inputs)
+  public static GeneratedDomainYamlFiles generateDomainYamlFiles(DomainValues inputs)
       throws Exception {
     return new GeneratedDomainYamlFiles(inputs);
   }
 
-  private GeneratedDomainYamlFiles(CreateDomainInputs inputs) throws Exception {
+  private GeneratedDomainYamlFiles(DomainValues inputs) throws Exception {
     userProjects = createUserProjectsDirectory();
     boolean ok = false;
     try {
@@ -52,20 +52,19 @@ public class GeneratedDomainYamlFiles {
               domainFiles.getDeleteWeblogicDomainJobYamlPath(), inputs);
       domainCustomResourceYaml =
           new ParsedDomainCustomResourceYaml(domainFiles.getDomainCustomResourceYamlPath(), inputs);
-      if (CreateDomainInputs.LOAD_BALANCER_TRAEFIK.equals(inputs.getLoadBalancer())) {
+      if (DomainValues.LOAD_BALANCER_TRAEFIK.equals(inputs.getLoadBalancer())) {
         traefikYaml = new ParsedTraefikYaml(domainFiles.getTraefikYamlPath(), inputs);
         traefikSecurityYaml =
             new ParsedTraefikSecurityYaml(domainFiles.getTraefikSecurityYamlPath(), inputs);
-      } else if (CreateDomainInputs.LOAD_BALANCER_APACHE.equals(inputs.getLoadBalancer())) {
+      } else if (DomainValues.LOAD_BALANCER_APACHE.equals(inputs.getLoadBalancer())) {
         apacheYaml = new ParsedApacheYaml(domainFiles.getApacheYamlPath(), inputs);
         apacheSecurityYaml =
             new ParsedApacheSecurityYaml(domainFiles.getApacheSecurityYamlPath(), inputs);
-      } else if (CreateDomainInputs.LOAD_BALANCER_VOYAGER.equals(inputs.getLoadBalancer())) {
+      } else if (DomainValues.LOAD_BALANCER_VOYAGER.equals(inputs.getLoadBalancer())) {
         voyagerOperatorYaml =
             new ParsedVoyagerOperatorYaml(domainFiles.getVoyagerOperatorYamlPath(), inputs);
         voyagerOperatorSecurityYaml =
-            new ParsedVoyagerOperatorSecurityYaml(
-                domainFiles.getVoyagerOperatorSecurityYamlPath(), inputs);
+            new ParsedVoyagerOperatorSecurityYaml(domainFiles.getVoyagerOperatorSecurityYamlPath());
         voyagerIngressYaml =
             new ParsedVoyagerIngressYaml(domainFiles.getVoyagerIngressYamlPath(), inputs);
       }

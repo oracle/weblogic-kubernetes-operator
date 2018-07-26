@@ -10,9 +10,9 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 /** Parses a generated domain-custom-resource.yaml file into a set of typed k8s java objects */
 public class ParsedDomainCustomResourceYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedDomainCustomResourceYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+  public ParsedDomainCustomResourceYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }

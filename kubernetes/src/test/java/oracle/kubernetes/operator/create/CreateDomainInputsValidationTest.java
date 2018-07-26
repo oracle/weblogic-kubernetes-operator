@@ -4,11 +4,28 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.utils.ExecResultMatcher.*;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.CLUSTER_TYPE_CONFIGURED;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.CLUSTER_TYPE_DYNAMIC;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_APACHE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_NONE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_TRAEFIK;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_VOYAGER;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_ADMIN;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_ALL;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_AUTO;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_NONE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_SPECIFIED;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_RECLAIM_POLICY_DELETE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_RECLAIM_POLICY_RECYCLE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_TYPE_HOST_PATH;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_TYPE_NFS;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.newInputs;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.readDefaultInputsFile;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.errorRegexp;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.ExecCreateDomain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
@@ -591,7 +608,7 @@ public class CreateDomainInputsValidationTest {
     createDomain_with_validInputs_succeeds(newInputs().loadBalancer(loadBalancerType));
   }
 
-  private void createDomain_with_validInputs_succeeds(CreateDomainInputs inputs) throws Exception {
+  private void createDomain_with_validInputs_succeeds(DomainValues inputs) throws Exception {
     // throws an error if the inputs are not valid, succeeds otherwise:
     GeneratedDomainYamlFiles.generateDomainYamlFiles(inputs).remove();
   }
@@ -621,7 +638,7 @@ public class CreateDomainInputsValidationTest {
     return errorRegexp(param + ".*lowercase.*" + val);
   }
 
-  private ExecResult execCreateDomain(CreateDomainInputs inputs) throws Exception {
+  private ExecResult execCreateDomain(DomainValues inputs) throws Exception {
     return ExecCreateDomain.execCreateDomain(userProjects.getPath(), inputs);
   }
 }
