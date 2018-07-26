@@ -4,13 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static oracle.kubernetes.operator.utils.ExecCreateDomain.*;
-import static oracle.kubernetes.operator.utils.ExecResultMatcher.succeedsAndPrints;
-import static oracle.kubernetes.operator.utils.UserProjects.createUserProjectsDirectory;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.nio.file.Path;
-
 /**
  * Generates the domain yaml files for a set of valid domain input params. Creates and managed the
  * user projects directory that the files are stored in. Parses the generated yaml files into typed
@@ -18,8 +11,6 @@ import java.nio.file.Path;
  */
 public class GeneratedDomainYamlFiles {
 
-  private UserProjects userProjects;
-  private DomainFiles domainFiles;
   private ParsedCreateWeblogicDomainJobYaml createWeblogicDomainJobYaml;
   private ParsedDeleteWeblogicDomainJobYaml deleteWeblogicDomainJobYaml;
   private ParsedDomainCustomResourceYaml domainCustomResourceYaml;
@@ -33,62 +24,41 @@ public class GeneratedDomainYamlFiles {
   private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
   private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
-  public static GeneratedDomainYamlFiles generateDomainYamlFiles(CreateDomainInputs inputs)
-      throws Exception {
-    return new GeneratedDomainYamlFiles(inputs);
+  public GeneratedDomainYamlFiles(
+      ParsedCreateWeblogicDomainJobYaml createDomainJobYaml,
+      ParsedDeleteWeblogicDomainJobYaml deleteDomainJobYaml,
+      ParsedDomainCustomResourceYaml domainYaml) {
+    this.createWeblogicDomainJobYaml = createDomainJobYaml;
+    this.deleteWeblogicDomainJobYaml = deleteDomainJobYaml;
+    this.domainCustomResourceYaml = domainYaml;
   }
 
-  private GeneratedDomainYamlFiles(CreateDomainInputs inputs) throws Exception {
-    userProjects = createUserProjectsDirectory();
-    boolean ok = false;
-    try {
-      domainFiles = new DomainFiles(userProjects.getPath(), inputs);
-      assertThat(execCreateDomain(userProjects.getPath(), inputs), succeedsAndPrints("Completed"));
-      createWeblogicDomainJobYaml =
-          new ParsedCreateWeblogicDomainJobYaml(
-              domainFiles.getCreateWeblogicDomainJobYamlPath(), inputs);
-      deleteWeblogicDomainJobYaml =
-          new ParsedDeleteWeblogicDomainJobYaml(
-              domainFiles.getDeleteWeblogicDomainJobYamlPath(), inputs);
-      domainCustomResourceYaml =
-          new ParsedDomainCustomResourceYaml(domainFiles.getDomainCustomResourceYamlPath(), inputs);
-      if (CreateDomainInputs.LOAD_BALANCER_TRAEFIK.equals(inputs.getLoadBalancer())) {
-        traefikYaml = new ParsedTraefikYaml(domainFiles.getTraefikYamlPath(), inputs);
-        traefikSecurityYaml =
-            new ParsedTraefikSecurityYaml(domainFiles.getTraefikSecurityYamlPath(), inputs);
-      } else if (CreateDomainInputs.LOAD_BALANCER_APACHE.equals(inputs.getLoadBalancer())) {
-        apacheYaml = new ParsedApacheYaml(domainFiles.getApacheYamlPath(), inputs);
-        apacheSecurityYaml =
-            new ParsedApacheSecurityYaml(domainFiles.getApacheSecurityYamlPath(), inputs);
-      } else if (CreateDomainInputs.LOAD_BALANCER_VOYAGER.equals(inputs.getLoadBalancer())) {
-        voyagerOperatorYaml =
-            new ParsedVoyagerOperatorYaml(domainFiles.getVoyagerOperatorYamlPath(), inputs);
-        voyagerOperatorSecurityYaml =
-            new ParsedVoyagerOperatorSecurityYaml(
-                domainFiles.getVoyagerOperatorSecurityYamlPath(), inputs);
-        voyagerIngressYaml =
-            new ParsedVoyagerIngressYaml(domainFiles.getVoyagerIngressYamlPath(), inputs);
-      }
-      weblogicDomainPersistentVolumeYaml =
-          new ParsedWeblogicDomainPersistentVolumeYaml(
-              domainFiles.getWeblogicDomainPersistentVolumeYamlPath(), inputs);
-      weblogicDomainPersistentVolumeClaimYaml =
-          new ParsedWeblogicDomainPersistentVolumeClaimYaml(
-              domainFiles.getWeblogicDomainPersistentVolumeClaimYamlPath(), inputs);
-      ok = true;
-    } finally {
-      if (!ok) {
-        remove();
-      }
-    }
+  public void definePersistentVolumeYaml(
+      ParsedWeblogicDomainPersistentVolumeYaml persistentVolumeYaml,
+      ParsedWeblogicDomainPersistentVolumeClaimYaml persistentVolumeClaimYaml) {
+    this.weblogicDomainPersistentVolumeYaml = persistentVolumeYaml;
+    this.weblogicDomainPersistentVolumeClaimYaml = persistentVolumeClaimYaml;
   }
 
-  public Path getInputsYamlPath() {
-    return ExecCreateDomain.getInputsYamlPath(userProjects.getPath());
+  public void defineYoyagerYaml(
+      ParsedVoyagerOperatorYaml voyagerOperatorYaml,
+      ParsedVoyagerOperatorSecurityYaml voyagerOperatorSecurityYaml,
+      ParsedVoyagerIngressYaml voyagerIngressYaml) {
+    this.voyagerOperatorYaml = voyagerOperatorYaml;
+    this.voyagerOperatorSecurityYaml = voyagerOperatorSecurityYaml;
+    this.voyagerIngressYaml = voyagerIngressYaml;
   }
 
-  public DomainFiles getDomainFiles() {
-    return domainFiles;
+  public void defineApacheYaml(
+      ParsedApacheYaml apacheYaml, ParsedApacheSecurityYaml apacheSecurityYaml) {
+    this.apacheYaml = apacheYaml;
+    this.apacheSecurityYaml = apacheSecurityYaml;
+  }
+
+  public void defineTraefikYaml(
+      ParsedTraefikYaml traefikYaml, ParsedTraefikSecurityYaml traefikSecurityYaml) {
+    this.traefikYaml = traefikYaml;
+    this.traefikSecurityYaml = traefikSecurityYaml;
   }
 
   public ParsedCreateWeblogicDomainJobYaml getCreateWeblogicDomainJobYaml() {
@@ -138,9 +108,5 @@ public class GeneratedDomainYamlFiles {
   public ParsedWeblogicDomainPersistentVolumeClaimYaml
       getWeblogicDomainPersistentVolumeClaimYaml() {
     return weblogicDomainPersistentVolumeClaimYaml;
-  }
-
-  public void remove() throws Exception {
-    userProjects.remove();
   }
 }

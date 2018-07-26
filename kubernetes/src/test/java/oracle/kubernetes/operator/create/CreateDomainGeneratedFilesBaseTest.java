@@ -5,17 +5,85 @@
 package oracle.kubernetes.operator.create;
 
 import static java.util.Arrays.asList;
-import static oracle.kubernetes.operator.LabelConstants.*;
-import static oracle.kubernetes.operator.VersionConstants.*;
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.readInputsYamlFile;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
+import static oracle.kubernetes.operator.LabelConstants.APP_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.APACHE_LOAD_BALANCER_V1;
+import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
+import static oracle.kubernetes.operator.VersionConstants.TRAEFIK_LOAD_BALANCER_V1;
+import static oracle.kubernetes.operator.VersionConstants.VOYAGER_LOAD_BALANCER_V1;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_GROUP_RBAC;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_APPS_V1BETA1;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_EXTENSIONS_V1BETA1;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_RBAC_V1;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_CLUSTER_ROLE;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE_ACCOUNT;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.containsRegexps;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.getThenEmptyConfigMapDataValue;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRole;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRoleBinding;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterStartup;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterStartupList;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMap;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMapVolumeSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainer;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainerPort;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeployment;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeploymentSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDomain;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDomainSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVarList;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHTTPGetAction;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHostPathVolumeSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIntOrString;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newJob;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newJobSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLabelSelector;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalObjectReferenceList;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectMeta;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolume;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeClaim;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeClaimSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeClaimVolumeSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodTemplateSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPolicyRule;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newProbe;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newResourceRequirements;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretReference;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretVolumeSource;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServerStartup;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServerStartupList;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newService;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceAccount;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServicePort;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceSpec;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newTCPSocketAction;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newToleration;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.*;
-import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1beta1ClusterRole;
+import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import oracle.kubernetes.operator.utils.DomainValues;
+import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
 import oracle.kubernetes.operator.utils.ParsedApacheSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedApacheYaml;
@@ -30,7 +98,6 @@ import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import org.junit.AfterClass;
 import org.junit.Test;
 
 /**
@@ -40,8 +107,9 @@ import org.junit.Test;
  */
 public abstract class CreateDomainGeneratedFilesBaseTest {
 
-  private static CreateDomainInputs inputs;
+  private static DomainValues inputs;
   private static GeneratedDomainYamlFiles generatedFiles;
+  private static DomainYamlFactory factory;
 
   private static final String PROPERTY_TRAEFIK_TOML = "traefik.toml";
   private static final String PROPERTY_UTILITY_SH = "utility.sh";
@@ -50,31 +118,31 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   private static final String PROPERTY_CREATE_DOMAIN_SCRIPT_SH = "create-domain-script.sh";
   private static final String PROPERTY_CREATE_DOMAIN_PY = "create-domain.py";
 
-  protected static CreateDomainInputs getInputs() {
+  protected static DomainValues getInputs() {
     return inputs;
   }
 
-  protected static GeneratedDomainYamlFiles getGeneratedFiles() {
+  private static GeneratedDomainYamlFiles getGeneratedFiles() {
     return generatedFiles;
   }
 
-  protected ParsedCreateWeblogicDomainJobYaml getCreateWeblogicDomainJobYaml() {
+  private ParsedCreateWeblogicDomainJobYaml getCreateWeblogicDomainJobYaml() {
     return getGeneratedFiles().getCreateWeblogicDomainJobYaml();
   }
 
-  protected ParsedDeleteWeblogicDomainJobYaml getDeleteWeblogicDomainJobYaml() {
+  private ParsedDeleteWeblogicDomainJobYaml getDeleteWeblogicDomainJobYaml() {
     return getGeneratedFiles().getDeleteWeblogicDomainJobYaml();
   }
 
-  protected ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() {
+  private ParsedDomainCustomResourceYaml getDomainCustomResourceYaml() {
     return getGeneratedFiles().getDomainCustomResourceYaml();
   }
 
-  protected ParsedTraefikSecurityYaml getTraefikSecurityYaml() {
+  private ParsedTraefikSecurityYaml getTraefikSecurityYaml() {
     return getGeneratedFiles().getTraefikSecurityYaml();
   }
 
-  protected ParsedTraefikYaml getTraefikYaml() {
+  private ParsedTraefikYaml getTraefikYaml() {
     return getGeneratedFiles().getTraefikYaml();
   }
 
@@ -107,74 +175,14 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return getGeneratedFiles().getWeblogicDomainPersistentVolumeYaml();
   }
 
-  protected static void setup(CreateDomainInputs val) throws Exception {
-    inputs = val;
-    generatedFiles = GeneratedDomainYamlFiles.generateDomainYamlFiles(getInputs());
-  }
-
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if (generatedFiles != null) {
-      generatedFiles.remove();
-    }
+  protected static void setup(DomainYamlFactory factory, DomainValues values) throws Exception {
+    CreateDomainGeneratedFilesBaseTest.factory = factory;
+    inputs = values;
+    generatedFiles = factory.generate(values);
   }
 
   @Test
-  public void generatedCorrect_weblogicDomainInputsYaml() throws Exception {
-    assertThat(
-        readInputsYamlFile(generatedFiles.getDomainFiles().getCreateWeblogicDomainInputsYamlPath()),
-        yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
-  }
-
-  @Test
-  public void createWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getCreateWeblogicDomainJobYaml().getObjectCount(),
-        is(getCreateWeblogicDomainJobYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void deleteWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getDeleteWeblogicDomainJobYaml().getObjectCount(),
-        is(getDeleteWeblogicDomainJobYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void domainCustomResourceYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getDomainCustomResourceYaml().getObjectCount(),
-        is(getDomainCustomResourceYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void loadBalancerSecurityYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getTraefikSecurityYaml().getObjectCount(),
-        is(getTraefikSecurityYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void loadBalancerYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(getTraefikYaml().getObjectCount(), is(getTraefikYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void weblogicDomainPersistentVolumeClaimYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getWeblogicDomainPersistentVolumeClaimYaml().getObjectCount(),
-        is(getWeblogicDomainPersistentVolumeClaimYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void weblogicDomainPersistentVolumeYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getWeblogicDomainPersistentVolumeYaml().getObjectCount(),
-        is(getWeblogicDomainPersistentVolumeYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void generatesCorrect_createWeblogicDomainJob() throws Exception {
+  public void generatesCorrect_createWeblogicDomainJob() {
     assertThat(
         getActualCreateWeblogicDomainJob(), yamlEqualTo(getExpectedCreateWeblogicDomainJob()));
   }
@@ -407,7 +415,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     assertThat(getActualDomain(), yamlEqualTo(getExpectedDomain()));
   }
 
-  protected Domain getActualDomain() {
+  private Domain getActualDomain() {
     return getDomainCustomResourceYaml().getDomain();
   }
 

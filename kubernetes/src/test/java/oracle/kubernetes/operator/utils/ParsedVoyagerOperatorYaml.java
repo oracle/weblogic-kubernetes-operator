@@ -13,9 +13,9 @@ import java.nio.file.Path;
 /** Parses a generated voyager-operator.yaml file into a set of typed k8s java objects */
 public class ParsedVoyagerOperatorYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedVoyagerOperatorYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+  public ParsedVoyagerOperatorYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }

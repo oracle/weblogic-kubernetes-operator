@@ -22,9 +22,9 @@ public class DomainFiles {
       "weblogic-domain-pvc.yaml";
 
   private Path userProjectsPath;
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public DomainFiles(Path userProjectsPath, CreateDomainInputs inputs) {
+  public DomainFiles(Path userProjectsPath, DomainValues inputs) {
     this.userProjectsPath = userProjectsPath;
     this.inputs = inputs;
   }
