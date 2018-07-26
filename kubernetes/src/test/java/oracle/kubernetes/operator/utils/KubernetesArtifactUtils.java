@@ -12,6 +12,7 @@ import com.appscode.voyager.client.models.V1beta1IngressRule;
 import com.appscode.voyager.client.models.V1beta1IngressSpec;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.ApiregistrationV1beta1ServiceReference;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -63,7 +64,6 @@ import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1PolicyRule;
 import io.kubernetes.client.models.V1beta1RoleBinding;
 import io.kubernetes.client.models.V1beta1RoleRef;
-import io.kubernetes.client.models.V1beta1ServiceReference;
 import io.kubernetes.client.models.V1beta1Subject;
 import java.util.ArrayList;
 import java.util.List;
@@ -174,8 +174,8 @@ public class KubernetesArtifactUtils {
     return new V1beta1APIServiceSpec();
   }
 
-  public static V1beta1ServiceReference newServiceReference() {
-    return new V1beta1ServiceReference();
+  public static ApiregistrationV1beta1ServiceReference newServiceReference() {
+    return new ApiregistrationV1beta1ServiceReference();
   }
 
   public static V1beta1Ingress newIngress() {
