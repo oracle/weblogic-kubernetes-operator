@@ -48,8 +48,8 @@ build:
     registry-auth-config: |
       {
         "https://registry-1.docker.io/v2/": {
-          "username": "${REPO_USERNAME}",
-          "password": "${REPO_PASSWORD}"
+          "username": "${DOCKER_USERNAME}",
+          "password": "${DOCKER_PASSWORD}"
         }
       }
   # push the image to Docker using the GIT branch as the tag
@@ -317,8 +317,8 @@ quality:
 promote-image:
   steps:
   - internal/docker-push:
-    username: $REPO_USERNAME
-    password: $REPO_PASSWORD
+    username: $DOCKER_USERNAME
+    password: $DOCKER_PASSWORD
     repository: oracle/weblogic-kubernetes-operator
     tag: $IMAGE_TAG_OPERATOR
 
