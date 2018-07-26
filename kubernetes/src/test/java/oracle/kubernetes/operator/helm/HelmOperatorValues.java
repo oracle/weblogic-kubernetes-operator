@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helm;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -116,7 +115,7 @@ class HelmOperatorValues extends OperatorValues {
     if (targetNamespaces.length() > 0) {
       Map<String, Map> namespaceEntries = new HashMap<>();
       for (String namespace : targetNamespaces.split(",")) {
-        namespaceEntries.put(namespace, Collections.emptyMap());
+        namespaceEntries.put(namespace, new HashMap());
       }
       map.put("domainsNamespaces", namespaceEntries);
     }

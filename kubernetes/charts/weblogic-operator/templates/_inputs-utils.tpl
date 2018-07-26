@@ -79,7 +79,7 @@ Verify that an enum string input value has been specified
 {{-   if has $value $legalValues -}}
       true
 {{-   else -}}
-{{      $errorMsg := cat "The property" $name "must be one of following values" $legalValues "instead of" $value -}}
+{{      $errorMsg := cat "The property" $name "must be one of the following values" $legalValues "instead of" $value -}}
 {{-     include "operator.recordValidationError" (list $scope $errorMsg) -}}
 {{-   end -}}
 {{- end -}}
