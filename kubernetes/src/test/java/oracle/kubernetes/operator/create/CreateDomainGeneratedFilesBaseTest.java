@@ -14,7 +14,6 @@ import static oracle.kubernetes.operator.VersionConstants.APACHE_LOAD_BALANCER_V
 import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
 import static oracle.kubernetes.operator.VersionConstants.TRAEFIK_LOAD_BALANCER_V1;
 import static oracle.kubernetes.operator.VersionConstants.VOYAGER_LOAD_BALANCER_V1;
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.readInputsYamlFile;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_GROUP_RBAC;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_APPS_V1BETA1;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_EXTENSIONS_V1BETA1;
@@ -72,7 +71,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
@@ -184,61 +182,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   @Test
-  public void generatedCorrect_weblogicDomainInputsYaml() throws Exception {
-    assertThat(
-        readInputsYamlFile(generatedFiles.getDomainFiles().getCreateWeblogicDomainInputsYamlPath()),
-        yamlEqualTo(readInputsYamlFile(generatedFiles.getInputsYamlPath())));
-  }
-
-  @Test
-  public void createWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getCreateWeblogicDomainJobYaml().getObjectCount(),
-        is(getCreateWeblogicDomainJobYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void deleteWeblogicDomainJobYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getDeleteWeblogicDomainJobYaml().getObjectCount(),
-        is(getDeleteWeblogicDomainJobYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void domainCustomResourceYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getDomainCustomResourceYaml().getObjectCount(),
-        is(getDomainCustomResourceYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void loadBalancerSecurityYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getTraefikSecurityYaml().getObjectCount(),
-        is(getTraefikSecurityYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void loadBalancerYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(getTraefikYaml().getObjectCount(), is(getTraefikYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void weblogicDomainPersistentVolumeClaimYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getWeblogicDomainPersistentVolumeClaimYaml().getObjectCount(),
-        is(getWeblogicDomainPersistentVolumeClaimYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void weblogicDomainPersistentVolumeYaml_hasCorrectNumberOfObjects() throws Exception {
-    assertThat(
-        getWeblogicDomainPersistentVolumeYaml().getObjectCount(),
-        is(getWeblogicDomainPersistentVolumeYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  public void generatesCorrect_createWeblogicDomainJob() throws Exception {
+  public void generatesCorrect_createWeblogicDomainJob() {
     assertThat(
         getActualCreateWeblogicDomainJob(), yamlEqualTo(getExpectedCreateWeblogicDomainJob()));
   }
@@ -471,7 +415,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     assertThat(getActualDomain(), yamlEqualTo(getExpectedDomain()));
   }
 
-  protected Domain getActualDomain() {
+  private Domain getActualDomain() {
     return getDomainCustomResourceYaml().getDomain();
   }
 
