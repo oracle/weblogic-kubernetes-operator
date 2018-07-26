@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorExternalService" }}
-{{- if (or .externalRestEnabled .remoteDebugNodePortEnabled) }}
+{{- if or (not (eq .externalRestOption "NONE")) .remoteDebugNodePortEnabled }}
 ---
 apiVersion: "v1"
 kind: "Service"
@@ -17,7 +17,7 @@ spec:
   selector:
     app: "weblogic-operator"
   ports:
-    {{- if .externalRestEnabled }}
+    {{- if not (eq .externalRestOption "NONE") }}
     - name: "rest"
       port: 8081
       nodePort: {{ .externalRestHttpsPort }}

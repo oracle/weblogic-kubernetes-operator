@@ -6,7 +6,7 @@
 apiVersion: "v1"
 data:
   internalOperatorCert: {{ .internalOperatorCert | quote }}
-  {{- if .externalRestEnabled }}
+  {{- if not (eq .externalRestOption "NONE") }}
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
   serviceaccount: {{ .operatorServiceAccount | quote }}
@@ -15,7 +15,7 @@ data:
 {{- if eq $len 0 -}}
 {{-   $ignore := set $domainsNamespaces "default" (dict) -}}
 {{- end }}
-  targetNamespaces: {{ keys $domainsNamespaces | join "," }}
+  targetNamespaces: {{ keys $domainsNamespaces | sortAlpha | join "," }}
 kind: "ConfigMap"
 metadata:
   labels:

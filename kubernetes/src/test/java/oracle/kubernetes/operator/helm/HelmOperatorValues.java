@@ -21,8 +21,8 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
     loadFromMap(map, this::setNamespace, "operatorNamespace");
     loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
+    loadFromMap(map, this::setExternalRestOption, "externalRestOption");
 
-    loadBooleanFromMap(map, this::setExternalRestOption, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
 
@@ -31,14 +31,6 @@ class HelmOperatorValues extends OperatorValues {
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
 
     loadDomainsNamespacesFromMap(map);
-  }
-
-  private void setExternalRestOption(Boolean externalRestEnabled) {
-    if (externalRestEnabled == Boolean.TRUE) {
-      setExternalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT);
-    } else if (externalRestEnabled == Boolean.FALSE) {
-      setExternalRestOption(EXTERNAL_REST_OPTION_NONE);
-    }
   }
 
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
@@ -97,8 +89,8 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
     addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
+    addStringMapEntry(map, this::getExternalRestOption, "externalRestOption");
 
-    addMapEntry(map, this::getExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
 
@@ -118,17 +110,6 @@ class HelmOperatorValues extends OperatorValues {
         namespaceEntries.put(namespace, new HashMap());
       }
       map.put("domainsNamespaces", namespaceEntries);
-    }
-  }
-
-  private Boolean getExternalRestEnabled() {
-    switch (getExternalRestOption()) {
-      case EXTERNAL_REST_OPTION_NONE:
-        return false;
-      case "":
-        return null;
-      default:
-        return true;
     }
   }
 

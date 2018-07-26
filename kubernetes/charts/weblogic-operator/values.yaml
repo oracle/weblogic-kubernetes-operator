@@ -8,11 +8,6 @@ setupKubernetesCluster: true
 # createOperator specifies whether or not the installation should create the operator and its resources.
 createOperator: true
 
-# createOperatorNamespace specifies whether or not the installation should create the Kubernetes
-# namespace that the operator will be deployed in.  If createOperatorNamespace is false than the
-# namespace must exist before the operator can be installed.
-createOperatorNamespace: true
-
 # operatorNamespace specifies the name of the Kubernetes namespace that the operator will be deployed in.
 # It is recommended that a namespace be created for the operator rather
 # than using the default namespace.
@@ -57,14 +52,82 @@ operatorImage: "weblogic-kubernetes-operator:1.0"
 # operatorImagePullPolicy specifies the image pull policy for the operator docker image.
 operatorImagePullPolicy: "IfNotPresent"
 
-# externalRestEnabled specifies whether or not the operator externally exposes a REST https interface
-# (i.e. outside of the Kubernetes cluster).
-externalRestEnabled: false
+# Options for externally exposing the operator REST https interface
+# (i.e. outside of the Kubernetes cluster). Valid values are:
+#
+# "NONE"
+#    The REST interface is not exposed outside the Kubernetes cluster.
+#
+# "SELF_SIGNED_CERT"
+#    The REST interface is exposed outside of the Kubernetes cluster on the
+#    port specified by the 'externalRestHttpsPort' property.
+#    A self-signed certificate and private key are generated for the REST interface.
+#    The certificate's subject alternative names are specified by the 'externalSans'
+#    property.
+#
+# "CUSTOM_CERT"
+#    The REST interface is exposed outside of the Kubernetes cluster on the
+#    port specified by the 'externalRestHttpsPort' property.
+#    The customer supplied certificate and private key are used for the REST
+#    interface.  They are specified by the 'externalOperatorCert' and
+#    'externalOperatorKey' properties.
+externalRestOption: NONE
 
 # externalRestHttpsPort specifies the node port that should be allocated for the external operator REST https interface.
 # This parameter is required if 'externalRestEnabled' is 'true'.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
+
+# The subject alternative names to put into the generated self-signed certificate
+# for the external WebLogic Operator REST https interface, for example:
+#   DNS:myhost,DNS:localhost,IP:127.0.0.1
+# This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
+# Otherwise, it is ignored.
+#externalOperatorCertSans:
+
+# The customer supplied certificate to use for the external operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM certificate.
+# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+#externalOperatorCert:
+
+# The customer supplied private key to use for the external operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM key.
+# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+#externalOperatorKey:
+
+# Options for the operator REST https interface inside the Kubernetes cluster.
+# Valid values are:
+#
+# "SELF_SIGNED_CERT"
+#    A self-signed certificate and private key are generated for the internal REST interface.
+#
+# "CUSTOM_CERT"
+#    The customer supplied certificate and private key are used for the REST
+#    interface.  They are specified by the 'internalOperatorCert' and
+#    'internalOperatorKey' properties.
+# 
+internalRestOption: SELF_SIGNED_CERT
+
+# The customer supplied certificate to use for the internal operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM certificate.
+# This parameter is required if 'internalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+# Note: the customer must ensure that the certificate contains the following
+# subject alternative names:
+#   DNS:internal-weblogic-operator-service
+#   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE
+#   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE.svc
+#   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE.svc.cluster.local"
+# where OPERTOR_NAMESPACE is the name of the operator's namespace.
+#internalOperatorCert:
+
+# The customer supplied private key to use for the internal operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM key.
+# This parameter is required if 'internalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+#internalOperatorKey:
 
 # remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
 # provided port and suspend execution until a remote debugger has attached.
