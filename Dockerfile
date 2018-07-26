@@ -3,8 +3,8 @@
 #
 # HOW TO BUILD THIS IMAGE
 # -----------------------
-# Run: 
-#      $ docker build -t weblogic-kubernetes-operator:latest . 
+# Run:
+#      $ docker build -t weblogic-kubernetes-operator:latest .
 #
 # Pull base image
 # From the Docker store
