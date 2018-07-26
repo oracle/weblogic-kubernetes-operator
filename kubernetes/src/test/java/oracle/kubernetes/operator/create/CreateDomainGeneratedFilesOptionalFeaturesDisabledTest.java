@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
-
-import io.kubernetes.client.models.V1PersistentVolume;
-import oracle.kubernetes.operator.utils.CreateDomainInputs;
 import org.junit.BeforeClass;
 
 /**
@@ -16,19 +12,10 @@ import org.junit.BeforeClass;
  * image pull secret, production mode is disabled and the weblogic domain storage type is HOST_PATH.
  */
 public class CreateDomainGeneratedFilesOptionalFeaturesDisabledTest
-    extends CreateDomainGeneratedFilesBaseTest {
+    extends CreateDomainGeneratedFilesOptionalFeaturesDisabledTestBase {
 
   @BeforeClass
   public static void setup() throws Exception {
-    setup(CreateDomainInputs.newInputs()); // defaults to admin node port off, t3 channel off,
-  }
-
-  @Override
-  protected V1PersistentVolume getExpectedWeblogicDomainPersistentVolume() {
-    V1PersistentVolume expected = super.getExpectedWeblogicDomainPersistentVolume();
-    expected
-        .getSpec()
-        .hostPath(newHostPathVolumeSource().path(getInputs().getWeblogicDomainStoragePath()));
-    return expected;
+    defineDomainYamlFactory(new ScriptedDomainYamlFactory());
   }
 }

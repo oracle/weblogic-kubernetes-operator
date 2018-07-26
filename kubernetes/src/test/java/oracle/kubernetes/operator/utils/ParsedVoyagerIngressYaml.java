@@ -13,9 +13,9 @@ import java.nio.file.Path;
  */
 public class ParsedVoyagerIngressYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedVoyagerIngressYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+  public ParsedVoyagerIngressYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }

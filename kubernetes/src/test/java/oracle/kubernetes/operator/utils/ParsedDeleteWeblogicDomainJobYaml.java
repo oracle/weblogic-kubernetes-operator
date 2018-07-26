@@ -11,10 +11,9 @@ import java.nio.file.Path;
 /** Parses a generated delete-weblogic-domain-job.yaml file into a set of typed k8s java objects */
 public class ParsedDeleteWeblogicDomainJobYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedDeleteWeblogicDomainJobYaml(Path yamlPath, CreateDomainInputs inputs)
-      throws Exception {
+  public ParsedDeleteWeblogicDomainJobYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }

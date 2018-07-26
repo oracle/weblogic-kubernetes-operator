@@ -4,14 +4,30 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.*;
-import static oracle.kubernetes.operator.utils.ExecResultMatcher.*;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.CLUSTER_TYPE_CONFIGURED;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.CLUSTER_TYPE_DYNAMIC;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_APACHE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_NONE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_TRAEFIK;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_VOYAGER;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_ADMIN;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_ALL;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_AUTO;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_NONE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STARTUP_CONTROL_SPECIFIED;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_RECLAIM_POLICY_DELETE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_RECLAIM_POLICY_RECYCLE;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_TYPE_HOST_PATH;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_TYPE_NFS;
+import static oracle.kubernetes.operator.utils.CreateDomainInputs.readDefaultInputsFile;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.errorRegexp;
+import static oracle.kubernetes.operator.utils.ExecResultMatcher.failsAndPrints;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import oracle.kubernetes.operator.utils.CreateDomainInputs;
+import oracle.kubernetes.operator.utils.DomainValues;
+import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import oracle.kubernetes.operator.utils.ExecCreateDomain;
 import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
 import oracle.kubernetes.operator.utils.UserProjects;
 import org.junit.After;
 import org.junit.Before;
@@ -24,6 +40,7 @@ import org.junit.Test;
 public class CreateDomainInputsValidationTest {
 
   private UserProjects userProjects;
+  private DomainYamlFactory factory = new ScriptedDomainYamlFactory();
 
   private static final String PARAM_ADMIN_PORT = "adminPort";
   private static final String PARAM_ADMIN_SERVER_NAME = "adminServerName";
@@ -88,6 +105,10 @@ public class CreateDomainInputsValidationTest {
     assertThat(
         execCreateDomain(newInputs().adminPort("")),
         failsAndPrints(paramMissingError(PARAM_ADMIN_PORT)));
+  }
+
+  private DomainValues newInputs() throws Exception {
+    return factory.newDomainValues();
   }
 
   @Test
@@ -278,14 +299,12 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
-  public void
-      createDomain_with_weblogicDomainStorageTypeHostPath_and_missingWeblogicDomainStorageNFSServer_succeeds()
-          throws Exception {
-    GeneratedDomainYamlFiles.generateDomainYamlFiles(
-            newInputs()
-                .weblogicDomainStorageType(STORAGE_TYPE_HOST_PATH)
-                .weblogicDomainStorageNFSServer(""))
-        .remove();
+  public void createDomainWithDomainStorageTypeHostPathAndMissingStorageNFSServer_succeeds()
+      throws Exception {
+    factory.generate(
+        newInputs()
+            .weblogicDomainStorageType(STORAGE_TYPE_HOST_PATH)
+            .weblogicDomainStorageNFSServer(""));
   }
 
   @Test
@@ -326,20 +345,18 @@ public class CreateDomainInputsValidationTest {
   @Test
   public void createDomain_with_weblogicDomainStorageReclaimPolicyRecycle_succeeds()
       throws Exception {
-    GeneratedDomainYamlFiles.generateDomainYamlFiles(
-            newInputs().weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_RECYCLE))
-        .remove();
+    factory.generate(
+        newInputs().weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_RECYCLE));
   }
 
   @Test
   public void
       createDomain_with_weblogicDomainStorageReclaimPolicyDelete_and_tmpWeblogicDomainStoragePath_succeeds()
           throws Exception {
-    GeneratedDomainYamlFiles.generateDomainYamlFiles(
-            newInputs()
-                .weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE)
-                .weblogicDomainStoragePath("/tmp/"))
-        .remove();
+    factory.generate(
+        newInputs()
+            .weblogicDomainStorageReclaimPolicy(STORAGE_RECLAIM_POLICY_DELETE)
+            .weblogicDomainStoragePath("/tmp/"));
   }
 
   @Test
@@ -612,9 +629,9 @@ public class CreateDomainInputsValidationTest {
     createDomain_with_validInputs_succeeds(newInputs().loadBalancer(loadBalancerType));
   }
 
-  private void createDomain_with_validInputs_succeeds(CreateDomainInputs inputs) throws Exception {
+  private void createDomain_with_validInputs_succeeds(DomainValues inputs) throws Exception {
     // throws an error if the inputs are not valid, succeeds otherwise:
-    GeneratedDomainYamlFiles.generateDomainYamlFiles(inputs).remove();
+    factory.generate(inputs);
   }
 
   private String invalidBooleanParamValueError(String param, String val) {
@@ -629,6 +646,7 @@ public class CreateDomainInputsValidationTest {
     return errorRegexp("Invalid.*" + param + ".*" + val);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private String invalidRelatedParamValueError(
       String param, String val, String param2, String val2) {
     return errorRegexp("Invalid.*" + param + ".*" + val + " with " + param2 + ".*" + val2);
@@ -650,7 +668,7 @@ public class CreateDomainInputsValidationTest {
     return errorRegexp(param + ".*lowercase.*" + val);
   }
 
-  private ExecResult execCreateDomain(CreateDomainInputs inputs) throws Exception {
+  private ExecResult execCreateDomain(DomainValues inputs) throws Exception {
     return ExecCreateDomain.execCreateDomain(userProjects.getPath(), inputs);
   }
 }

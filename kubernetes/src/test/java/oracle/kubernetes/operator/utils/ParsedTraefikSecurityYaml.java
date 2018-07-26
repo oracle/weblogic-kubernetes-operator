@@ -14,9 +14,9 @@ import java.nio.file.Path;
  */
 public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedTraefikSecurityYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+  public ParsedTraefikSecurityYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }

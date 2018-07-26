@@ -13,9 +13,9 @@ import java.nio.file.Path;
  */
 public class ParsedApacheSecurityYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedApacheSecurityYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+  public ParsedApacheSecurityYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }

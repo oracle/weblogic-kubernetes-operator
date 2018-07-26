@@ -10,9 +10,9 @@ import java.nio.file.Path;
 /** Parses a generated weblogic-domain-pvc.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicDomainPersistentVolumeClaimYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedWeblogicDomainPersistentVolumeClaimYaml(Path yamlPath, CreateDomainInputs inputs)
+  public ParsedWeblogicDomainPersistentVolumeClaimYaml(Path yamlPath, DomainValues inputs)
       throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;

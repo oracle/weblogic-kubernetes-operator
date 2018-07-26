@@ -12,9 +12,9 @@ import java.nio.file.Path;
 /** Parses a generated weblogic-domain-apache.yaml file into a set of typed k8s java objects */
 public class ParsedApacheYaml extends ParsedKubernetesYaml {
 
-  private CreateDomainInputs inputs;
+  private DomainValues inputs;
 
-  public ParsedApacheYaml(Path yamlPath, CreateDomainInputs inputs) throws Exception {
+  public ParsedApacheYaml(Path yamlPath, DomainValues inputs) throws Exception {
     super(new ScriptGeneratedYamlReader(yamlPath));
     this.inputs = inputs;
   }
