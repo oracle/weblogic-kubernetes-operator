@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.List;
 import oracle.kubernetes.operator.utils.CreateDomainInputs;
 import oracle.kubernetes.operator.utils.DomainFiles;
+import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.UserProjects;
 import org.junit.After;
 import org.junit.Before;
@@ -89,7 +90,7 @@ public class CreateDomainInputsFileTest {
       createDomainWithCompletedDefaultsInputsFile_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles()
           throws Exception {
     // customize the domain uid and weblogic storage path so that we have a valid inputs file
-    CreateDomainInputs inputs =
+    DomainValues inputs =
         readDefaultInputsFile()
             .domainUID("test-domain-uid")
             .weblogicDomainStoragePath("/scratch/k8s_dir/domain1");
@@ -102,7 +103,7 @@ public class CreateDomainInputsFileTest {
       createDomainFromPreCreatedInputsFileInPreCreatedOutputDirectory_usesSpecifiedInputsFileAndSucceedsAndGeneratesExpectedYamlFiles()
           throws Exception {
     // customize the domain uid and weblogic storage path so that we have a valid inputs file
-    CreateDomainInputs inputs =
+    DomainValues inputs =
         readDefaultInputsFile()
             .domainUID("test-domain-uid")
             .weblogicDomainStoragePath("/scratch/k8s_dir/domain1");
@@ -117,7 +118,7 @@ public class CreateDomainInputsFileTest {
     assertThatOnlyTheExpectedGeneratedYamlFilesExist(inputs);
   }
 
-  private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(CreateDomainInputs inputs)
+  private void assertThatOnlyTheExpectedGeneratedYamlFilesExist(DomainValues inputs)
       throws Exception {
     // Make sure the generated directory has the correct list of files
     DomainFiles domainFiles = new DomainFiles(userProjects.getPath(), inputs);
