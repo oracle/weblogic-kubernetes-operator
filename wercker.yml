@@ -55,6 +55,7 @@ build:
   # push the image to Docker using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:
+    image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
     username: $REPO_USERNAME
     password: $REPO_PASSWORD
     repository: $REPO_REPOSITORY
@@ -317,6 +318,7 @@ quality:
 promote-image:
   steps:
   - internal/docker-push:
+    image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
     username: $DOCKER_USERNAME
     password: $DOCKER_PASSWORD
     repository: oracle/weblogic-kubernetes-operator
