@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorNamespace" }}
-{{- if (and (.createOperatorNamespace) (not (eq .operatorNamespace "default"))) }}
 ---
 apiVersion: "v1"
 kind: "Namespace"
@@ -11,5 +10,4 @@ metadata:
     weblogic.operatorName: {{ .operatorNamespace | quote }}
     weblogic.resourceVersion: "operator-v1"
   name: {{ .operatorNamespace | quote }}
-{{- end }}
 {{- end }}

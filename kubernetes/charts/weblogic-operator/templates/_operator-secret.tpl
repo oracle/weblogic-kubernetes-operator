@@ -7,7 +7,7 @@ apiVersion: "v1"
 kind: "Secret"
 data:
   internalOperatorKey: {{ .internalOperatorKey | quote }}
-  {{- if .externalRestEnabled }}
+  {{- if not (eq .externalRestOption "NONE") }}
   externalOperatorKey: {{ .externalOperatorKey | quote }}
   {{- end }}
 metadata:

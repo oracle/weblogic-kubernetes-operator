@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.helm;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
@@ -20,23 +21,29 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
 
   private static final String WRONG_TYPE = "The %s property %s must be a %s instead";
 
-  private static final String[] REQUIRED_BOOLEAN_PROPERTIES = {
-    "elkIntegrationEnabled", "createOperatorNamespace", "externalRestEnabled"
+  private static final String[] TOP_LEVEL_BOOLEAN_PROPERTIES = {
+    "setupKubernetesCluster", "createOperator" // , "elkIntegrationEnabled"
   };
 
-  private static final String[] REQUIRED_STRING_PROPERTIES = {
+  private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
+
+  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {
     "operatorNamespace", "operatorServiceAccount", "operatorImage"
   };
 
-  private static final String[] REQUIRED_ENUM_PROPERTIES = {
-    "operatorImagePullPolicy", "javaLoggingLevel"
+  private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
+    "operatorImagePullPolicy", "javaLoggingLevel", "externalRestOption", "internalRestOption"
   };
 
   private static final String[] LOGGING_LEVELS = {
     "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", "FINEST"
   };
 
-  private final String[] PULL_POLICIES = {"Always", "IfNotPresent", "Never"};
+  private static final String[] PULL_POLICIES = {"Always", "IfNotPresent", "Never"};
+
+  private static final String[] EXTERNAL_REST_OPTIONS = {"NONE", "SELF_SIGNED_CERT", "CUSTOM_CERT"};
+
+  private static final String[] INTERNAL_REST_OPTIONS = {"SELF_SIGNED_CERT", "CUSTOM_CERT"};
 
   private HelmOperatorYamlFactory factory = new HelmOperatorYamlFactory();
   private Map<String, Object> overrides;
@@ -47,14 +54,24 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  public void whenStringSpecifiedForBooleanProperties_reportError() throws Exception {
-    for (String propertyName : REQUIRED_BOOLEAN_PROPERTIES) {
+  public void whenStringSpecifiedForBooleanTopLevelProperties_reportError() throws Exception {
+    whenStringSpecifiedForBooleanProperties_reportError(TOP_LEVEL_BOOLEAN_PROPERTIES);
+  }
+
+  @Test
+  public void whenStringSpecifiedForOperatorTopLevelProperties_reportError() throws Exception {
+    whenStringSpecifiedForBooleanProperties_reportError(OPERATOR_LEVEL_BOOLEAN_PROPERTIES);
+  }
+
+  private void whenStringSpecifiedForBooleanProperties_reportError(String[] propertyNames)
+      throws Exception {
+    for (String propertyName : propertyNames) {
       setProperty(propertyName, "this is not a boolean");
     }
 
     String processingError = getProcessingError();
 
-    for (String propertyName : REQUIRED_BOOLEAN_PROPERTIES) {
+    for (String propertyName : propertyNames) {
       assertThat(processingError, containsTypeError(propertyName, "bool", "string"));
     }
   }
@@ -72,14 +89,23 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  public void whenRequiredBooleanPropertiesMissing_reportError() throws Exception {
-    for (String propertyName : REQUIRED_BOOLEAN_PROPERTIES) {
+  public void whenTopLevelBooleanPropertiesMissing_reportError() throws Exception {
+    whenBooleanPropertiesMissing_reportError(TOP_LEVEL_BOOLEAN_PROPERTIES);
+  }
+
+  @Test
+  public void whenOperatorLevelBooleanPropertiesMissing_reportError() throws Exception {
+    whenBooleanPropertiesMissing_reportError(OPERATOR_LEVEL_BOOLEAN_PROPERTIES);
+  }
+
+  private void whenBooleanPropertiesMissing_reportError(String[] propertyNames) throws Exception {
+    for (String propertyName : propertyNames) {
       removeProperty(propertyName);
     }
 
     String processingError = getProcessingError();
 
-    for (String propertyName : REQUIRED_BOOLEAN_PROPERTIES) {
+    for (String propertyName : propertyNames) {
       assertThat(processingError, containsMissingBoolParameterError(propertyName));
     }
   }
@@ -93,14 +119,14 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  public void whenRequiredStringPropertiesMissing_reportError() throws Exception {
-    for (String propertyName : REQUIRED_STRING_PROPERTIES) {
+  public void whenOperatorLevelStringPropertiesMissing_reportError() throws Exception {
+    for (String propertyName : OPERATOR_LEVEL_STRING_PROPERTIES) {
       removeProperty(propertyName);
     }
 
     String processingError = getProcessingError();
 
-    for (String propertyName : REQUIRED_STRING_PROPERTIES) {
+    for (String propertyName : OPERATOR_LEVEL_STRING_PROPERTIES) {
       assertThat(processingError, containsMissingStringParameterError(propertyName));
     }
   }
@@ -110,14 +136,14 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  public void whenEnumPropertiesMissing_reportError() throws Exception {
-    for (String propertyName : REQUIRED_ENUM_PROPERTIES) {
+  public void whenOperatorLevelEnumPropertiesMissing_reportError() throws Exception {
+    for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
       removeProperty(propertyName);
     }
 
     String processingError = getProcessingError();
 
-    for (String propertyName : REQUIRED_ENUM_PROPERTIES) {
+    for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
       assertThat(processingError, containsMissingEnumParameterError(propertyName));
     }
   }
@@ -127,15 +153,18 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  public void whenBadValuesSpecifiedForEnumProperties_reportError() throws Exception {
-    for (String propertyName : REQUIRED_ENUM_PROPERTIES) {
+  public void whenBadValuesSpecifiedForOperatorLevelEnumProperties_reportError() throws Exception {
+    for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
       setProperty(propertyName, "bogus");
     }
 
     assertThat(
         getProcessingError(),
-        both(containsEnumParameterError("operatorImagePullPolicy", PULL_POLICIES))
-            .and(containsEnumParameterError("javaLoggingLevel", LOGGING_LEVELS)));
+        allOf(
+            containsEnumParameterError("operatorImagePullPolicy", PULL_POLICIES),
+            containsEnumParameterError("javaLoggingLevel", LOGGING_LEVELS),
+            containsEnumParameterError("externalRestOption", EXTERNAL_REST_OPTIONS),
+            containsEnumParameterError("internalRestOption", INTERNAL_REST_OPTIONS)));
   }
 
   private Matcher<String> containsEnumParameterError(String propertyName, String... validValues) {
@@ -148,9 +177,10 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   @Test
   @Ignore("fails to merge null overrides")
   public void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
-    setProperty("externalRestEnabled", false);
+    setProperty("externalRestOption", "NONE");
 
-    removeProperty("externalRestHttpPort");
+    removeProperty("externalRestHttpsPort");
+    removeProperty("externalOperatorCertSans");
     removeProperty("externalOperatorCert");
     removeProperty("externalOperatorKey");
 
@@ -159,9 +189,10 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
 
   @Test
   public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
-    setProperty("externalRestEnabled", false);
+    setProperty("externalRestOption", "NONE");
 
-    setProperty("externalRestHttpPort", "Not a number");
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalOperatorCertSans", false);
     setProperty("externalOperatorCert", 1234);
     setProperty("externalOperatorKey", true);
 
@@ -169,34 +200,67 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  public void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
-    misconfigureExternalRest();
+  public void whenExternalRestSelfSignedCert_reportRelatedParameterErrors() throws Exception {
+    misconfigureExternalRestSelfSignedCert();
 
     assertThat(
         getProcessingError(),
-        both(containsTypeError("externalOperatorCert", "string", "float64"))
-            .and(containsTypeError("externalOperatorKey", "string", "bool")));
+        allOf(
+            containsTypeError("externalRestHttpsPort", "float64", "string"),
+            containsTypeError("externalOperatorCertSans", "string", "bool"),
+            containsTypeError("externalOperatorCert", "string", "float64"),
+            containsTypeError("externalOperatorKey", "string", "bool")));
   }
 
-  private void misconfigureExternalRest() {
-    setProperty("externalRestEnabled", true);
+  @Test
+  public void whenExternalRestCustomCert_reportRelatedParameterErrors() throws Exception {
+    misconfigureExternalRestCustomCert();
 
-    setProperty("externalRestHttpPort", "Not a number");
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsTypeError("externalRestHttpsPort", "float64", "string"),
+            containsTypeError("externalOperatorCert", "string", "float64"),
+            containsTypeError("externalOperatorKey", "string", "bool")));
+  }
+
+  private void misconfigureExternalRestSelfSignedCert() {
+    setProperty("externalRestOption", "SELF_SIGNED_CERT");
+
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalOperatorCertSans", false);
     setProperty("externalOperatorCert", 1234);
     setProperty("externalOperatorKey", true);
   }
 
-  @Test
-  @Ignore("fails to detect non-numeric port")
-  public void whenExternalRestEnabled_reportPortNotANumber() throws Exception {
-    misconfigureExternalRest();
+  private void misconfigureExternalRestCustomCert() {
+    setProperty("externalRestOption", "CUSTOM_CERT");
 
-    assertThat(getProcessingError(), containsTypeError("externalRestHttpPort", "int", "string"));
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalOperatorCert", 1234);
+    setProperty("externalOperatorKey", true);
+  }
+
+  // TBD - add similar tests for internalRest
+
+  private void misconfigureInternalRestSelfSignedCert() {
+    setProperty("internalRestOption", "SELF_SIGNED_CERT");
+
+    setProperty("internalOperatorCert", 1234);
+    setProperty("internalOperatorKey", true);
+  }
+
+  private void misconfigureInternalRestCustomCert() {
+    setProperty("internalRestOption", "CUSTOM_CERT");
+
+    setProperty("internalOperatorCert", 1234);
+    setProperty("internalOperatorKey", true);
   }
 
   @Test
-  public void whenRemoteDebugNotPortDisabled_ignoreMissingPortNumbers() throws Exception {
-    setProperty("remoteDebugNotePortEnabled", false);
+  @Ignore("fails to merge null overrides")
+  public void whenRemoteDebugNodePortDisabled_ignoreMissingPortNumbers() throws Exception {
+    setProperty("remoteDebugNodePortEnabled", false);
 
     removeProperty("internalDebugHttpPort");
     removeProperty("externalDebugHttpPort");
@@ -205,9 +269,8 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  @Ignore("ignores missing port numbers")
-  public void whenRemoteDebugNotPortDisabled_reportMissingPortNumbers() throws Exception {
-    setProperty("remoteDebugNotePortEnabled", true);
+  public void whenRemoteDebugNodePortDisabled_reportMissingPortNumbers() throws Exception {
+    setProperty("remoteDebugNodePortEnabled", true);
 
     removeProperty("internalDebugHttpPort");
     removeProperty("externalDebugHttpPort");
@@ -219,21 +282,20 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   private Matcher<String> containsMissingIntParameterError(String propertyName) {
-    return containsString(String.format("The int property %s must be specified", propertyName));
+    return containsString(String.format("The float64 property %s must be specified", propertyName));
   }
 
   @Test
-  @Ignore("ignores port number type")
-  public void whenRemoteDebugNotPortDisabled_reportNonNumericPortNumbers() throws Exception {
-    setProperty("remoteDebugNotePortEnabled", true);
+  public void whenRemoteDebugNodePortDisabled_reportNonNumericPortNumbers() throws Exception {
+    setProperty("remoteDebugNodePortEnabled", true);
 
     setProperty("internalDebugHttpPort", true);
     setProperty("externalDebugHttpPort", "abcd");
 
     assertThat(
         getProcessingError(),
-        both(containsTypeError("internalDebugHttpPort", "int", "bool"))
-            .and(containsTypeError("externalDebugHttpPort", "int", "string")));
+        both(containsTypeError("internalDebugHttpPort", "float64", "bool"))
+            .and(containsTypeError("externalDebugHttpPort", "float64", "string")));
   }
 
   @Test
@@ -244,13 +306,13 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  @Ignore("Does not validate that createDomainsNamespace nested value is boolean")
   public void whenDomainsNamespacesCreateNotBool_reportError() throws Exception {
     setProperty(
         "domainsNamespaces",
         ImmutableMap.of("aaa", ImmutableMap.of("createDomainsNamespace", 123)));
 
-    assertThat(getProcessingError(), containsTypeError("", "bool", "int"));
+    assertThat(
+        getProcessingError(), containsTypeError("createDomainsNamespace", "bool", "float64"));
   }
 
   @Test

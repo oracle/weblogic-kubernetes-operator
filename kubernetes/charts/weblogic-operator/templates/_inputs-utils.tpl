@@ -22,9 +22,10 @@ Verify that an input value of a specific kind has been specified.
 {{- define "operator.verifyInputKind" -}}
 {{- $requiredKind := index . 0 -}}
 {{- $scope := index . 1 -}}
-{{- $name := index . 2 -}}
-{{- if hasKey $scope $name -}}
-{{-   $value := index $scope $name -}}
+{{- $parent := index . 2 -}}
+{{- $name := index . 3 -}}
+{{- if hasKey $parent $name -}}
+{{-   $value := index $parent $name -}}
 {{-   $actualKind := kindOf $value -}}
 {{-   if eq $requiredKind $actualKind -}}
         true
@@ -72,10 +73,11 @@ Verify that an enum string input value has been specified
 */}}
 {{- define "operator.verifyEnumInput" -}}
 {{- $scope := index . 0 -}}
-{{- $name := index . 1 -}}
-{{- $legalValues := index . 2 -}}
-{{- if include "operator.verifyStringInput" (list $scope $name) -}}
-{{-   $value := index $scope $name -}}
+{{- $parent := index . 1 -}}
+{{- $name := index . 2 -}}
+{{- $legalValues := index . 3 -}}
+{{- if include "operator.verifyStringInput" (list $scope $parent $name) -}}
+{{-   $value := index $parent $name -}}
 {{-   if has $value $legalValues -}}
       true
 {{-   else -}}

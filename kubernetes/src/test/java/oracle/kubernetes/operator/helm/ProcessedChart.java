@@ -139,7 +139,9 @@ public class ProcessedChart implements YamlReader {
     Path valuesFile = writeValuesOverride(valueOverrides);
 
     ProcessBuilder pb = new ProcessBuilder(createCommandLine(chartsDir, valuesFile));
-    return pb.start();
+    Process p = pb.start();
+    p.waitFor();
+    return p;
   }
 
   private void applyOverrides(Map<String, Object> valueOverrides) {

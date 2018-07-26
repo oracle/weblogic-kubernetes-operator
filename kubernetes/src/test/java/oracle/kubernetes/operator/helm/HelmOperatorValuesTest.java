@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helm;
 
 import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_CUSTOM_CERT;
-import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_NONE;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -189,29 +188,12 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenExternalRestOptionSet_createdMapContainsTrue() {
-    operatorValues.externalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT);
+  public void whenCreatedFromMapWithExternalRestOption_hasSpecifiedValue() {
+    String option = EXTERNAL_REST_OPTION_CUSTOM_CERT;
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("externalRestOption", option));
 
-    assertThat(operatorValues.createMap(), hasEntry("externalRestEnabled", true));
-  }
-
-  @Test
-  public void whenExternalRestOptionNONE_createdMapContainsFalse() {
-    operatorValues.externalRestOption(EXTERNAL_REST_OPTION_NONE);
-
-    assertThat(operatorValues.createMap(), hasEntry("externalRestEnabled", false));
-  }
-
-  @Test
-  public void whenExternalRestOptionNotSet_createdMapExcludesValue() {
-    assertThat(operatorValues.createMap(), not(hasKey("externalRestEnabled")));
-  }
-
-  @Test
-  public void externalRestOptionIsGettableStringValue() {
-    operatorValues.externalRestOption(stringValue);
-
-    assertThat(operatorValues.getExternalRestOption(), equalTo(stringValue));
+    assertThat(values.getExternalRestOption(), equalTo(option));
   }
 
   @Test
@@ -219,22 +201,6 @@ public class HelmOperatorValuesTest {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getExternalRestOption(), equalTo(""));
-  }
-
-  @Test
-  public void whenCreatedFromMapWithExternalRestOptionTrue_hasInferredValue() {
-    HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("externalRestEnabled", true));
-
-    assertThat(values.getExternalRestOption(), equalTo(EXTERNAL_REST_OPTION_CUSTOM_CERT));
-  }
-
-  @Test
-  public void whenCreatedFromMapWithExternalRestOptionFalse_hasInferredValue() {
-    HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("externalRestEnabled", false));
-
-    assertThat(values.getExternalRestOption(), equalTo(EXTERNAL_REST_OPTION_NONE));
   }
 
   // --------------- remoteDebugNodePortEnabled
