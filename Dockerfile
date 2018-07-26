@@ -9,7 +9,7 @@
 # Pull base image
 # From the Docker store
 # -------------------------
-FROM https://registry-1.docker.io/v2/store/oracle/serverjre:8
+FROM store/oracle/serverjre:8
 
 # Maintainer
 # ----------
