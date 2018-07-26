@@ -802,40 +802,75 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param deleteOptions Delete options
    * @return Status of deletion
    * @throws ApiException API Exception
    */
-  public V1Status deleteService(String name, String namespace) throws ApiException {
+  public V1Status deleteService(String name, String namespace, V1DeleteOptions deleteOptions)
+      throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).deleteNamespacedService(name, namespace, pretty);
+      return new CoreV1Api(client)
+          .deleteNamespacedService(
+              name,
+              namespace,
+              deleteOptions,
+              pretty,
+              gracePeriodSeconds,
+              orphanDependents,
+              propagationPolicy);
     } finally {
       helper.recycle(client);
     }
   }
 
   private com.squareup.okhttp.Call deleteServiceAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1Status> callback)
+      ApiClient client,
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ApiCallback<V1Status> callback)
       throws ApiException {
-    return new CoreV1Api(client).deleteNamespacedServiceAsync(name, namespace, pretty, callback);
+    return new CoreV1Api(client)
+        .deleteNamespacedServiceAsync(
+            name,
+            namespace,
+            deleteOptions,
+            pretty,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            callback);
   }
 
   private final CallFactory<V1Status> DELETE_SERVICE =
       (requestParams, usage, cont, callback) ->
-          wrap(deleteServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
+          wrap(
+              deleteServiceAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
 
   /**
    * Asynchronous step for deleting service
    *
    * @param name Name
    * @param namespace Namespace
+   * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step deleteServiceAsync(
-      String name, String namespace, ResponseStep<V1Status> responseStep) {
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteService", namespace, name, null), DELETE_SERVICE);
+        responseStep,
+        new RequestParams("deleteService", namespace, name, deleteOptions),
+        DELETE_SERVICE);
   }
 
   /* Events */
