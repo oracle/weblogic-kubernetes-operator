@@ -47,7 +47,7 @@ build:
     no-cache: true
     registry-auth-config: |
       {
-        "https://registry-1.docker.io/v2/": {
+        "https://registry-1.docker.io/v1/": {
           "username": "${DOCKER_USERNAME}",
           "password": "${DOCKER_PASSWORD}"
         }
