@@ -33,7 +33,6 @@ build:
       if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
         export IMAGE_TAG_OPERATOR="1.0"
       fi
-      docker login -u $REPO_USERNAME -p $REPO_PASSWORD
   - script:
     name: Install pre-reqs
     code: |
@@ -46,6 +45,13 @@ build:
     dockerfile: Dockerfile
     image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
     no-cache: true
+    registry-auth-config: |
+    {
+      "https://index.docker.io/v1/": {
+        "username": "$REPO_USERNAME",
+        "password": "$REPO_PASSWORD"
+      }
+    }
   # push the image to Docker using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:
@@ -54,9 +60,6 @@ build:
     repository: $REPO_REPOSITORY
     registry: $REPO_REGISTRY
     tag: $IMAGE_TAG_OPERATOR
-    working-dir: "/operator"
-    cmd: "operator.sh"
-    env: "PATH=$PATH:/operator"
 
 # This pipeline runs the integration tests against a k8s cluster on OCI.
 command-timeout: 60
