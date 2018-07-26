@@ -147,22 +147,6 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
   }
 
   @Test
-  @Override
-  public void loadBalancerSecurityYaml_hasCorrectNumberOfObjects() {
-    assertThat(
-        getVoyagerOperatorSecurityYaml().getObjectCount(),
-        is(getVoyagerOperatorSecurityYaml().getExpectedObjectCount()));
-  }
-
-  @Test
-  @Override
-  public void loadBalancerYaml_hasCorrectNumberOfObjects() {
-    assertThat(
-        getVoyagerOperatorYaml().getObjectCount(),
-        is(getVoyagerOperatorYaml().getExpectedObjectCount()));
-  }
-
-  @Test
   public void loadBalancerIngressYaml_hasCorrectNumberOfObjects() {
     assertThat(
         getVoyagerIngressYaml().getObjectCount(),

@@ -11,7 +11,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNFSVol
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newStringList;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1PersistentVolume;
@@ -121,17 +120,5 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTestBase
   public void generatesCorrect_loadBalancerClusterRoleBinding() {
     assertThat(
         getActualApacheClusterRoleBinding(), yamlEqualTo(getExpectedApacheClusterRoleBinding()));
-  }
-
-  @Override
-  public void loadBalancerSecurityYaml_hasCorrectNumberOfObjects() {
-    assertThat(
-        getApacheSecurityYaml().getObjectCount(),
-        is(getApacheSecurityYaml().getExpectedObjectCount()));
-  }
-
-  @Override
-  public void loadBalancerYaml_hasCorrectNumberOfObjects() {
-    assertThat(getApacheYaml().getObjectCount(), is(getApacheYaml().getExpectedObjectCount()));
   }
 }
