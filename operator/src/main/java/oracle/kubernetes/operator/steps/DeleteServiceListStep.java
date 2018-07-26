@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.steps;
 
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import java.util.Collection;
@@ -36,7 +37,9 @@ public class DeleteServiceListStep extends Step {
 
   private Step createDeleteStep(V1Service service) {
     V1ObjectMeta meta = service.getMetadata();
+    V1DeleteOptions deleteOptions = new V1DeleteOptions();
     return new CallBuilder()
-        .deleteServiceAsync(meta.getName(), meta.getNamespace(), new DefaultResponseStep<>(this));
+        .deleteServiceAsync(
+            meta.getName(), meta.getNamespace(), deleteOptions, new DefaultResponseStep<>(this));
   }
 }
