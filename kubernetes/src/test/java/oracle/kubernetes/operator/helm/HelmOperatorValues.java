@@ -10,8 +10,10 @@ import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.OperatorValues;
 import org.apache.commons.codec.binary.Base64;
@@ -51,9 +53,9 @@ class HelmOperatorValues extends OperatorValues {
 
   @SuppressWarnings("unchecked")
   private void loadDomainsNamespacesFromMap(Map<String, Object> map) {
-    Map<String, ?> domainsNamespaces = (Map<String, ?>) map.get("domainsNamespaces");
+    List<String> domainsNamespaces = (List<String>) map.get("domainsNamespaces");
     if (domainsNamespaces != null) {
-      String[] namespaces = domainsNamespaces.keySet().toArray(new String[0]);
+      String[] namespaces = domainsNamespaces.toArray(new String[0]);
       Arrays.sort(namespaces);
       setTargetNamespaces(String.join(",", namespaces));
     }
@@ -90,11 +92,11 @@ class HelmOperatorValues extends OperatorValues {
   private void addDomainsNamespaces(HashMap<String, Object> map) {
     String targetNamespaces = getTargetNamespaces();
     if (targetNamespaces.length() > 0) {
-      Map<String, Map> namespaceEntries = new HashMap<>();
+      List<String> namespaces = new ArrayList<>();
       for (String namespace : targetNamespaces.split(",")) {
-        namespaceEntries.put(namespace, new HashMap());
+        namespaces.add(namespace);
       }
-      map.put("domainsNamespaces", namespaceEntries);
+      map.put("domainsNamespaces", namespaces);
     }
   }
 

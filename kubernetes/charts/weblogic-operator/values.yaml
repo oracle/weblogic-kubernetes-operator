@@ -19,16 +19,16 @@ operatorNamespace: "weblogic-operator"
 # The name must be lowercase
 operatorServiceAccount: "weblogic-operator"
 
-# domainsNamespaces specifies a dictionary of WebLogic Domain namespaces which the operator manages (same as targetNamespaces but in dictionary format)
-# The names must be lowercase.  The values must be empty dictionaries.
+# domainsNamespaces specifies list of WebLogic Domain namespaces which the operator manages
+# The names must be lowercase.
 # The customer is responsible for creating these namespaces.
 #
 # Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
 #
 # createDomainsNamespace: true
 # domainsNamespaces:
-#   namespace1: {}
-#   namespace2: {}
+#   - namespace1
+#   - namespace2
 domainsNamespaces: {}
 
 # operatorImage specifies the docker image containing the operator code.
@@ -59,7 +59,7 @@ operatorImagePullPolicy: "IfNotPresent"
 externalRestOption: NONE
 
 # externalRestHttpsPort specifies the node port that should be allocated for the external operator REST https interface.
-# This parameter is required if 'externalRestEnabled' is 'true'.
+# This parameter is required if 'externalRestOption' is not 'NONE'.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
 
@@ -105,7 +105,7 @@ internalRestOption: SELF_SIGNED_CERT
 #   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE
 #   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE.svc
 #   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE.svc.cluster.local"
-# where OPERTOR_NAMESPACE is the name of the operator's namespace.
+# where OPERATOR_NAMESPACE is the name of the operator's namespace.
 #internalOperatorCert:
 
 # The customer supplied private key to use for the internal operator REST
@@ -157,4 +157,4 @@ elkIntegrationEnabled: false
 #   metadata: ...
 #   spec: ...
 #
-extraResources: {}
+extraResources: []

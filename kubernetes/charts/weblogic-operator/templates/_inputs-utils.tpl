@@ -40,6 +40,37 @@ Verify that an input value of a specific kind has been specified.
 {{- end -}}
 
 {{/*
+Verify that a list input value has been specified
+*/}}
+{{- define "operator.verifyListInput" -}}
+{{- $requiredKind := index . 0 -}}
+{{- $scope := index . 1 -}}
+{{- $parent := index . 2 -}}
+{{- $name := index . 3 -}}
+{{- $args := . -}}
+{{- if include "operator.verifyInputKind" (list "slice" $scope $parent $name) -}}
+{{-   $status := dict -}}
+{{-   if hasKey $parent $name -}}
+{{-     $list := index $parent $name -}}
+{{-     range $value := $list -}}
+{{-       $actualKind := kindOf $value -}}
+{{-       if not (eq $requiredKind $actualKind) -}}
+{{-         $errorMsg := cat "The list property" $name "has a" $actualKind "element.  It must only contain" $requiredKind "elements." -}}
+{{-         include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-         $ignore := set $status "error" true -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{-   if not (hasKey $status "error") -}}
+        true
+{{-   end -}}
+{{- else -}}
+{{-   $errorMsg := cat "The" $requiredKind "property" $name "must be specified." -}}
+{{-   include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Verify that a string input value has been specified
 */}}
 {{- define "operator.verifyStringInput" -}}
@@ -62,9 +93,9 @@ Verify that an integer input value has been specified
 {{- end -}}
 
 {{/*
-Verify that an object input value has been specified
+Verify that a dictionary input value has been specified
 */}}
-{{- define "operator.verifyObjectInput" -}}
+{{- define "operator.verifyDictInput" -}}
 {{- include "operator.verifyInputKind" (prepend . "map") -}} 
 {{- end -}}
 
@@ -85,6 +116,20 @@ Verify that an enum string input value has been specified
 {{-     include "operator.recordValidationError" (list $scope $errorMsg) -}}
 {{-   end -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Verify that a list of strings input value has been specified
+*/}}
+{{- define "operator.verifyStringListInput" -}}
+{{- include "operator.verifyListInput" (prepend . "string") -}} 
+{{- end -}}
+
+{{/*
+Verify that a list of dictionaries input value has been specified
+*/}}
+{{- define "operator.verifyDictListInput" -}}
+{{- include "operator.verifyListInput" (prepend . "map") -}} 
 {{- end -}}
 
 {{/*

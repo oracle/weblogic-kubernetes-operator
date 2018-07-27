@@ -49,13 +49,9 @@
 {{-         $ignore := include "operator.verifyIntegerInput" (list $scope $scope "externalDebugHttpPort") -}}
 {{-       end -}}
 {{-     end -}}
-{{-     if include "operator.verifyObjectInput" (list $scope $scope "domainsNamespaces") -}}
-{{-       $domainsNamespaces := $scope.domainsNamespaces -}}
-{{-       range $key, $element := $domainsNamespaces -}}
-{{-         $ignore := include "operator.verifyObjectInput" (list $scope $domainsNamespaces $key) -}}
-{{-       end -}}
-{{-     end -}}
+{{-     $ignore := include "operator.verifyStringListInput" (list $scope $scope "domainsNamespaces") -}}
 {{-   end -}}
 {{- end -}}
+{{- $ignore := include "operator.verifyDictListInput" (list $scope $scope "extraResources") -}}
 {{- include "operator.reportValidationErrors" $scope -}}
 {{- end -}}
