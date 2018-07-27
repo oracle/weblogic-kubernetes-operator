@@ -754,7 +754,6 @@ function deploy_operator {
       echo "setupKubernetesCluster: $SETUP_KUBERNETES_CLUSTER" >> $inputs
 
       trace 'customize the inputs yaml file to add test namespace'
-      echo "createDomainsNamespace: false" >> $inputs
       echo "domainsNamespaces:" >> $inputs
       for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
       do

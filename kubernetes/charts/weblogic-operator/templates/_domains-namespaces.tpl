@@ -11,7 +11,6 @@
 {{- range $key, $element := $domainsNamespaces -}}
 {{-   $args := merge (dict) $element $scope -}}
 {{-   $ignore := set $args "domainsNamespace" $key -}}
-{{-   include "operator.domainsNamespace" $args -}}
 {{- /*   include "operator.domainConfigMap" $args currently the GA operator runtime does this */ -}}
 {{-   include "operator.operatorRoleBinding" $args -}}
 {{- end }}

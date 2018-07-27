@@ -19,31 +19,16 @@ operatorNamespace: "weblogic-operator"
 # The name must be lowercase
 operatorServiceAccount: "weblogic-operator"
 
-# createDomainsNamespace is a global variable that specifies whether or not the helm installation should create the Kubernetes
-# namespaces for the domains specified in domainsNamespaces.
-createDomainsNamespace: true
-
-# domainsNamespaces specifies a map of WebLogic Domain namespaces which the operator manages (same as targetNamespaces but in map format)
-# The names must be lowercase
+# domainsNamespaces specifies a dictionary of WebLogic Domain namespaces which the operator manages (same as targetNamespaces but in dictionary format)
+# The names must be lowercase.  The values must be empty dictionaries.
+# The customer is responsible for creating these namespaces.
 #
-# Example 1: In the configuration below, the helm installation will create the Domain namespace 'namespace2' but not 'namespace1'.
+# Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
 #
 # createDomainsNamespace: true
 # domainsNamespaces:
-#   namespace1:
-#     createDomainsNamespace: false
-#   namespace2: {}
-#
-#-----------------------------------
-#
-# Example 2: In the configuration below, the helm installation will create the Domain namespace 'namespace2' but not 'namespace1'.
-#
-# createDomainsNamespace: false
-# domainsNamespaces:
 #   namespace1: {}
-#   namespace2:
-#     createDomainsNamespace: true
-#
+#   namespace2: {}
 domainsNamespaces: {}
 
 # operatorImage specifies the docker image containing the operator code.

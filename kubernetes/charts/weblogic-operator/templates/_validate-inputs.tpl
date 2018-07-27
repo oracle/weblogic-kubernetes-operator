@@ -52,17 +52,7 @@
 {{-     if include "operator.verifyObjectInput" (list $scope $scope "domainsNamespaces") -}}
 {{-       $domainsNamespaces := $scope.domainsNamespaces -}}
 {{-       range $key, $element := $domainsNamespaces -}}
-{{-         if include "operator.verifyObjectInput" (list $scope $domainsNamespaces $key) -}}
-{{-           $s := merge (dict) $element $scope -}}
-{{-           if include "operator.verifyBooleanInput" (list $scope $s "createDomainsNamespace") -}}
-{{-             if eq $key "default" -}}
-{{-               if $s.createDomainsNamespace -}}
-{{-                 $errorMsg := cat "The effective createDomainsNamespace value for the 'default' domainsNamespace must be set to false." -}}
-{{-                 $ignore := include "operator.recordValidationError" (list $scope $errorMsg) -}}
-{{-               end -}}
-{{-             end -}}
-{{-           end -}}
-{{-         end -}}
+{{-         $ignore := include "operator.verifyObjectInput" (list $scope $domainsNamespaces $key) -}}
 {{-       end -}}
 {{-     end -}}
 {{-   end -}}
