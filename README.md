@@ -167,7 +167,7 @@ The script will remove only domain-related resources which are labeled with theÂ
 kubectl -nÂ <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>
 ```
 
-By default, the domain's persistent volume claim and the persistent volume are created by the create-weblogic-domain.sh script, and are removed by delete-weblogic-domain-resources.sh script. To manually remove the persistent volume claim and the persistent volume, use these commands:
+By default, the domain's persistent volume claim and the persistent volume are created by the [Create WebLogic domain](kubernetes/create-weblogic-domain.sh) script, and are removed by the [Delete WebLogic domain resources](kubernetes/delete-weblogic-domain-resources.sh) script. To manually remove the persistent volume claim and the persistent volume, use these commands:
 
 ```
 kubectl delete pvc PVC-NAME -n NAMESPACE
