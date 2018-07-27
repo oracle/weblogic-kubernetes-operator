@@ -38,22 +38,17 @@ In this command, you must replace the uppercase items with your
 own values.  The secret name will be needed when installing the helm chart.
 
 ## Installing the Chart
-Clone the git weblogic-operator repo:
+
+Change directory to the cloned git weblogic-kubernetes-operator repo:
 
 ```bash
-git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-```
-
-Change directory to the cloned git weblogic-operator repo:
-
-```bash
-cd weblogic-operator/kubernetes/helm-charts
+cd kubernetes/charts
 ```
 
 To install the chart with the release `my-release`, namespace `my-namespace` and secret `my-secret' without creating a weblogic domain (such as when a WebLogic domain already exists):
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --set secretName=my-secret --set createWeblogicDomain=false
+helm install weblogic-domain --name my-release --namespace my-namespace --set weblogicCredentialsSecretName=my-secret --set createWeblogicDomain=false
 ```
 
 The command deploys weblogic-domain on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists
@@ -75,34 +70,42 @@ The command removes all the Kubernetes components associated with the chart and 
 |  Key                           |  Description                      |  Default              |
 | -------------------------------|-----------------------------------|-----------------------|
 | createWeblogicDomain | Boolean indicating if a weblogic domain should be created | true |
-| adminNodePort | NodePort to expose for the admin server | 30701 |
 | adminPort | Port number for Admin Server | 7001 |
 | adminServerName | Name of the Admin Server | admin-server |
-| clusterName | Cluster name | cluster-1 |
-| createDomainScript | Script used to create the domain | /u01/weblogic/create-domain-script.sh |
 | domainName | Name of the WebLogic domain to create | base_domain |
-| domainUid | Unique id identifying a domain. The id must be unique across all domains in a Kubernetes cluster | domain1 |
-| exposeAdminT3Channel | Boolean to indicate if the channel should be exposed as a service | false |
-| exposeAdminNodePort | Boolean to indicate if the adminNodePort will be exposed | false |
-| imagePullSecretName | Name of the Kubernetes secret to access the Docker Store to pull the Weblogic Docker image | |
-| loadBalancer | Load balancer to deploy.  Supported values are: traefik, none | traefik |
-| loadBalancerAdminPort | Load balancer admin port | 30315 |
-| loadBalancerWebPort| Load balancer web port | 30305 |
-| managedServerCount | Number of managed servers to generate for the domain | 2 |
-| managedServerStartCount | Number of managed severs to initially start for a domain | 2 |
+| domainUID | Unique id identifying a domain. The id must be unique across all domains in a Kubernetes cluster | domain1 (needs to uncomment) |
+| clusterType | Type of WebLogic Cluster. Legal values are "CONFIGURED" or "DYNAMIC" | DYNAMIC |
+| startupControl | Determines which WebLogic Servers the Operator will start up. Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO" | "AUTO" |
+| clusterName | Cluster name | cluster-1 |
+| configuredManagedServerCount | Number of managed servers to generate for the domain | 2 |
+| initialManagedServerReplicas | Number of managed severs to initially start for a domain | 2 |
 | managedServerNameBase | Base string used to generate managed server names | managed-server |
 | managedServerPort | Port number for each managed server | 8001 |
-| persistencePath | Physical path of the persistent volume storage | /scratch/k8s_dir/persistentVolume001 |
-| persistenceSize | Total storage allocated by the persistent volume | 10Gi |
+| weblogicImage | WebLogic Docker image | store/oracle/weblogic:12.2.1.3 |
+| weblogicDomainStorageType | Persistent volume type for the domain's storage. The value must be 'HOST_PATH' or 'NFS' | HOST_PAT |
+| weblogicDomainStorageNFSServer | The server name or ip address of the NFS server to use for the domain's storage | nfsServer (need to uncomment as necessary) |
+| weblogicDomainStoragePath | Physical path of the persistent volume storage | /scratch/k8s_dir/domain1 (need to uncomment) |
+| weblogicDomainStorageReclaimPolicy | Reclaim policy of the domain's persistent storage. The valid values are: 'Retain', 'Delete', and 'Recycle' | Retain |
+| weblogicDomainStorageSize | Total storage allocated to the domain's persistent volume | 10Gi |
 | productionModeEnabled | Boolean indicating if production mode is enabled for the domain | true |
-| secretName | Name of the Kubernetes secret for the Admin Server's username and password | domain1-weblogic-credentials |
+| weblogicCredentialsSecretName | Name of the Kubernetes secret for the Admin Server's username and password | domain1-weblogic-credentials |
+| weblogicImagePullSecretName | Name of the Kubernetes secret to access the Docker Store to pull the Weblogic Docker image | |
 | t3ChannelPort | Port for the T3Channel of the NetworkAccessPoint | 30012 |
 | t3PublicAddress | Public address for T3Channel of the NetworkAccessPoint. This value should be set to the Kubernetes server address, which you can get by running "kubectl cluster-info".  If this value is not set to that address, WLST will not be able to connect from outside the Kubernetes cluster | kubernetes |
+| exposeAdminT3Channel | Boolean to indicate if the channel should be exposed as a service | false |
+| adminNodePort | NodePort to expose for the admin server | 30701 |
+| exposeAdminNodePort | Boolean to indicate if the adminNodePort will be exposed | false |
+| loadBalancer | Load balancer to deploy.  Supported values are: APACHE, TRAEFIX, VOYAGER, NONE | TRAEFIK |
+| loadBalancerVolumePath | Docker volume path for APACHE. | |
+| loadBalancerExposeAdminPort| If the admin port is going to be exposed for APACHE | false |
+| loadBalancerWebPort| Load balancer web port | 30305 |
+| loadBalancerDashboardPort | Load balancer dashboard port | 30315 |
+| javaOptions | Java option for WebLogic Server | -Dweblogic.StdoutDebugEnabled=false |
  
 Specify parameters to override default values using the `--set key=value[,key=value]` argument to helm install. For example:
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --set managedServerCount=3
+helm install weblogic-domain --name my-release --namespace my-namespace --set configuredManagedServerCount=3
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example:
