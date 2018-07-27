@@ -8,12 +8,15 @@ import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTI
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.util.Map;
+import java.util.List;
 import org.junit.Test;
 
 public class HelmOperatorValuesTest {
@@ -374,19 +377,19 @@ public class HelmOperatorValuesTest {
   public void whenSingleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.targetNamespaces(stringValue);
 
-    assertThat(getDomainsNamespaces(), hasKey(stringValue));
+    assertThat(getDomainsNamespaces(), hasItem(stringValue));
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Map> getDomainsNamespaces() {
-    return (Map<String, Map>) operatorValues.createMap().get("domainsNamespaces");
+  private List<String> getDomainsNamespaces() {
+    return (List<String>) operatorValues.createMap().get("domainsNamespaces");
   }
 
   @Test
   public void whenMultipleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.targetNamespaces("aaa,bbb");
 
-    assertThat(getDomainsNamespaces(), both(hasKey("aaa")).and(hasKey("bbb")));
+    assertThat(getDomainsNamespaces(), hasItems("aaa", "bbb"));
   }
 
   @Test
@@ -400,7 +403,7 @@ public class HelmOperatorValuesTest {
   public void whenCreatedFromMapWithSingleNamespace_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(
-            ImmutableMap.of("domainsNamespaces", ImmutableMap.of("namespace1", ImmutableMap.of())));
+            ImmutableMap.of("domainsNamespaces", ImmutableList.of("namespace1")));
 
     assertThat(values.getTargetNamespaces(), equalTo("namespace1"));
   }
@@ -409,9 +412,7 @@ public class HelmOperatorValuesTest {
   public void whenCreatedFromMapWithMultipleNamespaces_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(
-            ImmutableMap.of(
-                "domainsNamespaces",
-                ImmutableMap.of("namespace1", ImmutableMap.of(), "namespace2", ImmutableMap.of())));
+            ImmutableMap.of("domainsNamespaces", ImmutableList.of("namespace1", "namespace2")));
 
     assertThat(values.getTargetNamespaces(), equalTo("namespace1,namespace2"));
   }

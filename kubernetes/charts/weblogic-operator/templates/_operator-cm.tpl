@@ -10,12 +10,16 @@ data:
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
   serviceaccount: {{ .operatorServiceAccount | quote }}
-{{- $domainsNamespaces := merge (dict) .domainsNamespaces -}}
+{{- $scope := . -}}
+{{- $args := merge (dict) $scope -}}
+{{- $domainsNamespaces := .domainsNamespaces -}}
 {{- $len := len $domainsNamespaces -}}
 {{- if eq $len 0 -}}
-{{-   $ignore := set $domainsNamespaces "default" (dict) -}}
+{{-   $ignore := set $args "domainsNamespacesList" (list "default") -}}
+{{- else -}}
+{{-   $ignore := set $args "domainsNamespacesList" $domainsNamespaces -}}
 {{- end }}
-  targetNamespaces: {{ keys $domainsNamespaces | sortAlpha | join "," }}
+  targetNamespaces: {{ $domainsNamespaces | uniq | sortAlpha | join "," | quote }}
 kind: "ConfigMap"
 metadata:
   labels:

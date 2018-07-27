@@ -3,15 +3,17 @@
 
 {{- define "operator.domainsNamespaces" }}
 {{- $scope := . -}}
-{{- $domainsNamespaces := merge (dict) .domainsNamespaces -}}
+{{- $args := merge (dict) $scope -}}
+{{- $domainsNamespaces := .domainsNamespaces -}}
 {{- $len := len $domainsNamespaces -}}
 {{- if eq $len 0 -}}
-{{-   $ignore := set $domainsNamespaces "default" (dict) -}}
+{{-   $ignore := set $args "domainsNamespacesList" (list "default") -}}
+{{- else -}}
+{{-   $ignore := set $args "domainsNamespacesList" $domainsNamespaces -}}
 {{- end -}}
-{{- range $key, $element := $domainsNamespaces -}}
-{{-   $args := merge (dict) $element $scope -}}
+{{- range $key := $args.domainsNamespacesList -}}
 {{-   $ignore := set $args "domainsNamespace" $key -}}
-{{- /*   include "operator.domainConfigMap" $args currently the GA operator runtime does this */ -}}
+{{/*- include "operator.domainConfigMap" $args currently the GA operator runtime does this -*/}}
 {{-   include "operator.operatorRoleBinding" $args -}}
 {{- end }}
 {{- end }}
