@@ -241,7 +241,27 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
     setProperty("externalOperatorKey", true);
   }
 
-  // TBD - add similar tests for internalRest
+  @Test
+  public void whenInternalRestSelfSignedCert_reportRelatedParameterErrors() throws Exception {
+    misconfigureInternalRestSelfSignedCert();
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsTypeError("internalOperatorCert", "string", "float64"),
+            containsTypeError("internalOperatorKey", "string", "bool")));
+  }
+
+  @Test
+  public void whenInternalRestCustomCert_reportRelatedParameterErrors() throws Exception {
+    misconfigureInternalRestCustomCert();
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsTypeError("internalOperatorCert", "string", "float64"),
+            containsTypeError("internalOperatorKey", "string", "bool")));
+  }
 
   private void misconfigureInternalRestSelfSignedCert() {
     setProperty("internalRestOption", "SELF_SIGNED_CERT");
