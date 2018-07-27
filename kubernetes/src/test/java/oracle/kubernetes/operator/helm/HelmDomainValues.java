@@ -28,10 +28,13 @@ class HelmDomainValues extends DomainValues {
     loadFromMap(map, this::setManagedServerNameBase, "managedServerNameBase");
     loadFromMap(map, this::setWeblogicImage, "weblogicImage");
     loadFromMap(map, this::setWeblogicDomainStorageType, "weblogicDomainStorageType");
+    loadFromMap(map, this::setWeblogicDomainStorageNFSServer, "weblogicDomainStorageNFSServer");
+    loadFromMap(map, this::setWeblogicDomainStoragePath, "weblogicDomainStoragePath");
     loadFromMap(
         map, this::setWeblogicDomainStorageReclaimPolicy, "weblogicDomainStorageReclaimPolicy");
     loadFromMap(map, this::setWeblogicDomainStorageSize, "weblogicDomainStorageSize");
     loadFromMap(map, this::setWeblogicCredentialsSecretName, "weblogicCredentialsSecretName");
+    loadFromMap(map, this::setWeblogicImagePullSecretName, "weblogicImagePullSecretName");
     loadFromMap(map, this::setT3PublicAddress, "t3PublicAddress");
     loadFromMap(map, this::setNamespace, "namespace");
     loadFromMap(map, this::setLoadBalancer, "loadBalancer");
@@ -91,9 +94,13 @@ class HelmDomainValues extends DomainValues {
     addStringMapEntry(map, this::getWeblogicImage, "weblogicImage");
     addStringMapEntry(map, this::getWeblogicDomainStorageType, "weblogicDomainStorageType");
     addStringMapEntry(
+        map, this::getWeblogicDomainStorageNFSServer, "weblogicDomainStorageNFSServer");
+    addStringMapEntry(map, this::getWeblogicDomainStoragePath, "weblogicDomainStoragePath");
+    addStringMapEntry(
         map, this::getWeblogicDomainStorageReclaimPolicy, "weblogicDomainStorageReclaimPolicy");
     addStringMapEntry(map, this::getWeblogicDomainStorageSize, "weblogicDomainStorageSize");
     addStringMapEntry(map, this::getWeblogicCredentialsSecretName, "weblogicCredentialsSecretName");
+    addStringMapEntry(map, this::getWeblogicImagePullSecretName, "weblogicImagePullSecretName");
     addStringMapEntry(map, this::getT3PublicAddress, "t3PublicAddress");
     addStringMapEntry(map, this::getNamespace, "namespace");
     addStringMapEntry(map, this::getLoadBalancer, "loadBalancer");

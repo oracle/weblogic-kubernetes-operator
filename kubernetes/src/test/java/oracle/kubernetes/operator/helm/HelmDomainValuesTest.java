@@ -346,6 +346,54 @@ public class HelmDomainValuesTest {
     assertThat(values.getWeblogicDomainStorageType(), equalTo(stringValue));
   }
 
+  // ----- weblogicDomainStorageNFSServer
+
+  @Test
+  public void whenWeblogicDomainStorageNFSServerSet_createdMapContainsValue() {
+    domainValues.weblogicDomainStorageNFSServer(stringValue);
+
+    assertThat(domainValues.createMap(), hasEntry("weblogicDomainStorageNFSServer", stringValue));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutWeblogicDomainStorageNFSServer_hasEmptyString() {
+    HelmDomainValues values = new HelmDomainValues(ImmutableMap.of());
+
+    assertThat(values.getWeblogicDomainStorageNFSServer(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithWeblogicDomainStorageNFSServer_hasSpecifiedValue() {
+    HelmDomainValues values =
+        new HelmDomainValues(ImmutableMap.of("weblogicDomainStorageNFSServer", stringValue));
+
+    assertThat(values.getWeblogicDomainStorageNFSServer(), equalTo(stringValue));
+  }
+
+  // ----- weblogicDomainStoragePath
+
+  @Test
+  public void whenWeblogicDomainStoragePathSet_createdMapContainsValue() {
+    domainValues.weblogicDomainStoragePath(stringValue);
+
+    assertThat(domainValues.createMap(), hasEntry("weblogicDomainStoragePath", stringValue));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutWeblogicDomainStoragePath_hasEmptyString() {
+    HelmDomainValues values = new HelmDomainValues(ImmutableMap.of());
+
+    assertThat(values.getWeblogicDomainStoragePath(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithWeblogicDomainStoragePath_hasSpecifiedValue() {
+    HelmDomainValues values =
+        new HelmDomainValues(ImmutableMap.of("weblogicDomainStoragePath", stringValue));
+
+    assertThat(values.getWeblogicDomainStoragePath(), equalTo(stringValue));
+  }
+
   // ----- weblogicDomainStorageReclaimPolicy
 
   @Test
@@ -459,6 +507,30 @@ public class HelmDomainValuesTest {
         new HelmDomainValues(ImmutableMap.of("weblogicCredentialsSecretName", stringValue));
 
     assertThat(values.getWeblogicCredentialsSecretName(), equalTo(stringValue));
+  }
+
+  // ----- weblogicImagePullSecretName
+
+  @Test
+  public void whenWeblogicImagePullSecretNameSet_createdMapContainsValue() {
+    domainValues.weblogicImagePullSecretName(stringValue);
+
+    assertThat(domainValues.createMap(), hasEntry("weblogicImagePullSecretName", stringValue));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutWeblogicImagePullSecretName_hasEmptyString() {
+    HelmDomainValues values = new HelmDomainValues(ImmutableMap.of());
+
+    assertThat(values.getWeblogicImagePullSecretName(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithWeblogicImagePullSecretName_hasSpecifiedValue() {
+    HelmDomainValues values =
+        new HelmDomainValues(ImmutableMap.of("weblogicImagePullSecretName", stringValue));
+
+    assertThat(values.getWeblogicImagePullSecretName(), equalTo(stringValue));
   }
 
   // ----- t3ChannelPort
