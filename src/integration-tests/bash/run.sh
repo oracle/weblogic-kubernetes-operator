@@ -757,7 +757,7 @@ function deploy_operator {
       echo "domainsNamespaces:" >> $inputs
       for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
       do
-        echo "  $i: {}" >> $inputs
+        echo "  - $i" >> $inputs
       done
       echo "operatorImagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
       echo "operatorImage: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
