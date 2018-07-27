@@ -4,7 +4,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ .Values.domainUID }}-weblogic-domain-pvc
+  name: {{ .Values.domainUID }}-weblogic-domain-job-pvc
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: domain-v1

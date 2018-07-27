@@ -128,6 +128,14 @@ public abstract class DomainValues {
     return getDomainUID() + "-weblogic-domain-pvc";
   }
 
+  public String getWeblogicDomainJobPersistentVolumeName() {
+    return getDomainUID() + "-weblogic-domain-job-pv";
+  }
+
+  public String getWeblogicDomainJobPersistentVolumeClaimName() {
+    return getDomainUID() + "-weblogic-domain-job-pvc";
+  }
+
   public String getAdminServerName() {
     return adminServerName;
   }

@@ -34,10 +34,16 @@ public class ProcessedChart implements YamlReader {
   private List<Object> documents;
   private Process process;
   private Map<String, Object> values;
+  private String namespace;
 
   ProcessedChart(String chartName, Map<String, Object> valueOverrides) {
+    this(chartName, valueOverrides, null);
+  }
+
+  ProcessedChart(String chartName, Map<String, Object> valueOverrides, String namespace) {
     this.chartName = chartName;
     this.valueOverrides = valueOverrides;
+    this.namespace = namespace;
   }
 
   boolean matches(String chartName, Map<String, Object> valueOverrides) {
@@ -149,7 +155,21 @@ public class ProcessedChart implements YamlReader {
   }
 
   private String[] createCommandLine(File chart, Path valuesPath) {
-    return new String[] {"helm", "template", chart.getAbsolutePath(), "-f", valuesPath.toString()};
+    if (namespace == null) {
+      return new String[] {
+        "helm", "template", chart.getAbsolutePath(), "-f", valuesPath.toString()
+      };
+    } else {
+      return new String[] {
+        "helm",
+        "template",
+        chart.getAbsolutePath(),
+        "-f",
+        valuesPath.toString(),
+        "--namespace",
+        namespace
+      };
+    }
   }
 
   private Path writeValuesOverride(Map<String, Object> values) throws IOException {
