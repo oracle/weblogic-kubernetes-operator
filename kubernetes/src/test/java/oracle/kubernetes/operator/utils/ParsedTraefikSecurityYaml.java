@@ -21,6 +21,11 @@ public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedTraefikSecurityYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1beta1ClusterRole getTraefikClusterRole() {
     return getClusterRoles().find(getTraefikScope());
   }

@@ -18,6 +18,12 @@ public class ParsedWeblogicDomainPersistentVolumeClaimYaml extends ParsedKuberne
     this.inputs = inputs;
   }
 
+  public ParsedWeblogicDomainPersistentVolumeClaimYaml(YamlReader factory, DomainValues inputs)
+      throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1PersistentVolumeClaim getWeblogicDomainPersistentVolumeClaim() {
     return getPersistentVolumeClaims().find(inputs.getWeblogicDomainPersistentVolumeClaimName());
   }

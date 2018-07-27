@@ -2,15 +2,12 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.create;
+package oracle.kubernetes.operator.helm;
 
-import static oracle.kubernetes.operator.utils.ExecCreateDomain.execCreateDomain;
-import static oracle.kubernetes.operator.utils.ExecResultMatcher.succeedsAndPrints;
-import static oracle.kubernetes.operator.utils.UserProjects.createUserProjectsDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
 
-import oracle.kubernetes.operator.utils.CreateDomainInputs;
-import oracle.kubernetes.operator.utils.DomainFiles;
+import java.util.Map;
 import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
@@ -26,14 +23,11 @@ import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
-import oracle.kubernetes.operator.utils.UserProjects;
-import oracle.kubernetes.operator.utils.YamlGeneratorBase;
 
-public class ScriptedDomainYamlFactory extends DomainYamlFactory {
-
+public class HelmDomainYamlFactory extends DomainYamlFactory {
   @Override
-  public CreateDomainInputs createDefaultValues() throws Exception {
-    return CreateDomainInputs.readDefaultInputsFile();
+  public HelmDomainValues createDefaultValues() {
+    return new HelmDomainValues();
   }
 
   @Override
@@ -41,28 +35,26 @@ public class ScriptedDomainYamlFactory extends DomainYamlFactory {
     return new YamlGenerator(values).getGeneratedDomainYamlFiles();
   }
 
-  static class YamlGenerator extends YamlGeneratorBase {
+  static class YamlGenerator extends oracle.kubernetes.operator.utils.YamlGeneratorBase {
     private final DomainValues values;
-    private DomainFiles domainFiles;
+    private final ProcessedChart chart;
 
-    YamlGenerator(DomainValues values) throws Exception {
-      this.values = values;
-      UserProjects userProjects = createUserProjectsDirectory();
-      domainFiles = new DomainFiles(userProjects.getPath(), values);
+    YamlGenerator(DomainValues inputValues) throws Exception {
+      Map<String, Object> overrides = ((HelmDomainValues) inputValues).createMap();
+      chart = new ProcessedChart("weblogic-domain", overrides);
 
-      assertThat(execCreateDomain(userProjects.getPath(), values), succeedsAndPrints("Completed"));
+      assertThat(chart.getError(), emptyOrNullString());
+
+      values = new HelmDomainValues(chart.getValues());
     }
 
     @Override
     protected GeneratedDomainYamlFiles getGeneratedDomainYamlFiles() throws Exception {
       GeneratedDomainYamlFiles files =
           new GeneratedDomainYamlFiles(
-              new ParsedCreateWeblogicDomainJobYaml(
-                  domainFiles.getCreateWeblogicDomainJobYamlPath(), values),
-              new ParsedDeleteWeblogicDomainJobYaml(
-                  domainFiles.getDeleteWeblogicDomainJobYamlPath(), values),
-              new ParsedDomainCustomResourceYaml(
-                  domainFiles.getDomainCustomResourceYamlPath(), values));
+              new ParsedCreateWeblogicDomainJobYaml(chart, values),
+              new ParsedDeleteWeblogicDomainJobYaml(chart, values),
+              new ParsedDomainCustomResourceYaml(chart, values));
 
       definePersistentVolumeYaml(files);
       defineLoadBalancer(files);
@@ -71,10 +63,8 @@ public class ScriptedDomainYamlFactory extends DomainYamlFactory {
 
     private void definePersistentVolumeYaml(GeneratedDomainYamlFiles files) throws Exception {
       files.definePersistentVolumeYaml(
-          new ParsedWeblogicDomainPersistentVolumeYaml(
-              domainFiles.getWeblogicDomainPersistentVolumeYamlPath(), values),
-          new ParsedWeblogicDomainPersistentVolumeClaimYaml(
-              domainFiles.getWeblogicDomainPersistentVolumeClaimYamlPath(), values));
+          new ParsedWeblogicDomainPersistentVolumeYaml(chart, values),
+          new ParsedWeblogicDomainPersistentVolumeClaimYaml(chart, values));
     }
 
     @Override
@@ -85,23 +75,21 @@ public class ScriptedDomainYamlFactory extends DomainYamlFactory {
     @Override
     protected void defineTraefikYaml(GeneratedDomainYamlFiles files) throws Exception {
       files.defineTraefikYaml(
-          new ParsedTraefikYaml(domainFiles.getTraefikYamlPath(), values),
-          new ParsedTraefikSecurityYaml(domainFiles.getTraefikSecurityYamlPath(), values));
+          new ParsedTraefikYaml(chart, values), new ParsedTraefikSecurityYaml(chart, values));
     }
 
     @Override
     protected void defineApacheYaml(GeneratedDomainYamlFiles files) throws Exception {
       files.defineApacheYaml(
-          new ParsedApacheYaml(domainFiles.getApacheYamlPath(), values),
-          new ParsedApacheSecurityYaml(domainFiles.getApacheSecurityYamlPath(), values));
+          new ParsedApacheYaml(chart, values), new ParsedApacheSecurityYaml(chart, values));
     }
 
     @Override
     protected void defineYoyagerYaml(GeneratedDomainYamlFiles files) throws Exception {
       files.defineYoyagerYaml(
-          new ParsedVoyagerOperatorYaml(domainFiles.getVoyagerOperatorYamlPath(), values),
-          new ParsedVoyagerOperatorSecurityYaml(domainFiles.getVoyagerOperatorSecurityYamlPath()),
-          new ParsedVoyagerIngressYaml(domainFiles.getVoyagerIngressYamlPath(), values));
+          new ParsedVoyagerOperatorYaml(chart, values),
+          new ParsedVoyagerOperatorSecurityYaml(chart),
+          new ParsedVoyagerIngressYaml(chart, values));
     }
   }
 }

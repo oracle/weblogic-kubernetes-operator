@@ -18,6 +18,12 @@ public class ParsedWeblogicDomainPersistentVolumeYaml extends ParsedKubernetesYa
     this.inputs = inputs;
   }
 
+  public ParsedWeblogicDomainPersistentVolumeYaml(YamlReader factory, DomainValues inputs)
+      throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1PersistentVolume getWeblogicDomainPersistentVolume() {
     return getPersistentVolumes().find(inputs.getWeblogicDomainPersistentVolumeName());
   }

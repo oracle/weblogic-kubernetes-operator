@@ -18,6 +18,12 @@ public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedCreateWeblogicDomainJobYaml(YamlReader factory, DomainValues inputs)
+      throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1ConfigMap getCreateWeblogicDomainConfigMap() {
     return getConfigMaps().find(inputs.getDomainUID() + "-create-weblogic-domain-job-cm");
   }

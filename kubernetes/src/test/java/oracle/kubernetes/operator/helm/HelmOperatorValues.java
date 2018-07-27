@@ -4,11 +4,15 @@
 
 package oracle.kubernetes.operator.helm;
 
+import static oracle.kubernetes.operator.helm.MapUtils.addMapEntry;
+import static oracle.kubernetes.operator.helm.MapUtils.addStringMapEntry;
+import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
+import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
+import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import oracle.kubernetes.operator.utils.OperatorValues;
 import org.apache.commons.codec.binary.Base64;
 
@@ -42,25 +46,6 @@ class HelmOperatorValues extends OperatorValues {
   private void setElkIntegrationEnabled(Boolean enabled) {
     if (enabled != null) {
       setElkIntegrationEnabled(enabled.toString());
-    }
-  }
-
-  private <T> void loadFromMap(Map<String, Object> map, Consumer<String> setter, String key) {
-    if (map.containsKey(key)) {
-      setter.accept((String) map.get(key));
-    }
-  }
-
-  private void loadBooleanFromMap(Map<String, Object> map, Consumer<Boolean> setter, String key) {
-    if (map.containsKey(key)) {
-      setter.accept((Boolean) map.get(key));
-    }
-  }
-
-  private void loadIntegerFromMap(Map<String, Object> map, Consumer<String> setter, String key) {
-    Integer value = (Integer) map.get(key);
-    if (value != null) {
-      setter.accept(value.toString());
     }
   }
 
@@ -114,50 +99,22 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   private Boolean isRemoteDebugNotPortEnabled() {
-    return valueOf(getRemoteDebugNodePortEnabled());
+    return MapUtils.valueOf(getRemoteDebugNodePortEnabled());
   }
 
   private Boolean isElkIntegrationEnabled() {
-    return valueOf(getElkIntegrationEnabled());
-  }
-
-  private Boolean valueOf(String stringValue) {
-    switch (stringValue) {
-      case "false":
-        return false;
-      case "true":
-        return true;
-      default:
-        return null;
-    }
+    return MapUtils.valueOf(getElkIntegrationEnabled());
   }
 
   private Integer getExternalRestHttpsPortNum() {
-    return integerValue(getExternalRestHttpsPort());
+    return MapUtils.integerValue(getExternalRestHttpsPort());
   }
 
   private Integer getExternalDebugHttpPortNum() {
-    return integerValue(getExternalDebugHttpPort());
+    return MapUtils.integerValue(getExternalDebugHttpPort());
   }
 
   private Integer getInternalDebugHttpPortNum() {
-    return integerValue(getInternalDebugHttpPort());
-  }
-
-  private Integer integerValue(String integerString) {
-    if (integerString.length() == 0) return null;
-    else return Integer.parseInt(integerString);
-  }
-
-  private void addStringMapEntry(HashMap<String, Object> map, Supplier<String> getter, String key) {
-    if (getter.get().length() > 0) {
-      map.put(key, getter.get());
-    }
-  }
-
-  private void addMapEntry(HashMap<String, Object> map, Supplier<Object> getter, String key) {
-    if (getter.get() != null) {
-      map.put(key, getter.get());
-    }
+    return MapUtils.integerValue(getInternalDebugHttpPort());
   }
 }

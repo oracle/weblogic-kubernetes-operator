@@ -20,6 +20,11 @@ public class ParsedVoyagerOperatorYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedVoyagerOperatorYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public ExtensionsV1beta1Deployment getVoyagerOperatorDeployment() {
     return getDeployments().find(getVoyagerOperatorName());
   }

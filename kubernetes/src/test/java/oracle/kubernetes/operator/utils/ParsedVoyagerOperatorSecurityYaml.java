@@ -17,6 +17,10 @@ public class ParsedVoyagerOperatorSecurityYaml extends ParsedKubernetesYaml {
     super(new ScriptGeneratedYamlReader(yamlPath));
   }
 
+  public ParsedVoyagerOperatorSecurityYaml(YamlReader factory) throws Exception {
+    super(factory);
+  }
+
   public V1ServiceAccount getVoyagerServiceAccount() {
     return getServiceAccounts().find(getVoyagerOperatorName());
   }
