@@ -195,12 +195,12 @@ This can be achieved by following the steps below. For convenience of discussion
 
 ````
 * Delete the contents of the physical volume using the appropriate tools. See the descriptions in the previous section for removing a domain.
-* Delete the contents in the `weblogic-domains/<domainUID>` directory under the output directory that is used when the domain is originally created, which is `/path/to/weblogic-operator-output-directory` in our example.
+* Delete the contents in the `weblogic-domains/<domainUID>` directory under the output directory that is specified when the domain is originally created, which is `/path/to/weblogic-operator-output-directory` in our example.
 * Update the create WebLogic domain inputs file `create-domain-job-inputs.yaml`.
 * Recreate all resources that are labeled with the `domainUID`, but are not created by the [Create WebLogic domain](kubernetes/create-weblogic-domain.sh) script. One example of such resources is the `secret` for the domain credentials, which often is created manually and may be labeled with `domainUID`. Any resources that are not labeled with the `domainUID` are not affected because they are not deleted by the [Delete WebLogic domain resources](kubernetes/delete-weblogic-domain-resources.sh) script.
 * Recreate the domain using the [Create WebLogic domain](kubectles/create-weblogic-domain.sh) script with the updated create WebLogic domain inputs file.
 
-If for some reason the last step fails, repeat the steps above after deleting the failed create WebLogic domain job using the following command. The `<output-dir>` is the directory that is passed to the create WebLogic domain script via `-o`, which is `/path/to/weblogic-operator-output-directory` in our example if the same command is used to recreate the domain.
+If for some reason the last step fails, repeat the steps above after deleting the failed create WebLogic domain job using the following command. The `<output-dir>` is the directory that is specified to the create WebLogic domain script via `-o`, which is `/path/to/weblogic-operator-output-directory` in our example if the same command is used to recreate the domain.
 
 ```
 kubectl delete -f <output-dir>/weblogic-domains/<domainUID>/create-weblogic-domain-job.yaml
