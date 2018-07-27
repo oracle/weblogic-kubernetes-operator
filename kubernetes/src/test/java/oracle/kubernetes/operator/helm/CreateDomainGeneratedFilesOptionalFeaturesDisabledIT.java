@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.helm;
 
 import oracle.kubernetes.operator.create.CreateDomainGeneratedFilesOptionalFeaturesDisabledTestBase;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
+@Ignore
 public class CreateDomainGeneratedFilesOptionalFeaturesDisabledIT
     extends CreateDomainGeneratedFilesOptionalFeaturesDisabledTestBase {
 
