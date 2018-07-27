@@ -17,6 +17,11 @@ public class ParsedDomainCustomResourceYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedDomainCustomResourceYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public Domain getDomain() {
     return getDomains().find(inputs.getDomainUID());
   }

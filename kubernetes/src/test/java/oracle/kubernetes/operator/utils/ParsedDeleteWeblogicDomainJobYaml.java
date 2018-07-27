@@ -18,6 +18,12 @@ public class ParsedDeleteWeblogicDomainJobYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedDeleteWeblogicDomainJobYaml(YamlReader factory, DomainValues inputs)
+      throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1ConfigMap getDeleteWeblogicDomainConfigMap() {
     return getConfigMaps().find(inputs.getDomainUID() + "-delete-weblogic-domain-job-cm");
   }
