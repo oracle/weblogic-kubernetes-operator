@@ -20,6 +20,11 @@ public class ParsedVoyagerIngressYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedVoyagerIngressYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1beta1Ingress getVoyagerIngress() {
     return getIngresses().find(getVoyagerIngressName());
   }

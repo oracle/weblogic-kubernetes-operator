@@ -9,7 +9,7 @@ public abstract class DomainYamlFactory {
     return createDefaultValues().withTestDefaults();
   }
 
-  public abstract CreateDomainInputs createDefaultValues() throws Exception;
+  public abstract DomainValues createDefaultValues() throws Exception;
 
   public abstract GeneratedDomainYamlFiles generate(DomainValues values) throws Exception;
 }
