@@ -19,6 +19,11 @@ public class ParsedApacheYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedApacheYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1ServiceAccount getApacheServiceAccount() {
     return getServiceAccounts().find(getApacheName());
   }

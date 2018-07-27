@@ -23,6 +23,11 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedTraefikYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1ServiceAccount getTraefikServiceAccount() {
     return getServiceAccounts().find(getTraefikScope());
   }

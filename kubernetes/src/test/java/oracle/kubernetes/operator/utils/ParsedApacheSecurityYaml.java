@@ -20,6 +20,11 @@ public class ParsedApacheSecurityYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
+  public ParsedApacheSecurityYaml(YamlReader factory, DomainValues inputs) throws Exception {
+    super(factory);
+    this.inputs = inputs;
+  }
+
   public V1beta1ClusterRole getApacheClusterRole() {
     return getClusterRoles().find(getApacheName());
   }
