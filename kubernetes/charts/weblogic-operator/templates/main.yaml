@@ -7,8 +7,8 @@
 {{- $ignore := set $scope "Files" .Files -}}
 {{- $ignore := set $scope "Chart" .Chart -}}
 
-{{- if .Values.setupKubernetesCluster }}
-{{ include "operator.kubernetesCluster" $scope }}
+{{- if .Values.createSharedOperatorResources }}
+{{ include "operator.sharedOperatorResources" $scope }}
 {{- end }}
 
 {{- if .Values.createOperator }}

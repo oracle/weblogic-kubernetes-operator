@@ -21,7 +21,7 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   private static final String WRONG_TYPE = "The %s property %s must be a %s instead";
 
   private static final String[] TOP_LEVEL_BOOLEAN_PROPERTIES = {
-    "setupKubernetesCluster", "createOperator" // , "elkIntegrationEnabled"
+    "createSharedOperatorResources", "createOperator" // , "elkIntegrationEnabled"
   };
 
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
@@ -321,6 +321,6 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   public void whenDomainsNamespacesPrimitiveType_reportError() throws Exception {
     setProperty("domainsNamespaces", true);
 
-    assertThat(getProcessingError(), containsTypeError("domainsNamespaces", "map", "bool"));
+    assertThat(getProcessingError(), containsTypeError("domainsNamespaces", "slice", "bool"));
   }
 }

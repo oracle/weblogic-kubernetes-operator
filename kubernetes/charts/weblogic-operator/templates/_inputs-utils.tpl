@@ -64,9 +64,6 @@ Verify that a list input value has been specified
 {{-   if not (hasKey $status "error") -}}
         true
 {{-   end -}}
-{{- else -}}
-{{-   $errorMsg := cat "The" $requiredKind "property" $name "must be specified." -}}
-{{-   include "operator.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
 {{- end -}}
 
