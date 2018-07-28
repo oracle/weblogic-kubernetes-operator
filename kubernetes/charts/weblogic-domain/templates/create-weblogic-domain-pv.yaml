@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Values.domainUID }}-weblogic-domain-pv
+  name: {{ .Values.domainUID }}-weblogic-domain-job-pv
   labels:
     weblogic.resourceVersion: domain-v1
     weblogic.domainUID: {{ .Values.domainUID }}
