@@ -3,8 +3,8 @@
 
 {{- define "operator.validateInputs" -}}
 {{- $scope := . -}}
-{{- if include "operator.verifyBooleanInput" (list $scope $scope "setupKubernetesCluster") -}}
-{{-   if $scope.setupKubernetesCluster }}
+{{- if include "operator.verifyBooleanInput" (list $scope $scope "createSharedOperatorResources") -}}
+{{-   if $scope.createSharedOperatorResources }}
 {{-     $ignore := include "operator.verifyBooleanInput" (list $scope $scope "elkIntegrationEnabled") -}}
 {{-   end }}
 {{- end }}

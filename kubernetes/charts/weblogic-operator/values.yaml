@@ -1,9 +1,10 @@
 # Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-# setupKubernetesCluster specifies whether or not the installation should deploy Kubernetes components
-# such as elasticsearch, kibana, operator RBAC roles, etc.
-setupKubernetesCluster: true
+# createSharedOperatorResources specifies whether or not the installation should create the
+# Kubernetes resources that are shared by all operators in this Kubernetes cluster such as
+# elasticsearch, kibana, operator RBAC roles, etc.
+createSharedOperatorResources: true
 
 # createOperator specifies whether or not the installation should create the operator and its resources.
 createOperator: true
@@ -29,7 +30,7 @@ operatorServiceAccount: "weblogic-operator"
 # domainsNamespaces:
 #   - namespace1
 #   - namespace2
-domainsNamespaces: {}
+domainsNamespaces: []
 
 # operatorImage specifies the docker image containing the operator code.
 operatorImage: "weblogic-kubernetes-operator:1.0"
