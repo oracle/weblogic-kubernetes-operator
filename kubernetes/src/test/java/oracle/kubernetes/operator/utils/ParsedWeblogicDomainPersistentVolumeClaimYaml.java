@@ -28,6 +28,10 @@ public class ParsedWeblogicDomainPersistentVolumeClaimYaml extends ParsedKuberne
     return getPersistentVolumeClaims().find(inputs.getWeblogicDomainPersistentVolumeClaimName());
   }
 
+  public V1PersistentVolumeClaim getWeblogicDomainJobPersistentVolumeClaim() {
+    return getPersistentVolumeClaims().find(inputs.getWeblogicDomainJobPersistentVolumeClaimName());
+  }
+
   public int getExpectedObjectCount() {
     return 1;
   }

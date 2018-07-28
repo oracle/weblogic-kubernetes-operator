@@ -41,7 +41,7 @@ public class HelmDomainYamlFactory extends DomainYamlFactory {
 
     YamlGenerator(DomainValues inputValues) throws Exception {
       Map<String, Object> overrides = ((HelmDomainValues) inputValues).createMap();
-      chart = new ProcessedChart("weblogic-domain", overrides);
+      chart = new ProcessedChart("weblogic-domain", overrides, (String) overrides.get("namespace"));
 
       assertThat(chart.getError(), emptyOrNullString());
 

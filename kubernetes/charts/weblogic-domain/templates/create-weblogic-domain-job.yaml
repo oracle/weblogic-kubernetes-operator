@@ -306,7 +306,7 @@ spec:
             name: {{ .Values.domainUID }}-create-weblogic-domain-job-cm
         - name: weblogic-domain-storage-volume
           persistentVolumeClaim:
-            claimName: {{ .Values.domainUID }}-weblogic-domain-pvc
+            claimName: {{ .Values.domainUID }}-weblogic-domain-job-pvc
         - name: weblogic-credentials-volume
           secret:
             secretName: {{ .Values.weblogicCredentialsSecretName }}
