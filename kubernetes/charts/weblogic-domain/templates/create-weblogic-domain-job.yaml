@@ -1,6 +1,6 @@
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-{{- if .Values.createWeblogicDomain }}
+{{- if .Values.createWebLogicDomain }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -113,7 +113,7 @@ data:
     # Create the domain
     wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py
 
-    echo "Successfully Completed"
+    echo "WebLogic domain configuration by create-domain-script.py successfully completed"
 
   create-domain.py: |-
     # This python script is used to create a WebLogic domain
@@ -183,7 +183,7 @@ data:
     set('NativeVersionEnabled', 'true')
     set('StartScriptEnabled', 'false')
     set('SecureListener', 'false')
-    set('LogLevel', 'FINEST')
+    set('LogLevel', 'INFO')
     set('DomainsDirRemoteSharingEnabled', 'true')
 
     # Set the Node Manager user name and password (domain name will change after writeDomain)

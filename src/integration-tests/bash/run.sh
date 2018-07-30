@@ -2439,8 +2439,8 @@ function startup_domain {
       local inputs=$TMP_DIR/create-weblogic-domain-inputs.yaml
       local outfile="$TMP_DIR/startup-weblogic-domain.out"
       cd $PROJECT_ROOT/kubernetes/charts
-      trace "calling helm install weblogic-domain --name ${DOM_KEY} -f $inputs --namespace ${NAMESPACE} --set createWeblogicDomain=false"
-      helm install weblogic-domain --name ${DOM_KEY} -f $inputs --namespace ${NAMESPACE} --set createWeblogicDomain=false 2>&1 | opt_tee ${outfile}
+      trace "calling helm install weblogic-domain --name ${DOM_KEY} -f $inputs --namespace ${NAMESPACE} --set createWebLogicDomain=false"
+      helm install weblogic-domain --name ${DOM_KEY} -f $inputs --namespace ${NAMESPACE} --set createWebLogicDomain=false 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else   
