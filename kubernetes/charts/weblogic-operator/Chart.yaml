@@ -2,5 +2,5 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 name: weblogic-operator
-version: 0.2.0
+version: 2.0
 description: Helm package for creation of the Weblogic operator.

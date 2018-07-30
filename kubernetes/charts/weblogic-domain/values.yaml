@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # Boolean indicating if weblogic domain should be created (Only available in helm charts templates)
-createWeblogicDomain: true
+createWebLogicDomain: true
 
 # The version of this inputs file.  Do not modify. (Not used in helm charts templates)
 version: create-weblogic-domain-inputs-v1

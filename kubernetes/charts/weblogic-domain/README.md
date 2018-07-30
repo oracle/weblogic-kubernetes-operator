@@ -3,7 +3,7 @@ This chart creates a single Weblogic domain on a [Kubernetes](https://kubernetes
 [Helm](https://github.com/kubernetes/helm) package manager.
 
 ## Prerequisites
-- Kubernetes 1.7.5+ with Beta APIs enabled
+- [Requirements for the Oracle WebLogic Server Kubernetes Operator](https://github.com/oracle/weblogic-kubernetes-operator/README.md) 
 
 - Install [Helm](https://github.com/kubernetes/helm#install)
 
@@ -48,7 +48,7 @@ cd kubernetes/charts
 To install the chart with the release `my-release`, namespace `my-namespace` and secret `my-secret' without creating a weblogic domain (such as when a WebLogic domain already exists):
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --set weblogicCredentialsSecretName=my-secret --set createWeblogicDomain=false
+helm install weblogic-domain --name my-release --namespace my-namespace --set weblogicCredentialsSecretName=my-secret --set createWebLogicDomain=false
 ```
 
 The command deploys weblogic-domain on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists
@@ -69,7 +69,7 @@ The command removes all the Kubernetes components associated with the chart and 
 ## Configuration 
 |  Key                           |  Description                      |  Default              |
 | -------------------------------|-----------------------------------|-----------------------|
-| createWeblogicDomain | Boolean indicating if a weblogic domain should be created | true |
+| createWebLogicDomain | Boolean indicating if a weblogic domain should be created | true |
 | adminPort | Port number for Admin Server | 7001 |
 | adminServerName | Name of the Admin Server | admin-server |
 | domainName | Name of the WebLogic domain to create | base_domain |
