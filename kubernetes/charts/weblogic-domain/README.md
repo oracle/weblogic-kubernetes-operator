@@ -3,7 +3,7 @@ This chart creates a single Weblogic domain on a [Kubernetes](https://kubernetes
 [Helm](https://github.com/kubernetes/helm) package manager.
 
 ## Prerequisites
-- [Requirements for the Oracle WebLogic Server Kubernetes Operator](https://github.com/oracle/weblogic-kubernetes-operator/README.md) 
+- [Requirements for the Oracle WebLogic Server Kubernetes Operator](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/README.md)
 
 - Install [Helm](https://github.com/kubernetes/helm#install)
 
