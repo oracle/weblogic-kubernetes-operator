@@ -1,0 +1,18 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+{{ include "operator.validateInputs" .Values }}
+
+{{- $scope := merge (dict) .Values -}}
+{{- $ignore := set $scope "Files" .Files -}}
+{{- $ignore := set $scope "Chart" .Chart -}}
+
+{{- if .Values.createSharedOperatorResources }}
+{{ include "operator.sharedOperatorResources" $scope }}
+{{- end }}
+
+{{- if .Values.createOperator }}
+{{- include "operator.operator" $scope }}
+{{- end }}
+
+{{- include "operator.extraResources" $scope }}
