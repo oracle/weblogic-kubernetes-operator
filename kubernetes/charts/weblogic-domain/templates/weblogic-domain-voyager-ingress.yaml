@@ -1,0 +1,49 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+{{- if eq .Values.loadBalancer "VOYAGER" }}
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Values.domainUID }}-voyager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  rules:
+  - host: '*' 
+    http:
+      nodePort: '{{ .Values.loadBalancerWebPort }}'
+      paths:
+      - backend:
+          serviceName: {{ .Values.domainUID }}-cluster-{{ .Values.clusterName | lower }}
+          servicePort: '{{ .Values.managedServerPort }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.domainUID }}-voyager-stats
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.domainUID }}-voyager-stats
+    weblogic.resourceVersion: voyager-load-balancer-v1
+    weblogic.domainUID: {{ .Values.domainUID }}
+    weblogic.domainName: {{ .Values.domainName }}
+spec:
+  type: NodePort
+  ports:
+    - name: client
+      protocol: TCP
+      port: 56789
+      targetPort: 56789
+      nodePort: {{ .Values.loadBalancerDashboardPort }}
+  selector:
+    origin: voyager
+    origin-name: {{ .Values.domainUID }}-voyager
+{{- end }}
