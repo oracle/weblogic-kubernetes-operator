@@ -877,11 +877,18 @@ public class PodHelper {
   // come for free with the WLS docker container with the correct values.
   private static void overrideContainerWeblogicEnvVars(
       DomainSpec spec, String serverName, V1Container container) {
+    // get the EnvVar that are externally specified
+    List<V1EnvVar> envList = container.getEnv();
+    String domainName = spec.getDomainName();
+    String domainHome = "/shared/domain/" + domainName;
+    String asName  = spec.getAsName();
+    String asPort  = spec.getAsPort().toString();
+
     // Override the domain name, domain directory, admin server name and admin server port.
-    addEnvVar(container, "DOMAIN_NAME", spec.getDomainName());
-    addEnvVar(container, "DOMAIN_HOME", "/shared/domain/" + spec.getDomainName());
-    addEnvVar(container, "ADMIN_NAME", spec.getAsName());
-    addEnvVar(container, "ADMIN_PORT", spec.getAsPort().toString());
+    addEnvVar(container, "DOMAIN_NAME", domainName);
+    addEnvVar(container, "DOMAIN_HOME", domainHome);
+    addEnvVar(container, "ADMIN_NAME", asName);
+    addEnvVar(container, "ADMIN_PORT", asPort);
     addEnvVar(container, "SERVER_NAME", serverName);
     // Hide the admin account's user name and password.
     // Note: need to use null v.s. "" since if you upload a "" to kubectl then download it,
@@ -892,6 +899,19 @@ public class PodHelper {
     // the default, e.g. 'weblogic' for the user name).
     addEnvVar(container, "ADMIN_USERNAME", null);
     addEnvVar(container, "ADMIN_PASSWORD", null);
+
+    // resolve tokens in externally specified env that refers to internal env via $(XXX)
+    for (V1EnvVar ev : envList) {
+      String oldValue = ev.getValue();
+      if (oldValue == null) continue;
+      String newValue = oldValue.replace("$(DOMAIN_NAME)", domainName);
+      newValue = newValue.replace("$(DOMAIN_HOME)", domainHome);
+      newValue = newValue.replace("$(ADMIN_NAME)", asName);
+      newValue = newValue.replace("$(ADMIN_PORT)", asPort);
+      newValue = newValue.replace("$(SERVER_NAME)", serverName);
+      if (!(oldValue.equals(newValue))) ev.setValue(newValue);
+    }
+
   }
 
   // Add an environment variable to a container
