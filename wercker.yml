@@ -64,6 +64,7 @@ build:
 
 # This pipeline runs the integration tests against a k8s cluster on OCI.
 command-timeout: 60
+no-response-timeout: 10
 integration-test:
   steps:
   - script:
@@ -79,7 +80,17 @@ integration-test:
         # clean up
         yum clean all
 
-        # store the artifacts so we can download them easily
+        if [ -x "$(command -v helm)" ]; then
+          echo @@ "Deleting installed helm charts"
+          helm list --short | xargs -L1 helm delete --purge
+
+          echo @@ "Calling helm reset -f"
+          helm reset -f
+        else
+          echo @@ "helm not installed, skipping helm reset"
+        fi
+
+        echo @@ "store the artifacts so we can download them easily"
         tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*
       }
 
@@ -136,6 +147,16 @@ integration-test:
 
       echo @@ "Calling 'kubectl version'"
       kubectl version
+
+      echo @@ "Helm installation starts"
+      curl -LO http://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
+      mkdir /tmp/helm
+      tar xzf helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
+      chmod +x /tmp/helm/linux-amd64/helm
+      mv /tmp/helm/linux-amd64/helm /usr/local/bin/
+      rm -rf /tmp/helm
+      helm version
+      echo @@ "Helm is installed."
 
       # obtain an exclusive k8s cluster lease using the 'lease.sh' helper script
       #   - first set LEASE_ID to a unique value
