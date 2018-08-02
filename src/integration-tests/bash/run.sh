@@ -2209,9 +2209,10 @@ function verify_service_and_pod_created {
       local EXTCHANNEL_T3CHANNEL_SERVICE_NAME=${SERVICE_NAME}-extchannel-t3channel
       trace "checking if service ${EXTCHANNEL_T3CHANNEL_SERVICE_NAME} is created"
       count=0
+      srv_count=0
       while [ "${srv_count:=Error}" != "1" -a $count -lt $max_count_srv ] ; do
         local count=`expr $count + 1`
-        local srv_count=`kubectl -n $NAMESPACE get services | grep "^$SERVICE_NAME " | wc -l`
+        local srv_count=`kubectl -n $NAMESPACE get services | grep "^$EXTCHANNEL_T3CHANNEL_SERVICE_NAME " | wc -l`
         if [ "${srv_count:=Error}" != "1" ]; then
           trace "Did not find service $EXTCHANNEL_T3CHANNEL_SERVICE_NAME, iteration $count of $max_count_srv"
           sleep $wait_time
