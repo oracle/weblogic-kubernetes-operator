@@ -160,9 +160,16 @@ public class ManagedServersUpStep extends Step {
             String serverName = wlsServerConfig.getListenAddress();
             // do not start admin server
             if (!serverName.equals(asName) && !servers.contains(serverName)) {
+              List<V1EnvVar> env = null;
+              // find ClusterStartup for WlsClusterConfig
+              ClusterStartup cs = findClusterStartup(wlsClusterConfig.getClusterName(), lcs);
+              if (cs != null) {
+                env = cs.getEnv();
+              }
+
               // start server
               servers.add(serverName);
-              ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, null, null));
+              ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, env, null));
             }
           }
         }
@@ -207,6 +214,25 @@ public class ManagedServersUpStep extends Step {
       LOGGER.exiting();
       return doNext(scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next)), packet);
     }
+  }
+
+  /**
+   * Find corresponding ClusterStartup for WLS cluster, if defined.
+   *
+   * @param wlsClusterName - name of WLS cluster
+   * @param lcs - List of defined ClusterStartup's
+   * @return - ClusterStartup, if exists, or Null
+   */
+  private static ClusterStartup findClusterStartup(String wlsClusterName, List<ClusterStartup> lcs) {
+    if (lcs != null) {
+      for (ClusterStartup cs : lcs) {
+        String clusterName = cs.getClusterName();
+        if (clusterName.equals(wlsClusterName)) {
+          return cs;
+        }
+      }
+    }
+    return null;
   }
   
   private static List<V1EnvVar> startInAdminMode(List<V1EnvVar> env) {
