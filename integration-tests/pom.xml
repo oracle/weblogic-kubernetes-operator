@@ -163,29 +163,7 @@
 								</goals>
 								<phase>integration-test</phase>
 								<configuration>
-									<excludes>
-										<exclude>**/*Test.java</exclude>
-										<!--  exclude>**/IT*.java</exclude -->
-									</excludes>
-									<!-- just run test suite -->
-									<includes> <include>**/*TestSuite.java</include> </includes>
-								</configuration>
-							</execution>
-							<execution>
-								<id>acceptance-test</id>
-								<goals>
-									<goal>integration-test</goal>
-									<goal>verify</goal>
-								</goals>
-								<phase>integration-test</phase>
-								<configuration>
-									<!-- do not run unit or integration tests -->
-									<excludes>
-										<exclude>**/*Test.java</exclude>
-										<exclude>**/IT*.java</exclude>
-									</excludes>
-									<!-- just run acceptance tests -->
-									<!-- includes> <include>**/*AT.java</include> </includes -->
+									<skipTests>false</skipTests>
 								</configuration>
 							</execution>
 						</executions>
