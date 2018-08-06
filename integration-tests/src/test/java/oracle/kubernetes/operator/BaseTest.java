@@ -10,8 +10,10 @@ import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 
 /**
@@ -20,6 +22,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
  */
 public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  public static final String TESTWEBAPP = "testwebapp";
 
   private static String resultRoot = "";
   private static String pvRoot = "";
@@ -112,6 +115,11 @@ public class BaseTest {
       }
     }
 
+    logger.info("appProps = " + appProps);
+    logger.info("maxIterationPod = " + appProps.getProperty("maxIterationsPod"));
+    logger.info(
+        "maxIterationPod with default= "
+            + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
     logger.info("RESULT_ROOT =" + resultRoot);
     logger.info("PV_ROOT =" + pvRoot);
     logger.info("userProjectsDir =" + userProjectsDir);
@@ -130,6 +138,135 @@ public class BaseTest {
     logger.info(
         "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
     logger.info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
+  }
+
+  /**
+   * Access Operator REST endpoint using admin node host and node port
+   *
+   * @throws Exception
+   */
+  public void testAdminServerExternalService(Domain domain) throws Exception {
+    logTestBegin("testAdminServerExternalService");
+    domain.verifyAdminServerExternalService(getUsername(), getPassword());
+    logger.info("SUCCESS");
+  }
+
+  /**
+   * Verify t3channel port by deploying webapp using the port
+   *
+   * @throws Exception
+   */
+  public void testAdminT3Channel(Domain domain) throws Exception {
+    logTestBegin("testAdminT3Channel");
+    Properties domainProps = domain.getDomainProps();
+    // check if the property is set to true
+    Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
+
+    if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
+      domain.deployWebAppViaWLST(
+          TESTWEBAPP,
+          getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
+          getUsername(),
+          getPassword());
+    } else {
+      throw new RuntimeException("FAILURE: exposeAdminT3Channel is not set or false");
+    }
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    logger.info("SUCCESS");
+  }
+
+  /**
+   * Restarting the domain should not have any impact on Operator managing the domain, web app load
+   * balancing and node port service
+   *
+   * @throws Exception
+   */
+  public void testDomainLifecyle(Operator operator, Domain domain) throws Exception {
+    logTestBegin("testDomainLifecyle");
+    domain.destroy();
+    domain.create();
+    operator.verifyExternalRESTService();
+    operator.verifyDomainExists(domain.getDomainUid());
+    domain.verifyDomainCreated();
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    domain.verifyAdminServerExternalService(getUsername(), getPassword());
+    logger.info("SUCCESS");
+  }
+
+  /**
+   * Scale the cluster up/down using Operator REST endpoint, load balancing should adjust
+   * accordingly.
+   *
+   * @throws Exception
+   */
+  public void testClusterScaling(Operator operator, Domain domain) throws Exception {
+    logTestBegin("testClusterScaling");
+    Properties domainProps = domain.getDomainProps();
+    String domainUid = domain.getDomainUid();
+    String domainNS = domainProps.getProperty("namespace");
+    String managedServerNameBase = domainProps.getProperty("managedServerNameBase");
+    int replicas = 3;
+    String podName = domain.getDomainUid() + "-" + managedServerNameBase + replicas;
+    String clusterName = domainProps.getProperty("clusterName");
+
+    logger.info(
+        "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
+    operator.scale(domainUid, domainProps.getProperty("clusterName"), replicas);
+
+    logger.info("Checking if managed pod(" + podName + ") is Running");
+    TestUtils.checkPodCreated(podName, domainNS);
+
+    logger.info("Checking if managed server (" + podName + ") is Running");
+    TestUtils.checkPodReady(podName, domainNS);
+
+    logger.info("Checking if managed service(" + podName + ") is created");
+    TestUtils.checkServiceCreated(podName, domainNS);
+
+    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    if (replicaCnt != replicas) {
+      throw new RuntimeException(
+          "FAILURE: Cluster replica doesn't match with scaled up size "
+              + replicaCnt
+              + "/"
+              + replicas);
+    }
+
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
+    replicas = 2;
+    podName = domainUid + "-" + managedServerNameBase + (replicas + 1);
+    logger.info("Scale down to " + replicas + " managed servers");
+    operator.scale(domainUid, clusterName, replicas);
+
+    logger.info("Checking if managed pod(" + podName + ") is deleted");
+    TestUtils.checkPodDeleted(podName, domainNS);
+
+    replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    if (replicaCnt != replicas) {
+      throw new RuntimeException(
+          "FAILURE: Cluster replica doesn't match with scaled down size "
+              + replicaCnt
+              + "/"
+              + replicas);
+    }
+
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    logger.info("SUCCESS");
+  }
+
+  /**
+   * Restarting Operator should not impact the running domain
+   *
+   * @throws Exception
+   */
+  public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
+    logTestBegin("testOperatorLifecycle");
+    operator.destroy();
+    operator.create();
+    operator.verifyExternalRESTService();
+    operator.verifyDomainExists(domain.getDomainUid());
+    domain.verifyDomainCreated();
+    logger.info("SUCCESS");
   }
 
   public static String getResultRoot() {
