@@ -443,7 +443,7 @@ public class Domain {
         .append(" --write-out %{http_code} -o ")
         .append(responseBodyFile);
     logger.info("cmd for curl " + cmd);
-    
+
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -454,7 +454,7 @@ public class Domain {
               + "\n "
               + result.stdout());
     }
-    
+
     String output = result.stdout().trim();
     logger.info("output " + output);
     if (!output.equals("200")) {
