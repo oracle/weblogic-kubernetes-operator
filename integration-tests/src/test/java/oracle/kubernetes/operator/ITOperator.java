@@ -20,7 +20,7 @@ import org.junit.runners.MethodSorters;
  * Operator(s).
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITIntegrationTest extends BaseTest {
+public class ITOperator extends BaseTest {
 
   // property file used to customize operator properties for operator inputs yaml
   private static String op1PropsFile = "ITFirstOperator.properties";
