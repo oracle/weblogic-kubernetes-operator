@@ -10,7 +10,8 @@ data:
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
   serviceaccount: {{ .operatorServiceAccount | quote }}
-{{- $args := include "operator.cloneDictionary" . | fromYaml -}}
+{{- $scope := . -}}
+{{- $args := merge (dict) $scope -}}
 {{- $domainsNamespaces := .domainsNamespaces -}}
 {{- $len := len $domainsNamespaces -}}
 {{- if eq $len 0 -}}

@@ -2,7 +2,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{- define "operator.domainsNamespaces" }}
-{{- $args := include "operator.cloneDictionary" . | fromYaml -}}
+{{- $scope := . -}}
+{{- $args := merge (dict) $scope -}}
 {{- $domainsNamespaces := .domainsNamespaces -}}
 {{- $len := len $domainsNamespaces -}}
 {{- if eq $len 0 -}}
