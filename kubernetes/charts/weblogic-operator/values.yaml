@@ -38,6 +38,9 @@ operatorImage: "weblogic-kubernetes-operator:1.0"
 # operatorImagePullPolicy specifies the image pull policy for the operator docker image.
 operatorImagePullPolicy: "IfNotPresent"
 
+# operatorImagePullSecret is the name of the Kubernetes secret the operator's namespace needed to access the registry containing the operator Docker image
+#operatorImagePullSecret:
+
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:
 #
