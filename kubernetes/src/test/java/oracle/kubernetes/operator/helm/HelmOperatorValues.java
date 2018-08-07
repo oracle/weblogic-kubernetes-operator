@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator.helm;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static oracle.kubernetes.operator.helm.MapUtils.addMapEntry;
 import static oracle.kubernetes.operator.helm.MapUtils.addStringMapEntry;
 import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
@@ -121,12 +124,8 @@ class HelmOperatorValues extends OperatorValues {
 
   private void addOperatorImagePullSecrets(HashMap<String, Object> map) {
     String secretName = getWeblogicOperatorImagePullSecretName();
-    if (secretName != null && (!secretName.isEmpty())) {
-      Map<String, String> secret = new HashMap();
-      secret.put("name", secretName);
-      List<Map<String, String>> secrets = new ArrayList();
-      secrets.add(secret);
-      map.put("operatorImagePullSecrets", secrets);
+    if (!isNullOrEmpty(secretName)) {
+      map.put("operatorImagePullSecrets", singletonList(singletonMap("name", secretName)));
     }
   }
 
