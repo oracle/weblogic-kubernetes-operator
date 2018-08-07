@@ -80,7 +80,7 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     operator1 = TestUtils.createOperator(op1PropsFile);
-    logger.info("SUCCESS"); 
+    logger.info("SUCCESS");
   }
 
   @Test
