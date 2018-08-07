@@ -13,7 +13,6 @@ import static org.hamcrest.Matchers.emptyString;
 import java.util.Map;
 import org.hamcrest.Matcher;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends ChartITBase {
@@ -174,7 +173,6 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  @Ignore("fails to merge null overrides")
   public void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
     setProperty("externalRestOption", "NONE");
 
@@ -277,7 +275,6 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   @Test
-  @Ignore("fails to merge null overrides")
   public void whenRemoteDebugNodePortDisabled_ignoreMissingPortNumbers() throws Exception {
     setProperty("remoteDebugNodePortEnabled", false);
 

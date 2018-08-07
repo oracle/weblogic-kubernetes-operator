@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helm;
 
 import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_CUSTOM_CERT;
-import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -152,13 +151,6 @@ public class HelmOperatorValuesTest {
         new HelmOperatorValues(ImmutableMap.of("operatorNamespace", stringValue));
 
     assertThat(values.getNamespace(), equalTo(stringValue));
-  }
-
-  @Test
-  public void whenNothingSet_createsMapWithInternalCerts() {
-    assertThat(
-        operatorValues.createMap(),
-        both(hasKey("internalOperatorCert")).and(hasKey("internalOperatorKey")));
   }
 
   @Test

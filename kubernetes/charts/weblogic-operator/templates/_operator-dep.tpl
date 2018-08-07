@@ -71,6 +71,10 @@ spec:
         - name: "ELASTICSEARCH_PORT"
           value: "9200"
       {{- end }}
+      {{- if .operatorImagePullSecrets }}
+      imagePullSecrets:
+      {{ .operatorImagePullSecrets | toYaml }}
+      {{- end }}
       volumes:
       - name: "weblogic-operator-cm-volume"
         configMap:
