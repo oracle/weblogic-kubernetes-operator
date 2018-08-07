@@ -8,6 +8,7 @@ import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -79,7 +80,7 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     operator1 = TestUtils.createOperator(op1PropsFile);
-    logger.info("SUCCESS");
+    logger.info("SUCCESS"); 
   }
 
   @Test
@@ -96,6 +97,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test3CreateAnotherDomainInDefaultNS() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test3CreateAnotherDomainInDefaultNS");
     logger.info("Creating Domain domain2 & verifing the domain creation");
     // create domain2
@@ -108,6 +112,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test4CreateDomainInTest1NS() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test4CreateDomainInTest1NS");
     logger.info("Creating Domain domain3 & verifing the domain creation");
     // create domain3
@@ -117,6 +124,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test5CreateAnotherOperatorManagingTest2NS() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test5CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator2
@@ -126,6 +136,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test6CreateConfiguredDomainInTest2NS() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test6CreateDomainInTest2NS");
     logger.info("Creating Domain domain4 & verifing the domain creation");
     // create domain4
@@ -150,6 +163,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test7CreateDomainWithStartupControlAdmin() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test7CreateDomainWithStartupControlAdmin");
     logger.info("Creating Domain domain5 & verifing the domain creation");
     // create domain5
@@ -159,6 +175,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test8CreateDomainPVReclaimPolicyRecycle() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test8CreateDomainPVReclaimPolicyRecycle");
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain6
@@ -170,6 +189,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test9WlsLivenessProbe() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test9WlsLivenessProbe");
     // test managed server1 pod auto restart
     String domain = domain1.getDomainUid();
@@ -181,6 +203,9 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testACreateDomainOnExistingDir() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+
     logTestBegin("test10CreateDomainOnExistingDir");
     logger.info("domain1 " + domain1);
     // create domain on existing dir
@@ -191,6 +216,8 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testBCreateDomainApacheLB() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logTestBegin("test11CreateDomainApacheLB");
     logger.info("Creating Domain domain7 & verifing the domain creation");
     // create domain7
