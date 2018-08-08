@@ -35,7 +35,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
@@ -209,7 +208,7 @@ public class ServiceHelperTest {
 
   @Test
   public void onClusterStepRunWithNoService_createIt() {
-    expectReadClusterService().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    initializeClusterServiceFromRecord(null);
     expectSuccessfulCreateClusterService();
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
@@ -219,25 +218,15 @@ public class ServiceHelperTest {
   }
 
   @Test
-  public void whenReadClusterServiceFails_reportThrowable() {
-    expectReadClusterService().failingWithStatus(HTTP_BAD_REQUEST);
-
-    testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
-
-    testSupport.verifyCompletionThrowable(ApiException.class);
-  }
-
-  @Test
   public void onClusterStepRunWithNoService_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadClusterService().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    initializeClusterServiceFromRecord(null);
     expectCreateClusterService().failingWithStatus(401);
 
     Step forClusterStep = ServiceHelper.createForClusterStep(terminalStep);
     testSupport.runSteps(forClusterStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-    assertThat(retryStrategy.getConflictStep(), sameInstance(forClusterStep));
   }
 
   @Test
@@ -246,7 +235,7 @@ public class ServiceHelperTest {
         new V1Service()
             .spec(createClusterServiceSpec())
             .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
-    expectReadClusterService().returning(service);
+    initializeClusterServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
 
@@ -260,7 +249,7 @@ public class ServiceHelperTest {
         new V1Service()
             .spec(createUntypedClusterServiceSpec())
             .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
-    expectReadClusterService().returning(service);
+    initializeClusterServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
 
@@ -270,7 +259,7 @@ public class ServiceHelperTest {
 
   @Test
   public void onClusterStepRunWithServiceWithBadVersion_replaceIt() {
-    expectReadClusterService().returning(createClusterServiceWithBadVersion());
+    initializeClusterServiceFromRecord(createClusterServiceWithBadVersion());
     expectDeleteServiceSuccessful(getClusterServiceName());
     expectSuccessfulCreateClusterService();
 
@@ -282,7 +271,7 @@ public class ServiceHelperTest {
 
   @Test
   public void onClusterStepRunWithServiceWithBadSpecType_replaceIt() {
-    expectReadClusterService().returning(createClusterServiceWithBadSpecType());
+    initializeClusterServiceFromRecord(createClusterServiceWithBadSpecType());
     expectDeleteServiceSuccessful(getClusterServiceName());
     expectSuccessfulCreateClusterService();
 
@@ -294,7 +283,7 @@ public class ServiceHelperTest {
 
   @Test
   public void onClusterStepRunWithServiceWithBadPort_replaceIt() {
-    expectReadClusterService().returning(createClusterServiceWithBadPort());
+    initializeClusterServiceFromRecord(createClusterServiceWithBadPort());
     expectDeleteServiceSuccessful(getClusterServiceName());
     expectSuccessfulCreateClusterService();
 
@@ -306,7 +295,8 @@ public class ServiceHelperTest {
 
   @Test
   public void whenAttemptToReplaceBadClusterServiceFailsOnDelete_reportCompletionFailure() {
-    expectReadClusterService().returning(createClusterServiceWithBadPort());
+    V1Service existingService = createClusterServiceWithBadPort();
+    initializeClusterServiceFromRecord(existingService);
     expectDeleteService(getClusterServiceName()).failingWithStatus(HTTP_BAD_REQUEST);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
@@ -316,18 +306,27 @@ public class ServiceHelperTest {
 
   @Test
   public void whenAttemptToReplaceBadClusterServiceFindsServiceMissing_replaceItAnyway() {
-    expectReadClusterService().returning(createClusterServiceWithBadPort());
+    initializeClusterServiceFromRecord(createClusterServiceWithBadPort());
     expectDeleteService(getClusterServiceName()).failingWithStatus(HTTP_NOT_FOUND);
     expectSuccessfulCreateClusterService();
+    V1Service expectedService = createClusterService();
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
 
-    assertThat(domainPresenceInfo.getClusters(), hasEntry(TEST_CLUSTER, createClusterService()));
+    assertThat(domainPresenceInfo.getClusters(), hasEntry(TEST_CLUSTER, expectedService));
     assertThat(logRecords, containsInfo(CLUSTER_SERVICE_REPLACED));
   }
 
   private AsyncCallTestSupport.CannedResponse expectReadClusterService() {
     return expectReadService(getClusterServiceName());
+  }
+
+  private void initializeClusterServiceFromRecord(V1Service service) {
+    if (service == null) {
+      domainPresenceInfo.getClusters().remove(TEST_CLUSTER);
+    } else {
+      domainPresenceInfo.getClusters().put(TEST_CLUSTER, service);
+    }
   }
 
   private String getClusterServiceName() {
@@ -412,7 +411,7 @@ public class ServiceHelperTest {
   }
 
   private void verifyMissingServerServiceCreated(V1Service newService) {
-    expectReadServerService().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    initializeServiceFromRecord(null);
     expectCreateService(newService).returning(newService);
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
@@ -452,25 +451,15 @@ public class ServiceHelperTest {
   }
 
   @Test
-  public void whenReadServerServiceFails_reportThrowable() {
-    expectReadServerService().failingWithStatus(HTTP_BAD_REQUEST);
-
-    testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
-
-    testSupport.verifyCompletionThrowable(ApiException.class);
-  }
-
-  @Test
   public void onServerStepRunWithNoService_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadServerService().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    initializeServiceFromRecord(null);
     expectCreateServerService().failingWithStatus(HTTP_BAD_REQUEST);
 
     Step forServerStep = ServiceHelper.createForServerStep(terminalStep);
     testSupport.runSteps(forServerStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-    assertThat(retryStrategy.getConflictStep(), sameInstance(forServerStep));
   }
 
   @Test
@@ -479,7 +468,7 @@ public class ServiceHelperTest {
         new V1Service()
             .spec(createServerServiceSpec())
             .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
-    expectReadServerService().returning(service);
+    initializeServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
@@ -493,7 +482,7 @@ public class ServiceHelperTest {
   }
 
   private void verifyServerServiceReplaced(V1Service oldService, V1Service newService) {
-    expectReadServerService().returning(oldService);
+    initializeServiceFromRecord(oldService);
     expectDeleteServiceSuccessful(getServerServiceName());
     expectSuccessfulCreateService(newService);
 
@@ -540,8 +529,8 @@ public class ServiceHelperTest {
         .ports(Collections.singletonList(new V1ServicePort().port(TEST_PORT)));
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadServerService() {
-    return expectReadService(getServerServiceName());
+  private void initializeServiceFromRecord(V1Service service) {
+    domainPresenceInfo.getServers().put(TEST_SERVER_NAME, createSko(service));
   }
 
   private String getServerServiceName() {
@@ -587,7 +576,7 @@ public class ServiceHelperTest {
   }
 
   private void verifyMissingExternalChannelServiceCreated(V1Service newService) {
-    expectReadExternalChannelService().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    initializeExternalChannelServiceFromRecord(null);
     expectCreateService(newService).returning(newService);
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
@@ -599,7 +588,7 @@ public class ServiceHelperTest {
   @Test
   public void onExternalChannelStepRunWithMatchingService_addToSko() {
     V1Service service = createExternalChannelService();
-    expectReadExternalChannelService().returning(service);
+    initializeExternalChannelServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
@@ -618,7 +607,7 @@ public class ServiceHelperTest {
 
   private void verifyExternalChannelServiceReplaced(ServiceMutator mutator) {
     V1Service newService = createExternalChannelService();
-    expectReadExternalChannelService().returning(mutator.change(createExternalChannelService()));
+    initializeExternalChannelServiceFromRecord(mutator.change(createExternalChannelService()));
     expectDeleteServiceSuccessful(getExternalChannelServiceName());
     expectSuccessfulCreateService(newService);
 
@@ -634,8 +623,21 @@ public class ServiceHelperTest {
   }
 
   private AsyncCallTestSupport.CannedResponse expectReadExternalChannelService() {
-    testSupport.addToPacket(NETWORK_ACCESS_POINT, networkAccessPoint);
     return expectReadService(getExternalChannelServiceName());
+  }
+
+  private void initializeExternalChannelServiceFromRecord(V1Service service) {
+    testSupport.addToPacket(NETWORK_ACCESS_POINT, networkAccessPoint);
+    ServerKubernetesObjects sko = domainPresenceInfo.getServers().get(TEST_SERVER_NAME);
+    if (sko == null) {
+      sko = createSko(null);
+      domainPresenceInfo.getServers().put(TEST_SERVER_NAME, sko);
+    }
+    if (service == null) {
+      sko.getChannels().remove(NAP_NAME);
+    } else {
+      sko.getChannels().put(NAP_NAME, service);
+    }
   }
 
   private V1Service createExternalChannelService() {
