@@ -43,6 +43,10 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String ITEM2 = "item2";
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
+  private static final String RAW_VALUE_1 = "find $(DOMAIN_NAME) at $(DOMAIN_HOME)";
+  private static final String END_VALUE_1 = "find domain1 at /shared/domain/domain1";
+  private static final String RAW_VALUE_2 = "$(SERVER_NAME) is not $(ADMIN_NAME):$(ADMIN_PORT)";
+  private static final String END_VALUE_2 = "ms1 is not ADMIN_SERVER:7001";
   private static final String CLUSTER_NAME = "test-cluster";
 
   public ManagedPodHelperTest() {
@@ -134,6 +138,17 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private V1EnvVar toEnvVar(String name, String value) {
     return envItem(name, value);
+  }
+
+  @Test
+  public void whenPacketHasEnvironmentItemsWithVariables_createManagedPodStartupWithThem() {
+    testSupport.addToPacket(
+        ProcessingConstants.ENVVARS,
+        Arrays.asList(toEnvVar(ITEM1, RAW_VALUE_1), toEnvVar(ITEM2, RAW_VALUE_2)));
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasEnvVar(ITEM1, END_VALUE_1), hasEnvVar(ITEM2, END_VALUE_2)));
   }
 
   @Test
