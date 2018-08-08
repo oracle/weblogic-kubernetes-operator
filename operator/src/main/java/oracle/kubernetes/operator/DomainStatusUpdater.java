@@ -297,7 +297,8 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      // This will control if we need to re-check states soon or if we can slow down checks
+      // This will control if we need to re-check states soon or if we can slow down
+      // checks
       packet.put(ProcessingConstants.STATUS_UNCHANGED, Boolean.valueOf(!madeChange));
 
       if (madeChange) {
@@ -658,7 +659,12 @@ public class DomainStatusUpdater {
                     if (statusCode == CallBuilder.NOT_FOUND) {
                       return doNext(packet); // Just ignore update
                     }
-                    return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+                    return super.onFailure(
+                        getRereadDomainConflictStep(factory, info, meta, conflictStep),
+                        packet,
+                        e,
+                        statusCode,
+                        responseHeaders);
                   }
 
                   @Override
@@ -673,6 +679,38 @@ public class DomainStatusUpdater {
                 }),
         packet);
     return na;
+  }
+
+  private static Step getRereadDomainConflictStep(
+      CallBuilderFactory factory, DomainPresenceInfo info, V1ObjectMeta meta, Step next) {
+    return factory
+        .create()
+        .readDomainAsync(
+            meta.getName(),
+            meta.getNamespace(),
+            new ResponseStep<Domain>(next) {
+              @Override
+              public NextAction onFailure(
+                  Packet packet,
+                  ApiException e,
+                  int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                if (statusCode == CallBuilder.NOT_FOUND) {
+                  return doNext(packet);
+                }
+                return super.onFailure(packet, e, statusCode, responseHeaders);
+              }
+
+              @Override
+              public NextAction onSuccess(
+                  Packet packet,
+                  Domain result,
+                  int statusCode,
+                  Map<String, List<String>> responseHeaders) {
+                info.setDomain(result);
+                return doNext(packet);
+              }
+            });
   }
 
   /**
