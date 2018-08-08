@@ -1921,7 +1921,7 @@ EOF
 #   -   local  --> run locally - requires java & weblogic to be installed
 #   -   remote --> run remotely on admin server, construct URL using admin pod name
 #   -   hybrid --> run remotely on admin server, construct URL using 'NODEPORT_HOST'
-#                  (using K8S_NODEPORT_IP instead since NODEPORT_HOST sometimes does not work in OCI)
+#                  or 'K8S_NODEPORT_IP' in wercker since NODEPORT_HOST sometimes does not work in OCI
 #
 function run_wlst_script {
   if [ "$#" -lt 3 ] ; then
@@ -1944,7 +1944,12 @@ function run_wlst_script {
   local password=`get_wladmin_pass $1`
   local pyfile_lcl="$3"
   local pyfile_pod="/shared/`basename $pyfile_lcl`"
-  local t3url_lcl="t3://$K8S_NODEPORT_IP:$ADMIN_WLST_PORT"
+  if [ "$WERCKER" = "true" ]; then 
+    # use OCI public IP in wercker
+    local t3url_lcl="t3://$K8S_NODEPORT_IP:$ADMIN_WLST_PORT"
+  else
+    local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  fi
   local t3url_pod="t3://$AS_NAME:$ADMIN_WLST_PORT"
   local wlcmdscript_lcl="$TMP_DIR/wlcmd.sh"
   local wlcmdscript_pod="/shared/wlcmd.sh"
