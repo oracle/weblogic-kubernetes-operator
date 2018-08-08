@@ -292,6 +292,9 @@ integration-test-java:
     code: |
       #!/bin/bash
       function cleanup_and_store {
+      
+        $WERCKER_SOURCE_DIR/integration-tests/src/test/resources/statedump.sh
+        
         # clean up
         yum clean all
 
