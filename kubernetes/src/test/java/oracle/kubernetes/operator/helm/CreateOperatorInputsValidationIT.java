@@ -15,7 +15,7 @@ import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CreateOperatorInputsValidationIT extends ChartITBase {
+public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private static final String WRONG_TYPE = "The %s property %s must be a %s instead";
 
@@ -26,7 +26,7 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
 
   private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {
-    "operatorNamespace", "operatorServiceAccount", "operatorImage"
+    "operatorServiceAccount", "operatorImage"
   };
 
   private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
@@ -79,7 +79,7 @@ public class CreateOperatorInputsValidationIT extends ChartITBase {
   }
 
   private String getProcessingError() throws Exception {
-    return getChart("weblogic-operator", overrides).getError();
+    return getChart(newInstallArgs(overrides)).getError();
   }
 
   private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
