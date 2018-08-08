@@ -29,7 +29,7 @@ import java.util.Map;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodWatcher;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.PodTuning;
@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -75,12 +75,10 @@ public class PodHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      Container c = ContainerResolver.getInstance().getContainer();
-      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
+      TuningParameters tuningParameters = TuningParameters.getInstance();
 
       // Compute the desired pod configuration for the admin server
-      V1Pod adminPod = computeAdminPodConfig(configMapHelper, packet);
+      V1Pod adminPod = computeAdminPodConfig(tuningParameters, packet);
 
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
@@ -99,8 +97,7 @@ public class PodHelper {
 
       // First, verify existing Pod
       Step read =
-          factory
-              .create()
+          new CallBuilder()
               .readPodAsync(
                   podName,
                   namespace,
@@ -120,8 +117,7 @@ public class PodHelper {
                         info.getExplicitRestartAdmin().set(false);
                         info.getExplicitRestartServers().remove(asName);
                         Step create =
-                            factory
-                                .create()
+                            new CallBuilder()
                                 .createPodAsync(
                                     namespace,
                                     adminPod,
@@ -187,7 +183,7 @@ public class PodHelper {
     }
 
     // Make this protected so that it can be unit tested
-    protected V1Pod computeAdminPodConfig(TuningParameters configMapHelper, Packet packet) {
+    protected V1Pod computeAdminPodConfig(TuningParameters tuningParameters, Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
@@ -282,7 +278,7 @@ public class PodHelper {
       container.addCommandItem(spec.getAsName());
       container.addCommandItem(weblogicDomainName);
 
-      PodTuning tuning = configMapHelper.getPodTuning();
+      PodTuning tuning = tuningParameters.getPodTuning();
 
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
@@ -319,7 +315,7 @@ public class PodHelper {
       }
 
       // Add internal-weblogic-operator-service certificate to Admin Server pod
-      String internalOperatorCert = getInternalOperatorCertFile(configMapHelper, packet);
+      String internalOperatorCert = getInternalOperatorCertFile(tuningParameters, packet);
       addEnvVar(container, INTERNAL_OPERATOR_CERT_ENV, internalOperatorCert);
 
       // Override the weblogic domain and admin server related environment variables that
@@ -356,8 +352,8 @@ public class PodHelper {
     }
 
     // Make it protected to so that it can be unit tested:
-    protected String getInternalOperatorCertFile(TuningParameters configMapHelper, Packet packet) {
-      return configMapHelper.get(INTERNAL_OPERATOR_CERT_FILE);
+    protected String getInternalOperatorCertFile(TuningParameters tuningParameters, Packet packet) {
+      return tuningParameters.get(INTERNAL_OPERATOR_CERT_FILE);
     }
   }
 
@@ -403,8 +399,7 @@ public class PodHelper {
       CallBuilderFactory factory =
           ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       Step delete =
-          factory
-              .create()
+          new CallBuilder()
               .deletePodAsync(
                   podName,
                   namespace,
@@ -427,8 +422,7 @@ public class PodHelper {
                       }
                       info.getExplicitRestartServers().contains(serverName);
                       Step create =
-                          factory
-                              .create()
+                          new CallBuilder()
                               .createPodAsync(
                                   namespace,
                                   newPod,
@@ -455,7 +449,7 @@ public class PodHelper {
                                         sko.getPod().set(result);
                                       }
 
-                                      PodWatcher pw = packet.getSPI(PodWatcher.class);
+                                      PodAwaiterStepFactory pw = getPodAwaiterStepFactory(packet);
                                       return doNext(pw.waitForReady(result, getNext()), packet);
                                     }
                                   });
@@ -464,6 +458,18 @@ public class PodHelper {
                   });
       return doNext(delete, packet);
     }
+  }
+
+  public static void addToPacket(Packet packet, PodAwaiterStepFactory pw) {
+    packet
+        .getComponents()
+        .put(
+            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+            Component.createFor(PodAwaiterStepFactory.class, pw));
+  }
+
+  static PodAwaiterStepFactory getPodAwaiterStepFactory(Packet packet) {
+    return packet.getSPI(PodAwaiterStepFactory.class);
   }
 
   /**
@@ -554,12 +560,10 @@ public class PodHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      Container c = ContainerResolver.getInstance().getContainer();
-      CallBuilderFactory factory = c.getSPI(CallBuilderFactory.class);
-      TuningParameters configMapHelper = c.getSPI(TuningParameters.class);
+      TuningParameters tuningParameters = TuningParameters.getInstance();
 
       // Compute the desired pod configuration for the managed server
-      V1Pod pod = computeManagedPodConfig(configMapHelper, packet);
+      V1Pod pod = computeManagedPodConfig(tuningParameters, packet);
 
       // Verify if Kubernetes api server has a matching Pod
       // Create or replace, if necessary
@@ -582,8 +586,7 @@ public class PodHelper {
 
       // First, verify there existing Pod
       Step read =
-          factory
-              .create()
+          new CallBuilder()
               .readPodAsync(
                   podName,
                   namespace,
@@ -609,8 +612,7 @@ public class PodHelper {
                       if (result == null) {
                         info.getExplicitRestartServers().remove(weblogicServerName);
                         Step create =
-                            factory
-                                .create()
+                            new CallBuilder()
                                 .createPodAsync(
                                     namespace,
                                     pod,
@@ -699,7 +701,7 @@ public class PodHelper {
     }
 
     // Make this protected so that it can be unit tested
-    protected V1Pod computeManagedPodConfig(TuningParameters configMapHelper, Packet packet) {
+    protected V1Pod computeManagedPodConfig(TuningParameters tuningParameters, Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
@@ -807,7 +809,7 @@ public class PodHelper {
       container.addCommandItem(spec.getAsName());
       container.addCommandItem(String.valueOf(spec.getAsPort()));
 
-      PodTuning tuning = configMapHelper.getPodTuning();
+      PodTuning tuning = tuningParameters.getPodTuning();
 
       V1Probe readinessProbe = new V1Probe();
       V1ExecAction readinessAction = new V1ExecAction();
@@ -900,6 +902,7 @@ public class PodHelper {
     addEnvVar(container, "ADMIN_USERNAME", null);
     addEnvVar(container, "ADMIN_PASSWORD", null);
 
+    if (envList == null) return;
     // resolve tokens in externally specified env that refers to internal env via $(XXX)
     for (V1EnvVar ev : envList) {
       String oldValue = ev.getValue();
@@ -952,11 +955,8 @@ public class PodHelper {
       // Set pod to null so that watcher doesn't try to recreate pod
       V1Pod oldPod = sko.getPod().getAndSet(null);
       if (oldPod != null) {
-        CallBuilderFactory factory =
-            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
         return doNext(
-            factory
-                .create()
+            new CallBuilder()
                 .deletePodAsync(
                     oldPod.getMetadata().getName(),
                     namespace,
