@@ -766,8 +766,6 @@ function deploy_operator {
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
       echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
       echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "createOperatorNamespace: false" >> $inputs
-      echo "operatorNamespace: \"${NAMESPACE}\"" >> $inputs
       echo "operatorServiceAccount: weblogic-operator" >> $inputs
       trace "Contents after customization in file $inputs"
       cat $inputs
@@ -775,7 +773,7 @@ function deploy_operator {
       local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
       trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
       cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-operator --name ${opkey} -f $inputs 2>&1 | opt_tee ${outfile}
+      helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
       operator_ready_wait $opkey
@@ -2544,7 +2542,7 @@ function startup_operator {
     if [ "$USE_HELM" = "true" ]; then
       local inputs="$TMP_DIR/weblogic-operator-values.yaml"
       local outfile="$TMP_DIR/startup-weblogic-operator.out"
-      helm install weblogic-operator --name ${OP_KEY} -f $inputs 2>&1 | opt_tee ${outfile}
+      helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
@@ -3015,11 +3013,11 @@ function test_suite {
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
 
-    if ! [ "$USE_HELM" = "true" ]; then
-      # do not create ooperator namespace when using helm charts
-      kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
-      kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
-    fi
+    # do not create operator namespace when using helm charts
+    kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
+    kubectl create serviceaccount --namespace weblogic-operator-1 weblogic-operator | sed 's/^/+/g' 
+    kubectl create serviceaccount --namespace weblogic-operator-2 weblogic-operator | sed 's/^/+/g' 
 
     # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
     declare_test_pass
