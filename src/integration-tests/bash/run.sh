@@ -2485,13 +2485,13 @@ function test_domain_lifecycle {
     declare_test_pass
 }
 
-function wait_for_operator_shutdown {
-  name=$1
+function wait_for_operator_helm_chart_deleted {
+  release=$1
   deleted=false
   iter=1
-  trace "waiting for operator shutdown by verifying that namespace ${name} no longer exist "
+  trace "waiting for the operator helm release ${release} to no longer exist"
   while [ ${deleted} == false -a $iter -lt 101 ]; do
-    kubectl get namespace ${name}
+    helm status ${release}
     if [ $? != 0 ]; then
       deleted=true
     else
@@ -2500,9 +2500,9 @@ function wait_for_operator_shutdown {
     fi
   done
   if [ ${deleted} == false ]; then
-    fail 'operator fail to be deleted'
+    fail 'operator helm release ${release} failed to be deleted'
   else
-    trace "operator namespace ${name} has been deleted"
+    trace "operator helm release ${release} has been deleted"
   fi
 }
 
@@ -2516,7 +2516,7 @@ function shutdown_operator {
 
     if [ "$USE_HELM" = "true" ]; then
       helm delete $OP_KEY --purge
-      wait_for_operator_shutdown $OPERATOR_NS
+      wait_for_operator_helm_chart_deleted $OP_KEY
     else
       kubectl delete -f $TMP_DIR/weblogic-operator.yaml
     fi
