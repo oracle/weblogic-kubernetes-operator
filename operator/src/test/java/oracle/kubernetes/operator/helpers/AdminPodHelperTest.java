@@ -20,9 +20,11 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Status;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,14 +41,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
   private static final String CERTFILE = "certfile";
-  private static final String ITEM1 = "item1";
-  private static final String ITEM2 = "item2";
-  private static final String VALUE1 = "value1";
-  private static final String VALUE2 = "value2";
-  private static final String RAW_VALUE_1 = "find $(DOMAIN_NAME) at $(DOMAIN_HOME)";
-  private static final String END_VALUE_1 = "find domain1 at /shared/domain/domain1";
-  private static final String RAW_VALUE_2 = "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)";
-  private static final String END_VALUE_2 = "ADMIN_SERVER is ADMIN_SERVER:7001";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -246,12 +240,14 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .getDomain()
         .getSpec()
         .setServerStartup(
-            Collections.singletonList(
-                createServerStartup(ADMIN_SERVER, ITEM1, VALUE1, ITEM2, VALUE2)));
+            new ServerStartupListBuilder(ADMIN_SERVER)
+                .withVar("item1", "value1")
+                .withVar("item2", "value2")
+                .build());
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
-        allOf(hasEnvVar(ITEM1, VALUE1), hasEnvVar(ITEM2, VALUE2)));
+        allOf(hasEnvVar("item1", "value1"), hasEnvVar("item2", "value2")));
   }
 
   @Test
@@ -260,19 +256,55 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .getDomain()
         .getSpec()
         .setServerStartup(
-            Collections.singletonList(
-                createServerStartup(ADMIN_SERVER, ITEM1, RAW_VALUE_1, ITEM2, RAW_VALUE_2)));
+            new ServerStartupListBuilder(ADMIN_SERVER)
+                .withVar("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
+                .withVar("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)")
+                .build());
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
-        allOf(hasEnvVar(ITEM1, END_VALUE_1), hasEnvVar(ITEM2, END_VALUE_2)));
+        allOf(
+            hasEnvVar("item1", "find domain1 at /shared/domain/domain1"),
+            hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 
-  private ServerStartup createServerStartup(
-      String serverName, String item1, String value1, String item2, String value2) {
-    return new ServerStartup()
-        .withServerName(serverName)
-        .withEnv(Arrays.asList(envItem(item1, value1), envItem(item2, value2)));
+  @Test
+  public void whenDomainPresenceHasIterativeVariables_createAdminPodStartupWithThem() {
+    domainPresenceInfo
+        .getDomain()
+        .getSpec()
+        .setServerStartup(
+            new ServerStartupListBuilder(ADMIN_SERVER)
+                .withVar("item1", "from $(item3)")
+                .withVar("item2", "<$(DOMAIN_NAME)>")
+                .withVar("item3", "using $(item2)")
+                .build());
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(
+            hasEnvVar("item1", "from using <domain1>"),
+            hasEnvVar("item2", "<domain1>"),
+            hasEnvVar("item3", "using <domain1>")));
+  }
+
+  static class ServerStartupListBuilder {
+    private String serverName;
+    private List<V1EnvVar> vars = new ArrayList<>();
+
+    ServerStartupListBuilder(String serverName) {
+      this.serverName = serverName;
+    }
+
+    ServerStartupListBuilder withVar(String name, String value) {
+      vars.add(new V1EnvVar().name(name).value(value));
+      return this;
+    }
+
+    List<ServerStartup> build() {
+      return Collections.singletonList(
+          new ServerStartup().withServerName(serverName).withEnv(vars));
+    }
   }
 
   @Override

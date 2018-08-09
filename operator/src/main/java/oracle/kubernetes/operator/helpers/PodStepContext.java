@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -547,8 +548,16 @@ public abstract class PodStepContext {
   }
 
   void doSubstitution(List<V1EnvVar> vars) {
-    for (V1EnvVar var : vars) {
-      var.setValue(translate(var.getValue(), vars));
+    boolean runAgain = true;
+    while (runAgain) {
+      runAgain = false;
+      for (V1EnvVar var : vars) {
+        String newValue = translate(var.getValue(), vars);
+        if (!Objects.equals(var.getValue(), newValue)) {
+          runAgain = true;
+          var.setValue(newValue);
+        }
+      }
     }
   }
 
