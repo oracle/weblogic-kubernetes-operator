@@ -2500,9 +2500,31 @@ function wait_for_operator_helm_chart_deleted {
     fi
   done
   if [ ${deleted} == false ]; then
-    fail 'operator helm release ${release} failed to be deleted'
+    fail 'the operator helm release ${release} failed to be deleted'
   else
-    trace "operator helm release ${release} has been deleted"
+    trace "the operator helm release ${release} has been deleted"
+  fi
+}
+
+function wait_for_operator_deployment_deleted {
+  namespace=$1
+  deployment="weblogic-operator"
+  deleted=false
+  iter=1
+  trace "waiting for the operator deployment ${deployment} in the namespace ${namespace} to longer exist"
+  while [ ${deleted} == false -a $iter -lt 101 ]; do
+    helm get deployment -namespace ${namespace} ${deployment}
+    if [ $? != 0 ]; then
+      deleted=true
+    else
+      iter=`expr $iter + 1`
+      sleep 5
+    fi
+  done
+  if [ ${deleted} == false ]; then
+    fail 'the operator deployment ${deployment} in the namespace ${namespace} failed to be deleted'
+  else
+    trace "the operator deployment ${deployment} in the namespace ${namespace} has been deleted"
   fi
 }
 
@@ -2517,6 +2539,7 @@ function shutdown_operator {
     if [ "$USE_HELM" = "true" ]; then
       helm delete $OP_KEY --purge
       wait_for_operator_helm_chart_deleted $OP_KEY
+      wait_for_operator_deployment_deleted $OPERATOR_NS
     else
       kubectl delete -f $TMP_DIR/weblogic-operator.yaml
     fi
