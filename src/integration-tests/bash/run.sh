@@ -2513,7 +2513,7 @@ function wait_for_operator_deployment_deleted {
   iter=1
   trace "waiting for the operator deployment ${deployment} in the namespace ${namespace} to longer exist"
   while [ ${deleted} == false -a $iter -lt 101 ]; do
-    helm get deployment -namespace ${namespace} ${deployment}
+    kubectl get deployment -namespace ${namespace} ${deployment}
     if [ $? != 0 ]; then
       deleted=true
     else
@@ -3036,7 +3036,6 @@ function test_suite {
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
 
-    # do not create operator namespace when using helm charts
     kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
     kubectl create serviceaccount --namespace weblogic-operator-1 weblogic-operator | sed 's/^/+/g' 
