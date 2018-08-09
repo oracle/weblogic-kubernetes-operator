@@ -41,7 +41,7 @@ public class PodHelper {
     AdminPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
 
-      setPodModel(createPodModel());
+      init();
     }
 
     @Override
@@ -183,7 +183,7 @@ public class PodHelper {
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
       cluster = (WlsClusterConfig) packet.get(ProcessingConstants.CLUSTER_SCAN);
 
-      setPodModel(createPodModel());
+      init();
     }
 
     @Override

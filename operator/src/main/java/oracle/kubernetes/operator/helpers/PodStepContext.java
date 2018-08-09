@@ -27,8 +27,9 @@ import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -68,14 +69,24 @@ public abstract class PodStepContext {
   private final DomainPresenceInfo info;
   private final Step conflictStep;
   private V1Pod podModel;
+  private Map<String, String> substitutionVariables = new HashMap<>();
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSPI(DomainPresenceInfo.class);
   }
 
-  void setPodModel(V1Pod podModel) {
-    this.podModel = podModel;
+  void init() {
+    createSubstitutionMap();
+    podModel = createPodModel();
+  }
+
+  private void createSubstitutionMap() {
+    substitutionVariables.put("DOMAIN_NAME", getDomainName());
+    substitutionVariables.put("DOMAIN_HOME", getDomainHome());
+    substitutionVariables.put("SERVER_NAME", getServerName());
+    substitutionVariables.put("ADMIN_NAME", getAsName());
+    substitutionVariables.put("ADMIN_PORT", getAsPort().toString());
   }
 
   private V1Pod getPodModel() {
@@ -435,7 +446,7 @@ public abstract class PodStepContext {
 
   // ---------------------- model methods ------------------------------
 
-  V1Pod createPodModel() {
+  private V1Pod createPodModel() {
     return new V1Pod().metadata(createMetadata()).spec(createSpec(TuningParameters.getInstance()));
   }
 
@@ -524,11 +535,15 @@ public abstract class PodStepContext {
   void overrideContainerWeblogicEnvVars(List<V1EnvVar> vars) {
     // Override the domain name, domain directory, admin server name and admin server port.
     addEnvVar(vars, "DOMAIN_NAME", getDomainName());
-    addEnvVar(vars, "DOMAIN_HOME", "/shared/domain/" + getDomainName());
+    addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
     addEnvVar(vars, "SERVER_NAME", getServerName());
     hideAdminUserCredentials(vars);
+  }
+
+  private String getDomainHome() {
+    return "/shared/domain/" + getDomainName();
   }
 
   // Hide the admin account's user name and password.
@@ -548,24 +563,16 @@ public abstract class PodStepContext {
   }
 
   void doSubstitution(List<V1EnvVar> vars) {
-    boolean runAgain = true;
-    while (runAgain) {
-      runAgain = false;
-      for (V1EnvVar var : vars) {
-        String newValue = translate(var.getValue(), vars);
-        if (!Objects.equals(var.getValue(), newValue)) {
-          runAgain = true;
-          var.setValue(newValue);
-        }
-      }
+    for (V1EnvVar var : vars) {
+      var.setValue(translate(var.getValue()));
     }
   }
 
-  private String translate(String rawValue, List<V1EnvVar> vars) {
+  private String translate(String rawValue) {
     String result = rawValue;
-    for (V1EnvVar var : vars) {
-      if (result != null && var.getValue() != null) {
-        result = result.replace(String.format("$(%s)", var.getName()), var.getValue());
+    for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
+      if (result != null && entry.getValue() != null) {
+        result = result.replace(String.format("$(%s)", entry.getKey()), entry.getValue());
       }
     }
     return result;

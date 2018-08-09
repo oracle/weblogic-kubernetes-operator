@@ -268,26 +268,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 
-  @Test
-  public void whenDomainPresenceHasIterativeVariables_createAdminPodStartupWithThem() {
-    domainPresenceInfo
-        .getDomain()
-        .getSpec()
-        .setServerStartup(
-            new ServerStartupListBuilder(ADMIN_SERVER)
-                .withVar("item1", "from $(item3)")
-                .withVar("item2", "<$(DOMAIN_NAME)>")
-                .withVar("item3", "using $(item2)")
-                .build());
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(),
-        allOf(
-            hasEnvVar("item1", "from using <domain1>"),
-            hasEnvVar("item2", "<domain1>"),
-            hasEnvVar("item3", "using <domain1>")));
-  }
-
   static class ServerStartupListBuilder {
     private String serverName;
     private List<V1EnvVar> vars = new ArrayList<>();
