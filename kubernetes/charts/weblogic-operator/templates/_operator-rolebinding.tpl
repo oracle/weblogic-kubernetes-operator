@@ -10,11 +10,11 @@ metadata:
   namespace: {{ .domainsNamespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
 subjects:
 - kind: "ServiceAccount"
   name: {{ .operatorServiceAccount | quote }}
-  namespace: {{ .operatorNamespace | quote }}
+  namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
   kind: "ClusterRole"

@@ -15,6 +15,10 @@ import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorYaml;
 
 public class HelmOperatorYamlFactory extends OperatorYamlFactory {
+
+  private static final String OPERATOR_CHART = "weblogic-operator";
+  private static final String OPERATOR_RELEASE = "weblogic-operator";
+
   @Override
   public OperatorValues createDefaultValues() {
     return new HelmOperatorValues().withTestDefaults();
@@ -23,7 +27,10 @@ public class HelmOperatorYamlFactory extends OperatorYamlFactory {
   @Override
   public GeneratedOperatorObjects generate(OperatorValues inputValues) throws Exception {
     Map<String, Object> overrides = ((HelmOperatorValues) inputValues).createMap();
-    ProcessedChart chart = new ProcessedChart("weblogic-operator", overrides);
+    String namespace = (String) overrides.get("operatorNamespace");
+    InstallArgs installArgs =
+        new InstallArgs(OPERATOR_CHART, OPERATOR_RELEASE, namespace, overrides);
+    ProcessedChart chart = new ProcessedChart(installArgs);
 
     assertThat(chart.getError(), emptyOrNullString());
 
