@@ -10,8 +10,7 @@ data:
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
   serviceaccount: {{ .operatorServiceAccount | quote }}
-{{- $scope := . -}}
-{{- $args := merge (dict) $scope -}}
+{{- $args := include "operator.cloneDictionary" . | fromYaml -}}
 {{- $domainsNamespaces := .domainsNamespaces -}}
 {{- $len := len $domainsNamespaces -}}
 {{- if eq $len 0 -}}
@@ -23,8 +22,8 @@ data:
 kind: "ConfigMap"
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "operator-v1"
   name: "weblogic-operator-cm"
-  namespace: {{ .operatorNamespace | quote }}
+  namespace: {{ .Release.Namespace | quote }}
 {{- end }}

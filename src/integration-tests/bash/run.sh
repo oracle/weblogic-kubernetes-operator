@@ -766,8 +766,6 @@ function deploy_operator {
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
       echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
       echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "createOperatorNamespace: false" >> $inputs
-      echo "operatorNamespace: \"${NAMESPACE}\"" >> $inputs
       echo "operatorServiceAccount: weblogic-operator" >> $inputs
       trace "Contents after customization in file $inputs"
       cat $inputs
@@ -775,7 +773,7 @@ function deploy_operator {
       local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
       trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
       cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-operator --name ${opkey} -f $inputs 2>&1 | opt_tee ${outfile}
+      helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
       operator_ready_wait $opkey
@@ -2487,13 +2485,13 @@ function test_domain_lifecycle {
     declare_test_pass
 }
 
-function wait_for_operator_shutdown {
-  name=$1
+function wait_for_operator_helm_chart_deleted {
+  release=$1
   deleted=false
   iter=1
-  trace "waiting for operator shutdown by verifying that namespace ${name} no longer exist "
+  trace "waiting for the operator helm release ${release} to no longer exist"
   while [ ${deleted} == false -a $iter -lt 101 ]; do
-    kubectl get namespace ${name}
+    helm status ${release}
     if [ $? != 0 ]; then
       deleted=true
     else
@@ -2502,9 +2500,31 @@ function wait_for_operator_shutdown {
     fi
   done
   if [ ${deleted} == false ]; then
-    fail 'operator fail to be deleted'
+    fail 'the operator helm release ${release} failed to be deleted'
   else
-    trace "operator namespace ${name} has been deleted"
+    trace "the operator helm release ${release} has been deleted"
+  fi
+}
+
+function wait_for_operator_deployment_deleted {
+  namespace=$1
+  deployment="weblogic-operator"
+  deleted=false
+  iter=1
+  trace "waiting for the operator deployment ${deployment} in the namespace ${namespace} to longer exist"
+  while [ ${deleted} == false -a $iter -lt 101 ]; do
+    kubectl get deployment -namespace ${namespace} ${deployment}
+    if [ $? != 0 ]; then
+      deleted=true
+    else
+      iter=`expr $iter + 1`
+      sleep 5
+    fi
+  done
+  if [ ${deleted} == false ]; then
+    fail 'the operator deployment ${deployment} in the namespace ${namespace} failed to be deleted'
+  else
+    trace "the operator deployment ${deployment} in the namespace ${namespace} has been deleted"
   fi
 }
 
@@ -2518,7 +2538,8 @@ function shutdown_operator {
 
     if [ "$USE_HELM" = "true" ]; then
       helm delete $OP_KEY --purge
-      wait_for_operator_shutdown $OPERATOR_NS
+      wait_for_operator_helm_chart_deleted $OP_KEY
+      wait_for_operator_deployment_deleted $OPERATOR_NS
     else
       kubectl delete -f $TMP_DIR/weblogic-operator.yaml
     fi
@@ -2544,7 +2565,7 @@ function startup_operator {
     if [ "$USE_HELM" = "true" ]; then
       local inputs="$TMP_DIR/weblogic-operator-values.yaml"
       local outfile="$TMP_DIR/startup-weblogic-operator.out"
-      helm install weblogic-operator --name ${OP_KEY} -f $inputs 2>&1 | opt_tee ${outfile}
+      helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
@@ -3015,11 +3036,10 @@ function test_suite {
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
 
-    if ! [ "$USE_HELM" = "true" ]; then
-      # do not create ooperator namespace when using helm charts
-      kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
-      kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
-    fi
+    kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
+    kubectl create serviceaccount --namespace weblogic-operator-1 weblogic-operator | sed 's/^/+/g' 
+    kubectl create serviceaccount --namespace weblogic-operator-2 weblogic-operator | sed 's/^/+/g' 
 
     # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
     declare_test_pass

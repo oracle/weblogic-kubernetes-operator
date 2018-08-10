@@ -7,10 +7,10 @@ apiVersion: "v1"
 kind: "Service"
 metadata:
   name: "internal-weblogic-operator-svc"
-  namespace: {{ .operatorNamespace | quote }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
   type: "ClusterIP"
   selector:
