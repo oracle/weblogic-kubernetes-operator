@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -49,6 +50,7 @@ public class StepTest {
   private static final Logger UNDERLYING_LOGGER =
       LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
   private List<Handler> savedhandlers;
+  private ScheduledExecutorService executorService;
 
   @Before
   public void disableConsoleLogging() {
@@ -62,7 +64,18 @@ public class StepTest {
 
   @Before
   public void setup() {
-    engine = new Engine("StepTest");
+    executorService = Engine.wrappedExecutorService("StepTest", getDefaultContainer());
+    engine = new Engine(executorService);
+  }
+
+  private Container getDefaultContainer() {
+    return ContainerResolver.getDefault().getContainer();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    executorService.shutdownNow();
+    executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
   }
 
   @Test

@@ -100,6 +100,11 @@ public class FiberTestSupport {
     return this;
   }
 
+  public <T> FiberTestSupport addComponent(String key, Class<T> aClass, T component) {
+    packet.getComponents().put(key, Component.createFor(aClass, component));
+    return this;
+  }
+
   public FiberTestSupport addVersion(KubernetesVersion kubernetesVersion) {
     packet
         .getComponents()
@@ -115,6 +120,21 @@ public class FiberTestSupport {
   public Packet runSteps(Step step) {
     fiber.start(step, packet, completionCallback);
     return packet;
+  }
+
+  /**
+   * Starts a unit-test fiber with the specified step
+   *
+   * @param nextStep the first step to run
+   */
+  public Packet runSteps(StepFactory factory, Step nextStep) {
+    fiber.start(factory.createStepList(nextStep), packet, completionCallback);
+    return packet;
+  }
+
+  @FunctionalInterface
+  public interface StepFactory {
+    Step createStepList(Step next);
   }
 
   /**
