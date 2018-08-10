@@ -20,7 +20,6 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -56,29 +55,29 @@ public class AsyncRequestStepTest {
           null);
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
 
     testSupport.runSteps(asyncRequestStep);
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     for (Memento memento : mementos) memento.revert();
   }
 
   @Test
-  public void afterFiberStarted_requestSent() throws Exception {
+  public void afterFiberStarted_requestSent() {
     assertTrue(callFactory.invokedWith(requestParams));
   }
 
   @Test
-  public void afterFiberStarted_timeoutStepScheduled() throws Exception {
+  public void afterFiberStarted_timeoutStepScheduled() {
     assertTrue(testSupport.hasItemScheduledAt(TIMEOUT_SECONDS, TimeUnit.SECONDS));
   }
 
   @Test
-  public void afterTimeout_newRequestSent() throws Exception {
+  public void afterTimeout_newRequestSent() {
     callFactory.clearRequest();
 
     testSupport.setTime(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -87,21 +86,21 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterSuccessfulCallback_nextStepAppliedWithValue() throws Exception {
+  public void afterSuccessfulCallback_nextStepAppliedWithValue() {
     callFactory.sendSuccessfulCallback(17);
 
     assertThat(nextStep.result, equalTo(17));
   }
 
   @Test
-  public void afterSuccessfulCallback_packetDoesNotContainsResponse() throws Exception {
+  public void afterSuccessfulCallback_packetDoesNotContainsResponse() {
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
 
     assertThat(testSupport.getPacketComponents(), not(hasKey(RESPONSE_COMPONENT_NAME)));
   }
 
   @Test
-  public void afterFailedCallback_packetContainsRetryStrategy() throws Exception {
+  public void afterFailedCallback_packetContainsRetryStrategy() {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
 
     assertThat(
@@ -109,13 +108,14 @@ public class AsyncRequestStepTest {
         notNullValue());
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void sendFailedCallback(int statusCode) {
     testSupport.schedule(
         () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
   }
 
   @Test
-  public void afterFailedCallback_retrySentAfterDelay() throws Exception {
+  public void afterFailedCallback_retrySentAfterDelay() {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
     callFactory.clearRequest();
 
@@ -139,9 +139,8 @@ public class AsyncRequestStepTest {
     }
 
     @Override
-    public NextAction onSuccess(
-        Packet packet, Integer result, int statusCode, Map<String, List<String>> responseHeaders) {
-      this.result = result;
+    public NextAction onSuccess(Packet packet, CallResponse<Integer> callResponse) {
+      result = callResponse.getResult();
       return null;
     }
   }
@@ -170,8 +169,7 @@ public class AsyncRequestStepTest {
 
     @Override
     public CancellableCall generate(
-        RequestParams requestParams, ApiClient client, String cont, ApiCallback<Integer> callback)
-        throws ApiException {
+        RequestParams requestParams, ApiClient client, String cont, ApiCallback<Integer> callback) {
       this.requestParams = requestParams;
       this.callback = callback;
 
@@ -180,11 +178,8 @@ public class AsyncRequestStepTest {
   }
 
   static class CancellableCallStub implements CancellableCall {
-    private boolean canceled;
 
     @Override
-    public void cancel() {
-      canceled = true;
-    }
+    public void cancel() {}
   }
 }
