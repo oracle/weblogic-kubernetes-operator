@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -28,9 +29,6 @@ import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
-
-  private static int maxIterationsPod = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
-  private static int waitTimePod = BaseTest.getWaitTimePod();
 
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
@@ -64,7 +62,7 @@ public class TestUtils {
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
 
     // check for service
-    while (i < maxIterationsPod) {
+    while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd.toString());
 
       // service might not have been created
@@ -73,18 +71,18 @@ public class TestUtils {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
         logger.info(
             "Service is not created Ite ["
                 + i
                 + "/"
-                + maxIterationsPod
+                + BaseTest.getMaxIterationsPod()
                 + "], sleeping "
-                + waitTimePod
+                + BaseTest.getWaitTimePod()
                 + " seconds more");
-        Thread.sleep(waitTimePod * 1000);
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
         logger.info("Service " + serviceName + " is Created");
@@ -197,6 +195,149 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
   }
 
+  public static void deletePVC(String pvcName, String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl delete pvc ");
+    cmd.append(pvcName).append(" -n ").append(namespace);
+    logger.info("Deleting PVC " + cmd);
+    ExecCommand.exec(cmd.toString());
+  }
+
+  public static boolean checkPVReleased(String domainUid, String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl get pv ");
+    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(namespace);
+
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      logger.info("Checking if PV is Released " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0
+          || result.exitValue() == 0 && !result.stdout().contains("Released")) {
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          throw new RuntimeException("FAILURE: PV is not in Released status, exiting!");
+        }
+        logger.info("PV is not in Released status," + result.stdout());
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+
+      } else {
+        logger.info("PV is in Released status," + result.stdout());
+        break;
+      }
+    }
+    return true;
+  }
+  /**
+   * First, kill the mgd server process in the container three times to cause the node manager to
+   * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
+   * initiates a pod restart.
+   *
+   * @param domainUid
+   * @param serverName
+   * @param namespace
+   * @throws Exception
+   */
+  public static void testWlsLivenessProbe(String domainUid, String serverName, String namespace)
+      throws Exception {
+    String podName = domainUid + "-" + serverName;
+    int initialRestartCnt = getPodRestartCount(podName, namespace);
+    String filePath =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/killserver.sh";
+    // create file to kill server process
+    FileWriter fw = new FileWriter(filePath);
+    fw.write("#!/bin/bash\n");
+    fw.write("kill -9 `jps | grep Server | awk '{print $1}'`");
+    fw.close();
+    new File(filePath).setExecutable(true, false);
+
+    // copy file to pod
+    kubectlcp(filePath, "/shared/killserver.sh", podName, namespace);
+
+    // kill server process 3 times
+    for (int i = 0; i < 3; i++) {
+      kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      Thread.sleep(2 * 1000);
+    }
+    // one more time so that liveness probe restarts
+    kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+
+    long startTime = System.currentTimeMillis();
+    long maxWaitMillis = 180 * 1000;
+    while (true) {
+      long currentTime = System.currentTimeMillis();
+      int finalRestartCnt = getPodRestartCount(podName, namespace);
+      if ((finalRestartCnt - initialRestartCnt) == 1) {
+        logger.info("WLS liveness probe test is successful.");
+        break;
+      }
+      logger.info("Waiting for liveness probe to restart the pod");
+      if ((currentTime - startTime) > maxWaitMillis) {
+        throw new RuntimeException(
+            "WLS liveness probe is not working within " + maxWaitMillis / 1000 + " seconds");
+      }
+      Thread.sleep(5 * 1000);
+    }
+  }
+
+  public static int getPodRestartCount(String podName, String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl describe pod ");
+    cmd.append(podName)
+        .append(" --namespace ")
+        .append(namespace)
+        .append(" | egrep Restart | awk '{print $3}'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAIL: Couldn't find the pod " + podName + " in namespace " + namespace);
+    }
+    return new Integer(result.stdout().trim()).intValue();
+  }
+
+  public static void kubectlcp(
+      String srcFileOnHost, String destLocationInPod, String podName, String namespace)
+      throws Exception {
+    StringBuffer cmdTocp = new StringBuffer("kubectl cp ");
+    cmdTocp
+        .append(srcFileOnHost)
+        .append(" ")
+        .append(namespace)
+        .append("/")
+        .append(podName)
+        .append(":")
+        .append(destLocationInPod);
+
+    logger.info("Command to copy file " + cmdTocp);
+    ExecResult result = ExecCommand.exec(cmdTocp.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: kubectl cp command " + cmdTocp + " failed, returned " + result.stderr());
+    }
+  }
+
+  public static ExecResult kubectlexecNoCheck(String podName, String namespace, String scriptPath)
+      throws Exception {
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(namespace)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" ")
+        .append(scriptPath);
+
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    return ExecCommand.exec(cmdKubectlSh.toString());
+  }
+
+  public static void kubectlexec(String podName, String namespace, String scriptPath)
+      throws Exception {
+
+    ExecResult result = kubectlexecNoCheck(podName, namespace, scriptPath);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("FAILURE: command failed, returned " + result.stderr());
+    }
+  }
+
   public static int makeOperatorPostRestCall(
       String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
     return makeOperatorRestCall(operatorNS, url, jsonObjStr, userProjectsDir);
@@ -271,7 +412,7 @@ public class TestUtils {
       throws Exception {
 
     File certFile =
-        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/../operator.cert.pem");
+        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.cert.pem");
 
     StringBuffer opCertCmd = new StringBuffer("grep externalOperatorCert ");
     opCertCmd
@@ -303,7 +444,7 @@ public class TestUtils {
   public static String getExternalOperatorKey(String operatorNS, String userProjectsDir)
       throws Exception {
     File keyFile =
-        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/../operator.key.pem");
+        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.key.pem");
 
     StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey ");
     opKeyCmd
@@ -506,7 +647,7 @@ public class TestUtils {
   private static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
-    while (i < maxIterationsPod) {
+    while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd);
 
       // pod might not have been created or if created loop till condition
@@ -514,7 +655,7 @@ public class TestUtils {
           || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
               "FAILURE: pod " + k8sObjName + " is not running/ready, exiting!");
         }
@@ -524,12 +665,12 @@ public class TestUtils {
                 + " is not Running Ite ["
                 + i
                 + "/"
-                + maxIterationsPod
+                + BaseTest.getMaxIterationsPod()
                 + "], sleeping "
-                + waitTimePod
+                + BaseTest.getWaitTimePod()
                 + " seconds more");
 
-        Thread.sleep(waitTimePod * 1000);
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
         logger.info("Pod " + k8sObjName + " is Running");
@@ -541,7 +682,7 @@ public class TestUtils {
   private static void checkCmdInLoopForDelete(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
-    while (i < maxIterationsPod) {
+    while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
@@ -549,7 +690,7 @@ public class TestUtils {
       if (result.exitValue() == 0 && !result.stdout().trim().equals("0")) {
         logger.info("Command " + cmd + " returned " + result.stdout());
         // check for last iteration
-        if (i == (maxIterationsPod - 1)) {
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
               "FAILURE: K8s Object " + k8sObjName + " is not deleted, exiting!");
         }
@@ -559,12 +700,12 @@ public class TestUtils {
                 + " still exists, Ite ["
                 + i
                 + "/"
-                + maxIterationsPod
+                + BaseTest.getMaxIterationsPod()
                 + "], sleeping "
-                + waitTimePod
+                + BaseTest.getWaitTimePod()
                 + " seconds more");
 
-        Thread.sleep(waitTimePod * 1000);
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
 
         i++;
       } else {

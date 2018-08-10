@@ -123,7 +123,7 @@ public class MessageKeys {
   public static final String RESTART_SERVERS_STARTING = "WLSKO-0116";
   public static final String ROLLING_CLUSTERS_STARTING = "WLSKO-0117";
   public static final String CYCLING_SERVERS = "WLSKO-0118";
-  public static final String ROLLING_SERVERS = "WLSKO-0118";
+  public static final String ROLLING_SERVERS = "WLSKO-0119";
   public static final String REMOVING_INGRESS = "WLSKO-0120";
   public static final String LIST_INGRESS_FOR_DOMAIN = "WLSKO-0121";
   public static final String POD_DELETED = "WLSKO-0122";

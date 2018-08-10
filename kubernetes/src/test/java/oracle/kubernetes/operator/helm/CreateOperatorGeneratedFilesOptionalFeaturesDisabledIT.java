@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helm;
 
 import oracle.kubernetes.operator.create.CreateOperatorGeneratedFilesOptionalFeaturesDisabledTestBase;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class CreateOperatorGeneratedFilesOptionalFeaturesDisabledIT
     extends CreateOperatorGeneratedFilesOptionalFeaturesDisabledTestBase {
@@ -13,5 +14,17 @@ public class CreateOperatorGeneratedFilesOptionalFeaturesDisabledIT
   @BeforeClass
   public static void setup() throws Exception {
     defineOperatorYamlFactory(new HelmOperatorYamlFactory());
+  }
+
+  @Test
+  @Override
+  public void generatesCorrect_weblogicOperatorNamespace() {
+    // the user is responsible for creating the namespace
+  }
+
+  @Test
+  @Override
+  public void generatesCorrect_weblogicOperatorServiceAccount() {
+    // the user is responsible for creating the service account
   }
 }
