@@ -1923,6 +1923,7 @@ EOF
 #   -   local  --> run locally - requires java & weblogic to be installed
 #   -   remote --> run remotely on admin server, construct URL using admin pod name
 #   -   hybrid --> run remotely on admin server, construct URL using 'NODEPORT_HOST'
+#                  or 'K8S_NODEPORT_IP' in wercker since NODEPORT_HOST sometimes does not work in OCI
 #
 function run_wlst_script {
   if [ "$#" -lt 3 ] ; then
@@ -1945,7 +1946,12 @@ function run_wlst_script {
   local password=`get_wladmin_pass $1`
   local pyfile_lcl="$3"
   local pyfile_pod="/shared/`basename $pyfile_lcl`"
-  local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  if [ "$WERCKER" = "true" ]; then 
+    # use OCI public IP in wercker
+    local t3url_lcl="t3://$K8S_NODEPORT_IP:$ADMIN_WLST_PORT"
+  else
+    local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  fi
   local t3url_pod="t3://$AS_NAME:$ADMIN_WLST_PORT"
   local wlcmdscript_lcl="$TMP_DIR/wlcmd.sh"
   local wlcmdscript_pod="/shared/wlcmd.sh"
@@ -2034,6 +2040,7 @@ EOF
 
     if [ "$result" = "0" ];
     then 
+      cat ${pyfile_lcl}.out
       break
     fi
 
@@ -2261,10 +2268,10 @@ function verify_service_and_pod_created {
     fi
 
     if [ "${IS_ADMIN_SERVER}" = "true" ]; then
-      if ! [ "$WERCKER" = "true" ]; then 
-        # skipping this test on wercker for now due to intermittent connect timeout
-        verify_wlst_access $DOM_KEY
-      fi
+      trace "listing pods"
+      kubectl -n $NAMESPACE get pods -o wide
+
+      verify_wlst_access $DOM_KEY
     fi
 }
 
