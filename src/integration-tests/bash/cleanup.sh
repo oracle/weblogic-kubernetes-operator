@@ -423,6 +423,12 @@ function orderlyDelete {
   kubectl delete job $JOB_NAME --ignore-not-found=true
 }
 
+function cleanup_tiller {
+  kubectl -n kube-system delete deployment tiller-deploy
+  kubectl delete clusterrolebinding tiller-cluster-rule
+  kubectl -n kube-system delete serviceaccount tiller
+}
+
 function fail {
   echo @@ cleanup.sh: Error "$@"
   exit 1
@@ -441,6 +447,11 @@ mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 if [ -x "$(command -v helm)" ]; then
   echo @@ Deleting installed helm charts
   helm list --short | xargs -L1 helm delete --purge
+
+  # cleanup tiller artifacts that are created in run.sh
+  if [ "$WERCKER" = "true" ]; then
+    cleanup_tiller
+  fi
 fi
 
 # first, try to delete with labels since the conversion is that all created resources need to
