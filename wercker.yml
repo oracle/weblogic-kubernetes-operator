@@ -108,6 +108,7 @@ integration-test:
 
       # Update KUBECONFIG for K8S cluster
       export K8S_NODEPORT_HOST="${OCI_K8S_WORKER0_HOSTNAME}"
+      export K8S_NODEPORT_IP="${OCI_K8S_WORKER0_IP}"
       sed -i -e "s,%ADDRESS%,https://$OCI_K8S_MASTER_IP:443,g" $WERCKER_SOURCE_DIR/build/kube.config
       sed -i -e "s,%CLIENT_CERT_DATA%,$OCI_K8S_CLIENT_CERT_DATA,g" $WERCKER_SOURCE_DIR/build/kube.config
       sed -i -e "s,%CLIENT_KEY_DATA%,$OCI_K8S_CLIENT_KEY_DATA,g" $WERCKER_SOURCE_DIR/build/kube.config
@@ -292,6 +293,9 @@ integration-test-java:
     code: |
       #!/bin/bash
       function cleanup_and_store {
+      
+        $WERCKER_SOURCE_DIR/integration-tests/src/test/resources/statedump.sh
+        
         # clean up
         yum clean all
 

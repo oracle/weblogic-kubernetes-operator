@@ -437,6 +437,12 @@ echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJEC
 
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
+# if helm is installed, delete all installed helm charts
+if [ -x "$(command -v helm)" ]; then
+  echo @@ Deleting installed helm charts
+  helm list --short | xargs -L1 helm delete --purge
+fi
+
 # first, try to delete with labels since the conversion is that all created resources need to
 # have the proper label(s)
 echo @@ Starting deleteWithLabels
