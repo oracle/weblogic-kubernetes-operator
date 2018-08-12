@@ -68,6 +68,7 @@
 			<properties>
 				<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
 				<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
+				<skipITs>false</skipITs>
 			</properties>
 			<build>
 				<plugins>
@@ -89,16 +90,6 @@
 								</goals>
 								<configuration>
 									<executable>${resource-integration-test}/setupenv.sh</executable>
-								</configuration>
-							</execution>
-							<execution><!-- dump pod, domain, etc logs -->
-								<id>statedump</id>
-								<phase>post-integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>${resource-integration-test}/statedump.sh</executable>
 								</configuration>
 							</execution>
 						</executions>
@@ -152,7 +143,7 @@
 								<!--<TAGS>${env.TAGS}</TAGS> -->
 								<maxThreads>3</maxThreads>
 							</systemPropertyVariables>
-						</configuration>
+    					</configuration>
 
 						<executions>
 							<execution>
@@ -163,29 +154,7 @@
 								</goals>
 								<phase>integration-test</phase>
 								<configuration>
-									<excludes>
-										<exclude>**/*Test.java</exclude>
-										<!--  exclude>**/IT*.java</exclude -->
-									</excludes>
-									<!-- just run test suite -->
-									<includes> <include>**/*TestSuite.java</include> </includes>
-								</configuration>
-							</execution>
-							<execution>
-								<id>acceptance-test</id>
-								<goals>
-									<goal>integration-test</goal>
-									<goal>verify</goal>
-								</goals>
-								<phase>integration-test</phase>
-								<configuration>
-									<!-- do not run unit or integration tests -->
-									<excludes>
-										<exclude>**/*Test.java</exclude>
-										<exclude>**/IT*.java</exclude>
-									</excludes>
-									<!-- just run acceptance tests -->
-									<!-- includes> <include>**/*AT.java</include> </includes -->
+									<skipTests>${skipITs}</skipTests>
 								</configuration>
 							</execution>
 						</executions>
