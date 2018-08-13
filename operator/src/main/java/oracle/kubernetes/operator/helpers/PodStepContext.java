@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.helpers;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -532,19 +531,7 @@ public abstract class PodStepContext {
           new CallBuilder()
               .withLabelSelectors(forDomainUid(domainUID))
               .listPersistentVolumeAsync(
-                  new ResponseStep<V1PersistentVolumeList>(getNext()) {
-                    @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        return onSuccess(packet, null, statusCode, responseHeaders);
-                      }
-                      return super.onFailure(packet, e, statusCode, responseHeaders);
-                    }
-
+                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
                     @Override
                     public NextAction onSuccess(
                         Packet packet,

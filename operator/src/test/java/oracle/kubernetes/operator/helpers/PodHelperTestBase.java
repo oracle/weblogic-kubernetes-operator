@@ -130,6 +130,7 @@ public abstract class PodHelperTestBase {
     mementos.add(TuningParametersStub.install());
 
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    onAdminExpectListPersistentVolume();
   }
 
   private String[] getMessageKeys() {
@@ -198,7 +199,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenNoPod_createIt() {
-    onAdminExpectListPersistentVolume();
     expectCreatePod(podWithName(getPodName())).returning(createPodModel());
     expectStepsAfterCreation();
 
@@ -209,13 +209,11 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_specHasOneContainer() {
-    onAdminExpectListPersistentVolume();
     assertThat(getCreatedPod().getSpec().getContainers(), hasSize(1));
   }
 
   @Test
   public void whenPodCreatedWithLatestImage_useAlwaysPullPolicy() {
-    onAdminExpectListPersistentVolume();
     defineDomainImage(LATEST_IMAGE);
 
     V1Container v1Container = getCreatedPodSpecContainer();
@@ -229,7 +227,6 @@ public abstract class PodHelperTestBase {
   public void whenPodCreatedWithVersionedImage_useIfNotPresentPolicy() {
     defineDomainImage(VERSIONED_IMAGE);
 
-    onAdminExpectListPersistentVolume();
     V1Container v1Container = getCreatedPodSpecContainer();
 
     assertThat(v1Container.getImage(), equalTo(VERSIONED_IMAGE));
@@ -238,7 +235,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_containerHasExpectedVolumeMounts() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
@@ -249,7 +245,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_lifecyclePreStopHasStopServerCommand() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getLifecycle().getPreStop().getExec().getCommand(),
         contains("/weblogic-operator/scripts/stopServer.sh", UID, getServerName(), DOMAIN_NAME));
@@ -257,7 +252,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_livenessProbeHasLivenessCommand() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe().getExec().getCommand(),
         contains("/weblogic-operator/scripts/livenessProbe.sh", DOMAIN_NAME, getServerName()));
@@ -265,7 +259,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_livenessProbeHasDefinedTuning() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
         hasExpectedTuning(LIVENESS_INITIAL_DELAY, LIVENESS_TIMEOUT, LIVENESS_PERIOD));
@@ -273,7 +266,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe().getExec().getCommand(),
         contains("/weblogic-operator/scripts/readinessProbe.sh", DOMAIN_NAME, getServerName()));
@@ -281,7 +273,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_readinessProbeHasDefinedTuning() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
         hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD));
@@ -290,7 +281,6 @@ public abstract class PodHelperTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void whenPodCreated_hasPredefinedEnvVariables() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
@@ -309,13 +299,11 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenDomainPresenceLacksClaims_adminPodSpecHasNoDomainStorageVolume() {
-    onAdminExpectListPersistentVolume();
     assertThat(getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME), nullValue());
   }
 
   @Test
   public void whenDomainPresenceHasClaim_podSpecHasDomainStorageVolume() {
-    onAdminExpectListPersistentVolume();
     domainPresenceInfo
         .getClaims()
         .addItemsItem(
@@ -328,7 +316,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void createdPod_hasCredentialsVolume() {
-    onAdminExpectListPersistentVolume();
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CREDENTIALS_VOLUME_NAME);
 
     assertThat(credentialsVolume.getSecret().getSecretName(), equalTo(ADMIN_SECRET_NAME));
@@ -336,7 +323,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void createdPod_hasConfigMapVolume() {
-    onAdminExpectListPersistentVolume();
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CONFIGMAP_VOLUME_NAME);
 
     assertThat(credentialsVolume.getConfigMap().getName(), equalTo(DOMAIN_CONFIG_MAP_NAME));
@@ -354,7 +340,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_hasExpectedLabels() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         allOf(
@@ -367,7 +352,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_hasPrometheusAnnotations() {
-    onAdminExpectListPersistentVolume();
     assertThat(
         getCreatedPod().getMetadata().getAnnotations(),
         allOf(
@@ -381,7 +365,6 @@ public abstract class PodHelperTestBase {
   public void whenPodCreated_containerUsesListenPort() {
     V1Container v1Container = getCreatedPodSpecContainer();
 
-    onAdminExpectListPersistentVolume();
     assertThat(v1Container.getPorts(), hasSize(1));
     assertThat(v1Container.getPorts().get(0).getProtocol(), equalTo("TCP"));
     assertThat(v1Container.getPorts().get(0).getContainerPort(), equalTo(listenPort));
@@ -426,7 +409,6 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenNoPod_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    onAdminExpectListPersistentVolume();
     expectCreatePod(podWithName(getPodName())).failingWithStatus(401);
     expectStepsAfterCreation();
 
@@ -440,7 +422,6 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenCompliantPodExists_recordIt() {
     initializeExistingPod(createPodModel());
-    onAdminExpectListPersistentVolume();
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getPodExistsMessageKey()));
@@ -551,7 +532,6 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenDomainPresenceInfoLacksImageName_createdPodUsesDefaultImage() {
-    onAdminExpectListPersistentVolume();
     domainPresenceInfo.getDomain().getSpec().setImage(null);
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
   }

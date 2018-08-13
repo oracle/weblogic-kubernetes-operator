@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -682,19 +683,7 @@ public class DomainStatusUpdater {
         .readDomainAsync(
             meta.getName(),
             meta.getNamespace(),
-            new ResponseStep<Domain>(next) {
-              @Override
-              public NextAction onFailure(
-                  Packet packet,
-                  ApiException e,
-                  int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                if (statusCode == CallBuilder.NOT_FOUND) {
-                  return doNext(packet);
-                }
-                return super.onFailure(packet, e, statusCode, responseHeaders);
-              }
-
+            new DefaultResponseStep<Domain>(next) {
               @Override
               public NextAction onSuccess(
                   Packet packet,
