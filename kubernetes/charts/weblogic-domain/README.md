@@ -45,23 +45,23 @@ Change directory to the cloned git weblogic-kubernetes-operator repo:
 cd kubernetes/charts
 ```
 
-To install the chart with the release `my-release`, namespace `my-namespace` and secret `my-secret' without creating a weblogic domain (such as when a WebLogic domain already exists):
+To install the chart with the domain uid `my-domain-uid`, namespace `my-namespace` and secret `my-secret' without creating a weblogic domain (such as when a WebLogic domain already exists):
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --set weblogicCredentialsSecretName=my-secret --set createWebLogicDomain=false
+helm install weblogic-domain --name my-domain-uid --namespace my-namespace --set weblogicCredentialsSecretName=my-secret --set createWebLogicDomain=false
 ```
 
 The command deploys weblogic-domain on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists
 the parameters that can be configured during installation.
 
-> Note: if you do not pass the --name flag, a release name will be auto-generated. You can view releases by running helm list (or helm ls, for short).
+> Note: if you do not pass the --name flag, a release name will be auto-generated, and it will be used as the domain uid.  You can view releases by running helm list (or helm ls, for short).
 
 
-## Uninstalling the Chart
-To uninstall/delete the `my-release` deployment:
+## Uninstalling the Domain
+To uninstall/delete `my-domain-uid`:
 
 ```bash
-helm delete --purge my-release
+helm delete --purge my-domain-uid
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -73,7 +73,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | adminPort | Port number for Admin Server | 7001 |
 | adminServerName | Name of the Admin Server | admin-server |
 | domainName | Name of the WebLogic domain to create | base_domain |
-| domainUID | Unique id identifying a domain. The id must be unique across all domains in a Kubernetes cluster | domain1 (needs to uncomment) |
 | clusterType | Type of WebLogic Cluster. Legal values are "CONFIGURED" or "DYNAMIC" | DYNAMIC |
 | startupControl | Determines which WebLogic Servers the Operator will start up. Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO" | "AUTO" |
 | clusterName | Cluster name | cluster-1 |
@@ -105,11 +104,11 @@ The command removes all the Kubernetes components associated with the chart and 
 Specify parameters to override default values using the `--set key=value[,key=value]` argument to helm install. For example:
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --set configuredManagedServerCount=3
+helm install weblogic-domain --name my-domain-uid --namespace my-namespace --set configuredManagedServerCount=3
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example:
 
 ```bash
-helm install weblogic-domain --name my-release --namespace my-namespace --values values.yaml
+helm install weblogic-domain --name my-domain-uid --namespace my-namespace --values values.yaml
 ```
