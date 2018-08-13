@@ -52,7 +52,7 @@ import oracle.kubernetes.operator.utils.YamlUtils;
 @SuppressWarnings("unused")
 public class AsyncCallTestSupport extends FiberTestSupport {
 
-  private final RequestStepFactory requestStepFactory = new RequestStepFactory();
+  private static final RequestStepFactoryRouter ROUTER = new RequestStepFactoryRouter();
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
@@ -60,7 +60,42 @@ public class AsyncCallTestSupport extends FiberTestSupport {
    * @return a memento which can be used to restore the production factory
    */
   public Memento installRequestStepFactory() throws NoSuchFieldException {
-    return StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", requestStepFactory);
+    ROUTER.setRequestStepFactory(new RequestStepFactory());
+    return StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", ROUTER);
+  }
+
+  // CallBuilder.STEP_FACTORY is final, meaning that the JDK may choose to cache it at some point,
+  // and miss its being set, thus using the wrong test factory. To avoid this, we install a constant
+  // instance of this class and then set its own non-final field with the actual test step factory.
+  private static class RequestStepFactoryRouter implements AsyncRequestStepFactory {
+    private AsyncRequestStepFactory requestStepFactory;
+
+    void setRequestStepFactory(AsyncRequestStepFactory factory) {
+      this.requestStepFactory = factory;
+    }
+
+    @Override
+    public <T> Step createRequestAsync(
+        ResponseStep<T> next,
+        RequestParams requestParams,
+        CallFactory<T> factory,
+        ClientPool helper,
+        int timeoutSeconds,
+        int maxRetryCount,
+        String fieldSelector,
+        String labelSelector,
+        String resourceVersion) {
+      return requestStepFactory.createRequestAsync(
+          next,
+          requestParams,
+          factory,
+          helper,
+          timeoutSeconds,
+          maxRetryCount,
+          fieldSelector,
+          labelSelector,
+          resourceVersion);
+    }
   }
 
   private class RequestStepFactory implements AsyncRequestStepFactory {
