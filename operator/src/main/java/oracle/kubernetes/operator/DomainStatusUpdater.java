@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
@@ -14,10 +13,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -645,31 +644,21 @@ public class DomainStatusUpdater {
                 meta.getName(),
                 meta.getNamespace(),
                 dom,
-                new ResponseStep<Domain>(next) {
+                new DefaultResponseStep<Domain>(next) {
                   @Override
-                  public NextAction onFailure(
-                      Packet packet,
-                      ApiException e,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
-                    if (statusCode == CallBuilder.NOT_FOUND) {
+                  public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
                       return doNext(packet); // Just ignore update
                     }
                     return super.onFailure(
                         getRereadDomainConflictStep(info, meta, conflictStep),
                         packet,
-                        e,
-                        statusCode,
-                        responseHeaders);
+                        callResponse);
                   }
 
                   @Override
-                  public NextAction onSuccess(
-                      Packet packet,
-                      Domain result,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
-                    info.setDomain(result);
+                  public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+                    info.setDomain(callResponse.getResult());
                     return doNext(packet);
                   }
                 }),
@@ -685,12 +674,8 @@ public class DomainStatusUpdater {
             meta.getNamespace(),
             new DefaultResponseStep<Domain>(next) {
               @Override
-              public NextAction onSuccess(
-                  Packet packet,
-                  Domain result,
-                  int statusCode,
-                  Map<String, List<String>> responseHeaders) {
-                info.setDomain(result);
+              public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+                info.setDomain(callResponse.getResult());
                 return doNext(packet);
               }
             });
