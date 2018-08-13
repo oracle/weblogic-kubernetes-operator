@@ -1921,6 +1921,7 @@ EOF
 #   -   local  --> run locally - requires java & weblogic to be installed
 #   -   remote --> run remotely on admin server, construct URL using admin pod name
 #   -   hybrid --> run remotely on admin server, construct URL using 'NODEPORT_HOST'
+#                  or 'K8S_NODEPORT_IP' in wercker since NODEPORT_HOST sometimes does not work in OCI
 #
 function run_wlst_script {
   if [ "$#" -lt 3 ] ; then
@@ -1943,7 +1944,12 @@ function run_wlst_script {
   local password=`get_wladmin_pass $1`
   local pyfile_lcl="$3"
   local pyfile_pod="/shared/`basename $pyfile_lcl`"
-  local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  if [ "$WERCKER" = "true" ]; then 
+    # use OCI public IP in wercker
+    local t3url_lcl="t3://$K8S_NODEPORT_IP:$ADMIN_WLST_PORT"
+  else
+    local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  fi
   local t3url_pod="t3://$AS_NAME:$ADMIN_WLST_PORT"
   local wlcmdscript_lcl="$TMP_DIR/wlcmd.sh"
   local wlcmdscript_pod="/shared/wlcmd.sh"
@@ -2032,6 +2038,7 @@ EOF
 
     if [ "$result" = "0" ];
     then 
+      cat ${pyfile_lcl}.out
       break
     fi
 
@@ -2205,9 +2212,10 @@ function verify_service_and_pod_created {
       local EXTCHANNEL_T3CHANNEL_SERVICE_NAME=${SERVICE_NAME}-extchannel-t3channel
       trace "checking if service ${EXTCHANNEL_T3CHANNEL_SERVICE_NAME} is created"
       count=0
+      srv_count=0
       while [ "${srv_count:=Error}" != "1" -a $count -lt $max_count_srv ] ; do
         local count=`expr $count + 1`
-        local srv_count=`kubectl -n $NAMESPACE get services | grep "^$SERVICE_NAME " | wc -l`
+        local srv_count=`kubectl -n $NAMESPACE get services | grep "^$EXTCHANNEL_T3CHANNEL_SERVICE_NAME " | wc -l`
         if [ "${srv_count:=Error}" != "1" ]; then
           trace "Did not find service $EXTCHANNEL_T3CHANNEL_SERVICE_NAME, iteration $count of $max_count_srv"
           sleep $wait_time
@@ -2258,6 +2266,9 @@ function verify_service_and_pod_created {
     fi
 
     if [ "${IS_ADMIN_SERVER}" = "true" ]; then
+      trace "listing pods"
+      kubectl -n $NAMESPACE get pods -o wide
+
       verify_wlst_access $DOM_KEY
     fi
 }

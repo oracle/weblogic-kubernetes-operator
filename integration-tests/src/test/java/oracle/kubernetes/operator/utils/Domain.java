@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -92,16 +93,20 @@ public class Domain {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
-    // check managed server pods
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      logger.info(
-          "Checking if managed pod("
-              + domainUid
-              + "-"
-              + managedServerNameBase
-              + i
-              + ") is Running");
-      TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+    if (domainProps.getProperty("startupControl") == null
+        || (domainProps.getProperty("startupControl") != null
+            && !domainProps.getProperty("startupControl").trim().equals("ADMIN"))) {
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        logger.info(
+            "Checking if managed pod("
+                + domainUid
+                + "-"
+                + managedServerNameBase
+                + i
+                + ") is Running");
+        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+      }
     }
   }
 
@@ -125,17 +130,20 @@ public class Domain {
       TestUtils.checkServiceCreated(
           domainUid + "-" + adminServerName + "-extchannel-t3channel", domainNS);
     }
-
-    // check managed server services
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      logger.info(
-          "Checking if managed service("
-              + domainUid
-              + "-"
-              + managedServerNameBase
-              + i
-              + ") is created");
-      TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+    if (domainProps.getProperty("startupControl") == null
+        || (domainProps.getProperty("startupControl") != null
+            && !domainProps.getProperty("startupControl").trim().equals("ADMIN"))) {
+      // check managed server services
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        logger.info(
+            "Checking if managed service("
+                + domainUid
+                + "-"
+                + managedServerNameBase
+                + i
+                + ") is created");
+        TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+      }
     }
   }
 
@@ -148,11 +156,15 @@ public class Domain {
     // check admin pod
     logger.info("Checking if admin server is Running");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
+    if (domainProps.getProperty("startupControl") == null
+        || (domainProps.getProperty("startupControl") != null
+            && !domainProps.getProperty("startupControl").trim().equals("ADMIN"))) {
 
-    // check managed server pods
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
-      TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
+        TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
+      }
     }
   }
   /**
@@ -245,15 +257,23 @@ public class Domain {
   public void deployWebAppViaWLST(
       String webappName, String webappLocation, String username, String password) throws Exception {
 
-    copyFileToAdminPod(webappLocation, "/shared/applications/testwebapp.war");
+    TestUtils.kubectlcp(
+        webappLocation,
+        "/shared/applications/testwebapp.war",
+        domainUid + "-" + adminServerName,
+        domainNS);
 
-    copyFileToAdminPod(
+    TestUtils.kubectlcp(
         projectRoot + "/integration-tests/src/test/resources/deploywebapp.py",
-        "/shared/deploywebapp.py");
+        "/shared/deploywebapp.py",
+        domainUid + "-" + adminServerName,
+        domainNS);
 
-    copyFileToAdminPod(
+    TestUtils.kubectlcp(
         projectRoot + "/integration-tests/src/test/resources/calldeploywebapp.sh",
-        "/shared/calldeploywebapp.sh");
+        "/shared/calldeploywebapp.sh",
+        domainUid + "-" + adminServerName,
+        domainNS);
 
     callShellScriptByExecToPod(username, password, webappName);
   }
@@ -272,9 +292,13 @@ public class Domain {
           .append(TestUtils.getHostName())
           .append(":")
           .append(loadBalancerWebPort)
-          .append("/")
-          .append(webappName)
           .append("/");
+
+      if (domainProps.get("loadBalancer") != null
+          && domainProps.get("loadBalancer").equals("APACHE")) {
+        testAppUrl.append("weblogic/");
+      }
+      testAppUrl.append(webappName).append("/");
 
       // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
@@ -355,6 +379,113 @@ public class Domain {
 
   public Properties getDomainProps() {
     return domainProps;
+  }
+
+  public void deletePVCAndCheckPVReleased() throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl get pv ");
+    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(domainNS);
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() == 0) {
+      logger.info("Status of PV before deleting PVC " + result.stdout());
+    }
+    TestUtils.deletePVC(domainUid + "-weblogic-domain-pvc", domainNS);
+    String reclaimPolicy = domainProps.getProperty("weblogicDomainStorageReclaimPolicy");
+    boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
+    if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
+      throw new RuntimeException(
+          "ERROR: pv for " + domainUid + " still exists after the pvc is deleted, exiting!");
+    } else {
+      logger.info("PV is released when PVC is deleted");
+    }
+  }
+
+  public void createDomainOnExistingDirectory() throws Exception {
+    String domainStoragePath = domainProps.getProperty("weblogicDomainStoragePath");
+    String domainDir = domainStoragePath + "/domain/" + domainProps.getProperty("domainName");
+    logger.info("making sure the domain directory exists");
+    if (domainDir != null && !(new File(domainDir).exists())) {
+      throw new RuntimeException(
+          "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
+    }
+    logger.info("Run the script to create domain");
+    StringBuffer cmd = new StringBuffer(createDomainScript);
+    cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() == 1) {
+      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+    } else {
+      throw new RuntimeException(
+          "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
+    }
+  }
+
+  public void verifyAdminConsoleViaLB() throws Exception {
+    if (!loadBalancer.equals("APACHE")) {
+      logger.info("This check is done only for APACHE load balancer");
+      return;
+    }
+    String nodePortHost = TestUtils.getHostName();
+    int nodePort = getAdminSericeLBNodePort();
+    String responseBodyFile =
+        userProjectsDir + "/weblogic-domains/" + domainUid + "/testconsole.response.body";
+    logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("curl --silent --show-error --noproxy ")
+        .append(nodePortHost)
+        .append(" http://")
+        .append(nodePortHost)
+        .append(":")
+        .append(nodePort)
+        .append("/console/login/LoginForm.jsp")
+        .append(" --write-out %{http_code} -o ")
+        .append(responseBodyFile);
+    logger.info("cmd for curl " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stderr()
+              + "\n "
+              + result.stdout());
+    }
+
+    String output = result.stdout().trim();
+    logger.info("output " + output);
+    if (!output.equals("200")) {
+      throw new RuntimeException(
+          "FAILURE: accessing admin console via load balancer did not return 200 status code, got "
+              + output);
+    }
+  }
+
+  public String getDomainUid() {
+    return domainUid;
+  }
+
+  private int getAdminSericeLBNodePort() throws Exception {
+
+    String adminServerLBNodePortService = domainUid + "-apache-webtier";
+
+    StringBuffer cmd = new StringBuffer("kubectl get services -n ");
+    cmd.append(domainNS)
+        .append(" -o jsonpath='{.items[?(@.metadata.name == \"")
+        .append(adminServerLBNodePortService)
+        .append("\")].spec.ports[0].nodePort}'");
+
+    logger.info("Cmd to get the admins service node port " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() == 0) {
+      return new Integer(result.stdout().trim()).intValue();
+    } else {
+      throw new RuntimeException("Cmd failed " + result.stderr() + " \n " + result.stdout());
+    }
   }
 
   private void createPV() throws Exception {
@@ -500,27 +631,6 @@ public class Domain {
     }
   }
 
-  private void copyFileToAdminPod(String srcFileOnHost, String destLocationInPod) throws Exception {
-    StringBuffer cmdTocp = new StringBuffer("kubectl cp ");
-    cmdTocp
-        .append(srcFileOnHost)
-        .append(" ")
-        .append(domainNS)
-        .append("/")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(":")
-        .append(destLocationInPod);
-
-    logger.info("Command to copy file " + cmdTocp);
-    ExecResult result = ExecCommand.exec(cmdTocp.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: kubectl cp command " + cmdTocp + " failed, returned " + result.stderr());
-    }
-  }
-
   private void initialize() throws Exception {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
@@ -562,6 +672,18 @@ public class Domain {
           System.getenv("DOCKER_PASSWORD"),
           System.getenv("DOCKER_EMAIL"),
           domainNS);
+    }
+    // test NFS for domain5 on JENKINS
+    if (domainUid.equals("domain5")
+        && (System.getenv("JENKINS") != null
+            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
+      domainProps.put("weblogicDomainStorageType", "NFS");
+      domainProps.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+    }
+
+    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
+      domainProps.put("loadBalancerAppPrepath", "/weblogic");
+      domainProps.put("loadBalancerExposeAdminPort", "true");
     }
   }
 
