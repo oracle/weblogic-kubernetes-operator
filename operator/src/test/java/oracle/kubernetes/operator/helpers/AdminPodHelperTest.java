@@ -14,7 +14,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
@@ -77,7 +76,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     V1Pod existingPod = createPodModel();
     mutator.mutate(existingPod);
-    expectReadPod(getPodName()).returning(existingPod);
+    initializeExistingPod(existingPod);
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     expectDeletePod(getPodName()).returning(new V1Status());
     expectCreatePod(podWithName(getPodName())).returning(createPodModel());
 
@@ -101,7 +101,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
-    expectReadPod(getPodName()).returning(getIncompatiblePod());
+    initializeExistingPod(getIncompatiblePod());
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
     expectCreatePod(podWithName(getPodName())).returning(createPodModel());
 
@@ -119,7 +120,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenAdminPodDeletionFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadPod(getPodName()).returning(getIncompatiblePod());
+    initializeExistingPod(getIncompatiblePod());
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     expectDeletePod(getPodName()).failingWithStatus(401);
     expectStepsAfterCreation();
 
@@ -128,13 +130,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-    assertThat(retryStrategy.getConflictStep(), sameInstance(initialStep));
   }
 
   @Test
   public void whenAdminPodReplacementFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadPod(getPodName()).returning(getIncompatiblePod());
+    initializeExistingPod(getIncompatiblePod());
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     expectDeletePod(getPodName()).returning(new V1Status());
     expectCreatePod(podWithName(getPodName())).failingWithStatus(401);
     expectStepsAfterCreation();
@@ -144,7 +146,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-    assertThat(retryStrategy.getConflictStep(), sameInstance(initialStep));
   }
 
   @Test
@@ -209,11 +210,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreated_specHasPodNameAsHostName() {
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     assertThat(getCreatedPod().getSpec().getHostname(), equalTo(getPodName()));
   }
 
   @Test
   public void whenAdminPodCreated_containerHasStartServerCommand() {
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     assertThat(
         getCreatedPodSpecContainer().getCommand(),
         contains("/weblogic-operator/scripts/startServer.sh", UID, getServerName(), DOMAIN_NAME));
@@ -222,6 +225,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
     putTuningParameter(INTERNAL_OPERATOR_CERT_FILE_PARAM, CERTFILE);
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, CERTFILE));
@@ -231,6 +235,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenDomainPresenceHasNullEnvironmentItems_createAdminPodStartupWithDefaultItems() {
     domainPresenceInfo.getDomain().getSpec().setServerStartup(null);
 
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     assertThat(getCreatedPodSpecContainer().getEnv(), not(empty()));
   }
 
@@ -245,6 +250,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
                 .withVar("item2", "value2")
                 .build());
 
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasEnvVar("item1", "value1"), hasEnvVar("item2", "value2")));
@@ -261,6 +267,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
                 .withVar("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)")
                 .build());
 
+    expectListPersistentVolume().returning(createPersistentVolumeList());
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
@@ -285,6 +292,11 @@ public class AdminPodHelperTest extends PodHelperTestBase {
       return Collections.singletonList(
           new ServerStartup().withServerName(serverName).withEnv(vars));
     }
+  }
+
+  @Override
+  protected void onAdminExpectListPersistentVolume() {
+    expectListPersistentVolume().returning(createPersistentVolumeList());
   }
 
   @Override

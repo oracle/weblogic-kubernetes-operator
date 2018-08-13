@@ -50,6 +50,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
 public abstract class PodStepContext {
@@ -70,9 +71,8 @@ public abstract class PodStepContext {
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String READINESS_PROBE = "/weblogic-operator/scripts/readinessProbe.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
-  
-  private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
+  private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   private final DomainPresenceInfo info;
   private final Step conflictStep;
@@ -100,9 +100,33 @@ public abstract class PodStepContext {
   private V1Pod getPodModel() {
     return podModel;
   }
-  
+
   private Step getConflictStep() {
-    return readPod(conflictStep);
+    return new ConflictStep();
+  }
+
+  private class ConflictStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(getConflictStep(), packet);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if ((other instanceof ConflictStep) == false) {
+        return false;
+      }
+      ConflictStep rhs = ((ConflictStep) other);
+      return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+    }
+
+    private Step getConflictStep() {
+      return conflictStep;
+    }
   }
 
   // ------------------------ data methods ----------------------------
@@ -382,17 +406,17 @@ public abstract class PodStepContext {
       }
       return super.onFailure(packet, callResponse);
     }
-    
+
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
       V1Pod currentPod = callResponse.getResult();
-      getSko().getPod().set(currentPod);
+      setRecordedPod(currentPod);
       return doNext(packet);
     }
   }
-  
+
   private class VerifyPodStep extends Step {
-    
+
     VerifyPodStep(Step next) {
       super(next);
     }
@@ -405,13 +429,11 @@ public abstract class PodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (canUseCurrentPod(currentPod)) {
         logPodExists();
-        setRecordedPod(currentPod);
         return doNext(packet);
       } else {
         return doNext(replaceCurrentPod(getNext()), packet);
       }
     }
-    
   }
 
   private ResponseStep<V1Pod> createResponse(Step next) {
