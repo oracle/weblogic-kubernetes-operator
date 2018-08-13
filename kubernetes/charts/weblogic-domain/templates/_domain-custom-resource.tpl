@@ -3,35 +3,38 @@
 #
 # This is an example of how to define a Domain Custom Resource.
 #
+
+{{- define "domain.domainCustomResource" }}
+---
 apiVersion: "weblogic.oracle/v1"
 kind: Domain
 metadata:
-  name: {{ .Values.domainUID }}
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: domain-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
 spec:
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
   # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
   # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
   # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
-  domainUID: {{ .Values.domainUID }}
+  domainUID: {{ .Release.Name }}
   # The WebLogic Domain Name
-  domainName: {{ .Values.domainName }}
+  domainName: {{ .domainName }}
   # The Operator currently does not support other images
-  image: "{{ .Values.weblogicImage }}"
+  image: "{{ .weblogicImage }}"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   adminSecret: 
-    name: {{ .Values.weblogicCredentialsSecretName }}
+    name: {{ .weblogicCredentialsSecretName }}
   # The name of the Admin Server
-  asName: "{{ .Values.adminServerName }}"
+  asName: "{{ .adminServerName }}"
   # The Admin Server's ListenPort
-  asPort: {{ .Values.adminPort }}
+  asPort: {{ .adminPort }}
   # startupControl legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "ALL" will start up all defined servers
@@ -40,7 +43,7 @@ spec:
   #   "clusterStartup" entries below to work out which servers to start
   # - "AUTO" will start the servers as with "SPECIFIED", but then also start servers from
   #   other clusters up to the replicas count
-  startupControl: "{{ .Values.startupControl }}"
+  startupControl: "{{ .startupControl }}"
   # serverStartup is used to list the desired behavior for starting servers.  The Operator will
   # use this field only if startupControl is set to "SPECIFIED" or "AUTO".  You may provide a list of 
   # entries, each entry should contain the keys should below:
@@ -50,15 +53,15 @@ spec:
   # "ADMIN" means the listed server will be start up to "ADMIN" mode
   - desiredState: "RUNNING"
     # the name of the server to apply these rules to
-    serverName: "{{ .Values.adminServerName }}"
+    serverName: "{{ .adminServerName }}"
     # The Admin Server's NodePort
-    {{- if .Values.exposeAdminNodePort }}
-    nodePort: {{ .Values.adminNodePort }}
+    {{- if .exposeAdminNodePort }}
+    nodePort: {{ .adminNodePort }}
     {{- end }}
     # an (optional) list of environment variable to be set on the server
     env:
     - name: JAVA_OPTIONS
-      value: "{{ .Values.javaOptions }}"
+      value: "{{ .javaOptions }}"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
   # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
@@ -66,18 +69,19 @@ spec:
   # applied to ALL servers that are members of the named clusters.
   clusterStartup:
   - desiredState: "RUNNING"
-    clusterName: "{{ .Values.clusterName }}"
-    replicas: {{ .Values.initialManagedServerReplicas }}
+    clusterName: "{{ .clusterName }}"
+    replicas: {{ .initialManagedServerReplicas }}
     env:
     - name: JAVA_OPTIONS
-      value: "{{ .Values.javaOptions }}"
+      value: "{{ .javaOptions }}"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
   # The number of managed servers to start from clusters not listed by clusterStartup
   # replicas: 1
 
   # Uncomment to export the T3Channel as a service
-  {{- if .Values.exposeAdminT3Channel }}
+  {{- if .exposeAdminT3Channel }}
   exportT3Channels:
   - T3Channel
   {{- end }}
+{{- end }}

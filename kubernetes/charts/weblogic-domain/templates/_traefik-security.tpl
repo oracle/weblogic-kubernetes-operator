@@ -1,15 +1,17 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-{{- if eq .Values.loadBalancer "APACHE" }}
+
+{{- define "domain.traefikSecurity" }}
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
   labels:
-    weblogic.resourceVersion: apache-load-balancer-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
+    weblogic.clusterName: {{ .clusterName }}
 rules:
   - apiGroups:
       - ""
@@ -30,21 +32,23 @@ rules:
       - get
       - list
       - watch
+
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
   labels:
-    weblogic.resourceVersion: apache-load-balancer-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.resourceVersion: traefik-load-balancer-v1
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
+    weblogic.clusterName: {{ .clusterName }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
 subjects:
 - kind: ServiceAccount
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
   namespace: {{ .Release.Namespace }}
 {{- end }}

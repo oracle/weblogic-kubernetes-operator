@@ -1,15 +1,17 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-{{- if .Values.createWebLogicDomain }}
+
+{{- define "domain.createDomainJob" }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.domainUID }}-create-weblogic-domain-job-cm
+  name: {{ .Release.Name }}-create-weblogic-domain-job-cm
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: domain-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-5"
@@ -70,7 +72,7 @@ data:
     fi
 
     # Do not proceed if the domain already exists
-    domainFolder=${SHARED_PATH}/domain/{{ .Values.domainName }}
+    domainFolder=${SHARED_PATH}/domain/{{ .domainName }}
     if [ -d ${domainFolder} ]; then
       fail "The create domain job will not overwrite an existing domain. The domain folder ${domainFolder} already exists"
     fi
@@ -108,7 +110,7 @@ data:
     # Include common utility functions
     source /u01/weblogic/utility.sh
 
-    export DOMAIN_HOME=${SHARED_PATH}/domain/{{ .Values.domainName }}
+    export DOMAIN_HOME=${SHARED_PATH}/domain/{{ .domainName }}
 
     # Create the domain
     wlst.sh -skipWLSModuleScanning /u01/weblogic/create-domain.py
@@ -121,16 +123,16 @@ data:
     # Read the domain secrets from the common python file
     execfile("/u01/weblogic/read-domain-secret.py")
 
-    server_port        = {{ .Values.managedServerPort }}
+    server_port        = {{ .managedServerPort }}
     domain_path        = os.environ.get("DOMAIN_HOME")
-    cluster_name       = "{{ .Values.clusterName }}"
-    number_of_ms       = {{ .Values.configuredManagedServerCount }}
-    cluster_type       = "{{ .Values.clusterType }}"
+    cluster_name       = "{{ .clusterName }}"
+    number_of_ms       = {{ .configuredManagedServerCount }}
+    cluster_type       = "{{ .clusterType }}"
 
     print('domain_path        : [%s]' % domain_path);
-    print('domain_name        : [{{ .Values.domainName }}]');
+    print('domain_name        : [{{ .domainName }}]');
     print('admin_username     : [%s]' % admin_username);
-    print('admin_port         : [{{ .Values.adminPort }}]');
+    print('admin_port         : [{{ .adminPort }}]');
     print('cluster_name       : [%s]' % cluster_name);
     print('server_port        : [%s]' % server_port);
     print('cluster_type       : [%s]' % cluster_type);
@@ -139,34 +141,34 @@ data:
     # ============================
     readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
 
-    set('Name', '{{ .Values.domainName }}')
-    setOption('DomainName', '{{ .Values.domainName }}')
-    create('{{ .Values.domainName }}','Log')
-    cd('/Log/{{ .Values.domainName }}');
-    set('FileName', '/shared/logs/{{ .Values.domainName }}.log')
+    set('Name', '{{ .domainName }}')
+    setOption('DomainName', '{{ .domainName }}')
+    create('{{ .domainName }}','Log')
+    cd('/Log/{{ .domainName }}');
+    set('FileName', '/shared/logs/{{ .domainName }}.log')
 
     # Configure the Administration Server
     # ===================================
     cd('/Servers/AdminServer')
-    set('ListenAddress', '{{ .Values.domainUID }}-{{ .Values.adminServerName }}')
-    set('ListenPort', {{ .Values.adminPort }})
-    set('Name', '{{ .Values.adminServerName }}')
+    set('ListenAddress', '{{ .Release.Name }}-{{ .adminServerName }}')
+    set('ListenPort', {{ .adminPort }})
+    set('Name', '{{ .adminServerName }}')
 
     create('T3Channel', 'NetworkAccessPoint')
-    cd('/Servers/{{ .Values.adminServerName }}/NetworkAccessPoints/T3Channel')
-    set('PublicPort', {{ .Values.t3ChannelPort }})
-    set('PublicAddress', '{{ .Values.t3PublicAddress }}')
-    set('ListenAddress', '{{ .Values.domainUID }}-{{ .Values.adminServerName }}')
-    set('ListenPort', {{ .Values.t3ChannelPort }})
+    cd('/Servers/{{ .adminServerName }}/NetworkAccessPoints/T3Channel')
+    set('PublicPort', {{ .t3ChannelPort }})
+    set('PublicAddress', '{{ .t3PublicAddress }}')
+    set('ListenAddress', '{{ .Release.Name }}-{{ .adminServerName }}')
+    set('ListenPort', {{ .t3ChannelPort }})
 
-    cd('/Servers/{{ .Values.adminServerName }}')
-    create('{{ .Values.adminServerName }}', 'Log')
-    cd('/Servers/{{ .Values.adminServerName }}/Log/{{ .Values.adminServerName }}')
-    set('FileName', '/shared/logs/{{ .Values.adminServerName }}.log')
+    cd('/Servers/{{ .adminServerName }}')
+    create('{{ .adminServerName }}', 'Log')
+    cd('/Servers/{{ .adminServerName }}/Log/{{ .adminServerName }}')
+    set('FileName', '/shared/logs/{{ .adminServerName }}.log')
 
     # Set the admin user's username and password
     # ==========================================
-    cd('/Security/{{ .Values.domainName }}/User/weblogic')
+    cd('/Security/{{ .domainName }}/User/weblogic')
     cmo.setName(admin_username)
     cmo.setPassword(admin_password)
 
@@ -203,12 +205,12 @@ data:
         cd('/')
 
         msIndex = index+1
-        name = '{{ .Values.managedServerNameBase }}%s' % msIndex
+        name = '{{ .managedServerNameBase }}%s' % msIndex
 
         create(name, 'Server')
         cd('/Servers/%s/' % name )
         print('managed server name is %s' % name);
-        set('ListenAddress', '{{ .Values.domainUID }}-%s' % name)
+        set('ListenAddress', '{{ .Release.Name }}-%s' % name)
         set('ListenPort', server_port)
         set('NumOfRetriesBeforeMSIMode', 0)
         set('RetryIntervalBeforeMSIMode', 1)
@@ -226,7 +228,7 @@ data:
       print('Done creating Server Template: %s' % templateName)
       cd('/ServerTemplates/%s' % templateName)
       cmo.setListenPort(server_port)
-      cmo.setListenAddress('{{ .Values.domainUID }}-{{ .Values.managedServerNameBase }}${id}')
+      cmo.setListenAddress('{{ .Release.Name }}-{{ .managedServerNameBase }}${id}')
       cmo.setCluster(cl)
       print('Done setting attributes for Server Template: %s' % templateName);
 
@@ -235,7 +237,7 @@ data:
       create(cluster_name, 'DynamicServers')
       cd('DynamicServers/%s' % cluster_name)
       set('ServerTemplate', st1)
-      set('ServerNamePrefix', "{{ .Values.managedServerNameBase }}")
+      set('ServerNamePrefix', "{{ .managedServerNameBase }}")
       set('DynamicClusterSize', number_of_ms)
       set('MaxDynamicClusterSize', number_of_ms)
       set('CalculatedListenPorts', false)
@@ -252,7 +254,7 @@ data:
     # Update Domain
     readDomain(domain_path)
     cd('/')
-    cmo.setProductionModeEnabled({{ .Values.productionModeEnabled }})
+    cmo.setProductionModeEnabled({{ .productionModeEnabled }})
     updateDomain()
     closeDomain()
     print 'Domain Updated'
@@ -266,7 +268,7 @@ data:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.domainUID }}-create-weblogic-domain-job
+  name: {{ .Release.Name }}-create-weblogic-domain-job
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install
@@ -277,14 +279,14 @@ spec:
     metadata:
       labels:
         weblogic.resourceVersion: domain-v1
-        weblogic.domainUID: {{ .Values.domainUID }}
-        weblogic.domainName: {{ .Values.domainName }}
-        app: {{ .Values.domainUID }}-create-weblogic-domain-job
+        weblogic.domainUID: {{ .Release.Name }}
+        weblogic.domainName: {{ .domainName }}
+        app: {{ .Release.Name }}-create-weblogic-domain-job
     spec:
       restartPolicy: Never
       containers:
         - name: create-weblogic-domain-job
-          image: {{ .Values.weblogicImage }}
+          image: {{ .weblogicImage }}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7001
@@ -303,15 +305,15 @@ spec:
       volumes:
         - name: create-weblogic-domain-job-cm-volume
           configMap:
-            name: {{ .Values.domainUID }}-create-weblogic-domain-job-cm
+            name: {{ .Release.Name }}-create-weblogic-domain-job-cm
         - name: weblogic-domain-storage-volume
           persistentVolumeClaim:
-            claimName: {{ .Values.domainUID }}-weblogic-domain-job-pvc
+            claimName: {{ .Release.Name }}-weblogic-domain-job-pvc
         - name: weblogic-credentials-volume
           secret:
-            secretName: {{ .Values.weblogicCredentialsSecretName }}
-      {{- if .Values.weblogicImagePullSecretName }}
+            secretName: {{ .weblogicCredentialsSecretName }}
+      {{- if .weblogicImagePullSecretName }}
       imagePullSecrets:
-      - name: {{ .Values.weblogicImagePullSecretName }}
+      - name: {{ .weblogicImagePullSecretName }}
       {{- end }}
 {{- end }}

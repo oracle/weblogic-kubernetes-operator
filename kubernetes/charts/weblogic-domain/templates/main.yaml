@@ -1,0 +1,33 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+{{- $scope := include "domain.cloneDictionary" .Values | fromYaml -}}
+{{- $ignore := set $scope "Files" .Files -}}
+{{- $ignore := set $scope "Chart" .Chart -}}
+{{- $ignore := set $scope "Release" .Release -}}
+
+{{- include "domain.domainCustomResource" $scope }}
+{{- include "domain.domainPersistentVolume" $scope }}
+{{- include "domain.domainPersistentVolumeClaim" $scope }}
+
+{{- if $scope.createWebLogicDomain }}
+{{-   include "domain.createDomainJob" $scope }}
+{{-   include "domain.createDomainPersistentVolume" $scope }}
+{{-   include "domain.createDomainPersistentVolumeClaim" $scope }}
+{{- end }}
+
+{{- if eq $scope.loadBalancer "TRAEFIK" }}
+{{-   include "domain.traefik" $scope }}
+{{-   include "domain.traefikSecurity" $scope }}
+{{- end }}
+
+{{- if eq $scope.loadBalancer "APACHE" }}
+{{-   include "domain.apache" $scope }}
+{{-   include "domain.apacheSecurity" $scope }}
+{{- end }}
+
+{{- if eq $scope.loadBalancer "VOYAGER" }}
+{{-   include "domain.voyager" $scope }}
+{{-   include "domain.voyagerSecurity" $scope }}
+{{-   include "domain.voyagerIngress" $scope }}
+{{- end }}
