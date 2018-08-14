@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
@@ -14,14 +13,15 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -295,7 +295,8 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      // This will control if we need to re-check states soon or if we can slow down checks
+      // This will control if we need to re-check states soon or if we can slow down
+      // checks
       packet.put(ProcessingConstants.STATUS_UNCHANGED, Boolean.valueOf(!madeChange));
 
       if (madeChange) {
@@ -643,31 +644,41 @@ public class DomainStatusUpdater {
                 meta.getName(),
                 meta.getNamespace(),
                 dom,
-                new ResponseStep<Domain>(next) {
+                new DefaultResponseStep<Domain>(next) {
                   @Override
-                  public NextAction onFailure(
-                      Packet packet,
-                      ApiException e,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
-                    if (statusCode == CallBuilder.NOT_FOUND) {
+                  public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
                       return doNext(packet); // Just ignore update
                     }
-                    return super.onFailure(conflictStep, packet, e, statusCode, responseHeaders);
+                    return super.onFailure(
+                        getRereadDomainConflictStep(info, meta, conflictStep),
+                        packet,
+                        callResponse);
                   }
 
                   @Override
-                  public NextAction onSuccess(
-                      Packet packet,
-                      Domain result,
-                      int statusCode,
-                      Map<String, List<String>> responseHeaders) {
-                    info.setDomain(result);
+                  public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+                    info.setDomain(callResponse.getResult());
                     return doNext(packet);
                   }
                 }),
         packet);
     return na;
+  }
+
+  private static Step getRereadDomainConflictStep(
+      DomainPresenceInfo info, V1ObjectMeta meta, Step next) {
+    return new CallBuilder()
+        .readDomainAsync(
+            meta.getName(),
+            meta.getNamespace(),
+            new DefaultResponseStep<Domain>(next) {
+              @Override
+              public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+                info.setDomain(callResponse.getResult());
+                return doNext(packet);
+              }
+            });
   }
 
   /**

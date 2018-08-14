@@ -36,10 +36,12 @@ public class ConfigMapAfterStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
-    configMapWatchers.put(
-        ns,
-        createConfigMapWatcher(
-            ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+    if (!configMapWatchers.containsKey(ns)) {
+      configMapWatchers.put(
+          ns,
+          createConfigMapWatcher(
+              ns, result != null ? result.getMetadata().getResourceVersion() : ""));
+    }
     return doNext(packet);
   }
 
