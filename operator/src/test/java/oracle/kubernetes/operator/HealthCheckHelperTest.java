@@ -66,6 +66,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class HealthCheckHelperTest {
@@ -97,13 +98,11 @@ public class HealthCheckHelperTest {
           "podpresets//settings.k8s.io",
           "podsecuritypolicies//extensions",
           "podtemplates",
+          "ingresses//extensions",
           "services");
 
   private static final List<String> CLUSTER_CRUD_RESOURCES =
-      Arrays.asList(
-          "customresourcedefinitions//apiextensions.k8s.io",
-          "ingresses//extensions",
-          "persistentvolumes");
+      Arrays.asList("customresourcedefinitions//apiextensions.k8s.io", "persistentvolumes");
 
   private static final List<String> CREATE_ONLY_RESOURCES =
       Arrays.asList("pods/exec", "tokenreviews//authentication.k8s.io");
@@ -131,7 +130,6 @@ public class HealthCheckHelperTest {
   private static final HealthCheckHelper.KubernetesVersion RULES_REVIEW_VERSION =
       new HealthCheckHelper.KubernetesVersion(1, 8);
 
-  private HealthCheckHelper helper = new HealthCheckHelper(OPERATOR_NAMESPACE, TARGET_NAMESPACES);
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
@@ -153,7 +151,7 @@ public class HealthCheckHelperTest {
     ignoreMessage(K8S_MIN_VERSION_CHECK_FAILED);
     specifyK8sVersion("0", "", "");
 
-    assertThat(helper.performK8sVersionCheck(), returnsVersion(0, 0));
+    assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(0, 0));
   }
 
   private void specifyK8sVersion(String majorVersion, String minorVersion, String gitVersion)
@@ -207,7 +205,7 @@ public class HealthCheckHelperTest {
   public void whenK8sMajorVersionLessThanOne_warnOfVersionTooLow() throws Exception {
     specifyK8sVersion("0", "", "");
 
-    helper.performK8sVersionCheck();
+    HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsWarning(K8S_MIN_VERSION_CHECK_FAILED));
   }
@@ -218,14 +216,14 @@ public class HealthCheckHelperTest {
 
     specifyK8sVersion("2", "7", "");
 
-    assertThat(helper.performK8sVersionCheck(), returnsVersion(2, 0));
+    assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(2, 0));
   }
 
   @Test
   public void whenK8sMajorVersionGreaterThanOne_logGitVersion() throws Exception {
     specifyK8sVersion("2", "", "");
 
-    helper.performK8sVersionCheck();
+    HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
   }
@@ -234,7 +232,7 @@ public class HealthCheckHelperTest {
   public void whenK8sMinorLessThanSeven_warnOfVersionTooLow() throws Exception {
     specifyK8sVersion("1", "6+", "");
 
-    helper.performK8sVersionCheck();
+    HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsWarning(K8S_MIN_VERSION_CHECK_FAILED));
   }
@@ -244,14 +242,14 @@ public class HealthCheckHelperTest {
     ignoreMessage(K8S_VERSION_CHECK);
     specifyK8sVersion("1", "8", "3");
 
-    assertThat(helper.performK8sVersionCheck(), returnsVersion(1, 8));
+    assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(1, 8));
   }
 
   @Test
   public void whenK8sMinorGreaterThanSeven_logGitVersion() throws Exception {
     specifyK8sVersion("1", "8", "3");
 
-    helper.performK8sVersionCheck();
+    HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
   }
@@ -261,7 +259,7 @@ public class HealthCheckHelperTest {
       throws Exception {
     specifyK8sVersion("1", "7", "1+coreos.0");
 
-    helper.performK8sVersionCheck();
+    HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsWarning(K8S_MIN_VERSION_CHECK_FAILED));
   }
@@ -271,50 +269,9 @@ public class HealthCheckHelperTest {
       throws Exception {
     specifyK8sVersion("1", "7", "5+coreos.0");
 
-    helper.performK8sVersionCheck();
+    HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
-  }
-
-  @Test
-  public void whenAllDomainUidsUniquePerNamespace_logNoTrackedMessages() throws Exception {
-    mementos.add(DomainListCallFactoryStub.install());
-    DomainListCallFactoryStub.defineDomainUids(NS1, "uid1", "uid2");
-    DomainListCallFactoryStub.defineDomainUids(NS2, "uid3", "uid4", "uid5");
-
-    helper.performNonSecurityChecks();
-  }
-
-  @Test
-  public void whenDuplicateDomainUidsWithinNamespace_logMessage() throws Exception {
-    mementos.add(DomainListCallFactoryStub.install());
-    DomainListCallFactoryStub.defineDomainUids(NS1, "uid1", "uid1");
-
-    helper.performNonSecurityChecks();
-
-    assertThat(logRecords, containsWarning(DOMAIN_UID_UNIQUENESS_FAILED));
-  }
-
-  @Test
-  public void whenMissingPersistentVolumeForUid_logMessage() throws Exception {
-    mementos.add(DomainListCallFactoryStub.install());
-    DomainListCallFactoryStub.defineDomainUids(NS1, "uid1", "uid2");
-    DomainListCallFactoryStub.removePersistentVolume("uid2");
-
-    helper.performNonSecurityChecks();
-
-    assertThat(logRecords, containsWarning(PV_NOT_FOUND_FOR_DOMAIN_UID));
-  }
-
-  @Test
-  public void whenPersistentVolumeForUidLacksReadWriteAccess_logMessage() throws Exception {
-    mementos.add(DomainListCallFactoryStub.install());
-    DomainListCallFactoryStub.defineDomainUids(NS1, "uid1", "uid2");
-    DomainListCallFactoryStub.setPersistentVolumeReadOnly("uid2");
-
-    helper.performNonSecurityChecks();
-
-    assertThat(logRecords, containsWarning(PV_ACCESS_MODE_FAILED));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -418,10 +375,13 @@ public class HealthCheckHelperTest {
   }
 
   @Test
+  @Ignore
   public void whenRulesReviewNotSupported_requestsAccessReviewForEverything() throws Exception {
     expectAccessChecks();
 
-    helper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION);
+    for (String ns : TARGET_NAMESPACES) {
+      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
+    }
 
     assertThat(AccessReviewCallFactoryStub.getExpectedAccessChecks(), empty());
   }
@@ -437,7 +397,9 @@ public class HealthCheckHelperTest {
     expectAccessChecks();
     setMayAccessNamespace(false);
 
-    helper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION);
+    for (String ns : TARGET_NAMESPACES) {
+      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
+    }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
   }
@@ -447,7 +409,9 @@ public class HealthCheckHelperTest {
     expectAccessChecks();
     setMayAccessCluster(false);
 
-    helper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION);
+    for (String ns : TARGET_NAMESPACES) {
+      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
+    }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
   }
@@ -456,7 +420,9 @@ public class HealthCheckHelperTest {
   public void whenRulesReviewSupported_accessGrantedForEverything() throws Exception {
     mementos.add(AccessReviewCallFactoryStub.install());
 
-    helper.performSecurityChecks(RULES_REVIEW_VERSION);
+    for (String ns : TARGET_NAMESPACES) {
+      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
+    }
   }
 
   @Test
@@ -464,7 +430,9 @@ public class HealthCheckHelperTest {
     mementos.add(AccessReviewCallFactoryStub.install());
     setMayAccessNamespace(false);
 
-    helper.performSecurityChecks(RULES_REVIEW_VERSION);
+    for (String ns : TARGET_NAMESPACES) {
+      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
+    }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
   }

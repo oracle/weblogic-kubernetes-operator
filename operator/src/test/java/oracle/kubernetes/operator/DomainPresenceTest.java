@@ -88,8 +88,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(installStub(Main.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
-    AtomicBoolean stopping = getStoppingVariable();
-    stopping.set(true);
+    Map<String, AtomicBoolean> isNamespaceStopping = getStoppingVariable();
+    isNamespaceStopping.forEach(
+        (key, value) -> {
+          value.set(true);
+        });
   }
 
   private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
@@ -102,8 +105,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
-  private AtomicBoolean getStoppingVariable() throws NoSuchFieldException {
-    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "stopping");
+  private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
+    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStopping");
     return stoppingMemento.getOriginalValue();
   }
 
