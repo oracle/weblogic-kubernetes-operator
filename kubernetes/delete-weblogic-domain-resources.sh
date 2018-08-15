@@ -11,6 +11,7 @@
 # Usage:
 #   See "function usage" below or call this script with no parameters.
 #
+
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/internal/utility.sh
@@ -34,7 +35,7 @@ cat << EOF
   Specify '-t' to run the script in a test mode which will
   show kubernetes commands but not actually perform them.
 
-  The script runs in three phases:  
+  The script runs in phases:  
 
     Phase 1:  Set the startupControl of each domain to NONE if
               it's not already NONE.  This should cause each
@@ -45,11 +46,16 @@ cat << EOF
               Server pods to exit normally, and then proceed
               to phase 3.
 
-    Phase 3:  Periodically delete all remaining kubernetes resources
+    Phase 3:  Delete each domain-uid's helm chart using
+              "helm delete --purge".  This normally should domain
+              up all remaining k8s domain resources except
+              for domain secrets.
+
+    Phase 4:  Periodically delete any remaining kubernetes resources
               for the specified domains, including any pods
-              leftover from phase 2.  Exit and fail if max-seconds
-              is exceeded and there are any leftover kubernetes
-              resources.
+              leftover from previous phases  Exit and fail if
+              max-seconds is exceeded and there are any leftover
+              kubernetes resources.
 
   This script exits with a zero status on success, and a 
   non-zero status on failure.
@@ -58,9 +64,16 @@ EOF
 
 function deleteVoyager {
   local VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
-  if [ `kubectl get crd $VOYAGER_ING_NAME |grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
-    if [ `kubectl get $VOYAGER_ING_NAME -l weblogic.domainName --all-namespaces=true | grep "voyager" | wc -l` -eq 0 ]; then
-      echo @@ There are no voyager ingress, about to uninstall voyager.
+  kubectl get crd $VOYAGER_ING_NAME > /dev/null 2>&1
+  if [ ! $? -eq 0 ]; then
+    # voyager not installed, so skip its cleanup
+    return
+  fi
+  if [ `kubectl get $VOYAGER_ING_NAME -l weblogic.domainName --all-namespaces=true | grep "voyager" | wc -l` -eq 0 ]; then
+    echo @@ There are no voyager ingress, about to uninstall voyager.
+    if [ "$test_mode" = "true" ]; then
+      echo "Test mode:  Since we are in test mode, skipping external call to deleteVoyagerOperator in imported script ${scriptDir}/internal/utility.sh"
+    else
       deleteVoyagerOperator
     fi
   fi
@@ -101,8 +114,10 @@ function getDomainResources {
     NAMESPACED_TYPES="domain,$NAMESPACED_TYPES"
   fi
 
+  # if voyager crd exists, look for voyager artifacts too:
   VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
-  if [ `kubectl get crd $VOYAGER_ING_NAME |grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+  kubectl get crd $VOYAGER_ING_NAME > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
     NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
   fi
 
@@ -130,13 +145,15 @@ function getDomainResources {
 #
 # Internal helper function
 #   This function first sets the startupControl of each Domain to NONE
-#   and waits up to half of $2 for pods to 'self delete'.  It then deletes
-#   all remaining k8s resources for domain $1 (including any remaining pods)
-#   and retries up to $2 seconds.
+#   and waits up to half of $2 for pods to 'self delete'.  It then performs
+#   a helm delete on $1, and finally it directly deletes
+#   any remaining k8s resources for domain $1 (including any remaining pods)
+#   and retries these direct deletes up to $2 seconds.
 #
 #   If $1 has special value "all", it deletes all domains in all namespaces.
 #
-#   If global $test_mode is true, show candidate actions but don't actually perform them
+#   If global $test_mode is true, it shows candidate actions but doesn't 
+#   actually perform them
 #
 function deleteDomains {
 
@@ -168,7 +185,10 @@ function deleteDomains {
     # Exit if all k8s resources deleted or max wait seconds exceeded.
 
     if [ $allcount -eq 0 ]; then
+      # The following 'deleteVoyager' function deletes remaining voyager LB resources,
+      # but first makes sure that no other domains are still using it.
       deleteVoyager
+
       echo @@ Success.
       rm -f $tempfile
       exit 0
@@ -182,19 +202,21 @@ function deleteDomains {
     # In phase 1, set the startupControl of each domain to NONE and then immediately
     # proceed to phase 2.  If there are no domains or WLS pods, we also immediately go to phase 2.
 
-    if [ $phase -eq 1 -a $podcount -gt 0 ]; then
-      echo @@ "Setting startupControl to NONE on each domain (this should cause operator(s) to initiate a controlled shutdown of the domain's pods.)"
-      cat $tempfile | grep "^Domain" | while read line; do 
-        local name="`echo $line | awk '{ print $2 }'`"
-        local namespace="`echo $line | awk '{ print $4 }'`"
-        if [ "$test_mode" = "true" ]; then
-          echo "kubectl patch domain $name -n $namespace -p '{\"spec\":{\"startupControl\":\"NONE\"}}' --type merge"
-        else
-          kubectl patch domain $name -n $namespace -p '{"spec":{"startupControl":"NONE"}}' --type merge
-        fi
-      done
+    if [ $phase -eq 1 ]; then
+      phase=2
+      if [ $podcount -gt 0 ]; then
+        echo @@ "Setting startupControl to NONE on each domain (this should cause operator(s) to initiate a controlled shutdown of the domain's pods.)"
+        cat $tempfile | grep "^Domain" | while read line; do 
+          local name="`echo $line | awk '{ print $2 }'`"
+          local namespace="`echo $line | awk '{ print $4 }'`"
+          if [ "$test_mode" = "true" ]; then
+            echo "kubectl patch domain $name -n $namespace -p '{\"spec\":{\"startupControl\":\"NONE\"}}' --type merge"
+          else
+            kubectl patch domain $name -n $namespace -p '{"spec":{"startupControl":"NONE"}}' --type merge
+          fi
+        done
+      fi
     fi
-    phase=2
 
     # In phase 2, wait for the WLS pod count to go down to 0 for at most half
     # of 'maxwaitsecs'.  Otherwise proceed immediately to phase 3.
@@ -202,18 +224,45 @@ function deleteDomains {
     if [ $phase -eq 2 ]; then
       if [ $podcount -eq 0 ]; then
         echo @@ All pods shutdown, about to directly delete remaining resources.
+        phase=3
       elif [ $((mnow - mstart)) -gt $((maxwaitsecs / 2)) ]; then
         echo @@ Warning! $podcount WebLogic Server pods remaining but wait time exceeds half of max wait seconds.  About to directly delete all remaining resources, including the leftover pods.
+        phase=3
       else
         echo @@ "Waiting for operator to shutdown pods (will wait for no more than half of max wait seconds before directly deleting them)."
         sleep 3
         continue
       fi
     fi
-    phase=3
 
-    # In phase 3, directly delete all k8s resources for the given domainUids
-    # (including any leftover WLS pods from phases 1 & 2).
+    # In phase 3, helm delete the given domainUids.
+
+    if [ $phase -eq 3 ]; then
+      phase=4
+      if [ ! -x "$(command -v helm)" ]; then
+        echo @@ "Skipping helm delete because helm not installed"
+        continue
+      fi
+      echo "@@ About to do helm delete(s) (if any)."
+      if [ "$1" = "all" ]; then
+        # helm delete all domain-uids that have chart name "weblogic-domain"
+        helm list | grep weblogic-domain | awk '{ print $1 }' | xargs -L1 --no-run-if-empty echo helm delete --purge
+        if [ ! "$test_mode" = "true" ]; then
+          helm list | grep weblogic-domain | awk '{ print $1 }' | xargs -L1 --no-run-if-empty helm delete --purge
+        fi
+      else
+        # helm delete the comma separated list of domain-uids in $1
+        echo -n "$1" | xargs -d, -L1 --no-run-if-empty echo helm delete --purge
+        if [ ! "$test_mode" = "true" ]; then
+          echo -n "$1" | xargs -d, -L1 --no-run-if-empty helm delete --purge
+        fi
+      fi
+      sleep 3
+      continue
+    fi
+
+    # In phase 4, directly delete remaining k8s resources for the given domainUids
+    # (including any leftover WLS pods from previous phases).
 
     # for each namespace with leftover resources, try delete them
     cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
