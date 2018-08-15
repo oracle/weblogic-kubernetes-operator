@@ -557,16 +557,6 @@ function setup_jenkins {
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
 
     docker images
-
-    trace "Helm installation starts" 
-    wget -q -O  /tmp/helm-v2.7.2-linux-amd64.tar.gz https://kubernetes-helm.storage.googleapis.com/helm-v2.7.2-linux-amd64.tar.gz
-    mkdir /tmp/helm
-    tar xzf /tmp/helm-v2.7.2-linux-amd64.tar.gz -C /tmp/helm
-    chmod +x /tmp/helm/linux-amd64/helm
-    /usr/local/packages/aime/ias/run_as_root "cp /tmp/helm/linux-amd64/helm /usr/bin/"
-    rm -rf /tmp/helm
-    helm init
-    trace "Helm is configured."
 }
 
 # setup_local is for arbitrary dev hosted linux - it assumes docker & k8s are already installed
