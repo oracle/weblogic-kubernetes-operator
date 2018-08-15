@@ -26,7 +26,6 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,8 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 @SuppressWarnings("deprecation")
 public abstract class PodStepContext {
@@ -93,6 +93,8 @@ public abstract class PodStepContext {
     return podModel;
   }
 
+  abstract ServerSpec getServerSpec();
+
   // ------------------------ data methods ----------------------------
 
   String getNamespace() {
@@ -100,11 +102,15 @@ public abstract class PodStepContext {
   }
 
   String getDomainUID() {
-    return info.getDomain().getSpec().getDomainUID();
+    return getDomain().getDomainUID();
+  }
+
+  Domain getDomain() {
+    return info.getDomain();
   }
 
   String getDomainName() {
-    return info.getDomain().getSpec().getDomainName();
+    return getDomain().getDomainName();
   }
 
   String getPodName() {
@@ -112,11 +118,11 @@ public abstract class PodStepContext {
   }
 
   String getAsName() {
-    return info.getDomain().getSpec().getAsName();
+    return getDomain().getAsName();
   }
 
   Integer getAsPort() {
-    return info.getDomain().getSpec().getAsPort();
+    return getDomain().getAsPort();
   }
 
   abstract Integer getPort();
@@ -124,7 +130,7 @@ public abstract class PodStepContext {
   abstract String getServerName();
 
   private String getAdminSecretName() {
-    return info.getDomain().getSpec().getAdminSecret().getName();
+    return getDomain().getAdminSecret().getName();
   }
 
   private List<V1PersistentVolumeClaim> getClaims() {
@@ -137,11 +143,6 @@ public abstract class PodStepContext {
 
   ServerKubernetesObjects getSko() {
     return ServerKubernetesObjectsManager.getOrCreate(info, getServerName());
-  }
-
-  List<ServerStartup> getServerStartups() {
-    List<ServerStartup> startups = info.getDomain().getSpec().getServerStartup();
-    return startups != null ? startups : Collections.emptyList();
   }
 
   // ----------------------- step methods ------------------------------
@@ -507,12 +508,12 @@ public abstract class PodStepContext {
   }
 
   private String getImageName() {
-    String imageName = info.getDomain().getSpec().getImage();
+    String imageName = getServerSpec().getImage();
     return isNullOrEmpty(imageName) ? KubernetesConstants.DEFAULT_IMAGE : imageName;
   }
 
   String getImagePullPolicy() {
-    String imagePullPolicy = info.getDomain().getSpec().getImagePullPolicy();
+    String imagePullPolicy = getServerSpec().getImagePullPolicy();
     return isNullOrEmpty(imagePullPolicy) ? getInferredImagePullPolicy() : imagePullPolicy;
   }
 
