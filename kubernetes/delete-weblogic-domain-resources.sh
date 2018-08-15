@@ -47,7 +47,7 @@ cat << EOF
               to phase 3.
 
     Phase 3:  Delete each domain-uid's helm chart using
-              "helm delete --purge".  This normally should domain
+              "helm delete --purge".  This normally should clean
               up all remaining k8s domain resources except
               for domain secrets.
 
