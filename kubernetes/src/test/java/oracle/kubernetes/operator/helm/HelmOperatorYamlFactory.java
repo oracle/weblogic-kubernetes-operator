@@ -27,9 +27,8 @@ public class HelmOperatorYamlFactory extends OperatorYamlFactory {
   @Override
   public GeneratedOperatorObjects generate(OperatorValues inputValues) throws Exception {
     Map<String, Object> overrides = ((HelmOperatorValues) inputValues).createMap();
-    String namespace = (String) overrides.get("operatorNamespace");
     InstallArgs installArgs =
-        new InstallArgs(OPERATOR_CHART, OPERATOR_RELEASE, namespace, overrides);
+        new InstallArgs(OPERATOR_CHART, OPERATOR_RELEASE, inputValues.getNamespace(), overrides);
     ProcessedChart chart = new ProcessedChart(installArgs);
 
     assertThat(chart.getError(), emptyOrNullString());
