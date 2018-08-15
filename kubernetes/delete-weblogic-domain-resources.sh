@@ -53,9 +53,14 @@ cat << EOF
 
     Phase 4:  Periodically delete any remaining kubernetes resources
               for the specified domains, including any pods
-              leftover from previous phases  Exit and fail if
+              leftover from previous phases.  Exit and fail if
               max-seconds is exceeded and there are any leftover
               kubernetes resources.
+
+    Phase 5:  Delete any singleton Voyager load balancer resources
+              if there are no kubernetes resources left with
+              a domainUID for any domain (not just the domains
+              deleted by this script).
 
   This script exits with a zero status on success, and a 
   non-zero status on failure.
