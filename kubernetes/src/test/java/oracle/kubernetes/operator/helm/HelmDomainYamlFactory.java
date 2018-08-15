@@ -43,9 +43,9 @@ public class HelmDomainYamlFactory extends DomainYamlFactory {
 
     YamlGenerator(DomainValues inputValues) throws Exception {
       Map<String, Object> overrides = ((HelmDomainValues) inputValues).createMap();
-      String release = (String) overrides.get("domainUID");
-      String namespace = (String) overrides.get("namespace");
-      InstallArgs installArgs = new InstallArgs(DOMAIN_CHART, release, namespace, overrides);
+      InstallArgs installArgs =
+          new InstallArgs(
+              DOMAIN_CHART, inputValues.getDomainUID(), inputValues.getNamespace(), overrides);
       chart = new ProcessedChart(installArgs);
 
       assertThat(chart.getError(), emptyOrNullString());

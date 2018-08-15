@@ -1008,7 +1008,9 @@ function run_create_domain_job {
       sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
     fi
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
+    if [ "$USE_HELM" != "true" ]; then
+      sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
+    fi
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
     sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
@@ -1063,7 +1065,7 @@ function run_create_domain_job {
     if [ "$USE_HELM" = "true" ]; then
       trace "Run helm install to create the domain, see \"$outfile\" for tracing."
       cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-domain --name $1 -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
+      helm install weblogic-domain --name $DOMAIN_UID -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
