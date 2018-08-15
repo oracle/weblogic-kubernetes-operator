@@ -7,12 +7,14 @@ package oracle.kubernetes.weblogic.domain.v1;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1SecretReference;
 import javax.validation.Valid;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
+@SuppressWarnings("deprecation")
 public class Domain {
 
   /**
@@ -155,6 +157,44 @@ public class Domain {
     return this;
   }
 
+  public ServerSpec getAdminServerSpec() {
+    return new ServerSpecV1Impl(spec).withServerStartup(getServerStartup(spec.getAsName()));
+  }
+
+  private ServerStartup getServerStartup(String name) {
+    if (spec.getServerStartup() == null) return null;
+
+    for (ServerStartup ss : spec.getServerStartup()) {
+      if (ss.getServerName().equals(name)) {
+        return ss;
+      }
+    }
+
+    return null;
+  }
+
+  public ServerSpec getServer(String clusterName, String serverName) {
+    return new ServerSpecV1Impl(spec)
+        .withServerStartup(getServerStartup(serverName))
+        .withClusterStartup(getClusterStartup(clusterName));
+  }
+
+  private ClusterStartup getClusterStartup(String clusterName) {
+    if (spec.getClusterStartup() == null) return null;
+
+    for (ClusterStartup cs : spec.getClusterStartup()) {
+      if (cs.getClusterName().equals(clusterName)) {
+        return cs;
+      }
+    }
+
+    return null;
+  }
+
+  public ClusterSpec getCluster(String clusterName) {
+    return null;
+  }
+
   /**
    * DomainSpec is a description of a domain.
    *
@@ -216,6 +256,50 @@ public class Domain {
     return this;
   }
 
+  /**
+   * Reference to secret containing domain administrator username and password.
+   *
+   * @return admin secret
+   */
+  public V1SecretReference getAdminSecret() {
+    return spec.getAdminSecret();
+  }
+
+  /**
+   * Returns the name of the admin server.
+   *
+   * @return admin server name
+   */
+  public String getAsName() {
+    return spec.getAsName();
+  }
+
+  /**
+   * Returns the port used by the admin server.
+   *
+   * @return admin server port
+   */
+  public Integer getAsPort() {
+    return spec.getAsPort();
+  }
+  /**
+   * Returns the domain unique identifier.
+   *
+   * @return domain UID
+   */
+  public String getDomainUID() {
+    return spec.getDomainUID();
+  }
+
+  /**
+   * Returns the domain name
+   *
+   * @return domain name
+   */
+  public String getDomainName() {
+    return spec.getDomainName();
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -243,7 +327,7 @@ public class Domain {
     if (other == this) {
       return true;
     }
-    if ((other instanceof Domain) == false) {
+    if (!(other instanceof Domain)) {
       return false;
     }
     Domain rhs = ((Domain) other);
