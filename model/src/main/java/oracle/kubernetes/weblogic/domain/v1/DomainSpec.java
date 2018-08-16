@@ -788,7 +788,7 @@ public class DomainSpec {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param clusters clusters
+   * @param servers servers
    */
   public void setServers(Map<String, NonClusteredServer> servers) {
     this.servers = servers;
@@ -809,7 +809,7 @@ public class DomainSpec {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param clusters clusters
+   * @param servers servers
    * @return this
    */
   public DomainSpec withServers(Map<String, NonClusteredServer> servers) {
@@ -833,7 +833,7 @@ public class DomainSpec {
    * </ol>
    *
    * @param name cluster name
-   * @param cluster cluster
+   * @param server server
    */
   public void setServer(String name, NonClusteredServer server) {
     this.servers.put(name, server);
@@ -855,7 +855,7 @@ public class DomainSpec {
    * </ol>
    *
    * @param name name
-   * @param cluster cluster
+   * @param server server
    * @return this
    */
   public DomainSpec withServer(String name, NonClusteredServer server) {
@@ -924,7 +924,7 @@ public class DomainSpec {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param servers servers
+   * @param clusters clusters
    */
   public void setClusters(Map<String, Cluster> clusters) {
     this.clusters = clusters;
@@ -943,7 +943,7 @@ public class DomainSpec {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param servers servers
+   * @param clusters clusters
    * @return this
    */
   public DomainSpec withClusters(Map<String, Cluster> clusters) {
@@ -965,7 +965,7 @@ public class DomainSpec {
    * </ol>
    *
    * @param name server name
-   * @param server server
+   * @param cluster cluster
    */
   public void setCluster(String name, Cluster cluster) {
     this.clusters.put(name, cluster);
@@ -985,7 +985,7 @@ public class DomainSpec {
    * </ol>
    *
    * @param name name
-   * @param server server
+   * @param cluster cluster
    * @return this
    */
   public DomainSpec withCluster(String name, Cluster cluster) {
