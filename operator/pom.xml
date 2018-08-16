@@ -7,12 +7,10 @@
     <parent>
        <groupId>oracle.kubernetes</groupId>
        <artifactId>operator-parent</artifactId>
-       <version>1.1</version>
+       <version>${operator.version}</version>
     </parent>
 
-	<groupId>oracle.kubernetes</groupId>
     <artifactId>weblogic-kubernetes-operator</artifactId>
-	<version>1.1</version>
 
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>operator-runtime</name>
