@@ -16,12 +16,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * ClusterStartup describes the desired startup state and passed environment variables for a
- * specific cluster server.
- *
- * @deprecated Use the DomainSpec's clusters and clusterDefaults properties.
+ * ClusterStarup describes the desired startup state and passed environment variables for a specific
+ * cluster.
  */
-@Deprecated
 public class ClusterStartup {
 
   /**
