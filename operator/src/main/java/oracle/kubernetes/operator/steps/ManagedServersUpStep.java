@@ -30,6 +30,14 @@ import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static NextStepFactory NEXT_STEP_FACTORY =
+      (info, servers, next) ->
+          scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
+
+  // an interface to provide a hook for unit testing.
+  interface NextStepFactory {
+    Step createServerStep(DomainPresenceInfo info, Collection<String> servers, Step next);
+  }
 
   public ManagedServersUpStep(Step next) {
     super(next);
@@ -66,7 +74,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     WlsDomainConfig scan = info.getScan();
-    Collection<ServerStartupInfo> ssic = new ArrayList<ServerStartupInfo>();
+    Collection<ServerStartupInfo> ssic = new ArrayList<>();
 
     String asName = spec.getAsName();
 
@@ -81,13 +89,13 @@ public class ManagedServersUpStep extends Step {
     info.getExplicitRestartClusters().clear();
 
     boolean startAll = false;
-    Collection<String> servers = new ArrayList<String>();
+    Collection<String> servers = new ArrayList<>();
     switch (sc) {
       case StartupControlConstants.ALL_STARTUPCONTROL:
         startAll = true;
       case StartupControlConstants.AUTO_STARTUPCONTROL:
       case StartupControlConstants.SPECIFIED_STARTUPCONTROL:
-        Collection<String> clusters = new ArrayList<String>();
+        Collection<String> clusters = new ArrayList<>();
 
         // start specified servers with their custom options
         List<ServerStartup> ssl = spec.getServerStartup();
@@ -214,18 +222,15 @@ public class ManagedServersUpStep extends Step {
         info.setServerStartupInfo(ssic);
         LOGGER.exiting();
         return doNext(
-            scaleDownIfNecessary(
-                info,
-                servers,
-                new ClusterServicesStep(info, new ManagedServerUpIteratorStep(ssic, getNext()))),
+            NEXT_STEP_FACTORY.createServerStep(
+                info, servers, new ManagedServerUpIteratorStep(ssic, getNext())),
             packet);
       case StartupControlConstants.ADMIN_STARTUPCONTROL:
       case StartupControlConstants.NONE_STARTUPCONTROL:
       default:
         info.setServerStartupInfo(null);
         LOGGER.exiting();
-        return doNext(
-            scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, getNext())), packet);
+        return doNext(NEXT_STEP_FACTORY.createServerStep(info, servers, getNext()), packet);
     }
   }
 

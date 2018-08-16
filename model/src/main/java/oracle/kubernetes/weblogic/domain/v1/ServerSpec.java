@@ -6,6 +6,15 @@ import java.util.List;
 public interface ServerSpec {
 
   /**
+   * Temporary: to enable refactoring only. Provides a means to obtain the old implementation object
+   * from the new one.
+   *
+   * @deprecated should be removed once the refactoring is done.
+   */
+  @Deprecated
+  ServerStartup getServerStartup();
+
+  /**
    * The WebLogic Docker image.
    *
    * @return image

@@ -2,6 +2,8 @@ package oracle.kubernetes.weblogic.domain.v1;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -40,7 +42,8 @@ public class DomainV1Test {
                   .withDomainName(DOMAIN_NAME)
                   .withDomainUID(DOMAIN_UID)
                   .withImage(IMAGE_NAME)
-                  .withImagePullPolicy(IMAGE_PULL_POLICY));
+                  .withImagePullPolicy(IMAGE_PULL_POLICY)
+                  .withStartupControl(NONE_STARTUPCONTROL));
 
   @Test
   public void canGetAdminServerInfoFromDomain() {
@@ -53,6 +56,25 @@ public class DomainV1Test {
   public void canGetDomainInfoFromDomain() {
     assertThat(domain.getDomainName(), equalTo(DOMAIN_NAME));
     assertThat(domain.getDomainUID(), equalTo(DOMAIN_UID));
+  }
+
+  @Test
+  public void whenStartupControlSpecified_returnIt() {
+    assertThat(domain.getStartupControl(), equalTo(NONE_STARTUPCONTROL));
+  }
+
+  @Test
+  public void whenStartupControlNotSpecified_defaultToAuto() {
+    domain.getSpec().setStartupControl(null);
+
+    assertThat(domain.getStartupControl(), equalTo(AUTO_STARTUPCONTROL));
+  }
+
+  @Test
+  public void whenStartupControlIsMixedCase_capitalizeIt() {
+    domain.getSpec().setStartupControl("auto");
+
+    assertThat(domain.getStartupControl(), equalTo("AUTO"));
   }
 
   @Test
