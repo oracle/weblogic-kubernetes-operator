@@ -960,7 +960,7 @@ public class Main {
                   }
                 }
               } else if (clusterName != null) {
-                V1Service oldService = info.getClusters().put(clusterName, null);
+                V1Service oldService = info.getClusters().remove(clusterName);
                 if (oldService != null) {
                   // Service was deleted, but clusters still contained a non-null entry
                   LOGGER.info(
