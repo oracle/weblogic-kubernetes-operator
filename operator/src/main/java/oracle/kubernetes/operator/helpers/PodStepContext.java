@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -508,23 +506,11 @@ public abstract class PodStepContext {
   }
 
   private String getImageName() {
-    String imageName = getServerSpec().getImage();
-    return isNullOrEmpty(imageName) ? KubernetesConstants.DEFAULT_IMAGE : imageName;
+    return getServerSpec().getImage();
   }
 
   String getImagePullPolicy() {
-    String imagePullPolicy = getServerSpec().getImagePullPolicy();
-    return isNullOrEmpty(imagePullPolicy) ? getInferredImagePullPolicy() : imagePullPolicy;
-  }
-
-  private boolean useLatestImage() {
-    return getImageName().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
-  }
-
-  private String getInferredImagePullPolicy() {
-    return useLatestImage()
-        ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
-        : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+    return getServerSpec().getImagePullPolicy();
   }
 
   protected List<String> getContainerCommand() {

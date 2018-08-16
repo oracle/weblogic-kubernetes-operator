@@ -1,5 +1,7 @@
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -9,6 +11,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.Arrays;
 import java.util.Collections;
+import oracle.kubernetes.operator.KubernetesConstants;
 import org.junit.Test;
 
 public class DomainV1Test {
@@ -61,8 +64,6 @@ public class DomainV1Test {
 
   // Confirms the value of fields that are constant across the domain
   private void verifyStandardFields(ServerSpec spec) {
-    assertThat(spec.getDomainName(), equalTo(DOMAIN_NAME));
-    assertThat(spec.getDomainUID(), equalTo(DOMAIN_UID));
     assertThat(spec.getImage(), equalTo(IMAGE_NAME));
     assertThat(spec.getImagePullPolicy(), equalTo(IMAGE_PULL_POLICY));
   }
@@ -191,5 +192,34 @@ public class DomainV1Test {
     ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
 
     assertThat(spec.getDesiredState(), equalTo("STAND-BY"));
+  }
+
+  @Test
+  public void whenNotSpecified_imageHasDefault() {
+    domain.getSpec().setImage(null);
+
+    ServerSpec spec = domain.getAdminServerSpec();
+
+    assertThat(spec.getImage(), equalTo(KubernetesConstants.DEFAULT_IMAGE));
+  }
+
+  @Test
+  public void whenImageTagIsLatestAndPullPolicyNotSpecified_pullPolicyIsAlways() {
+    domain.getSpec().setImage("test:latest");
+    domain.getSpec().setImagePullPolicy(null);
+
+    ServerSpec spec = domain.getAdminServerSpec();
+
+    assertThat(spec.getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+  }
+
+  @Test
+  public void whenImageTagIsNotLatestAndPullPolicyNotSpecified_pullPolicyIsIfAbsent() {
+    domain.getSpec().setImage("test:1.0");
+    domain.getSpec().setImagePullPolicy(null);
+
+    ServerSpec spec = domain.getAdminServerSpec();
+
+    assertThat(spec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
   }
 }

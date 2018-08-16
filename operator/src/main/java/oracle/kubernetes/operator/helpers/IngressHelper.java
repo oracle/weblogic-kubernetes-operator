@@ -159,11 +159,11 @@ public class IngressHelper {
     }
 
     private String getUid() {
-      return info.getDomain().getSpec().getDomainUID();
+      return info.getDomain().getDomainUID();
     }
 
     private String getDomainName() {
-      return info.getDomain().getSpec().getDomainName();
+      return info.getDomain().getDomainName();
     }
 
     V1beta1IngressSpec createIngressSpec() {
