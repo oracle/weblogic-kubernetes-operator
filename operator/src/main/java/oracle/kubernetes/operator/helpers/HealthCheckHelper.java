@@ -106,6 +106,8 @@ public final class HealthCheckHelper {
    * Verify Access.
    *
    * @param version Kubernetes version
+   * @param operatorNamespace operator namespace
+   * @param ns target namespace
    */
   public static void performSecurityChecks(
       KubernetesVersion version, String operatorNamespace, String ns) {
