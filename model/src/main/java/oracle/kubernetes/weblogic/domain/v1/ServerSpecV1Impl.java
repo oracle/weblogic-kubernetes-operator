@@ -1,8 +1,14 @@
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+
 import io.kubernetes.client.models.V1EnvVar;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import oracle.kubernetes.operator.KubernetesConstants;
 
 public class ServerSpecV1Impl implements ServerSpec {
   private DomainSpec domainSpec;
@@ -40,23 +46,21 @@ public class ServerSpecV1Impl implements ServerSpec {
   }
 
   @Override
-  public String getDomainUID() {
-    return domainSpec.getDomainUID();
-  }
-
-  @Override
-  public String getDomainName() {
-    return domainSpec.getDomainName();
-  }
-
-  @Override
   public String getImage() {
-    return domainSpec.getImage();
+    return Optional.ofNullable(domainSpec.getImage()).orElse(DEFAULT_IMAGE);
   }
 
   @Override
   public String getImagePullPolicy() {
-    return domainSpec.getImagePullPolicy();
+    return Optional.ofNullable(domainSpec.getImagePullPolicy()).orElse(getInferredPullPolicy());
+  }
+
+  private boolean useLatestImage() {
+    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
+  }
+
+  private String getInferredPullPolicy() {
+    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
   }
 
   @Override
@@ -66,8 +70,7 @@ public class ServerSpecV1Impl implements ServerSpec {
 
   @Override
   public String getDesiredState() {
-    String state = getConfiguredDesiredState();
-    return state != null ? state : "RUNNING";
+    return Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
   }
 
   private String getConfiguredDesiredState() {

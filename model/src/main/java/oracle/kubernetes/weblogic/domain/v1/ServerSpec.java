@@ -4,19 +4,6 @@ import io.kubernetes.client.models.V1EnvVar;
 import java.util.List;
 
 public interface ServerSpec {
-  /**
-   * Returns the domain unique identifier.
-   *
-   * @return domain UID
-   */
-  String getDomainUID();
-
-  /**
-   * Returns the domain name
-   *
-   * @return domain name
-   */
-  String getDomainName();
 
   /**
    * The WebLogic Docker image.
