@@ -107,7 +107,7 @@ The following parameters must be provided in the input file.
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
-| `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: $(DOMAIN_NAME), $(DOMAIN_HOME}, $(ADMIN_NAME), $(ADMIN_PORT), and $(SERVER_NAME). | `-Dweblogic.StdoutDebugEnabled=false` | 
+| `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: $(DOMAIN_NAME), $(DOMAIN_HOME), $(ADMIN_NAME), $(ADMIN_PORT), and $(SERVER_NAME). | `-Dweblogic.StdoutDebugEnabled=false` | 
 | `loadBalancer` | Type of load balancer to create.  Legal values are `NONE` and `TRAEFIK`. | `TRAEFIK` |
 | `loadBalancerDashboardPort` | Node port for the load balancer to accept dashboard traffic. | `30315` |
 | `loadBalancerWebPort` | Node port for the load balancer to accept user traffic. | `30305` |
