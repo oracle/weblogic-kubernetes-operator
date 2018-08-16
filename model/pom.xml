@@ -4,15 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
   
-  <parent>
-    <groupId>oracle.kubernetes</groupId>
-    <artifactId>operator-parent</artifactId>
-    <version>1.0</version>
-  </parent>
+    <parent>
+       <groupId>oracle.kubernetes</groupId>
+       <artifactId>operator-parent</artifactId>
+       <version>1.1</version>
+    </parent>
 
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-model</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>operator-model</name>

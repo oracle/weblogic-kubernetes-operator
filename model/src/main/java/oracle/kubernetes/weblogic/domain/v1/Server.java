@@ -309,6 +309,7 @@ public class Server {
    * <p>By default, the server will not be exposed outside the Kubernetes cluster.
    *
    * @param nodePort node port
+   * @return this
    */
   public Server withNodePort(Integer nodePort) {
     this.nodePort = nodePort;
@@ -443,7 +444,7 @@ public class Server {
    * An optional list of references to secrets in the same namespace to use for pulling the WebLogic
    * Docker image.
    *
-   * @param image pull secrets
+   * @param imagePullSecrets image pull secrets
    */
   public void setImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
@@ -453,7 +454,7 @@ public class Server {
    * An optional list of references to secrets in the same namespace to use for pulling the WebLogic
    * Docker image.
    *
-   * @param image pull secrets
+   * @param imagePullSecrets image pull secrets
    * @return this
    */
   public Server withImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
@@ -555,7 +556,7 @@ public class Server {
    *
    * <p>Defaults to false.
    *
-   * @parama gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
+   * @param gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
    */
   public void setGracefulShutdownIgnoreSessions(Boolean gracefulShutdownIgnoreSessions) {
     this.gracefulShutdownIgnoreSessions = gracefulShutdownIgnoreSessions;
@@ -567,7 +568,7 @@ public class Server {
    *
    * <p>Defaults to false.
    *
-   * @parama gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
+   * @param gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
    * @return this
    */
   public Server withGracefulShutdownIgnoreSessions(Boolean gracefulShutdownIgnoreSessions) {

@@ -38,7 +38,6 @@ public class LifeCycleHelper {
    *
    * @param domain the domain that the customer configured
    * @param clusterConfig the cluster config that holds the cluster's new replicas count
-   * @return a new domain spec with an updated replica count
    */
   public void updateDomainSpec(Domain domain, ClusterConfig clusterConfig) {
     LOGGER.entering(domain, clusterConfig);
