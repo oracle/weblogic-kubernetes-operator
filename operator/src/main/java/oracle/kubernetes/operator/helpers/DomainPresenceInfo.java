@@ -56,7 +56,7 @@ public class DomainPresenceInfo {
    *
    * @param domain Domain
    */
-  DomainPresenceInfo(Domain domain) {
+  public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.serverStartupInfo = new AtomicReference<>(null);

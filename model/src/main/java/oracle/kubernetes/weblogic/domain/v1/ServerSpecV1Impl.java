@@ -46,6 +46,11 @@ public class ServerSpecV1Impl implements ServerSpec {
   }
 
   @Override
+  public ServerStartup getServerStartup() {
+    return serverStartup;
+  }
+
+  @Override
   public String getImage() {
     return Optional.ofNullable(domainSpec.getImage()).orElse(DEFAULT_IMAGE);
   }

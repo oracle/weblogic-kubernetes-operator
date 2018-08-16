@@ -4,10 +4,13 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
+import java.util.Optional;
 import javax.validation.Valid;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -189,6 +192,10 @@ public class Domain {
     }
 
     return null;
+  }
+
+  public String getStartupControl() {
+    return Optional.ofNullable(spec.getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
   }
 
   public ClusterSpec getCluster(String clusterName) {

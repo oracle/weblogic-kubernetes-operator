@@ -41,17 +41,17 @@ public class DomainNormalizationTest {
   private List<Memento> mementos = new ArrayList<>();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     for (Memento memento : mementos) memento.revert();
   }
 
   @Test
-  public void whenDomainSpecHasNulls_normalizationSetsDefaultValues() throws Exception {
+  public void whenDomainSpecHasNulls_normalizationSetsDefaultValues() {
     domainSpec.setExportT3Channels(null);
     domainSpec.setServerStartup(null);
     domainSpec.setClusterStartup(null);
@@ -71,7 +71,7 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasDefinedValues_normalizationDoesNotChangeThem() throws Exception {
+  public void whenDomainSpecHasDefinedValues_normalizationDoesNotChangeThem() {
     domainSpec.setImage(LATEST_IMAGE);
     domainSpec.setImagePullPolicy(IMAGE_PULL_POLICY);
     domainSpec.setExportT3Channels(asList(T3_CHANNELS));
@@ -108,8 +108,7 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasLatestImageAndNoPullPolicy_normalizationSetsAlwaysPull()
-      throws Exception {
+  public void whenDomainSpecHasLatestImageAndNoPullPolicy_normalizationSetsAlwaysPull() {
     domainSpec.setImage(LATEST_IMAGE);
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
@@ -119,8 +118,7 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasServerStartupsWithoutDesiredState_normalizationSetsRunningState()
-      throws Exception {
+  public void whenDomainSpecHasServerStartupsWithoutDesiredState_normalizationSetsRunningState() {
     domainSpec.setServerStartup(
         asList(
             new ServerStartup().withServerName("server1").withEnv(singletonList(ENV_VAR1)),
@@ -143,8 +141,7 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasServerStartupsWithoutEnv_normalizationSetsEmptyList()
-      throws Exception {
+  public void whenDomainSpecHasServerStartupsWithoutEnv_normalizationSetsEmptyList() {
     domainSpec.setServerStartup(
         asList(
             new ServerStartup().withServerName("server1").withDesiredState("ADMIN").withEnv(null),
@@ -163,8 +160,7 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasClusterStartupsWithoutDesiredState_normalizationSetsRunningState()
-      throws Exception {
+  public void whenDomainSpecHasClusterStartupsWithoutDesiredState_normalizationSetsRunningState() {
     domainSpec.setClusterStartup(
         singletonList(
             new ClusterStartup().withClusterName("cluster1").withEnv(asList(ENV_VAR2, ENV_VAR3))));
@@ -180,8 +176,7 @@ public class DomainNormalizationTest {
   }
 
   @Test
-  public void whenDomainSpecHasClusterStartupsWithoutEnv_normalizationSetsEmptyList()
-      throws Exception {
+  public void whenDomainSpecHasClusterStartupsWithoutEnv_normalizationSetsEmptyList() {
     domainSpec.setClusterStartup(
         asList(
             new ClusterStartup().withClusterName("cluster1").withDesiredState("ADMIN"),
