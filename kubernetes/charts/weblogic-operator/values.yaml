@@ -33,7 +33,7 @@ operatorServiceAccount: "weblogic-operator"
 domainsNamespaces: []
 
 # operatorImage specifies the docker image containing the operator code.
-operatorImage: "weblogic-kubernetes-operator:1.0"
+operatorImage: "weblogic-kubernetes-operator:1.1"
 
 # operatorImagePullPolicy specifies the image pull policy for the operator docker image.
 operatorImagePullPolicy: "IfNotPresent"
