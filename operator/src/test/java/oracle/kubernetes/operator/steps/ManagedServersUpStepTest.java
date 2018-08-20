@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.steps;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
@@ -22,14 +23,20 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
@@ -54,8 +61,11 @@ import org.junit.Test;
 @SuppressWarnings({"ConstantConditions", "SameParameterValue"})
 public class ManagedServersUpStepTest {
 
-  private static final String NS = "namespace";
   private static final String DOMAIN = "domain";
+  private static final String NS = "namespace";
+  private static final String UID = "uid1";
+  private static final String RUNNING_SERVERS =
+      "Running servers for domain with UID: uid1, running list: [admin, ms1, ms2]";
   private final Domain domain = createDomain();
 
   private Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
@@ -68,6 +78,7 @@ public class ManagedServersUpStepTest {
   private List<Memento> mementos = new ArrayList<>();
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
   private ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);
@@ -82,12 +93,12 @@ public class ManagedServersUpStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withReplicas(1);
+    return new DomainSpec().withDomainUID(UID).withReplicas(1);
   }
 
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(TestStepFactory.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
@@ -97,6 +108,40 @@ public class ManagedServersUpStepTest {
     for (Memento memento : mementos) memento.revert();
 
     testSupport.throwOnCompletionFailure();
+  }
+
+  @Test
+  public void whenEnabled_logCurrentServers() {
+    List<LogRecord> messages = new ArrayList<>();
+    consoleHandlerMemento.withLogLevel(Level.FINE).collectLogMessages(messages, RUNNING_SERVERS);
+    addRunningServer("admin");
+    addRunningServer("ms1");
+    addRunningServer("ms2");
+
+    invokeStep();
+
+    assertThat(messages, containsFine(RUNNING_SERVERS));
+  }
+
+  private void addRunningServer(String serverName) {
+    ServerKubernetesObjects sko =
+        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", serverName);
+    sko.getPod().set(new V1Pod());
+  }
+
+  @Test
+  public void addExplicitlyStartedClusterMembersToExplicitlyRestartedServers() {
+    addWlsCluster("cluster1", "ms1", "ms2");
+    addWlsCluster("cluster2", "ms3", "ms4");
+    addWlsCluster("cluster3", "ms5", "ms6");
+    domainPresenceInfo.getExplicitRestartClusters().addAll(Arrays.asList("cluster1", "cluster3"));
+
+    invokeStep();
+
+    assertThat(domainPresenceInfo.getExplicitRestartClusters(), empty());
+    assertThat(
+        domainPresenceInfo.getExplicitRestartServers(),
+        containsInAnyOrder("ms1", "ms2", "ms5", "ms6"));
   }
 
   @Test
@@ -383,13 +428,60 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
+  public void withStartSpecifiedWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
+    setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL);
+    setDefaultReplicas(3);
+    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
+  @Test
+  public void withStartNoneWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
+    setStartupControl(StartupControlConstants.NONE_STARTUPCONTROL);
+    setDefaultReplicas(3);
+    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
+  @Test
+  public void withStartAdminWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
+    setStartupControl(StartupControlConstants.ADMIN_STARTUPCONTROL);
+    setDefaultReplicas(3);
+    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
+  @Test
+  public void withStartAutoWhenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
+    setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
     setDefaultReplicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+  }
+
+  @Test
+  public void withStartAllWhenWlsClusterNotInDomainSpec_addClusteredServersToListUpWithoutLimit() {
+    setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
+    setDefaultReplicas(3);
+    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3", "ms4", "ms5"));
+    assertThat(getServerStartupInfo("ms4").clusterConfig, equalTo(getWlsCluster("cluster1")));
+    assertThat(getServerStartupInfo("ms4").serverConfig, equalTo(getWlsServer("ms4")));
   }
 
   @Test
@@ -404,30 +496,6 @@ public class ManagedServersUpStepTest {
     assertThat(getServerStartupInfo("ms1").clusterConfig, sameInstance(getWlsCluster("cluster1")));
     assertThat(getServerStartupInfo("ms1").envVars, nullValue());
     assertThat(getServerStartupInfo("ms1").serverStartup, nullValue());
-  }
-
-  @Test
-  public void withStartupControlNoneWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
-    setDefaultReplicas(3);
-    setStartupControl(StartupControlConstants.NONE_STARTUPCONTROL);
-    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(getServers(), empty());
-  }
-
-  @Test
-  public void withStartupControlAll_addClusteredServersToListUpWithoutLimit() {
-    setDefaultReplicas(3);
-    setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
-    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3", "ms4", "ms5"));
-    assertThat(getServerStartupInfo("ms4").clusterConfig, equalTo(getWlsCluster("cluster1")));
-    assertThat(getServerStartupInfo("ms4").serverConfig, equalTo(getWlsServer("ms4")));
   }
 
   @Test
