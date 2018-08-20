@@ -324,18 +324,30 @@ public class Domain {
    * @throws Exception
    */
   public void create() throws Exception {
-    StringBuffer cmd = new StringBuffer("kubectl create -f ");
-    cmd.append(userProjectsDir)
-        .append("/weblogic-domains/")
-        .append(domainUid)
-        .append("/domain-custom-resource.yaml");
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm install kubernetes/charts/weblogic-domain");
+    cmd.append(" --name ")
+        .append(domainProps.getProperty("domainUID"))
+        .append(" --values ")
+        .append(generatedInputYamlFile)
+        .append(" --set createWebLogicDomain=false --namespace ")
+        .append(domainNS)
+        .append(" --wait");
+    logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
     }
-    String output = result.stdout().trim();
-    logger.info("command to create domain " + cmd + " \n returned " + output);
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+
     verifyDomainCreated();
   }
 
@@ -346,12 +358,8 @@ public class Domain {
    */
   public void destroy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    StringBuffer cmd = new StringBuffer("kubectl delete -f ");
-    cmd.append(userProjectsDir)
-        .append("/weblogic-domains/")
-        .append(domainUid)
-        .append("/domain-custom-resource.yaml");
-    ExecResult result = ExecCommand.exec(cmd.toString());
+    String cmd = "helm del --purge " + domainUid;
+    ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command " + cmd + " failed, returned " + result.stderr());
@@ -409,8 +417,16 @@ public class Domain {
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
     }
     logger.info("Run the script to create domain");
-    StringBuffer cmd = new StringBuffer(createDomainScript);
-    cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm install kubernetes/charts/weblogic-domain");
+    cmd.append(" --name ")
+        .append(domainProps.getProperty("domainUID"))
+        .append(" --values ")
+        .append(generatedInputYamlFile)
+        .append(" --namespace ")
+        .append(domainNS)
+        .append(" --wait");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 1) {
@@ -510,13 +526,21 @@ public class Domain {
   private void generateInputYaml() throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
-    generatedInputYamlFile = parentDir + "/" + domainUid + "-inputs.yaml";
-    TestUtils.createInputFile(domainProps, inputTemplateFile, generatedInputYamlFile);
+    generatedInputYamlFile = parentDir + "/weblogic-domain-values.yaml";
+    TestUtils.createInputFile(domainProps, generatedInputYamlFile);
   }
 
   private void callCreateDomainScript() throws Exception {
-    StringBuffer cmd = new StringBuffer(createDomainScript);
-    cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm install kubernetes/charts/weblogic-domain");
+    cmd.append(" --name ")
+        .append(domainProps.getProperty("domainUID"))
+        .append(" --values ")
+        .append(generatedInputYamlFile)
+        .append(" --namespace ")
+        .append(domainNS)
+        .append(" --wait");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -530,9 +554,6 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
-    if (!outputStr.contains(CREATE_DOMAIN_JOB_MESSAGE)) {
-      throw new RuntimeException("FAILURE: Create domain Script failed..");
-    }
   }
 
   private void callShellScriptByExecToPod(String username, String password, String webappName)
@@ -635,8 +656,6 @@ public class Domain {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
-    createDomainScript = projectRoot + "/kubernetes/create-weblogic-domain.sh";
-    inputTemplateFile = projectRoot + "/kubernetes/create-weblogic-domain-inputs.yaml";
     domainUid = domainProps.getProperty("domainUID");
     // Customize the create domain job inputs
     domainNS = domainProps.getProperty("namespace", domainNS);

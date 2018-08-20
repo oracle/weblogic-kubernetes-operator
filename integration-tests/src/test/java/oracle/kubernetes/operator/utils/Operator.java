@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import oracle.kubernetes.operator.BaseTest;
 
@@ -29,8 +30,6 @@ public class Operator {
   private String externalRestHttpsPort = "31001";
   private String userProjectsDir = "";
 
-  private String createOperatorScript = "";
-  private String inputTemplateFile = "";
   private String generatedInputYamlFile;
 
   private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
@@ -43,11 +42,14 @@ public class Operator {
    * @param inputProps
    * @throws Exception
    */
-  public Operator(Properties inputProps) throws Exception {
+  public Operator(Properties inputProps, boolean createSharedOperatorResources) throws Exception {
     this.operatorProps = inputProps;
     initialize();
     generateInputYaml();
-    callCreateOperatorScript();
+    if (createSharedOperatorResources) {
+      createSharedOperatorResources();
+    }
+    callHelmInstall();
   }
 
   /**
@@ -79,16 +81,7 @@ public class Operator {
    */
   public void create() throws Exception {
     logger.info("Starting Operator");
-    StringBuffer cmd = new StringBuffer("kubectl create -f ");
-    cmd.append(userProjectsDir)
-        .append("/weblogic-operators/")
-        .append(operatorNS)
-        .append("/weblogic-operator.yaml");
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    callHelmInstall();
 
     logger.info("Checking Operator deployment");
 
@@ -149,12 +142,7 @@ public class Operator {
   }
 
   public void destroy() throws Exception {
-    String cmd =
-        "kubectl delete -f "
-            + userProjectsDir
-            + "/weblogic-operators/"
-            + operatorNS
-            + "/weblogic-operator.yaml";
+    String cmd = "helm del --purge " + operatorProps.getProperty("releaseName");
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -202,9 +190,17 @@ public class Operator {
     return operatorProps;
   }
 
-  private void callCreateOperatorScript() throws Exception {
-    StringBuffer cmd = new StringBuffer(createOperatorScript);
-    cmd.append(" -i ").append(generatedInputYamlFile).append(" -o ").append(userProjectsDir);
+  private void callHelmInstall() throws Exception {
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm install kubernetes/charts/weblogic-operator ");
+    cmd.append(" --name ")
+        .append(operatorProps.getProperty("releaseName"))
+        .append(" --values ")
+        .append(generatedInputYamlFile)
+        .append(" --set createSharedOperatorResources=false --namespace ")
+        .append(operatorNS)
+        .append(" --wait");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -218,17 +214,46 @@ public class Operator {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+  }
 
-    if (!outputStr.contains(CREATE_OPERATOR_SCRIPT_MESSAGE)) {
-      throw new RuntimeException("FAILURE: Create Operator Script failed..");
+  private void createSharedOperatorResources() throws Exception {
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm install kubernetes/charts/weblogic-operator ");
+    cmd.append(" --name op --set createOperator=false --namespace ")
+        .append(operatorNS)
+        .append(" --wait");
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
     }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
   }
 
   private void generateInputYaml() throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-operators/" + operatorNS));
-    generatedInputYamlFile = parentDir + "/" + operatorNS + "-inputs.yaml";
-    TestUtils.createInputFile(operatorProps, inputTemplateFile, generatedInputYamlFile);
+    generatedInputYamlFile = parentDir + "/weblogic-operator-values.yaml";
+    TestUtils.createInputFile(operatorProps, generatedInputYamlFile);
+    // write certificates
+    ExecCommand.exec(
+        BaseTest.getProjectRoot()
+            + "/kubernetes/generate-internal-weblogic-operator-certificate.sh >> "
+            + generatedInputYamlFile);
+    ExecCommand.exec(
+        BaseTest.getProjectRoot()
+            + "/kubernetes/generate-external-weblogic-operator-certificate.sh "
+            + operatorProps.getProperty("externalOperatorCertSans")
+            + " >> "
+            + generatedInputYamlFile);
   }
 
   private void runCommandInLoop(String command) throws Exception {
@@ -250,11 +275,11 @@ public class Operator {
 
   private void initialize() throws Exception {
     userProjectsDir = BaseTest.getUserProjectsDir();
-    createOperatorScript = BaseTest.getProjectRoot() + "/kubernetes/create-weblogic-operator.sh";
-    inputTemplateFile =
-        BaseTest.getProjectRoot() + "/kubernetes/create-weblogic-operator-inputs.yaml";
     operatorNS = operatorProps.getProperty("namespace", operatorNS);
 
+    if (operatorProps.getProperty("releaseName") == null) {
+      throw new RuntimeException("FAILURE: releaseName cann't be null");
+    }
     // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
     // https port
     if (operatorProps.getProperty("externalRestOption") != null) {
@@ -262,8 +287,8 @@ public class Operator {
     }
     externalRestOption = operatorProps.getProperty("externalRestOption");
     if (externalRestOption != null && externalRestOption.equals("SELF_SIGNED_CERT")) {
-      if (operatorProps.getProperty("externalSans") == null) {
-        operatorProps.put("externalSans", "DNS:" + TestUtils.getHostName());
+      if (operatorProps.getProperty("externalOperatorCertSans") == null) {
+        operatorProps.put("externalOperatorCertSans", "DNS:" + TestUtils.getHostName());
       }
       if (operatorProps.getProperty("externalRestHttpsPort") != null) {
         externalRestHttpsPort = operatorProps.getProperty("externalRestHttpsPort");
@@ -283,26 +308,56 @@ public class Operator {
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorProps.put(
-          "weblogicOperatorImage",
+          "operatorImage",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
     } else {
       operatorProps.put(
-          "weblogicOperatorImage",
+          "operatorImage",
           "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
               + BaseTest.getBranchName().replaceAll("/", "_"));
     }
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
-      operatorProps.put(
-          "weblogicOperatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+      operatorProps.put("operatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     }
 
+    ExecCommand.exec("kubectl delete namespace " + operatorNS);
+
+    // create opeartor namespace
     ExecCommand.exec("kubectl create namespace " + operatorNS);
 
+    // create operator service account
+    String serviceAccount = operatorProps.getProperty("operatorServiceAccount");
+    if (serviceAccount != null && !serviceAccount.equals("default")) {
+      ExecResult result =
+          ExecCommand.exec("kubectl create serviceaccount " + serviceAccount + " -n " + operatorNS);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: Couldn't create serviceaccount "
+                + serviceAccount
+                + ". Cmd returned "
+                + result.stdout()
+                + "\n"
+                + result.stderr());
+      }
+    }
+
+    // create domain namespaces
+    String domainsNamespaces = operatorProps.getProperty("domainsNamespaces");
+    if (domainsNamespaces != null) {
+      StringTokenizer st = new StringTokenizer(domainsNamespaces, ",");
+      while (st.hasMoreTokens()) {
+        String ns = st.nextToken();
+        if (!ns.equals("default")) {
+          logger.info("Creating domainn namespace " + ns);
+          ExecCommand.exec("kubectl create namespace " + ns);
+        }
+      }
+    }
+
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      operatorProps.put(
-          "weblogicOperatorImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+      operatorProps.put("operatorImagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_OPERATOR"),

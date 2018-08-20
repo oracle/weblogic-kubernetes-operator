@@ -79,7 +79,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test1CreateOperatorManagingDefaultAndTest1NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
-    operator1 = TestUtils.createOperator(op1PropsFile);
+    operator1 = TestUtils.createOperator(op1PropsFile, true);
     logger.info("SUCCESS");
   }
 
@@ -92,6 +92,7 @@ public class ITOperator extends BaseTest {
     testDomainLifecyle(operator1, domain1);
     testClusterScaling(operator1, domain1);
     testOperatorLifecycle(operator1, domain1);
+
     logger.info("SUCCESS");
   }
 
@@ -130,7 +131,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test5CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator2
-    operator2 = TestUtils.createOperator(op2PropsFile);
+    operator2 = TestUtils.createOperator(op2PropsFile, false);
     logger.info("SUCCESS");
   }
 

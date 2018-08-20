@@ -15,6 +15,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -89,6 +90,43 @@ public class TestUtils {
         break;
       }
     }
+  }
+
+  /**
+   * @param propsFile - input props file
+   * @param generatedInputYamlFile - output file with replaced values
+   * @throws Exception
+   */
+  public static void createInputFile(Properties props, String generatedInputYamlFile)
+      throws Exception {
+    logger.info("Creating input yaml file at " + generatedInputYamlFile);
+
+    StringBuffer valuesYaml = new StringBuffer();
+
+    Enumeration enuKeys = props.keys();
+    while (enuKeys.hasMoreElements()) {
+      String key = (String) enuKeys.nextElement();
+      String value = props.getProperty(key);
+      if (key.equals("domainsNamespaces")) {
+        valuesYaml.append(key).append(": [ ");
+        if (value.contains(",")) {
+          StringTokenizer st = new StringTokenizer(value, ",");
+          while (st.hasMoreTokens()) {
+            valuesYaml.append("\"").append(st.nextToken()).append("\"");
+            if (st.hasMoreTokens()) valuesYaml.append(", ");
+          }
+        } else {
+          valuesYaml.append("\"").append(value).append("\"");
+        }
+        valuesYaml.append(" ]\n");
+      } else if (!key.equals("releaseName")
+          && !key.equals("namespace")
+          && !key.equals("domainUID")) {
+        valuesYaml.append(key).append(": ").append(value).append("\n");
+      }
+    }
+    // writing to the file
+    Files.write(Paths.get(generatedInputYamlFile), valuesYaml.toString().getBytes());
   }
 
   /**
@@ -414,12 +452,10 @@ public class TestUtils {
     File certFile =
         new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.cert.pem");
 
-    StringBuffer opCertCmd = new StringBuffer("grep externalOperatorCert ");
+    StringBuffer opCertCmd = new StringBuffer("kubectl get cm -n ");
     opCertCmd
-        .append(userProjectsDir)
-        .append("/weblogic-operators/")
         .append(operatorNS)
-        .append("/weblogic-operator.yaml | awk '{ print $2 }'");
+        .append(" weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'");
 
     ExecResult result = ExecCommand.exec(opCertCmd.toString());
     if (result.exitValue() != 0) {
@@ -446,12 +482,12 @@ public class TestUtils {
     File keyFile =
         new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.key.pem");
 
-    StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey ");
+    StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey: ");
     opKeyCmd
         .append(userProjectsDir)
         .append("/weblogic-operators/")
         .append(operatorNS)
-        .append("/weblogic-operator.yaml | awk '{ print $2 }'");
+        .append("/weblogic-operator-values.yaml | awk '{ print $2 }'");
 
     ExecResult result = ExecCommand.exec(opKeyCmd.toString());
     if (result.exitValue() != 0) {
@@ -477,11 +513,12 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opPropsFile) throws Exception {
+  public static Operator createOperator(String opPropsFile, boolean createSharedOperatorResources)
+      throws Exception {
     // load operator props defined
     Properties operatorProps = loadProps(opPropsFile);
     // create op
-    Operator operator = new Operator(operatorProps);
+    Operator operator = new Operator(operatorProps, createSharedOperatorResources);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();
