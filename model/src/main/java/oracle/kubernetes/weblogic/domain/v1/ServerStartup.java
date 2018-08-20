@@ -166,6 +166,19 @@ public class ServerStartup {
     return this;
   }
 
+  /**
+   * Adds an environment variable to pass while starting this managed server.
+   *
+   * @param name the name of the variable to add
+   * @param value the value of the variable to add
+   * @return this
+   */
+  public ServerStartup withEnvironmentVariable(String name, String value) {
+    if (env == null) env = new ArrayList<>();
+    env.add(new V1EnvVar().name(name).value(value));
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)

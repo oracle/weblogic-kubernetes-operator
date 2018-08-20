@@ -60,7 +60,7 @@ public class WlsDomainConfig {
    * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
    * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
-  WlsDomainConfig(
+  public WlsDomainConfig(
       String name,
       Map<String, WlsClusterConfig> wlsClusterConfigs,
       Map<String, WlsServerConfig> wlsServerConfigs,
