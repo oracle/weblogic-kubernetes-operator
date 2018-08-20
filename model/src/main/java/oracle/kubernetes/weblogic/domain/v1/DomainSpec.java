@@ -447,6 +447,18 @@ public class DomainSpec {
   }
 
   /**
+   * Add server startup details for one servers.
+   *
+   * @param serverStartupItem a single item to add
+   * @return this
+   */
+  public DomainSpec addServerStartupItem(ServerStartup serverStartupItem) {
+    if (serverStartup == null) serverStartup = new ArrayList<>();
+    serverStartup.add(serverStartupItem);
+    return this;
+  }
+
+  /**
    * List of server startup details for selected clusters
    *
    * @return cluster startup
@@ -465,13 +477,25 @@ public class DomainSpec {
   }
 
   /**
-   * List of server startup details for selected clusters
+   * Set list of server startup details for selected clusters
    *
    * @param clusterStartup cluster startup
    * @return this
    */
   public DomainSpec withClusterStartup(List<ClusterStartup> clusterStartup) {
     this.clusterStartup = clusterStartup;
+    return this;
+  }
+
+  /**
+   * Add startup details for a cluster
+   *
+   * @param clusterStartupItem cluster startup
+   * @return this
+   */
+  public DomainSpec addClusterStartupItem(ClusterStartup clusterStartupItem) {
+    if (clusterStartup == null) clusterStartup = new ArrayList<>();
+    clusterStartup.add(clusterStartupItem);
     return this;
   }
 
