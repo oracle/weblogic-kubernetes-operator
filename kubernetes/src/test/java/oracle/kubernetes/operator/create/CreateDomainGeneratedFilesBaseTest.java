@@ -82,6 +82,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
@@ -379,7 +380,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         cd('/Servers/%ADMIN_SERVER_NAME%/NetworkAccessPoints/T3Channel')
         set('PublicPort', %T3_CHANNEL_PORT%)
         set('PublicAddress', '%T3_PUBLIC_ADDRESS%')
-        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME%')
+        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_LC%')
         set('ListenPort', %T3_CHANNEL_PORT%)
         cd('/Servers/%ADMIN_SERVER_NAME%')
         create('%ADMIN_SERVER_NAME%', 'Log')
@@ -399,7 +400,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
             getInputs().getClusterType(),
             getInputs().getAdminServerName(),
             getInputs().getManagedServerNameBase(),
-            getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
+            LegalNames.toServerServiceName(
+                getInputs().getDomainUID(), getInputs().getAdminServerName()),
             "setProductionModeEnabled\\(" + getInputs().getProductionModeEnabled() + "\\)",
             "server_port *= " + getInputs().getManagedServerPort(),
             "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
