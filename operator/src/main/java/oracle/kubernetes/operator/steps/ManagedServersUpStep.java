@@ -4,14 +4,14 @@
 
 package oracle.kubernetes.operator.steps;
 
-import io.kubernetes.client.models.V1EnvVar;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.StartupControlConstants;
-import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -26,10 +26,12 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  static final String SERVERS_UP_MSG = "Running servers for domain with UID: %s, running list: %s";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, servers, next) ->
           scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
@@ -38,6 +40,38 @@ public class ManagedServersUpStep extends Step {
   interface NextStepFactory {
     Step createServerStep(DomainPresenceInfo info, Collection<String> servers, Step next);
   }
+
+  class ServersUpStepFactory {
+    Domain domain;
+    Collection<ServerStartupInfo> ssic = new ArrayList<>();
+    Collection<String> servers = new ArrayList<>();
+    Map<String, Integer> replicas = new HashMap<>();
+
+    ServersUpStepFactory(Domain domain) {
+      this.domain = domain;
+    }
+
+    private void addStartupInfo(WlsServerConfig server, WlsClusterConfig cluster) {
+      String clusterName = cluster == null ? null : cluster.getClusterName();
+      ServerSpec serverSpec = domain.getServer(clusterName, server.getName());
+      ssic.add(
+          new ServerStartupInfo(
+              server,
+              cluster,
+              serverSpec.getEnvironmentVariables(),
+              serverSpec.getServerStartup()));
+    }
+
+    private void addToCluster(String clusterName) {
+      replicas.put(clusterName, 1 + getReplicas(clusterName));
+    }
+
+    private Integer getReplicas(String clusterName) {
+      return Optional.ofNullable(replicas.get(clusterName)).orElse(0);
+    }
+  }
+
+  private ServersUpStepFactory factory;
 
   public ManagedServersUpStep(Step next) {
     super(next);
@@ -50,31 +84,15 @@ public class ManagedServersUpStep extends Step {
 
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
+    factory = new ServersUpStepFactory(dom);
 
     if (LOGGER.isFineEnabled()) {
-      Collection<String> runningList = new ArrayList<>();
-      for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-        ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null && sko.getPod() != null) {
-          runningList.add(entry.getKey());
-        }
-      }
-      LOGGER.fine(
-          "Running servers for domain with UID: "
-              + spec.getDomainUID()
-              + ", running list: "
-              + runningList);
+      LOGGER.fine(SERVERS_UP_MSG, spec.getDomainUID(), getRunningServers(info));
     }
 
-    String sc = spec.getStartupControl();
-    if (sc == null) {
-      sc = StartupControlConstants.AUTO_STARTUPCONTROL;
-    } else {
-      sc = sc.toUpperCase();
-    }
+    String sc = dom.getStartupControl();
 
     WlsDomainConfig scan = info.getScan();
-    Collection<ServerStartupInfo> ssic = new ArrayList<>();
 
     String asName = spec.getAsName();
 
@@ -89,7 +107,6 @@ public class ManagedServersUpStep extends Step {
     info.getExplicitRestartClusters().clear();
 
     boolean startAll = false;
-    Collection<String> servers = new ArrayList<>();
     switch (sc) {
       case StartupControlConstants.ALL_STARTUPCONTROL:
         startAll = true;
@@ -101,30 +118,15 @@ public class ManagedServersUpStep extends Step {
         List<ServerStartup> ssl = spec.getServerStartup();
         if (ssl != null) {
           for (ServerStartup ss : ssl) {
-            String serverName = ss.getServerName();
-            WlsServerConfig wlsServerConfig = scan.getServerConfig(serverName);
-            if (!serverName.equals(asName)
-                && wlsServerConfig != null
-                && !servers.contains(serverName)) {
-              // start server
-              servers.add(serverName);
-              // find cluster if this server is part of one
-              WlsClusterConfig cc = null;
-              find:
-              for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
-                for (WlsServerConfig clusterMemberServerConfig :
-                    wlsClusterConfig.getServerConfigs()) {
-                  if (serverName.equals(clusterMemberServerConfig.getName())) {
-                    cc = wlsClusterConfig;
-                    break find;
-                  }
-                }
+            WlsServerConfig wlsServerConfig = scan.getServerConfig(ss.getServerName());
+            if (wlsServerConfig != null) {
+              String serverName = wlsServerConfig.getName();
+              WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(scan, serverName);
+              if (!serverName.equals(asName) && !factory.servers.contains(serverName)) {
+                // start server
+                factory.servers.add(serverName);
+                factory.addStartupInfo(wlsServerConfig, wlsClusterConfig);
               }
-              List<V1EnvVar> env = ss.getEnv();
-              if (WebLogicConstants.ADMIN_STATE.equals(ss.getDesiredState())) {
-                env = startInAdminMode(env);
-              }
-              ssic.add(new ServerStartupInfo(wlsServerConfig, cc, env, ss));
             }
           }
         }
@@ -134,36 +136,19 @@ public class ManagedServersUpStep extends Step {
           for (ClusterStartup cs : lcs) {
             String clusterName = cs.getClusterName();
             clusters.add(clusterName);
-            int startedCount = 0;
             // find cluster
             WlsClusterConfig wlsClusterConfig = scan.getClusterConfig(clusterName);
             if (wlsClusterConfig != null) {
               for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
                 // done with the current cluster
-                if (startedCount >= cs.getReplicas() && !startAll) continue cluster;
+                if (factory.getReplicas(clusterName) >= factory.domain.getReplicaLimit(clusterName)
+                    && !startAll) continue cluster;
 
                 String serverName = wlsServerConfig.getName();
-                if (!serverName.equals(asName) && !servers.contains(serverName)) {
-                  List<V1EnvVar> env = cs.getEnv();
-                  ServerStartup ssi = null;
-                  ssl = spec.getServerStartup();
-                  if (ssl != null) {
-                    for (ServerStartup ss : ssl) {
-                      String s = ss.getServerName();
-                      if (serverName.equals(s)) {
-                        env = ss.getEnv();
-                        ssi = ss;
-                        break;
-                      }
-                    }
-                  }
-                  // start server
-                  servers.add(serverName);
-                  if (WebLogicConstants.ADMIN_STATE.equals(cs.getDesiredState())) {
-                    env = startInAdminMode(env);
-                  }
-                  ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, env, ssi));
-                  startedCount++;
+                if (!serverName.equals(asName) && !factory.servers.contains(serverName)) {
+                  factory.servers.add(serverName);
+                  factory.addStartupInfo(wlsServerConfig, wlsClusterConfig);
+                  factory.addToCluster(clusterName);
                 }
               }
             }
@@ -173,116 +158,80 @@ public class ManagedServersUpStep extends Step {
           // Look for any other servers
           for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
             for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
-              String serverName = wlsServerConfig.getListenAddress();
+              String serverName = wlsServerConfig.getName();
               // do not start admin server
-              if (!serverName.equals(asName) && !servers.contains(serverName)) {
-                List<V1EnvVar> env = null;
-                // find ClusterStartup for WlsClusterConfig
-                ClusterStartup cs = findClusterStartup(wlsClusterConfig.getClusterName(), lcs);
-                if (cs != null) {
-                  env = cs.getEnv();
-                }
-
+              if (!serverName.equals(asName) && !factory.servers.contains(serverName)) {
                 // start server
-                servers.add(serverName);
-                ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, null, null));
+                factory.servers.add(serverName);
+                factory.addStartupInfo(wlsServerConfig, wlsClusterConfig);
               }
             }
           }
-          for (Map.Entry<String, WlsServerConfig> wlsServerConfig :
-              scan.getServerConfigs().entrySet()) {
-            String serverName = wlsServerConfig.getKey();
+          for (WlsServerConfig wlsServerConfig : scan.getServerConfigs().values()) {
+            String serverName = wlsServerConfig.getName();
             // do not start admin server
-            if (!serverName.equals(asName) && !servers.contains(serverName)) {
+            if (!serverName.equals(asName) && !factory.servers.contains(serverName)) {
               // start server
-              servers.add(serverName);
-              ssic.add(new ServerStartupInfo(wlsServerConfig.getValue(), null, null, null));
+              factory.servers.add(serverName);
+              factory.addStartupInfo(wlsServerConfig, null);
             }
           }
         } else if (StartupControlConstants.AUTO_STARTUPCONTROL.equals(sc)) {
-          for (Map.Entry<String, WlsClusterConfig> wlsClusterConfig :
-              scan.getClusterConfigs().entrySet()) {
-            if (!clusters.contains(wlsClusterConfig.getKey())) {
-              int startedCount = 0;
-              WlsClusterConfig config = wlsClusterConfig.getValue();
-              for (WlsServerConfig wlsServerConfig : config.getServerConfigs()) {
-                if (startedCount >= spec.getReplicas()) break;
+          for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
+            if (!clusters.contains(wlsClusterConfig.getClusterName())) {
+              for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+                if (factory.getReplicas(wlsClusterConfig.getClusterName())
+                    >= factory.domain.getReplicaLimit(wlsClusterConfig.getClusterName())) break;
                 String serverName = wlsServerConfig.getName();
-                if (!serverName.equals(asName) && !servers.contains(serverName)) {
+                if (!serverName.equals(asName) && !factory.servers.contains(serverName)) {
                   // start server
-                  servers.add(serverName);
-                  ssic.add(new ServerStartupInfo(wlsServerConfig, config, null, null));
-                  startedCount++;
+                  factory.servers.add(serverName);
+                  factory.addStartupInfo(wlsServerConfig, wlsClusterConfig);
+                  factory.addToCluster(wlsClusterConfig.getClusterName());
                 }
               }
             }
           }
         }
 
-        info.setServerStartupInfo(ssic);
+        info.setServerStartupInfo(factory.ssic);
         LOGGER.exiting();
         return doNext(
             NEXT_STEP_FACTORY.createServerStep(
-                info, servers, new ManagedServerUpIteratorStep(ssic, getNext())),
+                info, factory.servers, new ManagedServerUpIteratorStep(factory.ssic, getNext())),
             packet);
       case StartupControlConstants.ADMIN_STARTUPCONTROL:
       case StartupControlConstants.NONE_STARTUPCONTROL:
       default:
         info.setServerStartupInfo(null);
         LOGGER.exiting();
-        return doNext(NEXT_STEP_FACTORY.createServerStep(info, servers, getNext()), packet);
+        return doNext(NEXT_STEP_FACTORY.createServerStep(info, factory.servers, getNext()), packet);
     }
   }
 
-  /**
-   * Find corresponding ClusterStartup for WLS cluster, if defined.
-   *
-   * @param wlsClusterName - name of WLS cluster
-   * @param lcs - List of defined ClusterStartup's
-   * @return - ClusterStartup, if exists, or Null
-   */
-  private static ClusterStartup findClusterStartup(
-      String wlsClusterName, List<ClusterStartup> lcs) {
-    if (lcs != null) {
-      for (ClusterStartup cs : lcs) {
-        String clusterName = cs.getClusterName();
-        if (clusterName.equals(wlsClusterName)) {
-          return cs;
+  private WlsClusterConfig getWlsClusterConfig(WlsDomainConfig scan, String serverName) {
+    WlsClusterConfig cc = null;
+    find:
+    for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
+      for (WlsServerConfig clusterMemberServerConfig : wlsClusterConfig.getServerConfigs()) {
+        if (serverName.equals(clusterMemberServerConfig.getName())) {
+          cc = wlsClusterConfig;
+          break find;
         }
       }
     }
-    return null;
+    return cc;
   }
 
-  private static List<V1EnvVar> startInAdminMode(List<V1EnvVar> env) {
-    if (env == null) {
-      env = new ArrayList<>();
-    }
-
-    // look for JAVA_OPTIONS
-    V1EnvVar jo = null;
-    for (V1EnvVar e : env) {
-      if ("JAVA_OPTIONS".equals(e.getName())) {
-        jo = e;
-        if (jo.getValueFrom() != null) {
-          throw new IllegalStateException();
-        }
-        break;
+  private Collection<String> getRunningServers(DomainPresenceInfo info) {
+    Collection<String> runningList = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      ServerKubernetesObjects sko = entry.getValue();
+      if (sko != null && sko.getPod() != null) {
+        runningList.add(entry.getKey());
       }
     }
-    if (jo == null) {
-      jo = new V1EnvVar();
-      jo.setName("JAVA_OPTIONS");
-      env.add(jo);
-    }
-
-    // create or update value
-    String startInAdmin = "-Dweblogic.management.startupMode=ADMIN";
-    String value = jo.getValue();
-    value = (value != null) ? (startInAdmin + " " + value) : startInAdmin;
-    jo.setValue(value);
-
-    return env;
+    return runningList;
   }
 
   private static Step scaleDownIfNecessary(

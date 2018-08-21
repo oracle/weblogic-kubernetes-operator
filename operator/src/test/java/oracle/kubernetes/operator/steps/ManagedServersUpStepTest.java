@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.steps;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
 import static org.hamcrest.Matchers.contains;
@@ -35,6 +36,7 @@ import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -64,8 +66,6 @@ public class ManagedServersUpStepTest {
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace";
   private static final String UID = "uid1";
-  private static final String RUNNING_SERVERS =
-      "Running servers for domain with UID: uid1, running list: [admin, ms1, ms2]";
   private final Domain domain = createDomain();
 
   private Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
@@ -113,14 +113,14 @@ public class ManagedServersUpStepTest {
   @Test
   public void whenEnabled_logCurrentServers() {
     List<LogRecord> messages = new ArrayList<>();
-    consoleHandlerMemento.withLogLevel(Level.FINE).collectLogMessages(messages, RUNNING_SERVERS);
+    consoleHandlerMemento.withLogLevel(Level.FINE).collectLogMessages(messages, SERVERS_UP_MSG);
     addRunningServer("admin");
     addRunningServer("ms1");
     addRunningServer("ms2");
 
     invokeStep();
 
-    assertThat(messages, containsFine(RUNNING_SERVERS));
+    assertThat(messages, containsFine(SERVERS_UP_MSG));
   }
 
   private void addRunningServer(String serverName) {
@@ -494,7 +494,7 @@ public class ManagedServersUpStepTest {
 
     assertThat(getServerStartupInfo("ms1").serverConfig, sameInstance(getWlsServer("ms1")));
     assertThat(getServerStartupInfo("ms1").clusterConfig, sameInstance(getWlsCluster("cluster1")));
-    assertThat(getServerStartupInfo("ms1").envVars, nullValue());
+    assertThat(getServerStartupInfo("ms1").envVars, empty());
     assertThat(getServerStartupInfo("ms1").serverStartup, nullValue());
   }
 
@@ -618,8 +618,8 @@ public class ManagedServersUpStepTest {
       return servers;
     }
 
-    static DomainPresenceInfo.ServerStartupInfo getServerStartupInfo(String serverName) {
-      for (DomainPresenceInfo.ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
+    static ServerStartupInfo getServerStartupInfo(String serverName) {
+      for (ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
         if (startupInfo.serverConfig.getName().equals(serverName)) return startupInfo;
       }
 
@@ -642,8 +642,8 @@ public class ManagedServersUpStepTest {
       this.name = name;
     }
 
-    WlsServerConfig build() { // TODO why do we need the listen address here?
-      return new WlsServerConfig(name, null, name, null, false, null, null);
+    WlsServerConfig build() {
+      return new WlsServerConfig(name, null, null, null, false, null, null);
     }
   }
 

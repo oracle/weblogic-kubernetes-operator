@@ -20,7 +20,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
@@ -168,14 +167,14 @@ public class PodHelper {
   static class ManagedPodStepContext extends PodStepContext {
 
     private final WlsServerConfig scan;
-    private final WlsClusterConfig cluster;
+    private final String clusterName;
     private final Packet packet;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
-      cluster = (WlsClusterConfig) packet.get(ProcessingConstants.CLUSTER_SCAN);
+      clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
 
       init();
     }
@@ -261,7 +260,7 @@ public class PodHelper {
     }
 
     private String getClusterName() {
-      return cluster == null ? null : cluster.getClusterName();
+      return clusterName;
     }
 
     @Override

@@ -5,6 +5,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 import io.kubernetes.client.models.V1EnvVar;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -70,7 +71,37 @@ public class ServerSpecV1Impl implements ServerSpec {
 
   @Override
   public List<V1EnvVar> getEnvironmentVariables() {
-    return serverStartup == null ? Collections.emptyList() : serverStartup.getEnv();
+    List<V1EnvVar> vars =
+        serverStartup != null
+            ? serverStartup.getEnv()
+            : clusterStartup != null ? clusterStartup.getEnv() : Collections.emptyList();
+    return withStateAdjustments(vars);
+  }
+
+  private List<V1EnvVar> withStateAdjustments(List<V1EnvVar> env) {
+    if (!getDesiredState().equals("ADMIN")) {
+      return env;
+    } else {
+      List<V1EnvVar> adjustedEnv = new ArrayList<>(env);
+      V1EnvVar var = getOrCreateVar(adjustedEnv, "JAVA_OPTIONS");
+      var.setValue(prepend(var.getValue(), "-Dweblogic.management.startupMode=ADMIN"));
+      return adjustedEnv;
+    }
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private V1EnvVar getOrCreateVar(List<V1EnvVar> env, String name) {
+    for (V1EnvVar var : env) {
+      if (var.getName().equals(name)) return var;
+    }
+    V1EnvVar var = new V1EnvVar().name(name);
+    env.add(var);
+    return var;
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private String prepend(String value, String prefix) {
+    return value == null ? prefix : prefix + ' ' + value;
   }
 
   @Override

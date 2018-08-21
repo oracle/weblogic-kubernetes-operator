@@ -94,15 +94,14 @@ public class RollingHelper {
 
         // If this server isn't part of a cluster, then it can also be safely restarted now
         Packet p = entry.getValue().packet;
-        WlsClusterConfig cluster = (WlsClusterConfig) p.get(ProcessingConstants.CLUSTER_SCAN);
-        if (cluster == null) {
+        String clusterName = (String) p.get(ProcessingConstants.CLUSTER_NAME);
+        if (clusterName == null) {
           servers.add(entry.getKey());
           serversThatCanRestartNow.add(entry.getValue());
           continue;
         }
 
         // clustered server
-        String clusterName = cluster.getClusterName();
         Collection<StepAndPacket> cr = clusteredRestarts.get(clusterName);
         if (cr == null) {
           cr = new ArrayList<>();
