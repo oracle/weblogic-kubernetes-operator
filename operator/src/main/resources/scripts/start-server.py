@@ -5,7 +5,6 @@
 import sys;
 #
 # +++ Start of common code for reading domain secrets
-
 # Read username secret
 file = open('/weblogic-operator/secrets/username', 'r')
 admin_username = file.read()
@@ -30,6 +29,7 @@ domain_uid = getEnvVar('DOMAIN_UID')
 server_name = getEnvVar('SERVER_NAME')
 domain_name = getEnvVar('DOMAIN_NAME')
 domain_path = getEnvVar('DOMAIN_HOME')
+service_name = getEnvVar('SERVICE_NAME')
 
 print 'admin username is %s' % admin_username
 print 'domain path is %s' % domain_path
@@ -57,8 +57,6 @@ bpFile=open('%s/servers/%s/security/boot.properties' % (domain_path, server_name
 bpFile.write("username=%s\n" % adminUsernameEncrypted)
 bpFile.write("password=%s\n" % adminPasswordEncrypted)
 bpFile.close()
-
-service_name = domain_uid + "-" + server_name
 
 # Connect to nodemanager and start server
 try:
