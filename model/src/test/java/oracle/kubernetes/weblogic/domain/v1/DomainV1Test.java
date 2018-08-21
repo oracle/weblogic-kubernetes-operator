@@ -7,6 +7,7 @@ import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCON
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1EnvVar;
@@ -217,6 +218,63 @@ public class DomainV1Test {
   }
 
   @Test
+  public void whenSpecifiedOnServer_managedServerHasEnvironmentVariables() {
+    addServerStartup(
+        new ServerStartup().withServerName(SERVER1).withEnv(Arrays.asList(createEnvironment())));
+
+    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+
+    assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
+  }
+
+  @Test
+  public void whenDesiredStateAdminAndSpecifiedOnServer_managedServerHasJavaOption() {
+    addServerStartup(
+        new ServerStartup()
+            .withServerName(SERVER1)
+            .withDesiredState("ADMIN")
+            .withEnv(Arrays.asList(createEnvironment())));
+
+    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+
+    assertThat(
+        spec.getEnvironmentVariables(),
+        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private V1EnvVar envVar(String name, String value) {
+    return new V1EnvVar().name(name).value(value);
+  }
+
+  @Test
+  public void whenSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
+    addClusterStartup(
+        new ClusterStartup()
+            .withClusterName(CLUSTER_NAME)
+            .withEnv(Arrays.asList(createEnvironment())));
+
+    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+
+    assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
+  }
+
+  @Test
+  public void whenDesiredStateAdminAndSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
+    addClusterStartup(
+        new ClusterStartup()
+            .withDesiredState("ADMIN")
+            .withClusterName(CLUSTER_NAME)
+            .withEnv(Collections.singletonList(envVar("JAVA_OPTIONS", "value"))));
+
+    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+
+    assertThat(
+        spec.getEnvironmentVariables(),
+        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN value")));
+  }
+
+  @Test
   public void whenNotSpecified_imageHasDefault() {
     domain.getSpec().setImage(null);
 
@@ -243,5 +301,22 @@ public class DomainV1Test {
     ServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+  }
+
+  @Test
+  public void whenNoStartupForCluster_useDefaultReplicaCount() {
+    domain.getSpec().setReplicas(5);
+
+    assertThat(domain.getReplicaLimit("nosuchcluster"), equalTo(5));
+  }
+
+  @Test
+  public void whenStartupDefinedForCluster_useClusterReplicaCount() {
+    domain.getSpec().setReplicas(5);
+    domain
+        .getSpec()
+        .addClusterStartupItem(new ClusterStartup().withClusterName("cluster1").withReplicas(3));
+
+    assertThat(domain.getReplicaLimit("cluster1"), equalTo(3));
   }
 }

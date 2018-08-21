@@ -299,6 +299,24 @@ public class DomainPresenceInfo {
       this.envVars = envVars;
       this.serverStartup = serverStartup;
     }
+
+    /**
+     * Returns the node port to use when starting up the configured server.
+     *
+     * @return a port number, or null.
+     */
+    public Integer getNodePort() {
+      return serverStartup == null ? null : serverStartup.getNodePort();
+    }
+
+    /**
+     * Returns the desired state for the started server.
+     *
+     * @return return a string, which may be null.
+     */
+    public String getDesiredState() {
+      return serverStartup == null ? null : serverStartup.getDesiredState();
+    }
   }
 
   /**

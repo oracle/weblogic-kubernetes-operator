@@ -20,7 +20,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -41,13 +40,12 @@ public class ManagedServerUpIteratorStep extends Step {
     for (ServerStartupInfo ssi : c) {
       Packet p = packet.clone();
       p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-      p.put(ProcessingConstants.CLUSTER_SCAN, ssi.clusterConfig);
+      p.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
       p.put(ProcessingConstants.ENVVARS, ssi.envVars);
 
       p.put(ProcessingConstants.SERVER_NAME, ssi.serverConfig.getName());
       p.put(ProcessingConstants.PORT, ssi.serverConfig.getListenPort());
-      ServerStartup ss = ssi.serverStartup;
-      p.put(ProcessingConstants.NODE_PORT, ss != null ? ss.getNodePort() : null);
+      p.put(ProcessingConstants.NODE_PORT, ssi.getNodePort());
 
       startDetails.add(new StepAndPacket(bringManagedServerUp(ssi, null), p));
     }

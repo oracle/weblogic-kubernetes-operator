@@ -194,12 +194,13 @@ public class Domain {
     return null;
   }
 
-  public String getStartupControl() {
-    return Optional.ofNullable(spec.getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
+  public int getReplicaLimit(String clusterName) {
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
+    return clusterStartup == null ? spec.getReplicas() : clusterStartup.getReplicas();
   }
 
-  public ClusterSpec getCluster(String clusterName) {
-    return null;
+  public String getStartupControl() {
+    return Optional.ofNullable(spec.getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
   }
 
   /**
