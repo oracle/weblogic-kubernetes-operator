@@ -5,14 +5,20 @@ server_name=$2
 domain_name=$3
 as_name=$4
 as_port=$5
-as_hostname=$1-$4
-
-echo "debug arguments are $1 $2 $3 $4 $5"
 
 nmProp="/u01/nodemanager/nodemanager.properties"
 
 # TODO: parameterize shared home and domain name
 export DOMAIN_HOME=/shared/domain/$domain_name
+
+#
+# Function to lowercase a value and convert a value to be a legal DNS name
+# $1 - value to convert to lowercase
+function toLowerDNS1123Legal {
+  local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
+  local value=${lc//"_"/"-"}
+  echo "$value"
+}
 
 #
 # Create a folder
@@ -57,6 +63,7 @@ function createServerScriptsProperties() {
   if [ -n "$4" ]; then
     echo "AdminURL=http\://$4\:$5" >> ${startProp}
   fi
+  local sn=$(toLowerDNS1123Legal $2)
   echo "RestartMax=2" >> ${startProp}
   echo "RotateLogOnStartup=false" >> ${startProp}
   echo "RotationType=bySize" >> ${startProp}
@@ -68,8 +75,13 @@ function createServerScriptsProperties() {
   echo "RestartInterval=3600" >> ${startProp}
   echo "NumberOfFilesLimited=true" >> ${startProp}
   echo "FileTimeSpan=24" >> ${startProp}
-  echo "NMHostName=$1-$2" >> ${startProp}
+  echo "NMHostName=$1-$sn" >> ${startProp}
 }
+
+as_hostname=$1-$(toLowerDNS1123Legal $as_name)
+service_name=$1-$(toLowerDNS1123Legal $server_name)
+
+echo "debug arguments are $1 $2 $3 $4 $5 $as_hostname $service_name"
 
 # Check for stale state file and remove if found"
 if [ -f "$stateFile" ]; then
@@ -82,9 +94,10 @@ mkdir -p /u01/nodemanager
 cp ${DOMAIN_HOME}/nodemanager/* /u01/nodemanager/
 
 # Edit the nodemanager properties file to use the home for the server
+
 sed -i -e "s:DomainsFile=.*:DomainsFile=/u01/nodemanager/nodemanager.domains:g" /u01/nodemanager/nodemanager.properties
 sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=/u01/nodemanager:g" /u01/nodemanager/nodemanager.properties
-sed -i -e "s:ListenAddress=.*:ListenAddress=$1-$2:g" /u01/nodemanager/nodemanager.properties
+sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" /u01/nodemanager/nodemanager.properties
 sed -i -e "s:LogFile=.*:LogFile=/shared/logs/nodemanager-$2.log:g" /u01/nodemanager/nodemanager.properties
 
 export JAVA_PROPERTIES="-DLogFile=/shared/logs/nodemanager-$server_name.log -DNodeManagerHome=/u01/nodemanager"
@@ -113,11 +126,11 @@ echo "Arguments=${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGro
 
 admin_server_t3_url=
 if [ -n "$4" ]; then
-  admin_server_t3_url=t3://$domain_uid-$as_name:$as_port
+  admin_server_t3_url=t3://$as_hostname:$as_port
 fi
 
 echo "Start the server"
-wlst.sh -skipWLSModuleScanning /weblogic-operator/scripts/start-server.py $domain_uid $server_name $domain_name $admin_server_t3_url
+wlst.sh -skipWLSModuleScanning /weblogic-operator/scripts/start-server.py $domain_uid $server_name $domain_name $service_name $admin_server_t3_url
 
 echo "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
 while true; do sleep 60; done
