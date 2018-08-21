@@ -12,8 +12,8 @@ admin_port=${ADMIN_PORT?}
 domain_home=${DOMAIN_HOME?}
 log_home=${LOG_HOME?}
 nodemgr_home=${NODEMGR_HOME?}
-
-admin_hostname=${domain_uid}-${admin_name}
+service_name=${SERVICE_NAME?}
+admin_hostname=${AS_SERVICE_NAME?}
 
 echo "Starting WebLogic Server '${server_name}'."
 
@@ -26,6 +26,8 @@ for varname in domain_uid \
                domain_home \
                log_home \
                nodemgr_home \
+               service_name \
+               admion_hostname \
                ;
 do
   echo -n " $varname=${!varname}"
@@ -85,8 +87,10 @@ function createServerScriptsProperties() {
   echo "RestartInterval=3600" >> ${startProp}
   echo "NumberOfFilesLimited=true" >> ${startProp}
   echo "FileTimeSpan=24" >> ${startProp}
-  echo "NMHostName=$1-$2" >> ${startProp}
+  echo "NMHostName=$service_name" >> ${startProp}
 }
+
+echo "debug arguments are $1 $2 $3 $4 $5 $admin_hostname $service_name"
 
 # Check for stale state file and remove if found"
 if [ -f "$stateFile" ]; then
@@ -103,7 +107,7 @@ nm_log="${log_home}/nodemanager-${server_name}.log"
 # Edit the nodemanager properties file to use the home for the server
 sed -i -e "s:DomainsFile=.*:DomainsFile=${nodemgr_home}/nodemanager.domains:g" ${nodemgr_home}/nodemanager.properties
 sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nodemgr_home}:g" ${nodemgr_home}/nodemanager.properties
-sed -i -e "s:ListenAddress=.*:ListenAddress=${domain_uid}-${server_name}:g" ${nodemgr_home}/nodemanager.properties
+sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" /u01/nodemanager/nodemanager.properties
 sed -i -e "s:LogFile=.*:LogFile=${nm_log}:g" ${nodemgr_home}/nodemanager.properties
 
 export JAVA_PROPERTIES="-DLogFile=${nm_log} -DNodeManagerHome=${nodemgr_home}"

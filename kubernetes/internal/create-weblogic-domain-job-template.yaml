@@ -143,7 +143,7 @@ data:
     # Configure the Administration Server
     # ===================================
     cd('/Servers/AdminServer')
-    set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME%')
+    set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_LC%')
     set('ListenPort', %ADMIN_PORT%)
     set('Name', '%ADMIN_SERVER_NAME%')
 
@@ -151,7 +151,7 @@ data:
     cd('/Servers/%ADMIN_SERVER_NAME%/NetworkAccessPoints/T3Channel')
     set('PublicPort', %T3_CHANNEL_PORT%)
     set('PublicAddress', '%T3_PUBLIC_ADDRESS%')
-    set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME%')
+    set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_LC%')
     set('ListenPort', %T3_CHANNEL_PORT%)
 
     cd('/Servers/%ADMIN_SERVER_NAME%')
@@ -199,11 +199,12 @@ data:
 
         msIndex = index+1
         name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
+        name_lc = '%MANAGED_SERVER_NAME_BASE_LC%%s' % msIndex
 
         create(name, 'Server')
         cd('/Servers/%s/' % name )
         print('managed server name is %s' % name);
-        set('ListenAddress', '%DOMAIN_UID%-%s' % name)
+        set('ListenAddress', '%DOMAIN_UID%-%s' % name_lc)
         set('ListenPort', server_port)
         set('NumOfRetriesBeforeMSIMode', 0)
         set('RetryIntervalBeforeMSIMode', 1)
@@ -221,7 +222,7 @@ data:
       print('Done creating Server Template: %s' % templateName)
       cd('/ServerTemplates/%s' % templateName)
       cmo.setListenPort(server_port)
-      cmo.setListenAddress('%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE%${id}')
+      cmo.setListenAddress('%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE_LC%${id}')
       cmo.setCluster(cl)
       print('Done setting attributes for Server Template: %s' % templateName);
 
