@@ -292,14 +292,13 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void serverStartupInfo_containsWlsServerStartupAndConfig() {
-    configureServer("ms1");
+    configureServer("ms1").withNodePort(17);
     addWlsServer("ms1");
 
     invokeStep();
 
     assertThat(getServerStartupInfo("ms1").serverConfig, sameInstance(getWlsServer("ms1")));
-    assertThat(
-        getServerStartupInfo("ms1").serverStartup, sameInstance(getServerConfiguration("ms1")));
+    assertThat(getServerStartupInfo("ms1").getNodePort(), equalTo(17));
   }
 
   @Test
@@ -312,7 +311,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").envVars,
+        getServerStartupInfo("ms1").getEnvironment(),
         containsInAnyOrder(envVar("item1", "value1"), envVar("item2", "value2")));
   }
 
@@ -324,7 +323,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").envVars,
+        getServerStartupInfo("ms1").getEnvironment(),
         hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
   }
 
@@ -338,7 +337,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").envVars,
+        getServerStartupInfo("ms1").getEnvironment(),
         hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN value1")));
   }
 
@@ -378,7 +377,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenClusterStartupDefinedForServerNotRunning_addServerStartup() {
-    configureServer("ms1");
+    configureServer("ms1").withNodePort(23);
     configureCluster("cluster1");
     addWlsCluster("cluster1", "ms1");
 
@@ -388,8 +387,7 @@ public class ManagedServersUpStepTest {
         getServerStartupInfo("ms1").serverConfig,
         sameInstance(getServerForWlsCluster("cluster1", "ms1")));
     assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
-    assertThat(
-        getServerStartupInfo("ms1").serverStartup, sameInstance(getServerConfiguration("ms1")));
+    assertThat(getServerStartupInfo("ms1").getNodePort(), equalTo(23));
   }
 
   @Test
@@ -399,7 +397,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").envVars, contains(envVar("item1", "value1")));
+    assertThat(getServerStartupInfo("ms1").getEnvironment(), contains(envVar("item1", "value1")));
   }
 
   @Test
@@ -410,7 +408,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").envVars, contains(envVar("item2", "value2")));
+    assertThat(getServerStartupInfo("ms1").getEnvironment(), contains(envVar("item2", "value2")));
   }
 
   @Test
@@ -423,7 +421,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").envVars,
+        getServerStartupInfo("ms1").getEnvironment(),
         hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
   }
 
@@ -494,8 +492,8 @@ public class ManagedServersUpStepTest {
 
     assertThat(getServerStartupInfo("ms1").serverConfig, sameInstance(getWlsServer("ms1")));
     assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
-    assertThat(getServerStartupInfo("ms1").envVars, empty());
-    assertThat(getServerStartupInfo("ms1").serverStartup, nullValue());
+    assertThat(getServerStartupInfo("ms1").getEnvironment(), empty());
+    assertThat(getServerStartupInfo("ms1").getNodePort(), nullValue());
   }
 
   @Test
@@ -569,14 +567,6 @@ public class ManagedServersUpStepTest {
     ClusterStartup startup = new ClusterStartup().withClusterName(clusterName).withReplicas(1);
     domain.getSpec().addClusterStartupItem(startup);
     return startup;
-  }
-
-  private ServerStartup getServerConfiguration(String name) {
-    for (ServerStartup startup : domain.getSpec().getServerStartup()) {
-      if (startup.getServerName().equals(name)) return startup;
-    }
-
-    return null;
   }
 
   private WlsServerConfig getServerForWlsCluster(String clusterName, String serverName) {
