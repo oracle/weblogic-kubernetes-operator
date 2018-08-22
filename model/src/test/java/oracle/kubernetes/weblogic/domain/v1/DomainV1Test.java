@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1EnvVar;
@@ -158,6 +159,25 @@ public class DomainV1Test {
     ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
 
     verifyStandardFields(spec);
+  }
+
+  @Test
+  public void whenNeitherServerNorClusterStartupDefined_managedServerIsNotSpecified() {
+    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).isSpecified(), is(false));
+  }
+
+  @Test
+  public void whenServerStartupDefined_managedServerIsSpecified() {
+    addServerStartup(new ServerStartup().withServerName(SERVER1));
+
+    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).isSpecified(), is(true));
+  }
+
+  @Test
+  public void whenClusterStartupDefined_managedServerIsSpecified() {
+    addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME));
+
+    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).isSpecified(), is(true));
   }
 
   @Test
