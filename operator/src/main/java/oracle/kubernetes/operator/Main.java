@@ -712,26 +712,47 @@ public class Main {
     return null;
   }
 
-  private static void deleteDomainPresence(
-      String namespace, String domainUID, DateTime deleteDomainDateTime) {
-    LOGGER.entering();
-
+  /**
+   * Delete DomainPresentInfo from DomainPresenceInfoManager iff there is DomainPresentInfo with the
+   * same domainUID and with a creationTimeStamp that is on or after the provided
+   * deleteDomainDateTime.
+   *
+   * @param domainUID domainUID of the DomainPresenceInfo to be deleted
+   * @param creationDateTime only delete DomainPresenceInfo from DomainPresenceInfoManager if its
+   *     creationTimeStamp is on or after the given creationDateTime
+   * @return The deleted DomainPresenceInfo that met the domainUID and creationDateTime criteria, or
+   *     null otherwise
+   */
+  static DomainPresenceInfo deleteDomainPresenceWithTimeCheck(
+      String domainUID, DateTime creationDateTime) {
     DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
     if (info != null) {
       DateTime infoDateTime = getDomainCreationTimeStamp(info);
       if (infoDateTime != null
-          && deleteDomainDateTime != null
-          && deleteDomainDateTime.isBefore(infoDateTime)) {
+          && creationDateTime != null
+          && creationDateTime.isBefore(infoDateTime)) {
         LOGGER.exiting("Domain to be deleted is too old");
-        return;
+        return null;
       }
       info = DomainPresenceInfoManager.remove(domainUID);
       if (info == null) {
         LOGGER.exiting("Domain already deleted by another Fiber");
-        return;
+        return null;
       }
-      DomainPresenceControl.cancelDomainStatusUpdating(info);
     }
+    return info;
+  }
+
+  private static void deleteDomainPresence(
+      String namespace, String domainUID, DateTime deleteDomainDateTime) {
+    LOGGER.entering();
+
+    DomainPresenceInfo info = deleteDomainPresenceWithTimeCheck(domainUID, deleteDomainDateTime);
+    if (info == null) {
+      return;
+    }
+    DomainPresenceControl.cancelDomainStatusUpdating(info);
+
     FIBER_GATE.startFiber(
         domainUID,
         new DeleteDomainStep(namespace, domainUID),
