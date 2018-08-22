@@ -109,6 +109,11 @@ public class ServerSpecV1Impl implements ServerSpec {
     return Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
   }
 
+  @Override
+  public boolean isSpecified() {
+    return serverStartup != null || clusterStartup != null;
+  }
+
   private String getConfiguredDesiredState() {
     if (serverStartup != null) return serverStartup.getDesiredState();
     return clusterStartup == null ? null : clusterStartup.getDesiredState();

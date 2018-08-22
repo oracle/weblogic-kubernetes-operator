@@ -46,4 +46,11 @@ public interface ServerSpec {
    * @return desired state
    */
   String getDesiredState();
+
+  /**
+   * Returns true if this server is specified in the domain spec.
+   *
+   * @return whether configuration exists for the server
+   */
+  boolean isSpecified();
 }
