@@ -349,7 +349,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").clusterConfig, nullValue());
+    assertThat(getServerStartupInfo("ms1").getClusterName(), nullValue());
   }
 
   @Test
@@ -362,7 +362,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").clusterConfig, sameInstance(getWlsCluster("cluster1")));
+    assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
   }
 
   @Test
@@ -387,7 +387,7 @@ public class ManagedServersUpStepTest {
     assertThat(
         getServerStartupInfo("ms1").serverConfig,
         sameInstance(getServerForWlsCluster("cluster1", "ms1")));
-    assertThat(getServerStartupInfo("ms1").clusterConfig, sameInstance(getWlsCluster("cluster1")));
+    assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
     assertThat(
         getServerStartupInfo("ms1").serverStartup, sameInstance(getServerConfiguration("ms1")));
   }
@@ -480,7 +480,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3", "ms4", "ms5"));
-    assertThat(getServerStartupInfo("ms4").clusterConfig, equalTo(getWlsCluster("cluster1")));
+    assertThat(getServerStartupInfo("ms4").getClusterName(), equalTo("cluster1"));
     assertThat(getServerStartupInfo("ms4").serverConfig, equalTo(getWlsServer("ms4")));
   }
 
@@ -493,7 +493,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServerStartupInfo("ms1").serverConfig, sameInstance(getWlsServer("ms1")));
-    assertThat(getServerStartupInfo("ms1").clusterConfig, sameInstance(getWlsCluster("cluster1")));
+    assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
     assertThat(getServerStartupInfo("ms1").envVars, empty());
     assertThat(getServerStartupInfo("ms1").serverStartup, nullValue());
   }
