@@ -92,7 +92,7 @@ public class WlsRetrieverTest {
     assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
   }
 
-  @Test
+  // @Test - no longer retry for Health check
   public void withHttpClientStep_Health_nologIfFailedOnRetry() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
