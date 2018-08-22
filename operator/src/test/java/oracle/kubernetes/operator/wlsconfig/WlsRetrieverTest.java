@@ -12,7 +12,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +19,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever.RequestType;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever.WithHttpClientStep;
@@ -30,8 +26,6 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,45 +93,10 @@ public class WlsRetrieverTest {
     assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
   }
 
-  // @Test - no longer retry for Health check
-  public void withHttpClientStep_Health_nologIfFailedOnRetry() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-    Packet packet = Stub.createStub(PacketStub.class).withRetryCount(1);
-
-    WithHttpClientStep withHttpClientStep =
-        new WithHttpClientStep(RequestType.HEALTH, service, next);
-    withHttpClientStep.apply(packet);
-
-    assert (logRecords.isEmpty());
-  }
-
   @Test(expected = IllegalArgumentException.class)
   public void WithHttpClientStep_const_throws_with_null_service() {
     Step next = new MockStep(null);
     new WithHttpClientStep(RequestType.HEALTH, null, next);
-  }
-
-  // @Test (expected =IllegalArgumentException.class)
-  public void ReadStep_apply_throws_with_null_service() {
-    final String SERVER_NAME = "managed-server1";
-    final String DOMAIN_UID = "testDomain";
-    Step next = new MockStep(null);
-    DomainSpec domainSpec = new DomainSpec();
-    domainSpec.setDomainUID(DOMAIN_UID);
-    Domain domain =
-        new Domain()
-            .withSpec(domainSpec)
-            .withMetadata(new V1ObjectMeta().namespace("testnamespace"));
-    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.getOrCreate(domain);
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, DOMAIN_UID, SERVER_NAME);
-    Packet packet =
-        Stub.createStub(PacketStub.class)
-            .addSpi(DomainPresenceInfo.class, domainPresenceInfo)
-            .withServerName(SERVER_NAME);
-
-    Step readStep = WlsRetriever.readHealthStep(next);
-    readStep.apply(packet);
   }
 
   abstract static class PacketStub extends Packet {
