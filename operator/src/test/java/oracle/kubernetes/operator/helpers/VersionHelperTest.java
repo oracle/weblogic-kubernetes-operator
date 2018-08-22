@@ -6,10 +6,10 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.LabelConstants.*;
 import static oracle.kubernetes.operator.helpers.VersionHelper.*;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
+import io.kubernetes.client.models.V1ObjectMeta;
 import org.junit.Test;
 
 public class VersionHelperTest {
@@ -31,6 +31,10 @@ public class VersionHelperTest {
     assertThat(
         matchesResourceVersion(newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, null), V1),
         equalTo(false));
+  }
+
+  private static V1ObjectMeta newObjectMeta() {
+    return new V1ObjectMeta();
   }
 
   @Test
