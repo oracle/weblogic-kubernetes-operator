@@ -23,7 +23,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.joda.time.DateTime;
 
 /**
@@ -277,26 +277,20 @@ public class DomainPresenceInfo {
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
     private String clusterName;
-    public final List<V1EnvVar> envVars;
-    public final ServerStartup serverStartup;
+    private ServerSpec serverSpec;
 
     /**
      * Create server startup info
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param envVars Environment variables
-     * @param serverStartup Server startup configuration
+     * @param serverSpec the server startup configuration
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig,
-        String clusterName,
-        List<V1EnvVar> envVars,
-        ServerStartup serverStartup) {
+        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
-      this.envVars = envVars;
-      this.serverStartup = serverStartup;
+      this.serverSpec = serverSpec;
     }
 
     public String getClusterName() {
@@ -309,7 +303,7 @@ public class DomainPresenceInfo {
      * @return a port number, or null.
      */
     public Integer getNodePort() {
-      return serverStartup == null ? null : serverStartup.getNodePort();
+      return serverSpec == null ? null : serverSpec.getNodePort();
     }
 
     /**
@@ -318,7 +312,11 @@ public class DomainPresenceInfo {
      * @return return a string, which may be null.
      */
     public String getDesiredState() {
-      return serverStartup == null ? null : serverStartup.getDesiredState();
+      return serverSpec == null ? null : serverSpec.getDesiredState();
+    }
+
+    public List<V1EnvVar> getEnvironment() {
+      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
   }
 

@@ -95,12 +95,7 @@ public class ManagedServersUpStep extends Step {
 
     private void addStartupInfo(WlsServerConfig server, String clusterName) {
       ServerSpec serverSpec = domain.getServer(clusterName, server.getName());
-      ssic.add(
-          new ServerStartupInfo(
-              server,
-              clusterName,
-              serverSpec.getEnvironmentVariables(),
-              serverSpec.getServerStartup()));
+      ssic.add(new ServerStartupInfo(server, clusterName, serverSpec));
     }
 
     private void addToCluster(String clusterName) {
