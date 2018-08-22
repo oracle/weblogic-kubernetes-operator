@@ -79,6 +79,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -307,7 +308,7 @@ public class Main {
       String domainUID = entry.getKey();
       DomainPresenceInfo info = entry.getValue();
       if (info != null && info.getDomain() == null) {
-        deleteDomainPresence(info.getNamespace(), domainUID);
+        deleteDomainPresence(info.getNamespace(), domainUID, null);
       }
     }
   }
@@ -699,14 +700,36 @@ public class Main {
 
     String domainUID = spec.getDomainUID();
 
-    deleteDomainPresence(namespace, domainUID);
+    deleteDomainPresence(namespace, domainUID, meta.getCreationTimestamp());
   }
 
-  private static void deleteDomainPresence(String namespace, String domainUID) {
+  private static DateTime getDomainCreationTimeStamp(DomainPresenceInfo domainPresenceInfo) {
+    if (domainPresenceInfo != null
+        && domainPresenceInfo.getDomain() != null
+        && domainPresenceInfo.getDomain().getMetadata() != null) {
+      return domainPresenceInfo.getDomain().getMetadata().getCreationTimestamp();
+    }
+    return null;
+  }
+
+  private static void deleteDomainPresence(
+      String namespace, String domainUID, DateTime deleteDomainDateTime) {
     LOGGER.entering();
 
-    DomainPresenceInfo info = DomainPresenceInfoManager.remove(domainUID);
+    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
     if (info != null) {
+      DateTime infoDateTime = getDomainCreationTimeStamp(info);
+      if (infoDateTime != null
+          && deleteDomainDateTime != null
+          && deleteDomainDateTime.isBefore(infoDateTime)) {
+        LOGGER.exiting("Domain to be deleted is too old");
+        return;
+      }
+      info = DomainPresenceInfoManager.remove(domainUID);
+      if (info == null) {
+        LOGGER.exiting("Domain already deleted by another Fiber");
+        return;
+      }
       DomainPresenceControl.cancelDomainStatusUpdating(info);
     }
     FIBER_GATE.startFiber(
