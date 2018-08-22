@@ -19,7 +19,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -277,7 +276,7 @@ public class DomainPresenceInfo {
   /** Details about a specific managed server that will be started up */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
-    public final WlsClusterConfig clusterConfig;
+    private String clusterName;
     public final List<V1EnvVar> envVars;
     public final ServerStartup serverStartup;
 
@@ -285,19 +284,23 @@ public class DomainPresenceInfo {
      * Create server startup info
      *
      * @param serverConfig Server config scan
-     * @param clusterConfig Cluster config scan
+     * @param clusterName the name of the cluster
      * @param envVars Environment variables
      * @param serverStartup Server startup configuration
      */
     public ServerStartupInfo(
         WlsServerConfig serverConfig,
-        WlsClusterConfig clusterConfig,
+        String clusterName,
         List<V1EnvVar> envVars,
         ServerStartup serverStartup) {
       this.serverConfig = serverConfig;
-      this.clusterConfig = clusterConfig;
+      this.clusterName = clusterName;
       this.envVars = envVars;
       this.serverStartup = serverStartup;
+    }
+
+    public String getClusterName() {
+      return clusterName;
     }
 
     /**

@@ -40,7 +40,7 @@ public class ManagedServerUpIteratorStep extends Step {
     for (ServerStartupInfo ssi : c) {
       Packet p = packet.clone();
       p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-      p.put(ProcessingConstants.CLUSTER_NAME, ssi.clusterConfig.getClusterName());
+      p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
       p.put(ProcessingConstants.ENVVARS, ssi.envVars);
 
       p.put(ProcessingConstants.SERVER_NAME, ssi.serverConfig.getName());
