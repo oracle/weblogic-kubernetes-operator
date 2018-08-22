@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1EnvVar;
@@ -338,5 +339,20 @@ public class DomainV1Test {
         .addClusterStartupItem(new ClusterStartup().withClusterName("cluster1").withReplicas(3));
 
     assertThat(domain.getReplicaLimit("cluster1"), equalTo(3));
+  }
+
+  @Test
+  public void whenNoServerStartupDefined_nodePortIsNull() {
+    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+
+    assertThat(spec.getNodePort(), nullValue());
+  }
+
+  @Test
+  public void whenServerStartupDefined_returnNodePort() {
+    addServerStartup(new ServerStartup().withServerName(SERVER1).withNodePort(31));
+    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+
+    assertThat(spec.getNodePort(), equalTo(31));
   }
 }

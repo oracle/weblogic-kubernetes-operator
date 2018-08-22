@@ -12,6 +12,7 @@ import java.util.Optional;
 import oracle.kubernetes.operator.KubernetesConstants;
 
 public class ServerSpecV1Impl implements ServerSpec {
+  private static final String ADMIN_MODE_FLAG = "-Dweblogic.management.startupMode=ADMIN";
   private DomainSpec domainSpec;
   private ServerStartup serverStartup;
   private ClusterStartup clusterStartup;
@@ -101,7 +102,7 @@ public class ServerSpecV1Impl implements ServerSpec {
 
   @SuppressWarnings("SameParameterValue")
   private String prepend(String value, String prefix) {
-    return value == null ? prefix : prefix + ' ' + value;
+    return value == null ? prefix : value.contains(prefix) ? value : prefix + ' ' + value;
   }
 
   @Override
@@ -112,6 +113,11 @@ public class ServerSpecV1Impl implements ServerSpec {
   @Override
   public boolean isSpecified() {
     return serverStartup != null || clusterStartup != null;
+  }
+
+  @Override
+  public Integer getNodePort() {
+    return serverStartup == null ? null : serverStartup.getNodePort();
   }
 
   private String getConfiguredDesiredState() {

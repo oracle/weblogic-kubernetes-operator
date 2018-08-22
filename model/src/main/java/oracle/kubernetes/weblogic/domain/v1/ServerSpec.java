@@ -53,4 +53,11 @@ public interface ServerSpec {
    * @return whether configuration exists for the server
    */
   boolean isSpecified();
+
+  /**
+   * Returns the port on which this server will be exposed.
+   *
+   * @return the port number. May be null.
+   */
+  Integer getNodePort();
 }
