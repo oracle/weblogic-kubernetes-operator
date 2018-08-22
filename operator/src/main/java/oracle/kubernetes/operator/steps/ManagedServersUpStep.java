@@ -123,10 +123,8 @@ public class ManagedServersUpStep extends Step {
     factory = new ServersUpStepFactory(dom);
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(SERVERS_UP_MSG, spec.getDomainUID(), getRunningServers(info));
+      LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
-
-    String sc = dom.getStartupControl();
 
     WlsDomainConfig scan = info.getScan();
 
@@ -162,88 +160,82 @@ public class ManagedServersUpStep extends Step {
           return doNext(NEXT_STEP_FACTORY.createServerStep(info, factory.servers, getNext()), packet);
         }
     /*/
-    boolean startAll = false;
-    switch (sc) {
-      case StartupControlConstants.ALL_STARTUPCONTROL:
-        startAll = true;
-      case StartupControlConstants.AUTO_STARTUPCONTROL:
-      case StartupControlConstants.SPECIFIED_STARTUPCONTROL:
-        Collection<String> clusters = new ArrayList<>();
+    if (factory.isStartSpecifiedServers()) {
+      Collection<String> clusters = new ArrayList<>();
 
-        // start specified servers with their custom options
-        List<ServerStartup> ssl = spec.getServerStartup();
-        if (ssl != null) {
-          for (ServerStartup ss : ssl) {
-            WlsServerConfig wlsServerConfig = scan.getServerConfig(ss.getServerName());
-            if (wlsServerConfig != null) {
-              String serverName = wlsServerConfig.getName();
-              WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(scan, serverName);
-              String clusterName =
-                  wlsClusterConfig == null ? null : wlsClusterConfig.getClusterName();
-              factory.addServer(clusterName, serverName, wlsServerConfig);
-            }
-          }
-        }
-        List<ClusterStartup> lcs = spec.getClusterStartup();
-        if (lcs != null) {
-          cluster:
-          for (ClusterStartup cs : lcs) {
-            String clusterName = cs.getClusterName();
-            clusters.add(clusterName);
-            // find cluster
-            WlsClusterConfig wlsClusterConfig = scan.getClusterConfig(clusterName);
-            if (wlsClusterConfig != null) {
-              for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
-                // done with the current cluster
-                if (factory.atReplicaLimit(clusterName) && !startAll) continue cluster;
-
-                String serverName = wlsServerConfig.getName();
-                factory.addServer(clusterName, serverName, wlsServerConfig);
-              }
-            }
-          }
-        }
-        if (startAll) {
-          // Look for any other servers
-          for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
-            for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
-              String serverName = wlsServerConfig.getName();
-              String clusterName = wlsClusterConfig.getClusterName();
-              // do not start admin server
-              factory.addServer(clusterName, serverName, wlsServerConfig);
-            }
-          }
-          for (WlsServerConfig wlsServerConfig : scan.getServerConfigs().values()) {
+      // start specified servers with their custom options
+      List<ServerStartup> ssl = spec.getServerStartup();
+      if (ssl != null) {
+        for (ServerStartup ss : ssl) {
+          WlsServerConfig wlsServerConfig = scan.getServerConfig(ss.getServerName());
+          if (wlsServerConfig != null) {
             String serverName = wlsServerConfig.getName();
-            String clusterName = null;
+            WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(scan, serverName);
+            String clusterName =
+                wlsClusterConfig == null ? null : wlsClusterConfig.getClusterName();
+            factory.addServer(clusterName, serverName, wlsServerConfig);
+          }
+        }
+      }
+      List<ClusterStartup> lcs = spec.getClusterStartup();
+      if (lcs != null) {
+        cluster:
+        for (ClusterStartup cs : lcs) {
+          String clusterName = cs.getClusterName();
+          clusters.add(clusterName);
+          // find cluster
+          WlsClusterConfig wlsClusterConfig = scan.getClusterConfig(clusterName);
+          if (wlsClusterConfig != null) {
+            for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+              // done with the current cluster
+              if (factory.atReplicaLimit(clusterName) && !factory.isIgnoreReplicaLimits())
+                continue cluster;
+
+              String serverName = wlsServerConfig.getName();
+              factory.addServer(clusterName, serverName, wlsServerConfig);
+            }
+          }
+        }
+      }
+      if (factory.isIgnoreReplicaLimits()) {
+        // Look for any other servers
+        for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
+          for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+            String serverName = wlsServerConfig.getName();
+            String clusterName = wlsClusterConfig.getClusterName();
             // do not start admin server
             factory.addServer(clusterName, serverName, wlsServerConfig);
           }
-        } else if (StartupControlConstants.AUTO_STARTUPCONTROL.equals(sc)) {
-          for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
-            String clusterName = wlsClusterConfig.getClusterName();
-            if (!clusters.contains(clusterName)) {
-              for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
-                if (factory.atReplicaLimit(clusterName)) break;
-                String serverName = wlsServerConfig.getName();
-                factory.addServer(clusterName, serverName, wlsServerConfig);
-              }
+        }
+        for (WlsServerConfig wlsServerConfig : scan.getServerConfigs().values()) {
+          String serverName = wlsServerConfig.getName();
+          String clusterName = null;
+          // do not start admin server
+          factory.addServer(clusterName, serverName, wlsServerConfig);
+        }
+      } else if (factory.isStartAllManagedServers()) {
+        for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
+          String clusterName = wlsClusterConfig.getClusterName();
+          if (!clusters.contains(clusterName)) {
+            for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
+              if (factory.atReplicaLimit(clusterName)) break;
+              String serverName = wlsServerConfig.getName();
+              factory.addServer(clusterName, serverName, wlsServerConfig);
             }
           }
         }
+      }
 
-        info.setServerStartupInfo(factory.ssic);
-        LOGGER.exiting();
-        return doNext(
-            NEXT_STEP_FACTORY.createServerStep(
-                info, factory.servers, new ManagedServerUpIteratorStep(factory.ssic, getNext())),
-            packet);
-      case StartupControlConstants.ADMIN_STARTUPCONTROL:
-      case StartupControlConstants.NONE_STARTUPCONTROL:
-      default:
-        info.setServerStartupInfo(null);
-        LOGGER.exiting();
-        return doNext(NEXT_STEP_FACTORY.createServerStep(info, factory.servers, getNext()), packet);
+      info.setServerStartupInfo(factory.ssic);
+      LOGGER.exiting();
+      return doNext(
+          NEXT_STEP_FACTORY.createServerStep(
+              info, factory.servers, new ManagedServerUpIteratorStep(factory.ssic, getNext())),
+          packet);
+    } else {
+      info.setServerStartupInfo(null);
+      LOGGER.exiting();
+      return doNext(NEXT_STEP_FACTORY.createServerStep(info, factory.servers, getNext()), packet);
     }
     /**/
   }
