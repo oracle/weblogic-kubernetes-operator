@@ -9,7 +9,7 @@
 # This script does a best-effort delete of acceptance test k8s artifacts, the
 # local test tmp directory, and the potentially remote domain pv directories.
 #
-# This script accepts two optional env var overrides:
+# This script accepts optional env var overrides:
 #
 #   RESULT_ROOT  The root directory of the test temporary files.
 #
@@ -19,30 +19,34 @@
 #   LEASE_ID     Set this if you want cleanup to release the 
 #                given lease on a failure.
 #
-# See 'run.sh' for a detailed description of RESULT_ROOT and PV_ROOT.
+#   WERCKER      Set this to true if you want cleanup to delete
+#                tiller (the WERCKER path in run.sh sets up tiller).
+#
+# See the acceptance test 'run.sh' for more details on each of the above.
 #
 # --------------------
 # Detailed Description
 # --------------------
 #
-# The test runs in 4 phases:
+# The test runs in phases:
+#
+#   Phase 0:  If helm is installed, helm delete all helm charts.
+#             Possibly also delete tiller (see WERCKER env var above.)
 #
 #   Phase 1:  Delete test kubernetes artifacts with labels.
 #
-#   Phase 2: Wait 15 seconds to see if stage 1 succeeded, and
+#   Phase 2:  Wait 15 seconds to see if previous phase succeeded, and
 #             if not, repeatedly search for all test related kubectl
 #             artifacts and try delete them directly for up to 60 more
-#             seconds.  This phase has no dependency on the
-#             previous test run's yaml files.  It makes no
-#             attempt to delete artifacts in a particular order.
+#             seconds. 
 #
 #   Phase 3:  Use a kubernetes job to delete the PV directories
 #             on the kubernetes cluster.
 #
 #   Phase 4:  Delete the local test output directory.
 #
-#   Phase 5:  If we own a lease, then release it on a failure
-#             see LEASE_ID above.
+#   Phase 5:  If we own a lease, then release it on a failure.
+#             (See optional LEASE_ID env var above.)
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
@@ -287,14 +291,6 @@ function genericDelete {
   return 1
 }
 
-function kubectlDeleteF {
-   if [ -f "$1" ]; then
-      kubectl delete -f "$1" --ignore-not-found
-   else
-      echo @@ File \"$1\" not found.  Skipping kubectl delete -f.
-   fi
-}
-
 function cleanup_tiller {
   kubectl -n kube-system delete deployment tiller-deploy --ignore-not-found=true
   kubectl delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
@@ -315,7 +311,7 @@ echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJEC
 
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
-# if helm is installed, delete all installed helm charts
+# first, if helm is installed, delete all installed helm charts
 if [ -x "$(command -v helm)" ]; then
   echo @@ Deleting installed helm charts
   helm list --short | xargs -L1 --no-run-if-empty helm delete --purge
@@ -326,12 +322,12 @@ if [ -x "$(command -v helm)" ]; then
   fi
 fi
 
-# first, try to delete with labels since the conversion is that all created resources need to
+# second, try to delete with labels since the conversion is that all created resources need to
 # have the proper label(s)
 echo @@ Starting deleteWithLabels
 deleteWithLabels
 
-# second, try a generic delete in case there are some leftover resources, this runs in two phases:
+# third, try a generic delete in case there are some leftover resources, this runs in two phases:
 #   phase 1:  wait to see if artifacts dissappear naturally due to the above 
 #   phase 2:  kubectl delete left over artifacts
 # arguments
