@@ -43,7 +43,7 @@ function validateInputParamsSpecified {
   for p in $*; do
     local name=$p
     local val=${!name}
-    if [ -z $val ]; then
+    if [ -z "$val" ]; then
       validationError "The ${name} parameter in ${valuesInputFile} is missing, null or empty"
     fi
   done
@@ -105,7 +105,13 @@ function parseYaml {
      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
   awk -F$fs '{
     if (length($3) > 0) {
-       printf("export %s=\"%s\"\n", $2, $3);
+      # javaOptions may contain tokens that are not allowed in export command
+      # we need to handle it differently. 
+      if ($2=="javaOptions") {
+        printf("%s=%s\n", $2, $3);
+      } else {
+        printf("export %s=\"%s\"\n", $2, $3);
+      }
     }
   }' > $2
 }
@@ -115,6 +121,7 @@ function parseYaml {
 #
 function parseCommonInputs {
   exportValuesFile="/tmp/export-values.sh"
+  tmpFile="/tmp/javaoptions_tmp.dat"
   parseYaml ${valuesInputFile} ${exportValuesFile}
 
   if [ ! -f ${exportValuesFile} ]; then
@@ -126,8 +133,17 @@ function parseCommonInputs {
   echo Input parameters being used
   cat ${exportValuesFile}
   echo
-  source ${exportValuesFile}
-  rm ${exportValuesFile}
+
+  # javaOptions may contain tokens that are not allowed in export command
+  # we need to handle it differently. 
+  # we set the javaOptions variable that can be used later
+  tmpStr=`grep "javaOptions" ${exportValuesFile}`
+  javaOptions=${tmpStr//"javaOptions="/}
+
+  # We exclude javaOptions from the exportValuesFile
+  grep -v "javaOptions" ${exportValuesFile} > ${tmpFile}
+  source ${tmpFile}
+  rm ${exportValuesFile} ${tmpFile}
 }
 
 #
