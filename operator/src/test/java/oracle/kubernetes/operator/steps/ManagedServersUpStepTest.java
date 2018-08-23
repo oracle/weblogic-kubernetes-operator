@@ -145,92 +145,98 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartupControlUndefined_startManagedServers() {
-    invokeStep();
+  public void whenStartupControlUndefined_startServers() {
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersToBeStarted();
+    assertServersToBeStarted();
+  }
+
+  private void invokeStepWithConfiguredServer() {
+    configureServer("configured");
+    addWlsServer("configured");
+    invokeStep();
   }
 
   @Test
-  public void whenStartupControlAuto_startManagedServers() {
+  public void whenStartupControlAuto_startServers() {
     setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersToBeStarted();
+    assertServersToBeStarted();
   }
 
   @Test
-  public void whenStartupControlAll_startManagedServers() {
+  public void whenStartupControlAll_startServers() {
     setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersToBeStarted();
+    assertServersToBeStarted();
   }
 
   @Test
-  public void whenStartupControlSpecified_startManagedServers() {
+  public void whenStartupControlSpecified_startServers() {
     setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL);
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersToBeStarted();
+    assertServersToBeStarted();
   }
 
   @Test
   public void whenStartupControlLowerCase_recognizeIt() {
     setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL.toLowerCase());
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersToBeStarted();
+    assertServersToBeStarted();
   }
 
-  private void assertManagedServersToBeStarted() {
+  private void assertServersToBeStarted() {
     assertThat(TestStepFactory.next, instanceOf(ManagedServerUpIteratorStep.class));
   }
 
   @Test
-  public void whenStartupControlAdmin_dontStartManagedServers() {
+  public void whenStartupControlAdmin_dontStartServers() {
     setStartupControl(StartupControlConstants.ADMIN_STARTUPCONTROL);
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersWillNotBeStarted();
+    assertServersWillNotBeStarted();
   }
 
   @Test
-  public void whenStartupControlNone_dontStartManagedServers() {
+  public void whenStartupControlNone_dontStartServers() {
     setStartupControl(StartupControlConstants.NONE_STARTUPCONTROL);
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersWillNotBeStarted();
+    assertServersWillNotBeStarted();
   }
 
   @Test
-  public void whenStartupControlNotRecognized_dontStartManagedServers() {
+  public void whenStartupControlNotRecognized_dontStartServers() {
     setStartupControl("xyzzy");
 
-    invokeStep();
+    invokeStepWithConfiguredServer();
 
-    assertManagedServersWillNotBeStarted();
+    assertServersWillNotBeStarted();
   }
 
   @Test
   public void whenWlsServerInDomainSpec_addToServerList() {
-    configureServer("ms1");
-    addWlsServer("ms1");
+    configureServer("wls1");
+    addWlsServer("wls1");
 
     invokeStep();
 
-    assertThat(getServers(), contains("ms1"));
+    assertThat(getServers(), contains("wls1"));
   }
 
   @Test
   public void whenWlsServerNotInDomainSpec_dontAddToServerList() {
-    addWlsServer("ms1");
+    addWlsServer("wls1");
 
     invokeStep();
 
@@ -239,7 +245,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenServerInDomainSpecButNotDefinedInWls_dontAddToServerList() {
-    configureServer("ms1");
+    configureServer("wls1");
 
     invokeStep();
 
@@ -248,114 +254,113 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenMultipleWlsServersInDomainSpec_addToServerList() {
-    configureServers("ms1", "ms2", "ms3");
-    addWlsServers("ms1", "ms2", "ms3");
+    configureServers("wls1", "wls2", "wls3");
+    addWlsServers("wls1", "wls2", "wls3");
 
     invokeStep();
 
-    assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+    assertThat(getServers(), containsInAnyOrder("wls1", "wls2", "wls3"));
   }
 
   @Test
   public void whenMultipleWlsServersInDomainSpec_skipAdminServer() {
-    defineAdminServer("ms2");
-    configureServers("ms1", "ms2", "ms3");
-    addWlsServers("ms1", "ms2", "ms3");
+    defineAdminServer("wls2");
+    configureServers("wls1", "wls2", "wls3");
+    addWlsServers("wls1", "wls2", "wls3");
 
     invokeStep();
 
-    assertThat(getServers(), containsInAnyOrder("ms1", "ms3"));
+    assertThat(getServers(), containsInAnyOrder("wls1", "wls3"));
   }
 
   @Test
   public void whenWlsServersDuplicatedInDomainSpec_skipDuplicates() {
     defineAdminServer("admin");
-    configureServers("ms1", "ms1", "ms2");
-    addWlsServers("ms1", "ms2", "ms3");
+    configureServers("wls1", "wls1", "wls2");
+    addWlsServers("wls1", "wls2", "wls3");
 
     invokeStep();
 
-    assertThat(getServers(), containsInAnyOrder("ms1", "ms2"));
+    assertThat(getServers(), containsInAnyOrder("wls1", "wls2"));
   }
 
   @Test
   public void whenWlsServersInDomainSpec_addStartupInfo() {
-    configureServer("ms1");
-    configureServer("ms2");
-    addWlsServers("ms1", "ms2");
+    configureServer("wls1");
+    configureServer("wls2");
+    addWlsServers("wls1", "wls2");
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1"), notNullValue());
-    assertThat(getServerStartupInfo("ms2"), notNullValue());
+    assertThat(getServerStartupInfo("wls1"), notNullValue());
+    assertThat(getServerStartupInfo("wls2"), notNullValue());
   }
 
   @Test
   public void serverStartupInfo_containsWlsServerStartupAndConfig() {
-    configureServer("ms1").withNodePort(17);
-    addWlsServer("ms1");
+    configureServer("wls1").withNodePort(17);
+    addWlsServer("wls1");
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").serverConfig, sameInstance(getWlsServer("ms1")));
-    assertThat(getServerStartupInfo("ms1").getNodePort(), equalTo(17));
+    assertThat(getServerStartupInfo("wls1").serverConfig, sameInstance(getWlsServer("wls1")));
+    assertThat(getServerStartupInfo("wls1").getNodePort(), equalTo(17));
   }
 
   @Test
   public void serverStartupInfo_containsEnvironmentVariable() {
-    configureServer("ms1")
+    configureServer("wls1")
         .withEnvironmentVariable("item1", "value1")
         .withEnvironmentVariable("item2", "value2");
-    addWlsServer("ms1");
+    addWlsServer("wls1");
 
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").getEnvironment(),
+        getServerStartupInfo("wls1").getEnvironment(),
         containsInAnyOrder(envVar("item1", "value1"), envVar("item2", "value2")));
   }
 
   @Test
   public void whenDesiredStateIsAdmin_serverStartupCreatesJavaOptionsEnvironment() {
-    configureServer("ms1").withDesiredState(ADMIN_STATE);
-    addWlsServer("ms1");
+    configureServer("wls1").withDesiredState(ADMIN_STATE);
+    addWlsServer("wls1");
 
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").getEnvironment(),
+        getServerStartupInfo("wls1").getEnvironment(),
         hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
   }
 
   @Test
   public void whenDesiredStateIsAdmin_serverStartupAddsToJavaOptionsEnvironment() {
-    configureServer("ms1")
+    configureServer("wls1")
         .withDesiredState(ADMIN_STATE)
         .withEnvironmentVariable("JAVA_OPTIONS", "value1");
-    addWlsServer("ms1");
+    addWlsServer("wls1");
 
     invokeStep();
 
     assertThat(
-        getServerStartupInfo("ms1").getEnvironment(),
+        getServerStartupInfo("wls1").getEnvironment(),
         hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN value1")));
   }
 
   @Test
   public void whenWlsServerNotInCluster_serverStartupInfoHasNoClusterConfig() {
-    configureServer("ms1");
-    addWlsServer("ms1");
+    configureServer("wls1");
+    addWlsServer("wls1");
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").getClusterName(), nullValue());
+    assertThat(getServerStartupInfo("wls1").getClusterName(), nullValue());
   }
 
   @Test
   public void whenWlsServerInCluster_serverStartupInfoHasMatchingClusterConfig() {
     configureServer("ms1");
 
-    addWlsServer("ms1");
     addWlsCluster("cluster1", "ms1");
     addWlsCluster("cluster2");
 
@@ -479,7 +484,7 @@ public class ManagedServersUpStepTest {
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3", "ms4", "ms5"));
     assertThat(getServerStartupInfo("ms4").getClusterName(), equalTo("cluster1"));
-    assertThat(getServerStartupInfo("ms4").serverConfig, equalTo(getWlsServer("ms4")));
+    assertThat(getServerStartupInfo("ms4").serverConfig, equalTo(getWlsServer("cluster1", "ms4")));
   }
 
   @Test
@@ -490,7 +495,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServerStartupInfo("ms1").serverConfig, sameInstance(getWlsServer("ms1")));
+    assertThat(getServerStartupInfo("ms1").serverConfig, equalTo(getWlsServer("cluster1", "ms1")));
     assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
     assertThat(getServerStartupInfo("ms1").getEnvironment(), empty());
     assertThat(getServerStartupInfo("ms1").getNodePort(), nullValue());
@@ -507,10 +512,8 @@ public class ManagedServersUpStepTest {
     assertThat(getServerStartupInfo("ms1").serverConfig, equalTo(getWlsServer("ms1")));
   }
 
-  private WlsServerConfig addWlsServer(String serverName) {
-    WlsServerConfig serverConfig = createServerConfig(serverName);
-    wlsServers.put(serverName, serverConfig);
-    return serverConfig;
+  private void addWlsServer(String serverName) {
+    wlsServers.put(serverName, createServerConfig(serverName));
   }
 
   private WlsServerConfig createServerConfig(String serverName) {
@@ -539,6 +542,17 @@ public class ManagedServersUpStepTest {
 
   private WlsServerConfig getWlsServer(String serverName) {
     return wlsServers.get(serverName);
+  }
+
+  private WlsServerConfig getWlsServer(String clusterName, String serverName) {
+    WlsClusterConfig wlsClusterConfig = wlsClusters.get(clusterName);
+    if (wlsClusterConfig == null) return null;
+
+    for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
+      if (serverConfig.getName().equals(serverName)) return serverConfig;
+    }
+
+    return null;
   }
 
   private ServerStartup configureServer(String serverName) {
@@ -576,7 +590,7 @@ public class ManagedServersUpStepTest {
     return null;
   }
 
-  private void assertManagedServersWillNotBeStarted() {
+  private void assertServersWillNotBeStarted() {
     assertThat(TestStepFactory.next, sameInstance(nextStep));
   }
 
@@ -646,8 +660,7 @@ public class ManagedServersUpStepTest {
     }
 
     void addServer(String serverName) {
-      WlsServerConfig serverConfig = wlsServers.get(serverName);
-      serverConfigs.add(serverConfig != null ? serverConfig : addWlsServer(serverName));
+      serverConfigs.add(createServerConfig(serverName));
     }
 
     WlsClusterConfig build() {
