@@ -244,6 +244,9 @@ public class WlsRetriever {
     public WithHttpClientStep(RequestType requestType, V1Service service, Step next) {
       super(next);
       this.requestType = requestType;
+      if (service == null) {
+        throw new IllegalArgumentException("service cannot be null");
+      }
       this.service = service;
     }
 
@@ -359,18 +362,19 @@ public class WlsRetriever {
 
         return doNext(packet);
       } catch (Throwable t) {
+        // do not retry for health check
+        if (RequestType.HEALTH.equals(requestType)) {
+          LOGGER.fine(
+              MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
+          return doNext(packet);
+        }
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
           retryCount = 0;
           // Log warning if this is the first try. Do not log for retries to prevent
           // filling up the log repeatedly  with same log message
-          if (RequestType.CONFIG.equals(requestType)) {
-            LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
-          } else {
-            LOGGER.fine(
-                MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
-          }
+          LOGGER.warning(MessageKeys.WLS_CONFIGURATION_READ_FAILED, t);
         }
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
         packet.put(RETRY_COUNT, retryCount);
