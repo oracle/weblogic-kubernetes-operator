@@ -165,16 +165,9 @@ public class ManagedServersUpStep extends Step {
           // Look for any other servers
           for (WlsClusterConfig wlsClusterConfig : scan.getClusterConfigs().values()) {
             for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
-              String serverName = wlsServerConfig.getListenAddress();
+              String serverName = wlsServerConfig.getName();
               // do not start admin server
               if (!serverName.equals(asName) && !servers.contains(serverName)) {
-                List<V1EnvVar> env = null;
-                // find ClusterStartup for WlsClusterConfig
-                ClusterStartup cs = findClusterStartup(wlsClusterConfig.getClusterName(), lcs);
-                if (cs != null) {
-                  env = cs.getEnv();
-                }
-
                 // start server
                 servers.add(serverName);
                 ssic.add(new ServerStartupInfo(wlsServerConfig, wlsClusterConfig, null, null));
