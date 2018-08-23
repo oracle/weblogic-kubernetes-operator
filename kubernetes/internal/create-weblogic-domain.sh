@@ -400,7 +400,6 @@ function initialize {
     weblogicDomainStorageSize \
     weblogicCredentialsSecretName \
     namespace \
-    javaOptions \
     t3PublicAddress \
     version
 

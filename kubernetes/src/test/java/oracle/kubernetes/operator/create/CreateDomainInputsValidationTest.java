@@ -592,14 +592,6 @@ public class CreateDomainInputsValidationTest {
             missingFileError(PARAM_LOAD_BALANCER_VOLUME_PATH, val, "custom-mod-wl-apache.conf")));
   }
 
-  // TBD - shouldn't we allow empty java options?
-  @Test
-  public void createDomain_with_missingJavaOptions_failsAndReturnsError() throws Exception {
-    assertThat(
-        execCreateDomain(newInputs().javaOptions("")),
-        failsAndPrints(paramMissingError(PARAM_JAVA_OPTIONS)));
-  }
-
   @Test
   public void createDomain_with_missingVersion_failsAndReturnsError() throws Exception {
     assertThat(
