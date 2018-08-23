@@ -122,7 +122,7 @@ function validateVersion {
 #
 function validateDomainUid {
   validateLowerCase "domainUID" ${domainUID}
-  validateDNS1123LegalName domainUID
+  validateDNS1123LegalName domainUID ${domainUID}
 }
 
 #
