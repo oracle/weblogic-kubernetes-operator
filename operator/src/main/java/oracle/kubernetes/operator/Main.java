@@ -79,6 +79,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -307,7 +308,7 @@ public class Main {
       String domainUID = entry.getKey();
       DomainPresenceInfo info = entry.getValue();
       if (info != null && info.getDomain() == null) {
-        deleteDomainPresence(info.getNamespace(), domainUID);
+        deleteDomainPresence(info.getNamespace(), domainUID, null);
       }
     }
   }
@@ -699,16 +700,59 @@ public class Main {
 
     String domainUID = spec.getDomainUID();
 
-    deleteDomainPresence(namespace, domainUID);
+    deleteDomainPresence(namespace, domainUID, meta.getCreationTimestamp());
   }
 
-  private static void deleteDomainPresence(String namespace, String domainUID) {
+  private static DateTime getDomainCreationTimeStamp(DomainPresenceInfo domainPresenceInfo) {
+    if (domainPresenceInfo != null
+        && domainPresenceInfo.getDomain() != null
+        && domainPresenceInfo.getDomain().getMetadata() != null) {
+      return domainPresenceInfo.getDomain().getMetadata().getCreationTimestamp();
+    }
+    return null;
+  }
+
+  /**
+   * Delete DomainPresentInfo from DomainPresenceInfoManager iff there is DomainPresentInfo with the
+   * same domainUID and with a creationTimeStamp that is on or after the provided
+   * deleteDomainDateTime.
+   *
+   * @param domainUID domainUID of the DomainPresenceInfo to be deleted
+   * @param creationDateTime only delete DomainPresenceInfo from DomainPresenceInfoManager if its
+   *     creationTimeStamp is on or after the given creationDateTime
+   * @return The deleted DomainPresenceInfo that met the domainUID and creationDateTime criteria, or
+   *     null otherwise
+   */
+  static DomainPresenceInfo deleteDomainPresenceWithTimeCheck(
+      String domainUID, DateTime creationDateTime) {
+    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
+    if (info != null) {
+      DateTime infoDateTime = getDomainCreationTimeStamp(info);
+      if (infoDateTime != null
+          && creationDateTime != null
+          && creationDateTime.isBefore(infoDateTime)) {
+        LOGGER.exiting("Domain to be deleted is too old");
+        return null;
+      }
+      info = DomainPresenceInfoManager.remove(domainUID);
+      if (info == null) {
+        LOGGER.exiting("Domain already deleted by another Fiber");
+        return null;
+      }
+    }
+    return info;
+  }
+
+  private static void deleteDomainPresence(
+      String namespace, String domainUID, DateTime deleteDomainDateTime) {
     LOGGER.entering();
 
-    DomainPresenceInfo info = DomainPresenceInfoManager.remove(domainUID);
-    if (info != null) {
-      DomainPresenceControl.cancelDomainStatusUpdating(info);
+    DomainPresenceInfo info = deleteDomainPresenceWithTimeCheck(domainUID, deleteDomainDateTime);
+    if (info == null) {
+      return;
     }
+    DomainPresenceControl.cancelDomainStatusUpdating(info);
+
     FIBER_GATE.startFiber(
         domainUID,
         new DeleteDomainStep(namespace, domainUID),
