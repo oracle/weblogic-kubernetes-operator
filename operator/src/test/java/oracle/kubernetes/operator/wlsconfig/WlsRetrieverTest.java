@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever.RequestType;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever.WithHttpClientStep;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -92,17 +93,10 @@ public class WlsRetrieverTest {
     assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
   }
 
-  @Test
-  public void withHttpClientStep_Health_nologIfFailedOnRetry() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
+  @Test(expected = IllegalArgumentException.class)
+  public void WithHttpClientStep_const_throws_with_null_service() {
     Step next = new MockStep(null);
-    Packet packet = Stub.createStub(PacketStub.class).withRetryCount(1);
-
-    WithHttpClientStep withHttpClientStep =
-        new WithHttpClientStep(RequestType.HEALTH, service, next);
-    withHttpClientStep.apply(packet);
-
-    assert (logRecords.isEmpty());
+    new WithHttpClientStep(RequestType.HEALTH, null, next);
   }
 
   abstract static class PacketStub extends Packet {
@@ -117,6 +111,12 @@ public class WlsRetrieverTest {
 
     PacketStub withServerName(String serverName) {
       this.serverName = serverName;
+      return this;
+    }
+
+    PacketStub addSpi(Class clazz, Object spiObject) {
+      Component component = Component.createFor(spiObject);
+      this.getComponents().put(clazz.getName(), component);
       return this;
     }
 

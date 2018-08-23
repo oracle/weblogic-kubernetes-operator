@@ -60,7 +60,7 @@ public class CreateOperatorInputsFileTest {
                 .externalRestHttpsPort("31001")
                 .externalSans("")
                 .remoteDebugNodePortEnabled("false")
-                .weblogicOperatorImage("weblogic-kubernetes-operator:1.0")
+                .weblogicOperatorImage("weblogic-kubernetes-operator:1.1")
                 .weblogicOperatorImagePullPolicy("IfNotPresent")
                 .weblogicOperatorImagePullSecretName("")
                 .internalDebugHttpPort("30999")
