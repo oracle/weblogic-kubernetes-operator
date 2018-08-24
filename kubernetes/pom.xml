@@ -8,7 +8,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>1.0</version>
+    <version>${operator.version}</version>
   </parent>
 
   <artifactId>installation-tests</artifactId>

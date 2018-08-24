@@ -26,11 +26,13 @@ public class DomainSpec {
   @Expose
   @NotNull
   private String domainUID;
+
   /** Domain name (Required) */
   @SerializedName("domainName")
   @Expose
   @NotNull
   private String domainName;
+
   /** WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3 */
   @SerializedName("image")
   @Expose
@@ -43,6 +45,7 @@ public class DomainSpec {
   @SerializedName("imagePullPolicy")
   @Expose
   private String imagePullPolicy;
+
   /**
    * Reference to secret containing domain administrator username and password. Secret must contain
    * keys names 'username' and 'password' (Required)
@@ -60,6 +63,7 @@ public class DomainSpec {
   @Expose
   @NotNull
   private String asName;
+
   /**
    * Administration server port. Note: Possibly temporary as we could find this value through domain
    * home inspection. (Required)
@@ -68,6 +72,7 @@ public class DomainSpec {
   @Expose
   @NotNull
   private Integer asPort;
+
   /**
    * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
    * Services. The internal and external ports must match; therefore, it is required that the
@@ -77,7 +82,8 @@ public class DomainSpec {
   @SerializedName("exportT3Channels")
   @Expose
   @Valid
-  private List<String> exportT3Channels = new ArrayList<String>();
+  private List<String> exportT3Channels = new ArrayList<>();
+
   /**
    * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
    * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
@@ -92,16 +98,19 @@ public class DomainSpec {
   @SerializedName("startupControl")
   @Expose
   private String startupControl;
+
   /** List of server startup details for selected servers. */
   @SerializedName("serverStartup")
   @Expose
   @Valid
-  private List<ServerStartup> serverStartup = new ArrayList<ServerStartup>();
+  private List<ServerStartup> serverStartup = new ArrayList<>();
+
   /** List of server startup details for selected clusters */
   @SerializedName("clusterStartup")
   @Expose
   @Valid
   private List<ClusterStartup> clusterStartup = new ArrayList<>();
+
   /**
    * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
    * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
@@ -615,7 +624,7 @@ public class DomainSpec {
     if (other == this) {
       return true;
     }
-    if ((other instanceof DomainSpec) == false) {
+    if (!(other instanceof DomainSpec)) {
       return false;
     }
     DomainSpec rhs = ((DomainSpec) other);
