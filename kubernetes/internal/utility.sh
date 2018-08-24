@@ -178,8 +178,8 @@ function toLower {
 # $1 - value to convert to lowercase
 function toLowerDNS1123Legal {
   local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
-  lc=${lc//"_"/"-"}
-  echo "$lc"
+  local value=${lc//"_"/"-"}
+  echo "$value"
 }
 
 #
