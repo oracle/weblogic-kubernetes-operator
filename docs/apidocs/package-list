@@ -14,3 +14,5 @@ oracle.kubernetes.operator.utils
 oracle.kubernetes.operator.watcher
 oracle.kubernetes.operator.wlsconfig
 oracle.kubernetes.operator.work
+oracle.kubernetes.weblogic.domain.v1
+oracle.kubernetes.weblogic.domain.v1.api

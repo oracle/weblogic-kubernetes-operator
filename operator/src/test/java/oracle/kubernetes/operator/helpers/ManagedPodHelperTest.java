@@ -225,7 +225,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     V1Pod existingPod = createPodModel();
     mutator.mutate(existingPod);
-    expectReadPod(getPodName()).returning(existingPod);
+    initializeExistingPod(existingPod);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 

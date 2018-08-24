@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -13,8 +15,10 @@ import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
@@ -37,12 +41,14 @@ import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
 public abstract class PodStepContext {
@@ -63,6 +69,8 @@ public abstract class PodStepContext {
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String READINESS_PROBE = "/weblogic-operator/scripts/readinessProbe.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
+
+  private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   private final DomainPresenceInfo info;
   private final Step conflictStep;
@@ -93,6 +101,34 @@ public abstract class PodStepContext {
 
   abstract ServerSpec getServerSpec();
 
+  private Step getConflictStep() {
+    return new ConflictStep();
+  }
+
+  private class ConflictStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(getConflictStep(), packet);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if (!(other instanceof ConflictStep)) {
+        return false;
+      }
+      ConflictStep rhs = ((ConflictStep) other);
+      return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+    }
+
+    private Step getConflictStep() {
+      return conflictStep;
+    }
+  }
+
   // ------------------------ data methods ----------------------------
 
   String getNamespace() {
@@ -109,6 +145,10 @@ public abstract class PodStepContext {
 
   String getDomainName() {
     return getDomain().getDomainName();
+  }
+
+  private String getDomainResourceName() {
+    return info.getDomain().getMetadata().getName();
   }
 
   String getPodName() {
@@ -161,7 +201,7 @@ public abstract class PodStepContext {
    * @return a step to be scheduled.
    */
   Step verifyPod(Step next) {
-    return new CallBuilder().readPodAsync(getPodName(), getNamespace(), readResponse(next));
+    return new VerifyPodStep(next);
   }
 
   /**
@@ -209,6 +249,16 @@ public abstract class PodStepContext {
    */
   private Step replacePod(Step next) {
     return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), replaceResponse(next));
+  }
+
+  /**
+   * Reads the specified pod and records it.
+   *
+   * @param next the next step to perform after the pod creation is complete.
+   * @return a step to be scheduled.
+   */
+  private Step readPod(Step next) {
+    return new CallBuilder().readPodAsync(getPodName(), getNamespace(), readResponse(next));
   }
 
   private void logPodCreated() {
@@ -349,14 +399,35 @@ public abstract class PodStepContext {
     }
 
     @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, callResponse);
+      }
+      return super.onFailure(packet, callResponse);
+    }
+
+    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
       V1Pod currentPod = callResponse.getResult();
+      setRecordedPod(currentPod);
+      return doNext(packet);
+    }
+  }
+
+  private class VerifyPodStep extends Step {
+
+    VerifyPodStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1Pod currentPod = getSko().getPod().get();
       if (currentPod == null) {
         updateRestartForNewPod();
         return doNext(createNewPod(getNext()), packet);
       } else if (canUseCurrentPod(currentPod)) {
         logPodExists();
-        setRecordedPod(currentPod);
         return doNext(packet);
       } else {
         return doNext(replaceCurrentPod(getNext()), packet);
@@ -375,7 +446,7 @@ public abstract class PodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(conflictStep, packet, callResponse);
+      return super.onFailure(getConflictStep(), packet, callResponse);
     }
 
     @Override
@@ -402,7 +473,7 @@ public abstract class PodStepContext {
       if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
-      return super.onFailure(conflictStep, packet, callResponses);
+      return super.onFailure(getConflictStep(), packet, callResponses);
     }
 
     @Override
@@ -426,7 +497,7 @@ public abstract class PodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(conflictStep, packet, callResponse);
+      return super.onFailure(getConflictStep(), packet, callResponse);
     }
 
     @Override
@@ -440,6 +511,65 @@ public abstract class PodStepContext {
 
       PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
       return doNext(pw.waitForReady(newPod, next), packet);
+    }
+  }
+
+  Step verifyPersistentVolume(Step next) {
+    return new VerifyPersistentVolumeStep(next);
+  }
+
+  private class VerifyPersistentVolumeStep extends Step {
+
+    VerifyPersistentVolumeStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      String domainUID = getDomainUID();
+      Step list =
+          new CallBuilder()
+              .withLabelSelectors(forDomainUid(domainUID))
+              .listPersistentVolumeAsync(
+                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
+                    @Override
+                    public NextAction onSuccess(
+                        Packet packet,
+                        V1PersistentVolumeList result,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (result != null) {
+                        for (V1PersistentVolume pv : result.getItems()) {
+                          List<String> accessModes = pv.getSpec().getAccessModes();
+                          boolean foundAccessMode = false;
+                          for (String accessMode : accessModes) {
+                            if (accessMode.equals(READ_WRITE_MANY_ACCESS)) {
+                              foundAccessMode = true;
+                              break;
+                            }
+                          }
+
+                          // Persistent volume does not have ReadWriteMany access mode,
+                          if (!foundAccessMode) {
+                            LOGGER.warning(
+                                MessageKeys.PV_ACCESS_MODE_FAILED,
+                                pv.getMetadata().getName(),
+                                getDomainResourceName(),
+                                domainUID,
+                                READ_WRITE_MANY_ACCESS);
+                          }
+                        }
+                      } else {
+                        LOGGER.warning(
+                            MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
+                            getDomainResourceName(),
+                            domainUID);
+                      }
+                      return doNext(packet);
+                    }
+                  });
+
+      return doNext(list, packet);
     }
   }
 

@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
 public class ServiceHelper {
@@ -134,6 +135,11 @@ public class ServiceHelper {
     }
 
     @Override
+    protected V1Service getServiceFromRecord() {
+      return sko.getService().get();
+    }
+
+    @Override
     protected void addServiceToRecord(@Nonnull V1Service service) {
       sko.getService().set(service);
     }
@@ -203,7 +209,7 @@ public class ServiceHelper {
   }
 
   private abstract static class ServiceStepContext {
-    private Step conflictStep;
+    private final Step conflictStep;
     DomainPresenceInfo info;
 
     ServiceStepContext(Step conflictStep, Packet packet) {
@@ -212,7 +218,34 @@ public class ServiceHelper {
     }
 
     Step getConflictStep() {
-      return conflictStep;
+      return new ConflictStep();
+    }
+
+    private class ConflictStep extends Step {
+      @Override
+      public NextAction apply(Packet packet) {
+        return doNext(
+            new CallBuilder()
+                .readServiceAsync(
+                    createServiceName(), getNamespace(), new ReadServiceResponse(conflictStep)),
+            packet);
+      }
+
+      @Override
+      public boolean equals(Object other) {
+        if (other == this) {
+          return true;
+        }
+        if ((other instanceof ConflictStep) == false) {
+          return false;
+        }
+        ConflictStep rhs = ((ConflictStep) other);
+        return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+      }
+
+      private Step getConflictStep() {
+        return conflictStep;
+      }
     }
 
     V1Service createModel() {
@@ -257,17 +290,27 @@ public class ServiceHelper {
 
     protected abstract V1ServicePort createServicePort();
 
+    protected abstract V1Service getServiceFromRecord();
+
     protected abstract void addServiceToRecord(V1Service service);
 
     protected abstract void removeServiceFromRecord();
 
     Step verifyService(Step next) {
-      return new CallBuilder()
-          .readServiceAsync(createServiceName(), getNamespace(), new VerifyServiceResponse(next));
+      V1Service service = getServiceFromRecord();
+      if (service == null) {
+        return createNewService(next);
+      } else if (validateCurrentService(createModel(), service)) {
+        logServiceExists();
+        return next;
+      } else {
+        removeServiceFromRecord();
+        return deleteAndReplaceService(next);
+      }
     }
 
-    private class VerifyServiceResponse extends DefaultResponseStep<V1Service> {
-      VerifyServiceResponse(Step next) {
+    private class ReadServiceResponse extends DefaultResponseStep<V1Service> {
+      ReadServiceResponse(Step next) {
         super(next);
       }
 
@@ -282,15 +325,11 @@ public class ServiceHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
         V1Service service = callResponse.getResult();
         if (service == null) {
-          return doNext(createNewService(getNext()), packet);
-        } else if (validateCurrentService(createModel(), service)) {
-          logServiceExists();
-          addServiceToRecord(service);
-          return doNext(packet);
-        } else {
           removeServiceFromRecord();
-          return doNext(deleteAndReplaceService(getNext()), packet);
+        } else {
+          addServiceToRecord(service);
         }
+        return doNext(packet);
       }
     }
 
@@ -458,6 +497,11 @@ public class ServiceHelper {
     }
 
     @Override
+    protected V1Service getServiceFromRecord() {
+      return info.getClusters().get(clusterName);
+    }
+
+    @Override
     protected void addServiceToRecord(@Nonnull V1Service service) {
       info.getClusters().put(clusterName, service);
     }
@@ -579,6 +623,12 @@ public class ServiceHelper {
       return LegalNames.toNAPName(getDomainUID(), getServerName(), networkAccessPoint);
     }
 
+    @Override
+    protected V1Service getServiceFromRecord() {
+      return sko.getChannels().get(getChannelName());
+    }
+
+    @Override
     protected void addServiceToRecord(@Nonnull V1Service service) {
       sko.getChannels().put(getChannelName(), service);
     }
