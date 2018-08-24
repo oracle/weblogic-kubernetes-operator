@@ -3,6 +3,9 @@ package oracle.kubernetes.weblogic.domain.v1;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.StartupControlConstants.ALL_STARTUPCONTROL;
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+import static oracle.kubernetes.operator.StartupControlConstants.SPECIFIED_STARTUPCONTROL;
 
 import io.kubernetes.client.models.V1EnvVar;
 import java.util.ArrayList;
@@ -14,37 +17,15 @@ import oracle.kubernetes.operator.KubernetesConstants;
 public class ServerSpecV1Impl implements ServerSpec {
   private static final String ADMIN_MODE_FLAG = "-Dweblogic.management.startupMode=ADMIN";
   private DomainSpec domainSpec;
+  private final String clusterName;
   private ServerStartup serverStartup;
   private ClusterStartup clusterStartup;
 
-  ServerSpecV1Impl(DomainSpec domainSpec) {
+  ServerSpecV1Impl(DomainSpec domainSpec, String serverName, String clusterName) {
     this.domainSpec = domainSpec;
-  }
-
-  /**
-   * Sets the server startup. If null, is ignored.
-   *
-   * @param serverStartup the startup definition for this server.
-   * @return the original object
-   */
-  ServerSpecV1Impl withServerStartup(ServerStartup serverStartup) {
-    if (serverStartup == null) return this;
-
-    this.serverStartup = serverStartup;
-    return this;
-  }
-
-  /**
-   * Sets the cluster startup. If null, is ignored.
-   *
-   * @param clusterStartup the startup definition for this cluster.
-   * @return the original object
-   */
-  ServerSpecV1Impl withClusterStartup(ClusterStartup clusterStartup) {
-    if (clusterStartup == null) return this;
-
-    this.clusterStartup = clusterStartup;
-    return this;
+    this.clusterName = clusterName;
+    serverStartup = domainSpec.getServerStartup(serverName);
+    clusterStartup = domainSpec.getClusterStartup(clusterName);
   }
 
   @Override
@@ -85,7 +66,7 @@ public class ServerSpecV1Impl implements ServerSpec {
     } else {
       List<V1EnvVar> adjustedEnv = new ArrayList<>(env);
       V1EnvVar var = getOrCreateVar(adjustedEnv, "JAVA_OPTIONS");
-      var.setValue(prepend(var.getValue(), "-Dweblogic.management.startupMode=ADMIN"));
+      var.setValue(prepend(var.getValue(), ADMIN_MODE_FLAG));
       return adjustedEnv;
     }
   }
@@ -111,11 +92,6 @@ public class ServerSpecV1Impl implements ServerSpec {
   }
 
   @Override
-  public boolean isSpecified() {
-    return serverStartup != null || clusterStartup != null;
-  }
-
-  @Override
   public Integer getNodePort() {
     return serverStartup == null ? null : serverStartup.getNodePort();
   }
@@ -123,5 +99,27 @@ public class ServerSpecV1Impl implements ServerSpec {
   private String getConfiguredDesiredState() {
     if (serverStartup != null) return serverStartup.getDesiredState();
     return clusterStartup == null ? null : clusterStartup.getDesiredState();
+  }
+
+  @Override
+  public boolean shouldStart(int replicaCount) {
+    switch (domainSpec.getEffectiveStartupControl()) {
+      case ALL_STARTUPCONTROL:
+        return true;
+      case AUTO_STARTUPCONTROL:
+        if (clusterName != null) return replicaCount < getReplicaLimit();
+      case SPECIFIED_STARTUPCONTROL:
+        return isSpecified() && replicaCount < getReplicaLimit();
+      default:
+        return false;
+    }
+  }
+
+  private int getReplicaLimit() {
+    return clusterStartup == null ? domainSpec.getReplicas() : clusterStartup.getReplicas();
+  }
+
+  private boolean isSpecified() {
+    return serverStartup != null || clusterStartup != null;
   }
 }

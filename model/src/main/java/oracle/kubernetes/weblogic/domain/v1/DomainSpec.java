@@ -4,11 +4,14 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -98,7 +101,7 @@ public class DomainSpec {
   @SerializedName("clusterStartup")
   @Expose
   @Valid
-  private List<ClusterStartup> clusterStartup = new ArrayList<ClusterStartup>();
+  private List<ClusterStartup> clusterStartup = new ArrayList<>();
   /**
    * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
    * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
@@ -107,6 +110,43 @@ public class DomainSpec {
   @SerializedName("replicas")
   @Expose
   private Integer replicas;
+
+  String getEffectiveStartupControl() {
+    return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
+  }
+
+  ServerSpec getAdminServerSpec() {
+    return new ServerSpecV1Impl(this, getAsName(), null);
+  }
+
+  ServerStartup getServerStartup(String name) {
+    if (getServerStartup() == null) return null;
+
+    for (ServerStartup ss : getServerStartup()) {
+      if (ss.getServerName().equals(name)) {
+        return ss;
+      }
+    }
+
+    return null;
+  }
+
+  int getReplicaLimit(String clusterName) {
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
+    return clusterStartup == null ? getReplicas() : clusterStartup.getReplicas();
+  }
+
+  ClusterStartup getClusterStartup(String clusterName) {
+    if (getClusterStartup() == null || clusterName == null) return null;
+
+    for (ClusterStartup cs : getClusterStartup()) {
+      if (clusterName.equals(cs.getClusterName())) {
+        return cs;
+      }
+    }
+
+    return null;
+  }
 
   /**
    * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
