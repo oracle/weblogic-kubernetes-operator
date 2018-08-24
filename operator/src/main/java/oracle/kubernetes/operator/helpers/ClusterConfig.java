@@ -17,7 +17,7 @@ public class ClusterConfig {
   private int maxReplicas;
   private int minReplicas;
   private String clusterName;
-  private Map<String, ClusteredServerConfig> servers = new HashMap();
+  private Map<String, ClusteredServerConfig> servers = new HashMap<>();
 
   /**
    * Gets cluster's name.
@@ -92,7 +92,7 @@ public class ClusterConfig {
    *
    * @param minReplicas min replicas
    */
-  public void setMinReplicas(int replicas) {
+  public void setMinReplicas(int minReplicas) {
     this.minReplicas = minReplicas;
   }
 
@@ -122,7 +122,7 @@ public class ClusterConfig {
    *
    * @param maxReplicas max replicas
    */
-  public void setMaxReplicas(int replicas) {
+  public void setMaxReplicas(int maxReplicas) {
     this.maxReplicas = maxReplicas;
   }
 

@@ -14,7 +14,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
@@ -77,7 +76,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     V1Pod existingPod = createPodModel();
     mutator.mutate(existingPod);
-    expectReadPod(getPodName()).returning(existingPod);
+    initializeExistingPod(existingPod);
     expectDeletePod(getPodName()).returning(new V1Status());
     expectCreatePod(podWithName(getPodName())).returning(createPodModel());
 
@@ -101,7 +100,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
-    expectReadPod(getPodName()).returning(getIncompatiblePod());
+    initializeExistingPod(getIncompatiblePod());
     expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
     expectCreatePod(podWithName(getPodName())).returning(createPodModel());
 
@@ -119,7 +118,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenAdminPodDeletionFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadPod(getPodName()).returning(getIncompatiblePod());
+    initializeExistingPod(getIncompatiblePod());
     expectDeletePod(getPodName()).failingWithStatus(401);
     expectStepsAfterCreation();
 
@@ -128,13 +127,12 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-    assertThat(retryStrategy.getConflictStep(), sameInstance(initialStep));
   }
 
   @Test
   public void whenAdminPodReplacementFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadPod(getPodName()).returning(getIncompatiblePod());
+    initializeExistingPod(getIncompatiblePod());
     expectDeletePod(getPodName()).returning(new V1Status());
     expectCreatePod(podWithName(getPodName())).failingWithStatus(401);
     expectStepsAfterCreation();
@@ -144,7 +142,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-    assertThat(retryStrategy.getConflictStep(), sameInstance(initialStep));
   }
 
   @Test
@@ -285,6 +282,11 @@ public class AdminPodHelperTest extends PodHelperTestBase {
       return Collections.singletonList(
           new ServerStartup().withServerName(serverName).withEnv(vars));
     }
+  }
+
+  @Override
+  protected void onAdminExpectListPersistentVolume() {
+    expectListPersistentVolume().returning(createPersistentVolumeList());
   }
 
   @Override

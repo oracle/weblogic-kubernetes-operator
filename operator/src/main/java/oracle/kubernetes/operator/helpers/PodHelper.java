@@ -145,7 +145,7 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       PodStepContext context = new AdminPodStepContext(this, packet);
 
-      return doNext(context.verifyPod(getNext()), packet);
+      return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
     }
   }
 

@@ -8,12 +8,10 @@
 	<parent>
 		<groupId>oracle.kubernetes</groupId>
 		<artifactId>operator-parent</artifactId>
-		<version>1.0</version>
+		<version>${operator.version}</version>
 	</parent>
 
-	<groupId>oracle.kubernetes</groupId>
 	<artifactId>operator-integration-tests</artifactId>
-	<version>1.0</version>
 
 	<description>Oracle Weblogic Server Kubernetes Operator</description>
 	<name>operator-integration-tests</name>
