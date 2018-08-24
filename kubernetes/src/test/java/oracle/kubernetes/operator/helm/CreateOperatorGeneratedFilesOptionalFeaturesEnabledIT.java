@@ -6,9 +6,7 @@ package oracle.kubernetes.operator.helm;
 
 import oracle.kubernetes.operator.create.CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 
-@Ignore("certificate processing failing")
 public class CreateOperatorGeneratedFilesOptionalFeaturesEnabledIT
     extends CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase {
 
