@@ -13,8 +13,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** DomainConfig describes the desired state of a domain. */
 public class DomainConfig {
 
-  private Map<String, NonClusteredServerConfig> servers = new HashMap();
-  private Map<String, ClusterConfig> clusters = new HashMap();
+  private Map<String, NonClusteredServerConfig> servers = new HashMap<>();
+  private Map<String, ClusterConfig> clusters = new HashMap<>();
 
   /**
    * Gets the configurations of the non-clustered servers in this domain.
@@ -59,6 +59,7 @@ public class DomainConfig {
    * Sets the configuration of a non-clustered server in this domain.
    *
    * @param serverName server name
+   * @param server server
    * @return this
    */
   public DomainConfig withServer(String serverName, NonClusteredServerConfig server) {
@@ -90,7 +91,7 @@ public class DomainConfig {
    * @param clusters clusters
    * @return this
    */
-  public DomainConfig withClusters(Map<String, ClusterConfig> servers) {
+  public DomainConfig withClusters(Map<String, ClusterConfig> clusters) {
     this.clusters = clusters;
     return this;
   }

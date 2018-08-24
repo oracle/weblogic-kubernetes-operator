@@ -250,6 +250,31 @@ public class CallBuilder {
         responseStep, new RequestParams("listDomain", namespace, null, null), LIST_DOMAIN);
   }
 
+  private com.squareup.okhttp.Call readDomainAsync(
+      ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .readWebLogicOracleV1NamespacedDomainAsync(
+            name, namespace, pretty, exact, export, callback);
+  }
+
+  private final CallFactory<Domain> READ_DOMAIN =
+      (requestParams, usage, cont, callback) ->
+          wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
+
+  /**
+   * Asynchronous step for reading domain
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readDomainAsync(String name, String namespace, ResponseStep<Domain> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readDomain", namespace, name, null), READ_DOMAIN);
+  }
+
   /**
    * Replace domain
    *
@@ -911,30 +936,38 @@ public class CallBuilder {
 
   /* Persistent Volumes */
 
+  private com.squareup.okhttp.Call listPersistentVolumeAsync(
+      ApiClient client, String _continue, ApiCallback<V1PersistentVolumeList> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .listPersistentVolumeAsync(
+            pretty,
+            _continue,
+            fieldSelector,
+            includeUninitialized,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  private final CallFactory<V1PersistentVolumeList> LIST_PERSISTENTVOLUME =
+      (requestParams, usage, cont, callback) ->
+          wrap(listPersistentVolumeAsync(usage, cont, callback));
+
   /**
-   * List persistent volumes
+   * Asynchronous step for listing persistent volumes
    *
-   * @return List of persistent volumes
-   * @throws ApiException API Exception
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
    */
-  public V1PersistentVolumeList listPersistentVolume() throws ApiException {
-    String _continue = "";
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.listPersistentVolumes(
-          client,
-          pretty,
-          _continue,
-          fieldSelector,
-          includeUninitialized,
-          labelSelector,
-          limit,
-          resourceVersion,
-          timeoutSeconds,
-          watch);
-    } finally {
-      helper.recycle(client);
-    }
+  public Step listPersistentVolumeAsync(ResponseStep<V1PersistentVolumeList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listPersistentVolume", null, null, null),
+        LIST_PERSISTENTVOLUME);
   }
 
   /* Persistent Volume Claims */

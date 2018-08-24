@@ -148,6 +148,7 @@ public class ServerConfig {
    * Gets the NodePort for the server.
    *
    * @param nodePort node port
+   * @return this
    */
   public ServerConfig withNodePort(int nodePort) {
     this.nodePort = nodePort;
@@ -256,7 +257,7 @@ public class ServerConfig {
    * Sets the list of references to secrets in the same namespace to use for pulling the WebLogic
    * Docker image.
    *
-   * @param image pull secrets
+   * @param imagePullSecrets image pull secrets
    */
   public void setImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
@@ -266,7 +267,7 @@ public class ServerConfig {
    * Sets the list of references to secrets in the same namespace to use for pulling the WebLogic
    * Docker image.
    *
-   * @param image pull secrets
+   * @param imagePullSecrets image pull secrets
    * @return this
    */
   public ServerConfig withImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
@@ -350,7 +351,7 @@ public class ServerConfig {
    * Sets whether to ignore pending HTTP sessions during inflight work handling when gracefully
    * shutting down this server.
    *
-   * @parama gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
+   * @param gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
    */
   public void setGracefulShutdownIgnoreSessions(boolean gracefulShutdownIgnoreSessions) {
     this.gracefulShutdownIgnoreSessions = gracefulShutdownIgnoreSessions;
@@ -360,7 +361,7 @@ public class ServerConfig {
    * Sets whether to ignore pending HTTP sessions during inflight work handling when gracefully
    * shutting down this server.
    *
-   * @parama gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
+   * @param gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
    * @return this
    */
   public ServerConfig withGracefulShutdownIgnoreSessions(boolean gracefulShutdownIgnoreSessions) {

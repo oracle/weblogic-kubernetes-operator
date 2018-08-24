@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.JSON;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
@@ -22,14 +21,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -79,6 +79,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -125,18 +126,20 @@ public class Main {
   private static final Engine engine = new Engine(wrappedExecutorService);
   private static final FiberGate FIBER_GATE = new FiberGate(engine);
 
-  private static final ConcurrentMap<String, Boolean> initialized = new ConcurrentHashMap<>();
-  private static final AtomicBoolean stopping = new AtomicBoolean(false);
+  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+
+  private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, IngressWatcher> ingressWatchers = new ConcurrentHashMap<>();
+
+  private static final String operatorNamespace = getOperatorNamespace();
 
   private static String principal;
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
-  private static Map<String, ConfigMapWatcher> configMapWatchers = new HashMap<>();
-  private static Map<String, DomainWatcher> domainWatchers = new HashMap<>();
-  private static Map<String, PodWatcher> podWatchers = new HashMap<>();
-  private static Map<String, EventWatcher> eventWatchers = new HashMap<>();
-  private static Map<String, ServiceWatcher> serviceWatchers = new HashMap<>();
-  private static Map<String, IngressWatcher> ingressWatchers = new HashMap<>();
   private static KubernetesVersion version = null;
 
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
@@ -176,29 +179,29 @@ public class Main {
     // start liveness thread
     startLivenessThread();
 
-    engine.getExecutor().execute(Main::begin);
+    try {
+      engine.getExecutor().execute(Main::begin);
 
-    // now we just wait until the pod is terminated
-    waitForDeath();
+      // now we just wait until the pod is terminated
+      waitForDeath();
 
-    // stop the REST server
-    stopRestServer();
+      // stop the REST server
+      stopRestServer();
+    } finally {
+      LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
+    }
   }
 
   private static void begin() {
-    // read the operator configuration
-    String namespace = getOperatorNamespace();
-
-    Collection<String> targetNamespaces =
-        getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
-
     String serviceAccountName = tuningAndConfig.get("serviceaccount");
     if (serviceAccountName == null) {
       serviceAccountName = "default";
     }
-    principal = "system:serviceaccount:" + namespace + ":" + serviceAccountName;
+    principal = "system:serviceaccount:" + operatorNamespace + ":" + serviceAccountName;
 
-    LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, namespace);
+    LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, operatorNamespace);
+
+    Collection<String> targetNamespaces = getTargetNamespaces();
     StringBuilder tns = new StringBuilder();
     Iterator<String> it = targetNamespaces.iterator();
     while (it.hasNext()) {
@@ -215,45 +218,87 @@ public class Main {
       // that includes k8s objects
       LoggingFactory.setJSON(new JSON());
 
-      // start the REST server
-      startRestServer(principal, targetNamespaces);
-
       // create the Custom Resource Definitions if they are not already there
       CRDHelper.checkAndCreateCustomResourceDefinition();
 
-      try {
-        HealthCheckHelper healthCheck = new HealthCheckHelper(namespace, targetNamespaces);
-        version = healthCheck.performK8sVersionCheck();
-        healthCheck.performNonSecurityChecks();
-        healthCheck.performSecurityChecks(version);
-      } catch (ApiException e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-      }
+      version = HealthCheckHelper.performK8sVersionCheck();
 
-      // check for any existing resources and add the watches on them
-      // this would happen when the Domain was running BEFORE the Operator starts up
-      LOGGER.info(MessageKeys.LISTING_DOMAINS);
-      Step resourceSteps = null;
-      for (String ns : targetNamespaces) {
-        initialized.put(ns, Boolean.TRUE);
-        resourceSteps = Step.chain(resourceSteps, readExistingResources(namespace, ns));
-      }
-      runSteps(resourceSteps, Main::deleteStrandedResources);
+      runSteps(new StartNamespacesStep(targetNamespaces), Main::completeBegin);
+    } catch (Throwable e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+    }
+  }
+
+  private static void completeBegin() {
+    deleteStrandedResources();
+
+    try {
+      // start the REST server
+      startRestServer(principal, isNamespaceStopping.keySet());
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
       engine
           .getExecutor()
           .scheduleWithFixedDelay(
-              updateDomainPresenceInfos(
-                  DomainPresenceInfoManager.getDomainPresenceInfos().values()),
-              recheckInterval,
-              recheckInterval,
-              TimeUnit.SECONDS);
+              recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-    } finally {
-      LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
+    }
+  }
+
+  private static class StartNamespacesStep extends Step {
+    private final Collection<String> targetNamespaces;
+
+    public StartNamespacesStep(Collection<String> targetNamespaces) {
+      this.targetNamespaces = targetNamespaces;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      // check for any existing resources and add the watches on them
+      // this would happen when the Domain was running BEFORE the Operator starts up
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+      for (String ns : targetNamespaces) {
+        startDetails.add(
+            new StepAndPacket(
+                Step.chain(
+                    new StartNamespaceBeforeStep(ns), readExistingResources(operatorNamespace, ns)),
+                packet.clone()));
+      }
+      return doForkJoin(getNext(), packet, startDetails);
+    }
+  }
+
+  private static class StartNamespaceBeforeStep extends Step {
+    private final String ns;
+
+    StartNamespaceBeforeStep(String ns) {
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (isNamespaceStopping.putIfAbsent(ns, new AtomicBoolean(false)) == null) {
+        try {
+          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
+        } catch (Throwable e) {
+          LOGGER.warning(MessageKeys.EXCEPTION, e);
+        }
+
+        return doNext(packet);
+      }
+      return doEnd(packet);
+    }
+  }
+
+  private static void stopNamespaces(Collection<String> namespacesToStop) {
+    for (String ns : namespacesToStop) {
+      AtomicBoolean stopping = isNamespaceStopping.remove(ns);
+      if (stopping != null) {
+        stopping.set(true);
+      }
     }
   }
 
@@ -263,9 +308,15 @@ public class Main {
       String domainUID = entry.getKey();
       DomainPresenceInfo info = entry.getValue();
       if (info != null && info.getDomain() == null) {
-        deleteDomainPresence(info.getNamespace(), domainUID);
+        deleteDomainPresence(info.getNamespace(), domainUID, null);
       }
     }
+  }
+
+  private static final AtomicBoolean UNINITIALIZED_NS_STOPPING = new AtomicBoolean(true);
+
+  private static AtomicBoolean isNamespaceStopping(String ns) {
+    return isNamespaceStopping.getOrDefault(ns, UNINITIALIZED_NS_STOPPING);
   }
 
   private static void runSteps(Step firstStep) {
@@ -280,11 +331,16 @@ public class Main {
     return new NullCompletionCallback(completionAction);
   }
 
-  private static Runnable updateDomainPresenceInfos(Collection<DomainPresenceInfo> infos) {
+  private static Runnable recheckDomains() {
     return () -> {
-      for (DomainPresenceInfo info : infos) {
-        checkAndCreateDomainPresence(info, false);
-      }
+      Collection<String> targetNamespaces = getTargetNamespaces();
+
+      // Check for removed namespaces
+      Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
+      namespacesToStop.removeAll(targetNamespaces);
+      stopNamespaces(namespacesToStop);
+
+      runSteps(new StartNamespacesStep(targetNamespaces), Main::deleteStrandedResources);
     };
   }
 
@@ -300,6 +356,7 @@ public class Main {
   }
 
   private static Step readExistingDomains(String ns) {
+    LOGGER.info(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
   }
 
@@ -328,7 +385,8 @@ public class Main {
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
-    return new ConfigMapAfterStep(ns, configMapWatchers, stopping, Main::dispatchConfigMapWatch);
+    return new ConfigMapAfterStep(
+        ns, configMapWatchers, isNamespaceStopping(ns), Main::dispatchConfigMapWatch);
   }
 
   // -----------------------------------------------------------------------------
@@ -349,7 +407,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, true, null, null);
+        doCheckAndCreateDomainPresence(dom, false, true, null, null, false);
       }
     }
   }
@@ -369,7 +427,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, false, servers, null);
+        doCheckAndCreateDomainPresence(dom, false, false, servers, null, false);
       }
     }
   }
@@ -388,7 +446,7 @@ public class Main {
     if (info != null) {
       Domain dom = info.getDomain();
       if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, false, null, clusters);
+        doCheckAndCreateDomainPresence(dom, false, false, null, clusters, false);
       }
     }
   }
@@ -494,13 +552,8 @@ public class Main {
     }
   }
 
-  private static void doCheckAndCreateDomainPresence(Domain dom) {
-    doCheckAndCreateDomainPresence(dom, false, false, null, null);
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static void doCheckAndCreateDomainPresence(Domain dom, boolean explicitRecheck) {
-    doCheckAndCreateDomainPresence(dom, explicitRecheck, false, null, null);
+  private static void doCheckAndCreateDomainPresence(Domain dom, boolean isWillInterrupt) {
+    doCheckAndCreateDomainPresence(dom, false, false, null, null, isWillInterrupt);
   }
 
   private static void doCheckAndCreateDomainPresence(
@@ -508,7 +561,8 @@ public class Main {
       boolean explicitRecheck,
       boolean explicitRestartAdmin,
       List<String> explicitRestartServers,
-      List<String> explicitRestartClusters) {
+      List<String> explicitRestartClusters,
+      boolean isWillInterrupt) {
     LOGGER.entering();
 
     boolean hasExplicitRestarts =
@@ -544,21 +598,17 @@ public class Main {
       info.getExplicitRestartClusters().addAll(explicitRestartClusters);
     }
 
-    checkAndCreateDomainPresence(info);
-  }
-
-  private static void checkAndCreateDomainPresence(DomainPresenceInfo info) {
-    checkAndCreateDomainPresence(info, true);
+    checkAndCreateDomainPresence(info, isWillInterrupt);
   }
 
   private static void checkAndCreateDomainPresence(
-      DomainPresenceInfo info, boolean isCausedByWatch) {
+      DomainPresenceInfo info, boolean isWillInterrupt) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
     String domainUID = spec.getDomainUID();
 
     String ns = dom.getMetadata().getNamespace();
-    if (initialized.getOrDefault(ns, Boolean.FALSE) && !stopping.get()) {
+    if (!isNamespaceStopping(ns).get()) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
       Step managedServerStrategy =
           bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(null));
@@ -615,7 +665,7 @@ public class Main {
             }
           };
 
-      if (isCausedByWatch) {
+      if (isWillInterrupt) {
         FIBER_GATE.startFiber(domainUID, strategy, p, cc);
       } else {
         FIBER_GATE.startFiberIfNoCurrentFiber(domainUID, strategy, p, cc);
@@ -650,16 +700,59 @@ public class Main {
 
     String domainUID = spec.getDomainUID();
 
-    deleteDomainPresence(namespace, domainUID);
+    deleteDomainPresence(namespace, domainUID, meta.getCreationTimestamp());
   }
 
-  private static void deleteDomainPresence(String namespace, String domainUID) {
+  private static DateTime getDomainCreationTimeStamp(DomainPresenceInfo domainPresenceInfo) {
+    if (domainPresenceInfo != null
+        && domainPresenceInfo.getDomain() != null
+        && domainPresenceInfo.getDomain().getMetadata() != null) {
+      return domainPresenceInfo.getDomain().getMetadata().getCreationTimestamp();
+    }
+    return null;
+  }
+
+  /**
+   * Delete DomainPresentInfo from DomainPresenceInfoManager iff there is DomainPresentInfo with the
+   * same domainUID and with a creationTimeStamp that is on or after the provided
+   * deleteDomainDateTime.
+   *
+   * @param domainUID domainUID of the DomainPresenceInfo to be deleted
+   * @param creationDateTime only delete DomainPresenceInfo from DomainPresenceInfoManager if its
+   *     creationTimeStamp is on or after the given creationDateTime
+   * @return The deleted DomainPresenceInfo that met the domainUID and creationDateTime criteria, or
+   *     null otherwise
+   */
+  static DomainPresenceInfo deleteDomainPresenceWithTimeCheck(
+      String domainUID, DateTime creationDateTime) {
+    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
+    if (info != null) {
+      DateTime infoDateTime = getDomainCreationTimeStamp(info);
+      if (infoDateTime != null
+          && creationDateTime != null
+          && creationDateTime.isBefore(infoDateTime)) {
+        LOGGER.exiting("Domain to be deleted is too old");
+        return null;
+      }
+      info = DomainPresenceInfoManager.remove(domainUID);
+      if (info == null) {
+        LOGGER.exiting("Domain already deleted by another Fiber");
+        return null;
+      }
+    }
+    return info;
+  }
+
+  private static void deleteDomainPresence(
+      String namespace, String domainUID, DateTime deleteDomainDateTime) {
     LOGGER.entering();
 
-    DomainPresenceInfo info = DomainPresenceInfoManager.remove(domainUID);
-    if (info != null) {
-      DomainPresenceControl.cancelDomainStatusUpdating(info);
+    DomainPresenceInfo info = deleteDomainPresenceWithTimeCheck(domainUID, deleteDomainDateTime);
+    if (info == null) {
+      return;
     }
+    DomainPresenceControl.cancelDomainStatusUpdating(info);
+
     FIBER_GATE.startFiber(
         domainUID,
         new DeleteDomainStep(namespace, domainUID),
@@ -728,26 +821,20 @@ public class Main {
       // ignoring
     }
 
-    stopping.set(true);
+    isNamespaceStopping.forEach(
+        (key, value) -> {
+          value.set(true);
+        });
   }
 
-  /**
-   * True, if the operator is stopping
-   *
-   * @return Is operator stopping
-   */
-  public static boolean getStopping() {
-    return stopping.get();
-  }
-
-  private static EventWatcher createEventWatcher(String namespace, String initialResourceVersion) {
+  private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
     return EventWatcher.create(
         getThreadFactory(),
-        namespace,
+        ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
         Main::dispatchEventWatch,
-        stopping);
+        isNamespaceStopping(ns));
   }
 
   private static void dispatchEventWatch(Watch.Response<V1Event> item) {
@@ -782,9 +869,13 @@ public class Main {
     }
   }
 
-  private static PodWatcher createPodWatcher(String namespace, String initialResourceVersion) {
+  private static PodWatcher createPodWatcher(String ns, String initialResourceVersion) {
     return PodWatcher.create(
-        getThreadFactory(), namespace, initialResourceVersion, Main::dispatchPodWatch, stopping);
+        getThreadFactory(),
+        ns,
+        initialResourceVersion,
+        Main::dispatchPodWatch,
+        isNamespaceStopping(ns));
   }
 
   private static void dispatchPodWatch(Watch.Response<V1Pod> item) {
@@ -831,14 +922,13 @@ public class Main {
     }
   }
 
-  private static ServiceWatcher createServiceWatcher(
-      String namespace, String initialResourceVersion) {
+  private static ServiceWatcher createServiceWatcher(String ns, String initialResourceVersion) {
     return ServiceWatcher.create(
         getThreadFactory(),
-        namespace,
+        ns,
         initialResourceVersion,
         Main::dispatchServiceWatch,
-        stopping);
+        isNamespaceStopping(ns));
   }
 
   private static void dispatchServiceWatch(Watch.Response<V1Service> item) {
@@ -914,7 +1004,7 @@ public class Main {
                   }
                 }
               } else if (clusterName != null) {
-                V1Service oldService = info.getClusters().put(clusterName, null);
+                V1Service oldService = info.getClusters().remove(clusterName);
                 if (oldService != null) {
                   // Service was deleted, but clusters still contained a non-null entry
                   LOGGER.info(
@@ -935,14 +1025,13 @@ public class Main {
     }
   }
 
-  private static IngressWatcher createIngressWatcher(
-      String namespace, String initialResourceVersion) {
+  private static IngressWatcher createIngressWatcher(String ns, String initialResourceVersion) {
     return IngressWatcher.create(
         getThreadFactory(),
-        namespace,
+        ns,
         initialResourceVersion,
         Main::dispatchIngressWatch,
-        stopping);
+        isNamespaceStopping(ns));
   }
 
   private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
@@ -1013,7 +1102,7 @@ public class Main {
         d = item.object;
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
-        doCheckAndCreateDomainPresence(d);
+        doCheckAndCreateDomainPresence(d, true);
         break;
 
       case "DELETED":
@@ -1034,6 +1123,12 @@ public class Main {
       namespace = "default";
     }
     return namespace;
+  }
+
+  private static Collection<String> getTargetNamespaces() {
+    String namespace = getOperatorNamespace();
+
+    return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
   }
 
   private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
@@ -1064,7 +1159,9 @@ public class Main {
           }
         }
       }
-      ingressWatchers.put(ns, createIngressWatcher(ns, getInitialResourceVersion(result)));
+      if (!ingressWatchers.containsKey(ns)) {
+        ingressWatchers.put(ns, createIngressWatcher(ns, getInitialResourceVersion(result)));
+      }
       return doNext(packet);
     }
 
@@ -1089,13 +1186,31 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
+      Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
-          doCheckAndCreateDomainPresence(dom);
+          domainUIDs.add(dom.getSpec().getDomainUID());
+          doCheckAndCreateDomainPresence(dom, false);
         }
       }
 
-      domainWatchers.put(ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
+      getDomainPresenceInfos()
+          .forEach(
+              (key, value) -> {
+                Domain d = value.getDomain();
+                if (d != null && ns.equals(d.getMetadata().getNamespace())) {
+                  if (!domainUIDs.contains(d.getSpec().getDomainUID())) {
+                    // This is a stranded DomainPresenceInfo. Clear the Domain reference
+                    // so that stranded resources are marked for clean-up.
+                    value.setDomain(null);
+                  }
+                }
+              });
+
+      if (!domainWatchers.containsKey(ns)) {
+        domainWatchers.put(
+            ns, createDomainWatcher(ns, getResourceVersion(callResponse.getResult())));
+      }
       return doNext(packet);
     }
 
@@ -1103,14 +1218,13 @@ public class Main {
       return result != null ? result.getMetadata().getResourceVersion() : "";
     }
 
-    private static DomainWatcher createDomainWatcher(
-        String namespace, String initialResourceVersion) {
+    private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
       return DomainWatcher.create(
           getThreadFactory(),
-          namespace,
+          ns,
           initialResourceVersion,
           Main::dispatchDomainWatch,
-          stopping);
+          isNamespaceStopping(ns));
     }
   }
 
@@ -1148,7 +1262,9 @@ public class Main {
           }
         }
       }
-      serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
+      if (!serviceWatchers.containsKey(ns)) {
+        serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
+      }
       return doNext(packet);
     }
 
@@ -1179,7 +1295,9 @@ public class Main {
           onEvent(event);
         }
       }
-      eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
+      if (!eventWatchers.containsKey(ns)) {
+        eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
+      }
       return doNext(packet);
     }
 
@@ -1217,7 +1335,9 @@ public class Main {
           }
         }
       }
-      podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
+      if (!podWatchers.containsKey(ns)) {
+        podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
+      }
       return doNext(packet);
     }
 

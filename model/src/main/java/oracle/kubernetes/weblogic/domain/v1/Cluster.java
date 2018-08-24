@@ -85,7 +85,7 @@ public class Cluster extends ClusterParams {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param clusters clusters
+   * @param servers servers
    */
   public void setServers(Map<String, ClusteredServer> servers) {
     this.servers = servers;
@@ -110,7 +110,7 @@ public class Cluster extends ClusterParams {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param clusters clusters
+   * @param servers servers
    * @return this
    */
   public Cluster withServers(Map<String, ClusteredServer> servers) {
@@ -137,8 +137,8 @@ public class Cluster extends ClusterParams {
    *   <li>If not, then use the default value for the property.
    * </ol>
    *
-   * @param name cluster name
-   * @param cluster cluster
+   * @param name server name
+   * @param server server
    */
   public void setServer(String name, ClusteredServer server) {
     this.servers.put(name, server);
@@ -164,7 +164,7 @@ public class Cluster extends ClusterParams {
    * </ol>
    *
    * @param name name
-   * @param cluster cluster
+   * @param server server
    * @return this
    */
   public Cluster withServer(String name, ClusteredServer server) {
