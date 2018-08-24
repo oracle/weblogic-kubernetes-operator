@@ -15,7 +15,7 @@ nodemgr_home=${NODEMGR_HOME?}
 
 admin_hostname=${domain_uid}-${admin_name}
 
-echo "Starting WebLogic Server '${server_name}'"
+echo "Starting WebLogic Server '${server_name}'."
 
 echo "Inputs: "
 for varname in domain_uid \
