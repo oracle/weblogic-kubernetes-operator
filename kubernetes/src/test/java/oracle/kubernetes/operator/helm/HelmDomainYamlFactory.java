@@ -36,12 +36,17 @@ public class HelmDomainYamlFactory extends DomainYamlFactory {
   }
 
   static class YamlGenerator extends oracle.kubernetes.operator.utils.YamlGeneratorBase {
+    private static final String DOMAIN_CHART = "weblogic-domain";
+
     private final DomainValues values;
     private final ProcessedChart chart;
 
     YamlGenerator(DomainValues inputValues) throws Exception {
       Map<String, Object> overrides = ((HelmDomainValues) inputValues).createMap();
-      chart = new ProcessedChart("weblogic-domain", overrides, (String) overrides.get("namespace"));
+      String release = (String) overrides.get("domainUID");
+      String namespace = (String) overrides.get("namespace");
+      InstallArgs installArgs = new InstallArgs(DOMAIN_CHART, release, namespace, overrides);
+      chart = new ProcessedChart(installArgs);
 
       assertThat(chart.getError(), emptyOrNullString());
 

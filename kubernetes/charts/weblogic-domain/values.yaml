@@ -95,9 +95,6 @@ adminNodePort: 30701
 # Boolean to indicate if the adminNodePort will be exposed
 exposeAdminNodePort: false
 
-# Name of the domain namespace (not used in helm charts templates)
-namespace: default
-
 # Load balancer to deploy.  Supported values are: APACHE, TRAEFIK, VOYAGER, NONE
 loadBalancer: TRAEFIK
 

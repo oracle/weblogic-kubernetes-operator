@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator.helm;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static oracle.kubernetes.operator.helm.MapUtils.addMapEntry;
 import static oracle.kubernetes.operator.helm.MapUtils.addStringMapEntry;
 import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
@@ -16,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.OperatorValues;
-import org.apache.commons.codec.binary.Base64;
 
 class HelmOperatorValues extends OperatorValues {
   HelmOperatorValues() {}
@@ -28,6 +30,12 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setNamespace, "operatorNamespace");
     loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
     loadFromMap(map, this::setExternalRestOption, "externalRestOption");
+    loadFromMap(map, this::setExternalSans, "externalOperatorCertSans");
+    loadFromMap(map, this::setExternalOperatorCert, "externalOperatorCert");
+    loadFromMap(map, this::setExternalOperatorKey, "externalOperatorKey");
+    loadFromMap(map, this::setInternalRestOption, "internalRestOption");
+    loadFromMap(map, this::setInternalOperatorCert, "internalOperatorCert");
+    loadFromMap(map, this::setInternalOperatorKey, "internalOperatorKey");
 
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
@@ -37,6 +45,7 @@ class HelmOperatorValues extends OperatorValues {
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
 
     loadDomainsNamespacesFromMap(map);
+    loadOperatorImagePullSecretsFromMap(map);
   }
 
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
@@ -61,22 +70,34 @@ class HelmOperatorValues extends OperatorValues {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private void loadOperatorImagePullSecretsFromMap(Map<String, Object> map) {
+    List<Map<String, String>> operatorImagePullSecrets =
+        (List<Map<String, String>>) map.get("operatorImagePullSecrets");
+    if (operatorImagePullSecrets != null) {
+      // TBD - enhance OperatorValues to have an array of image pull secrets, instead of just one
+      String secretName = (String) operatorImagePullSecrets.get(0).get("name");
+      if (secretName != null) {
+        setWeblogicOperatorImagePullSecretName(secretName);
+      }
+    }
+  }
+
   Map<String, Object> createMap() {
     HashMap<String, Object> map = new HashMap<>();
-    map.put(
-        "internalOperatorCert",
-        Base64.encodeBase64String(internalOperatorSelfSignedCertPem().getBytes()));
-    map.put(
-        "internalOperatorKey",
-        Base64.encodeBase64String(internalOperatorSelfSignedKeyPem().getBytes()));
-    map.put("externalOperatorCert", externalOperatorSelfSignedCertPem());
-    map.put("externalOperatorKey", externalOperatorSelfSignedKeyPem());
+
     addStringMapEntry(map, this::getServiceAccount, "operatorServiceAccount");
     addStringMapEntry(map, this::getWeblogicOperatorImage, "operatorImage");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
     addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
     addStringMapEntry(map, this::getExternalRestOption, "externalRestOption");
+    addStringMapEntry(map, this::getExternalSans, "externalOperatorCertSans");
+    addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
+    addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");
+    addStringMapEntry(map, this::getInternalRestOption, "internalRestOption");
+    addStringMapEntry(map, this::getInternalOperatorCert, "internalOperatorCert");
+    addStringMapEntry(map, this::getInternalOperatorKey, "internalOperatorKey");
 
     addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
@@ -86,6 +107,7 @@ class HelmOperatorValues extends OperatorValues {
     addMapEntry(map, this::getInternalDebugHttpPortNum, "internalDebugHttpPort");
 
     addDomainsNamespaces(map);
+    addOperatorImagePullSecrets(map);
     return map;
   }
 
@@ -97,6 +119,13 @@ class HelmOperatorValues extends OperatorValues {
         namespaces.add(namespace);
       }
       map.put("domainsNamespaces", namespaces);
+    }
+  }
+
+  private void addOperatorImagePullSecrets(HashMap<String, Object> map) {
+    String secretName = getWeblogicOperatorImagePullSecretName();
+    if (!isNullOrEmpty(secretName)) {
+      map.put("operatorImagePullSecrets", singletonList(singletonMap("name", secretName)));
     }
   }
 
@@ -118,5 +147,22 @@ class HelmOperatorValues extends OperatorValues {
 
   private Integer getInternalDebugHttpPortNum() {
     return MapUtils.integerValue(getInternalDebugHttpPort());
+  }
+
+  // Eventually in 2.0 the operator runtime will create the self signed certs.
+  // For now, they must be in the values:
+
+  @Override
+  public OperatorValues setupExternalRestSelfSignedCert() {
+    return super.setupExternalRestSelfSignedCert()
+        .externalOperatorCert(toBase64(externalOperatorSelfSignedCertPem()))
+        .externalOperatorKey(toBase64(externalOperatorSelfSignedKeyPem()));
+  }
+
+  @Override
+  public OperatorValues setupInternalRestSelfSignedCert() {
+    return super.setupInternalRestSelfSignedCert()
+        .internalOperatorCert(toBase64(internalOperatorSelfSignedCertPem()))
+        .internalOperatorKey(toBase64(internalOperatorSelfSignedKeyPem()));
   }
 }
