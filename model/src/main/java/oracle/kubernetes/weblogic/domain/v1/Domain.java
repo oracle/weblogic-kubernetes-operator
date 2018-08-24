@@ -4,13 +4,10 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
-import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
-
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.Optional;
 import javax.validation.Valid;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -161,46 +158,19 @@ public class Domain {
   }
 
   public ServerSpec getAdminServerSpec() {
-    return new ServerSpecV1Impl(spec).withServerStartup(getServerStartup(spec.getAsName()));
+    return spec.getAdminServerSpec();
   }
 
-  private ServerStartup getServerStartup(String name) {
-    if (spec.getServerStartup() == null) return null;
-
-    for (ServerStartup ss : spec.getServerStartup()) {
-      if (ss.getServerName().equals(name)) {
-        return ss;
-      }
-    }
-
-    return null;
+  public ServerSpec getServer(String serverName, String clusterName) {
+    return new ServerSpecV1Impl(spec, serverName, clusterName);
   }
 
-  public ServerSpec getServer(String clusterName, String serverName) {
-    return new ServerSpecV1Impl(spec)
-        .withServerStartup(getServerStartup(serverName))
-        .withClusterStartup(getClusterStartup(clusterName));
+  int getReplicaLimit(String clusterName) {
+    return spec.getReplicaLimit(clusterName);
   }
 
-  private ClusterStartup getClusterStartup(String clusterName) {
-    if (spec.getClusterStartup() == null) return null;
-
-    for (ClusterStartup cs : spec.getClusterStartup()) {
-      if (cs.getClusterName().equals(clusterName)) {
-        return cs;
-      }
-    }
-
-    return null;
-  }
-
-  public int getReplicaLimit(String clusterName) {
-    ClusterStartup clusterStartup = getClusterStartup(clusterName);
-    return clusterStartup == null ? spec.getReplicas() : clusterStartup.getReplicas();
-  }
-
-  public String getStartupControl() {
-    return Optional.ofNullable(spec.getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
+  String getEffectiveStartupControl() {
+    return spec.getEffectiveStartupControl();
   }
 
   /**

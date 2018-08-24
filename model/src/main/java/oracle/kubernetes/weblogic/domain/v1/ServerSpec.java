@@ -48,16 +48,17 @@ public interface ServerSpec {
   String getDesiredState();
 
   /**
-   * Returns true if this server is specified in the domain spec.
-   *
-   * @return whether configuration exists for the server
-   */
-  boolean isSpecified();
-
-  /**
    * Returns the port on which this server will be exposed.
    *
    * @return the port number. May be null.
    */
   Integer getNodePort();
+
+  /**
+   * Returns true if the specified server should be started, based on the current domain spec.
+   *
+   * @param replicaCount the number of replicas already selected for the cluster.
+   * @return whether to start the server
+   */
+  boolean shouldStart(int replicaCount);
 }

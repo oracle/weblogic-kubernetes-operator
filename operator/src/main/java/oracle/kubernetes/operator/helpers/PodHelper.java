@@ -181,7 +181,7 @@ public class PodHelper {
 
     @Override
     ServerSpec getServerSpec() {
-      return getDomain().getServer(getClusterName(), getServerName());
+      return getDomain().getServer(getServerName(), getClusterName());
     }
 
     @Override

@@ -2,8 +2,10 @@ package oracle.kubernetes.weblogic.domain.v1;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.StartupControlConstants.ALL_STARTUPCONTROL;
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
+import static oracle.kubernetes.operator.StartupControlConstants.SPECIFIED_STARTUPCONTROL;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -63,21 +65,21 @@ public class DomainV1Test {
 
   @Test
   public void whenStartupControlSpecified_returnIt() {
-    assertThat(domain.getStartupControl(), equalTo(NONE_STARTUPCONTROL));
+    assertThat(domain.getEffectiveStartupControl(), equalTo(NONE_STARTUPCONTROL));
   }
 
   @Test
   public void whenStartupControlNotSpecified_defaultToAuto() {
     domain.getSpec().setStartupControl(null);
 
-    assertThat(domain.getStartupControl(), equalTo(AUTO_STARTUPCONTROL));
+    assertThat(domain.getEffectiveStartupControl(), equalTo(AUTO_STARTUPCONTROL));
   }
 
   @Test
   public void whenStartupControlIsMixedCase_capitalizeIt() {
     domain.getSpec().setStartupControl("auto");
 
-    assertThat(domain.getStartupControl(), equalTo("AUTO"));
+    assertThat(domain.getEffectiveStartupControl(), equalTo("AUTO"));
   }
 
   @Test
@@ -157,42 +159,107 @@ public class DomainV1Test {
 
   @Test
   public void managedServerSpecHasStandardValues() {
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     verifyStandardFields(spec);
   }
 
   @Test
-  public void whenNeitherServerNorClusterStartupDefined_managedServerIsNotSpecified() {
-    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).isSpecified(), is(false));
+  public void whenStartAll_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(ALL_STARTUPCONTROL);
+
+    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).shouldStart(0), is(true));
   }
 
   @Test
-  public void whenServerStartupDefined_managedServerIsSpecified() {
+  public void whenStartAutoAndNamedClusterHasRoomByDefault_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(AUTO_STARTUPCONTROL);
+    domain.getSpec().setReplicas(3);
+
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(2), is(true));
+  }
+
+  @Test
+  public void whenStartAutoAndNamedClusterHasRoomExplicitly_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(AUTO_STARTUPCONTROL);
+    domain.getSpec().setReplicas(1);
+    addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME).withReplicas(3));
+
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(2), is(true));
+  }
+
+  @Test
+  public void whenStartAutoAndNamedClusterHasNoRoomByDefault_shouldStartReturnsFalse() {
+    domain.getSpec().setStartupControl(AUTO_STARTUPCONTROL);
+    domain.getSpec().setReplicas(3);
+
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(3), is(false));
+  }
+
+  @Test
+  public void whenStartAutoAndNamedClusterHasNoRoomExplicitly_shouldStartReturnsFalse() {
+    domain.getSpec().setStartupControl(AUTO_STARTUPCONTROL);
+    domain.getSpec().setReplicas(5);
+    addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME).withReplicas(1));
+
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(2), is(false));
+  }
+
+  @Test
+  public void whenStartAutoAndServerSpecifiedWithoutCluster_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(AUTO_STARTUPCONTROL);
+    domain.getSpec().setReplicas(5);
     addServerStartup(new ServerStartup().withServerName(SERVER1));
 
-    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).isSpecified(), is(true));
+    assertThat(domain.getServer(SERVER1, null).shouldStart(0), is(true));
   }
 
   @Test
-  public void whenClusterStartupDefined_managedServerIsSpecified() {
-    addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME));
+  public void whenStartSpecifiedAndSpecifiedClusterHasRoom_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(SPECIFIED_STARTUPCONTROL);
+    addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME).withReplicas(3));
 
-    assertThat(domain.getServer(CLUSTER_NAME, SERVER1).isSpecified(), is(true));
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(2), is(true));
+  }
+
+  @Test
+  public void whenStartSpecifiedAndServerSpecifiedWithoutCluster_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(SPECIFIED_STARTUPCONTROL);
+    domain.getSpec().setReplicas(5);
+    addServerStartup(new ServerStartup().withServerName(SERVER1));
+
+    assertThat(domain.getServer(SERVER1, null).shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenStartSpecifiedAndNamedClusterHasRoom_shouldStartReturnsTrue() {
+    domain.getSpec().setStartupControl(SPECIFIED_STARTUPCONTROL);
+    domain.getSpec().setReplicas(3);
+    addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME).withReplicas(3));
+
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(2), is(true));
+  }
+
+  @Test
+  public void whenStartSpecifiedAndNeitherServerNorClusterSpecified_shouldStartReturnsFalse() {
+    domain.getSpec().setStartupControl(SPECIFIED_STARTUPCONTROL);
+    domain.getSpec().setReplicas(3);
+
+    assertThat(domain.getServer(SERVER1, CLUSTER_NAME).shouldStart(2), is(false));
   }
 
   @Test
   public void whenClusterStartupIsNull_managedServerDesiredStateIsRunning() {
     domain.getSpec().setClusterStartup(null);
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   public void whenNotSpecified_managedServerDesiredStateIsRunning() {
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
@@ -201,7 +268,7 @@ public class DomainV1Test {
   public void whenSpecified_managedServerDesiredStateIsAsSpecified() {
     addServerStartup(new ServerStartup().withServerName(SERVER1).withDesiredState("STAND-BY"));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("STAND-BY"));
   }
@@ -210,7 +277,7 @@ public class DomainV1Test {
   public void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
     addServerStartup(new ServerStartup().withServerName(AS_NAME).withDesiredState("ADMIN"));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
@@ -219,7 +286,7 @@ public class DomainV1Test {
   public void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
     addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME).withDesiredState("NEVER"));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("NEVER"));
   }
@@ -233,7 +300,7 @@ public class DomainV1Test {
     addServerStartup(new ServerStartup().withServerName(SERVER1).withDesiredState("STAND-BY"));
     addClusterStartup(new ClusterStartup().withClusterName(CLUSTER_NAME).withDesiredState("NEVER"));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("STAND-BY"));
   }
@@ -243,7 +310,7 @@ public class DomainV1Test {
     addServerStartup(
         new ServerStartup().withServerName(SERVER1).withEnv(Arrays.asList(createEnvironment())));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -256,7 +323,7 @@ public class DomainV1Test {
             .withDesiredState("ADMIN")
             .withEnv(Arrays.asList(createEnvironment())));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(
         spec.getEnvironmentVariables(),
@@ -275,7 +342,7 @@ public class DomainV1Test {
             .withClusterName(CLUSTER_NAME)
             .withEnv(Arrays.asList(createEnvironment())));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -288,7 +355,7 @@ public class DomainV1Test {
             .withClusterName(CLUSTER_NAME)
             .withEnv(Collections.singletonList(envVar("JAVA_OPTIONS", "value"))));
 
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(
         spec.getEnvironmentVariables(),
@@ -343,7 +410,7 @@ public class DomainV1Test {
 
   @Test
   public void whenNoServerStartupDefined_nodePortIsNull() {
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getNodePort(), nullValue());
   }
@@ -351,7 +418,7 @@ public class DomainV1Test {
   @Test
   public void whenServerStartupDefined_returnNodePort() {
     addServerStartup(new ServerStartup().withServerName(SERVER1).withNodePort(31));
-    ServerSpec spec = domain.getServer(CLUSTER_NAME, SERVER1);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getNodePort(), equalTo(31));
   }
