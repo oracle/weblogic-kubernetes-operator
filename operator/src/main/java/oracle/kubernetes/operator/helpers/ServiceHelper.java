@@ -271,11 +271,11 @@ public class ServiceHelper {
     }
 
     String getDomainName() {
-      return info.getDomain().getSpec().getDomainName();
+      return info.getDomain().getDomainName();
     }
 
     String getDomainUID() {
-      return info.getDomain().getSpec().getDomainUID();
+      return info.getDomain().getDomainUID();
     }
 
     String getNamespace() {

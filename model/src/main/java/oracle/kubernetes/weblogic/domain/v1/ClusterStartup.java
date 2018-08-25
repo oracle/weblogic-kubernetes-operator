@@ -16,12 +16,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * ClusterStartup describes the desired startup state and passed environment variables for a
- * specific cluster server.
- *
- * @deprecated Use the DomainSpec's clusters and clusterDefaults properties.
+ * ClusterStartup describes the desired startup state and passed environment variables for a specific
+ * cluster.
  */
-@Deprecated
 public class ClusterStartup {
 
   /**
@@ -168,6 +165,19 @@ public class ClusterStartup {
    */
   public ClusterStartup withEnv(List<V1EnvVar> env) {
     this.env = env;
+    return this;
+  }
+
+  /**
+   * Adds an environment variable to pass while starting this managed cluster.
+   *
+   * @param name the name of the variable to add
+   * @param value the value of the variable to add
+   * @return this
+   */
+  public ClusterStartup withEnvironmentVariable(String name, String value) {
+    if (env == null) env = new ArrayList<>();
+    env.add(new V1EnvVar().name(name).value(value));
     return this;
   }
 

@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
@@ -153,7 +152,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenPacketHasClusterConfig_managedPodHasClusterLabel() {
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_SCAN, new WlsClusterConfig(CLUSTER_NAME));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(
         getCreatedPod().getMetadata().getLabels(),

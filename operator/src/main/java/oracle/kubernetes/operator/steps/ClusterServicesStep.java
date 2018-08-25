@@ -36,7 +36,6 @@ public class ClusterServicesStep extends Step {
       for (Map.Entry<String, WlsClusterConfig> entry : scan.getClusterConfigs().entrySet()) {
         Packet p = packet.clone();
         WlsClusterConfig clusterConfig = entry.getValue();
-        p.put(ProcessingConstants.CLUSTER_SCAN, clusterConfig);
         p.put(ProcessingConstants.CLUSTER_NAME, clusterConfig.getClusterName());
         for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
           p.put(ProcessingConstants.PORT, serverConfig.getListenPort());

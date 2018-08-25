@@ -35,7 +35,6 @@ import oracle.kubernetes.weblogic.domain.v1.DomainCondition;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
 import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 import org.joda.time.DateTime;
 
@@ -203,8 +202,7 @@ public class DomainStatusUpdater {
       Collection<ServerStartupInfo> ssic = info.getServerStartupInfo();
       if (ssic != null) {
         for (ServerStartupInfo ssi : ssic) {
-          ServerStartup ss = ssi.serverStartup;
-          if (ss != null && !"ADMIN".equals(ss.getDesiredState())) {
+          if (!"ADMIN".equals(ssi.getDesiredState())) {
             continue;
           }
           serversIntendedToRunning.add(ssi.serverConfig.getName());
