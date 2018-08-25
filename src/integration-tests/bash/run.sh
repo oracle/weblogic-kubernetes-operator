@@ -604,9 +604,9 @@ function setup_wercker {
     trace "Existing helm charts "
     helm ls
     trace "Deleting installed helm charts"
-    helm list --short | xargs -L1 helm delete --purge
+    helm list --short -all | xargs -L1 helm delete --purge
     trace "After helm delete, list of installed helm charts is: "
-    helm ls
+    helm ls -all
   fi
 
   trace "Completed setup_wercker"
