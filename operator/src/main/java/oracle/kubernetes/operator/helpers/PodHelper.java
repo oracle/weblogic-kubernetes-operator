@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -21,13 +20,12 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 @SuppressWarnings("deprecation")
 public class PodHelper {
@@ -42,6 +40,11 @@ public class PodHelper {
       super(conflictStep, packet);
 
       init();
+    }
+
+    @Override
+    ServerSpec getServerSpec() {
+      return getDomain().getAdminServerSpec();
     }
 
     @Override
@@ -103,21 +106,11 @@ public class PodHelper {
 
     @Override
     List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
-      List<V1EnvVar> vars = new ArrayList<>();
-      addServerEnvVars(vars);
+      List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
       addEnvVar(vars, INTERNAL_OPERATOR_CERT_ENV, getInternalOperatorCertFile(tuningParameters));
       overrideContainerWeblogicEnvVars(vars);
       doSubstitution(vars);
       return vars;
-    }
-
-    private void addServerEnvVars(List<V1EnvVar> vars) {
-      getServerStartups()
-          .stream()
-          .filter(ss -> ss.getServerName().equals(getServerName()))
-          .map(ServerStartup::getEnv)
-          .flatMap(Collection::stream)
-          .forEach(vars::add);
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
@@ -174,16 +167,21 @@ public class PodHelper {
   static class ManagedPodStepContext extends PodStepContext {
 
     private final WlsServerConfig scan;
-    private final WlsClusterConfig cluster;
+    private final String clusterName;
     private final Packet packet;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
-      cluster = (WlsClusterConfig) packet.get(ProcessingConstants.CLUSTER_SCAN);
+      clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
 
       init();
+    }
+
+    @Override
+    ServerSpec getServerSpec() {
+      return getDomain().getServer(getServerName(), getClusterName());
     }
 
     @Override
@@ -262,7 +260,7 @@ public class PodHelper {
     }
 
     private String getClusterName() {
-      return cluster == null ? null : cluster.getClusterName();
+      return clusterName;
     }
 
     @Override

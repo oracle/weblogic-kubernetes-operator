@@ -20,6 +20,7 @@ import io.kubernetes.client.models.V1Status;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.Packet;
@@ -46,6 +47,7 @@ public class PodHelperTest {
 
   @Before
   public void setUp() throws NoSuchFieldException {
+    mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.installRequestStepFactory());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }

@@ -81,17 +81,29 @@ public class YamlUtils {
           Tag tag = sn.getTag();
           String value = sn.getValue();
           if (Tag.STR.equals(tag)) {
-            return KubernetesArtifactUtils.newIntOrString(value);
+            return newIntOrString(value);
           } else if (Tag.INT.equals(tag)) {
-            return KubernetesArtifactUtils.newIntOrString(Integer.parseInt(value));
+            return newIntOrString(Integer.parseInt(value));
           }
         } else if (Quantity.class.equals(type)) {
           ScalarNode sn = (ScalarNode) node;
-          return KubernetesArtifactUtils.newQuantity(sn.getValue());
+          return newQuantity(sn.getValue());
         }
         return super.construct(node);
       }
     }
+  }
+
+  private static Quantity newQuantity(String value) {
+    return Quantity.fromString(value);
+  }
+
+  private static IntOrString newIntOrString(int val) {
+    return new IntOrString(val);
+  }
+
+  private static IntOrString newIntOrString(String value) {
+    return new IntOrString(value);
   }
 
   // Note: don't name it 'equalTo' since it conflicts with static importing

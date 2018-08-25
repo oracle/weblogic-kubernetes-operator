@@ -48,7 +48,7 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   }
 
   private String getDomainUID(DomainPresenceInfo item) {
-    return item.getDomain().getSpec().getDomainUID();
+    return item.getDomain().getDomainUID();
   }
 
   private boolean mismatchedUID(Description description, String actualDomainUID) {
