@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * ClusterStarup describes the desired startup state and passed environment variables for a specific
+ * ClusterStartup describes the desired startup state and passed environment variables for a specific
  * cluster.
  */
 public class ClusterStartup {
