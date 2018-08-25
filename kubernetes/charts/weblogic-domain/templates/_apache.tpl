@@ -1,70 +1,72 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-{{- if eq .Values.loadBalancer "APACHE" }}
+
+{{- define "domain.apache" }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-apache-webtier
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: apache-load-balancer-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
     app: apache-webtier
+
 --- 
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-apache-webtier
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: apache-load-balancer-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
     app: apache-webtier
 spec: 
   replicas: 1
   selector:
     matchLabels:
-      weblogic.domainUID: {{ .Values.domainUID }}
-      weblogic.domainName: {{ .Values.domainName }}
+      weblogic.domainUID: {{ .Release.Name }}
+      weblogic.domainName: {{ .domainName }}
       app: apache-webtier
   template:
     metadata:
       labels:
         weblogic.resourceVersion: apache-load-balancer-v1
-        weblogic.domainUID: {{ .Values.domainUID }}
-        weblogic.domainName: {{ .Values.domainName }}
+        weblogic.domainUID: {{ .Release.Name }}
+        weblogic.domainName: {{ .domainName }}
         app: apache-webtier
     spec:
-      serviceAccountName: {{ .Values.domainUID }}-apache-webtier
+      serviceAccountName: {{ .Release.Name }}-apache-webtier
       terminationGracePeriodSeconds: 60
-      {{- if .Values.loadBalancerVolumePath }}
+      {{- if .loadBalancerVolumePath }}
       volumes:
-      - name: {{ .Values.domainUID }}-apache-webtier
+      - name: {{ .Release.Name }}-apache-webtier
         hostPath:
-          path: {{ .Values.loadBalancerVolumePath }}
+          path: {{ .loadBalancerVolumePath }}
       {{- end }}
       containers:
-      - name: {{ .Values.domainUID }}-apache-webtier
+      - name: {{ .Release.Name }}-apache-webtier
         image: store/oracle/apache:12.2.1.3
         imagePullPolicy: Never
-        {{- if .Values.loadBalancerVolumePath }}
+        {{- if .loadBalancerVolumePath }}
         volumeMounts:
-        - name: {{ .Values.domainUID }}-apache-webtier
+        - name: {{ .Release.Name }}-apache-webtier
           mountPath: "/config"
         {{- end }}
         env:
           - name: WEBLOGIC_CLUSTER
-            value: '{{ .Values.domainUID }}-cluster-{{ .Values.clusterName | lower }}:{{ .Values.managedServerPort }}'
+            value: '{{ .Release.Name }}-cluster-{{ .clusterName | lower }}:{{ .managedServerPort }}'
           - name: LOCATION
-            value: '{{ .Values.loadBalancerAppPrepath }}'
-          {{- if .Values.loadBalancerExposeAdminPort }}
+            value: '{{ .loadBalancerAppPrepath }}'
+          {{- if .loadBalancerExposeAdminPort }}
           - name: WEBLOGIC_HOST
-            value: '{{ .Values.domainUID }}-{{ .Values.adminServerName }}'
+            value: '{{ .Release.Name }}-{{ .adminServerName }}'
           - name: WEBLOGIC_PORT
-            value: '{{ .Values.adminPort }}'
+            value: '{{ .adminPort }}'
           {{- end }}
         readinessProbe:
           tcpSocket:
@@ -87,20 +89,20 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.domainUID }}-apache-webtier
+  name: {{ .Release.Name }}-apache-webtier
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: apache-load-balancer-v1
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
 spec:
   type: NodePort
   selector:
-    weblogic.domainUID: {{ .Values.domainUID }}
-    weblogic.domainName: {{ .Values.domainName }}
+    weblogic.domainUID: {{ .Release.Name }}
+    weblogic.domainName: {{ .domainName }}
     app: apache-webtier
   ports:
     - port: 80
-      nodePort: {{ .Values.loadBalancerWebPort }}
+      nodePort: {{ .loadBalancerWebPort }}
       name: rest-https
 {{- end }}

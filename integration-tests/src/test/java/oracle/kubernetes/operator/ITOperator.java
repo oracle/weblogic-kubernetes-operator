@@ -5,6 +5,8 @@
 package oracle.kubernetes.operator;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -71,6 +73,17 @@ public class ITOperator extends BaseTest {
       TestUtils.releaseLease(getProjectRoot(), getLeaseId());
     }
 
+    StringBuffer cmd =
+        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append("/integration-tests/src/test/resources/statedump.sh");
+
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() == 0) logger.info("Executed statedump.sh " + result.stdout());
+    else
+      logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
+
     logger.info("SUCCESS");
   }
 
@@ -79,7 +92,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test1CreateOperatorManagingDefaultAndTest1NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
-    operator1 = TestUtils.createOperator(op1PropsFile);
+    operator1 = TestUtils.createOperator(op1PropsFile, true);
     logger.info("SUCCESS");
   }
 
@@ -92,6 +105,7 @@ public class ITOperator extends BaseTest {
     testDomainLifecyle(operator1, domain1);
     testClusterScaling(operator1, domain1);
     testOperatorLifecycle(operator1, domain1);
+
     logger.info("SUCCESS");
   }
 
@@ -130,7 +144,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test5CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator2
-    operator2 = TestUtils.createOperator(op2PropsFile);
+    operator2 = TestUtils.createOperator(op2PropsFile, false);
     logger.info("SUCCESS");
   }
 

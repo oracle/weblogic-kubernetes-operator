@@ -7,17 +7,17 @@ apiVersion: "apps/v1beta1" # for versions before 1.6.0 use extensions/v1beta1
 kind: "Deployment"
 metadata:
   name: "weblogic-operator"
-  namespace: {{ .operatorNamespace | quote }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
   replicas: 1
   template:
     metadata:
      labels:
         weblogic.resourceVersion: "operator-v1"
-        weblogic.operatorName: {{ .operatorNamespace | quote }}
+        weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
     spec:
       serviceAccountName: {{ .operatorServiceAccount | quote }}
@@ -70,6 +70,10 @@ spec:
           value: "elasticsearch.default.svc.cluster.local"
         - name: "ELASTICSEARCH_PORT"
           value: "9200"
+      {{- end }}
+      {{- if .operatorImagePullSecrets }}
+      imagePullSecrets:
+      {{ .operatorImagePullSecrets | toYaml }}
       {{- end }}
       volumes:
       - name: "weblogic-operator-cm-volume"

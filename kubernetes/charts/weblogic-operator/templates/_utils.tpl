@@ -134,7 +134,74 @@ Report the validation errors that have been found then kill the helm chart insta
 */}}
 {{- define "operator.reportValidationErrors" -}}
 {{- if .validationErrors -}}
-{{-   $ignore := required .validationErrors "" -}}
+{{-   fail .validationErrors -}}
 {{- end -}}
 {{- end -}}
 
+{{/*
+Merge a set of dictionaries into a single dictionary.
+
+The scope must be a list of dictionaries, starting with the least specific
+and ending with the most specific.
+
+First it makes an empty destinaction dictionary, then iterates over the dictionaries,
+overlaying their values on the destination dictionary.
+
+If a value is null, then it removes that key from the destination dictionary.
+
+If the value is already present in the destination dictionary, and the old and
+new values are both dictionaries, it merges them into the destination.
+*/}}
+{{- define "operator.mergeDictionaries" -}}
+{{- $dest := dict -}}
+{{- range $src := . -}}
+{{-   if not (empty $src) -}}
+{{-     range $key, $value := $src -}}
+{{-       $ignore := include "operator.mergeDictionaryValue" (list $dest $key $value) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- toYaml $dest -}}
+{{- end -}}
+
+{{/*
+Merge a value into a dictionary.
+This is like helm's 'merge' function, except that it handles null entries too.
+*/}}
+{{- define "operator.mergeDictionaryValue" -}}
+{{- $dest := index . 0 -}}
+{{- $key := index . 1 -}}
+{{- $newValue := index . 2 -}}
+{{- $newType := typeOf $newValue -}}
+{{- if hasKey $dest $key -}}
+{{-   if eq $newType "<nil>" -}}
+{{/*    # if the value already existed, and the new value is null, remove the old value */}}
+{{-     $ignore := unset $dest $key -}}
+{{-   else -}}
+{{-     $oldValue := index $dest $key -}}
+{{-     $oldKind := kindOf $oldValue -}}
+{{-     $newKind := kindOf $newValue -}}
+{{-     if (and (eq $oldKind "map") (eq $newKind "map")) -}}
+{{/*       # if both values are maps, merge them */}}
+{{-       $merged := include "operator.mergeDictionaries" (list $oldValue $newValue) | fromYaml -}}
+{{-       $ignore := set $dest $key $merged -}}
+{{-     else -}}
+{{/*       # replace the old value with the new one */}}
+{{-       $ignore := set $dest $key $newValue -}}
+{{-     end -}}
+{{-   end -}}
+{{- else -}}
+{{-   if not (eq $newType "<nil>") -}}
+{{/*     #if there was no old value, and the new value isn't null, use the new value */}}
+{{-     $ignore := set $dest $key $newValue -}}
+{{-   end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Make a writable copy of a dictionary.
+TBD - does helm provide a clone method we can use instead?
+*/}}
+{{- define "operator.cloneDictionary" -}}
+{{- include "operator.mergeDictionaries" (list .) -}}
+{{- end -}}

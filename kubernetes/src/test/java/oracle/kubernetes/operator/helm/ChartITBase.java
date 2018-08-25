@@ -5,26 +5,20 @@
 package oracle.kubernetes.operator.helm;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @SuppressWarnings("SameParameterValue")
 class ChartITBase {
   private static List<ProcessedChart> charts = new ArrayList<>();
 
-  ProcessedChart getChart(String chartName) {
-    return getChart(chartName, Collections.emptyMap());
-  }
-
-  ProcessedChart getChart(String chartName, Map<String, Object> valueOverrides) {
+  ProcessedChart getChart(InstallArgs installArgs) {
     for (ProcessedChart chart : charts) {
-      if (chart.matches(chartName, valueOverrides)) {
+      if (chart.matches(installArgs)) {
         return chart;
       }
     }
 
-    ProcessedChart chart = new ProcessedChart(chartName, valueOverrides);
+    ProcessedChart chart = new ProcessedChart(installArgs);
     charts.add(chart);
     return chart;
   }

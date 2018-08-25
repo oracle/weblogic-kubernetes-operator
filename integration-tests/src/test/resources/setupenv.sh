@@ -24,6 +24,39 @@ function setup_jenkins {
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
 
     docker images
+    
+    echo "Helm installation starts" 
+    wget -q -O  /tmp/helm-v2.8.2-linux-amd64.tar.gz https://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
+    mkdir /tmp/helm
+    tar xzf /tmp/helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
+    chmod +x /tmp/helm/linux-amd64/helm
+    /usr/local/packages/aime/ias/run_as_root "cp /tmp/helm/linux-amd64/helm /usr/bin/"
+    rm -rf /tmp/helm
+    helm init
+    echo "Helm is configured."
+}
+
+function setup_wercker {
+    echo "Perform setup for running in wercker"
+	echo "Install tiller"
+	kubectl create serviceaccount --namespace kube-system tiller
+	kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+	
+	# Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
+	helm init --service-account=tiller --wait
+	
+	helm version
+	
+	kubectl get po -n kube-system
+	
+	echo "Existing helm charts "
+	helm ls
+	echo "Deleting installed helm charts"
+	helm list --short | xargs -L1 helm delete --purge
+	echo "After helm delete, list of installed helm charts is: "
+	helm ls
+
+    echo "Completed setup_wercker"
 }
 
 function pull_tag_images {
@@ -120,6 +153,8 @@ if [ "$WERCKER" = "true" ]; then
         echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
         exit 1
     fi
+    
+    setup_wercker
     
 elif [ "$JENKINS" = "true" ]; then
 
