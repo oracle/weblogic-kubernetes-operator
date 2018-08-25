@@ -8,7 +8,7 @@ kind: "ConfigMap"
 metadata:
   labels:
     weblogic.createdByOperator: "true"
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "domain-v1"
   name: "weblogic-domain-cm"
   namespace: {{ .domainsNamespace | quote }}

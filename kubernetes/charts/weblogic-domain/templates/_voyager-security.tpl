@@ -1,6 +1,8 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-{{- if eq .Values.loadBalancer "VOYAGER" }}
+
+{{- define "domain.voyagerSecurity" }}
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -9,8 +11,8 @@ metadata:
   labels:
     weblogic.resourceVersion: voyager-load-balancer-v1
     app: voyager
----
 
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -90,8 +92,8 @@ rules:
   - rolebindings
   - roles
   verbs: ["get", "create", "delete", "patch"]
----
 
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -108,8 +110,8 @@ subjects:
 - kind: ServiceAccount
   name: voyager-operator
   namespace: voyager
----
 
+---
 # to read the config for terminating authentication
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -127,8 +129,8 @@ subjects:
 - kind: ServiceAccount
   name: voyager-operator
   namespace: voyager
----
 
+---
 # to delegate authentication and authorization
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -144,8 +146,8 @@ subjects:
 - kind: ServiceAccount
   name: voyager-operator
   namespace: voyager
----
 
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -169,6 +171,7 @@ rules:
   - patch
   - update
   - watch
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1

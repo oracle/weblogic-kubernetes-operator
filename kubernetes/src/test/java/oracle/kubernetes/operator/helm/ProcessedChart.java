@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import oracle.kubernetes.operator.utils.PathUtils;
 import oracle.kubernetes.operator.utils.YamlReader;
 import org.yaml.snakeyaml.Yaml;
@@ -28,26 +27,18 @@ import org.yaml.snakeyaml.Yaml;
  */
 @SuppressWarnings({"unchecked", "SameParameterValue"})
 public class ProcessedChart implements YamlReader {
-  private final String chartName;
-  private Map<String, Object> valueOverrides;
+  private final InstallArgs installArgs;
   private String error;
   private List<Object> documents;
   private Process process;
   private Map<String, Object> values;
-  private String namespace;
 
-  ProcessedChart(String chartName, Map<String, Object> valueOverrides) {
-    this(chartName, valueOverrides, null);
+  ProcessedChart(InstallArgs installArgs) {
+    this.installArgs = installArgs;
   }
 
-  ProcessedChart(String chartName, Map<String, Object> valueOverrides, String namespace) {
-    this.chartName = chartName;
-    this.valueOverrides = valueOverrides;
-    this.namespace = namespace;
-  }
-
-  boolean matches(String chartName, Map<String, Object> valueOverrides) {
-    return this.chartName.equals(chartName) && Objects.equals(valueOverrides, this.valueOverrides);
+  boolean matches(InstallArgs installArgs) {
+    return this.installArgs.equals(installArgs);
   }
 
   /**
@@ -130,19 +121,18 @@ public class ProcessedChart implements YamlReader {
 
   private Process getProcess() throws Exception {
     if (process == null) {
-      process = processChart(chartName, valueOverrides);
+      process = processChart();
     }
     return process;
   }
 
-  private Process processChart(String chartName, Map<String, Object> valueOverrides)
-      throws Exception {
-    File chartsDir = getChartDir(chartName);
+  private Process processChart() throws Exception {
+    File chartsDir = getChartDir(installArgs.getChartName());
     File baseValuesFile = new File(chartsDir, "values.yaml");
     values = new Yaml().load(new FileReader(baseValuesFile));
-    applyOverrides(valueOverrides);
+    applyOverrides(installArgs.getValueOverrides());
 
-    Path valuesFile = writeValuesOverride(valueOverrides);
+    Path valuesFile = writeValuesOverride(installArgs.getValueOverrides());
 
     ProcessBuilder pb = new ProcessBuilder(createCommandLine(chartsDir, valuesFile));
     Process p = pb.start();
@@ -155,21 +145,17 @@ public class ProcessedChart implements YamlReader {
   }
 
   private String[] createCommandLine(File chart, Path valuesPath) {
-    if (namespace == null) {
-      return new String[] {
-        "helm", "template", chart.getAbsolutePath(), "-f", valuesPath.toString()
-      };
-    } else {
-      return new String[] {
-        "helm",
-        "template",
-        chart.getAbsolutePath(),
-        "-f",
-        valuesPath.toString(),
-        "--namespace",
-        namespace
-      };
-    }
+    return new String[] {
+      "helm",
+      "template",
+      chart.getAbsolutePath(),
+      "-f",
+      valuesPath.toString(),
+      "--name",
+      installArgs.getReleaseName(),
+      "--namespace",
+      installArgs.getNamespace()
+    };
   }
 
   private Path writeValuesOverride(Map<String, Object> values) throws IOException {

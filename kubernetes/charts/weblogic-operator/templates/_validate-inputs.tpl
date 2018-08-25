@@ -11,13 +11,10 @@
 {{- if include "operator.verifyBooleanInput" (list $scope $scope "createOperator") -}}
 {{-   if .createOperator }}
 {{-     $ignore := include "operator.verifyBooleanInput" (list $scope $scope "elkIntegrationEnabled") -}}
-{{-     $ignore := include "operator.verifyStringInput"  (list $scope $scope "operatorNamespace") -}}
 {{-     $ignore := include "operator.verifyStringInput"  (list $scope $scope "operatorServiceAccount") -}}
 {{-     $ignore := include "operator.verifyStringInput"  (list $scope $scope "operatorImage") -}}
 {{-     $ignore := include "operator.verifyEnumInput"    (list $scope $scope "operatorImagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{-     $ignore := include "operator.verifyEnumInput"    (list $scope $scope "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
-{{-     $ignore := include "operator.verifyStringInput"  (list $scope $scope "internalOperatorCert") -}}
-{{-     $ignore := include "operator.verifyStringInput"  (list $scope $scope "internalOperatorKey") -}}
 {{-     if include "operator.verifyEnumInput" (list $scope $scope "externalRestOption" (list "NONE" "SELF_SIGNED_CERT" "CUSTOM_CERT")) -}}
 {{-       if eq $scope.externalRestOption "SELF_SIGNED_CERT" -}}
 {{-         $ignore := include "operator.verifyIntegerInput" (list $scope $scope "externalRestHttpsPort") -}}

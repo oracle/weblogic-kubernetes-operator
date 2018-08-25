@@ -557,6 +557,16 @@ function setup_jenkins {
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true .
 
     docker images
+
+    trace "Helm installation starts" 
+    wget -q -O  /tmp/helm-v2.8.2-linux-amd64.tar.gz https://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
+    mkdir /tmp/helm
+    tar xzf /tmp/helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
+    chmod +x /tmp/helm/linux-amd64/helm
+    /usr/local/packages/aime/ias/run_as_root "cp /tmp/helm/linux-amd64/helm /usr/bin/"
+    rm -rf /tmp/helm
+    helm init
+    trace "Helm is configured."
 }
 
 # setup_local is for arbitrary dev hosted linux - it assumes docker & k8s are already installed
@@ -580,13 +590,23 @@ function setup_wercker {
   if [ "$USE_HELM" = "true" ]; then
 
     trace "Install tiller"
-    helm init
+
+    kubectl create serviceaccount --namespace kube-system tiller
+    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+
+    # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
+    helm init --service-account=tiller --wait
 
     helm version
 
     kubectl get po -n kube-system
 
-    setup_tiller_rbac
+    trace "Existing helm charts "
+    helm ls
+    trace "Deleting installed helm charts"
+    helm list --short --all | xargs -L1 helm delete --purge
+    trace "After helm delete, list of installed helm charts is: "
+    helm ls --all
   fi
 
   trace "Completed setup_wercker"
@@ -756,8 +776,6 @@ function deploy_operator {
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
       echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
       echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "createOperatorNamespace: false" >> $inputs
-      echo "operatorNamespace: \"${NAMESPACE}\"" >> $inputs
       echo "operatorServiceAccount: weblogic-operator" >> $inputs
       trace "Contents after customization in file $inputs"
       cat $inputs
@@ -765,7 +783,7 @@ function deploy_operator {
       local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
       trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
       cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-operator --name ${opkey} -f $inputs 2>&1 | opt_tee ${outfile}
+      helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
       operator_ready_wait $opkey
@@ -990,7 +1008,9 @@ function run_create_domain_job {
       sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
     fi
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
+    if [ "$USE_HELM" != "true" ]; then
+      sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
+    fi
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
     sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
@@ -1045,7 +1065,7 @@ function run_create_domain_job {
     if [ "$USE_HELM" = "true" ]; then
       trace "Run helm install to create the domain, see \"$outfile\" for tracing."
       cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-domain --name $1 -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
+      helm install weblogic-domain --name $DOMAIN_UID -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
@@ -1814,26 +1834,20 @@ function test_mvn_integration_local {
 function test_mvn_integration_wercker {
     declare_new_test 1 "$@"
 
-    trace "Running mvn -P integration-tests install.  Output in $RESULT_DIR/mvn.out"
-
     local mstart=`date +%s`
-    mvn -P integration-tests install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    if [ "$USE_HELM" = "true" ]; then
+      trace "Running mvn -P integration-tests -Phelm-integration-test.  Output in $RESULT_DIR/mvn.out"
+      mvn -P integration-tests -Phelm-integration-test install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    else
+      trace "Running mvn -P integration-tests.  Output in $RESULT_DIR/mvn.out"
+      mvn -P integration-tests install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    fi
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
     confirm_mvn_build $RESULT_DIR/mvn.out
     declare_test_pass
-}
-
-function setup_tiller_rbac {
-    trace "Running setup_tiller_rbac"
-
-    kubectl create serviceaccount --namespace kube-system tiller
-    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-    kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
-
-    trace "setup_tiller_rbac completed"
 }
 
 function check_pv {
@@ -2488,13 +2502,13 @@ function test_domain_lifecycle {
     declare_test_pass
 }
 
-function wait_for_operator_shutdown {
-  name=$1
+function wait_for_operator_helm_chart_deleted {
+  release=$1
   deleted=false
   iter=1
-  trace "waiting for operator shutdown by verifying that namespace ${name} no longer exist "
+  trace "waiting for the operator helm release ${release} to no longer exist"
   while [ ${deleted} == false -a $iter -lt 101 ]; do
-    kubectl get namespace ${name}
+    helm status ${release}
     if [ $? != 0 ]; then
       deleted=true
     else
@@ -2503,9 +2517,31 @@ function wait_for_operator_shutdown {
     fi
   done
   if [ ${deleted} == false ]; then
-    fail 'operator fail to be deleted'
+    fail 'the operator helm release ${release} failed to be deleted'
   else
-    trace "operator namespace ${name} has been deleted"
+    trace "the operator helm release ${release} has been deleted"
+  fi
+}
+
+function wait_for_operator_deployment_deleted {
+  namespace=$1
+  deployment="weblogic-operator"
+  deleted=false
+  iter=1
+  trace "waiting for the operator deployment ${deployment} in the namespace ${namespace} to longer exist"
+  while [ ${deleted} == false -a $iter -lt 101 ]; do
+    kubectl get deployment -namespace ${namespace} ${deployment}
+    if [ $? != 0 ]; then
+      deleted=true
+    else
+      iter=`expr $iter + 1`
+      sleep 5
+    fi
+  done
+  if [ ${deleted} == false ]; then
+    fail 'the operator deployment ${deployment} in the namespace ${namespace} failed to be deleted'
+  else
+    trace "the operator deployment ${deployment} in the namespace ${namespace} has been deleted"
   fi
 }
 
@@ -2519,7 +2555,8 @@ function shutdown_operator {
 
     if [ "$USE_HELM" = "true" ]; then
       helm delete $OP_KEY --purge
-      wait_for_operator_shutdown $OPERATOR_NS
+      wait_for_operator_helm_chart_deleted $OP_KEY
+      wait_for_operator_deployment_deleted $OPERATOR_NS
     else
       kubectl delete -f $TMP_DIR/weblogic-operator.yaml
     fi
@@ -2545,7 +2582,7 @@ function startup_operator {
     if [ "$USE_HELM" = "true" ]; then
       local inputs="$TMP_DIR/weblogic-operator-values.yaml"
       local outfile="$TMP_DIR/startup-weblogic-operator.out"
-      helm install weblogic-operator --name ${OP_KEY} -f $inputs 2>&1 | opt_tee ${outfile}
+      helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
@@ -2902,9 +2939,6 @@ function test_suite_init {
     if [ "$WERCKER" = "true" ]; then 
       trace "Test Suite is running locally on Wercker and k8s is running on remote nodes."
 
-      # do not use helm when running on wercker, for now
-      USE_HELM="false"
-
       # No need to check M2_HOME or docker_pass -- not used by local runs
 
       # Assume store/oracle/weblogic:12.2.1.3 and store/oracle/serverjre:8 are already
@@ -3016,11 +3050,10 @@ function test_suite {
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
 
-    if ! [ "$USE_HELM" = "true" ]; then
-      # do not create ooperator namespace when using helm charts
-      kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
-      kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
-    fi
+    kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
+    kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
+    kubectl create serviceaccount --namespace weblogic-operator-1 weblogic-operator | sed 's/^/+/g' 
+    kubectl create serviceaccount --namespace weblogic-operator-2 weblogic-operator | sed 's/^/+/g' 
 
     # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
     declare_test_pass

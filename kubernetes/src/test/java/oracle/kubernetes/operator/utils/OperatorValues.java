@@ -11,6 +11,8 @@ public class OperatorValues {
   public static final String EXTERNAL_REST_OPTION_NONE = "NONE";
   public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
   public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
+  public static final String INTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
+  public static final String INTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
   public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
   public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
   public static final String JAVA_LOGGING_LEVEL_INFO = "INFO";
@@ -21,8 +23,10 @@ public class OperatorValues {
   public static final String IMAGE_PULL_POLICY_IF_NOT_PRESENT = "IfNotPresent";
   public static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
   public static final String IMAGE_PULL_POLICY_NEVER = "Never";
-  private static final String CUSTOM_CERT_PEM = "test-custom-certificate-pem";
-  private static final String CUSTOM_KEY_PEM = "test-custom-private-key-pem";
+  private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
+  private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
+  private static final String INTERNAL_CUSTOM_CERT_PEM = "test-internal-custom-certificate-pem";
+  private static final String INTERNAL_CUSTOM_KEY_PEM = "test-internal-custom-private-key-pem";
   private String version = "";
   private String serviceAccount = "";
   private String namespace = "";
@@ -30,6 +34,9 @@ public class OperatorValues {
   private String weblogicOperatorImage = "";
   private String weblogicOperatorImagePullPolicy = "";
   private String weblogicOperatorImagePullSecretName = "";
+  private String internalRestOption = "";
+  private String internalOperatorCert = "";
+  private String internalOperatorKey = "";
   private String externalRestOption = "";
   private String externalRestHttpsPort = "";
   private String externalSans = "";
@@ -47,7 +54,8 @@ public class OperatorValues {
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
         .weblogicOperatorImagePullPolicy("Never")
-        .javaLoggingLevel("FINEST");
+        .javaLoggingLevel("FINEST")
+        .setupInternalRestSelfSignedCert();
   }
 
   public OperatorValues enableDebugging() {
@@ -65,16 +73,34 @@ public class OperatorValues {
   public OperatorValues setupExternalRestCustomCert() {
     return this.externalRestHttpsPort("30070")
         .externalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT)
-        .externalOperatorCert(Base64.encodeBase64String(CUSTOM_CERT_PEM.getBytes()))
-        .externalOperatorKey(Base64.encodeBase64String(CUSTOM_KEY_PEM.getBytes()));
+        .externalOperatorCert(toBase64(externalOperatorCustomCertPem()))
+        .externalOperatorKey(toBase64(externalOperatorCustomKeyPem()));
+  }
+
+  public OperatorValues setupInternalRestSelfSignedCert() {
+    return this.internalRestOption(INTERNAL_REST_OPTION_SELF_SIGNED_CERT);
+  }
+
+  public OperatorValues setupInternalRestCustomCert() {
+    return this.internalRestOption(INTERNAL_REST_OPTION_CUSTOM_CERT)
+        .internalOperatorCert(toBase64(internalOperatorCustomCertPem()))
+        .internalOperatorKey(toBase64(internalOperatorCustomKeyPem()));
   }
 
   public String externalOperatorCustomCertPem() {
-    return CUSTOM_CERT_PEM;
+    return EXTERNAL_CUSTOM_CERT_PEM;
   }
 
   public String externalOperatorCustomKeyPem() {
-    return CUSTOM_KEY_PEM;
+    return EXTERNAL_CUSTOM_KEY_PEM;
+  }
+
+  public String internalOperatorCustomCertPem() {
+    return INTERNAL_CUSTOM_CERT_PEM;
+  }
+
+  public String internalOperatorCustomKeyPem() {
+    return INTERNAL_CUSTOM_KEY_PEM;
   }
 
   public String externalOperatorSelfSignedCertPem() {
@@ -283,6 +309,45 @@ public class OperatorValues {
     return this;
   }
 
+  public String getInternalRestOption() {
+    return internalRestOption;
+  }
+
+  public void setInternalRestOption(String val) {
+    internalRestOption = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues internalRestOption(String val) {
+    setInternalRestOption(val);
+    return this;
+  }
+
+  public String getInternalOperatorCert() {
+    return internalOperatorCert;
+  }
+
+  public void setInternalOperatorCert(String val) {
+    internalOperatorCert = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues internalOperatorCert(String val) {
+    setInternalOperatorCert(val);
+    return this;
+  }
+
+  public String getInternalOperatorKey() {
+    return internalOperatorKey;
+  }
+
+  public void setInternalOperatorKey(String val) {
+    internalOperatorKey = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues internalOperatorKey(String val) {
+    setInternalOperatorKey(val);
+    return this;
+  }
+
   public String getRemoteDebugNodePortEnabled() {
     return remoteDebugNodePortEnabled;
   }
@@ -352,5 +417,9 @@ public class OperatorValues {
   // to a yaml file, the nulls are written out as "null".  Use "" instead.
   private String convertNullToEmptyString(String val) {
     return Objects.toString(val, "");
+  }
+
+  protected String toBase64(String val) {
+    return Base64.encodeBase64String(val.getBytes());
   }
 }

@@ -9,16 +9,10 @@ createSharedOperatorResources: true
 # createOperator specifies whether or not the installation should create the operator and its resources.
 createOperator: true
 
-# operatorNamespace specifies the name of the Kubernetes namespace that the operator will be deployed in.
-# It is recommended that a namespace be created for the operator rather
-# than using the default namespace.
-# The name must be lowercase
-operatorNamespace: "weblogic-operator"
-
 # operatorServiceAccount specifies the name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
 # The name must be lowercase
-operatorServiceAccount: "weblogic-operator"
+operatorServiceAccount: "default"
 
 # domainsNamespaces specifies list of WebLogic Domain namespaces which the operator manages
 # The names must be lowercase.
@@ -26,7 +20,6 @@ operatorServiceAccount: "weblogic-operator"
 #
 # Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
 #
-# createDomainsNamespace: true
 # domainsNamespaces:
 #   - namespace1
 #   - namespace2
@@ -37,6 +30,9 @@ operatorImage: "weblogic-kubernetes-operator:1.1"
 
 # operatorImagePullPolicy specifies the image pull policy for the operator docker image.
 operatorImagePullPolicy: "IfNotPresent"
+
+# operatorImagePullSecret is the name of the Kubernetes secret the operator's namespace needed to access the registry containing the operator Docker image
+#operatorImagePullSecret:
 
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:
@@ -93,7 +89,6 @@ externalRestHttpsPort: 31001
 #    The customer supplied certificate and private key are used for the REST
 #    interface.  They are specified by the 'internalOperatorCert' and
 #    'internalOperatorKey' properties.
-# 
 internalRestOption: SELF_SIGNED_CERT
 
 # The customer supplied certificate to use for the internal operator REST
