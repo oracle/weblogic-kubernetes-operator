@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * ServerStarup describes the desired startup state and passed environment variables for a specific
+ * ServerStartup describes the desired startup state and passed environment variables for a specific
  * managed server.
  */
 public class ServerStartup {
