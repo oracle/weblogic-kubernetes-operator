@@ -15,9 +15,9 @@ package oracle.kubernetes.operator;
  * servers from other clusters up to the replicas count.
  */
 public interface StartupControlConstants {
-  public static final String NONE_STARTUPCONTROL = "NONE";
-  public static final String AUTO_STARTUPCONTROL = "AUTO";
-  public static final String ADMIN_STARTUPCONTROL = "ADMIN";
-  public static final String ALL_STARTUPCONTROL = "ALL";
-  public static final String SPECIFIED_STARTUPCONTROL = "SPECIFIED";
+  String NONE_STARTUPCONTROL = "NONE";
+  String AUTO_STARTUPCONTROL = "AUTO";
+  String ADMIN_STARTUPCONTROL = "ADMIN";
+  String ALL_STARTUPCONTROL = "ALL";
+  String SPECIFIED_STARTUPCONTROL = "SPECIFIED";
 }

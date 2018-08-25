@@ -19,12 +19,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.joda.time.DateTime;
 
 /**
@@ -56,7 +55,7 @@ public class DomainPresenceInfo {
    *
    * @param domain Domain
    */
-  DomainPresenceInfo(Domain domain) {
+  public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.serverStartupInfo = new AtomicReference<>(null);
@@ -277,27 +276,47 @@ public class DomainPresenceInfo {
   /** Details about a specific managed server that will be started up */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
-    public final WlsClusterConfig clusterConfig;
-    public final List<V1EnvVar> envVars;
-    public final ServerStartup serverStartup;
+    private String clusterName;
+    private ServerSpec serverSpec;
 
     /**
      * Create server startup info
      *
      * @param serverConfig Server config scan
-     * @param clusterConfig Cluster config scan
-     * @param envVars Environment variables
-     * @param serverStartup Server startup configuration
+     * @param clusterName the name of the cluster
+     * @param serverSpec the server startup configuration
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig,
-        WlsClusterConfig clusterConfig,
-        List<V1EnvVar> envVars,
-        ServerStartup serverStartup) {
+        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
       this.serverConfig = serverConfig;
-      this.clusterConfig = clusterConfig;
-      this.envVars = envVars;
-      this.serverStartup = serverStartup;
+      this.clusterName = clusterName;
+      this.serverSpec = serverSpec;
+    }
+
+    public String getClusterName() {
+      return clusterName;
+    }
+
+    /**
+     * Returns the node port to use when starting up the configured server.
+     *
+     * @return a port number, or null.
+     */
+    public Integer getNodePort() {
+      return serverSpec == null ? null : serverSpec.getNodePort();
+    }
+
+    /**
+     * Returns the desired state for the started server.
+     *
+     * @return return a string, which may be null.
+     */
+    public String getDesiredState() {
+      return serverSpec == null ? null : serverSpec.getDesiredState();
+    }
+
+    public List<V1EnvVar> getEnvironment() {
+      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
   }
 

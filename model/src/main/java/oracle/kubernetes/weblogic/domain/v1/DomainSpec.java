@@ -4,13 +4,14 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -32,31 +33,17 @@ public class DomainSpec {
   @NotNull
   private String domainName;
 
-  /**
-   * The WebLogic Docker image.
-   *
-   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
-   *
-   * @deprecated Use the Server image property.
-   */
+  /** WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3 */
   @SerializedName("image")
   @Expose
-  @Deprecated
   private String image;
-
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @deprecated Use the Server imagePullPolicy property.
+   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
+   * https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @SerializedName("imagePullPolicy")
   @Expose
-  @Deprecated
   private String imagePullPolicy;
 
   /**
@@ -68,7 +55,6 @@ public class DomainSpec {
   @Valid
   @NotNull
   private V1SecretReference adminSecret;
-
   /**
    * Admin server name. Note: Possibly temporary as we could find this value through domain home
    * inspection. (Required)
@@ -96,123 +82,80 @@ public class DomainSpec {
   @SerializedName("exportT3Channels")
   @Expose
   @Valid
-  private List<String> exportT3Channels = new ArrayList<String>();
+  private List<String> exportT3Channels = new ArrayList<>();
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
+   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
+   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
+   * that all servers in the domain will be started. SPECIFIED indicates that the administration
+   * server is started and then additionally only those servers listed under serverStartup or
+   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
+   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
+   * but then managed servers belonging to clusters not listed under clusterStartup will be started
+   * up to the replicas field.
    */
   @SerializedName("startupControl")
   @Expose
-  @Deprecated
   private String startupControl;
 
-  /**
-   * List of server startup details for selected servers.
-   *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
-   */
+  /** List of server startup details for selected servers. */
   @SerializedName("serverStartup")
   @Expose
   @Valid
-  @Deprecated
-  private List<ServerStartup> serverStartup = new ArrayList<ServerStartup>();
+  private List<ServerStartup> serverStartup = new ArrayList<>();
 
-  /**
-   * List of server startup details for selected clusters.
-   *
-   * @deprecated Use the clusters and clusterDefaults properties.
-   */
+  /** List of server startup details for selected clusters */
   @SerializedName("clusterStartup")
   @Expose
   @Valid
-  @Deprecated
-  private List<ClusterStartup> clusterStartup = new ArrayList<ClusterStartup>();
+  private List<ClusterStartup> clusterStartup = new ArrayList<>();
 
   /**
-   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
-   *
-   * @deprecated Use the clusterDefaults property's replicas property.
+   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
+   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
+   * Ignored if startupControl is not AUTO.
    */
   @SerializedName("replicas")
   @Expose
-  @Deprecated
   private Integer replicas;
 
-  /** The default desired state of servers. */
-  @SerializedName("serverDefaults")
-  @Expose
-  @Valid
-  private Server serverDefaults;
+  String getEffectiveStartupControl() {
+    return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
+  }
 
-  /** The default desired state of non-clustered servers. */
-  @SerializedName("nonClusteredServerDefaults")
-  @Expose
-  @Valid
-  private NonClusteredServer nonClusteredServerDefaults;
+  ServerSpec getAdminServerSpec() {
+    return new ServerSpecV1Impl(this, getAsName(), null);
+  }
 
-  /**
-   * Maps the name of a non-clustered server to its desired state.
-   *
-   * <p>The server property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the server in nonClusteredServers property, and the property has
-   *       been specified on that server, then use its value.
-   *   <li>If not, and the property has been specified on the nonClusteredServerDefaults property,
-   *       then use its value.
-   *   <li>If not, and the property value has been specified on the serverDefaults property, then
-   *       use its value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   */
-  @SerializedName("servers")
-  @Expose
-  @Valid
-  private Map<String, NonClusteredServer> servers = new HashMap<String, NonClusteredServer>();
+  ServerStartup getServerStartup(String name) {
+    if (getServerStartup() == null) return null;
 
-  /** The default desired state of clusters. */
-  @SerializedName("clusterDefaults")
-  @Expose
-  @Valid
-  private ClusterParams clusterDefaults;
+    for (ServerStartup ss : getServerStartup()) {
+      if (ss.getServerName().equals(name)) {
+        return ss;
+      }
+    }
 
-  /**
-   * Maps the name of a cluster to its desired state.
-   *
-   * <p>The cluster property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the cluster in the clusters property, and the property has been
-   *       specified on that cluster, then use its value.
-   *   <li>If not, and the property has been specified on the clusterDefaults property, then use its
-   *       value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   */
-  @SerializedName("clusters")
-  @Expose
-  @Valid
-  private Map<String, Cluster> clusters = new HashMap<String, Cluster>();
+    return null;
+  }
+
+  int getReplicaLimit(String clusterName) {
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
+    return clusterStartup == null ? getReplicas() : clusterStartup.getReplicas();
+  }
+
+  ClusterStartup getClusterStartup(String clusterName) {
+    if (getClusterStartup() == null || clusterName == null) return null;
+
+    for (ClusterStartup cs : getClusterStartup()) {
+      if (clusterName.equals(cs.getClusterName())) {
+        return cs;
+      }
+    }
+
+    return null;
+  }
 
   /**
    * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
@@ -272,95 +215,65 @@ public class DomainSpec {
     return this;
   }
 
-  /*
-   * The WebLogic Docker image.
-   *
-   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
-   *
-   * @deprecated Use the Server image property.
+  /**
+   * WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3
    *
    * @return image
    */
-  @Deprecated
   public String getImage() {
     return image;
   }
 
-  /*
-   * The WebLogic Docker image.
-   *
-   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
-   *
-   * @deprecated Use the Server image property.
+  /**
+   * WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3
    *
    * @param image image
    */
-  @Deprecated
   public void setImage(String image) {
     this.image = image;
   }
 
-  /*
-   * The WebLogic Docker image.
-   *
-   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
-   *
-   * @deprecated Use the Server image property.
+  /**
+   * WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3
    *
    * @param image image
    * @return this
    */
-  @Deprecated
   public DomainSpec withImage(String image) {
     this.image = image;
     return this;
   }
 
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
+   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
+   * https://kubernetes.io/docs/concepts/containers/images#updating-images
    *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @deprecated Use the Server imagePullPolicy property.
    * @return image pull policy
    */
-  @Deprecated
   public String getImagePullPolicy() {
     return imagePullPolicy;
   }
 
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
+   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
+   * https://kubernetes.io/docs/concepts/containers/images#updating-images
    *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @deprecated Use the Server imagePullPolicy property.
    * @param imagePullPolicy image pull policy
    */
-  @Deprecated
   public void setImagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
+   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
+   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
+   * https://kubernetes.io/docs/concepts/containers/images#updating-images
    *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @deprecated Use the Server imagePullPolicy property.
    * @param imagePullPolicy image pull policy
    * @return this
    */
-  @Deprecated
   public DomainSpec withImagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
@@ -501,83 +414,53 @@ public class DomainSpec {
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
+   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
+   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
+   * that all servers in the domain will be started. SPECIFIED indicates that the administration
+   * server is started and then additionally only those servers listed under serverStartup or
+   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
+   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
+   * but then managed servers belonging to clusters not listed under clusterStartup will be started
+   * up to the replicas field.
    *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
    * @return startup control
    */
-  @Deprecated
   public String getStartupControl() {
     return startupControl;
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
+   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
+   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
+   * that all servers in the domain will be started. SPECIFIED indicates that the administration
+   * server is started and then additionally only those servers listed under serverStartup or
+   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
+   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
+   * but then managed servers belonging to clusters not listed under clusterStartup will be started
+   * up to the replicas field.
    *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
    * @param startupControl startup control
    */
-  @Deprecated
   public void setStartupControl(String startupControl) {
     this.startupControl = startupControl;
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
+   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
+   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
+   * that all servers in the domain will be started. SPECIFIED indicates that the administration
+   * server is started and then additionally only those servers listed under serverStartup or
+   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
+   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
+   * but then managed servers belonging to clusters not listed under clusterStartup will be started
+   * up to the replicas field.
    *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
    * @param startupControl startup control
    * @return this
    */
-  @Deprecated
   public DomainSpec withStartupControl(String startupControl) {
     this.startupControl = startupControl;
     return this;
@@ -586,11 +469,8 @@ public class DomainSpec {
   /**
    * List of server startup details for selected servers.
    *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
    * @return server startup
    */
-  @Deprecated
   public List<ServerStartup> getServerStartup() {
     return serverStartup;
   }
@@ -598,11 +478,8 @@ public class DomainSpec {
   /**
    * List of server startup details for selected servers.
    *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
    * @param serverStartup server startup
    */
-  @Deprecated
   public void setServerStartup(List<ServerStartup> serverStartup) {
     this.serverStartup = serverStartup;
   }
@@ -610,386 +487,99 @@ public class DomainSpec {
   /**
    * List of server startup details for selected servers.
    *
-   * @deprecated Use the servers, clusters, clusterDefaults, nonClusteredServerDefaults and
-   *     serverDefaults properties.
    * @param serverStartup server startup
    * @return this
    */
-  @Deprecated
   public DomainSpec withServerStartup(List<ServerStartup> serverStartup) {
     this.serverStartup = serverStartup;
     return this;
   }
 
   /**
-   * List of server startup details for selected clusters.
+   * Add server startup details for one servers.
    *
-   * @deprecated Use the clusters and clusterDefaults properties.
+   * @param serverStartupItem a single item to add
+   * @return this
+   */
+  public DomainSpec addServerStartupItem(ServerStartup serverStartupItem) {
+    if (serverStartup == null) serverStartup = new ArrayList<>();
+    serverStartup.add(serverStartupItem);
+    return this;
+  }
+
+  /**
+   * List of server startup details for selected clusters
+   *
    * @return cluster startup
    */
-  @Deprecated
   public List<ClusterStartup> getClusterStartup() {
     return clusterStartup;
   }
 
   /**
-   * List of server startup details for selected clusters.
+   * List of server startup details for selected clusters
    *
-   * @deprecated Use the clusters and clusterDefaults properties.
    * @param clusterStartup cluster startup
    */
-  @Deprecated
   public void setClusterStartup(List<ClusterStartup> clusterStartup) {
     this.clusterStartup = clusterStartup;
   }
 
   /**
-   * List of server startup details for selected clusters.
+   * Set list of server startup details for selected clusters
    *
-   * @deprecated Use the clusters and clusterDefaults properties.
    * @param clusterStartup cluster startup
    * @return this
    */
-  @Deprecated
   public DomainSpec withClusterStartup(List<ClusterStartup> clusterStartup) {
     this.clusterStartup = clusterStartup;
     return this;
   }
 
   /**
-   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
+   * Add startup details for a cluster
    *
-   * @deprecated Use the clusterDefaults property's replicas property.
+   * @param clusterStartupItem cluster startup
+   * @return this
+   */
+  public DomainSpec addClusterStartupItem(ClusterStartup clusterStartupItem) {
+    if (clusterStartup == null) clusterStartup = new ArrayList<>();
+    clusterStartup.add(clusterStartupItem);
+    return this;
+  }
+
+  /**
+   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
+   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
+   * Ignored if startupControl is not AUTO.
+   *
    * @return replicas
    */
-  @Deprecated
   public Integer getReplicas() {
     return replicas;
   }
 
   /**
-   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
+   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
+   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
+   * Ignored if startupControl is not AUTO.
    *
-   * @deprecated Use the clusterDefaults property's replicas property.
    * @param replicas replicas
    */
-  @Deprecated
   public void setReplicas(Integer replicas) {
     this.replicas = replicas;
   }
 
   /**
-   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
+   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
+   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
+   * Ignored if startupControl is not AUTO.
    *
-   * @deprecated Use the clusterDefaults property's replicas property.
    * @param replicas replicas
    * @return this
    */
-  @Deprecated
   public DomainSpec withReplicas(Integer replicas) {
     this.replicas = replicas;
-    return this;
-  }
-
-  /**
-   * The default desired state of servers.
-   *
-   * @return server defaults
-   */
-  public Server getServerDefaults() {
-    return serverDefaults;
-  }
-
-  /**
-   * The default desired state of servers.
-   *
-   * @param serverDefaults server defaults
-   */
-  public void setServerDefaults(Server serverDefaults) {
-    this.serverDefaults = serverDefaults;
-  }
-
-  /**
-   * The default desired state of servers.
-   *
-   * @param serverDefaults server defaults
-   * @return this
-   */
-  public DomainSpec withServerDefaults(Server serverDefaults) {
-    this.serverDefaults = serverDefaults;
-    return this;
-  }
-
-  /**
-   * The default desired state of non-clustered servers.
-   *
-   * @return server defaults
-   */
-  public NonClusteredServer getNonClusteredServerDefaults() {
-    return nonClusteredServerDefaults;
-  }
-
-  /**
-   * The default desired state of non-clustered servers.
-   *
-   * @param nonClusteredServerDefaults non-clustered server defaults
-   */
-  public void setNonClusteredServerDefaults(NonClusteredServer nonClusteredServerDefaults) {
-    this.nonClusteredServerDefaults = nonClusteredServerDefaults;
-  }
-
-  /**
-   * The default desired state of non-clustered servers.
-   *
-   * @param nonClusteredServerDefaults non-clustered server defaults
-   * @return this
-   */
-  public DomainSpec withNonClusteredServerDefaults(NonClusteredServer nonClusteredServerDefaults) {
-    this.nonClusteredServerDefaults = nonClusteredServerDefaults;
-    return this;
-  }
-
-  /**
-   * Maps the name of a non-clustered server to its desired state.
-   *
-   * <p>The server property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the server in nonClusteredServers property, and the property has
-   *       been specified on that server, then use its value.
-   *   <li>If not, and the property has been specified on the nonClusteredServerDefaults property,
-   *       then use its value.
-   *   <li>If not, and the property value has been specified on the serverDefaults property, then
-   *       use its value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @return servers
-   */
-  public Map<String, NonClusteredServer> getServers() {
-    return this.servers;
-  }
-
-  /**
-   * Maps the name of a non-clustered server to its desired state.
-   *
-   * <p>The server property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the server in nonClusteredServers property, and the property has
-   *       been specified on that server, then use its value.
-   *   <li>If not, and the property has been specified on the nonClusteredServerDefaults property,
-   *       then use its value.
-   *   <li>If not, and the property value has been specified on the serverDefaults property, then
-   *       use its value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param servers servers
-   */
-  public void setServers(Map<String, NonClusteredServer> servers) {
-    this.servers = servers;
-  }
-
-  /**
-   * Maps the name of a non-clustered server to its desired state.
-   *
-   * <p>The server property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the server in nonClusteredServers property, and the property has
-   *       been specified on that server, then use its value.
-   *   <li>If not, and the property has been specified on the nonClusteredServerDefaults property,
-   *       then use its value.
-   *   <li>If not, and the property value has been specified on the serverDefaults property, then
-   *       use its value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param servers servers
-   * @return this
-   */
-  public DomainSpec withServers(Map<String, NonClusteredServer> servers) {
-    this.servers = servers;
-    return this;
-  }
-
-  /**
-   * Maps the name of a non-clustered server to its desired state.
-   *
-   * <p>The server property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the server in nonClusteredServers property, and the property has
-   *       been specified on that server, then use its value.
-   *   <li>If not, and the property has been specified on the nonClusteredServerDefaults property,
-   *       then use its value.
-   *   <li>If not, and the property value has been specified on the serverDefaults property, then
-   *       use its value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param name cluster name
-   * @param server server
-   */
-  public void setServer(String name, NonClusteredServer server) {
-    this.servers.put(name, server);
-  }
-
-  /**
-   * Maps the name of a non-clustered server to its desired state.
-   *
-   * <p>The server property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the server in nonClusteredServers property, and the property has
-   *       been specified on that server, then use its value.
-   *   <li>If not, and the property has been specified on the nonClusteredServerDefaults property,
-   *       then use its value.
-   *   <li>If not, and the property value has been specified on the serverDefaults property, then
-   *       use its value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param name name
-   * @param server server
-   * @return this
-   */
-  public DomainSpec withServer(String name, NonClusteredServer server) {
-    this.servers.put(name, server);
-    return this;
-  }
-
-  /**
-   * The default desired state of clusters.
-   *
-   * @return cluster defaults
-   */
-  public ClusterParams getClusterDefaults() {
-    return clusterDefaults;
-  }
-
-  /**
-   * The default desired state of clusters.
-   *
-   * @param clusterDefaults cluster defaults
-   */
-  public void setClusterDefaults(ClusterParams clusterDefaults) {
-    this.clusterDefaults = clusterDefaults;
-  }
-
-  /**
-   * The default desired state of clusters.
-   *
-   * @param clusterDefaults cluster defaults
-   * @return this
-   */
-  public DomainSpec withClusterDefaults(ClusterParams clusterDefaults) {
-    this.clusterDefaults = clusterDefaults;
-    return this;
-  }
-
-  /**
-   * Maps the name of a cluster to its desired state.
-   *
-   * <p>The cluster property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the cluster in the clusters property, and the property has been
-   *       specified on that cluster, then use its value.
-   *   <li>If not, and the property has been specified on the clusterDefaults property, then use its
-   *       value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @return servers
-   */
-  public Map<String, Cluster> getClusters() {
-    return this.clusters;
-  }
-
-  /**
-   * Maps the name of a cluster to its desired state.
-   *
-   * <p>The cluster property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the cluster in the clusters property, and the property has been
-   *       specified on that cluster, then use its value.
-   *   <li>If not, and the property has been specified on the clusterDefaults property, then use its
-   *       value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param clusters clusters
-   */
-  public void setClusters(Map<String, Cluster> clusters) {
-    this.clusters = clusters;
-  }
-
-  /**
-   * Maps the name of a cluster to its desired state.
-   *
-   * <p>The cluster property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the cluster in the clusters property, and the property has been
-   *       specified on that cluster, then use its value.
-   *   <li>If not, and the property has been specified on the clusterDefaults property, then use its
-   *       value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param clusters clusters
-   * @return this
-   */
-  public DomainSpec withClusters(Map<String, Cluster> clusters) {
-    this.clusters = clusters;
-    return this;
-  }
-
-  /**
-   * Maps the name of a cluster to its desired state.
-   *
-   * <p>The cluster property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the cluster in the clusters property, and the property has been
-   *       specified on that cluster, then use its value.
-   *   <li>If not, and the property has been specified on the clusterDefaults property, then use its
-   *       value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param name server name
-   * @param cluster cluster
-   */
-  public void setCluster(String name, Cluster cluster) {
-    this.clusters.put(name, cluster);
-  }
-
-  /**
-   * Maps the name of a cluster to its desired state.
-   *
-   * <p>The cluster property values use the following defaulting rules:
-   *
-   * <ol>
-   *   <li>If there is an entry for the cluster in the clusters property, and the property has been
-   *       specified on that cluster, then use its value.
-   *   <li>If not, and the property has been specified on the clusterDefaults property, then use its
-   *       value.
-   *   <li>If not, then use the default value for the property.
-   * </ol>
-   *
-   * @param name name
-   * @param cluster cluster
-   * @return this
-   */
-  public DomainSpec withCluster(String name, Cluster cluster) {
-    this.clusters.put(name, cluster);
     return this;
   }
 
@@ -1008,11 +598,6 @@ public class DomainSpec {
         .append("serverStartup", serverStartup)
         .append("clusterStartup", clusterStartup)
         .append("replicas", replicas)
-        .append("serverDefaults", serverDefaults)
-        .append("nonClusteredServerDefaults", nonClusteredServerDefaults)
-        .append("servers", servers)
-        .append("clusterDefaults", clusterDefaults)
-        .append("clusters", clusters)
         .toString();
   }
 
@@ -1022,20 +607,15 @@ public class DomainSpec {
         .append(image)
         .append(imagePullPolicy)
         .append(asName)
-        .append(clusterDefaults)
         .append(replicas)
         .append(startupControl)
         .append(domainUID)
         .append(clusterStartup)
         .append(asPort)
-        .append(servers)
         .append(domainName)
         .append(exportT3Channels)
         .append(serverStartup)
-        .append(serverDefaults)
         .append(adminSecret)
-        .append(nonClusteredServerDefaults)
-        .append(clusters)
         .toHashCode();
   }
 
@@ -1044,7 +624,7 @@ public class DomainSpec {
     if (other == this) {
       return true;
     }
-    if ((other instanceof DomainSpec) == false) {
+    if (!(other instanceof DomainSpec)) {
       return false;
     }
     DomainSpec rhs = ((DomainSpec) other);
@@ -1052,20 +632,15 @@ public class DomainSpec {
         .append(image, rhs.image)
         .append(imagePullPolicy, rhs.imagePullPolicy)
         .append(asName, rhs.asName)
-        .append(clusterDefaults, rhs.clusterDefaults)
         .append(replicas, rhs.replicas)
         .append(startupControl, rhs.startupControl)
         .append(domainUID, rhs.domainUID)
         .append(clusterStartup, rhs.clusterStartup)
         .append(asPort, rhs.asPort)
-        .append(servers, rhs.servers)
         .append(domainName, rhs.domainName)
         .append(exportT3Channels, rhs.exportT3Channels)
         .append(serverStartup, rhs.serverStartup)
-        .append(serverDefaults, rhs.serverDefaults)
         .append(adminSecret, rhs.adminSecret)
-        .append(nonClusteredServerDefaults, rhs.nonClusteredServerDefaults)
-        .append(clusters, rhs.clusters)
         .isEquals();
   }
 }
