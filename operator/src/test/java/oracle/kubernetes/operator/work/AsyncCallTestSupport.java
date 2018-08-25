@@ -68,7 +68,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
   // and miss its being set, thus using the wrong test factory. To avoid this, we install a constant
   // instance of this class and then set its own non-final field with the actual test step factory.
   private static class RequestStepFactoryRouter implements AsyncRequestStepFactory {
-    private AsyncRequestStepFactory requestStepFactory;
+    private transient AsyncRequestStepFactory requestStepFactory;
 
     void setRequestStepFactory(AsyncRequestStepFactory factory) {
       this.requestStepFactory = factory;

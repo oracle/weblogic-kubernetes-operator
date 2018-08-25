@@ -18,11 +18,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * ServerStartup describes the desired startup state and passed environment variables for a specific
  * managed server.
- *
- * @deprecated Use the DomainSpec's servers, clusters, clusterDefaults, nonClusteredServerDefaults
- *     and serverDefaults properties.
  */
-@Deprecated
 public class ServerStartup {
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
@@ -167,6 +163,19 @@ public class ServerStartup {
    */
   public ServerStartup withEnv(List<V1EnvVar> env) {
     this.env = env;
+    return this;
+  }
+
+  /**
+   * Adds an environment variable to pass while starting this managed server.
+   *
+   * @param name the name of the variable to add
+   * @param value the value of the variable to add
+   * @return this
+   */
+  public ServerStartup withEnvironmentVariable(String name, String value) {
+    if (env == null) env = new ArrayList<>();
+    env.add(new V1EnvVar().name(name).value(value));
     return this;
   }
 
