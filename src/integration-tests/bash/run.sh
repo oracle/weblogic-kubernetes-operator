@@ -567,6 +567,12 @@ function setup_jenkins {
     rm -rf /tmp/helm
     helm init
     trace "Helm is configured."
+
+    if [ "$USE_HELM" = "true" ]; then
+      if [ ! -x "$(command -v helm)" ]; then
+        fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
+      fi
+    fi
 }
 
 # setup_local is for arbitrary dev hosted linux - it assumes docker & k8s are already installed
@@ -582,6 +588,11 @@ function setup_local {
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
 
+  if [ "$USE_HELM" = "true" ]; then
+    if [ ! -x "$(command -v helm)" ]; then
+      fail "USE_HELM set to true but helm binary not found in path, helm must be pre-installed prior to running integration tests locally"
+    fi
+  fi
 }
 
 function setup_wercker {
@@ -607,6 +618,10 @@ function setup_wercker {
     helm list --short --all | xargs -L1 helm delete --purge
     trace "After helm delete, list of installed helm charts is: "
     helm ls --all
+
+    if [ ! -x "$(command -v helm)" ]; then
+      fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
+    fi
   fi
 
   trace "Completed setup_wercker"
@@ -2836,6 +2851,7 @@ function test_suite_init {
                    WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
                    JENKINS \
+                   USE_HELM \
                    LEASE_ID;
     do
       trace "Customizable env var before: $varname=${!varname}"
@@ -2866,6 +2882,15 @@ function test_suite_init {
       export DEBUG_OUT="false"
     fi
 
+    # Test installation using helm charts if helm is available
+    #
+    if [ -x "$(command -v helm)" ]; then
+      trace 'helm is installed, assume user wants to use helm if USE_HELM is not set'
+      USE_HELM="${USE_HELM:-true}"
+    else
+      trace 'helm is not installed and USE_HELM="$USE_HELM", if USE_HELM is true future steps may try install helm'
+    fi
+
     # The following customizable exports are currently only customized by WERCKER
     export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
     export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
@@ -2893,6 +2918,7 @@ function test_suite_init {
                    WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
                    JENKINS \
+                   USE_HELM \
                    LEASE_ID;
     do
       trace "Customizable env var after: $varname=${!varname}"
@@ -2926,16 +2952,6 @@ function test_suite_init {
 
     cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
    
-
-    # Test installation using helm charts if helm is available
-    #
-    if ! [ -x "$(command -v helm)" ]; then
-      trace 'helm is not installed. Skipping helm charts tests'
-    else
-      USE_HELM="true"
-      trace 'helm is installed. Using helm for the tests'
-    fi
-
     if [ "$WERCKER" = "true" ]; then 
       trace "Test Suite is running locally on Wercker and k8s is running on remote nodes."
 

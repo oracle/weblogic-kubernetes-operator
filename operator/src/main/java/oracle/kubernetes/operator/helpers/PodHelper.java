@@ -10,7 +10,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -266,7 +266,6 @@ public class PodHelper {
     @Override
     protected List<String> getContainerCommand() {
       List<String> command = new ArrayList<>(super.getContainerCommand());
-      command.addAll(Arrays.asList(getAsName(), String.valueOf(getAsPort())));
       return command;
     }
 
