@@ -369,6 +369,16 @@ public class Domain {
     verifyDomainDeleted(replicas);
   }
 
+  public void shutdown() throws Exception {
+    String cmd = "kubectl delete domain " + domainUid + " -n " + domainNS;
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("command to delete domain " + cmd + " \n returned " + output);
+  }
   /**
    * verify domain is deleted
    *
