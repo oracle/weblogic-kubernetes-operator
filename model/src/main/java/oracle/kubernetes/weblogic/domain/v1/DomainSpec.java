@@ -64,7 +64,8 @@ public class DomainSpec {
   /**
    * TReference to the secret used to authenticate a request for an image pull.
    *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
    */
   @SerializedName("imagePullSecretName")
   @Expose
@@ -380,7 +381,8 @@ public class DomainSpec {
   /**
    * Returns the reference to the secret used to authenticate a request for an image pull.
    *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
    */
   public V1LocalObjectReference getImagePullSecret() {
     return hasImagePullSecret() ? imagePullSecret : null;
@@ -393,7 +395,8 @@ public class DomainSpec {
   /**
    * Reference to the secret used to authenticate a request for an image pull.
    *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
    */
   public void setImagePullSecret(V1LocalObjectReference imagePullSecret) {
     this.imagePullSecret = imagePullSecret;
@@ -402,7 +405,8 @@ public class DomainSpec {
   /**
    * The name of the secret used to authenticate a request for an image pull.
    *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
    */
   public DomainSpec withImagePullSecretName(String imagePullSecretName) {
     this.imagePullSecret = new V1LocalObjectReference().name(imagePullSecretName);
