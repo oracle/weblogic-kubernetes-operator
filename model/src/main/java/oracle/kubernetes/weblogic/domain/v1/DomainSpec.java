@@ -6,8 +6,10 @@ package oracle.kubernetes.weblogic.domain.v1;
 
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,18 +35,36 @@ public class DomainSpec {
   @NotNull
   private String domainName;
 
-  /** WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3 */
+  /**
+   * The WebLogic Docker image.
+   *
+   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
+   */
   @SerializedName("image")
   @Expose
   private String image;
+
   /**
-   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
-   * https://kubernetes.io/docs/concepts/containers/images#updating-images
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * IfNotPresent.
+   *
+   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @SerializedName("imagePullPolicy")
   @Expose
   private String imagePullPolicy;
+
+  /**
+   * TReference to the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  @SerializedName("imagePullSecret")
+  @Expose
+  private V1LocalObjectReference imagePullSecret;
 
   /**
    * Reference to secret containing domain administrator username and password. Secret must contain
@@ -55,6 +75,7 @@ public class DomainSpec {
   @Valid
   @NotNull
   private V1SecretReference adminSecret;
+
   /**
    * Admin server name. Note: Possibly temporary as we could find this value through domain home
    * inspection. (Required)
@@ -82,18 +103,25 @@ public class DomainSpec {
   @SerializedName("exportT3Channels")
   @Expose
   @Valid
-  private List<String> exportT3Channels = new ArrayList<>();
+  private List<String> exportT3Channels = new ArrayList<String>();
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
-   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
-   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
-   * that all servers in the domain will be started. SPECIFIED indicates that the administration
-   * server is started and then additionally only those servers listed under serverStartup or
-   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
-   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
-   * but then managed servers belonging to clusters not listed under clusterStartup will be started
-   * up to the replicas field.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
+   * and AUTO.
+   *
+   * <ul>
+   *   <li>NONE indicates that no servers, including the administration server, will be started.
+   *   <li>ADMIN indicates that only the administration server will be started.
+   *   <li>ALL indicates that all servers in the domain will be started.
+   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
+   *       only those servers listed under serverStartup or managed servers belonging to cluster
+   *       listed under clusterStartup up to the cluster's replicas field will be started.
+   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
+   *       servers belonging to clusters not listed under clusterStartup will be started up to the
+   *       replicas field.
+   * </ul>
+   *
+   * <p>Defaults to AUTO.
    */
   @SerializedName("startupControl")
   @Expose
@@ -105,16 +133,15 @@ public class DomainSpec {
   @Valid
   private List<ServerStartup> serverStartup = new ArrayList<>();
 
-  /** List of server startup details for selected clusters */
+  /** List of server startup details for selected clusters. */
   @SerializedName("clusterStartup")
   @Expose
   @Valid
   private List<ClusterStartup> clusterStartup = new ArrayList<>();
 
   /**
-   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
-   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
-   * Ignored if startupControl is not AUTO.
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusterStartup.
    */
   @SerializedName("replicas")
   @Expose
@@ -215,8 +242,10 @@ public class DomainSpec {
     return this;
   }
 
-  /**
-   * WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3
+  /*
+   * The WebLogic Docker image.
+   *
+   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
    *
    * @return image
    */
@@ -224,8 +253,10 @@ public class DomainSpec {
     return image;
   }
 
-  /**
-   * WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3
+  /*
+   * The WebLogic Docker image.
+   *
+   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
    *
    * @param image image
    */
@@ -233,8 +264,10 @@ public class DomainSpec {
     this.image = image;
   }
 
-  /**
-   * WebLogic Docker image. Defaults to store/oracle/weblogic:12.2.1.3
+  /*
+   * The WebLogic Docker image.
+   *
+   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
    *
    * @param image image
    * @return this
@@ -245,9 +278,12 @@ public class DomainSpec {
   }
 
   /**
-   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
-   * https://kubernetes.io/docs/concepts/containers/images#updating-images
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * IfNotPresent.
+   *
+   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    *
    * @return image pull policy
    */
@@ -256,9 +292,12 @@ public class DomainSpec {
   }
 
   /**
-   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
-   * https://kubernetes.io/docs/concepts/containers/images#updating-images
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * IfNotPresent.
+   *
+   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    *
    * @param imagePullPolicy image pull policy
    */
@@ -267,15 +306,53 @@ public class DomainSpec {
   }
 
   /**
-   * Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is
-   * specified, or IfNotPresent otherwise. Cannot be updated. More info:
-   * https://kubernetes.io/docs/concepts/containers/images#updating-images
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * IfNotPresent.
+   *
+   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    *
    * @param imagePullPolicy image pull policy
    * @return this
    */
   public DomainSpec withImagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
+    return this;
+  }
+
+  /**
+   * Returns the reference to the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  public V1LocalObjectReference getImagePullSecret() {
+    return hasImagePullSecret() ? imagePullSecret : null;
+  }
+
+  private boolean hasImagePullSecret() {
+    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
+  }
+
+  /**
+   * Reference to the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  public void setImagePullSecret(V1LocalObjectReference imagePullSecret) {
+    this.imagePullSecret = imagePullSecret;
+  }
+
+  /**
+   * The name of the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info:
+   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  public DomainSpec withImagePullSecretName(String imagePullSecretName) {
+    this.imagePullSecret = new V1LocalObjectReference().name(imagePullSecretName);
     return this;
   }
 
@@ -414,15 +491,22 @@ public class DomainSpec {
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
-   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
-   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
-   * that all servers in the domain will be started. SPECIFIED indicates that the administration
-   * server is started and then additionally only those servers listed under serverStartup or
-   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
-   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
-   * but then managed servers belonging to clusters not listed under clusterStartup will be started
-   * up to the replicas field.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
+   * and AUTO.
+   *
+   * <ul>
+   *   <li>NONE indicates that no servers, including the administration server, will be started.
+   *   <li>ADMIN indicates that only the administration server will be started.
+   *   <li>ALL indicates that all servers in the domain will be started.
+   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
+   *       only those servers listed under serverStartup or managed servers belonging to cluster
+   *       listed under clusterStartup up to the cluster's replicas field will be started.
+   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
+   *       servers belonging to clusters not listed under clusterStartup will be started up to the
+   *       replicas field.
+   * </ul>
+   *
+   * <p>Defaults to AUTO.
    *
    * @return startup control
    */
@@ -431,15 +515,22 @@ public class DomainSpec {
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
-   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
-   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
-   * that all servers in the domain will be started. SPECIFIED indicates that the administration
-   * server is started and then additionally only those servers listed under serverStartup or
-   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
-   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
-   * but then managed servers belonging to clusters not listed under clusterStartup will be started
-   * up to the replicas field.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
+   * and AUTO.
+   *
+   * <ul>
+   *   <li>NONE indicates that no servers, including the administration server, will be started.
+   *   <li>ADMIN indicates that only the administration server will be started.
+   *   <li>ALL indicates that all servers in the domain will be started.
+   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
+   *       only those servers listed under serverStartup or managed servers belonging to cluster
+   *       listed under clusterStartup up to the cluster's replicas field will be started.
+   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
+   *       servers belonging to clusters not listed under clusterStartup will be started up to the
+   *       replicas field.
+   * </ul>
+   *
+   * <p>Defaults to AUTO.
    *
    * @param startupControl startup control
    */
@@ -448,15 +539,22 @@ public class DomainSpec {
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED or
-   * AUTO. Defaults to AUTO. NONE indicates that no servers, including the administration server,
-   * will be started. ADMIN indicates that only the administration server is started. ALL indicates
-   * that all servers in the domain will be started. SPECIFIED indicates that the administration
-   * server is started and then additionally only those servers listed under serverStartup or
-   * managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas
-   * field will be started. AUTO indicates that servers will be started exactly as with SPECIFIED,
-   * but then managed servers belonging to clusters not listed under clusterStartup will be started
-   * up to the replicas field.
+   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
+   * and AUTO.
+   *
+   * <ul>
+   *   <li>NONE indicates that no servers, including the administration server, will be started.
+   *   <li>ADMIN indicates that only the administration server will be started.
+   *   <li>ALL indicates that all servers in the domain will be started.
+   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
+   *       only those servers listed under serverStartup or managed servers belonging to cluster
+   *       listed under clusterStartup up to the cluster's replicas field will be started.
+   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
+   *       servers belonging to clusters not listed under clusterStartup will be started up to the
+   *       replicas field.
+   * </ul>
+   *
+   * <p>Defaults to AUTO.
    *
    * @param startupControl startup control
    * @return this
@@ -517,7 +615,7 @@ public class DomainSpec {
   }
 
   /**
-   * List of server startup details for selected clusters
+   * List of server startup details for selected clusters.
    *
    * @param clusterStartup cluster startup
    */
@@ -526,7 +624,7 @@ public class DomainSpec {
   }
 
   /**
-   * Set list of server startup details for selected clusters
+   * List of server startup details for selected clusters.
    *
    * @param clusterStartup cluster startup
    * @return this
@@ -560,9 +658,8 @@ public class DomainSpec {
   }
 
   /**
-   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
-   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
-   * Ignored if startupControl is not AUTO.
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusterStartup.
    *
    * @param replicas replicas
    */
@@ -571,9 +668,8 @@ public class DomainSpec {
   }
 
   /**
-   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
-   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
-   * Ignored if startupControl is not AUTO.
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusterStartup.
    *
    * @param replicas replicas
    * @return this
