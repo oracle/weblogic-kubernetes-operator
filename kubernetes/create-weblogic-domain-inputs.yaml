@@ -14,7 +14,7 @@ adminServerName: admin-server
 domainName: base_domain
 
 # Unique id identifying a domain.
-# This id must be lowercase and unique across all domains in a Kubernetes cluster.
+# This id must not contain "_", and must be lowercase and unique across all domains in a Kubernetes cluster.
 #domainUID: domain1
 
 # Type of WebLogic Cluster
