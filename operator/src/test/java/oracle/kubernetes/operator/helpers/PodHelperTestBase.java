@@ -93,6 +93,8 @@ public abstract class PodHelperTestBase {
   private static final int LIVENESS_PERIOD = 6;
   private static final int LIVENESS_TIMEOUT = 5;
   private static final String DOMAIN_HOME = "/shared/domain/domain1";
+  private static final String LOG_HOME = "/shared/logs";
+  private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
@@ -247,14 +249,14 @@ public abstract class PodHelperTestBase {
   public void whenPodCreated_lifecyclePreStopHasStopServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLifecycle().getPreStop().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/stopServer.sh", UID, getServerName(), DOMAIN_NAME));
+        contains("/weblogic-operator/scripts/stopServer.sh"));
   }
 
   @Test
   public void whenPodCreated_livenessProbeHasLivenessCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/livenessProbe.sh", DOMAIN_NAME, getServerName()));
+        contains("/weblogic-operator/scripts/livenessProbe.sh"));
   }
 
   @Test
@@ -268,7 +270,7 @@ public abstract class PodHelperTestBase {
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/readinessProbe.sh", DOMAIN_NAME, getServerName()));
+        contains("/weblogic-operator/scripts/readinessProbe.sh"));
   }
 
   @Test
@@ -290,7 +292,10 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
             hasEnvVar("ADMIN_USERNAME", null),
-            hasEnvVar("ADMIN_PASSWORD", null)));
+            hasEnvVar("ADMIN_PASSWORD", null),
+            hasEnvVar("DOMAIN_UID", UID),
+            hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
+            hasEnvVar("LOG_HOME", LOG_HOME)));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -451,20 +456,12 @@ public abstract class PodHelperTestBase {
         .preStop(
             new V1Handler()
                 .exec(
-                    new V1ExecAction()
-                        .addCommandItem("/weblogic-operator/scripts/stopServer.sh")
-                        .addCommandItem(UID)
-                        .addCommandItem(getServerName())
-                        .addCommandItem(DOMAIN_NAME)));
+                    new V1ExecAction().addCommandItem("/weblogic-operator/scripts/stopServer.sh")));
   }
 
   private V1Probe createReadinessProbe() {
     return new V1Probe()
-        .exec(
-            new V1ExecAction()
-                .addCommandItem("/weblogic-operator/scripts/readinessProbe.sh")
-                .addCommandItem(DOMAIN_NAME)
-                .addCommandItem(getServerName()))
+        .exec(new V1ExecAction().addCommandItem("/weblogic-operator/scripts/readinessProbe.sh"))
         .initialDelaySeconds(READINESS_INITIAL_DELAY)
         .timeoutSeconds(READINESS_TIMEOUT)
         .periodSeconds(READINESS_PERIOD)
@@ -473,11 +470,7 @@ public abstract class PodHelperTestBase {
 
   private V1Probe createLivenessProbe() {
     return new V1Probe()
-        .exec(
-            new V1ExecAction()
-                .addCommandItem("/weblogic-operator/scripts/livenessProbe.sh")
-                .addCommandItem(DOMAIN_NAME)
-                .addCommandItem(getServerName()))
+        .exec(new V1ExecAction().addCommandItem("/weblogic-operator/scripts/livenessProbe.sh"))
         .initialDelaySeconds(LIVENESS_INITIAL_DELAY)
         .timeoutSeconds(LIVENESS_TIMEOUT)
         .periodSeconds(LIVENESS_PERIOD)
@@ -520,6 +513,9 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
         .addEnvItem(envItem("ADMIN_USERNAME", null))
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
+        .addEnvItem(envItem("DOMAIN_UID", UID))
+        .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
+        .addEnvItem(envItem("LOG_HOME", LOG_HOME))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
