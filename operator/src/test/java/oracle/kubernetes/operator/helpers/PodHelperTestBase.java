@@ -247,7 +247,6 @@ public abstract class PodHelperTestBase {
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
   }
 
-
   @Test
   public void whenPodCreated_containerHasExpectedVolumeMounts() {
     assertThat(
