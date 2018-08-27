@@ -145,7 +145,7 @@ Finally, run the create script, pointing it at your inputs file and output direc
 
 ```
   ./create-weblogic-domain.sh \
-  –i create-domain-job-inputs.yaml \
+  –i create-weblogic-domain-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
 
