@@ -434,6 +434,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                 .withDomainName(getInputs().getDomainName())
                 .withImage("store/oracle/weblogic:12.2.1.3")
                 .withImagePullPolicy("IfNotPresent")
+                .withImagePullSecretName(getInputs().getWeblogicImagePullSecretName())
                 .withAdminSecret(
                     newSecretReference().name(getInputs().getWeblogicCredentialsSecretName()))
                 .withAsName(getInputs().getAdminServerName())

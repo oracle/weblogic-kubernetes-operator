@@ -35,6 +35,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
@@ -232,6 +233,20 @@ public abstract class PodHelperTestBase {
     assertThat(v1Container.getImage(), equalTo(VERSIONED_IMAGE));
     assertThat(v1Container.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
   }
+
+  @Test
+  public void whenPodCreatedWithoutPullSecret_doNotAddToPod() {
+    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), nullValue());
+  }
+
+  @Test
+  public void whenPodCreatedWithPullSecret_addToPod() {
+    V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
+    domainPresenceInfo.getDomain().getSpec().setImagePullSecret(imagePullSecret);
+
+    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
+  }
+
 
   @Test
   public void whenPodCreated_containerHasExpectedVolumeMounts() {

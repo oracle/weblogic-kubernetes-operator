@@ -4,8 +4,10 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,6 +60,15 @@ public class DomainSpec {
   @Expose
   @Deprecated
   private String imagePullPolicy;
+
+  /**
+   * TReference to the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  @SerializedName("imagePullSecretName")
+  @Expose
+  private V1LocalObjectReference imagePullSecret;
 
   /**
    * Reference to secret containing domain administrator username and password. Secret must contain
@@ -363,6 +374,38 @@ public class DomainSpec {
   @Deprecated
   public DomainSpec withImagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
+    return this;
+  }
+
+  /**
+   * Returns the reference to the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  public V1LocalObjectReference getImagePullSecret() {
+    return hasImagePullSecret() ? imagePullSecret : null;
+  }
+
+  private boolean hasImagePullSecret() {
+    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
+  }
+
+  /**
+   * Reference to the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  public void setImagePullSecret(V1LocalObjectReference imagePullSecret) {
+    this.imagePullSecret = imagePullSecret;
+  }
+
+  /**
+   * The name of the secret used to authenticate a request for an image pull.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+   */
+  public DomainSpec withImagePullSecretName(String imagePullSecretName) {
+    this.imagePullSecret = new V1LocalObjectReference().name(imagePullSecretName);
     return this;
   }
 
