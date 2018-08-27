@@ -1214,8 +1214,12 @@ function verify_managed_servers_ready {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
-
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
 
     local replicas=`get_cluster_replicas $DOM_KEY`
 
@@ -1258,7 +1262,12 @@ function test_wls_liveness_probe {
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
 
     local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}1"
 
@@ -1323,7 +1332,18 @@ function verify_webapp_load_balancing {
        fail "wrong parameters, managed server count must be 2 or 3"
     fi
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
+    local WL_CLUSTER_NAME_DNS_LEGAL=$WL_CLUSTER_NAME
+    # the cluster name of domain3 contains invalid DNS charaters
+    local legal_cluster_dns_name="`legal_dns_name $WL_CLUSTER_NAME`"
+    if [ "$legal_cluster_dns_name" == "false" ]; then
+      WL_CLUSTER_NAME_DNS_LEGAL=$(change_to_legal_dns_name $WL_CLUSTER_NAME)
+    fi
 
     local list=()
     local i
@@ -1350,7 +1370,7 @@ function verify_webapp_load_balancing {
     local max_count=30
     local wait_time=6
     local count=0
-    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME"
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME_DNS_LEGAL"
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
@@ -2096,7 +2116,12 @@ function verify_ms_connectivity {
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
 
     trace "Checking JMX connectivity between admin and managed servers using WLST"
 
@@ -2182,9 +2207,22 @@ EOF
 }
 
 #
+# Function to check if a value is lowercase and legal DNS name
+# $1 - value to check
+# $2 - name of object being checked
+function legal_dns_name {
+  local val=$(change_to_legal_dns_name $1)
+  if [ "$val" != "$1" ]; then
+    echo "false"
+  else 
+    echo "true"
+  fi
+}
+
+#
 # Function to lowercase a value and make it a legal DNS name
 # $1 - value to convert to lowercase
-function toLowerDNSLegal {
+function change_to_legal_dns_name {
     local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
     local value=${lc//"_"/"-"}
     echo "$value"
@@ -2206,7 +2244,12 @@ function verify_service_and_pod_created {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local OPERATOR_TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
 
 
     local SERVER_NUM="$2"
@@ -2325,7 +2368,12 @@ function verify_domain_created {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
 
     trace "verify domain $DOMAIN_UID in $NAMESPACE namespace"
 
@@ -2386,7 +2434,12 @@ function verify_pod_deleted {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$(toLowerDNSLegal $MS_BASE_NAME)
+    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
+    fi
 
     local SERVER_NUM="$2"
 
@@ -3078,8 +3131,8 @@ function test_suite {
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
     dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          Managed-Server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  oper1   test1     domain3    AUTO            cluster_1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
+    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          Managed_Server 7011       30031           30702           8021    30306                  30316
+    dom_define domain3  oper1   test1     domain3    AUTO            cluster_1       DYNAMIC          managed-Server 7021       30041           30703           8031    30307                  30317
     dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       CONFIGURED       managed-server 7041       30051           30704           8041    30308                  30318
     dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       DYNAMIC          managed-server 7051       30061           30705           8051    30309                  30319
     dom_define domain6  oper1   default   domain6    AUTO            cluster-1       DYNAMIC          managed-server 7061       30071           30706           8061    30310                  30320
