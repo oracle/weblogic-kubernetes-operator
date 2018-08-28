@@ -4,21 +4,17 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import com.google.common.base.Strings;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.google.common.base.Strings;
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1SecretReference;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
