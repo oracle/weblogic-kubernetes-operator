@@ -57,7 +57,7 @@ public class DomainSpec {
   private String imagePullPolicy;
 
   /**
-   * TReference to the secret used to authenticate a request for an image pull.
+   * Reference to the secret used to authenticate a request for an image pull.
    *
    * <p>More info:
    * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
