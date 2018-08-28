@@ -392,10 +392,29 @@ public class DomainV1Test {
   }
 
   @Test
+  public void whenNoReplicaCountSpecified_useDefaultValue() {
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
+  }
+
+  @Test
   public void whenNoStartupForCluster_useDefaultReplicaCount() {
     domain.getSpec().setReplicas(5);
 
-    assertThat(domain.getReplicaLimit("nosuchcluster"), equalTo(5));
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(5));
+  }
+
+  @Test
+  public void afterReplicaCountSetForCluster_canReadIt() {
+    domain.setReplicaCount("cluster1", 5);
+
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(5));
+  }
+
+  @Test
+  public void afterReplicaCountSetForCluster_defaultIsUnchanged() {
+    domain.setReplicaCount("cluster1", 5);
+
+    assertThat(domain.getReplicaCount("cluster2"), equalTo(1));
   }
 
   @Test
@@ -405,7 +424,7 @@ public class DomainV1Test {
         .getSpec()
         .addClusterStartupItem(new ClusterStartup().withClusterName("cluster1").withReplicas(3));
 
-    assertThat(domain.getReplicaLimit("cluster1"), equalTo(3));
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(3));
   }
 
   @Test

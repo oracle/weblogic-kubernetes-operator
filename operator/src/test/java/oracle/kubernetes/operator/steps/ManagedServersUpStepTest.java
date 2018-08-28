@@ -28,9 +28,7 @@ import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -39,10 +37,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
@@ -68,10 +64,7 @@ public class ManagedServersUpStepTest {
   private static final String UID = "uid1";
   private final Domain domain = createDomain();
 
-  private Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
-  private Map<String, WlsServerConfig> wlsServers = new HashMap<>();
-  private Map<String, WlsServerConfig> templates = new HashMap<>();
-  private Map<String, WlsMachineConfig> machineConfigs = new HashMap<>();
+  private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
 
   private Step nextStep = new TerminalStep();
   private FiberTestSupport testSupport = new FiberTestSupport();
@@ -142,6 +135,10 @@ public class ManagedServersUpStepTest {
     assertThat(
         domainPresenceInfo.getExplicitRestartServers(),
         containsInAnyOrder("ms1", "ms2", "ms5", "ms6"));
+  }
+
+  private void addWlsCluster(String clusterName, String... serverNames) {
+    configSupport.addWlsCluster(clusterName, serverNames);
   }
 
   @Test
@@ -513,11 +510,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void addWlsServer(String serverName) {
-    wlsServers.put(serverName, createServerConfig(serverName));
-  }
-
-  private WlsServerConfig createServerConfig(String serverName) {
-    return new ServerConfigBuilder(serverName).build();
+    configSupport.addWlsServer(serverName);
   }
 
   private void setDefaultReplicas(int replicas) {
@@ -541,18 +534,11 @@ public class ManagedServersUpStepTest {
   }
 
   private WlsServerConfig getWlsServer(String serverName) {
-    return wlsServers.get(serverName);
+    return configSupport.getWlsServer(serverName);
   }
 
   private WlsServerConfig getWlsServer(String clusterName, String serverName) {
-    WlsClusterConfig wlsClusterConfig = wlsClusters.get(clusterName);
-    if (wlsClusterConfig == null) return null;
-
-    for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
-      if (serverConfig.getName().equals(serverName)) return serverConfig;
-    }
-
-    return null;
+    return configSupport.getWlsServer(clusterName, serverName);
   }
 
   private ServerStartup configureServer(String serverName) {
@@ -565,16 +551,8 @@ public class ManagedServersUpStepTest {
     return new V1EnvVar().name(name).value(value);
   }
 
-  private void addWlsCluster(String clusterName, String... serverNames) {
-    ClusterConfigBuilder builder = new ClusterConfigBuilder(clusterName);
-    for (String serverName : serverNames) {
-      builder.addServer(serverName);
-    }
-    wlsClusters.put(clusterName, builder.build());
-  }
-
   private WlsClusterConfig getWlsCluster(String clusterName) {
-    return wlsClusters.get(clusterName);
+    return configSupport.getWlsCluster(clusterName);
   }
 
   private ClusterStartup configureCluster(String clusterName) {
@@ -599,12 +577,8 @@ public class ManagedServersUpStepTest {
   }
 
   private void invokeStep() {
-    domainPresenceInfo.setScan(createDomainConfig());
+    domainPresenceInfo.setScan(configSupport.createDomainConfig());
     testSupport.runSteps(step);
-  }
-
-  private WlsDomainConfig createDomainConfig() {
-    return new WlsDomainConfig(DOMAIN, wlsClusters, wlsServers, templates, machineConfigs);
   }
 
   static class TestStepFactory implements ManagedServersUpStep.NextStepFactory {
@@ -636,39 +610,6 @@ public class ManagedServersUpStepTest {
       TestStepFactory.servers = servers;
       TestStepFactory.next = next;
       return new TerminalStep();
-    }
-  }
-
-  static class ServerConfigBuilder {
-    private String name;
-
-    ServerConfigBuilder(String name) {
-      this.name = name;
-    }
-
-    WlsServerConfig build() {
-      return new WlsServerConfig(name, null, null, null, false, null, null);
-    }
-  }
-
-  class ClusterConfigBuilder {
-    private String name;
-    List<WlsServerConfig> serverConfigs = new ArrayList<>();
-
-    ClusterConfigBuilder(String name) {
-      this.name = name;
-    }
-
-    void addServer(String serverName) {
-      serverConfigs.add(createServerConfig(serverName));
-    }
-
-    WlsClusterConfig build() {
-      return new WlsClusterConfig(name, getServers());
-    }
-
-    WlsDynamicServersConfig getServers() {
-      return new WlsDynamicServersConfig(0, 0, "", false, "", null, serverConfigs);
     }
   }
 }

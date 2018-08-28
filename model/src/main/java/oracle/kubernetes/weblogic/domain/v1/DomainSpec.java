@@ -167,7 +167,7 @@ public class DomainSpec {
     return null;
   }
 
-  int getReplicaLimit(String clusterName) {
+  int getReplicaCount(String clusterName) {
     ClusterStartup clusterStartup = getClusterStartup(clusterName);
     return clusterStartup == null ? getReplicas() : clusterStartup.getReplicas();
   }
@@ -182,6 +182,21 @@ public class DomainSpec {
     }
 
     return null;
+  }
+
+  void setReplicaCount(String clusterName, int replicaLimit) {
+    getOrCreateClusterStartup(clusterName).setReplicas(replicaLimit);
+  }
+
+  private ClusterStartup getOrCreateClusterStartup(String clusterName) {
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
+    if (clusterStartup != null) {
+      return clusterStartup;
+    }
+
+    ClusterStartup newClusterStartup = new ClusterStartup().withClusterName(clusterName);
+    getClusterStartup().add(newClusterStartup);
+    return newClusterStartup;
   }
 
   /**
@@ -654,7 +669,7 @@ public class DomainSpec {
    * @return replicas
    */
   public Integer getReplicas() {
-    return replicas;
+    return replicas != null ? replicas : Domain.DEFAULT_REPLICA_LIMIT;
   }
 
   /**
