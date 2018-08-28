@@ -60,6 +60,8 @@ public abstract class PodStepContext {
   private static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   private static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   private static final String STORAGE_MOUNT_PATH = "/shared";
+  private static final String NODEMGR_HOME = "/u01/nodemanager";
+  private static final String LOG_HOME = "/shared/logs";
   private static final int FAILURE_THRESHOLD = 1;
 
   @SuppressWarnings("OctalInteger")
@@ -644,7 +646,7 @@ public abstract class PodStepContext {
   }
 
   protected List<String> getContainerCommand() {
-    return Arrays.asList(START_SERVER, getDomainUID(), getServerName(), getDomainName());
+    return Arrays.asList(START_SERVER);
   }
 
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
@@ -656,6 +658,9 @@ public abstract class PodStepContext {
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
     addEnvVar(vars, "SERVER_NAME", getServerName());
+    addEnvVar(vars, "DOMAIN_UID", getDomainUID());
+    addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
+    addEnvVar(vars, "LOG_HOME", LOG_HOME);
     hideAdminUserCredentials(vars);
   }
 
@@ -696,8 +701,7 @@ public abstract class PodStepContext {
   }
 
   private V1Lifecycle createLifecycle() {
-    return new V1Lifecycle()
-        .preStop(handler(STOP_SERVER, getDomainUID(), getServerName(), getDomainName()));
+    return new V1Lifecycle().preStop(handler(STOP_SERVER));
   }
 
   private V1Handler handler(String... commandItems) {
@@ -723,7 +727,7 @@ public abstract class PodStepContext {
         .timeoutSeconds(tuning.readinessProbeTimeoutSeconds)
         .periodSeconds(tuning.readinessProbePeriodSeconds)
         .failureThreshold(FAILURE_THRESHOLD)
-        .exec(execAction(READINESS_PROBE, getDomainName(), getServerName()));
+        .exec(execAction(READINESS_PROBE));
     return readinessProbe;
   }
 
@@ -733,6 +737,6 @@ public abstract class PodStepContext {
         .timeoutSeconds(tuning.livenessProbeTimeoutSeconds)
         .periodSeconds(tuning.livenessProbePeriodSeconds)
         .failureThreshold(FAILURE_THRESHOLD)
-        .exec(execAction(LIVENESS_PROBE, getDomainName(), getServerName()));
+        .exec(execAction(LIVENESS_PROBE));
   }
 }
