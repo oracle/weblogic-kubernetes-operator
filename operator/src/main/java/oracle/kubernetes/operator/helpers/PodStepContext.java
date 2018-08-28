@@ -15,6 +15,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
@@ -609,6 +610,10 @@ public abstract class PodStepContext {
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
                             .defaultMode(ALL_READ_AND_EXECUTE)));
 
+    V1LocalObjectReference imagePullSecret = info.getDomain().getSpec().getImagePullSecret();
+    if (imagePullSecret != null) {
+      podSpec.addImagePullSecretsItem(imagePullSecret);
+    }
     if (!getClaims().isEmpty()) {
       podSpec.addVolumesItem(
           new V1Volume()
