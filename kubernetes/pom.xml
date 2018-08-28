@@ -44,7 +44,7 @@
     </plugins>
   </build>
 
-  <dependencies>
+  <dependencies>  
     <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>weblogic-kubernetes-operator</artifactId>
