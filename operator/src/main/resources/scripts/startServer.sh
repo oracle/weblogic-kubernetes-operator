@@ -76,6 +76,7 @@ function createServerScriptsProperties() {
   if [ -n "$4" ]; then
     echo "AdminURL=http\://$4\:$5" >> ${startProp}
   fi
+  local sn=$(toLowerDNS1123Legal $2)
   echo "RestartMax=2" >> ${startProp}
   echo "RotateLogOnStartup=false" >> ${startProp}
   echo "RotationType=bySize" >> ${startProp}
