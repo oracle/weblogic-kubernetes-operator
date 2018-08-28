@@ -2116,13 +2116,6 @@ function verify_ms_connectivity {
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
-
     trace "Checking JMX connectivity between admin and managed servers using WLST"
 
     local pyfile_ms=$TMP_DIR/check_ms.py

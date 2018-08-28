@@ -76,7 +76,6 @@ function createServerScriptsProperties() {
   if [ -n "$4" ]; then
     echo "AdminURL=http\://$4\:$5" >> ${startProp}
   fi
-  local sn=$(toLowerDNS1123Legal $2)
   echo "RestartMax=2" >> ${startProp}
   echo "RotateLogOnStartup=false" >> ${startProp}
   echo "RotationType=bySize" >> ${startProp}
@@ -108,7 +107,7 @@ nm_log="${log_home}/nodemanager-${server_name}.log"
 # Edit the nodemanager properties file to use the home for the server
 sed -i -e "s:DomainsFile=.*:DomainsFile=${nodemgr_home}/nodemanager.domains:g" ${nodemgr_home}/nodemanager.properties
 sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nodemgr_home}:g" ${nodemgr_home}/nodemanager.properties
-sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" /u01/nodemanager/nodemanager.properties
+sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" ${nodemgr_home}/nodemanager/nodemanager.properties
 sed -i -e "s:LogFile=.*:LogFile=${nm_log}:g" ${nodemgr_home}/nodemanager.properties
 
 export JAVA_PROPERTIES="-DLogFile=${nm_log} -DNodeManagerHome=${nodemgr_home}"
