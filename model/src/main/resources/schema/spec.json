@@ -23,8 +23,13 @@
       "type": "string"
      },
      "imagePullPolicy": {
-      "description": "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
+      "description": "The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise. <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images.",
       "type": "string"
+     },
+     "imagePullSecret": {
+      "description": "Reference to the secret used to authenticate a request for an image pull",
+      "javaType": "io.kubernetes.client.models.V1LocalObjectReference",
+      "type": "object"
      },
      "adminSecret": {
       "description": "Reference to secret containing domain administrator username and password.  Secret must contain keys names 'username' and 'password'",
@@ -47,7 +52,7 @@
       }
      },
      "startupControl": {
-      "description": "Controls which managed servers will be started.  Legal values are NONE, ADMIN, ALL, SPECIFIED or AUTO.  Defaults to AUTO.  NONE indicates that no servers, including the administration server, will be started.  ADMIN indicates that only the administration server is started.  ALL indicates that all servers in the domain will be started.  SPECIFIED indicates that the administration server is started and then additionally only those servers listed under serverStartup or managed servers belonging to clusters listed under clusterStartup up to the cluster's replicas field will be started.  AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.",
+      "description": "Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED and AUTO. <ul><li>NONE indicates that no servers, including the administration server, will be started. <li>ADMIN indicates that only the administration server will be started. <li>ALL indicates that all servers in the domain will be started. <li>SPECIFIED indicates that the administration server will be started and then additionally only those servers listed under serverStartup or managed servers belonging to cluster listed under clusterStartup up to the cluster's replicas field will be started. <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed servers belonging to clusters not listed under clusterStartup will be started up to the replicas field.</ul> <p>Defaults to AUTO.",
       "type": "string"
      },
      "serverStartup": {
@@ -58,14 +63,14 @@
       }
      },
      "clusterStartup": {
-      "description": "List of server startup details for selected clusters",
+      "description": "List of server startup details for selected clusters.",
       "type": "array",
       "items": {
        "$ref": "clusterstartup.json"
       }
      },
      "replicas": {
-      "description": "Replicas is the desired number of managed servers running in each WebLogic cluster that is not configured under clusterStartup.  Provided so that administrators can scale the Domain resource.  Ignored if startupControl is not AUTO.",
+      "description": "The desired number of running managed servers in each WebLogic cluster that is not explicitly configured in clusterStartup.",
       "type": "integer",
       "format": "int32"
      }
