@@ -253,7 +253,7 @@ public class TestUtils {
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: PV is not in Released status, exiting!");
         }
-        logger.info("PV is not in Released status," + result.stdout());
+        logger.info("PV is not in Released status," + result.stdout() + "\n " + result.stderr());
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
 
