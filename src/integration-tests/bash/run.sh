@@ -3128,7 +3128,7 @@ function test_suite {
     # TODO: we need to figure out how to support invalid characters in the helm use cases
     # for now, invalid characters are only tested in the none helm cases
     if [ "$USE_HELM" = "true" ]; then
-      dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed_server 7011       30031           30702           8021    30306                  30316
+      dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
       dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
     else
       dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          Managed_Server 7011       30031           30702           8021    30306                  30316
