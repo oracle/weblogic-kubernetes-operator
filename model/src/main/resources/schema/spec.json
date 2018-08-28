@@ -26,6 +26,11 @@
       "description": "The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise. <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images <p>Deprecated. Use the Server imagePullPolicy property.",
       "type": "string"
      },
+     "imagePullSecret": {
+      "description": "Reference to the secret used to authenticate a request for an image pull",
+      "javaType": "io.kubernetes.client.models.V1LocalObjectReference",
+      "type": "object"
+     },
      "adminSecret": {
       "description": "Reference to secret containing domain administrator username and password.  Secret must contain keys names 'username' and 'password'",
       "javaType": "io.kubernetes.client.models.V1SecretReference",
