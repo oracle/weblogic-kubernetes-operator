@@ -102,26 +102,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Override
   List<String> createStartCommand() {
-    return Arrays.asList(
-        "/weblogic-operator/scripts/startServer.sh",
-        UID,
-        getServerName(),
-        DOMAIN_NAME,
-        ADMIN_SERVER,
-        ADMIN_PORT.toString());
+    return Arrays.asList("/weblogic-operator/scripts/startServer.sh");
   }
 
   @Test
   public void whenManagedPodCreated_containerHasStartServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getCommand(),
-        contains(
-            "/weblogic-operator/scripts/startServer.sh",
-            UID,
-            getServerName(),
-            DOMAIN_NAME,
-            ADMIN_SERVER,
-            Integer.toString(ADMIN_PORT)));
+        contains("/weblogic-operator/scripts/startServer.sh"));
   }
 
   @Test
