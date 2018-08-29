@@ -1204,6 +1204,16 @@ function get_startup_control {
     echo $startup_control
 }
 
+function get_dns_legal_name {
+    local legal_name=$1
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $1`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      legal_name=$(change_to_legal_dns_name $1)
+    fi
+    echo "$legal_name"
+}
+
 function verify_managed_servers_ready {
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainkey"
@@ -1214,12 +1224,7 @@ function verify_managed_servers_ready {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
 
     local replicas=`get_cluster_replicas $DOM_KEY`
 
@@ -1262,12 +1267,7 @@ function test_wls_liveness_probe {
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
 
     local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}1"
 
@@ -1332,18 +1332,8 @@ function verify_webapp_load_balancing {
        fail "wrong parameters, managed server count must be 2 or 3"
     fi
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
-    local WL_CLUSTER_NAME_DNS_LEGAL=$WL_CLUSTER_NAME
-    # the cluster name of domain3 contains invalid DNS charaters
-    local legal_cluster_dns_name="`legal_dns_name $WL_CLUSTER_NAME`"
-    if [ "$legal_cluster_dns_name" == "false" ]; then
-      WL_CLUSTER_NAME_DNS_LEGAL=$(change_to_legal_dns_name $WL_CLUSTER_NAME)
-    fi
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+    local WL_CLUSTER_NAME_DNS_LEGAL=`get_dns_legal_name $WL_CLUSTER_NAME`
 
     local list=()
     local i
@@ -2237,13 +2227,7 @@ function verify_service_and_pod_created {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local OPERATOR_TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
-
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
 
     local SERVER_NUM="$2"
 
@@ -2361,12 +2345,7 @@ function verify_domain_created {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
 
     trace "verify domain $DOMAIN_UID in $NAMESPACE namespace"
 
@@ -2427,12 +2406,7 @@ function verify_pod_deleted {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
-    local MS_BASE_NAME_DNS_LEGAL=$MS_BASE_NAME
-    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
-    local legal_dns_name="`legal_dns_name $MS_BASE_NAME`"
-    if [ "$legal_dns_name" == "false" ] ; then
-      MS_BASE_NAME_DNS_LEGAL=$(change_to_legal_dns_name $MS_BASE_NAME)
-    fi
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
 
     local SERVER_NUM="$2"
 
