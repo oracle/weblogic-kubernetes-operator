@@ -11,9 +11,9 @@ import org.junit.BeforeClass;
 
 /**
  * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh creates with
- * VOYAGER load balacner type are correct when adminServerName, ManagedServerNameBase and
- * clusterName contains invalid DNS charcters. The invalid DNS characters include upper case letters
- * and "_".
+ * VOYAGER load balancer type are correct when adminServerName, managedServerNameBase or/and
+ * clusterName in create domain inputs file contain invalid DNS characters. The invalid DNS
+ * characters include uppercase letters and underscore "_".
  */
 public class CreateDomainGeneratedFilesInvalidDNSNameVoyagerTest
     extends CreateDomainGeneratedFilesVoyagerTestBase {
