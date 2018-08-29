@@ -107,7 +107,7 @@ public class TestUtils {
     while (enuKeys.hasMoreElements()) {
       String key = (String) enuKeys.nextElement();
       String value = props.getProperty(key);
-      if (key.equals("domainsNamespaces")) {
+      if (key.equals("domainNamespaces")) {
         valuesYaml.append(key).append(": [ ");
         if (value.contains(",")) {
           StringTokenizer st = new StringTokenizer(value, ",");

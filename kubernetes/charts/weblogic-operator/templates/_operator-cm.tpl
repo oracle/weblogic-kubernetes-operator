@@ -10,15 +10,7 @@ data:
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
   serviceaccount: {{ .operatorServiceAccount | quote }}
-{{- $args := include "operator.cloneDictionary" . | fromYaml -}}
-{{- $domainsNamespaces := .domainsNamespaces -}}
-{{- $len := len $domainsNamespaces -}}
-{{- if eq $len 0 -}}
-{{-   $ignore := set $args "domainsNamespacesList" (list "default") -}}
-{{- else -}}
-{{-   $ignore := set $args "domainsNamespacesList" $domainsNamespaces -}}
-{{- end }}
-  targetNamespaces: {{ $domainsNamespaces | uniq | sortAlpha | join "," | quote }}
+  targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
 kind: "ConfigMap"
 metadata:
   labels:

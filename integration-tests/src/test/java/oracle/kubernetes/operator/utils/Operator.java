@@ -344,13 +344,13 @@ public class Operator {
     }
 
     // create domain namespaces
-    String domainsNamespaces = operatorProps.getProperty("domainsNamespaces");
-    if (domainsNamespaces != null) {
-      StringTokenizer st = new StringTokenizer(domainsNamespaces, ",");
+    String domainNamespaces = operatorProps.getProperty("domainNamespaces");
+    if (domainNamespaces != null) {
+      StringTokenizer st = new StringTokenizer(domainNamespaces, ",");
       while (st.hasMoreTokens()) {
         String ns = st.nextToken();
         if (!ns.equals("default")) {
-          logger.info("Creating domainn namespace " + ns);
+          logger.info("Creating domain namespace " + ns);
           ExecCommand.exec("kubectl create namespace " + ns);
         }
       }

@@ -44,7 +44,7 @@ class HelmOperatorValues extends OperatorValues {
     loadIntegerFromMap(map, this::setExternalDebugHttpPort, "externalDebugHttpPort");
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
 
-    loadDomainsNamespacesFromMap(map);
+    loadDomainNamespacesFromMap(map);
     loadOperatorImagePullSecretsFromMap(map);
   }
 
@@ -61,10 +61,10 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   @SuppressWarnings("unchecked")
-  private void loadDomainsNamespacesFromMap(Map<String, Object> map) {
-    List<String> domainsNamespaces = (List<String>) map.get("domainsNamespaces");
-    if (domainsNamespaces != null) {
-      String[] namespaces = domainsNamespaces.toArray(new String[0]);
+  private void loadDomainNamespacesFromMap(Map<String, Object> map) {
+    List<String> domainNamespaces = (List<String>) map.get("domainNamespaces");
+    if (domainNamespaces != null) {
+      String[] namespaces = domainNamespaces.toArray(new String[0]);
       Arrays.sort(namespaces);
       setTargetNamespaces(String.join(",", namespaces));
     }
@@ -106,19 +106,19 @@ class HelmOperatorValues extends OperatorValues {
     addMapEntry(map, this::getExternalDebugHttpPortNum, "externalDebugHttpPort");
     addMapEntry(map, this::getInternalDebugHttpPortNum, "internalDebugHttpPort");
 
-    addDomainsNamespaces(map);
+    addDomainNamespaces(map);
     addOperatorImagePullSecrets(map);
     return map;
   }
 
-  private void addDomainsNamespaces(HashMap<String, Object> map) {
+  private void addDomainNamespaces(HashMap<String, Object> map) {
     String targetNamespaces = getTargetNamespaces();
     if (targetNamespaces.length() > 0) {
       List<String> namespaces = new ArrayList<>();
       for (String namespace : targetNamespaces.split(",")) {
         namespaces.add(namespace);
       }
-      map.put("domainsNamespaces", namespaces);
+      map.put("domainNamespaces", namespaces);
     }
   }
 

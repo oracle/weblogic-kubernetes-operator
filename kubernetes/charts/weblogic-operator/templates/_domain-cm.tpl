@@ -11,7 +11,7 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "domain-v1"
   name: "weblogic-domain-cm"
-  namespace: {{ .domainsNamespace | quote }}
+  namespace: {{ .domainNamespace | quote }}
 data:
 {{ (.Files.Glob "scripts/domain/*").AsConfig | indent 2 }}
 {{- end }}
