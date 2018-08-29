@@ -374,13 +374,13 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         create('%DOMAIN_NAME%','Log')
         cd('/Log/%DOMAIN_NAME%');
         set('FileName', '/shared/logs/%DOMAIN_NAME%.log')
-        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME%')
+        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_SVC%')
         set('ListenPort', %ADMIN_PORT%)
         set('Name', '%ADMIN_SERVER_NAME%')
         cd('/Servers/%ADMIN_SERVER_NAME%/NetworkAccessPoints/T3Channel')
         set('PublicPort', %T3_CHANNEL_PORT%)
         set('PublicAddress', '%T3_PUBLIC_ADDRESS%')
-        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_LC%')
+        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_SVC%')
         set('ListenPort', %T3_CHANNEL_PORT%)
         cd('/Servers/%ADMIN_SERVER_NAME%')
         create('%ADMIN_SERVER_NAME%', 'Log')
@@ -579,7 +579,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                                                 .value(
                                                     getInputs().getDomainUID()
                                                         + "-cluster-"
-                                                        + getClusterNameLC()
+                                                        + getClusterNameSVC()
                                                         + ":"
                                                         + getInputs().getManagedServerPort()))
                                         .addEnvItem(
@@ -1223,15 +1223,15 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected String getTraefikScope() {
-    return getClusterLCScope() + "-traefik";
+    return getClusterSVCScope() + "-traefik";
   }
 
-  protected String getClusterLCScope() {
-    return getInputs().getDomainUID() + "-" + getClusterNameLC();
+  protected String getClusterSVCScope() {
+    return getInputs().getDomainUID() + "-" + getClusterNameSVC();
   }
 
-  protected String getClusterNameLC() {
-    return getInputs().getClusterName().toLowerCase();
+  protected String getClusterNameSVC() {
+    return LegalNames.toDNS1123LegalName(getInputs().getClusterName());
   }
 
   protected String getApacheName() {

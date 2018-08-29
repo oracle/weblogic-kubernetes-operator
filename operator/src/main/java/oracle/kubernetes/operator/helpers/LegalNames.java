@@ -44,7 +44,7 @@ public class LegalNames {
    * @param value Input value
    * @return nearest DNS-1123 legal name
    */
-  private static String toDNS1123LegalName(String value) {
+  public static String toDNS1123LegalName(String value) {
     return value.toLowerCase().replace('_', '-');
   }
 }

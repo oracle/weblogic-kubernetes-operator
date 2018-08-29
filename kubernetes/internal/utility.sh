@@ -176,10 +176,10 @@ function toLower {
 #
 # Function to lowercase a value and make it a legal DNS1123 name
 # $1 - value to convert to lowercase
-function toLowerDNS1123Legal {
-  local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
-  local value=${lc//"_"/"-"}
-  echo "$value"
+function toDNS1123Legal {
+  local val=`echo $1 | tr "[:upper:]" "[:lower:]"`
+  val=${val//"_"/"-"}
+  echo "$val"
 }
 
 #
@@ -198,8 +198,8 @@ function validateLowerCase {
 # $1 - value to check
 # $2 - name of object being checked
 function validateDNS1123LegalName {
-  local lcVal=$(toLowerDNS1123Legal $2)
-  if [ "$lcVal" != "$2" ]; then
+  local val=$(toDNS1123Legal $2)
+  if [ "$val" != "$2" ]; then
     validationError "The value of $1 contains invalid charaters: $2"
   fi
 }
