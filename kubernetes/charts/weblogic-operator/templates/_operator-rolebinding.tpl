@@ -18,6 +18,6 @@ subjects:
   apiGroup: ""
 roleRef:
   kind: "ClusterRole"
-  name: "weblogic-operator-namespace-role"
+  name: {{ list .Release.Namespace "namespace-role" | join "-" | quote }}
   apiGroup: ""
 {{- end }}

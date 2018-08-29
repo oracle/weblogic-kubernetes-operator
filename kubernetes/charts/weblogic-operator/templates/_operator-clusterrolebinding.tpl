@@ -13,7 +13,7 @@ metadata:
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: "ClusterRole"
-  name: "weblogic-operator-cluster-role"
+  name: {{ list .Release.Namespace "cluster-role" | join "-" | quote }}
 subjects:
 - kind: "ServiceAccount"
   apiGroup: ""
