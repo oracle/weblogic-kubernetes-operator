@@ -302,7 +302,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingIntParameterError(String propertyName) {
-    return containsString(String.format("The float64 property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "float64", propertyName));
   }
 
   @Test

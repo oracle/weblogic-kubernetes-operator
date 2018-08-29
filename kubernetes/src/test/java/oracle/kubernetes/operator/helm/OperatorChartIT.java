@@ -30,7 +30,7 @@ public class OperatorChartIT extends OperatorChartITBase {
   public void whenNoCertificateSpecified_helmReportsFailure() throws Exception {
     ProcessedChart chart = getChart(NO_VALUES_INSTALL_ARGS);
 
-    assertThat(chart.getError(), containsString("property internalOperatorCert must be specified"));
+    assertThat(chart.getError(), containsString("string internalOperatorCert must be specified"));
   }
 
   @Test
