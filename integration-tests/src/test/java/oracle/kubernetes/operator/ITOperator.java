@@ -196,7 +196,7 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain6
     Domain domain6 = TestUtils.createDomain(domain6PropsFile);
-    domain6.destroy();
+    domain6.shutdown();
     domain6.deletePVCAndCheckPVReleased();
     logger.info("SUCCESS");
   }
