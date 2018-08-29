@@ -17,7 +17,9 @@ import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
-  private static final String WRONG_TYPE = "The %s property %s must be a %s instead";
+  private static final String MISSING = "%s %s must be specified";
+
+  private static final String WRONG_TYPE = "%s must be a %s : %s";
 
   private static final String[] TOP_LEVEL_BOOLEAN_PROPERTIES = {
     "createSharedOperatorResources", "createOperator" // , "elkIntegrationEnabled"
@@ -83,7 +85,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
-    return containsString(String.format(WRONG_TYPE, actualType, name, expectedType));
+    return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
   }
 
   @Test
@@ -113,7 +115,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingBoolParameterError(String propertyName) {
-    return containsString(String.format("The bool property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "bool", propertyName));
   }
 
   @Test
@@ -130,7 +132,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingStringParameterError(String propertyName) {
-    return containsString(String.format("The string property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "string", propertyName));
   }
 
   @Test
@@ -147,29 +149,31 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingEnumParameterError(String propertyName) {
-    return containsString(String.format("The string property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "string", propertyName));
   }
 
   @Test
   public void whenBadValuesSpecifiedForOperatorLevelEnumProperties_reportError() throws Exception {
+    String badValue = "bogus";
     for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
-      setProperty(propertyName, "bogus");
+      setProperty(propertyName, badValue);
     }
 
     assertThat(
         getProcessingError(),
         allOf(
-            containsEnumParameterError("operatorImagePullPolicy", PULL_POLICIES),
-            containsEnumParameterError("javaLoggingLevel", LOGGING_LEVELS),
-            containsEnumParameterError("externalRestOption", EXTERNAL_REST_OPTIONS),
-            containsEnumParameterError("internalRestOption", INTERNAL_REST_OPTIONS)));
+            containsEnumParameterError("operatorImagePullPolicy", badValue, PULL_POLICIES),
+            containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS),
+            containsEnumParameterError("externalRestOption", badValue, EXTERNAL_REST_OPTIONS),
+            containsEnumParameterError("internalRestOption", badValue, INTERNAL_REST_OPTIONS)));
   }
 
-  private Matcher<String> containsEnumParameterError(String propertyName, String... validValues) {
+  private Matcher<String> containsEnumParameterError(
+      String propertyName, String badValue, String... validValues) {
     return containsString(
         String.format(
-            "The property %s must be one of the following values [%s]",
-            propertyName, String.join(" ", validValues)));
+            "%s must be one of the following values [%s] : %s",
+            propertyName, String.join(" ", validValues), badValue));
   }
 
   @Test
@@ -315,9 +319,9 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenDomainsNamespacesPrimitiveType_reportError() throws Exception {
-    setProperty("domainsNamespaces", true);
+  public void whenDomainNamespacesPrimitiveType_reportError() throws Exception {
+    setProperty("domainNamespaces", true);
 
-    assertThat(getProcessingError(), containsTypeError("domainsNamespaces", "slice", "bool"));
+    assertThat(getProcessingError(), containsTypeError("domainNamespaces", "slice", "bool"));
   }
 }

@@ -764,7 +764,7 @@ function deploy_operator {
       echo "createSharedOperatorResources: $CREATE_SHARED_OPERATOR_RESOURCES" >> $inputs
 
       trace 'customize the inputs yaml file to add test namespace'
-      echo "domainsNamespaces:" >> $inputs
+      echo "domainNamespaces:" >> $inputs
       for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
       do
         echo "  - $i" >> $inputs

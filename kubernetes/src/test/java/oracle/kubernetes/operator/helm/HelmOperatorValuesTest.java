@@ -362,30 +362,30 @@ public class HelmOperatorValuesTest {
 
   @Test
   public void whenTargetNamespacesNotDefined_createdMapLacksValue() {
-    assertThat(operatorValues.createMap(), not(hasKey("domainsNamespaces")));
+    assertThat(operatorValues.createMap(), not(hasKey("domainNamespaces")));
   }
 
   @Test
   public void whenSingleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.targetNamespaces(stringValue);
 
-    assertThat(getDomainsNamespaces(), hasItem(stringValue));
+    assertThat(getDomainNamespaces(), hasItem(stringValue));
   }
 
   @SuppressWarnings("unchecked")
-  private List<String> getDomainsNamespaces() {
-    return (List<String>) operatorValues.createMap().get("domainsNamespaces");
+  private List<String> getDomainNamespaces() {
+    return (List<String>) operatorValues.createMap().get("domainNamespaces");
   }
 
   @Test
   public void whenMultipleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.targetNamespaces("aaa,bbb");
 
-    assertThat(getDomainsNamespaces(), hasItems("aaa", "bbb"));
+    assertThat(getDomainNamespaces(), hasItems("aaa", "bbb"));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutDomainsNamespaces_hasEmptyString() {
+  public void whenCreatedFromMapWithoutDomainNamespaces_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getTargetNamespaces(), equalTo(""));
@@ -394,8 +394,7 @@ public class HelmOperatorValuesTest {
   @Test
   public void whenCreatedFromMapWithSingleNamespace_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(
-            ImmutableMap.of("domainsNamespaces", ImmutableList.of("namespace1")));
+        new HelmOperatorValues(ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1")));
 
     assertThat(values.getTargetNamespaces(), equalTo("namespace1"));
   }
@@ -404,7 +403,7 @@ public class HelmOperatorValuesTest {
   public void whenCreatedFromMapWithMultipleNamespaces_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(
-            ImmutableMap.of("domainsNamespaces", ImmutableList.of("namespace1", "namespace2")));
+            ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1", "namespace2")));
 
     assertThat(values.getTargetNamespaces(), equalTo("namespace1,namespace2"));
   }
