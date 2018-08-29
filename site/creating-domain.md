@@ -154,7 +154,7 @@ Finally, run the create script, pointing it at your inputs file and output direc
 The script will perform the following steps:
 
 *	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
-*	Create Kubernetes YAML files based on the provided inputs. Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the create-domain-job-inputs file. Those properties include the adminServerName, clusterName and managedServerNameBase. If those values contains any charaters that are nvalid in a Kubernetes service name, those charaters are converted to valid values in those YAML files. For example, a upper case letter is converted to lower case and "_" is converted to "-".
+*	Create Kubernetes YAML files based on the provided inputs. Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the create-domain-job-inputs file. Those properties include the adminServerName, clusterName and managedServerNameBase. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in those YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore ("_") is converted to a hyphen"-".
 *	Create a persistent volume for the shared state.
 *	Create a persistent volume claim for that volume.
 *	Create a Kubernetes job that will start up a utility WebLogic Server container and run WLST to create the domain on the shared storage.
