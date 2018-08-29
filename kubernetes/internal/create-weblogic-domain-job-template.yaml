@@ -199,12 +199,12 @@ data:
 
         msIndex = index+1
         name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
-        name_lc = '%MANAGED_SERVER_NAME_BASE_SVC%%s' % msIndex
+        name_svc = '%MANAGED_SERVER_NAME_BASE_SVC%%s' % msIndex
 
         create(name, 'Server')
         cd('/Servers/%s/' % name )
         print('managed server name is %s' % name);
-        set('ListenAddress', '%DOMAIN_UID%-%s' % name_lc)
+        set('ListenAddress', '%DOMAIN_UID%-%s' % name_svc)
         set('ListenPort', server_port)
         set('NumOfRetriesBeforeMSIMode', 0)
         set('RetryIntervalBeforeMSIMode', 1)
