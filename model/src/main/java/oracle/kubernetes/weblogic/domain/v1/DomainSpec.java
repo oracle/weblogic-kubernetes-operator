@@ -167,9 +167,13 @@ public class DomainSpec {
     return null;
   }
 
-  int getReplicaCount(String clusterName) {
+  public int getReplicaCount(String clusterName) {
     ClusterStartup clusterStartup = getClusterStartup(clusterName);
-    return clusterStartup == null ? getReplicas() : clusterStartup.getReplicas();
+    return hasReplicaCount(clusterStartup) ? clusterStartup.getReplicas() : getReplicas();
+  }
+
+  private boolean hasReplicaCount(ClusterStartup clusterStartup) {
+    return clusterStartup != null && clusterStartup.getReplicas() != null;
   }
 
   ClusterStartup getClusterStartup(String clusterName) {

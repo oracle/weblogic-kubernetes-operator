@@ -279,7 +279,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void verifyWLSConfiguredClusterCapacity(
-      String namespace, Domain domain, String cluster, int managedServerCount) {
+      String namespace, Domain domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
     String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
@@ -288,16 +288,13 @@ public class RestBackendImpl implements RestBackend {
         getWlsClusterConfig(namespace, cluster, adminServerServiceName, adminSecretName);
 
     // Verify the current configured cluster size
-    int clusterSize = wlsClusterConfig.getClusterSize();
-    if (wlsClusterConfig.hasDynamicServers()) {
-      clusterSize += wlsClusterConfig.getMaxDynamicClusterSize();
-    }
-    if (managedServerCount > clusterSize) {
+    int MaxClusterSize = wlsClusterConfig.getMaxClusterSize();
+    if (requestedSize > MaxClusterSize) {
       throw createWebApplicationException(
           Status.BAD_REQUEST,
           MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
-          managedServerCount,
-          clusterSize,
+          requestedSize,
+          MaxClusterSize,
           cluster,
           cluster);
     }

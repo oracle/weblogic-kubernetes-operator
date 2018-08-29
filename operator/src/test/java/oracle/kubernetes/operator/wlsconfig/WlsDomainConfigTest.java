@@ -4,12 +4,14 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_REPLICAS_IGNORED;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -24,10 +26,12 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /** Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved. */
@@ -38,7 +42,7 @@ public class WlsDomainConfigTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-    DOMAIN_REPLICAS_IGNORED, NO_WLS_SERVER_IN_CLUSTER, REPLICA_MORE_THAN_WLS_SERVERS
+    NO_WLS_SERVER_IN_CLUSTER, REPLICA_MORE_THAN_WLS_SERVERS
   };
 
   private List<LogRecord> logRecords = new ArrayList<>();
@@ -149,6 +153,24 @@ public class WlsDomainConfigTest {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
 
     assertEquals(6, wlsDomainConfig.getServerConfigs().size());
+  }
+
+  @Test
+  public void verifySuggestsUpdateToDynamicClusterIfReplicasTooHigh() {
+    createDomainConfig(JSON_STRING_MIXED_CLUSTER);
+
+    defineDomainSpec()
+        .withClusterStartup(
+            Collections.singletonList(
+                new ClusterStartup().withClusterName("DockerCluster").withReplicas(3)));
+
+    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+    wlsDomainConfig.validate(domainSpec, suggestedConfigUpdates);
+
+    assertEquals(1, suggestedConfigUpdates.size());
+    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
+        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
+    assertEquals(3, configUpdate.targetClusterSize);
   }
 
   @Test
@@ -282,6 +304,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
+  @Ignore("No longer relevant, due to algorithm change")
   public void verifyUpdateDomainSpecWarnsIfNoServersInClusterStartupCluster() {
     defineDomainSpec()
         .withClusterStartup(
@@ -306,41 +329,6 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyUpdateDomainSpecInfoIfReplicasAndZeroClusters() {
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
-        .withReplicas(10);
-    consoleControl.withLogLevel(Level.INFO);
-    wlsDomainConfig.validate(domainSpec);
-    assertThat(logRecords, containsInfo(DOMAIN_REPLICAS_IGNORED));
-    assertThat(logRecords, containsWarning(NO_WLS_SERVER_IN_CLUSTER));
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecInfoIfReplicasAndTwoClusters() {
-    createDomainConfig(JSON_STRING_2_CLUSTERS);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
-        .withReplicas(10);
-    consoleControl.withLogLevel(Level.INFO);
-    wlsDomainConfig.validate(domainSpec);
-    assertThat(logRecords, containsInfo(DOMAIN_REPLICAS_IGNORED));
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecReplicasNotValidatedWithMoreThan1Clusters() {
-    createDomainConfig(JSON_STRING_2_CLUSTERS);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
-        .withReplicas(10);
-    wlsDomainConfig.validate(domainSpec);
-    assertTrue(logRecords.isEmpty());
-  }
-
-  @Test
   public void verifyUpdateDomainSpecNoWarningIfReplicasOK() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     defineDomainSpec()
@@ -358,7 +346,7 @@ public class WlsDomainConfigTest {
         .withClusterStartup(
             Collections.singletonList(
                 new ClusterStartup().withClusterName("DockerCluster2").withReplicas(3)))
-        .withReplicas(5);
+        .withReplicas(2);
     wlsDomainConfig.validate(domainSpec);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
   }
@@ -383,7 +371,7 @@ public class WlsDomainConfigTest {
         .withClusterStartup(
             Collections.singletonList(
                 new ClusterStartup().withClusterName("DockerCluster2").withReplicas(2)))
-        .withReplicas(5);
+        .withReplicas(1);
     wlsDomainConfig.validate(domainSpec);
     assertTrue(logRecords.isEmpty());
   }
@@ -398,6 +386,52 @@ public class WlsDomainConfigTest {
         .withReplicas(10);
     wlsDomainConfig.validate(domainSpec);
     assertTrue(logRecords.isEmpty());
+  }
+
+  @Test
+  public void whenNoClustersDefined_returnEmptyArray() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsServer("server1");
+    support.addWlsServer("server2");
+
+    assertThat(support.createDomainConfig().getClusterNames(), emptyArray());
+  }
+
+  @Test
+  public void whenOneClusterDefined_returnItsName() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    support.addWlsServer("server2");
+
+    assertThat(support.createDomainConfig().getClusterNames(), arrayContaining("cluster1"));
+  }
+
+  @Test
+  public void whenTwoClustersDefined_returnBothNames() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    support.addWlsCluster("cluster2", "ms4", "ms5");
+
+    assertThat(
+        support.createDomainConfig().getClusterNames(),
+        arrayContainingInAnyOrder("cluster1", "cluster2"));
+  }
+
+  @Test
+  public void whenTwoClustersDefined_returnReplicaLimits() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+    support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    support.addWlsCluster("cluster2", "ms4", "ms5");
+
+    assertThat(support.createDomainConfig().getReplicaLimit("cluster1"), equalTo(3));
+    assertThat(support.createDomainConfig().getReplicaLimit("cluster2"), equalTo(2));
+  }
+
+  @Test
+  public void whenUnknownClusterName_returnZeroReplicaLimit() {
+    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+
+    assertThat(support.createDomainConfig().getReplicaLimit("cluster3"), equalTo(0));
   }
 
   private boolean containsServer(WlsClusterConfig wlsClusterConfig, String serverName) {
