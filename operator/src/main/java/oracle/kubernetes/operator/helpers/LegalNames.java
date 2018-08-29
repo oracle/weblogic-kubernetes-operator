@@ -30,7 +30,7 @@ public class LegalNames {
     return toServerName(domainUID, serverName);
   }
 
-  static String toClusterServiceName(String domainUID, String clusterName) {
+  public static String toClusterServiceName(String domainUID, String clusterName) {
     return toDNS1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUID, clusterName));
   }
 
