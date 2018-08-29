@@ -11,7 +11,6 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 
 /** Contains configuration of a WLS cluster */
 public class WlsClusterConfig {
@@ -93,6 +92,10 @@ public class WlsClusterConfig {
    */
   public synchronized int getClusterSize() {
     return serverConfigs.size();
+  }
+
+  public synchronized int getMaxClusterSize() {
+    return hasDynamicServers() ? getClusterSize() + getMaxDynamicClusterSize() : getClusterSize();
   }
 
   /**
@@ -182,68 +185,34 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Validate the clusterStartup configured should be consistent with this configured WLS cluster.
-   * The method also logs warning if inconsistent WLS configurations are found.
+   * Validate the proposed number of replicas to be applied to this configured WLS cluster. The
+   * method also logs warning if inconsistent WLS configurations are found.
    *
    * <p>In the future this method may also attempt to fix the configuration inconsistencies by
-   * updating the ClusterStartup. It is the responsibility of the caller to persist the changes to
-   * ClusterStartup to kubernetes.
+   * updating the replica setting. It is the responsibility of the caller to persist the changes to
+   * kubernetes.
    *
-   * @param clusterStartup The ClusterStartup to be validated against the WLS configuration
+   * @param replicas the proposed number of replicas
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be
    *     filled in by this method. Optional.
-   * @return true if the DomainSpec has been updated, false otherwise
    */
-  public boolean validateClusterStartup(
-      ClusterStartup clusterStartup, List<ConfigUpdate> suggestedConfigUpdates) {
-    LOGGER.entering();
-
-    boolean modified = false;
-
+  void validateCluster(int replicas, List<ConfigUpdate> suggestedConfigUpdates) {
     // log warning if no servers are configured in the cluster
-    if (getClusterSize() == 0 && !hasDynamicServers()) {
-      LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
+    if (getMaxClusterSize() == 0) {
+      LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, getClusterName());
     }
 
-    // Warns if replicas is larger than the number of servers configured in the cluster
-    validateReplicas(clusterStartup.getReplicas(), "clusterStartup", suggestedConfigUpdates);
-
-    LOGGER.exiting(modified);
-
-    return modified;
+    // make recommendations if config can be updated
+    suggestConfigUpdates(replicas, suggestedConfigUpdates);
   }
 
-  /**
-   * Validate the configured replicas value in the kubernetes WebLogic domain spec against the
-   * configured size of this cluster. Log warning if any inconsistencies are found.
-   *
-   * @param replicas The configured replicas value for this cluster in the kubernetes weblogic
-   *     domain spec for this cluster
-   * @param source The name of the section in the domain spec where the replicas is specified, for
-   *     logging purposes
-   * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be
-   *     filled in by this method. Optional.
-   */
-  public void validateReplicas(
-      Integer replicas, String source, List<ConfigUpdate> suggestedConfigUpdates) {
-    if (replicas == null) {
-      return;
-    }
-    // log warning if replicas is too large and cluster
-    int maxClusterSize = getClusterSize();
-    if (hasDynamicServers()) {
-      maxClusterSize += getMaxDynamicClusterSize();
-    }
-    if (replicas > maxClusterSize) {
-      LOGGER.warning(
-          MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS, source, clusterName, replicas, maxClusterSize);
-    }
+  private void suggestConfigUpdates(Integer replicas, List<ConfigUpdate> suggestedConfigUpdates) {
     // recommend updating WLS dynamic cluster size and machines if requested to recommend
     // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
     // the current dynamic cluster size.
     //
     // Note: Never reduce the value of dynamicClusterSize even during scale down
-    if (suggestedConfigUpdates != null && hasDynamicServers()) {
+    if (suggestedConfigUpdates != null && this.hasDynamicServers()) {
       if (replicas > getDynamicClusterSize()
           && getDynamicClusterSize() < getMaxDynamicClusterSize()) {
         // increase dynamic cluster size to satisfy replicas, but only up to the configured max

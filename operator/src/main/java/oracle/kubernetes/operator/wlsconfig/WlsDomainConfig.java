@@ -5,18 +5,18 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.WlsDomain;
 
 /** Contains a snapshot of configuration for a WebLogic Domain */
-public class WlsDomainConfig {
+public class WlsDomainConfig implements WlsDomain {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   // Contains all configured WLS clusters in the WLS domain
@@ -313,37 +313,47 @@ public class WlsDomainConfig {
     LOGGER.entering();
 
     boolean updated = false;
-    List<ClusterStartup> clusterStartupList = domainSpec.getClusterStartup();
-
-    // check each ClusterStartup if specified in the DomainSpec
-    if (clusterStartupList != null) {
-      for (ClusterStartup clusterStartup : clusterStartupList) {
-        String clusterName = clusterStartup.getClusterName();
-        if (clusterName != null) {
-          WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
-          updated |=
-              wlsClusterConfig.validateClusterStartup(clusterStartup, suggestedConfigUpdates);
+    for (String clusterName : getClusterNames()) {
+      WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
+      if (wlsClusterConfig.getMaxClusterSize() > 0) {
+        int proposedReplicas = domainSpec.getReplicaCount(clusterName);
+        int replicaLimit = getReplicaLimit(clusterName);
+        if (proposedReplicas > replicaLimit) {
+          LOGGER.warning(
+              MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
+              "clusterSpec",
+              clusterName,
+              proposedReplicas,
+              replicaLimit);
         }
       }
     }
 
-    // validate replicas in DomainSpec if specified
-    if (domainSpec.getReplicas() != null) {
-      Collection<WlsClusterConfig> clusterConfigs = getClusterConfigs().values();
-      // WLS domain contains only one cluster
-      if (clusterConfigs != null && clusterConfigs.size() == 1) {
-        for (WlsClusterConfig wlsClusterConfig : clusterConfigs) {
-          wlsClusterConfig.validateReplicas(
-              domainSpec.getReplicas(), "domainSpec", suggestedConfigUpdates);
-        }
+    for (WlsClusterConfig clusterConfig : wlsClusterConfigs.values()) {
+      String clusterName = clusterConfig.getClusterName();
+      if (clusterConfig.getMaxClusterSize() == 0) {
+        LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
       } else {
-        // log info message if replicas is specified but number of WLS clusters in domain is not 1
-        LOGGER.info(MessageKeys.DOMAIN_REPLICAS_IGNORED);
+        clusterConfig.validateCluster(
+            domainSpec.getReplicaCount(clusterName), suggestedConfigUpdates);
       }
     }
 
     LOGGER.exiting(updated);
     return updated;
+  }
+
+  @Override
+  @Nonnull
+  public String[] getClusterNames() {
+    return wlsClusterConfigs.keySet().toArray(new String[0]);
+  }
+
+  @Override
+  public int getReplicaLimit(String clusterName) {
+    if (!wlsClusterConfigs.containsKey(clusterName)) return 0;
+
+    return wlsClusterConfigs.get(clusterName).getMaxClusterSize();
   }
 
   /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects */

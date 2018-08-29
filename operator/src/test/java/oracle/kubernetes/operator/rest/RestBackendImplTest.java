@@ -48,7 +48,7 @@ public class RestBackendImplTest {
 
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace1";
-  public static final String UID = "uid1";
+  private static final String UID = "uid1";
   private static List<Domain> domains = new ArrayList<>();
   private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
 
