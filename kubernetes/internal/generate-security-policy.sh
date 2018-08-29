@@ -91,7 +91,7 @@ cat >> ${SCRIPT}  <<EOF
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: weblogic-operator-cluster-role
+  name: ${NAMESPACE}-cluster-role
   labels:
     weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
@@ -124,7 +124,7 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: weblogic-operator-cluster-role-nonresource
+  name: ${NAMESPACE}-cluster-role-nonresource
   labels:
     weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
@@ -149,7 +149,7 @@ subjects:
   apiGroup: ""
 roleRef:
   kind: ClusterRole
-  name: weblogic-operator-cluster-role
+  name: ${NAMESPACE}-cluster-role
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRoleBinding
@@ -166,7 +166,7 @@ subjects:
   apiGroup: ""
 roleRef:
   kind: ClusterRole
-  name: weblogic-operator-cluster-role-nonresource
+  name: ${NAMESPACE}-cluster-role-nonresource
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRoleBinding
@@ -209,7 +209,7 @@ roleRef:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: weblogic-operator-namespace-role
+  name: ${NAMESPACE}-namespace-role
   labels:
     weblogic.resourceVersion: operator-v1
     weblogic.operatorName: ${NAMESPACE}
@@ -263,7 +263,7 @@ subjects:
   apiGroup: ""
 roleRef:
   kind: ClusterRole
-  name: weblogic-operator-namespace-role
+  name: ${NAMESPACE}-namespace-role
   apiGroup: ""
 ---
 EOF

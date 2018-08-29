@@ -424,9 +424,9 @@ function createYamlFiles {
 
   # Create the weblogic-operator-security.yaml file
   oprSecurityFile="${oprOutputDir}/weblogic-operator-security.yaml"
-  roleName="weblogic-operator-namespace-role"
+  roleName="${namespace}-namespace-role"
   roleBinding="weblogic-operator-rolebinding"
-  clusterRole="weblogic-operator-cluster-role"
+  clusterRole="${namespace}-cluster-role"
   clusterRoleBinding="${namespace}-operator-rolebinding"
 
   echo Running the weblogic operator security customization script

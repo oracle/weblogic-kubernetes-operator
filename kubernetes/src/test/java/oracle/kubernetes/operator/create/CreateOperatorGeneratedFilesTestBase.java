@@ -372,7 +372,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRole()
         .metadata(
             newObjectMeta()
-                .name("weblogic-operator-cluster-role")
+                .name(getInputs().getNamespace() + "-cluster-role")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(
@@ -460,7 +460,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRole()
         .metadata(
             newObjectMeta()
-                .name("weblogic-operator-cluster-role-nonresource")
+                .name(getInputs().getNamespace() + "-cluster-role-nonresource")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(newPolicyRule().addNonResourceURLsItem("/version/*").addVerbsItem("get"));
@@ -485,7 +485,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                         .apiGroup(""))
                 .roleRef(
                     newRoleRef()
-                        .name("weblogic-operator-cluster-role")
+                        .name(getInputs().getNamespace() + "-cluster-role")
                         .apiGroup("rbac.authorization.k8s.io"))));
   }
 
@@ -515,7 +515,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .apiGroup(""))
         .roleRef(
             newRoleRef()
-                .name("weblogic-operator-cluster-role-nonresource")
+                .name(getInputs().getNamespace() + "-cluster-role-nonresource")
                 .apiGroup("rbac.authorization.k8s.io"));
   }
 
@@ -576,7 +576,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRole()
         .metadata(
             newObjectMeta()
-                .name("weblogic-operator-namespace-role")
+                .name(getInputs().getNamespace() + "-namespace-role")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(
@@ -688,7 +688,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .name(getInputs().getServiceAccount())
                 .namespace(getInputs().getNamespace())
                 .apiGroup(""))
-        .roleRef(newRoleRef().name("weblogic-operator-namespace-role").apiGroup(""));
+        .roleRef(newRoleRef().name(getInputs().getNamespace() + "-namespace-role").apiGroup(""));
   }
 
   @SuppressWarnings("unused")

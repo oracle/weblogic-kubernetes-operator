@@ -36,11 +36,11 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   }
 
   public V1beta1ClusterRole getWeblogicOperatorClusterRole() {
-    return getClusterRoles().find("weblogic-operator-cluster-role");
+    return getClusterRoles().find(inputs.getNamespace() + "-cluster-role");
   }
 
   public V1beta1ClusterRole getWeblogicOperatorClusterRoleNonResource() {
-    return getClusterRoles().find("weblogic-operator-cluster-role-nonresource");
+    return getClusterRoles().find(inputs.getNamespace() + "-cluster-role-nonresource");
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBinding() {
@@ -62,7 +62,7 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   }
 
   public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() {
-    return getClusterRoles().find("weblogic-operator-namespace-role");
+    return getClusterRoles().find(inputs.getNamespace() + "-namespace-role");
   }
 
   public V1beta1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
