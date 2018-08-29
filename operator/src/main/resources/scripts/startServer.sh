@@ -27,7 +27,7 @@ for varname in domain_uid \
                log_home \
                nodemgr_home \
                service_name \
-               admion_hostname \
+               admin_hostname \
                ;
 do
   echo -n " $varname=${!varname}"
