@@ -397,11 +397,25 @@ public class TestUtils {
     Builder request = createRESTRequest(myKeyStore, url, token);
 
     Response response = null;
-    // Post scaling request to Operator
-    if (jsonObjStr != null) {
-      response = request.post(Entity.json(jsonObjStr));
-    } else {
-      response = request.get();
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod() / 2) {
+      try {
+        // Post scaling request to Operator
+        if (jsonObjStr != null) {
+          response = request.post(Entity.json(jsonObjStr));
+        } else {
+          response = request.get();
+        }
+      } catch (Exception ex) {
+        logger.info("Got exception " + ex.getMessage());
+        i++;
+        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+          logger.info("Sleeping 5 more seconds and try again");
+          Thread.sleep(5 * 1000);
+          continue;
+        }
+      }
+      break;
     }
     logger.info("response: " + response.toString());
 

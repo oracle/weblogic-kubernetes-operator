@@ -9,9 +9,11 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import java.nio.file.Path;
+import oracle.kubernetes.operator.helpers.LegalNames;
 
 /**
- * Parses a generated weblogic-domain-traefik-inputs.getClusterName().toLowerCase().yaml file into a
+ * Parses a generated
+ * weblogic-domain-traefik-inputs.LegalNames.toDNS1123LegalName(getClusterName()).yaml file into a
  * set of typed k8s java objects
  */
 public class ParsedTraefikYaml extends ParsedKubernetesYaml {
@@ -57,6 +59,6 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
   }
 
   private String getClusterScope() {
-    return inputs.getDomainUID() + "-" + inputs.getClusterName().toLowerCase();
+    return inputs.getDomainUID() + "-" + LegalNames.toDNS1123LegalName(inputs.getClusterName());
   }
 }
