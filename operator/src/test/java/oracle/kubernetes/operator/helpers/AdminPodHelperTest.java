@@ -19,11 +19,9 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Status;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +30,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.Test;
 
 @SuppressWarnings({"ConstantConditions, unchecked", "SameParameterValue", "deprecation"})
@@ -225,63 +223,36 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainPresenceHasNullEnvironmentItems_createAdminPodStartupWithDefaultItems() {
-    domainPresenceInfo.getDomain().getSpec().setServerStartup(null);
-
+  public void whenDomainPresenceHasNoEnvironmentItems_createAdminPodStartupWithDefaultItems() {
     assertThat(getCreatedPodSpecContainer().getEnv(), not(empty()));
   }
 
   @Test
-  public void whenDomainPresenceHasEnvironmentItems_createAdminPodStartupWithThem() {
-    domainPresenceInfo
-        .getDomain()
-        .getSpec()
-        .setServerStartup(
-            new ServerStartupListBuilder(ADMIN_SERVER)
-                .withVar("item1", "value1")
-                .withVar("item2", "value2")
-                .build());
+  public void whenDomainHasEnvironmentItems_createAdminPodStartupWithThem() {
+    configureServer(ADMIN_SERVER)
+        .withEnvironmentVariable("item1", "value1")
+        .withEnvironmentVariable("item2", "value2");
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasEnvVar("item1", "value1"), hasEnvVar("item2", "value2")));
   }
 
+  private ServerConfigurator configureServer(String serverName) {
+    return getConfigurator().configureServer(serverName);
+  }
+
   @Test
-  public void whenDomainPresenceHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
-    domainPresenceInfo
-        .getDomain()
-        .getSpec()
-        .setServerStartup(
-            new ServerStartupListBuilder(ADMIN_SERVER)
-                .withVar("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
-                .withVar("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)")
-                .build());
+  public void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
+    configureServer(ADMIN_SERVER)
+        .withEnvironmentVariable("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
+        .withEnvironmentVariable("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)");
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
             hasEnvVar("item1", "find domain1 at /shared/domain/domain1"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
-  }
-
-  static class ServerStartupListBuilder {
-    private String serverName;
-    private List<V1EnvVar> vars = new ArrayList<>();
-
-    ServerStartupListBuilder(String serverName) {
-      this.serverName = serverName;
-    }
-
-    ServerStartupListBuilder withVar(String name, String value) {
-      vars.add(new V1EnvVar().name(name).value(value));
-      return this;
-    }
-
-    List<ServerStartup> build() {
-      return Collections.singletonList(
-          new ServerStartup().withServerName(serverName).withEnv(vars));
-    }
   }
 
   @Override

@@ -166,11 +166,17 @@ public class Domain {
     return new ServerSpecV1Impl(spec, serverName, clusterName);
   }
 
+  /**
+   * Returns the number of replicas to start for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
   public int getReplicaCount(String clusterName) {
     return spec.getReplicaCount(clusterName);
   }
 
-  public void setReplicaCount(String clusterName, int replicaLimit) {
+  void setReplicaCount(String clusterName, int replicaLimit) {
     spec.setReplicaCount(clusterName, replicaLimit);
   }
 

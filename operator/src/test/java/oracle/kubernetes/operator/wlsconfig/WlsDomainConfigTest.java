@@ -19,25 +19,26 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /** Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved. */
 public class WlsDomainConfigTest {
 
-  private DomainSpec domainSpec;
+  private Domain domain = new Domain().withSpec(new DomainSpec());
+  private DomainSpec domainSpec = domain.getSpec();
+  private DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
 
   // The log messages to be checked during this test
@@ -158,11 +159,7 @@ public class WlsDomainConfigTest {
   @Test
   public void verifySuggestsUpdateToDynamicClusterIfReplicasTooHigh() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
-
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(
-                new ClusterStartup().withClusterName("DockerCluster").withReplicas(3)));
+    configureCluster("DockerCluster").withReplicas(3);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
     wlsDomainConfig.validate(domainSpec, suggestedConfigUpdates);
@@ -171,6 +168,10 @@ public class WlsDomainConfigTest {
     WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
         (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
     assertEquals(3, configUpdate.targetClusterSize);
+  }
+
+  private ClusterConfigurator configureCluster(String clusterName) {
+    return configurator.configureCluster(clusterName);
   }
 
   @Test
@@ -304,37 +305,19 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  @Ignore("No longer relevant, due to algorithm change")
-  public void verifyUpdateDomainSpecWarnsIfNoServersInClusterStartupCluster() {
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("noSuchCluster")));
-    wlsDomainConfig.validate(domainSpec);
-    assertThat(logRecords, containsWarning(NO_WLS_SERVER_IN_CLUSTER, "noSuchCluster"));
-  }
-
-  @Test
   public void verifyUpdateDomainSpecWarnsIfReplicasTooLarge() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
-        .withReplicas(10);
+    configureCluster("DockerCluster").withReplicas(10);
+
     wlsDomainConfig.validate(domainSpec);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
-  }
-
-  private DomainSpec defineDomainSpec() {
-    return domainSpec = new DomainSpec();
   }
 
   @Test
   public void verifyUpdateDomainSpecNoWarningIfReplicasOK() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(new ClusterStartup().withClusterName("DockerCluster")))
-        .withReplicas(5);
+    configureCluster("DockerCluster").withReplicas(5);
+
     wlsDomainConfig.validate(domainSpec);
     assertTrue(logRecords.isEmpty());
   }
@@ -342,11 +325,8 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(
-                new ClusterStartup().withClusterName("DockerCluster2").withReplicas(3)))
-        .withReplicas(2);
+    configureCluster("DockerCluster2").withReplicas(3);
+
     wlsDomainConfig.validate(domainSpec);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
   }
@@ -354,11 +334,9 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge_2clusters() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
-    ClusterStartup dockerCluster =
-        new ClusterStartup().withClusterName("DockerCluster").withReplicas(10);
-    ClusterStartup dockerCluster2 =
-        new ClusterStartup().withClusterName("DockerCluster2").withReplicas(10);
-    defineDomainSpec().withClusterStartup(Arrays.asList(dockerCluster, dockerCluster2));
+    configureCluster("DockerCluster").withReplicas(10);
+    configureCluster("DockerCluster2").withReplicas(10);
+
     wlsDomainConfig.validate(domainSpec);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
@@ -367,23 +345,23 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecNoWarningIfClusterStatupReplicasOK() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(
-                new ClusterStartup().withClusterName("DockerCluster2").withReplicas(2)))
-        .withReplicas(1);
+    configureDefaultReplicas(1);
+    configureCluster("DockerCluster2").withReplicas(2);
+
     wlsDomainConfig.validate(domainSpec);
     assertTrue(logRecords.isEmpty());
+  }
+
+  private void configureDefaultReplicas(int replicas) {
+    configurator.setDefaultReplicas(replicas);
   }
 
   @Test
   public void verifyUpdateDomainSpecNoWarningIfClusterStatupOnDynamicCluster() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
-    defineDomainSpec()
-        .withClusterStartup(
-            Collections.singletonList(
-                new ClusterStartup().withClusterName("DockerCluster").withReplicas(10)))
-        .withReplicas(10);
+    configureDefaultReplicas(10);
+    configureCluster("DockerCluster").withReplicas(10);
+
     wlsDomainConfig.validate(domainSpec);
     assertTrue(logRecords.isEmpty());
   }

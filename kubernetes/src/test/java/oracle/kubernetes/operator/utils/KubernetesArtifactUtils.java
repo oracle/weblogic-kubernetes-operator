@@ -68,10 +68,8 @@ import io.kubernetes.client.models.V1beta1Subject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -351,18 +349,6 @@ public class KubernetesArtifactUtils {
     return new V1PersistentVolumeClaimSpec();
   }
 
-  public static ServerStartup newServerStartup() {
-    return new ServerStartup();
-  }
-
-  public static FluentArrayList<ServerStartup> newServerStartupList() {
-    return newFluentArrayList(ServerStartup.class);
-  }
-
-  public static ClusterStartup newClusterStartup() {
-    return new ClusterStartup();
-  }
-
   public static V1LabelSelector newLabelSelector() {
     return new V1LabelSelector();
   }
@@ -389,10 +375,6 @@ public class KubernetesArtifactUtils {
 
   public static FluentArrayList<String> newStringList() {
     return newFluentArrayList(String.class);
-  }
-
-  public static FluentArrayList<ClusterStartup> newClusterStartupList() {
-    return newFluentArrayList(ClusterStartup.class);
   }
 
   public static FluentArrayList<V1LocalObjectReference> newLocalObjectReferenceList() {
