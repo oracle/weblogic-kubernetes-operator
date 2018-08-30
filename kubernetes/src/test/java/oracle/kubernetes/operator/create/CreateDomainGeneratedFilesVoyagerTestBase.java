@@ -334,7 +334,7 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
                                                 .serviceName(
                                                     getInputs().getDomainUID()
                                                         + "-cluster-"
-                                                        + getClusterNameLC())
+                                                        + getClusterNameSVC())
                                                 .servicePort(
                                                     newIntOrString(
                                                         getInputs().getManagedServerPort())))))));

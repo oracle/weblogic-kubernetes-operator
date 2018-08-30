@@ -961,6 +961,7 @@ function run_create_domain_job {
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
     local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
     # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
+
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     if [ "$WERCKER" = "true" ]; then 
@@ -1035,6 +1036,7 @@ function run_create_domain_job {
     sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputs
     sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputs
     sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputs
+    sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputs
     sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputs
     if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
       sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
@@ -1202,6 +1204,16 @@ function get_startup_control {
     echo $startup_control
 }
 
+function get_dns_legal_name {
+    local legal_name=$1
+    # the managed server base name of domain2 and domain3 contains invalid DNS charaters
+    local legal_dns_name="`legal_dns_name $1`"
+    if [ "$legal_dns_name" == "false" ] ; then
+      legal_name=$(change_to_legal_dns_name $1)
+    fi
+    echo "$legal_name"
+}
+
 function verify_managed_servers_ready {
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainkey"
@@ -1212,6 +1224,8 @@ function verify_managed_servers_ready {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+
     local replicas=`get_cluster_replicas $DOM_KEY`
 
     local max_count=50
@@ -1221,7 +1235,7 @@ function verify_managed_servers_ready {
     trace "verify $replicas number of managed servers for readiness"
     for i in $(seq 1 $replicas);
     do
-      local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME}$i"
+      local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME_DNS_LEGAL}$i"
       trace "verify that $MS_NAME pod is ready"
       local count=0
       local status="0/1"
@@ -1253,7 +1267,9 @@ function test_wls_liveness_probe {
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
-    local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME}1"
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+
+    local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}1"
 
     local initial_restart_count=`kubectl describe pod $POD_NAME --namespace=$NAMESPACE | egrep Restart | awk '{print $3}'`
 
@@ -1316,11 +1332,14 @@ function verify_webapp_load_balancing {
        fail "wrong parameters, managed server count must be 2 or 3"
     fi
 
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+    local WL_CLUSTER_NAME_DNS_LEGAL=`get_dns_legal_name $WL_CLUSTER_NAME`
+
     local list=()
     local i
     for i in $(seq 1 $MS_NUM);
     do
-      local msname="$DOMAIN_UID-${MS_BASE_NAME}$i"
+      local msname="$DOMAIN_UID-${MS_BASE_NAME_DNS_LEGAL}$i"
       list+=("$msname")
     done
 
@@ -1341,7 +1360,7 @@ function verify_webapp_load_balancing {
     local max_count=30
     local wait_time=6
     local count=0
-    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME"
+    local vheader="host: $DOMAIN_UID.$WL_CLUSTER_NAME_DNS_LEGAL"
 
     while [ "${HTTP_RESPONSE}" != "200" -a $count -lt $max_count ] ; do
       local count=`expr $count + 1`
@@ -1364,7 +1383,7 @@ function verify_webapp_load_balancing {
         local i
         for i in $(seq 1 $MS_NUM);
         do
-          kubectl logs ${DOMAIN_UID}-${MS_BASE_NAME}$i -n $NAMESPACE
+          kubectl logs ${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}$i -n $NAMESPACE
         done
         fail "ERROR: testwebapp is not available"
     fi
@@ -2170,7 +2189,27 @@ EOF
     trace "Done."
 }
 
+#
+# Function to check if a value is lowercase and legal DNS name
+# $1 - value to check
+# $2 - name of object being checked
+function legal_dns_name {
+  local val=$(change_to_legal_dns_name $1)
+  if [ "$val" != "$1" ]; then
+    echo "false"
+  else 
+    echo "true"
+  fi
+}
 
+#
+# Function to lowercase a value and make it a legal DNS name
+# $1 - value to convert to lowercase
+function change_to_legal_dns_name {
+    local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
+    local value=${lc//"_"/"-"}
+    echo "$value"
+}
 
 function verify_service_and_pod_created {
     if [ "$#" != 2 ] ; then
@@ -2188,6 +2227,8 @@ function verify_service_and_pod_created {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local OPERATOR_TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+
     local SERVER_NUM="$2"
 
     if [ "$SERVER_NUM" = "0" ]; then 
@@ -2195,7 +2236,7 @@ function verify_service_and_pod_created {
       local POD_NAME="${DOMAIN_UID}-admin-server"
     else
       local IS_ADMIN_SERVER="false"
-      local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME}${SERVER_NUM}"
+      local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}${SERVER_NUM}"
     fi
 
     local SERVICE_NAME="${POD_NAME}"
@@ -2304,6 +2345,8 @@ function verify_domain_created {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+
     trace "verify domain $DOMAIN_UID in $NAMESPACE namespace"
 
     # Prepend "+" to detailed debugging to make it easy to filter out
@@ -2334,7 +2377,7 @@ function verify_domain_created {
     local i
     for i in $(seq 1 $replicas);
     do
-      local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME}$i"
+      local MS_NAME="$DOMAIN_UID-${MS_BASE_NAME_DNS_LEGAL}$i"
       trace "verify service and pod of server $MS_NAME"
       if [ "${verify_as_only}" = "true" ]; then 
         verify_pod_deleted $DOM_KEY $i
@@ -2344,7 +2387,7 @@ function verify_domain_created {
     done
 
     # Check if we got exepcted number of managed servers running
-    local ms_name_common=${DOMAIN_UID}-${MS_BASE_NAME}
+    local ms_name_common="${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}"
     local pod_count=`kubectl get pods -n $NAMESPACE |grep "^${ms_name_common}" | wc -l `
     if [ ${pod_count:=Error} != $replicas ] && [ "${verify_as_only}" != "true" ] ; then
       fail "ERROR: expected $replicas number of managed servers running, but got $pod_count, exiting!"
@@ -2363,12 +2406,14 @@ function verify_pod_deleted {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
 
+    local MS_BASE_NAME_DNS_LEGAL=`get_dns_legal_name $MS_BASE_NAME`
+
     local SERVER_NUM="$2"
 
     if [ "$SERVER_NUM" = "0" ]; then 
       local POD_NAME="${DOMAIN_UID}-admin-server"
     else
-      local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME}${SERVER_NUM}"
+      local POD_NAME="${DOMAIN_UID}-${MS_BASE_NAME_DNS_LEGAL}${SERVER_NUM}"
     fi
 
     local max_count_srv=50
@@ -2792,8 +2837,6 @@ function test_create_domain_on_exist_dir {
 
     local NAMESPACE="`dom_get $1 NAMESPACE`"
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
-    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
-    local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
     trace "check domain directory exists"
@@ -3055,8 +3098,16 @@ function test_suite {
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
     dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
-    dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
-    dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
+
+    # TODO: we need to figure out how to support invalid characters in the helm use cases
+    # for now, invalid characters are only tested in the none helm cases
+    if [ "$USE_HELM" = "true" ]; then
+      dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
+      dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
+    else
+      dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          Managed_Server 7011       30031           30702           8021    30306                  30316
+      dom_define domain3  oper1   test1     domain3    AUTO            cluster_1       DYNAMIC          managed-Server 7021       30041           30703           8031    30307                  30317
+    fi
     dom_define domain4  oper2   test2     domain4    AUTO            cluster-1       CONFIGURED       managed-server 7041       30051           30704           8041    30308                  30318
     dom_define domain5  oper1   default   domain5    ADMIN           cluster-1       DYNAMIC          managed-server 7051       30061           30705           8051    30309                  30319
     dom_define domain6  oper1   default   domain6    AUTO            cluster-1       DYNAMIC          managed-server 7061       30071           30706           8061    30310                  30320

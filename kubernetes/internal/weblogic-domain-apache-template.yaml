@@ -50,7 +50,7 @@ spec:
         %ENABLE_LOAD_BALANCER_VOLUME_PATH%  mountPath: "/config"
         env:
           - name: WEBLOGIC_CLUSTER
-            value: '%DOMAIN_UID%-cluster-%CLUSTER_NAME_LC%:%MANAGED_SERVER_PORT%'
+            value: '%DOMAIN_UID%-cluster-%CLUSTER_NAME_SVC%:%MANAGED_SERVER_PORT%'
           - name: LOCATION
             value: '%WEB_APP_PREPATH%'
           %ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%- name: WEBLOGIC_HOST
