@@ -36,6 +36,8 @@ import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -55,6 +57,7 @@ public class RestBackendImplTest {
   private List<Memento> mementos = new ArrayList<>();
   private RestBackend restBackend;
   private Domain domain = createDomain(NS, UID);
+  private DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
 
   private static Domain createDomain(String namespace, String uid) {
     return new Domain()
@@ -86,16 +89,20 @@ public class RestBackendImplTest {
 
   @Test
   public void whenPerClusterReplicaSettingMatchesScaleRequest_doNothing() {
-    domain.setReplicaCount("cluster1", 5);
+    configureCluster("cluster1").withReplicas(5);
 
     restBackend.scaleCluster(UID, "cluster1", 5);
 
     assertThat(getUpdatedDomain(), nullValue());
   }
 
+  private ClusterConfigurator configureCluster(String clusterName) {
+    return configurator.configureCluster(clusterName);
+  }
+
   @Test
   public void whenPerClusterReplicaSetting_scaleClusterUpdatesSetting() {
-    domain.setReplicaCount("cluster1", 1);
+    configureCluster("cluster1").withReplicas(1);
 
     restBackend.scaleCluster(UID, "cluster1", 5);
 

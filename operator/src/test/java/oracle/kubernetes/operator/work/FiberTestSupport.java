@@ -75,7 +75,7 @@ public class FiberTestSupport {
     schedule.setTime(time, unit);
   }
 
-  /** Returns an unmodificable map of the components in the test packet. */
+  /** Returns an unmodifiable map of the components in the test packet. */
   public Map<String, Component> getPacketComponents() {
     return Collections.unmodifiableMap(packet.getComponents());
   }

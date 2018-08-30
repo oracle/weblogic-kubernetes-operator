@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.rest;
 
+import static oracle.kubernetes.weblogic.domain.DomainConfigurator.forDomain;
+
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
@@ -258,7 +260,7 @@ public class RestBackendImpl implements RestBackend {
   private void updateReplicasForDomain(
       String namespace, Domain domain, String cluster, int newReplicaCount) {
     if (newReplicaCount != domain.getReplicaCount(cluster)) {
-      domain.setReplicaCount(cluster, newReplicaCount);
+      forDomain(domain).configureCluster(cluster).withReplicas(newReplicaCount);
       overwriteDomain(namespace, domain);
     }
   }

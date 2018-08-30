@@ -43,10 +43,11 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +64,7 @@ public class ManagedServersUpStepTest {
   private static final String NS = "namespace";
   private static final String UID = "uid1";
   private final Domain domain = createDomain();
+  private final DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
 
   private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
 
@@ -514,7 +516,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void setDefaultReplicas(int replicas) {
-    domain.getSpec().setReplicas(replicas);
+    configurator.setDefaultReplicas(replicas);
   }
 
   private void configureServers(String... serverNames) {
@@ -530,7 +532,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void defineAdminServer(String adminServerName) {
-    domain.getSpec().setAsName(adminServerName);
+    configurator.defineAdminServer(adminServerName);
   }
 
   private WlsServerConfig getWlsServer(String serverName) {
@@ -541,10 +543,8 @@ public class ManagedServersUpStepTest {
     return configSupport.getWlsServer(clusterName, serverName);
   }
 
-  private ServerStartup configureServer(String serverName) {
-    ServerStartup serverStartup = new ServerStartup().withServerName(serverName);
-    domain.getSpec().addServerStartupItem(serverStartup);
-    return serverStartup;
+  private ServerConfigurator configureServer(String serverName) {
+    return configurator.configureServer(serverName);
   }
 
   private V1EnvVar envVar(String name, String value) {
@@ -555,10 +555,8 @@ public class ManagedServersUpStepTest {
     return configSupport.getWlsCluster(clusterName);
   }
 
-  private ClusterStartup configureCluster(String clusterName) {
-    ClusterStartup startup = new ClusterStartup().withClusterName(clusterName).withReplicas(1);
-    domain.getSpec().addClusterStartupItem(startup);
-    return startup;
+  private ClusterConfigurator configureCluster(String clusterName) {
+    return configurator.configureCluster(clusterName).withReplicas(1);
   }
 
   private WlsServerConfig getServerForWlsCluster(String clusterName, String serverName) {
@@ -573,7 +571,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void setStartupControl(String startupcontrol) {
-    domain.getSpec().setStartupControl(startupcontrol);
+    configurator.setStartupControl(startupcontrol);
   }
 
   private void invokeStep() {
