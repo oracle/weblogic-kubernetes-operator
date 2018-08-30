@@ -99,8 +99,8 @@ function initAndValidateOutputDir {
     create-weblogic-domain-inputs.yaml \
     weblogic-domain-pv.yaml \
     weblogic-domain-pvc.yaml \
-    weblogic-domain-traefik-${clusterNameLC}.yaml \
-    weblogic-domain-traefik-security-${clusterNameLC}.yaml \
+    weblogic-domain-traefik-${clusterNameSVC}.yaml \
+    weblogic-domain-traefik-security-${clusterNameSVC}.yaml \
     weblogic-domain-apache.yaml \
     weblogic-domain-apache-security.yaml \
     create-weblogic-domain-job.yaml \
@@ -122,6 +122,7 @@ function validateVersion {
 #
 function validateDomainUid {
   validateLowerCase "domainUID" ${domainUID}
+  validateDNS1123LegalName domainUID ${domainUID}
 }
 
 #
@@ -135,7 +136,21 @@ function validateNamespace {
 # Create an instance of clusterName to be used in cases where lowercase is required.
 #
 function validateClusterName {
-  clusterNameLC=$(toLower $clusterName)
+  clusterNameSVC=$(toDNS1123Legal $clusterName)
+}
+
+#
+# Create an instance of adminServerName to be used in cases where lowercase is required.
+#
+function validateAdminServerName {
+  adminServerNameSVC=$(toDNS1123Legal $adminServerName)
+}
+
+#
+# Create an instance of adminServerName to be used in cases where lowercase is required.
+#
+function validateManagedServerNameBase {
+  managedServerNameBaseSVC=$(toDNS1123Legal $managedServerNameBase)
 }
 
 #
@@ -421,6 +436,8 @@ function initialize {
   validateVersion
   validateDomainUid
   validateNamespace
+  validateAdminServerName
+  validateManagedServerNameBase
   validateClusterName
   validateWeblogicDomainStorageType
   validateWeblogicDomainStorageReclaimPolicy
@@ -454,8 +471,8 @@ function createYamlFiles {
   createJobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
   deleteJobOutput="${domainOutputDir}/delete-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
-  traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"
-  traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
+  traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameSVC}.yaml"
+  traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameSVC}.yaml"
   apacheOutput="${domainOutputDir}/weblogic-domain-apache.yaml"
   apacheSecurityOutput="${domainOutputDir}/weblogic-domain-apache-security.yaml"
   voyagerSecurityOutput="${domainOutputDir}/voyager-operator-security.yaml"
@@ -517,9 +534,11 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
+  sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${createJobOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${createJobOutput}
   sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${createJobOutput}
   sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${createJobOutput}
+  sed -i -e "s:%MANAGED_SERVER_NAME_BASE_SVC%:${managedServerNameBaseSVC}:g" ${createJobOutput}
   sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${createJobOutput}
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
@@ -578,7 +597,7 @@ function createYamlFiles {
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikOutput}
-    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikOutput}
+    sed -i -e "s:%CLUSTER_NAME_SVC%:${clusterNameSVC}:g" ${traefikOutput}
     sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${traefikOutput}
     sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${traefikOutput}
 
@@ -589,7 +608,7 @@ function createYamlFiles {
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${traefikSecurityOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${traefikSecurityOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${traefikSecurityOutput}
-    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${traefikSecurityOutput}
+    sed -i -e "s:%CLUSTER_NAME_SVC%:${clusterNameSVC}:g" ${traefikSecurityOutput}
   fi
 
   if [ "${loadBalancer}" = "APACHE" ]; then
@@ -625,7 +644,8 @@ function createYamlFiles {
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheOutput}
-    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${apacheOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${apacheOutput}
+    sed -i -e "s:%CLUSTER_NAME_SVC%:${clusterNameSVC}:g" ${apacheOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${apacheOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${apacheOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${apacheOutput}
@@ -652,7 +672,7 @@ function createYamlFiles {
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerIngressOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerIngressOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerIngressOutput}
-    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%CLUSTER_NAME_SVC%:${clusterNameSVC}:g" ${voyagerIngressOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerIngressOutput}
     sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerIngressOutput}
     sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${voyagerIngressOutput}
@@ -762,7 +782,7 @@ function setupVoyagerLoadBalancer {
 #
 function setupTraefikLoadBalancer {
 
-  traefikName="${domainUID}-${clusterNameLC}-traefik"
+  traefikName="${domainUID}-${clusterNameSVC}-traefik"
 
   echo Setting up traefik security
   kubectl apply -f ${traefikSecurityOutput}

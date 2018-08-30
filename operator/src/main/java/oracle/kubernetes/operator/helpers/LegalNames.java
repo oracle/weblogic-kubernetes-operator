@@ -30,7 +30,7 @@ public class LegalNames {
     return toServerName(domainUID, serverName);
   }
 
-  static String toClusterServiceName(String domainUID, String clusterName) {
+  public static String toClusterServiceName(String domainUID, String clusterName) {
     return toDNS1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUID, clusterName));
   }
 
@@ -44,7 +44,7 @@ public class LegalNames {
    * @param value Input value
    * @return nearest DNS-1123 legal name
    */
-  private static String toDNS1123LegalName(String value) {
+  public static String toDNS1123LegalName(String value) {
     return value.toLowerCase().replace('_', '-');
   }
 }

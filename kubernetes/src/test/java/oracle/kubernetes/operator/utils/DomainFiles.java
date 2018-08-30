@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.utils;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.kubernetes.operator.helpers.LegalNames;
 
 /** Manages the input and generated files for a domain */
 public class DomainFiles {
@@ -71,13 +72,18 @@ public class DomainFiles {
 
   public Path getTraefikYamlPath() {
     return getWeblogicDomainPath()
-        .resolve("weblogic-domain-traefik-" + inputs.getClusterName().toLowerCase() + ".yaml");
+        .resolve(
+            "weblogic-domain-traefik-"
+                + LegalNames.toDNS1123LegalName(inputs.getClusterName())
+                + ".yaml");
   }
 
   public Path getTraefikSecurityYamlPath() {
     return getWeblogicDomainPath()
         .resolve(
-            "weblogic-domain-traefik-security-" + inputs.getClusterName().toLowerCase() + ".yaml");
+            "weblogic-domain-traefik-security-"
+                + LegalNames.toDNS1123LegalName(inputs.getClusterName())
+                + ".yaml");
   }
 
   public Path getWeblogicDomainPersistentVolumeYamlPath() {

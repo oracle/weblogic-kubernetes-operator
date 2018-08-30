@@ -309,7 +309,9 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
-            hasEnvVar("LOG_HOME", LOG_HOME)));
+            hasEnvVar("LOG_HOME", LOG_HOME),
+            hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
+            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -530,6 +532,8 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
         .addEnvItem(envItem("LOG_HOME", LOG_HOME))
+        .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
+        .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
