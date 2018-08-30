@@ -141,6 +141,14 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_invalidDomainUID_failsAndReturnsError() throws Exception {
+    String val = "test_domain_1";
+    assertThat(
+        execCreateDomain(newInputs().domainUID(val)),
+        failsAndPrints(paramInvalidError(PARAM_DOMAIN_UID, val)));
+  }
+
+  @Test
   public void createDomain_with_upperCaseDomainUID_failsAndReturnsError() throws Exception {
     String val = "TestDomainUID";
     assertThat(
@@ -650,6 +658,10 @@ public class CreateDomainInputsValidationTest {
 
   private String missingFileError(String param, String val, String dir) {
     return errorRegexp(param + ".*" + val + ".*" + "does not exist under" + ".*" + dir + ".*");
+  }
+
+  private String paramInvalidError(String param, String val) {
+    return errorRegexp(param + ".*invalid");
   }
 
   private String paramMissingError(String param) {
