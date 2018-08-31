@@ -278,17 +278,17 @@ public class CallBuilder {
   /**
    * Replace domain
    *
-   * @param name Name
+   * @param uid the domain uid (unique within the k8s cluster)
    * @param namespace Namespace
    * @param body Body
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomain(String name, String namespace, Domain body) throws ApiException {
+  public Domain replaceDomain(String uid, String namespace, Domain body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new WeblogicApi(client)
-          .replaceWebLogicOracleV1NamespacedDomain(name, namespace, body, pretty);
+      return CALL_FACTORY.replaceWebLogicOracleV1NamespacedDomain(
+          client, uid, namespace, body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -1112,7 +1112,7 @@ public class CallBuilder {
       throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new AuthorizationV1Api(client).createSubjectAccessReview(body, pretty);
+      return CALL_FACTORY.createSubjectAccessReview(client, body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -1254,7 +1254,7 @@ public class CallBuilder {
   public V1TokenReview createTokenReview(V1TokenReview body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new AuthenticationV1Api(client).createTokenReview(body, pretty);
+      return CALL_FACTORY.createTokenReview(client, body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -1516,6 +1516,14 @@ public class CallBuilder {
     }
 
     @Override
+    public Domain replaceWebLogicOracleV1NamespacedDomain(
+        ApiClient client, String name, String namespace, Domain body, String pretty)
+        throws ApiException {
+      return new WeblogicApi(client)
+          .replaceWebLogicOracleV1NamespacedDomain(name, namespace, body, pretty);
+    }
+
+    @Override
     public V1SelfSubjectRulesReview createSelfSubjectRulesReview(
         ApiClient client, V1SelfSubjectRulesReview body, String pretty) throws ApiException {
       return new AuthorizationV1Api(client).createSelfSubjectRulesReview(body, pretty);
@@ -1525,6 +1533,18 @@ public class CallBuilder {
     public V1SelfSubjectAccessReview createSelfSubjectAccessReview(
         ApiClient client, V1SelfSubjectAccessReview body, String pretty) throws ApiException {
       return new AuthorizationV1Api(client).createSelfSubjectAccessReview(body, pretty);
+    }
+
+    @Override
+    public V1SubjectAccessReview createSubjectAccessReview(
+        ApiClient client, V1SubjectAccessReview body, String pretty) throws ApiException {
+      return new AuthorizationV1Api(client).createSubjectAccessReview(body, pretty);
+    }
+
+    @Override
+    public V1TokenReview createTokenReview(ApiClient client, V1TokenReview body, String pretty)
+        throws ApiException {
+      return new AuthenticationV1Api(client).createTokenReview(body, pretty);
     }
 
     @Override

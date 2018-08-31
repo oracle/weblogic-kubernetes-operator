@@ -24,8 +24,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.containsR
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.getThenEmptyConfigMapDataValue;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRole;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRoleBinding;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterStartup;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterStartupList;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMap;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMapVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainer;
@@ -35,7 +33,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeploy
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDomain;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDomainSpec;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVarList;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHTTPGetAction;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHostPathVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIntOrString;
@@ -57,8 +54,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newResour
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretReference;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServerStartup;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServerStartupList;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newService;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceAccount;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServicePort;
@@ -82,6 +77,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import oracle.kubernetes.operator.utils.GeneratedDomainYamlFiles;
@@ -97,6 +93,7 @@ import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.junit.Test;
 
@@ -373,13 +370,13 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
         create('%DOMAIN_NAME%','Log')
         cd('/Log/%DOMAIN_NAME%');
         set('FileName', '/shared/logs/%DOMAIN_NAME%.log')
-        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME%')
+        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_SVC%')
         set('ListenPort', %ADMIN_PORT%)
         set('Name', '%ADMIN_SERVER_NAME%')
         cd('/Servers/%ADMIN_SERVER_NAME%/NetworkAccessPoints/T3Channel')
         set('PublicPort', %T3_CHANNEL_PORT%)
         set('PublicAddress', '%T3_PUBLIC_ADDRESS%')
-        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME%')
+        set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_SVC%')
         set('ListenPort', %T3_CHANNEL_PORT%)
         cd('/Servers/%ADMIN_SERVER_NAME%')
         create('%ADMIN_SERVER_NAME%', 'Log')
@@ -399,7 +396,8 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
             getInputs().getClusterType(),
             getInputs().getAdminServerName(),
             getInputs().getManagedServerNameBase(),
-            getInputs().getDomainUID() + "-" + getInputs().getAdminServerName(),
+            LegalNames.toServerServiceName(
+                getInputs().getDomainUID(), getInputs().getAdminServerName()),
             "setProductionModeEnabled\\(" + getInputs().getProductionModeEnabled() + "\\)",
             "server_port *= " + getInputs().getManagedServerPort(),
             "number_of_ms *= " + getInputs().getConfiguredManagedServerCount(),
@@ -420,60 +418,41 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected Domain getExpectedDomain() {
-    return newDomain()
-        .withMetadata(
-            newObjectMeta()
-                .name(getInputs().getDomainUID())
-                .namespace(getInputs().getNamespace())
-                .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
-                .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
-                .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
-        .withSpec(
-            newDomainSpec()
-                .withDomainUID(getInputs().getDomainUID())
-                .withDomainName(getInputs().getDomainName())
-                .withImage("store/oracle/weblogic:12.2.1.3")
-                .withImagePullPolicy("IfNotPresent")
-                .withImagePullSecretName(getInputs().getWeblogicImagePullSecretName())
-                .withAdminSecret(
-                    newSecretReference().name(getInputs().getWeblogicCredentialsSecretName()))
-                .withAsName(getInputs().getAdminServerName())
-                .withAsPort(Integer.parseInt(getInputs().getAdminPort()))
-                .withStartupControl(getInputs().getStartupControl())
-                .withServerStartup(
-                    newServerStartupList()
-                        .addElement(
-                            newServerStartup()
-                                .withDesiredState("RUNNING")
-                                .withServerName(getInputs().getAdminServerName())
-                                .withEnv(
-                                    newEnvVarList()
-                                        .addElement(
-                                            newEnvVar()
-                                                .name("JAVA_OPTIONS")
-                                                .value(getInputs().getJavaOptions()))
-                                        .addElement(
-                                            newEnvVar()
-                                                .name("USER_MEM_ARGS")
-                                                .value("-Xms64m -Xmx256m ")))))
-                .withClusterStartup(
-                    newClusterStartupList()
-                        .addElement(
-                            newClusterStartup()
-                                .withDesiredState("RUNNING")
-                                .withClusterName(getInputs().getClusterName())
-                                .withReplicas(
-                                    Integer.parseInt(getInputs().getInitialManagedServerReplicas()))
-                                .withEnv(
-                                    newEnvVarList()
-                                        .addElement(
-                                            newEnvVar()
-                                                .name("JAVA_OPTIONS")
-                                                .value(getInputs().getJavaOptions()))
-                                        .addElement(
-                                            newEnvVar()
-                                                .name("USER_MEM_ARGS")
-                                                .value("-Xms64m -Xmx256m "))))));
+    Domain domain =
+        newDomain()
+            .withMetadata(
+                newObjectMeta()
+                    .name(getInputs().getDomainUID())
+                    .namespace(getInputs().getNamespace())
+                    .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                    .putLabelsItem(DOMAINUID_LABEL, getInputs().getDomainUID())
+                    .putLabelsItem(DOMAINNAME_LABEL, getInputs().getDomainName()))
+            .withSpec(
+                newDomainSpec()
+                    .withDomainUID(getInputs().getDomainUID())
+                    .withDomainName(getInputs().getDomainName())
+                    .withImage("store/oracle/weblogic:12.2.1.3")
+                    .withImagePullPolicy("IfNotPresent")
+                    .withImagePullSecretName(getInputs().getWeblogicImagePullSecretName())
+                    .withAdminSecret(
+                        newSecretReference().name(getInputs().getWeblogicCredentialsSecretName()))
+                    .withAsName(getInputs().getAdminServerName())
+                    .withAsPort(Integer.parseInt(getInputs().getAdminPort()))
+                    .withStartupControl(getInputs().getStartupControl()));
+
+    DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+    configurator
+        .configureServer(getInputs().getAdminServerName())
+        .withDesiredState("RUNNING")
+        .withEnvironmentVariable("JAVA_OPTIONS", getInputs().getJavaOptions())
+        .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m ");
+    configurator
+        .configureCluster(getInputs().getClusterName())
+        .withDesiredState("RUNNING")
+        .withReplicas(Integer.parseInt(getInputs().getInitialManagedServerReplicas()))
+        .withEnvironmentVariable("JAVA_OPTIONS", getInputs().getJavaOptions())
+        .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m ");
+    return domain;
   }
 
   @Test
@@ -578,7 +557,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                                                 .value(
                                                     getInputs().getDomainUID()
                                                         + "-cluster-"
-                                                        + getClusterNameLC()
+                                                        + getClusterNameSVC()
                                                         + ":"
                                                         + getInputs().getManagedServerPort()))
                                         .addEnvItem(
@@ -1222,15 +1201,15 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected String getTraefikScope() {
-    return getClusterLCScope() + "-traefik";
+    return getClusterSVCScope() + "-traefik";
   }
 
-  protected String getClusterLCScope() {
-    return getInputs().getDomainUID() + "-" + getClusterNameLC();
+  protected String getClusterSVCScope() {
+    return getInputs().getDomainUID() + "-" + getClusterNameSVC();
   }
 
-  protected String getClusterNameLC() {
-    return getInputs().getClusterName().toLowerCase();
+  protected String getClusterNameSVC() {
+    return LegalNames.toDNS1123LegalName(getInputs().getClusterName());
   }
 
   protected String getApacheName() {
