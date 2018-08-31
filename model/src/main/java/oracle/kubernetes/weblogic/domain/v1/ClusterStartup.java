@@ -18,7 +18,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * ClusterStartup describes the desired startup state and passed environment variables for a
  * specific cluster.
+ *
+ * @deprecated used internally for version 1 of the domain model.
  */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 public class ClusterStartup {
 
   /**
@@ -32,6 +36,7 @@ public class ClusterStartup {
    * Name of specific cluster to start. Managed servers in the cluster will be started beginning
    * with replicas instances. (Required)
    */
+  @SuppressWarnings("NullableProblems")
   @SerializedName("clusterName")
   @Expose
   @NotNull
@@ -44,7 +49,7 @@ public class ClusterStartup {
   @SerializedName("env")
   @Expose
   @Valid
-  private List<V1EnvVar> env = new ArrayList<V1EnvVar>();
+  private List<V1EnvVar> env = new ArrayList<>();
 
   /**
    * Desired startup state for any managed server started in this cluster. Legal values are RUNNING
@@ -73,7 +78,7 @@ public class ClusterStartup {
    * @param desiredState Desired status
    * @return this
    */
-  public ClusterStartup withDesiredState(String desiredState) {
+  ClusterStartup withDesiredState(String desiredState) {
     this.desiredState = desiredState;
     return this;
   }
@@ -105,7 +110,7 @@ public class ClusterStartup {
    * @param clusterName Cluster name
    * @return this
    */
-  public ClusterStartup withClusterName(String clusterName) {
+  ClusterStartup withClusterName(String clusterName) {
     this.clusterName = clusterName;
     return this;
   }
@@ -163,7 +168,7 @@ public class ClusterStartup {
    * @param env Environment variables
    * @return this
    */
-  public ClusterStartup withEnv(List<V1EnvVar> env) {
+  ClusterStartup withEnv(List<V1EnvVar> env) {
     this.env = env;
     return this;
   }
@@ -173,12 +178,10 @@ public class ClusterStartup {
    *
    * @param name the name of the variable to add
    * @param value the value of the variable to add
-   * @return this
    */
-  public ClusterStartup withEnvironmentVariable(String name, String value) {
+  void withEnvironmentVariable(String name, String value) {
     if (env == null) env = new ArrayList<>();
     env.add(new V1EnvVar().name(name).value(value));
-    return this;
   }
 
   @Override
@@ -206,7 +209,7 @@ public class ClusterStartup {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ClusterStartup) == false) {
+    if (!(other instanceof ClusterStartup)) {
       return false;
     }
     ClusterStartup rhs = ((ClusterStartup) other);

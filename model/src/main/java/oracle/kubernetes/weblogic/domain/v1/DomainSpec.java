@@ -21,6 +21,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainSpec is a description of a domain. */
+@SuppressWarnings("NullableProblems")
 public class DomainSpec {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
@@ -103,7 +104,7 @@ public class DomainSpec {
   @SerializedName("exportT3Channels")
   @Expose
   @Valid
-  private List<String> exportT3Channels = new ArrayList<String>();
+  private List<String> exportT3Channels = new ArrayList<>();
 
   /**
    * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
@@ -128,12 +129,14 @@ public class DomainSpec {
   private String startupControl;
 
   /** List of server startup details for selected servers. */
+  @SuppressWarnings("deprecation")
   @SerializedName("serverStartup")
   @Expose
   @Valid
   private List<ServerStartup> serverStartup = new ArrayList<>();
 
   /** List of server startup details for selected clusters. */
+  @SuppressWarnings("deprecation")
   @SerializedName("clusterStartup")
   @Expose
   @Valid
@@ -155,6 +158,7 @@ public class DomainSpec {
     return new ServerSpecV1Impl(this, getAsName(), null);
   }
 
+  @SuppressWarnings("deprecation")
   ServerStartup getServerStartup(String name) {
     if (getServerStartup() == null) return null;
 
@@ -167,11 +171,21 @@ public class DomainSpec {
     return null;
   }
 
-  int getReplicaLimit(String clusterName) {
-    ClusterStartup clusterStartup = getClusterStartup(clusterName);
-    return clusterStartup == null ? getReplicas() : clusterStartup.getReplicas();
+  public int getReplicaCount(String clusterName) {
+    return getReplicaCount(getClusterStartup(clusterName));
   }
 
+  @SuppressWarnings("deprecation")
+  int getReplicaCount(ClusterStartup clusterStartup) {
+    return hasReplicaCount(clusterStartup) ? clusterStartup.getReplicas() : getReplicas();
+  }
+
+  @SuppressWarnings("deprecation")
+  private boolean hasReplicaCount(ClusterStartup clusterStartup) {
+    return clusterStartup != null && clusterStartup.getReplicas() != null;
+  }
+
+  @SuppressWarnings("deprecation")
   ClusterStartup getClusterStartup(String clusterName) {
     if (getClusterStartup() == null || clusterName == null) return null;
 
@@ -182,6 +196,22 @@ public class DomainSpec {
     }
 
     return null;
+  }
+
+  void setReplicaCount(String clusterName, int replicaLimit) {
+    getOrCreateClusterStartup(clusterName).setReplicas(replicaLimit);
+  }
+
+  @SuppressWarnings("deprecation")
+  private ClusterStartup getOrCreateClusterStartup(String clusterName) {
+    ClusterStartup clusterStartup = getClusterStartup(clusterName);
+    if (clusterStartup != null) {
+      return clusterStartup;
+    }
+
+    ClusterStartup newClusterStartup = new ClusterStartup().withClusterName(clusterName);
+    getClusterStartup().add(newClusterStartup);
+    return newClusterStartup;
   }
 
   /**
@@ -372,6 +402,7 @@ public class DomainSpec {
    *
    * @param adminSecret admin secret
    */
+  @SuppressWarnings("unused")
   public void setAdminSecret(V1SecretReference adminSecret) {
     this.adminSecret = adminSecret;
   }
@@ -436,6 +467,8 @@ public class DomainSpec {
    *
    * @param asPort admin server port
    */
+  @SuppressWarnings("WeakerAccess")
+  // public access is needed for yaml processing
   public void setAsPort(Integer asPort) {
     this.asPort = asPort;
   }
@@ -485,6 +518,7 @@ public class DomainSpec {
    * @param exportT3Channels exported channels
    * @return this
    */
+  @SuppressWarnings("UnusedReturnValue")
   public DomainSpec withExportT3Channels(List<String> exportT3Channels) {
     this.exportT3Channels = exportT3Channels;
     return this;
@@ -567,8 +601,13 @@ public class DomainSpec {
   /**
    * List of server startup details for selected servers.
    *
+   * @deprecated use {@link Domain#getServer(String, String)} to get the effective settings for a
+   *     specific server.
    * @return server startup
    */
+  @SuppressWarnings({"WeakerAccess", "DeprecatedIsStillUsed"})
+  @Deprecated
+  // public access is needed for yaml processing
   public List<ServerStartup> getServerStartup() {
     return serverStartup;
   }
@@ -576,40 +615,38 @@ public class DomainSpec {
   /**
    * List of server startup details for selected servers.
    *
+   * @deprecated use {@link
+   *     oracle.kubernetes.weblogic.domain.DomainConfigurator#configureServer(String)} to configure
+   *     a server.
    * @param serverStartup server startup
    */
+  @Deprecated
   public void setServerStartup(List<ServerStartup> serverStartup) {
     this.serverStartup = serverStartup;
-  }
-
-  /**
-   * List of server startup details for selected servers.
-   *
-   * @param serverStartup server startup
-   * @return this
-   */
-  public DomainSpec withServerStartup(List<ServerStartup> serverStartup) {
-    this.serverStartup = serverStartup;
-    return this;
   }
 
   /**
    * Add server startup details for one servers.
    *
    * @param serverStartupItem a single item to add
-   * @return this
    */
-  public DomainSpec addServerStartupItem(ServerStartup serverStartupItem) {
+  @SuppressWarnings("deprecation")
+  void addServerStartupItem(ServerStartup serverStartupItem) {
     if (serverStartup == null) serverStartup = new ArrayList<>();
     serverStartup.add(serverStartupItem);
-    return this;
   }
 
   /**
-   * List of server startup details for selected clusters
+   * List of startup details for selected clusters
    *
+   * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective replica count
+   *     for a cluster, or {@link Domain#getServer(String, String)} to get any other settings
+   *     controlled by a cluster configuration.
    * @return cluster startup
    */
+  @SuppressWarnings({"WeakerAccess", "DeprecatedIsStillUsed"})
+  @Deprecated
+  // public access is needed for yaml processing
   public List<ClusterStartup> getClusterStartup() {
     return clusterStartup;
   }
@@ -617,33 +654,27 @@ public class DomainSpec {
   /**
    * List of server startup details for selected clusters.
    *
+   * @deprecated use {@link
+   *     oracle.kubernetes.weblogic.domain.DomainConfigurator#configureCluster(String)} to configure
+   *     a cluster.
    * @param clusterStartup cluster startup
    */
+  @SuppressWarnings("WeakerAccess")
+  @Deprecated
+  // public access is needed for yaml processing
   public void setClusterStartup(List<ClusterStartup> clusterStartup) {
     this.clusterStartup = clusterStartup;
-  }
-
-  /**
-   * List of server startup details for selected clusters.
-   *
-   * @param clusterStartup cluster startup
-   * @return this
-   */
-  public DomainSpec withClusterStartup(List<ClusterStartup> clusterStartup) {
-    this.clusterStartup = clusterStartup;
-    return this;
   }
 
   /**
    * Add startup details for a cluster
    *
    * @param clusterStartupItem cluster startup
-   * @return this
    */
-  public DomainSpec addClusterStartupItem(ClusterStartup clusterStartupItem) {
+  @SuppressWarnings("deprecation")
+  void addClusterStartupItem(ClusterStartup clusterStartupItem) {
     if (clusterStartup == null) clusterStartup = new ArrayList<>();
     clusterStartup.add(clusterStartupItem);
-    return this;
   }
 
   /**
@@ -651,10 +682,13 @@ public class DomainSpec {
    * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
    * Ignored if startupControl is not AUTO.
    *
+   * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective setting.
    * @return replicas
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   public Integer getReplicas() {
-    return replicas;
+    return replicas != null ? replicas : Domain.DEFAULT_REPLICA_LIMIT;
   }
 
   /**

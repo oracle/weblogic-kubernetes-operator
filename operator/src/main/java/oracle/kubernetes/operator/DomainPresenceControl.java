@@ -7,9 +7,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
 
 class DomainPresenceControl {
 
@@ -20,9 +18,6 @@ class DomainPresenceControl {
     normalizeImagePullPolicy(spec);
     normalizeExportT3Channels(spec);
     normalizeStartupControl(spec);
-    normalizeServerStartup(spec);
-    normalizeClusterStartup(spec);
-    normalizeReplicas(spec);
   }
 
   private static void normalizeImage(DomainSpec spec) {
@@ -45,29 +40,6 @@ class DomainPresenceControl {
   private static void normalizeStartupControl(DomainSpec spec) {
     if (isNotDefined(spec.getStartupControl()))
       spec.setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
-  }
-
-  private static void normalizeServerStartup(DomainSpec spec) {
-    if (spec.getServerStartup() == null) spec.setServerStartup(new ArrayList<>());
-    else
-      for (ServerStartup ss : spec.getServerStartup()) {
-        if (ss.getDesiredState() == null) ss.setDesiredState(WebLogicConstants.RUNNING_STATE);
-        if (ss.getEnv() == null) ss.setEnv(new ArrayList<>());
-      }
-  }
-
-  private static void normalizeClusterStartup(DomainSpec spec) {
-    if (spec.getClusterStartup() == null) spec.setClusterStartup(new ArrayList<>());
-    else
-      for (ClusterStartup cs : spec.getClusterStartup()) {
-        if (cs.getDesiredState() == null) cs.setDesiredState(WebLogicConstants.RUNNING_STATE);
-        if (cs.getEnv() == null) cs.setEnv(new ArrayList<>());
-        if (cs.getReplicas() == null) cs.setReplicas(1);
-      }
-  }
-
-  private static void normalizeReplicas(DomainSpec spec) {
-    if (spec.getReplicas() == null) spec.setReplicas(1);
   }
 
   private static boolean isNotDefined(String value) {

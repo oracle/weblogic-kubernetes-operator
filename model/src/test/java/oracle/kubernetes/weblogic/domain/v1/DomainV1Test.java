@@ -19,6 +19,7 @@ import io.kubernetes.client.models.V1SecretReference;
 import java.util.Arrays;
 import java.util.Collections;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Test;
 
 public class DomainV1Test {
@@ -392,20 +393,47 @@ public class DomainV1Test {
   }
 
   @Test
-  public void whenNoStartupForCluster_useDefaultReplicaCount() {
-    domain.getSpec().setReplicas(5);
-
-    assertThat(domain.getReplicaLimit("nosuchcluster"), equalTo(5));
+  public void whenNoReplicaCountSpecified_useDefaultValue() {
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
   }
 
   @Test
-  public void whenStartupDefinedForCluster_useClusterReplicaCount() {
+  public void whenNoStartupForCluster_useDefaultReplicaCount() {
+    DomainConfigurator.forDomain(domain).setDefaultReplicas(5);
+
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(5));
+  }
+
+  @Test
+  public void afterReplicaCountSetForCluster_canReadIt() {
+    DomainConfigurator.forDomain(domain).configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(5));
+  }
+
+  @Test
+  public void afterReplicaCountSetForCluster_defaultIsUnchanged() {
+    DomainConfigurator.forDomain(domain).configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getReplicaCount("cluster2"), equalTo(1));
+  }
+
+  @Test
+  public void whenStartupDefinedForClusterWithReplicas_useClusterReplicaCount() {
     domain.getSpec().setReplicas(5);
     domain
         .getSpec()
         .addClusterStartupItem(new ClusterStartup().withClusterName("cluster1").withReplicas(3));
 
-    assertThat(domain.getReplicaLimit("cluster1"), equalTo(3));
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(3));
+  }
+
+  @Test
+  public void whenStartupDefinedForClusterWithoutReplicas_useDomainReplicaCount() {
+    domain.getSpec().setReplicas(5);
+    domain.getSpec().addClusterStartupItem(new ClusterStartup().withClusterName("cluster1"));
+
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(5));
   }
 
   @Test

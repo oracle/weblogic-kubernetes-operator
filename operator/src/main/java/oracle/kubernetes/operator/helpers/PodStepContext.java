@@ -666,6 +666,9 @@ public abstract class PodStepContext {
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(vars, "LOG_HOME", LOG_HOME);
+    addEnvVar(
+        vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
+    addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
     hideAdminUserCredentials(vars);
   }
 

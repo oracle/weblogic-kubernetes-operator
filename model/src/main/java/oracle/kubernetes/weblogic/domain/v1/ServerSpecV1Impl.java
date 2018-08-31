@@ -102,21 +102,21 @@ public class ServerSpecV1Impl implements ServerSpec {
   }
 
   @Override
-  public boolean shouldStart(int replicaCount) {
+  public boolean shouldStart(int currentReplicas) {
     switch (domainSpec.getEffectiveStartupControl()) {
       case ALL_STARTUPCONTROL:
         return true;
       case AUTO_STARTUPCONTROL:
-        if (clusterName != null) return replicaCount < getReplicaLimit();
+        if (clusterName != null) return currentReplicas < getReplicaCount();
       case SPECIFIED_STARTUPCONTROL:
-        return isSpecified() && replicaCount < getReplicaLimit();
+        return isSpecified() && currentReplicas < getReplicaCount();
       default:
         return false;
     }
   }
 
-  private int getReplicaLimit() {
-    return clusterStartup == null ? domainSpec.getReplicas() : clusterStartup.getReplicas();
+  private int getReplicaCount() {
+    return domainSpec.getReplicaCount(clusterStartup);
   }
 
   private boolean isSpecified() {

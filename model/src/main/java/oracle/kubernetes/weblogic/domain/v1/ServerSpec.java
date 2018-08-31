@@ -57,8 +57,8 @@ public interface ServerSpec {
   /**
    * Returns true if the specified server should be started, based on the current domain spec.
    *
-   * @param replicaCount the number of replicas already selected for the cluster.
+   * @param currentReplicas the number of replicas already selected for the cluster.
    * @return whether to start the server
    */
-  boolean shouldStart(int replicaCount);
+  boolean shouldStart(int currentReplicas);
 }

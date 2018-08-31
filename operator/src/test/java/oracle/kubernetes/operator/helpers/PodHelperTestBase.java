@@ -66,6 +66,7 @@ import oracle.kubernetes.operator.work.BodyMatcher;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.hamcrest.Description;
@@ -78,8 +79,8 @@ import org.junit.Test;
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase {
   static final String NS = "namespace";
-  static final String DOMAIN_NAME = "domain1";
-  static final String UID = "uid1";
+  private static final String DOMAIN_NAME = "domain1";
+  private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
 
@@ -101,7 +102,9 @@ public abstract class PodHelperTestBase {
   private static final int READ_AND_EXECUTE_MODE = 0555;
 
   final TerminalStep terminalStep = new TerminalStep();
-  final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final Domain domain = createDomain();
+  final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  private final DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
   protected AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   protected List<Memento> mementos = new ArrayList<>();
   protected List<LogRecord> logRecords = new ArrayList<>();
@@ -119,8 +122,12 @@ public abstract class PodHelperTestBase {
     return actualBody.getMetadata().getName();
   }
 
-  public String getServerName() {
+  private String getServerName() {
     return serverName;
+  }
+
+  protected DomainConfigurator getConfigurator() {
+    return configurator;
   }
 
   @Before
@@ -150,14 +157,14 @@ public abstract class PodHelperTestBase {
     testSupport.verifyAllDefinedResponsesInvoked();
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo() {
-    DomainPresenceInfo domainPresenceInfo =
-        new DomainPresenceInfo(
-            new Domain()
-                .withMetadata(new V1ObjectMeta().namespace(NS))
-                .withSpec(createDomainSpec()));
+  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     domainPresenceInfo.setClaims(new V1PersistentVolumeClaimList());
     return domainPresenceInfo;
+  }
+
+  private Domain createDomain() {
+    return new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(createDomainSpec());
   }
 
   @SuppressWarnings("deprecation")
@@ -173,10 +180,6 @@ public abstract class PodHelperTestBase {
 
   void putTuningParameter(String name, String value) {
     TuningParametersStub.namedParameters.put(name, value);
-  }
-
-  AsyncCallTestSupport.CannedResponse expectReadPod(String podName) {
-    return testSupport.createCannedResponse("readPod").withNamespace(NS).withName(podName);
   }
 
   AsyncCallTestSupport.CannedResponse expectCreatePod(BodyMatcher bodyMatcher) {
@@ -309,7 +312,9 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
-            hasEnvVar("LOG_HOME", LOG_HOME)));
+            hasEnvVar("LOG_HOME", LOG_HOME),
+            hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
+            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -530,6 +535,8 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
         .addEnvItem(envItem("LOG_HOME", LOG_HOME))
+        .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
+        .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
