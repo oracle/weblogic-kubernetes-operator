@@ -1870,8 +1870,8 @@ function test_mvn_integration_wercker {
 
     local mstart=`date +%s`
     if [ "$USE_HELM" = "true" ]; then
-      trace "Running mvn -P integration-tests -Phelm-integration-test.  Output in $RESULT_DIR/mvn.out"
-      mvn -P integration-tests -Phelm-integration-test install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+      trace "Running mvn -P integration-tests -P helm-installation-test.  Output in $RESULT_DIR/mvn.out"
+      mvn -P integration-tests -P helm-installation-test install 2>&1 | opt_tee $RESULT_DIR/mvn.out
     else
       trace "Running mvn -P integration-tests.  Output in $RESULT_DIR/mvn.out"
       mvn -P integration-tests install 2>&1 | opt_tee $RESULT_DIR/mvn.out

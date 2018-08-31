@@ -150,7 +150,7 @@ data:
     # Configure the Administration Server
     # ===================================
     cd('/Servers/AdminServer')
-    set('ListenAddress', '{{ .Release.Name }}-{{ .adminServerName }}')
+    set('ListenAddress', '{{ .Release.Name | lower | replace "_" "-"}}-{{ .adminServerName | lower | replace "_" "-"}}')
     set('ListenPort', {{ .adminPort }})
     set('Name', '{{ .adminServerName }}')
 
