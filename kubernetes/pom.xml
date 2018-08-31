@@ -91,7 +91,7 @@
 
   <profiles>
     <profile>
-      <id>helm-integration-test</id>
+      <id>helm-installation-test</id>
       <build>
         <plugins>
           <plugin>
