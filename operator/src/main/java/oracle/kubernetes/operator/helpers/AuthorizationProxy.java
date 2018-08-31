@@ -18,7 +18,6 @@ import java.util.List;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 
 /** Delegate authorization decisions to Kubernetes ABAC and/or RBAC. */
 public class AuthorizationProxy {
@@ -149,9 +148,7 @@ public class AuthorizationProxy {
         prepareSubjectAccessReview(
             principal, groups, operation, resource, resourceName, scope, namespaceName);
     try {
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      subjectAccessReview = factory.create().createSubjectAccessReview(subjectAccessReview);
+      subjectAccessReview = new CallBuilder().createSubjectAccessReview(subjectAccessReview);
     } catch (ApiException e) {
       LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
       LOGGER.exiting(Boolean.FALSE);
@@ -182,8 +179,7 @@ public class AuthorizationProxy {
 
   private Boolean createSelfSubjectAccessReview(V1SelfSubjectAccessReview subjectAccessReview) {
     try {
-      CallBuilderFactory factory = new CallBuilderFactory();
-      subjectAccessReview = factory.create().createSelfSubjectAccessReview(subjectAccessReview);
+      subjectAccessReview = new CallBuilder().createSelfSubjectAccessReview(subjectAccessReview);
       V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
       return subjectAccessReviewStatus.isAllowed();
     } catch (ApiException e) {
@@ -295,9 +291,8 @@ public class AuthorizationProxy {
     V1SelfSubjectRulesReviewSpec spec = new V1SelfSubjectRulesReviewSpec();
     spec.setNamespace(namespace);
     subjectRulesReview.setSpec(spec);
-    CallBuilderFactory factory = new CallBuilderFactory();
     try {
-      return factory.create().createSelfSubjectRulesReview(subjectRulesReview);
+      return new CallBuilder().createSelfSubjectRulesReview(subjectRulesReview);
     } catch (ApiException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return null;
