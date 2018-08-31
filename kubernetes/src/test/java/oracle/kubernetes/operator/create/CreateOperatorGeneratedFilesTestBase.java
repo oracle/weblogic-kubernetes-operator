@@ -372,7 +372,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRole()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-cluster-role")
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-general")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(
@@ -460,7 +460,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRole()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-cluster-role-nonresource")
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-nonresource")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(newPolicyRule().addNonResourceURLsItem("/version/*").addVerbsItem("get"));
@@ -474,7 +474,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
             newClusterRoleBinding()
                 .metadata(
                     newObjectMeta()
-                        .name(getInputs().getNamespace() + "-operator-rolebinding")
+                        .name(
+                            getInputs().getNamespace()
+                                + "-weblogic-operator-clusterrolebinding-general")
                         .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                         .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
                 .addSubjectsItem(
@@ -485,7 +487,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                         .apiGroup(""))
                 .roleRef(
                     newRoleRef()
-                        .name(getInputs().getNamespace() + "-cluster-role")
+                        .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-general")
                         .apiGroup("rbac.authorization.k8s.io"))));
   }
 
@@ -504,7 +506,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-operator-rolebinding-nonresource")
+                .name(
+                    getInputs().getNamespace()
+                        + "-weblogic-operator-clusterrolebinding-nonresource")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(
@@ -515,7 +519,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .apiGroup(""))
         .roleRef(
             newRoleRef()
-                .name(getInputs().getNamespace() + "-cluster-role-nonresource")
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-nonresource")
                 .apiGroup("rbac.authorization.k8s.io"));
   }
 
@@ -530,7 +534,8 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-operator-rolebinding-discovery")
+                .name(
+                    getInputs().getNamespace() + "-weblogic-operator-clusterrolebinding-discovery")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(
@@ -553,7 +558,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRoleBinding()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-operator-rolebinding-auth-delegator")
+                .name(
+                    getInputs().getNamespace()
+                        + "-weblogic-operator-clusterrolebinding-auth-delegator")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addSubjectsItem(
@@ -576,7 +583,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newClusterRole()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-namespace-role")
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-namespace")
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(
@@ -678,7 +685,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return newRoleBinding()
         .metadata(
             newObjectMeta()
-                .name("weblogic-operator-rolebinding")
+                .name("weblogic-operator-rolebinding-namespace")
                 .namespace(namespace)
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
@@ -688,7 +695,10 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .name(getInputs().getServiceAccount())
                 .namespace(getInputs().getNamespace())
                 .apiGroup(""))
-        .roleRef(newRoleRef().name(getInputs().getNamespace() + "-namespace-role").apiGroup(""));
+        .roleRef(
+            newRoleRef()
+                .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-namespace")
+                .apiGroup(""));
   }
 
   @SuppressWarnings("unused")

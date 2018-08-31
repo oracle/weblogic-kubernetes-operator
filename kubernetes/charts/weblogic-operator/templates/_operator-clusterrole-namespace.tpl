@@ -6,7 +6,7 @@
 kind: "ClusterRole"
 apiVersion: "rbac.authorization.k8s.io/v1beta1"
 metadata:
-  name: {{ list .Release.Namespace "namespace-role" | join "-" | quote }}
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
