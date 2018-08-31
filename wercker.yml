@@ -37,9 +37,22 @@ build:
     name: Install pre-reqs
     code: |
       yum -y install tar gzip procps
+  - script:
+    name: Install helm
+    code: |
+      #!/bin/bash
+      echo @@ "Helm installation starts"
+      curl -LO http://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
+      mkdir /tmp/helm
+      tar xzf helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
+      chmod +x /tmp/helm/linux-amd64/helm
+      mv /tmp/helm/linux-amd64/helm /usr/local/bin/
+      rm -rf /tmp/helm
+      echo @@ "Helm is installed."
   - wercker/maven:
     goals: clean install
     version: 3.5.2
+    profiles: helm-installation-test
     cache_repo: true
   - internal/docker-build:
     dockerfile: Dockerfile
