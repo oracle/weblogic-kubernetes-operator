@@ -9,11 +9,11 @@ metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "operator-v1"
-  name: {{ list .Release.Namespace "operator-rolebinding-nonresource" | join "-" | quote }}
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-nonresource" | join "-" | quote }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: "ClusterRole"
-  name: {{ list .Release.Namespace "cluster-role-nonresource" | join "-" | quote }}
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrole-nonresource" | join "-" | quote }}
 subjects:
 - kind: "ServiceAccount"
   apiGroup: ""

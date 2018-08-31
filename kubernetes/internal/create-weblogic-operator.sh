@@ -424,10 +424,10 @@ function createYamlFiles {
 
   # Create the weblogic-operator-security.yaml file
   oprSecurityFile="${oprOutputDir}/weblogic-operator-security.yaml"
-  roleName="${namespace}-namespace-role"
-  roleBinding="weblogic-operator-rolebinding"
-  clusterRole="${namespace}-cluster-role"
-  clusterRoleBinding="${namespace}-operator-rolebinding"
+  roleName="${namespace}-weblogic-operator-clusterrole-namespace"
+  roleBinding="weblogic-operator-rolebinding-namespace"
+  clusterRolePrefix="${namespace}-weblogic-operator-clusterrole-"
+  clusterRoleBindingPrefix="${namespace}-weblogic-operator-clusterrolebinding-"
 
   echo Running the weblogic operator security customization script
   ${genSecPolicyScript} ${serviceAccount} ${namespace} "${targetNamespaces}" -o ${oprSecurityFile}
@@ -525,16 +525,16 @@ function setupSecurity {
     fi
   done
 
-  echo Checking the cluster role ${clusterRole} was created
-  CLUSTERROLE=`kubectl get clusterroles | grep ${clusterRole} | wc | awk ' { print $1; } '`
-  if [ "$CLUSTERROLE" != "2" ]; then
-      fail "The cluster role ${clusterRole} was not created"
+  echo Checking if 3 cluster roles with prefix ${clusterRolePrefix} were created
+  CLUSTERROLE=`kubectl get clusterroles | grep ${clusterRolePrefix} | wc | awk ' { print $1; } '`
+  if [ "$CLUSTERROLE" != "3" ]; then
+      fail "Expected 3 cluster roles with prefix ${clusterRolePrefix}"
   fi
 
-  echo Checking the cluster role bindings ${clusterRoleBinding} were created
-  CLUSTERROLEBINDING=`kubectl get clusterrolebindings | grep ${clusterRoleBinding} | wc | awk ' { print $1; } '`
+  echo Checking if 4 cluster role bindings with prefix ${clusterRoleBindingPrefix} were created
+  CLUSTERROLEBINDING=`kubectl get clusterrolebindings | grep ${clusterRoleBindingPrefix} | wc | awk ' { print $1; } '`
   if [ "$CLUSTERROLEBINDING" != "4" ]; then
-    fail "The cluster role binding ${clusterRoleBinding} was not created"
+    fail "Expected 4 cluster role bindings with prefix ${clusterRoleBindingPrefix}"
   fi
 
 }
