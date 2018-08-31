@@ -9,8 +9,11 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1SubjectAccessReview;
+import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.VersionInfo;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 
 public interface SynchronousCallFactory {
@@ -22,11 +25,21 @@ public interface SynchronousCallFactory {
   V1beta1CustomResourceDefinition createCustomResourceDefinition(
       ApiClient client, V1beta1CustomResourceDefinition body, String pretty) throws ApiException;
 
+  Domain replaceWebLogicOracleV1NamespacedDomain(
+      ApiClient client, String name, String namespace, Domain body, String pretty)
+      throws ApiException;
+
   V1SelfSubjectRulesReview createSelfSubjectRulesReview(
       ApiClient client, V1SelfSubjectRulesReview body, String pretty) throws ApiException;
 
   V1SelfSubjectAccessReview createSelfSubjectAccessReview(
       ApiClient client, V1SelfSubjectAccessReview body, String pretty) throws ApiException;
+
+  V1SubjectAccessReview createSubjectAccessReview(
+      ApiClient client, V1SubjectAccessReview body, String pretty) throws ApiException;
+
+  V1TokenReview createTokenReview(ApiClient client, V1TokenReview body, String pretty)
+      throws ApiException;
 
   V1PersistentVolumeList listPersistentVolumes(
       ApiClient client,

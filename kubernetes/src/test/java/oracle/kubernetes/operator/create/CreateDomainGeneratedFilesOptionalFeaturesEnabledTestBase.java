@@ -10,6 +10,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalO
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNFSVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newStringList;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
+import static oracle.kubernetes.weblogic.domain.DomainConfigurator.forDomain;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.kubernetes.client.models.V1Job;
@@ -65,12 +66,11 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTestBase
   protected Domain getExpectedDomain() {
     Domain expected = super.getExpectedDomain();
     expected.getSpec().withExportT3Channels(newStringList().addElement("T3Channel"));
-    // there is only one server startup item in the base domain config - set its node port:
-    expected
-        .getSpec()
-        .getServerStartup()
-        .get(0)
+    // set the node port for the admin server:
+    forDomain(expected)
+        .configureServer(getInputs().getAdminServerName())
         .withNodePort(Integer.parseInt(getInputs().getAdminNodePort()));
+
     return expected;
   }
 

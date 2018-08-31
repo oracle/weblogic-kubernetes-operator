@@ -17,6 +17,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @SuppressWarnings("deprecation")
 public class Domain {
 
+  public static final int DEFAULT_REPLICA_LIMIT = 1;
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
@@ -165,8 +166,18 @@ public class Domain {
     return new ServerSpecV1Impl(spec, serverName, clusterName);
   }
 
-  int getReplicaLimit(String clusterName) {
-    return spec.getReplicaLimit(clusterName);
+  /**
+   * Returns the number of replicas to start for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getReplicaCount(String clusterName) {
+    return spec.getReplicaCount(clusterName);
+  }
+
+  void setReplicaCount(String clusterName, int replicaLimit) {
+    spec.setReplicaCount(clusterName, replicaLimit);
   }
 
   String getEffectiveStartupControl() {
