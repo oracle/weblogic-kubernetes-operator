@@ -8,15 +8,15 @@ The general design goal is to provide the operator with the minimum amount of pe
 
 | Cluster role | Resources | Verbs | Notes |
 | --- | --- | --- | --- |
-| `weblogic-operator-cluster-role` |	namespaces, persistentvolumes	| get, list, watch | 1 |
+| `NAMESPACE-weblogic-operator-clusterrole-general` |	namespaces, persistentvolumes	| get, list, watch | 1 |
 | |	customresourcedefinitions in API group apiextensions.k8s.io	| get, list, watch, create, update, patch, delete, deletecollection	| |
 | |	domains in API group weblogic.oracle	| get, list, watch, update, patch	| |
 | |	Ingresses in API group extensions	| get, list, watch, create, update, patch, delete, deletecollection	| |
-| `weblogic-operator-cluster-role-nonresource`	| nonResourceURLs: ["/version/*"]	| get |	1 |
-|`weblogic-operator-namespace-role`	| secrets, persistentvolumeclaims	| get, list, watch	| 2 |
+| `NAMESPACE-weblogic-operator-clusterrole-nonresource`	| nonResourceURLs: ["/version/*"]	| get |	1 |
+|`NAMESPACE-weblogic-operator-clusterrole-namespace`	| secrets, persistentvolumeclaims	| get, list, watch	| 2 |
 | |	services, pods, networkpolicies	| get, list, watch, create, update, patch, delete, deletecollection | |
-| `NAMESPACE-operator-rolebinding-discovery`	| system:discovery in API group rbac.authorization.k8s.io | |		1 |
-| `NAMESPACE-operator-rolebinding-auth-delegator`	| system:auth-delegator in API group rbac.authorization.k8s.io	| |	1 |
+| `NAMESPACE-weblogic-operator-clusterrolebinding-discovery`	| system:discovery in API group rbac.authorization.k8s.io | |		1 |
+| `NAMESPACE-weblogic-operator-clusterrolebinding-auth-delegator`	| system:auth-delegator in API group rbac.authorization.k8s.io	| |	1 |
 
 **Notes**:
 

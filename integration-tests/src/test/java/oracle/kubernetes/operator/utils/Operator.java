@@ -47,7 +47,12 @@ public class Operator {
     initialize();
     generateInputYaml();
     if (createSharedOperatorResources) {
-      createSharedOperatorResources();
+      // This has stopped working after converting clusterRoles to per-Operator
+      // instead of shared. It isn't needed yet for integration testing
+      // as it only sets up kibana/elasticSearch, which don't have integration tests.
+      // Note that the sharing of kibana/elasticSearch will be revisited in 2.0
+      // via 'OWLS-68160 Extract ElasticStack, Kibana from operator Helm chart'
+      // createSharedOperatorResources();
     }
     callHelmInstall();
   }
