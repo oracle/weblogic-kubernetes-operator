@@ -13,6 +13,6 @@
 {{- range $key := $args.domainsNamespacesList -}}
 {{-   $ignore := set $args "domainsNamespace" $key -}}
 {{/*- include "operator.domainConfigMap" $args currently the GA operator runtime does this -*/}}
-{{-   include "operator.operatorRoleBinding" $args -}}
+{{-   include "operator.operatorRoleBindingNamespace" $args -}}
 {{- end }}
 {{- end }}
