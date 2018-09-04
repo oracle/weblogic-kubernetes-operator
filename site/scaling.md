@@ -354,7 +354,7 @@ token=`echo ${enc_token} | base64 --decode`
 #echo "token [${token}]"
   
 # Retrieve SSL certificate for the external REST endpoint from the generated yaml file for the Operator  
-operator_cert_data=`grep externalOperatorCert ${domdir}/weblogic-operators/${ns}/weblogic-operator.yaml | awk '{ print $2 }'`
+operator_cert_data=`kubectl get cm -n ${ns} weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'`
 #echo "operator_cert_data [${operator_cert_data}]"
   
 # clean up any temporary files
