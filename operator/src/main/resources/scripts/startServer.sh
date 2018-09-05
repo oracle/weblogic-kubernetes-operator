@@ -4,6 +4,32 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
+#
+# startServer.sh
+# This is the script WebLogic Operator WLS Pods use to start their WL Server.
+#
+
+#
+# Helper fn for trace output
+# Date reported in same format as operator-log.  01-22-2018T21:49:01
+# Args $* - Information to echo
+#
+function trace {
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [WL Start Script]: ""$@"
+}
+
+#
+# Helper fn to create a folder
+# Arg $1 - path of folder to create
+#
+function createFolder {
+  mkdir -m 777 -p $1
+  if [ ! -d $1 ]; then
+    trace "Unable to create folder $1"
+    exit 1
+  fi
+}
+
 domain_uid=${DOMAIN_UID?}
 server_name=${SERVER_NAME?}
 domain_name=${DOMAIN_NAME?}
@@ -14,135 +40,110 @@ log_home=${LOG_HOME?}
 nodemgr_home=${NODEMGR_HOME?}
 service_name=${SERVICE_NAME?}
 admin_hostname=${AS_SERVICE_NAME?}
+user_mem_args=${USER_MEM_ARGS}
+java_options=${JAVA_OPTIONS}
 
-echo "Starting WebLogic Server '${server_name}'."
+trace "Starting WebLogic Server '${server_name}'."
 
-echo "Inputs: "
 for varname in domain_uid \
-               server_name \
-               admin_name \
-               admin_port \
                domain_name \
                domain_home \
+               admin_name \
+               admin_port \
+               admin_hostname \
+               server_name \
+               service_name \
                log_home \
                nodemgr_home \
-               service_name \
-               admin_hostname \
+               user_mem_args \
+               java_options \
                ;
 do
-  echo -n " $varname=${!varname}"
+  trace "  Input $varname='${!varname}'"
 done
-echo ""
+trace ""
 
-#
-# Create a folder
-# $1 - path of folder to create
-function createFolder {
-  mkdir -m 777 -p $1
-  if [ ! -d $1 ]; then
-    echo "Unable to create folder $1"
-    exit 1
-  fi
-}
 
-# Function to create server specific scripts and properties (e.g startup.properties, etc)
-# $1 - Domain UID
-# $2 - Server Name
-# $3 - Domain Home
-# $4 - Admin Server Hostname (only passed for managed servers)
-# $5 - Admin Server port (only passed for managed servers)
-function createServerScriptsProperties() {
+wlDataDir=${domain_home}/servers/${server_name}/data/nodemanager
+wlStateFile=${wlDataDir}/${server_name}.state
+wlStartPropFile=${wlDataDir}/startup.properties
+nmLogFile="${log_home}/nodemanager-${server_name}.log"
+nmPropFile=${nodemgr_home}/nodemanager.properties
 
-  # Create nodemanager home for the server
-  createFolder ${nodemgr_home}
-  cp $3/nodemanager/nodemanager.domains ${nodemgr_home}
-  cp $3/bin/startNodeManager.sh ${nodemgr_home}
+# Check for stale state file and remove if found
+# (The liveness probe checks this file)
 
-  # Edit the start nodemanager script to use the home for the server
-  sed -i -e "s:$3/nodemanager:${nodemgr_home}:g" ${nodemgr_home}/startNodeManager.sh
-
-  # Create startup.properties file
-  datadir=$3/servers/$2/data/nodemanager
-  stateFile=${datadir}/$2.state
-  startProp=${datadir}/startup.properties
-  if [ -f "$startProp" ]; then
-    echo "startup.properties already exists"
-    return 0
-  fi
-
-  createFolder ${datadir}
-  echo "# Server startup properties" > ${startProp}
-  echo "AutoRestart=true" >> ${startProp}
-  if [ -n "$4" ]; then
-    echo "AdminURL=http\://$4\:$5" >> ${startProp}
-  fi
-  echo "RestartMax=2" >> ${startProp}
-  echo "RotateLogOnStartup=false" >> ${startProp}
-  echo "RotationType=bySize" >> ${startProp}
-  echo "RotationTimeStart=00\:00" >> ${startProp}
-  echo "RotatedFileCount=100" >> ${startProp}
-  echo "RestartDelaySeconds=0" >> ${startProp}
-  echo "FileSizeKB=5000" >> ${startProp}
-  echo "FileTimeSpanFactor=3600000" >> ${startProp}
-  echo "RestartInterval=3600" >> ${startProp}
-  echo "NumberOfFilesLimited=true" >> ${startProp}
-  echo "FileTimeSpan=24" >> ${startProp}
-  echo "NMHostName=$service_name" >> ${startProp}
-}
-
-echo "debug arguments are $1 $2 $3 $4 $5 $admin_hostname $service_name"
-
-# Check for stale state file and remove if found"
-if [ -f "$stateFile" ]; then
-  echo "Removing stale file $stateFile"
-  rm ${stateFile}
+if [ -f "$wlStateFile" ]; then
+  trace "Removing stale file $wlStateFile"
+  rm ${wlStateFile}
 fi
 
 # Create nodemanager home directory that is local to the k8s node
-mkdir -p ${nodemgr_home}
-cp ${domain_home}/nodemanager/* ${nodemgr_home}
 
-nm_log="${log_home}/nodemanager-${server_name}.log"
+createFolder ${nodemgr_home}
+cp ${domain_home}/nodemanager/* ${nodemgr_home}
+cp ${domain_home}/bin/startNodeManager.sh ${nodemgr_home}
+
+# Edit the start nodemanager script to use the home for the server
+
+sed -i -e "s:${domain_home}/nodemanager:${nodemgr_home}:g" ${nodemgr_home}/startNodeManager.sh
 
 # Edit the nodemanager properties file to use the home for the server
-sed -i -e "s:DomainsFile=.*:DomainsFile=${nodemgr_home}/nodemanager.domains:g" ${nodemgr_home}/nodemanager.properties
-sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nodemgr_home}:g" ${nodemgr_home}/nodemanager.properties
-sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" ${nodemgr_home}/nodemanager.properties
-sed -i -e "s:LogFile=.*:LogFile=${nm_log}:g" ${nodemgr_home}/nodemanager.properties
 
-export JAVA_PROPERTIES="-DLogFile=${nm_log} -DNodeManagerHome=${nodemgr_home}"
+sed -i -e "s:DomainsFile=.*:DomainsFile=${nodemgr_home}/nodemanager.domains:g" ${nmPropFile}
+sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nodemgr_home}:g" ${nmPropFile}
+sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" ${nmPropFile}
+sed -i -e "s:LogFile=.*:LogFile=${nmLogFile}:g" ${nmPropFile}
 
-# Create startup.properties
-echo "Create startup.properties"
+# Init JAVA_PROPERTIES used by startNodeManager script
+
+export JAVA_PROPERTIES="-DLogFile=${nmLogFile} -DNodeManagerHome=${nodemgr_home}"
+
+# Create the startup.properties used when WebLogic Server is started
+
+trace "Create startup.properties"
+createFolder ${wlDataDir}
+echo "# Server startup properties" > ${wlStartPropFile}
+echo "AutoRestart=true" >> ${wlStartPropFile}
 if [ ! "$admin_name" = "$server_name" ]; then
-  echo "this is managed server"
-  createServerScriptsProperties $domain_uid $server_name $domain_home $admin_hostname $admin_port
-else
-  echo "this is admin server"
-  createServerScriptsProperties $domain_uid $server_name $domain_home
+  echo "AdminURL=http\://${admin_hostname}\:${admin_port}" >> ${wlStartPropFile}
 fi
+echo "RestartMax=2" >> ${wlStartPropFile}
+echo "RotateLogOnStartup=false" >> ${wlStartPropFile}
+echo "RotationType=bySize" >> ${wlStartPropFile}
+echo "RotationTimeStart=00\:00" >> ${wlStartPropFile}
+echo "RotatedFileCount=100" >> ${wlStartPropFile}
+echo "RestartDelaySeconds=0" >> ${wlStartPropFile}
+echo "FileSizeKB=5000" >> ${wlStartPropFile}
+echo "FileTimeSpanFactor=3600000" >> ${wlStartPropFile}
+echo "RestartInterval=3600" >> ${wlStartPropFile}
+echo "NumberOfFilesLimited=true" >> ${wlStartPropFile}
+echo "FileTimeSpan=24" >> ${wlStartPropFile}
+echo "NMHostName=${service_name}" >> ${wlStartPropFile}
+trace "Update JVM arguments"
+echo "Arguments=${user_mem_args} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap ${java_options}" >> ${wlStartPropFile}
 
-echo "Start the nodemanager"
-rm -f ${nm_log}
+# Start the nodemanager and wait until it's ready
+
+trace "Start the nodemanager and wait for it to initialize"
+rm -f ${nmLogFile}
 . ${nodemgr_home}/startNodeManager.sh &
 
-echo "Allow the nodemanager some time to start before attempting to connect"
 wait_count=0
 while [ $wait_count -lt 15 ]; do
   sleep 1
-  if [ -e ${nm_log} ] && [ `grep -c "Plain socket listener started" ${nm_log}` -gt 0 ]; then
+  if [ -e ${nmLogFile} ] && [ `grep -c "Plain socket listener started" ${nmLogFile}` -gt 0 ]; then
     break
   fi
   wait_count=$((wait_count + 1))
 done
-echo "Finished waiting for the nodemanager to start"
+trace "Finished waiting for the nodemanager to start"
 
-echo "Update JVM arguments"
-echo "Arguments=${USER_MEM_ARGS} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap ${JAVA_OPTIONS}" >> ${startProp}
+# Start the server
 
-echo "Start the server"
+trace "Start the WebLogic Server via the nodemanager"
 wlst.sh -skipWLSModuleScanning /weblogic-operator/scripts/start-server.py
 
-echo "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
 while true; do sleep 60; done
 
