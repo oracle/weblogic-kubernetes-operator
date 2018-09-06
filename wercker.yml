@@ -29,10 +29,8 @@ build:
     code: |
       echo "Building Oracle WebLogic Server Kubernetes Operator..."
       echo "The branch and commit id are $WERCKER_GIT_BRANCH, $WERCKER_GIT_COMMIT"
+      export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR="1.1"
-      fi
   - script:
     name: Install pre-reqs
     code: |
@@ -58,6 +56,7 @@ build:
     dockerfile: Dockerfile
     image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
     no-cache: true
+    build-args: VERSION=$JAR_VERSION
     registry-auth-config: |
       {
         "https://index.docker.io/v1/": {
@@ -204,9 +203,6 @@ integration-test:
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR="1.1"
-      fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
       export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
@@ -312,9 +308,6 @@ integration-test-java:
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
-      if [ "$IMAGE_TAG_OPERATOR" = "master" ]; then
-        export IMAGE_TAG_OPERATOR="1.1"
-      fi
       export IMAGE_PULL_POLICY_OPERATOR="Always"
       export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
@@ -381,6 +374,7 @@ promote-image:
     password: $DOCKER_PASSWORD
     repository: oracle/weblogic-kubernetes-operator
     tag: $IMAGE_TAG_OPERATOR
+    build-args: VERSION=$VERSION
 
 dev:
   steps:
