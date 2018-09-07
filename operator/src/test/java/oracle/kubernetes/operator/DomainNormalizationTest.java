@@ -63,7 +63,7 @@ public class DomainNormalizationTest {
     assertThat(domainSpec.getExportT3Channels(), empty());
     assertThat(
         domainSpec.getStartupControl(), equalTo(StartupControlConstants.AUTO_STARTUPCONTROL));
-    assertThat(domainSpec.getReplicaCount("nocluster"), equalTo(1));
+    assertThat(domain.getReplicaCount("nocluster"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
   }
 
   @Test

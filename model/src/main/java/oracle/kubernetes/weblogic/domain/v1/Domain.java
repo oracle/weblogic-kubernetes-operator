@@ -17,7 +17,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @SuppressWarnings("deprecation")
 public class Domain {
 
-  public static final int DEFAULT_REPLICA_LIMIT = 1;
+  /** The default number of replicas for a cluster. */
+  public static final int DEFAULT_REPLICA_LIMIT = 2;
+
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
@@ -159,11 +161,11 @@ public class Domain {
   }
 
   public ServerSpec getAdminServerSpec() {
-    return spec.getAdminServerSpec();
+    return spec.getEffectiveConfigurationFactory(apiVersion).getAdminServerSpec();
   }
 
   public ServerSpec getServer(String serverName, String clusterName) {
-    return new ServerSpecV1Impl(spec, serverName, clusterName);
+    return spec.getEffectiveConfigurationFactory(apiVersion).getServerSpec(serverName, clusterName);
   }
 
   /**
@@ -173,11 +175,11 @@ public class Domain {
    * @return the result of applying any configurations for this value
    */
   public int getReplicaCount(String clusterName) {
-    return spec.getReplicaCount(clusterName);
+    return spec.getEffectiveConfigurationFactory(apiVersion).getReplicaCount(clusterName);
   }
 
-  void setReplicaCount(String clusterName, int replicaLimit) {
-    spec.setReplicaCount(clusterName, replicaLimit);
+  public void setReplicaCount(String clusterName, int replicaLimit) {
+    spec.getEffectiveConfigurationFactory(apiVersion).setReplicaCount(clusterName, replicaLimit);
   }
 
   String getEffectiveStartupControl() {
@@ -231,18 +233,6 @@ public class Domain {
    */
   public void setStatus(DomainStatus status) {
     this.status = status;
-  }
-
-  /**
-   * DomainStatus represents information about the status of a domain. Status may trail the actual
-   * state of a system.
-   *
-   * @param status Status
-   * @return this
-   */
-  public Domain withStatus(DomainStatus status) {
-    this.status = status;
-    return this;
   }
 
   /**

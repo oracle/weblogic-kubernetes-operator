@@ -1,54 +1,54 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.weblogic.domain.v1;
 
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.StartupControlConstants.ALL_STARTUPCONTROL;
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.operator.StartupControlConstants.SPECIFIED_STARTUPCONTROL;
 
 import io.kubernetes.client.models.V1EnvVar;
-import java.util.ArrayList;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import oracle.kubernetes.operator.KubernetesConstants;
 
-public class ServerSpecV1Impl implements ServerSpec {
-  private static final String ADMIN_MODE_FLAG = "-Dweblogic.management.startupMode=ADMIN";
+/** The effective configuration for a server configured by the version 1 domain model. */
+public class ServerSpecV1Impl extends ServerSpec {
   private DomainSpec domainSpec;
   private final String clusterName;
+
+  @SuppressWarnings("deprecation")
   private ServerStartup serverStartup;
+
+  @SuppressWarnings("deprecation")
   private ClusterStartup clusterStartup;
 
-  ServerSpecV1Impl(DomainSpec domainSpec, String serverName, String clusterName) {
+  @SuppressWarnings("deprecation")
+  ServerSpecV1Impl(
+      DomainSpec domainSpec,
+      String clusterName,
+      ServerStartup serverStartup,
+      ClusterStartup clusterStartup) {
     this.domainSpec = domainSpec;
     this.clusterName = clusterName;
-    serverStartup = domainSpec.getServerStartup(serverName);
-    clusterStartup = domainSpec.getClusterStartup(clusterName);
+    this.serverStartup = serverStartup;
+    this.clusterStartup = clusterStartup;
+  }
+
+  protected String getConfiguredImage() {
+    return domainSpec.getImage();
   }
 
   @Override
-  public ServerStartup getServerStartup() {
-    return serverStartup;
+  protected String getConfiguredImagePullPolicy() {
+    return domainSpec.getImagePullPolicy();
   }
 
   @Override
-  public String getImage() {
-    return Optional.ofNullable(domainSpec.getImage()).orElse(DEFAULT_IMAGE);
-  }
-
-  @Override
-  public String getImagePullPolicy() {
-    return Optional.ofNullable(domainSpec.getImagePullPolicy()).orElse(getInferredPullPolicy());
-  }
-
-  private boolean useLatestImage() {
-    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
-  }
-
-  private String getInferredPullPolicy() {
-    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+  public V1LocalObjectReference getImagePullSecret() {
+    return domainSpec.getImagePullSecret();
   }
 
   @Override
@@ -58,32 +58,6 @@ public class ServerSpecV1Impl implements ServerSpec {
             ? serverStartup.getEnv()
             : clusterStartup != null ? clusterStartup.getEnv() : Collections.emptyList();
     return withStateAdjustments(vars);
-  }
-
-  private List<V1EnvVar> withStateAdjustments(List<V1EnvVar> env) {
-    if (!getDesiredState().equals("ADMIN")) {
-      return env;
-    } else {
-      List<V1EnvVar> adjustedEnv = new ArrayList<>(env);
-      V1EnvVar var = getOrCreateVar(adjustedEnv, "JAVA_OPTIONS");
-      var.setValue(prepend(var.getValue(), ADMIN_MODE_FLAG));
-      return adjustedEnv;
-    }
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1EnvVar getOrCreateVar(List<V1EnvVar> env, String name) {
-    for (V1EnvVar var : env) {
-      if (var.getName().equals(name)) return var;
-    }
-    V1EnvVar var = new V1EnvVar().name(name);
-    env.add(var);
-    return var;
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private String prepend(String value, String prefix) {
-    return value == null ? prefix : value.contains(prefix) ? value : prefix + ' ' + value;
   }
 
   @Override

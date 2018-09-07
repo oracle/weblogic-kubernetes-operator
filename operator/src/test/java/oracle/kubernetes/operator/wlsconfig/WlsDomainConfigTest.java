@@ -162,7 +162,7 @@ public class WlsDomainConfigTest {
     configureCluster("DockerCluster").withReplicas(3);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsDomainConfig.validate(domainSpec, suggestedConfigUpdates);
+    wlsDomainConfig.validate(domain, suggestedConfigUpdates);
 
     assertEquals(1, suggestedConfigUpdates.size());
     WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
@@ -309,7 +309,7 @@ public class WlsDomainConfigTest {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     configureCluster("DockerCluster").withReplicas(10);
 
-    wlsDomainConfig.validate(domainSpec);
+    wlsDomainConfig.validate(domain);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
   }
 
@@ -318,7 +318,7 @@ public class WlsDomainConfigTest {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     configureCluster("DockerCluster").withReplicas(5);
 
-    wlsDomainConfig.validate(domainSpec);
+    wlsDomainConfig.validate(domain);
     assertTrue(logRecords.isEmpty());
   }
 
@@ -327,7 +327,7 @@ public class WlsDomainConfigTest {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     configureCluster("DockerCluster2").withReplicas(3);
 
-    wlsDomainConfig.validate(domainSpec);
+    wlsDomainConfig.validate(domain);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
   }
 
@@ -337,7 +337,7 @@ public class WlsDomainConfigTest {
     configureCluster("DockerCluster").withReplicas(10);
     configureCluster("DockerCluster2").withReplicas(10);
 
-    wlsDomainConfig.validate(domainSpec);
+    wlsDomainConfig.validate(domain);
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
     assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
   }
@@ -348,7 +348,7 @@ public class WlsDomainConfigTest {
     configureDefaultReplicas(1);
     configureCluster("DockerCluster2").withReplicas(2);
 
-    wlsDomainConfig.validate(domainSpec);
+    wlsDomainConfig.validate(domain);
     assertTrue(logRecords.isEmpty());
   }
 
@@ -362,7 +362,7 @@ public class WlsDomainConfigTest {
     configureDefaultReplicas(10);
     configureCluster("DockerCluster").withReplicas(10);
 
-    wlsDomainConfig.validate(domainSpec);
+    wlsDomainConfig.validate(domain);
     assertTrue(logRecords.isEmpty());
   }
 
