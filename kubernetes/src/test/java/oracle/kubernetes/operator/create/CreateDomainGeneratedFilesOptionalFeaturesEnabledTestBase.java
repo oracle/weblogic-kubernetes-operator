@@ -68,7 +68,7 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTestBase
     expected.getSpec().withExportT3Channels(newStringList().addElement("T3Channel"));
     // set the node port for the admin server:
     forDomain(expected)
-        .configureServer(getInputs().getAdminServerName())
+        .configureAdminServer()
         .withNodePort(Integer.parseInt(getInputs().getAdminNodePort()));
 
     return expected;

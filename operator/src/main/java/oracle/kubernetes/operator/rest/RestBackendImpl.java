@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import static oracle.kubernetes.weblogic.domain.DomainConfigurator.forDomain;
-
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
@@ -67,8 +65,7 @@ public class RestBackendImpl implements RestBackend {
    * @param targetNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
    *     operator manages.
    */
-  public RestBackendImpl(
-      String principal, String accessToken, Collection<String> targetNamespaces) {
+  RestBackendImpl(String principal, String accessToken, Collection<String> targetNamespaces) {
     LOGGER.entering(principal, targetNamespaces);
     this.principal = principal;
     userInfo = authenticate(accessToken);
@@ -83,7 +80,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void authorize(String domainUID, Operation operation) {
     LOGGER.entering(domainUID, operation);
-    boolean authorized = false;
+    boolean authorized;
     if (domainUID == null) {
       authorized =
           atz.check(
@@ -172,7 +169,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private List<Domain> getDomainsList() {
-    Collection<List<Domain>> c = new ArrayList<List<Domain>>();
+    Collection<List<Domain>> c = new ArrayList<>();
     try {
       for (String ns : targetNamespaces) {
         DomainList dl = new CallBuilder().listDomain(ns);
@@ -191,9 +188,8 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
-    boolean result = false;
     authorize(null, Operation.list);
-    result = getDomainUIDs().contains(domainUID);
+    boolean result = getDomainUIDs().contains(domainUID);
     LOGGER.exiting(result);
     return result;
   }
@@ -260,7 +256,7 @@ public class RestBackendImpl implements RestBackend {
   private void updateReplicasForDomain(
       String namespace, Domain domain, String cluster, int newReplicaCount) {
     if (newReplicaCount != domain.getReplicaCount(cluster)) {
-      forDomain(domain).configureCluster(cluster).withReplicas(newReplicaCount);
+      domain.setReplicaCount(cluster, newReplicaCount);
       overwriteDomain(namespace, domain);
     }
   }
