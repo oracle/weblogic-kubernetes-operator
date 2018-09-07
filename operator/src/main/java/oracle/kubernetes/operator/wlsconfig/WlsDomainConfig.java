@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.WlsDomain;
 
 /** Contains a snapshot of configuration for a WebLogic Domain */
@@ -294,29 +294,28 @@ public class WlsDomainConfig implements WlsDomain {
     return null;
   }
 
-  public boolean validate(DomainSpec domainSpec) {
-    return validate(domainSpec, null);
+  public boolean validate(Domain domain) {
+    return validate(domain, null);
   }
 
   /**
    * Checks the provided k8s domain spec to see if it is consistent with the configuration of the
    * WLS domain. The method also logs warning if inconsistent WLS configurations are found.
    *
-   * @param domainSpec The DomainSpec to be validated against the WLS configuration
+   * @param domain The Domain to be validated against the WLS configuration
    * @param suggestedConfigUpdates a List of ConfigUpdate objects containing suggested WebLogic
    *     config updates that are necessary to make the WebLogic domain consistent with the
    *     DomainSpec. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
-  public boolean validate(DomainSpec domainSpec, List<ConfigUpdate> suggestedConfigUpdates) {
-
+  public boolean validate(Domain domain, List<ConfigUpdate> suggestedConfigUpdates) {
     LOGGER.entering();
 
     boolean updated = false;
     for (String clusterName : getClusterNames()) {
       WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
       if (wlsClusterConfig.getMaxClusterSize() > 0) {
-        int proposedReplicas = domainSpec.getReplicaCount(clusterName);
+        int proposedReplicas = domain.getReplicaCount(clusterName);
         int replicaLimit = getReplicaLimit(clusterName);
         if (proposedReplicas > replicaLimit) {
           LOGGER.warning(
@@ -334,8 +333,7 @@ public class WlsDomainConfig implements WlsDomain {
       if (clusterConfig.getMaxClusterSize() == 0) {
         LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
       } else {
-        clusterConfig.validateCluster(
-            domainSpec.getReplicaCount(clusterName), suggestedConfigUpdates);
+        clusterConfig.validateCluster(domain.getReplicaCount(clusterName), suggestedConfigUpdates);
       }
     }
 

@@ -22,7 +22,6 @@ import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Status;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -229,7 +228,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenDomainHasEnvironmentItems_createAdminPodStartupWithThem() {
-    configureServer(ADMIN_SERVER)
+    configureAdminServer()
         .withEnvironmentVariable("item1", "value1")
         .withEnvironmentVariable("item2", "value2");
 
@@ -238,13 +237,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         allOf(hasEnvVar("item1", "value1"), hasEnvVar("item2", "value2")));
   }
 
-  private ServerConfigurator configureServer(String serverName) {
-    return getConfigurator().configureServer(serverName);
+  private ServerConfigurator configureAdminServer() {
+    return getConfigurator().configureAdminServer();
   }
 
   @Test
   public void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
-    configureServer(ADMIN_SERVER)
+    configureAdminServer()
         .withEnvironmentVariable("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
         .withEnvironmentVariable("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)");
 
@@ -278,6 +277,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   List<String> createStartCommand() {
-    return Arrays.asList("/weblogic-operator/scripts/startServer.sh");
+    return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
   }
 }
