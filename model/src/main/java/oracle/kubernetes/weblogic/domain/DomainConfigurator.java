@@ -4,12 +4,15 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainV1Configurator;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
+ * Note that the configurator uses a predefined domain schema, and should only be used for testing.
+ * Using it in the runtime runs the risk of corrupting the domain.
  */
 public interface DomainConfigurator {
 
@@ -39,7 +42,44 @@ public interface DomainConfigurator {
    */
   void setDefaultReplicas(int replicas);
 
+  /**
+   * Sets the default image for the domain.
+   *
+   * @param image the name of the image
+   */
+  void setDefaultImage(String image);
+
+  /**
+   * Sets the default image pull policy for the domain.
+   *
+   * @param imagepullpolicy the new policy
+   */
+  void setDefaultImagePullPolicy(String imagepullpolicy);
+
+  /**
+   * Sets the default image pull secret for the domain
+   *
+   * @param secretReference the object referring to the secret
+   */
+  void setDefaultImagePullSecret(V1LocalObjectReference secretReference);
+
   DomainConfigurator setStartupControl(String startupControl);
+
+  /**
+   * Add an environment variable to the domain
+   *
+   * @param name variable name
+   * @param value value
+   * @return this object
+   */
+  DomainConfigurator withEnvironmentVariable(String name, String value);
+
+  /**
+   * Adds an admin server configuration to the domain, if not already present.
+   *
+   * @return an object to add additional configurations
+   */
+  ServerConfigurator configureAdminServer();
 
   /**
    * Adds a default server configuration to the domain, if not already present.

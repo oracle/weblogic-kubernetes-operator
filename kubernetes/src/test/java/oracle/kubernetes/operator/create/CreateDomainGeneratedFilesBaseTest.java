@@ -442,7 +442,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
 
     DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
     configurator
-        .configureServer(getInputs().getAdminServerName())
+        .configureAdminServer()
         .withDesiredState("RUNNING")
         .withEnvironmentVariable("JAVA_OPTIONS", getInputs().getJavaOptions())
         .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m ");

@@ -4,10 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import io.kubernetes.client.models.V1LocalObjectReference;
 import java.util.Collections;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
@@ -40,9 +42,34 @@ public class DomainV1Configurator implements DomainConfigurator {
   }
 
   @Override
+  public void setDefaultImage(String image) {
+    domain.getSpec().setImage(image);
+  }
+
+  @Override
+  public void setDefaultImagePullPolicy(String imagepullpolicy) {
+    domain.getSpec().setImagePullPolicy(imagepullpolicy);
+  }
+
+  @Override
+  public void setDefaultImagePullSecret(V1LocalObjectReference secretReference) {
+    domain.getSpec().setImagePullSecret(secretReference);
+  }
+
+  @Override
   public DomainConfigurator setStartupControl(String startupControl) {
     domain.getSpec().setStartupControl(startupControl);
     return this;
+  }
+
+  @Override
+  public DomainConfigurator withEnvironmentVariable(String name, String value) {
+    throw new ConfigurationNotSupportedException("domain", "env");
+  }
+
+  @Override
+  public ServerConfigurator configureAdminServer() {
+    return configureServer(domain.getAsName());
   }
 
   @Override
@@ -79,6 +106,7 @@ public class DomainV1Configurator implements DomainConfigurator {
     return startup;
   }
 
+  @SuppressWarnings("deprecation")
   class ServerStartupConfigurator implements ServerConfigurator {
     private ServerStartup serverStartup;
 
@@ -103,8 +131,29 @@ public class DomainV1Configurator implements DomainConfigurator {
       serverStartup.withEnvironmentVariable(name, value);
       return this;
     }
+
+    @Override
+    public ServerConfigurator withImage(String imageName) {
+      throw new ConfigurationNotSupportedException("server", "image");
+    }
+
+    @Override
+    public ServerConfigurator withImagePullPolicy(String policy) {
+      throw new ConfigurationNotSupportedException("server", "imagePullPolicy");
+    }
+
+    @Override
+    public ServerConfigurator withImagePullSecret(String secretName) {
+      throw new ConfigurationNotSupportedException("server", "imagePullSecret");
+    }
+
+    @Override
+    public ServerConfigurator withServerStartState(String state) {
+      return withDesiredState(state);
+    }
   }
 
+  @SuppressWarnings("deprecation")
   class ClusterStartupConfigurator implements ClusterConfigurator {
     private ClusterStartup clusterStartup;
 
@@ -122,6 +171,26 @@ public class DomainV1Configurator implements DomainConfigurator {
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       clusterStartup.withEnvironmentVariable(name, value);
       return this;
+    }
+
+    @Override
+    public ClusterConfigurator withImage(String imageName) {
+      throw new ConfigurationNotSupportedException("cluster", "image");
+    }
+
+    @Override
+    public ClusterConfigurator withImagePullPolicy(String policy) {
+      throw new ConfigurationNotSupportedException("cluster", "imagePullPolicy");
+    }
+
+    @Override
+    public ClusterConfigurator withImagePullSecret(String secretName) {
+      throw new ConfigurationNotSupportedException("cluster", "imagePullSecret");
+    }
+
+    @Override
+    public ClusterConfigurator withServerStartState(String state) {
+      return withDesiredState(state);
     }
 
     @Override

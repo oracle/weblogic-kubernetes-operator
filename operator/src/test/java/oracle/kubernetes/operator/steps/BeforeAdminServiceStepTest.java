@@ -1,3 +1,7 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.steps;
 
 import static oracle.kubernetes.operator.ProcessingConstants.NODE_PORT;
@@ -81,7 +85,7 @@ public class BeforeAdminServiceStepTest {
 
   @Test
   public void whenAdminServerNodePortDefined_packetContainsItAfterProcessing() {
-    configurator.configureServer(ADMIN_NAME).withNodePort(NODE_PORT_NUM);
+    configurator.configureAdminServer().withNodePort(NODE_PORT_NUM);
     Packet packet = invokeStep();
 
     assertThat(packet, hasEntry(NODE_PORT, NODE_PORT_NUM));
