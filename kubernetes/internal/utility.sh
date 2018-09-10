@@ -175,13 +175,33 @@ function toLower {
 
 #
 # Function to check if a value is lowercase
-# $1 - value to check
-# $2 - name of object being checked
+# $1 - name of object being checked
+# $2 - value to check
 function validateLowerCase {
   local lcVal=$(toLower $2)
   if [ "$lcVal" != "$2" ]; then
     validationError "The value of $1 must be lowercase: $2"
   fi
+}
+
+# 
+# Function to lowercase a value and make it a legal DNS1123 name 
+# $1 - value to convert to DNS legal name
+function toDNS1123Legal { 
+  local val=`echo $1 | tr "[:upper:]" "[:lower:]"` 
+  val=${val//"_"/"-"} 
+  echo "$val" 
+}
+
+# 
+# Function to check if a value is lowercase and legal DNS name 
+# $1 - name of object being checked 
+# $2 - value to check 
+function validateDNS1123LegalName { 
+  local val=$(toDNS1123Legal $2) 
+  if [ "$val" != "$2" ]; then 
+    validationError "The value of $1 contains invalid charaters (uppercase letters or "_"): $2" 
+  fi 
 }
 
 #

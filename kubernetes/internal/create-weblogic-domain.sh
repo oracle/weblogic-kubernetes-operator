@@ -118,10 +118,25 @@ function validateVersion {
 }
 
 #
-# Function to ensure the domain uid is lowercase
+# Function to ensure the domain uid is legal DNS name
 #
 function validateDomainUid {
   validateLowerCase "domainUID" ${domainUID}
+  validateDNS1123LegalName domainUID ${domainUID}
+}
+
+#
+# Function to ensure the adminServerName is legal DNS name
+#
+function validateAdminServerName {
+  validateDNS1123LegalName adminServerName ${adminServerName}
+}
+
+#
+# Function to ensure the managedServerNameBase is legal DNS name
+#
+function validateManagedServerNameBase {
+  validateDNS1123LegalName managedServerNameBase ${managedServerNameBase}
 }
 
 #
@@ -132,10 +147,11 @@ function validateNamespace {
 }
 
 #
-# Create an instance of clusterName to be used in cases where lowercase is required.
+# Function to ensure the clusterName is legal DNS name
 #
 function validateClusterName {
-  clusterNameLC=$(toLower $clusterName)
+  clusterNameLC=$(toDNS1123Legal $clusterName)
+  validateDNS1123LegalName clusterName ${clusterName}
 }
 
 #
@@ -420,6 +436,8 @@ function initialize {
 
   validateVersion
   validateDomainUid
+  validateAdminServerName
+  validateManagedServerNameBase
   validateNamespace
   validateClusterName
   validateWeblogicDomainStorageType
