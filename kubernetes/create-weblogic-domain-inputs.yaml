@@ -8,13 +8,14 @@ version: create-weblogic-domain-inputs-v1
 adminPort: 7001
 
 # Name of the Admin Server
+# This name must not contain an underscope ("_"), and must be lowercase. 
 adminServerName: admin-server
 
 # Name of the WebLogic domain to create
 domainName: base_domain
 
-# Unique id identifying a domain.
-# This id must be lowercase and unique across all domains in a Kubernetes cluster.
+# Unique ID identifying a domain. 
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster. 
 #domainUID: domain1
 
 # Type of WebLogic Cluster
@@ -26,6 +27,7 @@ clusterType: DYNAMIC
 startupControl: AUTO
 
 # Cluster name
+# This name must not contain an underscope ("_"), and must be lowercase. 
 clusterName: cluster-1
 
 # Number of managed servers to generate for the domain
@@ -35,6 +37,7 @@ configuredManagedServerCount: 2
 initialManagedServerReplicas: 2
 
 # Base string used to generate managed server names
+# This name must not contain an underscope ("_"), and must be lowercase. 
 managedServerNameBase: managed-server
 
 # Port number for each managed server

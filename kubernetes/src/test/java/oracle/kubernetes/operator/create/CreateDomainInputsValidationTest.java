@@ -127,6 +127,14 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_invalidAdminServerName() throws Exception {
+    String val = "test_admin_Server";
+    assertThat(
+        execCreateDomain(newInputs().adminServerName(val)),
+        failsAndPrints(paramInvalidError(PARAM_ADMIN_SERVER_NAME, val)));
+  }
+
+  @Test
   public void createDomain_with_missingDomainName_failsAndReturnsError() throws Exception {
     assertThat(
         execCreateDomain(newInputs().domainName("")),
@@ -146,6 +154,14 @@ public class CreateDomainInputsValidationTest {
     assertThat(
         execCreateDomain(newInputs().domainUID(val)),
         failsAndPrints(paramNotLowercaseError(PARAM_DOMAIN_UID, val)));
+  }
+
+  @Test
+  public void createDomain_with_invalidDomainUID_failsAndReturnsError() throws Exception {
+    String val = "test_domain_1";
+    assertThat(
+        execCreateDomain(newInputs().domainUID(val)),
+        failsAndPrints(paramInvalidError(PARAM_DOMAIN_UID, val)));
   }
 
   @Test
@@ -221,6 +237,14 @@ public class CreateDomainInputsValidationTest {
   }
 
   @Test
+  public void createDomain_with_invalidClusterName_failsAndReturnsError() throws Exception {
+    String val = "test_Cluster_1";
+    assertThat(
+        execCreateDomain(newInputs().clusterName(val)),
+        failsAndPrints(paramInvalidError(PARAM_CLUSTER_NAME, val)));
+  }
+
+  @Test
   public void createDomain_with_missingConfiguredManagedServerCount_failsAndReturnsError()
       throws Exception {
     assertThat(
@@ -260,6 +284,15 @@ public class CreateDomainInputsValidationTest {
     assertThat(
         execCreateDomain(newInputs().managedServerNameBase("")),
         failsAndPrints(paramMissingError(PARAM_MANAGED_SERVER_NAME_BASE)));
+  }
+
+  @Test
+  public void createDomain_with_invalidManagedServerNameBase_failsAndReturnsError()
+      throws Exception {
+    String val = "test_MS";
+    assertThat(
+        execCreateDomain(newInputs().managedServerNameBase(val)),
+        failsAndPrints(paramInvalidError(PARAM_MANAGED_SERVER_NAME_BASE, val)));
   }
 
   @Test
@@ -636,6 +669,10 @@ public class CreateDomainInputsValidationTest {
 
   private String invalidEnumParamValueError(String param, String val) {
     return errorRegexp("Invalid.*" + param + ".*" + val);
+  }
+
+  private String paramInvalidError(String param, String val) {
+    return errorRegexp(param + ".*invalid");
   }
 
   @SuppressWarnings("SameParameterValue")
