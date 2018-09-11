@@ -1,12 +1,8 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
-
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.model.CollectionModel;
-import oracle.kubernetes.operator.rest.model.DomainModel;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -14,12 +10,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.model.CollectionModel;
+import oracle.kubernetes.operator.rest.model.DomainModel;
 
 /**
  * DomainsResource is a jaxrs resource that implements the REST api for the
- * /operator/{version}/domains path.
- * It can be used to list the WebLogic domains that are registered with the
- * WebLogic operator.
+ * /operator/{version}/domains path. It can be used to list the WebLogic domains that are registered
+ * with the WebLogic operator.
  */
 public class DomainsResource extends BaseResource {
 
@@ -27,6 +26,7 @@ public class DomainsResource extends BaseResource {
 
   /**
    * Construct a DomainsResource.
+   *
    * @param parent - the jaxrs resource that parents this resource.
    * @param pathSegment - the last path segment in the url to this resource.
    */
@@ -36,6 +36,7 @@ public class DomainsResource extends BaseResource {
 
   /**
    * List the WebLogic domains that are registered with the WebLogic operator.
+   *
    * @return a collection of DomainModels describing the domains.
    */
   @GET
@@ -55,10 +56,11 @@ public class DomainsResource extends BaseResource {
 
   /**
    * Construct and return a 'domain' jaxrs child resource.
-   * @param domainUID - the unique identifier assigned to the WebLogic domain
-   * when it was registered with the WebLogic operator.
-   * @return the domain sub resource, throws a WebApplicationException if
-   * domainUID is not registered.
+   *
+   * @param domainUID - the unique identifier assigned to the WebLogic domain when it was registered
+   *     with the WebLogic operator.
+   * @return the domain sub resource, throws a WebApplicationException if domainUID is not
+   *     registered.
    */
   @Path("{domainUID}")
   public DomainResource getDomainResource(@PathParam("domainUID") String domainUID) {

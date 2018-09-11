@@ -1,30 +1,30 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
-
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * BaseDebugLoggingFilter provides utilities shared by RequestDebugLoggingFilter and
  * ResponseDebugLoggingFilter
  */
-abstract public class BaseDebugLoggingFilter {
+public abstract class BaseDebugLoggingFilter {
 
   protected static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
+  private static final String DATE_FORMAT =
+      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
 
   protected static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
   protected static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
@@ -46,8 +46,8 @@ abstract public class BaseDebugLoggingFilter {
     LOGGER.entering();
 
     // Make a copy of all of the request headers
-    MultivaluedHashMap<String,String> loggableHeaders =
-      new MultivaluedHashMap<String, String>(req.getHeaders());
+    MultivaluedHashMap<String, String> loggableHeaders =
+        new MultivaluedHashMap<String, String>(req.getHeaders());
 
     // Authorization headers contain credentials.  These credentials should not be
     // debug logged since they contain sensitive data.

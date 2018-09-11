@@ -1,0 +1,161 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# createSharedOperatorResources specifies whether or not the installation should create the
+# Kubernetes resources that are shared by all operators in this Kubernetes cluster such as
+# elasticsearch, kibana, operator RBAC roles, etc.
+createSharedOperatorResources: true
+
+# createOperator specifies whether or not the installation should create the operator and its resources.
+createOperator: true
+
+# operatorNamespace specifies the name of the Kubernetes namespace that the operator will be deployed in.
+# It is recommended that a namespace be created for the operator rather
+# than using the default namespace.
+# The name must be lowercase
+operatorNamespace: "weblogic-operator"
+
+# operatorServiceAccount specifies the name of the service account that the operator will use to
+# make requests to the Kubernetes API server.
+# The name must be lowercase
+operatorServiceAccount: "weblogic-operator"
+
+# domainsNamespaces specifies list of WebLogic Domain namespaces which the operator manages
+# The names must be lowercase.
+# The customer is responsible for creating these namespaces.
+#
+# Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
+#
+# createDomainsNamespace: true
+# domainsNamespaces:
+#   - namespace1
+#   - namespace2
+domainsNamespaces: []
+
+# operatorImage specifies the docker image containing the operator code.
+operatorImage: "weblogic-kubernetes-operator:1.1"
+
+# operatorImagePullPolicy specifies the image pull policy for the operator docker image.
+operatorImagePullPolicy: "IfNotPresent"
+
+# Options for externally exposing the operator REST https interface
+# (i.e. outside of the Kubernetes cluster). Valid values are:
+#
+# "NONE"
+#    The REST interface is not exposed outside the Kubernetes cluster.
+#
+# "SELF_SIGNED_CERT"
+#    The REST interface is exposed outside of the Kubernetes cluster on the
+#    port specified by the 'externalRestHttpsPort' property.
+#    A self-signed certificate and private key are generated for the REST interface.
+#    The certificate's subject alternative names are specified by the 'externalSans'
+#    property.
+#
+# "CUSTOM_CERT"
+#    The REST interface is exposed outside of the Kubernetes cluster on the
+#    port specified by the 'externalRestHttpsPort' property.
+#    The customer supplied certificate and private key are used for the REST
+#    interface.  They are specified by the 'externalOperatorCert' and
+#    'externalOperatorKey' properties.
+externalRestOption: NONE
+
+# externalRestHttpsPort specifies the node port that should be allocated for the external operator REST https interface.
+# This parameter is required if 'externalRestOption' is not 'NONE'.
+# Otherwise, it is ignored.
+externalRestHttpsPort: 31001
+
+# The subject alternative names to put into the generated self-signed certificate
+# for the external WebLogic Operator REST https interface, for example:
+#   DNS:myhost,DNS:localhost,IP:127.0.0.1
+# This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
+# Otherwise, it is ignored.
+#externalOperatorCertSans:
+
+# The customer supplied certificate to use for the external operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM certificate.
+# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+#externalOperatorCert:
+
+# The customer supplied private key to use for the external operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM key.
+# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+#externalOperatorKey:
+
+# Options for the operator REST https interface inside the Kubernetes cluster.
+# Valid values are:
+#
+# "SELF_SIGNED_CERT"
+#    A self-signed certificate and private key are generated for the internal REST interface.
+#
+# "CUSTOM_CERT"
+#    The customer supplied certificate and private key are used for the REST
+#    interface.  They are specified by the 'internalOperatorCert' and
+#    'internalOperatorKey' properties.
+# 
+internalRestOption: SELF_SIGNED_CERT
+
+# The customer supplied certificate to use for the internal operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM certificate.
+# This parameter is required if 'internalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+# Note: the customer must ensure that the certificate contains the following
+# subject alternative names:
+#   DNS:internal-weblogic-operator-service
+#   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE
+#   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE.svc
+#   DNS:internal-weblogic-operator-service.OPERATOR_NAMESPACE.svc.cluster.local"
+# where OPERATOR_NAMESPACE is the name of the operator's namespace.
+#internalOperatorCert:
+
+# The customer supplied private key to use for the internal operator REST
+# https interface.  The value must be a string containing a base64 encoded PEM key.
+# This parameter is required if 'internalRestOption' is 'CUSTOM_CERT'.
+# Otherwise, it is ignored.
+#internalOperatorKey:
+
+# remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
+# provided port and suspend execution until a remote debugger has attached.
+# The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
+# cluster and the 'externalDebugHttpPort' property controls the port number outside
+# the Kubernetes cluster.
+remoteDebugNodePortEnabled: false
+
+# internalDebugHttpPort specifes the port number inside the Kubernetes cluster for the operator's Java
+# remote debug server.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+internalDebugHttpPort: 30999
+
+# externalDebugHttpPort specifies the node port that should be allocated for the Kubernetes cluster for the operator's
+# Java remote debug server.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+externalDebugHttpPort: 30999
+
+# javaLoggingLevel specifies the level of Java logging that should be enabled in the operator.
+# Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
+javaLoggingLevel: "INFO"
+
+# elkIntegrationEnabled specifies whether or not ELK integration is enabled.
+elkIntegrationEnabled: false
+
+# extraResources specifies an arbitrary list of extra Kubernetes resources that should be
+# created (and deleted) along with this chart.  It provides an easy way for the
+# customer to attach extra Kubernetes resources to the lifecycle of this chart.
+#
+# Example: create an extra persistent volume and persistent claim when this chart is
+# installed, and remove them when this chart is deleted:
+#
+# extraResources:
+# - kind: PersistentVolume
+#   apiVersion: v1
+#   metadata: ...
+#   spec: ...
+# - kind: PersistentVolumeClaim
+#   apiVersion: v1
+#   metadata: ...
+#   spec: ...
+#
+extraResources: []

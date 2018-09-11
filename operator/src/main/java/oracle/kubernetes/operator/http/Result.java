@@ -1,5 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
 
@@ -18,25 +19,19 @@ public class Result {
     this.successful = successful;
   }
 
-  /**
-   *
-   * @return The String response received from the REST request
-   */
+  /** @return The String response received from the REST request */
   public String getResponse() {
     return response;
   }
 
-  /**
-   *
-   * @return HTTP status code from the REST request
-   */
+  /** @return HTTP status code from the REST request */
   public int getStatus() {
     return status;
   }
 
   /**
-   *
-   * @return True if the REST request returns a status code that indicates successful request, false otherwise
+   * @return True if the REST request returns a status code that indicates successful request, false
+   *     otherwise
    */
   public boolean isSuccessful() {
     return successful;
@@ -44,10 +39,14 @@ public class Result {
 
   @Override
   public String toString() {
-    return "Result{" +
-            "response='" + response + '\'' +
-            ", status=" + status +
-            ", successful=" + successful +
-            '}';
+    return "Result{"
+        + "response='"
+        + response
+        + '\''
+        + ", status="
+        + status
+        + ", successful="
+        + successful
+        + '}';
   }
 }

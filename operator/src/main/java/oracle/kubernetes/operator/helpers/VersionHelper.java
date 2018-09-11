@@ -1,20 +1,18 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.Map;
-
 import io.kubernetes.client.models.V1ObjectMeta;
+import java.util.Map;
 import oracle.kubernetes.operator.LabelConstants;
 
-/**
- * Helper methods for managing versions.
- * 
- */
+/** Helper methods for managing versions. */
 public class VersionHelper {
   /**
    * Determines whether a resource matches a version
+   *
    * @param meta Metadata
    * @param resourceVersion resource version
    * @return true, if the labeled and expected versions match
@@ -23,7 +21,7 @@ public class VersionHelper {
     if (meta == null) {
       return false;
     }
-    Map<String,String> labels = meta.getLabels();
+    Map<String, String> labels = meta.getLabels();
     if (labels == null) {
       return false;
     }

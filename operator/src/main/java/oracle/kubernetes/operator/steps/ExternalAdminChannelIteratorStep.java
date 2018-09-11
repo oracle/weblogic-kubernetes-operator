@@ -1,11 +1,11 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.util.Collection;
 import java.util.Iterator;
-
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -18,7 +18,8 @@ public class ExternalAdminChannelIteratorStep extends Step {
   private final DomainPresenceInfo info;
   private final Iterator<NetworkAccessPoint> it;
 
-  public ExternalAdminChannelIteratorStep(DomainPresenceInfo info, Collection<NetworkAccessPoint> naps, Step next) {
+  public ExternalAdminChannelIteratorStep(
+      DomainPresenceInfo info, Collection<NetworkAccessPoint> naps, Step next) {
     super(next);
     this.info = info;
     this.it = naps.iterator();

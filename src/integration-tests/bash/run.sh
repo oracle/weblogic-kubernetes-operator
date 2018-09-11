@@ -81,8 +81,13 @@
 #   LB_TYPE        Load balancer type. Can be 'TRAEFIK', 'VOYAGER', or 'APACHE'.
 #                  Default is 'TRAEFIK'.
 #
-#   VERBOSE        Set to 'true' to echo verbose output to stdout.
+#   VERBOSE        Set to 'true' to echo verbose tracing to stdout.
 #                  Default is 'false'.
+#
+#   DEBUG_OUT      Set to 'tee' to echo various command output to stdout that
+#                  is normally only stored in files.  Set to 'cat' to echo such
+#                  commands via 'cat' instead of 'tee'.   Set to 'file' to
+#                  only put the output in files.  Default is 'file'.
 #
 #   QUICKTEST      When set to "true", limits testing to a subset of
 #                  of the tests.
@@ -217,7 +222,7 @@ function renewLease {
   if [ ! "$LEASE_ID" = "" ]; then
     # RESULT_DIR may not have been created yet, so use /tmp
     local outfile=/tmp/acc_test_renew_lease.out
-    $SCRIPTPATH/lease.sh -r "$LEASE_ID" > $outfile 2>&1
+    $SCRIPTPATH/lease.sh -r "$LEASE_ID" 2>&1 | opt_tee $outfile
     if [ $? -ne 0 ]; then
       trace "Lease renew error:"
       echo "" >> $outfile
@@ -370,6 +375,24 @@ function trace {
   echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: ""$@"
 }
 
+#
+# opt_tee <filename>
+# Use this function in place of 'tee' for most use cases.
+# See the description of 'DEBUG_OUT' above for information about this function
+#
+function opt_tee {
+  local filename="${1?}"
+  if [ "$DEBUG_OUT" = "tee" ]; then
+    tee $filename
+  elif [ "$DEBUG_OUT" = "cat" ]; then
+    cat > $filename
+    cat $filename
+  else
+    cat > $filename
+  fi
+  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=$TEST_ID] [fn=${FUNCNAME[1]}]: Output from last command is in ""$1"
+}
+
 # 
 # state_dump <dir-suffix>
 #   - called at the end of a run, and from fail
@@ -388,6 +411,7 @@ function state_dump {
      local PROJECT_ROOT="`cat /tmp/test_suite.project_root`"
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
      local LEASE_ID="`cat /tmp/test_suite.lease_id`"
+     local DEBUG_OUT="`cat /tmp/test_suite.debug_out`"
 
      if [ ! -d "$RESULT_DIR" ]; then
         trace State dump exiting early.  RESULT_DIR \"$RESULT_DIR\" does not exist or is not a directory.
@@ -409,8 +433,8 @@ function state_dump {
   #   get domains is in its own command since this can fail if domain CRD undefined
 
   trace Dumping kubectl gets to kgetmany.out and kgetdomains.out in ${DUMP_DIR}
-  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetmany.out 2>&1
-  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 > ${DUMP_DIR}/kgetdomains.out 2>&1
+  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 | opt_tee ${DUMP_DIR}/kgetmany.out
+  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 | opt_tee ${DUMP_DIR}/kgetdomains.out
 
   # Get all pod logs and redirect/copy to files 
 
@@ -428,15 +452,15 @@ function state_dump {
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      kubectl log $pod -n $namespace > $logfile 2>&1
-      kubectl describe pod $pod -n $namespace > $descfile 2>&1
+      kubectl log $pod -n $namespace 2>&1 | opt_tee $logfile
+      kubectl describe pod $pod -n $namespace 2>&1 | opt_tee $descfile
     done
   done
 
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
   trace "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" > ${outfile} 2>&1
+  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | opt_tee ${outfile}
   if [ "$?" = "0" ]; then
      trace Job complete.
   else
@@ -445,12 +469,12 @@ function state_dump {
 
   if [ ! "$LEASE_ID" = "" ]; then
     # release the lease if we own it
-    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" > ${RESULT_DIR}/release_lease.out 2>&1
+    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | opt_tee ${RESULT_DIR}/release_lease.out
     if [ "$?" = "0" ]; then
       trace Lease released.
     else
       trace Lease could not be released:
-      cat /tmp/release_lease.out 
+      cat /${RESULT_DIR}/release_lease.out 
     fi
   fi
 
@@ -498,6 +522,7 @@ function ctrl_c() {
     declare_new_test_from_trap 1 run_aborted_with_ctrl_c
     # disable the trap:
     trap - INT
+    set -o pipefail
     fail "Trapped CTRL-C"
 }
 
@@ -549,6 +574,24 @@ function setup_local {
 
 }
 
+function setup_wercker {
+  trace "Perform setup for running in wercker"
+
+  if [ "$USE_HELM" = "true" ]; then
+
+    trace "Install tiller"
+    helm init
+
+    helm version
+
+    kubectl get po -n kube-system
+
+    setup_tiller_rbac
+  fi
+
+  trace "Completed setup_wercker"
+}
+
 function create_image_pull_secret_jenkins {
 
     trace "Creating Secret"
@@ -568,12 +611,15 @@ function create_image_pull_secret_jenkins {
 
 function create_image_pull_secret_wercker {
 
+    local namespace=${1:-default}
+
     trace "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server=index.docker.io/v1/ \
-    --docker-username=$DOCKER_USERNAME \
-    --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL 2>&1 | sed 's/^/+' 2>&1
+    --docker-server='index.docker.io/v1/' \
+    --docker-username='$DOCKER_USERNAME' \
+    --docker-password='$DOCKER_PASSWORD' \
+    --docker-email='$DOCKER_EMAIL' \
+    -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
     local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -583,9 +629,11 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Registry Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-    --docker-server=$REPO_REGISTRY \
-    --docker-username=$REPO_USERNAME \
-    --docker-password=$REPO_PASSWORD 2>&1 | sed 's/^/+' 2>&1
+    --docker-server='$REPO_SERVER' \
+    --docker-username='$REPO_USERNAME' \
+    --docker-password='$REPO_PASSWORD' \
+    --docker-email='$REPO_EMAIL' \
+    -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
     local SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
@@ -595,7 +643,7 @@ function create_image_pull_secret_wercker {
 
 }
 
-# op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT
+# op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT CREATE_SHARED_OPERATOR_RESOURCES
 #   sets up table of operator values.
 #
 # op_get    OP_KEY
@@ -612,13 +660,14 @@ function create_image_pull_secret_wercker {
 #
 
 function op_define {
-    if [ "$#" != 4 ] ; then
-      fail "requires 4 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT"
+    if [ "$#" != 5 ] ; then
+      fail "requires 5 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT CREATE_SHARED_OPERATOR_RESOURCES"
     fi
     local opkey="`echo \"${1?}\" | sed 's/-/_/g'`"
     eval export OP_${opkey}_NAMESPACE="$2"
     eval export OP_${opkey}_TARGET_NAMESPACES="$3"
     eval export OP_${opkey}_EXTERNAL_REST_HTTPSPORT="$4"
+    eval export OP_${opkey}_CREATE_SHARED_OPERATOR_RESOURCES="$5"
 
     # generated TMP_DIR for operator = $USER_PROJECTS_DIR/weblogic-operators/$NAMESPACE :
     eval export OP_${opkey}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-operators/$2"
@@ -639,6 +688,34 @@ function op_echo_all {
     env | grep "^OP_${opkey}_"
 }
 
+function operator_ready_wait {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: operatorKey"
+    fi
+    local OP_KEY=${1}
+    local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
+    local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
+
+    local namespace=$OPERATOR_NS
+    trace Waiting for operator deployment to be ready...
+    local AVAILABLE="0"
+    local max=30
+    local count=0
+    while [ "$AVAILABLE" != "1" -a $count -lt $max ] ; do
+        sleep 10
+        local AVAILABLE=`kubectl get deploy weblogic-operator -n $namespace -o jsonpath='{.status.availableReplicas}'`
+        trace "status is $AVAILABLE, iteration $count of $max"
+        local count=`expr $count + 1`
+    done
+
+    if [ "$AVAILABLE" != "1" ]; then
+        kubectl get deploy weblogic-operator -n ${namespace}
+        kubectl describe deploy weblogic-operator -n ${namespace}
+        kubectl describe pods -n ${namespace}
+        fail "The WebLogic operator deployment is not available, after waiting 300 seconds"
+    fi
+}
+
 function deploy_operator {
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: opkey"
@@ -650,31 +727,73 @@ function deploy_operator {
     local EXTERNAL_REST_HTTPSPORT="`op_get $opkey EXTERNAL_REST_HTTPSPORT`"
     local TMP_DIR="`op_get $opkey TMP_DIR`"
 
-    trace 'customize the yaml'
-    local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
-    mkdir -p $TMP_DIR
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
-
-    trace 'customize the inputs yaml file to use our pre-built docker image'
-    sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-    sed -i -e "s|\(weblogicOperatorImage:\).*|\1${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
-    if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-      sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
+    if [ "$WERCKER" = "true" ]; then 
+      create_image_pull_secret_wercker $NAMESPACE
     fi
-    trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
-    sed -i -e "s|\(externalRestOption:\).*|\1SELF_SIGNED_CERT|g" $inputs
-    sed -i -e "s|\(externalSans:\).*|\1DNS:${NODEPORT_HOST}|g" $inputs
-    trace 'customize the inputs yaml file to set the java logging level to FINER'
-    sed -i -e "s|\(javaLoggingLevel:\).*|\1FINER|g" $inputs
-    sed -i -e "s|\(externalRestHttpsPort:\).*|\1${EXTERNAL_REST_HTTPSPORT}|g" $inputs
-    trace 'customize the inputs yaml file to add test namespace' 
-    sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
-    sed -i -e "s/^targetNamespaces:.*/targetNamespaces: ${TARGET_NAMESPACES}/" $inputs
-    sed -i -e "s/^serviceAccount:.*/serviceAccount: weblogic-operator/" $inputs
 
-    local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
-    trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
+    trace 'customize the yaml'
+    mkdir -p $TMP_DIR
+    if [ "$USE_HELM" = "true" ]; then
+      local inputs="$TMP_DIR/weblogic-operator-values.yaml"
+      local CREATE_SHARED_OPERATOR_RESOURCES="`op_get $opkey CREATE_SHARED_OPERATOR_RESOURCES`"
+
+      # generate certificates
+      $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
+      $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
+
+      echo "createSharedOperatorResources: $CREATE_SHARED_OPERATOR_RESOURCES" >> $inputs
+
+      trace 'customize the inputs yaml file to add test namespace'
+      echo "domainsNamespaces:" >> $inputs
+      for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
+      do
+        echo "  - $i" >> $inputs
+      done
+      echo "operatorImagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
+      echo "operatorImage: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+      echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
+      echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
+      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
+      echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
+      echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
+      echo "createOperatorNamespace: false" >> $inputs
+      echo "operatorNamespace: \"${NAMESPACE}\"" >> $inputs
+      echo "operatorServiceAccount: weblogic-operator" >> $inputs
+      trace "Contents after customization in file $inputs"
+      cat $inputs
+
+      local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
+      trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
+      cd $PROJECT_ROOT/kubernetes/charts
+      helm install weblogic-operator --name ${opkey} -f $inputs 2>&1 | opt_tee ${outfile}
+      trace "helm install output:"
+      cat $outfile
+      operator_ready_wait $opkey
+    else
+      local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
+      cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
+
+      trace 'customize the inputs yaml file to use our pre-built docker image'
+      sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1 ${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
+      sed -i -e "s|\(weblogicOperatorImage:\).*|\1 ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
+      if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
+        sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
+      fi
+      trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
+      sed -i -e "s|\(externalRestOption:\).*|\1 SELF_SIGNED_CERT|g" $inputs
+      sed -i -e "s|\(externalSans:\).*|\1 DNS:${NODEPORT_HOST}|g" $inputs
+      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
+      sed -i -e "s|\(javaLoggingLevel:\).*|\1 $LOGLEVEL_OPERATOR|g" $inputs
+      sed -i -e "s|\(externalRestHttpsPort:\).*|\1 ${EXTERNAL_REST_HTTPSPORT}|g" $inputs
+      trace 'customize the inputs yaml file to add test namespace' 
+      sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
+      sed -i -e "s/^targetNamespaces:.*/targetNamespaces: ${TARGET_NAMESPACES}/" $inputs
+      sed -i -e "s/^serviceAccount:.*/serviceAccount: weblogic-operator/" $inputs
+      local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
+      trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
+      sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfile}
+    fi
+
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
        cat ${outfile} | sed 's/^/+/g'
@@ -767,6 +886,13 @@ function dom_define {
     # derive TMP_DIR $USER_PROJECTS_DIR/weblogic-domains/$NAMESPACE-$DOMAIN_UID :
     eval export DOM_${DOM_KEY}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-domains/$4"
 
+    # we only test loadBalancerExposeAdminPort=true for Apache on domain1
+    if [ "$LB_TYPE" == "APACHE" ] && [ "$4" == "domain1" ] ; then
+      export DOM_${DOM_KEY}_LOAD_BALANCER_EXPOSE_ADMIN_PORT="true"
+    else 
+      export DOM_${DOM_KEY}_LOAD_BALANCER_EXPOSE_ADMIN_PORT="false"
+    fi
+
     #verbose tracing starts with a +
     dom_echo_all $1 | sed 's/^/+/'
 
@@ -800,8 +926,13 @@ function run_create_domain_job {
     local MS_PORT="`dom_get $1 MS_PORT`"
     local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
     local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
     # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
     local TMP_DIR="`dom_get $1 TMP_DIR`"
+
+    if [ "$WERCKER" = "true" ]; then 
+      create_image_pull_secret_wercker $NAMESPACE
+    fi
 
     local WLS_JAVA_OPTIONS="$JVM_ARGS"
 
@@ -819,7 +950,11 @@ function run_create_domain_job {
 
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
+    if [ "$USE_HELM" = "true" ]; then
+      cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
+    else
+      cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
+    fi
 
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
@@ -876,6 +1011,7 @@ function run_create_domain_job {
       local load_balancer_app_prepath="/weblogic"
       sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
       sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+      sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputs
     fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
@@ -895,7 +1031,7 @@ function run_create_domain_job {
 
     # Note that the job.sh job mounts PV_ROOT to /scratch and runs as UID 1000,
     # so PV_ROOT must already exist and have 777 or UID=1000 permissions.
-    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" > ${outfile} 2>&1
+    $SCRIPTPATH/job.sh "mkdir -p /scratch/acceptance_test_pv/$DOMAIN_STORAGE_DIR" 2>&1 | opt_tee ${outfile}
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
        trace Job complete.  Directory created on k8s cluster.
@@ -905,9 +1041,18 @@ function run_create_domain_job {
     fi
 
     local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
-    trace "Run the script to create the domain, see \"$outfile\" for tracing."
 
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR > ${outfile} 2>&1
+    if [ "$USE_HELM" = "true" ]; then
+      trace "Run helm install to create the domain, see \"$outfile\" for tracing."
+      cd $PROJECT_ROOT/kubernetes/charts
+      helm install weblogic-domain --name $1 -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
+      trace "helm install output:"
+      cat $outfile
+    else
+      trace "Run the script to create the domain, see \"$outfile\" for tracing."
+
+      sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfile}
+    fi
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -1317,6 +1462,75 @@ function verify_admin_server_ext_service {
     trace 'done'
 }
 
+function verify_admin_console_via_loadbalancer {
+
+    # Pre-requisite: requires admin server to be already up and running and able to service requests
+
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainKey"
+    fi 
+
+    # We only perform this verification when the load balancer type is APACHE
+    if [ "$LB_TYPE" != "APACHE" ]; then
+      return
+    fi 
+
+    trace "verify that admin console is accessible via Apache load balancer from outside of the kubernetes cluster"
+
+    local DOM_KEY="$1"
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local WLS_ADMIN_USERNAME="`get_wladmin_user $1`"
+    local WLS_ADMIN_PASSWORD="`get_wladmin_pass $1`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
+
+    local ADMIN_SERVER_LB_NODEPORT_SERVICE="$DOMAIN_UID-apache-webtier"
+
+    local get_service_nodePort="kubectl get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$ADMIN_SERVER_LB_NODEPORT_SERVICE\")].spec.ports[0].nodePort}'"
+   
+    trace get_service_nodePort
+
+    set +x     
+    local nodePort=`eval $get_service_nodePort`
+    set -x     
+
+    if [ -z ${nodePort} ]; then
+      fail "nodePort not found in domain $DOMAIN_UID"
+    fi
+
+    local TEST_CONSOLE_URL="http://${NODEPORT_HOST}:${nodePort}/console/login/LoginForm.jsp"
+    local CONSOLE_RESPONSE_BODY="$TMP_DIR/testconsole.response.body"
+
+    trace "console test url: $TEST_CONSOLE_URL "
+    echo "NO_DATA" > $CONSOLE_RESPONSE_BODY
+
+    set +x
+    local HTTP_RESPONSE=$(curl --silent --show-error --noproxy ${NODEPORT_HOST} ${TEST_CONSOLE_URL} \
+      --write-out "%{http_code}" \
+      -o ${CONSOLE_RESPONSE_BODY} \
+    )
+    set -x
+
+    trace "console test response: $HTTP_RESPONSE "
+
+    if [ "$LOAD_BALANCER_EXPOSE_ADMIN_PORT" == "false" ]; then
+      if [ "${HTTP_RESPONSE}" == "200" ]; then
+        cat $CONSOLE_RESPONSE_BODY
+        fail "accessing admin console via load balancer returned status code ${HTTP_RESPONSE} unexpectedly"
+      fi
+    else 
+      if [ "${HTTP_RESPONSE}" != "200" ]; then
+        cat $CONSOLE_RESPONSE_BODY
+        fail "accessing admin console via load balancer did not return 200 status code, got ${HTTP_RESPONSE}"
+      fi
+    fi
+
+    trace 'done'
+
+}
+
 function test_domain_creation {
     declare_new_test 1 "$@"
     if [ "$#" != 1 ] ; then
@@ -1335,6 +1549,8 @@ function test_domain_creation {
 
     verify_admin_server_ext_service $DOM_KEY
 
+    verify_admin_console_via_loadbalancer $DOM_KEY
+    
     extra_weblogic_checks
     declare_test_pass
 }
@@ -1386,7 +1602,11 @@ function call_operator_rest {
     local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
     local ENCODED_TOKEN="`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`"
     local TOKEN="`echo ${ENCODED_TOKEN} | base64 --decode`"
-    local OPERATOR_CERT_DATA="`grep externalOperatorCert ${OPERATOR_TMP_DIR}/weblogic-operator.yaml | awk '{ print $2 }'`"
+    if [ "$USE_HELM" = "true" ]; then
+      local OPERATOR_CERT_DATA="`grep externalOperatorCert: ${OPERATOR_TMP_DIR}/weblogic-operator-values.yaml | awk '{ print $2 }'`"
+    else
+      local OPERATOR_CERT_DATA="`grep externalOperatorCert ${OPERATOR_TMP_DIR}/weblogic-operator.yaml | awk '{ print $2 }'`"
+    fi
     local OPERATOR_CERT_FILE="${OPERATOR_TMP_DIR}/operator.cert.pem"
     echo ${OPERATOR_CERT_DATA} | base64 --decode > ${OPERATOR_CERT_FILE}
 
@@ -1577,14 +1797,15 @@ function test_mvn_integration_local {
     [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    mvn -P integration-tests clean install > $RESULT_DIR/mvn.out 2>&1
+    mvn -P integration-tests clean install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
     confirm_mvn_build $RESULT_DIR/mvn.out
 
-    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . > $RESULT_DIR/docker_build_tag.out 2>&1
+    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --no-cache=true . 2>&1 | opt_tee $RESULT_DIR/docker_build_tag.out
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image, see $RESULT_DIR/docker_build_tag.out".
 
     declare_test_pass
@@ -1596,13 +1817,23 @@ function test_mvn_integration_wercker {
     trace "Running mvn -P integration-tests install.  Output in $RESULT_DIR/mvn.out"
 
     local mstart=`date +%s`
-    mvn -P integration-tests install > $RESULT_DIR/mvn.out 2>&1
+    mvn -P integration-tests install 2>&1 | opt_tee $RESULT_DIR/mvn.out
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
 
     confirm_mvn_build $RESULT_DIR/mvn.out
     declare_test_pass
+}
+
+function setup_tiller_rbac {
+    trace "Running setup_tiller_rbac"
+
+    kubectl create serviceaccount --namespace kube-system tiller
+    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+    kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+
+    trace "setup_tiller_rbac completed"
 }
 
 function check_pv {
@@ -1680,6 +1911,7 @@ EOF
 #   -   local  --> run locally - requires java & weblogic to be installed
 #   -   remote --> run remotely on admin server, construct URL using admin pod name
 #   -   hybrid --> run remotely on admin server, construct URL using 'NODEPORT_HOST'
+#                  or 'K8S_NODEPORT_IP' in wercker since NODEPORT_HOST sometimes does not work in OCI
 #
 function run_wlst_script {
   if [ "$#" -lt 3 ] ; then
@@ -1702,7 +1934,12 @@ function run_wlst_script {
   local password=`get_wladmin_pass $1`
   local pyfile_lcl="$3"
   local pyfile_pod="/shared/`basename $pyfile_lcl`"
-  local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  if [ "$WERCKER" = "true" ]; then 
+    # use OCI public IP in wercker
+    local t3url_lcl="t3://$K8S_NODEPORT_IP:$ADMIN_WLST_PORT"
+  else
+    local t3url_lcl="t3://$NODEPORT_HOST:$ADMIN_WLST_PORT"
+  fi
   local t3url_pod="t3://$AS_NAME:$ADMIN_WLST_PORT"
   local wlcmdscript_lcl="$TMP_DIR/wlcmd.sh"
   local wlcmdscript_pod="/shared/wlcmd.sh"
@@ -1717,7 +1954,7 @@ function run_wlst_script {
 
     cat << EOF > $TMP_DIR/empty.py
 EOF
-    java weblogic.WLST $TMP_DIR/empty.py > $TMP_DIR/empty.py.out 2>&1
+    java weblogic.WLST $TMP_DIR/empty.py 2>&1 | opt_tee $TMP_DIR/empty.py.out
     if [ "$?" = "0" ]; then
       # We're running WLST locally.  No need to do anything fancy.
       local mycommand="java weblogic.WLST ${pyfile_lcl} ${username} ${password} ${t3url_lcl}"
@@ -1783,7 +2020,7 @@ EOF
   local maxwaitsecs=180
   local failedonce="false"
   while : ; do
-    eval "$mycommand ""$@" > ${pyfile_lcl}.out 2>&1
+    eval "$mycommand ""$@" 2>&1 | opt_tee ${pyfile_lcl}.out
     local result="$?"
 
     # '+' marks verbose tracing
@@ -1791,6 +2028,7 @@ EOF
 
     if [ "$result" = "0" ];
     then 
+      cat ${pyfile_lcl}.out
       break
     fi
 
@@ -1964,9 +2202,10 @@ function verify_service_and_pod_created {
       local EXTCHANNEL_T3CHANNEL_SERVICE_NAME=${SERVICE_NAME}-extchannel-t3channel
       trace "checking if service ${EXTCHANNEL_T3CHANNEL_SERVICE_NAME} is created"
       count=0
+      srv_count=0
       while [ "${srv_count:=Error}" != "1" -a $count -lt $max_count_srv ] ; do
         local count=`expr $count + 1`
-        local srv_count=`kubectl -n $NAMESPACE get services | grep "^$SERVICE_NAME " | wc -l`
+        local srv_count=`kubectl -n $NAMESPACE get services | grep "^$EXTCHANNEL_T3CHANNEL_SERVICE_NAME " | wc -l`
         if [ "${srv_count:=Error}" != "1" ]; then
           trace "Did not find service $EXTCHANNEL_T3CHANNEL_SERVICE_NAME, iteration $count of $max_count_srv"
           sleep $wait_time
@@ -2017,6 +2256,9 @@ function verify_service_and_pod_created {
     fi
 
     if [ "${IS_ADMIN_SERVER}" = "true" ]; then
+      trace "listing pods"
+      kubectl -n $NAMESPACE get pods -o wide
+
       verify_wlst_access $DOM_KEY
     fi
 }
@@ -2141,7 +2383,7 @@ function verify_domain_deleted {
 
     kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
 
-    kubectl get domains  -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get domains -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
     trace 'checking if the domain is deleted'
     local count=`kubectl get domain $DOMAIN_UID -n $NAMESPACE | egrep $DOMAIN_UID | wc -l `
@@ -2173,7 +2415,13 @@ function shutdown_domain {
 
     local replicas=`get_cluster_replicas $DOM_KEY`
 
-    kubectl delete -f ${TMP_DIR}/domain-custom-resource.yaml
+    if [ "$USE_HELM" = "true" ]; then
+      trace "calling helm delete ${DOM_KEY} --purge"
+      helm delete ${DOM_KEY} --purge
+    else
+      kubectl delete -f ${TMP_DIR}/domain-custom-resource.yaml
+    fi
+
     verify_domain_deleted $DOM_KEY $replicas
     trace Done. 
 }
@@ -2186,8 +2434,19 @@ function startup_domain {
     local DOM_KEY="$1"
 
     local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
 
-    kubectl create -f ${TMP_DIR}/domain-custom-resource.yaml
+    if [ "$USE_HELM" = "true" ]; then
+      local inputs=$TMP_DIR/create-weblogic-domain-inputs.yaml
+      local outfile="$TMP_DIR/startup-weblogic-domain.out"
+      cd $PROJECT_ROOT/kubernetes/charts
+      trace "calling helm install weblogic-domain --name ${DOM_KEY} -f $inputs --namespace ${NAMESPACE} --set createWebLogicDomain=false"
+      helm install weblogic-domain --name ${DOM_KEY} -f $inputs --namespace ${NAMESPACE} --set createWebLogicDomain=false 2>&1 | opt_tee ${outfile}
+      trace "helm install output:"
+      cat $outfile
+    else   
+      kubectl create -f ${TMP_DIR}/domain-custom-resource.yaml
+    fi
 
     verify_domain_created $DOM_KEY 
 }
@@ -2229,6 +2488,27 @@ function test_domain_lifecycle {
     declare_test_pass
 }
 
+function wait_for_operator_shutdown {
+  name=$1
+  deleted=false
+  iter=1
+  trace "waiting for operator shutdown by verifying that namespace ${name} no longer exist "
+  while [ ${deleted} == false -a $iter -lt 101 ]; do
+    kubectl get namespace ${name}
+    if [ $? != 0 ]; then
+      deleted=true
+    else
+      iter=`expr $iter + 1`
+      sleep 5
+    fi
+  done
+  if [ ${deleted} == false ]; then
+    fail 'operator fail to be deleted'
+  else
+    trace "operator namespace ${name} has been deleted"
+  fi
+}
+
 function shutdown_operator {
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: operatorKey"
@@ -2237,7 +2517,13 @@ function shutdown_operator {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    kubectl delete -f $TMP_DIR/weblogic-operator.yaml
+    if [ "$USE_HELM" = "true" ]; then
+      helm delete $OP_KEY --purge
+      wait_for_operator_shutdown $OPERATOR_NS
+    else
+      kubectl delete -f $TMP_DIR/weblogic-operator.yaml
+    fi
+
     trace "Checking REST service is deleted"
     set +x
     local servicenum=`kubectl get services -n $OPERATOR_NS | egrep weblogic-operator-svc | wc -l`
@@ -2256,26 +2542,19 @@ function startup_operator {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    kubectl create -f $TMP_DIR/weblogic-operator.yaml
+    if [ "$USE_HELM" = "true" ]; then
+      local inputs="$TMP_DIR/weblogic-operator-values.yaml"
+      local outfile="$TMP_DIR/startup-weblogic-operator.out"
+      helm install weblogic-operator --name ${OP_KEY} -f $inputs 2>&1 | opt_tee ${outfile}
+      trace "helm install output:"
+      cat $outfile
+    else
+      kubectl create -f $TMP_DIR/weblogic-operator.yaml
+    fi
+
+    operator_ready_wait $OP_KEY
 
     local namespace=$OPERATOR_NS
-    trace Waiting for operator deployment to be ready...
-    local AVAILABLE="0"
-    local max=30
-    local count=0
-    while [ "$AVAILABLE" != "1" -a $count -lt $max ] ; do
-        sleep 10
-        local AVAILABLE=`kubectl get deploy weblogic-operator -n $namespace -o jsonpath='{.status.availableReplicas}'`
-        trace "status is $AVAILABLE, iteration $count of $max"
-        local count=`expr $count + 1`
-    done
-
-    if [ "$AVAILABLE" != "1" ]; then
-        kubectl get deploy weblogic-operator -n ${namespace}
-        kubectl describe deploy weblogic-operator -n ${namespace}
-        kubectl describe pods -n ${namespace}
-        fail "The WebLogic operator deployment is not available, after waiting 300 seconds"
-    fi
 
     trace "Checking the operator pods"
     local REPLICA_SET=`kubectl describe deploy weblogic-operator -n ${namespace} | grep NewReplicaSet: | awk ' { print $2; }'`
@@ -2414,6 +2693,7 @@ function test_cluster_scale {
 
     local DOM_KEY="$1"
     local VERIFY_DOM_KEY="$2"
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
 
     local TMP_DIR="`dom_get $1 TMP_DIR`"
 
@@ -2422,6 +2702,9 @@ function test_cluster_scale {
 
     trace "test cluster scale-up from 2 to 3"
     local domainCR="$TMP_DIR/domain-custom-resource.yaml"
+    if [ "$USE_HELM" = "true" ]; then
+      kubectl get domain $DOM_KEY -n $NAMESPACE -o yaml > $domainCR
+    fi
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 3/"  $domainCR
     kubectl apply -f $domainCR
 
@@ -2429,6 +2712,9 @@ function test_cluster_scale {
     verify_webapp_load_balancing $DOM_KEY 3
 
     trace "test cluster scale-down from 3 to 2"
+    if [ "$USE_HELM" = "true" ]; then
+      kubectl get domain $DOM_KEY -n $NAMESPACE -o yaml > $domainCR
+    fi
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 2/"  $domainCR
     kubectl apply -f $domainCR
 
@@ -2501,6 +2787,7 @@ function test_suite_init {
                    PV_ROOT \
                    LB_TYPE \
                    VERBOSE \
+                   DEBUG_OUT \
                    QUICKTEST \
                    NODEPORT_HOST \
                    JVM_ARGS \
@@ -2534,8 +2821,12 @@ function test_suite_init {
 
     export LEASE_ID="${LEASE_ID}"
 
-   if [ -z "$LB_TYPE" ]; then
+    if [ -z "$LB_TYPE" ]; then
       export LB_TYPE=TRAEFIK
+    fi
+
+    if [ -z "$DEBUG_OUT" ]; then
+      export DEBUG_OUT="false"
     fi
 
     # The following customizable exports are currently only customized by WERCKER
@@ -2544,6 +2835,7 @@ function test_suite_init {
     export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
     export WEBLOGIC_IMAGE_PULL_SECRET_NAME=${WEBLOGIC_IMAGE_PULL_SECRET_NAME}
+    export LOGLEVEL_OPERATOR=${LOGLEVEL_OPERATOR:-INFO}
 
     # Show custom env vars after defaults were substituted as needed.
 
@@ -2552,6 +2844,7 @@ function test_suite_init {
                    PV_ROOT \
                    LB_TYPE \
                    VERBOSE \
+                   DEBUG_OUT \
                    QUICKTEST \
                    NODEPORT_HOST \
                    JVM_ARGS \
@@ -2587,6 +2880,7 @@ function test_suite_init {
     echo "${PV_ROOT}" > /tmp/test_suite.pv_root
     echo "${PROJECT_ROOT}" > /tmp/test_suite.project_root
     echo "${LEASE_ID}" > /tmp/test_suite.lease_id
+    echo "${DEBUG_OUT}" > /tmp/test_suite.debug_out
 
     # Declare we're in a test.  We did not declare at the start
     # of the function to ensure that any env vars that might
@@ -2596,8 +2890,20 @@ function test_suite_init {
     cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
    
 
+    # Test installation using helm charts if helm is available
+    #
+    if ! [ -x "$(command -v helm)" ]; then
+      trace 'helm is not installed. Skipping helm charts tests'
+    else
+      USE_HELM="true"
+      trace 'helm is installed. Using helm for the tests'
+    fi
+
     if [ "$WERCKER" = "true" ]; then 
       trace "Test Suite is running locally on Wercker and k8s is running on remote nodes."
+
+      # do not use helm when running on wercker, for now
+      USE_HELM="false"
 
       # No need to check M2_HOME or docker_pass -- not used by local runs
 
@@ -2607,6 +2913,8 @@ function test_suite_init {
       mkdir -p $RESULT_ROOT/acceptance_test_tmp || fail "Could not mkdir -p RESULT_ROOT/acceptance_test_tmp (RESULT_ROOT=$RESULT_ROOT)"
 
       create_image_pull_secret_wercker
+
+      setup_wercker
       
     elif [ "$JENKINS" = "true" ]; then
     
@@ -2691,9 +2999,9 @@ function test_suite {
     
     declare_new_test 1 define_operators_and_domains
 
-    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT
-    op_define  oper1   weblogic-operator-1  "default,test1"    31001
-    op_define  oper2   weblogic-operator-2  test2              32001
+    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT  CREATE_SHARED_OPERATOR_RESOURCES
+    op_define  oper1   weblogic-operator-1  "default,test1"    31001                    true
+    op_define  oper2   weblogic-operator-2  test2              32001                    false
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
     dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
@@ -2708,9 +3016,15 @@ function test_suite {
     kubectl create namespace test1 2>&1 | sed 's/^/+/g' 
     kubectl create namespace test2 2>&1 | sed 's/^/+/g' 
 
+    if ! [ "$USE_HELM" = "true" ]; then
+      # do not create ooperator namespace when using helm charts
+      kubectl create namespace weblogic-operator-1 2>&1 | sed 's/^/+/g' 
+      kubectl create namespace weblogic-operator-2 2>&1 | sed 's/^/+/g' 
+    fi
+
     # This test pass pairs with 'declare_new_test 1 define_operators_and_domains' above
     declare_test_pass
-    
+   
     trace 'Running mvn integration tests...'
     if [ "$WERCKER" = "true" ]; then
       test_mvn_integration_wercker
@@ -2719,6 +3033,7 @@ function test_suite {
     else
       test_mvn_integration_local
     fi
+
 
     # create and start first operator, manages namespaces default & test1
     test_first_operator oper1
@@ -2762,7 +3077,7 @@ function test_suite {
 
       # test scaling domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
       test_cluster_scale domain4 domain1 
-  
+ 
       # cycle domain1 down and back up, plus verify no impact on domain4
       test_domain_lifecycle domain1 domain4 
 
@@ -2804,6 +3119,15 @@ function test_suite {
 
 
 # entry point
+
+# "set -o pipefail" ensures that "$?" reflects the first failure in a pipe
+# instead of the status of the last command in the pipe.
+# For example, this script:
+#   ls missing-file | tee /tmp/ls.out
+#   echo $?
+# Will echo "0" by default, and echo "2" with "set -o pipefile" 
+
+set -o pipefail
 
 if [ "$WERCKER" = "true" -o "$JENKINS" = "true" ]; then
   if [ "${VERBOSE:-false}" = "true" ]; then

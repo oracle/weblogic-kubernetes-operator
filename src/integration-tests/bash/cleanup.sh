@@ -125,13 +125,6 @@ function deleteWithOneLabel {
   fi
 }
 
-function deleteVoyagerController {
-
-  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
-      | bash -s -- --provider=baremetal --namespace=voyager --uninstall --purge
-  kubectl delete namespace voyager
-}
-
 #
 # Usage:
 # deleteNamespaces outputfile
@@ -177,7 +170,7 @@ function deleteWithLabels {
 
   echo @@ Deleting voyager controller.
   if [ "$HANDLE_VOYAGER" = "true" ]; then
-    deleteVoyagerController
+    deleteVoyagerOperator
   fi
 }
 
@@ -438,10 +431,17 @@ function fail {
 echo @@ Starting cleanup.
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
+source $PROJECT_ROOT/kubernetes/internal/utility.sh
 
 echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT"
 
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
+
+# if helm is installed, delete all installed helm charts
+if [ -x "$(command -v helm)" ]; then
+  echo @@ Deleting installed helm charts
+  helm list --short | xargs -L1 helm delete --purge
+fi
 
 # first, try to delete with labels since the conversion is that all created resources need to
 # have the proper label(s)

@@ -4,15 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
   
-  <parent>
-    <groupId>oracle.kubernetes</groupId>
-    <artifactId>operator-parent</artifactId>
-    <version>1.0</version>
-  </parent>
+    <parent>
+       <groupId>oracle.kubernetes</groupId>
+       <artifactId>operator-parent</artifactId>
+       <version>1.1-SNAPSHOT</version>
+    </parent>
 
-    <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-model</artifactId>
-    <version>1.0</version>
 
     <description>Oracle Weblogic Server Kubernetes Operator</description>
     <name>operator-model</name>
@@ -61,6 +59,20 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+      
+      		<plugin>
+				<groupId>com.coveo</groupId>
+				<artifactId>fmt-maven-plugin</artifactId>
+				<version>2.4.0</version>
+				<executions>
+					<execution>
+						<phase>test</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
       
         </plugins>
     </build>

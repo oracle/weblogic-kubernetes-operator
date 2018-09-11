@@ -1,23 +1,21 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
-/**
- * Contains a snapshot of configuration for a WebLogic Domain
- */
+/** Contains a snapshot of configuration for a WebLogic Domain */
 public class WlsDomainConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -37,7 +35,6 @@ public class WlsDomainConfig {
    * Create a new WlsDomainConfig object using the json result from the WLS REST call
    *
    * @param jsonResult A String containing the JSON response from the WLS REST call
-   *
    * @return A new WlsDomainConfig object created with information from the JSON response
    */
   public static WlsDomainConfig create(String jsonResult) {
@@ -63,10 +60,12 @@ public class WlsDomainConfig {
    * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
    * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
-  WlsDomainConfig(String name, Map<String, WlsClusterConfig> wlsClusterConfigs,
-                  Map<String, WlsServerConfig> wlsServerConfigs,
-                  Map<String, WlsServerConfig> wlsServerTemplates,
-                  Map<String, WlsMachineConfig> wlsMachineConfigs) {
+  WlsDomainConfig(
+      String name,
+      Map<String, WlsClusterConfig> wlsClusterConfigs,
+      Map<String, WlsServerConfig> wlsServerConfigs,
+      Map<String, WlsServerConfig> wlsServerTemplates,
+      Map<String, WlsMachineConfig> wlsMachineConfigs) {
     this.wlsClusterConfigs = wlsClusterConfigs;
     this.wlsServerConfigs = wlsServerConfigs;
     this.wlsServerTemplates = wlsServerTemplates;
@@ -74,7 +73,7 @@ public class WlsDomainConfig {
     this.name = name;
     // set domainConfig for each WlsClusterConfig
     if (wlsClusterConfigs != null) {
-      for (WlsClusterConfig wlsClusterConfig: wlsClusterConfigs.values()) {
+      for (WlsClusterConfig wlsClusterConfig : wlsClusterConfigs.values()) {
         wlsClusterConfig.setWlsDomainConfig(this);
       }
     }
@@ -92,16 +91,17 @@ public class WlsDomainConfig {
   /**
    * Returns all cluster configurations found in the WLS domain
    *
-   * @return A Map of WlsClusterConfig, keyed by name, containing server configurations for all clusters found in the WLS domain
+   * @return A Map of WlsClusterConfig, keyed by name, containing server configurations for all
+   *     clusters found in the WLS domain
    */
   public synchronized Map<String, WlsClusterConfig> getClusterConfigs() {
     return wlsClusterConfigs;
   }
 
   /**
-   * Returns configuration of servers found in the WLS domain, including admin server, standalone managed servers
-   * that do not belong to any cluster, and statically configured managed servers that belong to a cluster.
-   * It does not include dynamic servers configured in dynamic clusters.
+   * Returns configuration of servers found in the WLS domain, including admin server, standalone
+   * managed servers that do not belong to any cluster, and statically configured managed servers
+   * that belong to a cluster. It does not include dynamic servers configured in dynamic clusters.
    *
    * @return A Map of WlsServerConfig, keyed by name, for each server configured the WLS domain
    */
@@ -122,8 +122,9 @@ public class WlsDomainConfig {
    * Returns the configuration for the WLS cluster with the given name
    *
    * @param clusterName name of the WLS cluster
-   * @return The WlsClusterConfig object containing configuration of the WLS cluster with the given name. This methods
-   * return an empty WlsClusterConfig object even if no WLS configuration is found for the given cluster name.
+   * @return The WlsClusterConfig object containing configuration of the WLS cluster with the given
+   *     name. This methods return an empty WlsClusterConfig object even if no WLS configuration is
+   *     found for the given cluster name.
    */
   public synchronized WlsClusterConfig getClusterConfig(String clusterName) {
     WlsClusterConfig result = null;
@@ -138,12 +139,12 @@ public class WlsDomainConfig {
   }
 
   /**
-   * Returns the configuration for the WLS server with the given name. Note that this method would not return
-   * dynamic server.
+   * Returns the configuration for the WLS server with the given name. Note that this method would
+   * not return dynamic server.
    *
    * @param serverName name of the WLS server
-   * @return The WlsServerConfig object containing configuration of the WLS server with the given name. This methods
-   * return null if no WLS configuration is found for the given server name.
+   * @return The WlsServerConfig object containing configuration of the WLS server with the given
+   *     name. This methods return null if no WLS configuration is found for the given server name.
    */
   public synchronized WlsServerConfig getServerConfig(String serverName) {
     WlsServerConfig result = null;
@@ -157,8 +158,8 @@ public class WlsDomainConfig {
    * Returns the configuration for the WLS machine with the given name.
    *
    * @param machineName name of the WLS machine
-   * @return The WlsMachineConfig object containing configuration of the WLS machine with the given name. This methods
-   * return null if no WLS machine is configured with the given name.
+   * @return The WlsMachineConfig object containing configuration of the WLS machine with the given
+   *     name. This methods return null if no WLS machine is configured with the given name.
    */
   public synchronized WlsMachineConfig getMachineConfig(String machineName) {
     WlsMachineConfig result = null;
@@ -196,7 +197,8 @@ public class WlsDomainConfig {
     // process list of clusters (Note: must process server templates before processing clusters)
     if (parsedResult.clusters != null) {
       for (Map<String, Object> clusterConfig : parsedResult.clusters) {
-        WlsClusterConfig wlsClusterConfig = WlsClusterConfig.create(clusterConfig, wlsServerTemplates, name);
+        WlsClusterConfig wlsClusterConfig =
+            WlsClusterConfig.create(clusterConfig, wlsServerTemplates, name);
         wlsClusterConfigs.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
       }
     }
@@ -207,7 +209,8 @@ public class WlsDomainConfig {
         wlsServerConfigs.put(wlsServerConfig.getName(), wlsServerConfig);
         String clusterName = WlsServerConfig.getClusterNameFromJsonMap(thisServer);
         if (clusterName != null) {
-          WlsClusterConfig wlsClusterConfig = wlsClusterConfigs.computeIfAbsent(clusterName, WlsClusterConfig::new);
+          WlsClusterConfig wlsClusterConfig =
+              wlsClusterConfigs.computeIfAbsent(clusterName, WlsClusterConfig::new);
           wlsClusterConfig.addServerConfig(wlsServerConfig);
         }
       }
@@ -219,7 +222,8 @@ public class WlsDomainConfig {
         wlsMachineConfigs.put(wlsMachineConfig.getName(), wlsMachineConfig);
       }
     }
-    return new WlsDomainConfig(name, wlsClusterConfigs, wlsServerConfigs, wlsServerTemplates, wlsMachineConfigs);
+    return new WlsDomainConfig(
+        name, wlsClusterConfigs, wlsServerConfigs, wlsServerTemplates, wlsMachineConfigs);
   }
 
   public static String getRetrieveServersSearchUrl() {
@@ -227,15 +231,25 @@ public class WlsDomainConfig {
   }
 
   public static String getRetrieveServersSearchPayload() {
-    return "{ fields: [ " + getSearchFields() + " ], " +
-            "  links: [], " +
-            "  children: { " +
-            "    servers: { " + WlsServerConfig.getSearchPayload() + " }, " +
-            "    serverTemplates: { " + WlsServerConfig.getSearchPayload() + " }, " +
-            "    clusters: { " + WlsClusterConfig.getSearchPayload() + " }, " +
-            "    machines: { " + WlsMachineConfig.getSearchPayload() + " } " +
-            "  } " +
-            "}";
+    return "{ fields: [ "
+        + getSearchFields()
+        + " ], "
+        + "  links: [], "
+        + "  children: { "
+        + "    servers: { "
+        + WlsServerConfig.getSearchPayload()
+        + " }, "
+        + "    serverTemplates: { "
+        + WlsServerConfig.getSearchPayload()
+        + " }, "
+        + "    clusters: { "
+        + WlsClusterConfig.getSearchPayload()
+        + " }, "
+        + "    machines: { "
+        + WlsMachineConfig.getSearchPayload()
+        + " } "
+        + "  } "
+        + "}";
   }
 
   private static String getSearchFields() {
@@ -243,11 +257,12 @@ public class WlsDomainConfig {
   }
 
   /**
-   * Parse the json string containing WLS configuration and return a list containing a map of (server
-   * attribute name, attribute value).
+   * Parse the json string containing WLS configuration and return a list containing a map of
+   * (server attribute name, attribute value).
    *
    * @param jsonString JSON string containing WLS configuration to be parsed
-   * @return a ParsedJson object containing WebLogic domain configuration by parsing the given JSON string
+   * @return a ParsedJson object containing WebLogic domain configuration by parsing the given JSON
+   *     string
    */
   @SuppressWarnings("unchecked")
   private static ParsedJson parseJson(String jsonString) {
@@ -284,12 +299,13 @@ public class WlsDomainConfig {
   }
 
   /**
-   * Checks the provided k8s domain spec to see if it is consistent with the configuration of the WLS domain.
-   * The method also logs warning if inconsistent WLS configurations are found.
+   * Checks the provided k8s domain spec to see if it is consistent with the configuration of the
+   * WLS domain. The method also logs warning if inconsistent WLS configurations are found.
    *
    * @param domainSpec The DomainSpec to be validated against the WLS configuration
-   * @param suggestedConfigUpdates a List of ConfigUpdate objects containing suggested WebLogic config updates that
-   *                               are necessary to make the WebLogic domain consistent with the DomainSpec. Optional.
+   * @param suggestedConfigUpdates a List of ConfigUpdate objects containing suggested WebLogic
+   *     config updates that are necessary to make the WebLogic domain consistent with the
+   *     DomainSpec. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
   public boolean validate(DomainSpec domainSpec, List<ConfigUpdate> suggestedConfigUpdates) {
@@ -305,8 +321,8 @@ public class WlsDomainConfig {
         String clusterName = clusterStartup.getClusterName();
         if (clusterName != null) {
           WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
-          updated |= wlsClusterConfig.validateClusterStartup(clusterStartup,
-            suggestedConfigUpdates);
+          updated |=
+              wlsClusterConfig.validateClusterStartup(clusterStartup, suggestedConfigUpdates);
         }
       }
     }
@@ -317,9 +333,8 @@ public class WlsDomainConfig {
       // WLS domain contains only one cluster
       if (clusterConfigs != null && clusterConfigs.size() == 1) {
         for (WlsClusterConfig wlsClusterConfig : clusterConfigs) {
-          wlsClusterConfig.validateReplicas(domainSpec.getReplicas(),
-            "domainSpec",
-            suggestedConfigUpdates);
+          wlsClusterConfig.validateReplicas(
+              domainSpec.getReplicas(), "domainSpec", suggestedConfigUpdates);
         }
       } else {
         // log info message if replicas is specified but number of WLS clusters in domain is not 1
@@ -331,9 +346,7 @@ public class WlsDomainConfig {
     return updated;
   }
 
-  /**
-   * Object used by the {@link #parseJson(String)} method to return multiple parsed objects
-   */
+  /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects */
   static class ParsedJson {
     String domainName;
     List<Map<String, Object>> servers;
@@ -344,13 +357,18 @@ public class WlsDomainConfig {
 
   @Override
   public String toString() {
-    return "WlsDomainConfig{" +
-            "wlsClusterConfigs=" + wlsClusterConfigs +
-            ", wlsServerConfigs=" + wlsServerConfigs +
-            ", wlsServerTemplates=" + wlsServerTemplates +
-            ", wlsMachineConfigs=" + wlsMachineConfigs +
-            ", name='" + name + '\'' +
-            '}';
+    return "WlsDomainConfig{"
+        + "wlsClusterConfigs="
+        + wlsClusterConfigs
+        + ", wlsServerConfigs="
+        + wlsServerConfigs
+        + ", wlsServerTemplates="
+        + wlsServerTemplates
+        + ", wlsMachineConfigs="
+        + wlsMachineConfigs
+        + ", name='"
+        + name
+        + '\''
+        + '}';
   }
-
 }
