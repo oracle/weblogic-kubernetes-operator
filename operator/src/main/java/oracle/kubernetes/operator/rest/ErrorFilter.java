@@ -1,23 +1,22 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.model.ErrorModel;
-
+import java.io.IOException;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
-import java.io.IOException;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.model.ErrorModel;
 
 /**
- * ErrorFilter reformats string entities from non-success responses
- * into arrays of message entities
+ * ErrorFilter reformats string entities from non-success responses into arrays of message entities
  */
 @Provider
 @Priority(FilterPriorities.ERROR_FILTER_PRIORITY)
@@ -29,9 +28,7 @@ public class ErrorFilter implements ContainerResponseFilter {
     // nothing to do
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void filter(ContainerRequestContext req, ContainerResponseContext res) throws IOException {
     LOGGER.entering();

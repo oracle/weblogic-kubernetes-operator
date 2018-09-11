@@ -1,11 +1,12 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
 /**
- * Message keys used to look up log messages from the resource bundle.  The use of
- * message keys makes the code more readable.
+ * Message keys used to look up log messages from the resource bundle. The use of message keys makes
+ * the code more readable.
  */
 public class MessageKeys {
   private MessageKeys() {}
@@ -99,7 +100,7 @@ public class MessageKeys {
   public static final String EXCH_UNEQUAL_LISTEN_PORTS = "WLSKO-0090";
   public static final String EXCH_WRONG_PROTOCOL = "WLSKO-0091";
   public static final String EXCH_CHANNEL_NOT_DEFINED = "WLSKO-0092";
-  public static final String EXCH_OUTSIDE_RANGE="WLSKO-0093";
+  public static final String EXCH_OUTSIDE_RANGE = "WLSKO-0093";
   public static final String ASYNC_REQUEST = "WLSKO-0094";
   public static final String ASYNC_FAILURE = "WLSKO-0095";
   public static final String ASYNC_SUCCESS = "WLSKO-0096";
@@ -122,7 +123,7 @@ public class MessageKeys {
   public static final String RESTART_SERVERS_STARTING = "WLSKO-0116";
   public static final String ROLLING_CLUSTERS_STARTING = "WLSKO-0117";
   public static final String CYCLING_SERVERS = "WLSKO-0118";
-  public static final String ROLLING_SERVERS = "WLSKO-0118";
+  public static final String ROLLING_SERVERS = "WLSKO-0119";
   public static final String REMOVING_INGRESS = "WLSKO-0120";
   public static final String LIST_INGRESS_FOR_DOMAIN = "WLSKO-0121";
   public static final String POD_DELETED = "WLSKO-0122";

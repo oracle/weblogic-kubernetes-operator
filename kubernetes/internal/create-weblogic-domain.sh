@@ -118,10 +118,25 @@ function validateVersion {
 }
 
 #
-# Function to ensure the domain uid is lowercase
+# Function to ensure the domain uid is legal DNS name
 #
 function validateDomainUid {
   validateLowerCase "domainUID" ${domainUID}
+  validateDNS1123LegalName domainUID ${domainUID}
+}
+
+#
+# Function to ensure the adminServerName is legal DNS name
+#
+function validateAdminServerName {
+  validateDNS1123LegalName adminServerName ${adminServerName}
+}
+
+#
+# Function to ensure the managedServerNameBase is legal DNS name
+#
+function validateManagedServerNameBase {
+  validateDNS1123LegalName managedServerNameBase ${managedServerNameBase}
 }
 
 #
@@ -132,10 +147,11 @@ function validateNamespace {
 }
 
 #
-# Create an instance of clusterName to be used in cases where lowercase is required.
+# Function to ensure the clusterName is legal DNS name
 #
 function validateClusterName {
-  clusterNameLC=$(toLower $clusterName)
+  clusterNameLC=$(toDNS1123Legal $clusterName)
+  validateDNS1123LegalName clusterName ${clusterName}
 }
 
 #
@@ -336,9 +352,14 @@ function initialize {
     validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
 
-  jobInput="${scriptDir}/create-weblogic-domain-job-template.yaml"
-  if [ ! -f ${jobInput} ]; then
-    validationError "The template file ${jobInput} for creating a WebLogic domain was not found"
+  createJobInput="${scriptDir}/create-weblogic-domain-job-template.yaml"
+  if [ ! -f ${createJobInput} ]; then
+    validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
+  fi
+
+  deleteJobInput="${scriptDir}/delete-weblogic-domain-job-template.yaml"
+  if [ ! -f ${deleteJobInput} ]; then
+    validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
   dcrInput="${scriptDir}/domain-custom-resource-template.yaml"
@@ -366,9 +387,19 @@ function initialize {
     validationError "The template file ${apacheInput} for generating the apache-webtier deployment was not found"
   fi
   
-  voyagerInput="${scriptDir}/voyager-ingress-template.yaml"
-  if [ ! -f ${voyagerInput} ]; then
-    validationError "The template file ${voyagerInput} for generating the Voyager Ingress was not found"
+  voyagerOperatorInput="${scriptDir}/voyager-operator.yaml"
+  if [ ! -f ${voyagerOperatorInput} ]; then
+    validationError "The file ${voyagerOperatorInput} for Voyager Operator was not found"
+  fi
+
+  voyagerSecurityInput="${scriptDir}/voyager-operator-security.yaml"
+  if [ ! -f ${voyagerSecurityInput} ]; then
+    validationError "The file ${voyagerSecurityInput} for generating the Voyager RBAC was not found"
+  fi
+
+  voyagerIngressInput="${scriptDir}/weblogic-domain-voyager-ingress-template.yaml"
+  if [ ! -f ${voyagerIngressInput} ]; then
+    validationError "The template file ${voyagerIngressInput} for generating the Voyager Ingress was not found"
   fi
 
   failIfValidationErrors
@@ -385,7 +416,6 @@ function initialize {
     weblogicDomainStorageSize \
     weblogicCredentialsSecretName \
     namespace \
-    javaOptions \
     t3PublicAddress \
     version
 
@@ -406,6 +436,8 @@ function initialize {
 
   validateVersion
   validateDomainUid
+  validateAdminServerName
+  validateManagedServerNameBase
   validateNamespace
   validateClusterName
   validateWeblogicDomainStorageType
@@ -437,16 +469,27 @@ function createYamlFiles {
 
   domainPVOutput="${domainOutputDir}/weblogic-domain-pv.yaml"
   domainPVCOutput="${domainOutputDir}/weblogic-domain-pvc.yaml"
-  jobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
+  createJobOutput="${domainOutputDir}/create-weblogic-domain-job.yaml"
+  deleteJobOutput="${domainOutputDir}/delete-weblogic-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
   traefikSecurityOutput="${domainOutputDir}/weblogic-domain-traefik-security-${clusterNameLC}.yaml"
   traefikOutput="${domainOutputDir}/weblogic-domain-traefik-${clusterNameLC}.yaml"
   apacheOutput="${domainOutputDir}/weblogic-domain-apache.yaml"
   apacheSecurityOutput="${domainOutputDir}/weblogic-domain-apache-security.yaml"
-  voyagerOutput="${domainOutputDir}/voyager-ingress.yaml"
+  voyagerSecurityOutput="${domainOutputDir}/voyager-operator-security.yaml"
+  voyagerOperatorOutput="${domainOutputDir}/voyager-operator.yaml"
+  voyagerIngressOutput="${domainOutputDir}/weblogic-domain-voyager-ingress.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
+
+  # For backward compatability, default to "store/oracle/weblogic:12.2.1.3" if not defined in
+  # create-weblogic-domain-inputs.yaml
+  if [ -z "${weblogicImage}" ]; then
+    weblogicImage="store/oracle/weblogic:12.2.1.3"
+  fi
+  # Must escape the ':' value in weblogicImage for sed to properly parse and replace
+  weblogicImage=$(echo ${weblogicImage} | sed -e "s/\:/\\\:/g")
 
   # Generate the yaml to create the persistent volume
   echo Generating ${domainPVOutput}
@@ -480,25 +523,38 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
-  echo Generating ${jobOutput}
+  echo Generating ${createJobOutput}
 
-  cp ${jobInput} ${jobOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${jobOutput}
-  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${jobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${jobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${jobOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${jobOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${jobOutput}
-  sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${jobOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${jobOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${jobOutput}
-  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${jobOutput}
-  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${jobOutput}
-  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${jobOutput}
-  sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${jobOutput}
-  sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${jobOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${jobOutput}
-  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${jobOutput}
+  cp ${createJobInput} ${createJobOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
+  sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
+  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
+  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${createJobOutput}
+  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${createJobOutput}
+  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${createJobOutput}
+  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${createJobOutput}
+  sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
+  sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
+  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
+
+  # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
+  echo Generating ${deleteJobOutput}
+
+  cp ${deleteJobInput} ${deleteJobOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
@@ -521,6 +577,8 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
@@ -555,7 +613,33 @@ function createYamlFiles {
   if [ "${loadBalancer}" = "APACHE" ]; then
     # Apache file
     cp ${apacheInput} ${apacheOutput}
+ 
     echo Generating ${apacheOutput}
+
+    if [ "${loadBalancerExposeAdminPort}" = "true" ]; then
+      enableLoadBalancerExposeAdminPortPrefix="${enabledPrefix}"
+    else
+      enableLoadBalancerExposeAdminPortPrefix="${disabledPrefix}"
+    fi
+
+    enableLoadBalancerVolumePathPrefix="${disabledPrefix}"
+    apacheConfigFileName="custom_mod_wl_apache.conf"
+    if [ ! -z "${loadBalancerVolumePath}" ]; then
+      if [ ! -d ${loadBalancerVolumePath} ]; then
+        echo -e "\nERROR - The specified loadBalancerVolumePath $loadBalancerVolumePath does not exist! \n"
+        fail "Exiting due to a validation error"
+      elif [ ! -f ${loadBalancerVolumePath}/${apacheConfigFileName} ]; then
+        echo -e "\nERROR - The required file ${apacheConfigFileName} does not exist under the specified loadBalancerVolumePath $loadBalancerVolumePath! \n"
+        fail "Exiting due to a validation error"
+      else
+        enableLoadBalancerVolumePathPrefix="${enabledPrefix}"
+        sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
+
+      fi
+    fi
+
+    sed -i -e "s:%ENABLE_LOAD_BALANCER_EXPOSE_ADMIN_PORT%:${enableLoadBalancerExposeAdminPortPrefix}:g" ${apacheOutput}
+    sed -i -e "s:%ENABLE_LOAD_BALANCER_VOLUME_PATH%:${enableLoadBalancerVolumePathPrefix}:g" ${apacheOutput}
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${apacheOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${apacheOutput}
@@ -565,27 +649,6 @@ function createYamlFiles {
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${apacheOutput}
     sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${apacheOutput}
     sed -i -e "s:%WEB_APP_PREPATH%:$loadBalancerAppPrepath:g" ${apacheOutput}
-
-    if [ ! -z "${loadBalancerVolumePath}" ]; then
-      apacheConfigFileName="custom_mod_wl_apache.conf"
-      if [ ! -d ${loadBalancerVolumePath} ]; then
-        echo -e "\nERROR - The specified loadBalancerVolumePath $loadBalancerVolumePath does not exist! \n"
-        fail "Exiting due to a validation error"
-      elif [ ! -f ${loadBalancerVolumePath}/${apacheConfigFileName} ]; then
-        echo -e "\nERROR - The required file ${apacheConfigFileName} does not exist under the specified loadBalancerVolumePath $loadBalancerVolumePath! \n"
-        fail "Exiting due to a validation error"
-      else
-        sed -i -e "s:%LOAD_BALANCER_VOLUME_PATH%:${loadBalancerVolumePath}:g" ${apacheOutput}
-        sed -i -e "s:# volumes:volumes:g" ${apacheOutput}
-        sed -i -e "s:# - name:- name:g" ${apacheOutput}
-        sed -i -e "s:#   hostPath:  hostPath:g" ${apacheOutput}
-        sed -i -e "s:#     path:    path:g" ${apacheOutput}
-        sed -i -e "s:# volumeMounts:volumeMounts:g" ${apacheOutput}
-        sed -i -e "s:# - name:- name:g" ${apacheOutput}
-        sed -i -e "s:#   mountPath:  mountPath:g" ${apacheOutput}
-
-      fi
-    fi
  
     # Apache security file
     cp ${apacheSecurityInput} ${apacheSecurityOutput}
@@ -596,17 +659,21 @@ function createYamlFiles {
   fi
 
   if [ "${loadBalancer}" = "VOYAGER" ]; then
+    # Voyager Operator Security yaml file
+    cp ${voyagerSecurityInput} ${voyagerSecurityOutput}
+    # Voyager Operator yaml file
+    cp ${voyagerOperatorInput} ${voyagerOperatorOutput}
     # Voyager Ingress file
-    cp ${voyagerInput} ${voyagerOutput}
-    echo Generating ${voyagerOutput}
-    sed -i -e "s:%NAMESPACE%:$namespace:g" ${voyagerOutput}
-    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerOutput}
-    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerOutput}
-    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerOutput}
-    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${voyagerOutput}
-    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerOutput}
-    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerOutput}
-    sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${voyagerOutput}
+    cp ${voyagerIngressInput} ${voyagerIngressOutput}
+    echo Generating ${voyagerIngressOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${voyagerIngressOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%CLUSTER_NAME_LC%:${clusterNameLC}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${voyagerIngressOutput}
+    sed -i -e "s:%LOAD_BALANCER_WEB_PORT%:$loadBalancerWebPort:g" ${voyagerIngressOutput}
+    sed -i -e "s:%LOAD_BALANCER_DASHBOARD_PORT%:$loadBalancerDashboardPort:g" ${voyagerIngressOutput}
   fi
 
   # Remove any "...yaml-e" files left over from running sed
@@ -650,10 +717,10 @@ function createDomain {
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-domain-job"
-  deleteK8sObj job $JOB_NAME ${jobOutput}
+  deleteK8sObj job $JOB_NAME ${createJobOutput}
 
-  echo Creating the domain by creating the job ${jobOutput}
-  kubectl create -f ${jobOutput}
+  echo Creating the domain by creating the job ${createJobOutput}
+  kubectl create -f ${createJobOutput}
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
@@ -704,70 +771,8 @@ function createDomain {
 # Deploy Voyager/HAProxy load balancer
 #
 function setupVoyagerLoadBalancer {
-  # only deploy Voyager Ingress Controller the first time
-  local vpod=`kubectl get pod -n voyager | grep voyager | wc -l`
-  if [ "$vpod" == "0" ]; then
-    kubectl create namespace voyager
-    curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
-    | bash -s -- --provider=baremetal --namespace=voyager
-  fi
-
-  # verify Voyager controller pod is ready
-  local ready=`kubectl -n voyager get pod | grep voyager-operator | awk ' { print $2; } '`
-  if [ "${ready}" != "1/1" ] ; then
-    fail "Voyager Ingress Controller is not ready"
-  fi
-
-  # deploy Voyager Ingress resource
-  kubectl apply -f ${voyagerOutput}
-
-  echo Checking Voyager Ingress resource
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local vdep=`kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } '`
-    if [ "$vdep" = "1" ]; then
-      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
-    fi
-    sleep 5
-  done
-
-  echo Checking HAProxy pod is running
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local st=`kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } '`
-    if [ "$st" = "Running" ]; then
-      echo "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is created successfully."
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager  was not created or running."
-    fi
-    sleep 5
-  done
-
-  echo Checking Voyager service
-  local maxwaitsecs=100
-  local mstart=`date +%s`
-  while : ; do
-    local mnow=`date +%s`
-    local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
-    if [ "$vscv" = "1" ]; then
-      echo 'The service ${domainUID}-voyager-stats is created successfully.'
-      break
-    fi
-    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-      fail "The service ${domainUID}-voyager-stats was not created."
-    fi
-    sleep 5
-  done
+  createVoyagerOperator ${voyagerSecurityOutput} ${voyagerOperatorOutput}
+  createVoyagerIngress ${voyagerIngressOutput} ${namespace} ${domainUID}
 }
 
 #
@@ -924,7 +929,7 @@ function outputJobSummary {
   echo "  ${domainOutputDir}/create-weblogic-domain-inputs.yaml"
   echo "  ${domainPVOutput}"
   echo "  ${domainPVCOutput}"
-  echo "  ${jobOutput}"
+  echo "  ${createJobOutput}"
   echo "  ${dcrOutput}"
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     echo "  ${traefikSecurityOutput}"
@@ -933,7 +938,9 @@ function outputJobSummary {
     echo "  ${apacheSecurityOutput}"
     echo "  ${apacheOutput}"
   elif [ "${loadBalancer}" = "VOYAGER" ]; then
-    echo "  ${voyagerOutput}"
+    echo "  ${voyagerOperatorOutput}"
+    echo "  ${voyagerSecurityOutput}"
+    echo "  ${voyagerIngressOutput}"
   fi
 }
 

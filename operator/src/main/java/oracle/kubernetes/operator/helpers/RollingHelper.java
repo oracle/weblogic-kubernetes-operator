@@ -1,5 +1,6 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -9,12 +10,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
-import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -24,37 +21,42 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
 
 /**
- * After the {@link PodHelper} identifies servers that are presently running, but that are using an out-of-date specification,
- * it defers the processing of these servers to the RollingHelper.  This class will ensure that a minimum number of cluster
- * members remain up, if possible, throughout the rolling process.
- * 
+ * After the {@link PodHelper} identifies servers that are presently running, but that are using an
+ * out-of-date specification, it defers the processing of these servers to the RollingHelper. This
+ * class will ensure that a minimum number of cluster members remain up, if possible, throughout the
+ * rolling process.
  */
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  
+
   private static final int MINIMUM_FOR_CLUSTER = 2;
 
   private RollingHelper() {}
-  
+
   /**
-   * Creates an asynchronous step that completes the rolling.  The rolling parameter is a map from 
-   * server name to a {@link StepAndPacket} that includes the asynchronous step and packet necessary to 
-   * roll that individual server.  This will include first stopping (deleting) the existing Pod, recreating
-   * the Pod with the updated specification, waiting for that new Pod to become Ready and, finally, completing
-   * the server presence with necessary Service and Ingress objects, etc.
-   * @param rolling Map from server name to {@link Step} and {@link Packet} combination for rolling one server
+   * Creates an asynchronous step that completes the rolling. The rolling parameter is a map from
+   * server name to a {@link StepAndPacket} that includes the asynchronous step and packet necessary
+   * to roll that individual server. This will include first stopping (deleting) the existing Pod,
+   * recreating the Pod with the updated specification, waiting for that new Pod to become Ready
+   * and, finally, completing the server presence with necessary Service and Ingress objects, etc.
+   *
+   * @param rolling Map from server name to {@link Step} and {@link Packet} combination for rolling
+   *     one server
    * @param next Next asynchronous step
    * @return Asynchronous step to complete rolling
    */
   public static Step rollServers(Map<String, StepAndPacket> rolling, Step next) {
     return new RollingStep(rolling, next);
   }
-  
+
   private static class RollingStep extends Step {
     private final Map<String, StepAndPacket> rolling;
-    
+
     private RollingStep(Map<String, StepAndPacket> rolling, Step next) {
       super(next);
       this.rolling = rolling;
@@ -63,7 +65,7 @@ public class RollingHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      
+
       Domain dom = info.getDomain();
       DomainStatus status = dom.getStatus();
       // These are presently Ready servers
@@ -79,9 +81,9 @@ public class RollingHelper {
 
       Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
       Map<String, Collection<StepAndPacket>> clusteredRestarts = new HashMap<>();
-      
+
       List<String> servers = new ArrayList<>();
-      for(Map.Entry<String, StepAndPacket> entry : rolling.entrySet()) {
+      for (Map.Entry<String, StepAndPacket> entry : rolling.entrySet()) {
         // If this server isn't currently Ready, then it can be safely restarted now
         // regardless of the state of its cluster (if any)
         if (!availableServers.contains(entry.getKey())) {
@@ -89,7 +91,7 @@ public class RollingHelper {
           serversThatCanRestartNow.add(entry.getValue());
           continue;
         }
-        
+
         // If this server isn't part of a cluster, then it can also be safely restarted now
         Packet p = entry.getValue().packet;
         WlsClusterConfig cluster = (WlsClusterConfig) p.get(ProcessingConstants.CLUSTER_SCAN);
@@ -98,7 +100,7 @@ public class RollingHelper {
           serversThatCanRestartNow.add(entry.getValue());
           continue;
         }
-        
+
         // clustered server
         String clusterName = cluster.getClusterName();
         Collection<StepAndPacket> cr = clusteredRestarts.get(clusterName);
@@ -108,49 +110,55 @@ public class RollingHelper {
         }
         cr.add(entry.getValue());
       }
-      
+
       if (!servers.isEmpty()) {
         LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getSpec().getDomainUID(), servers);
       }
-      
+
       Collection<StepAndPacket> work = new ArrayList<>();
       if (!serversThatCanRestartNow.isEmpty()) {
-        work.add(new StepAndPacket(new ServersThatCanRestartNowStep(serversThatCanRestartNow, null), packet));
+        work.add(
+            new StepAndPacket(
+                new ServersThatCanRestartNowStep(serversThatCanRestartNow, null), packet));
       }
-      
+
       if (!clusteredRestarts.isEmpty()) {
         for (Map.Entry<String, Collection<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
-          work.add(new StepAndPacket(new RollSpecificClusterStep(entry.getKey(), entry.getValue(), null), packet));
+          work.add(
+              new StepAndPacket(
+                  new RollSpecificClusterStep(entry.getKey(), entry.getValue(), null), packet));
         }
       }
-      
+
       if (!work.isEmpty()) {
-        return doForkJoin(next, packet, work);
+        return doForkJoin(getNext(), packet, work);
       }
-      
+
       return doNext(packet);
     }
   }
-  
+
   private static class ServersThatCanRestartNowStep extends Step {
     private final Collection<StepAndPacket> serversThatCanRestartNow;
 
-    public ServersThatCanRestartNowStep(Collection<StepAndPacket> serversThatCanRestartNow, Step next) {
+    public ServersThatCanRestartNowStep(
+        Collection<StepAndPacket> serversThatCanRestartNow, Step next) {
       super(next);
       this.serversThatCanRestartNow = serversThatCanRestartNow;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      return doForkJoin(next, packet, serversThatCanRestartNow);
+      return doForkJoin(getNext(), packet, serversThatCanRestartNow);
     }
   }
-  
+
   private static class RollSpecificClusterStep extends Step {
     private final String clusterName;
     private final Iterator<StepAndPacket> it;
 
-    public RollSpecificClusterStep(String clusterName, Collection<StepAndPacket> clusteredServerRestarts, Step next) {
+    public RollSpecificClusterStep(
+        String clusterName, Collection<StepAndPacket> clusteredServerRestarts, Step next) {
       super(next);
       this.clusterName = clusterName;
       it = clusteredServerRestarts.iterator();
@@ -160,7 +168,7 @@ public class RollingHelper {
     public NextAction apply(Packet packet) {
       if (it.hasNext()) {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        
+
         // Refresh as this is constantly changing
         Domain dom = info.getDomain();
         DomainStatus status = dom.getStatus();
@@ -177,15 +185,16 @@ public class RollingHelper {
 
         List<String> servers = new ArrayList<>();
         List<String> readyServers = new ArrayList<>();
-        
+
         Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
         // We will always restart at least one server
         StepAndPacket current = it.next();
         serversThatCanRestartNow.add(current);
-        
-        WlsServerConfig scan = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
+
+        WlsServerConfig scan =
+            (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
         servers.add(scan != null ? scan.getName() : dom.getSpec().getAsName());
-        
+
         // See if we can restart more now
         if (it.hasNext()) {
           // we are already pending a restart of one server, so start count at -1
@@ -203,8 +212,9 @@ public class RollingHelper {
               }
             }
           }
-          
-          // then add as many as possible next() entries leaving at least minimum cluster availability
+
+          // then add as many as possible next() entries leaving at least minimum cluster
+          // availability
           while (countReady-- > MINIMUM_FOR_CLUSTER) {
             current = it.next();
             scan = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
@@ -215,13 +225,14 @@ public class RollingHelper {
             }
           }
         }
-        
+
         readyServers.removeAll(servers);
-        LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getSpec().getDomainUID(), servers, readyServers);
-        
+        LOGGER.info(
+            MessageKeys.ROLLING_SERVERS, dom.getSpec().getDomainUID(), servers, readyServers);
+
         return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
       }
-      
+
       return doNext(packet);
     }
   }

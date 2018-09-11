@@ -1,5 +1,9 @@
 package oracle.kubernetes.operator.work;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
+
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Iterator;
@@ -10,35 +14,40 @@ import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import io.kubernetes.client.ApiException;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static com.meterware.simplestub.Stub.createStub;
+import oracle.kubernetes.operator.calls.RetryStrategy;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 
 /**
- * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to initiate
- * fiber execution, which will happen in simulated time. That time starts at zero when an instance is created,
- * and can be increased by a call to setTime. This is useful to run steps which are scheduled for the future,
- * without using delays. As all steps are run in a single thread, there is no need to add semaphores to coordinate
- * them.
+ * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to
+ * initiate fiber execution, which will happen in simulated time. That time starts at zero when an
+ * instance is created, and can be increased by a call to setTime. This is useful to run steps which
+ * are scheduled for the future, without using delays. As all steps are run in a single thread,
+ * there is no need to add semaphores to coordinate them.
  *
- * The components in the packet used by the embedded fiber may be access via #getPacketComponents.
+ * <p>The components in the packet used by the embedded fiber may be access via
+ * #getPacketComponents.
  */
+@SuppressWarnings("UnusedReturnValue")
 public class FiberTestSupport {
   private CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
-  
+
   private Engine engine = new Engine(schedule);
   private Fiber fiber = engine.createFiber();
   private Packet packet = new Packet();
 
+  /** Creates a single-threaded FiberGate instance. */
+  public FiberGate createFiberGateStub() {
+    return new FiberGate(engine);
+  }
+
   /**
-   * Schedules a runnable to run immediately. In practice, it will run as soon as all previously queued runnables
-   * have complete.
+   * Schedules a runnable to run immediately. In practice, it will run as soon as all previously
+   * queued runnables have complete.
+   *
    * @param runnable a runnable to be executed by the scheduler.
    */
   public void schedule(Runnable runnable) {
@@ -47,6 +56,7 @@ public class FiberTestSupport {
 
   /**
    * Returns true if an item is scheduled to run at the specified time.
+   *
    * @param time the time, in units
    * @param unit the unit associated with the time
    */
@@ -55,7 +65,9 @@ public class FiberTestSupport {
   }
 
   /**
-   * Sets the simulated time, thus triggering the execution of any runnable items associated with earlier times.
+   * Sets the simulated time, thus triggering the execution of any runnable items associated with
+   * earlier times.
+   *
    * @param time the time, in units
    * @param unit the unit associated with the time
    */
@@ -63,33 +75,84 @@ public class FiberTestSupport {
     schedule.setTime(time, unit);
   }
 
-  /**
-   * Returns an unmodificable map of the components in the test packet.
-   */
+  /** Returns an unmodificable map of the components in the test packet. */
   public Map<String, Component> getPacketComponents() {
     return Collections.unmodifiableMap(packet.getComponents());
   }
 
-  /**
-   * Starts a unit-test fiber with the specified step
-   * @param step the first step to run
-   */
-  public void runStep(Step step) {
-    fiber.start(step, packet, completionCallback);
+  public FiberTestSupport addToPacket(String key, Object value) {
+    packet.put(key, value);
+    return this;
+  }
+
+  public FiberTestSupport removeFromPacket(String key) {
+    packet.put(key, null);
+    return this;
+  }
+
+  public FiberTestSupport addDomainPresenceInfo(DomainPresenceInfo info) {
+    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    return this;
+  }
+
+  public FiberTestSupport addRetryStrategy(RetryStrategy retryStrategy) {
+    packet.getComponents().put("retry", Component.createFor(RetryStrategy.class, retryStrategy));
+    return this;
+  }
+
+  public <T> FiberTestSupport addComponent(String key, Class<T> aClass, T component) {
+    packet.getComponents().put(key, Component.createFor(aClass, component));
+    return this;
+  }
+
+  public FiberTestSupport addVersion(KubernetesVersion kubernetesVersion) {
+    packet
+        .getComponents()
+        .put("version", Component.createFor(KubernetesVersion.class, kubernetesVersion));
+    return this;
   }
 
   /**
-   * Verifies that the completion callback's 'onThrowable' method was invoked with a throwable of the specified class.
-   * Clears the throwable so that #throwOnFailure will not throw the expected exception.
+   * Starts a unit-test fiber with the specified step
+   *
+   * @param step the first step to run
+   */
+  public Packet runSteps(Step step) {
+    fiber.start(step, packet, completionCallback);
+    return packet;
+  }
+
+  /**
+   * Starts a unit-test fiber with the specified step
+   *
+   * @param nextStep the first step to run
+   */
+  public Packet runSteps(StepFactory factory, Step nextStep) {
+    fiber.start(factory.createStepList(nextStep), packet, completionCallback);
+    return packet;
+  }
+
+  @FunctionalInterface
+  public interface StepFactory {
+    Step createStepList(Step next);
+  }
+
+  /**
+   * Verifies that the completion callback's 'onThrowable' method was invoked with a throwable of
+   * the specified class. Clears the throwable so that #throwOnFailure will not throw the expected
+   * exception.
+   *
    * @param throwableClass the class of the excepted throwable
    */
-  public void verifyCompletionThrowable(Class<ApiException> throwableClass) {
+  public void verifyCompletionThrowable(Class<? extends Throwable> throwableClass) {
     completionCallback.verifyThrowable(throwableClass);
   }
 
   /**
    * If the completion callback's 'onThrowable' method was invoked, throws the specified throwable.
-   * Note that a call to #verifyCompletionThrowable will consume the throwable, so this method will not throw it.
+   * Note that a call to #verifyCompletionThrowable will consume the throwable, so this method will
+   * not throw it.
+   *
    * @throws Exception the exception reported as a failure
    */
   public void throwOnCompletionFailure() throws Exception {
@@ -110,7 +173,8 @@ public class FiberTestSupport {
 
     @Override
     @Nonnull
-    public ScheduledFuture<?> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+    public ScheduledFuture<?> schedule(
+        @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
       scheduledItems.add(new ScheduledItem(unit.toMillis(delay), command));
       return createStub(ScheduledFuture.class);
     }
@@ -118,29 +182,30 @@ public class FiberTestSupport {
     @Override
     public void execute(@Nullable Runnable command) {
       queue.add(command);
-      if (current == null)
-        runNextRunnable();
+      if (current == null) runNextRunnable();
     }
 
     private void runNextRunnable() {
-      while (queue.peek() != null) {
-        current = queue.poll();
+      while (null != (current = queue.poll())) {
         current.run();
         current = null;
       }
     }
 
     /**
-     * Sets the simulated time, thus triggering the execution of any runnable iterms associated with earlier times.
+     * Sets the simulated time, thus triggering the execution of any runnable iterms associated with
+     * earlier times.
+     *
      * @param time the time, in units
      * @param unit the unit associated with the time
      */
     void setTime(long time, TimeUnit unit) {
       long newTime = unit.toMillis(time);
       if (newTime < currentTime)
-        throw new IllegalStateException("Attempt to move clock backwards from " + currentTime + " to " + newTime);
+        throw new IllegalStateException(
+            "Attempt to move clock backwards from " + currentTime + " to " + newTime);
 
-      for (Iterator<ScheduledItem> it = scheduledItems.iterator(); it.hasNext();) {
+      for (Iterator<ScheduledItem> it = scheduledItems.iterator(); it.hasNext(); ) {
         ScheduledItem item = it.next();
         if (item.atTime > newTime) break;
         it.remove();
@@ -152,6 +217,7 @@ public class FiberTestSupport {
 
     /**
      * Returns true if a runnable item has been scheduled for the specified time.
+     *
      * @param time the time, in units
      * @param unit the unit associated with the time
      * @return true if such an item exists
@@ -179,37 +245,37 @@ public class FiberTestSupport {
   }
 
   static class CompletionCallbackStub implements Fiber.CompletionCallback {
-    private Packet packet;
     private Throwable throwable;
 
     @Override
-    public void onCompletion(Packet packet) {
-      this.packet = packet;
-    }
+    public void onCompletion(Packet packet) {}
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      this.packet = packet;
       this.throwable = throwable;
     }
 
     /**
-     * Verifies that 'onThrowable' was invoked with a throwable of the specified class. Clears
-     * the throwable so that #throwOnFailure will not throw the expected exception.
+     * Verifies that 'onThrowable' was invoked with a throwable of the specified class. Clears the
+     * throwable so that #throwOnFailure will not throw the expected exception.
+     *
      * @param throwableClass the class of the excepted throwable
      */
     void verifyThrowable(Class<?> throwableClass) {
       Throwable actual = throwable;
       throwable = null;
 
-      if (actual == null) throw new AssertionError("Expected exception: " + throwableClass.getName());
+      if (actual == null)
+        throw new AssertionError("Expected exception: " + throwableClass.getName());
       if (!throwableClass.isInstance(actual))
-        throw new AssertionError("Expected exception: " + throwableClass.getName() + " but was " + actual);
+        throw new AssertionError(
+            "Expected exception: " + throwableClass.getName() + " but was " + actual);
     }
 
     /**
-     * If 'onThrowable' was invoked, throws the specified throwable. Note that a call to #verifyThrowable
-     * will consume the throwable, so this method will not throw it.
+     * If 'onThrowable' was invoked, throws the specified throwable. Note that a call to
+     * #verifyThrowable will consume the throwable, so this method will not throw it.
+     *
      * @throws Exception the exception reported as a failure
      */
     void throwOnFailure() throws Exception {

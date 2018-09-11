@@ -17,7 +17,7 @@ You need to build the Docker image for the Apache HTTP Server that embeds the Or
 
 ```
 
-For more information about the Apache plugin, see [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+For more information about the Apache plugin, see [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/12213/webtier/develop-plugin/apache.htm#PLGWL395).
 
 After you have access to the Docker image of the Apache HTTP Server, you can follow the instructions below to set up and start the Kubernetes resources for the Apache HTTP Server.
 
@@ -62,9 +62,7 @@ loadBalancerAppPrepath: /weblogic
 
 ```
 
-It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, then, after the `weblogic-domain-apache.yaml` file is generated, you can customize exposure of the WebLogic Administration Server host and port by uncommenting the `WEBLOGIC_HOST` and `WEBLOGIC_PORT` environment variables in the file.   If this file's resources have already been deployed (as happens automatically when running `create-weblogic-domain.sh`), one way to make the change is to delete the file's running Kubernetes resources using `kubectl delete -f weblogic-domain-apache.yaml`, and then deploy them again via `kubectl create -f weblogic-domain-apache.yaml`.
-
-Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>,` and, if the WebLogic Administration Server host and port environment variables are uncommented below, an adminstrator can access the Administration Console using `http://<host>:30305/console`.
+Users can then access an application from outside of the Kubernetes cluster by using `http://<host>:30305/weblogic/<application-url>`.
 
 The generated Kubernetes YAML files look like the following, given the `domainUID`, "`domain1`".
 
@@ -176,13 +174,13 @@ spec:
 
             value: '/weblogic'
 
-          #- name: WEBLOGIC_HOST
+        # - name: WEBLOGIC_HOST
 
-          #  value: 'domain1-admin-server'
+        #   value: 'domain1-admin-server'
 
-          #- name: WEBLOGIC_PORT
+        # - name: WEBLOGIC_PORT
 
-          #  value: '7001'
+        #   value: '7001'
 
         readinessProbe:
 
@@ -392,6 +390,16 @@ domain1-apache-webtier                                    2h
 
 ```
 
+
+It is sometimes, but rarely, desirable to expose a WebLogic Administration Server host and port through a load balancer to a public network.  If this is needed, you can customize the exposure of the WebLogic Administration Server host and port by using the `loadBalancerExposeAdminPort` property in the `create-weblogic-domain-inputs.yaml` file.
+
+```
+
+# Boolean to indicate if the admin port is going to be exposed via APACHE load balancer. By default, it is false.
+loadBalancerExposeAdminPort: false
+```
+
+If the domain is created with the `loadBalancerExposeAdminPort` set to `true`, an adminstrator can access the Administration Console using `http://<host>:30305/console`.
 
 ### Use your own plugin WL module configuration
 

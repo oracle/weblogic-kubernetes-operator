@@ -43,7 +43,7 @@ function validateInputParamsSpecified {
   for p in $*; do
     local name=$p
     local val=${!name}
-    if [ -z $val ]; then
+    if [ -z "$val" ]; then
       validationError "The ${name} parameter in ${valuesInputFile} is missing, null or empty"
     fi
   done
@@ -105,7 +105,13 @@ function parseYaml {
      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
   awk -F$fs '{
     if (length($3) > 0) {
-       printf("export %s=\"%s\"\n", $2, $3);
+      # javaOptions may contain tokens that are not allowed in export command
+      # we need to handle it differently. 
+      if ($2=="javaOptions") {
+        printf("%s=%s\n", $2, $3);
+      } else {
+        printf("export %s=\"%s\"\n", $2, $3);
+      }
     }
   }' > $2
 }
@@ -115,6 +121,7 @@ function parseYaml {
 #
 function parseCommonInputs {
   exportValuesFile="/tmp/export-values.sh"
+  tmpFile="/tmp/javaoptions_tmp.dat"
   parseYaml ${valuesInputFile} ${exportValuesFile}
 
   if [ ! -f ${exportValuesFile} ]; then
@@ -126,8 +133,17 @@ function parseCommonInputs {
   echo Input parameters being used
   cat ${exportValuesFile}
   echo
-  source ${exportValuesFile}
-  rm ${exportValuesFile}
+
+  # javaOptions may contain tokens that are not allowed in export command
+  # we need to handle it differently. 
+  # we set the javaOptions variable that can be used later
+  tmpStr=`grep "javaOptions" ${exportValuesFile}`
+  javaOptions=${tmpStr//"javaOptions="/}
+
+  # We exclude javaOptions from the exportValuesFile
+  grep -v "javaOptions" ${exportValuesFile} > ${tmpFile}
+  source ${tmpFile}
+  rm ${exportValuesFile} ${tmpFile}
 }
 
 #
@@ -159,13 +175,33 @@ function toLower {
 
 #
 # Function to check if a value is lowercase
-# $1 - value to check
-# $2 - name of object being checked
+# $1 - name of object being checked
+# $2 - value to check
 function validateLowerCase {
   local lcVal=$(toLower $2)
   if [ "$lcVal" != "$2" ]; then
     validationError "The value of $1 must be lowercase: $2"
   fi
+}
+
+# 
+# Function to lowercase a value and make it a legal DNS1123 name 
+# $1 - value to convert to DNS legal name
+function toDNS1123Legal { 
+  local val=`echo $1 | tr "[:upper:]" "[:lower:]"` 
+  val=${val//"_"/"-"} 
+  echo "$val" 
+}
+
+# 
+# Function to check if a value is lowercase and legal DNS name 
+# $1 - name of object being checked 
+# $2 - value to check 
+function validateDNS1123LegalName { 
+  local val=$(toDNS1123Legal $2) 
+  if [ "$val" != "$2" ]; then 
+    validationError "The value of $1 contains invalid charaters (uppercase letters or "_"): $2" 
+  fi 
 }
 
 #
@@ -313,4 +349,219 @@ function copyInputsFileToOutputDirectory {
   if [ "${doCopy}" = "true" ]; then
     cp ${from} ${to}
   fi
+}
+
+VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+#
+# Usage:
+# createVoyagerOperator voyagerSecurityYaml voyagerOperatorYaml
+#
+# If the voyager operator is already running, do nothing.
+#
+function createVoyagerOperator() {
+  if [ "$#" != 2 ] ; then
+    fail "requires 2 parameter: voyagerSecurityYaml voyagerOperatorYaml"
+  fi
+  
+  local vnamespace=voyager
+  # only deploy Voyager Operator once
+  if test "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc -l)" == 0; then
+    echo "Deploying Voyager Operator to namespace $vnamespace..."
+
+    if test "$(kubectl get namespace $vnamespace --ignore-not-found | wc -l)" = 0; then
+      kubectl create namespace $vnamespace
+    fi
+    kubectl apply -f $1
+    kubectl apply -f $2
+  fi
+
+  echo "Wait until Voyager Operator is ready..."
+  local maxwaitsecs=100
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    if test "$(kubectl -n $vnamespace get pod  --ignore-not-found | grep voyager-operator | awk ' { print $2; } ')" = "1/1"; then
+      echo "The Voyager Operator is ready."
+      break
+    fi
+    if test $((mnow - mstart)) -gt $((maxwaitsecs)); then
+      fail "The Voyager Operator is not ready."
+    fi
+    sleep 5
+  done
+
+  echo "Checking apiserver..."
+  local maxwaitsecs=10
+  local mstart=`date +%s`
+  while test "$(kubectl get apiservice | grep v1beta1.admission.voyager.appscode.com  | wc -l)" = 0; do
+    sleep 2
+    local mnow=`date +%s`
+    if test $((mnow - mstart)) -gt $((maxwaitsecs)); then
+      fail "The Voyager apiserver v1beta1.admission.voyager.appscode.com is not ready."
+    fi
+  done
+  echo "The Voyager apiserver is ready."
+
+  echo "Checking Voyager CRDs..."
+  local maxwaitsecs=10
+  local mstart=`date +%s`
+  while  test "$(kubectl get crd | grep certificates.voyager.appscode.com | wc -l)" = 0; do
+    sleep 2
+    local mnow=`date +%s`
+    if test $((mnow - mstart)) -gt $((maxwaitsecs)); then
+      fail "The Voyager CRD certificates.voyager.appscode.com is not ready."
+    fi
+  done
+  echo "The Voyager CRD certificates.voyager.appscode.com is ready."
+
+  local maxwaitsecs=10
+  local mstart=`date +%s`
+  while  test "$(kubectl get crd | grep $VOYAGER_ING_NAME | wc -l)" = 0; do
+    sleep 2
+    local mnow=`date +%s`
+    if test $((mnow - mstart)) -gt $((maxwaitsecs)); then
+      fail "The Voyager CRD $VOYAGER_ING_NAME is not ready."
+    fi
+  done
+  echo "The Voyager CRD $VOYAGER_ING_NAME is ready."
+  echo
+}
+
+#
+# delete voyager operator
+#
+function deleteVoyagerOperator {
+  local vnamespace=voyager
+  if test "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc -l)" == 0; then
+    echo "Voyager operator has already been deleted."
+    return
+  fi
+
+  echo "Deleting Voyager opreator resources"
+  kubectl delete apiservice -l app=voyager
+  # delete voyager operator
+  kubectl delete deployment -l app=voyager --namespace $vnamespace
+  kubectl delete service -l app=voyager --namespace $vnamespace
+  kubectl delete secret -l app=voyager --namespace $vnamespace
+  # delete RBAC objects
+  kubectl delete serviceaccount -l app=voyager --namespace $vnamespace
+  kubectl delete clusterrolebindings -l app=voyager
+  kubectl delete clusterrole -l app=voyager
+  kubectl delete rolebindings -l app=voyager --namespace $vnamespace
+  kubectl delete role -l app=voyager --namespace $vnamespace
+
+  echo "Wait until voyager operator pod stopped..."
+  local maxwaitsecs=100
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    pods=($(kubectl get pods --all-namespaces -l app=voyager -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+    total=${#pods[*]}
+    if [ $total -eq 0 ] ; then
+      echo "Voyager operator pod is stopped."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "Voyager operator pod is NOT stopped."
+    fi
+    sleep 5
+  done
+  echo
+  #TODO purge CRDs
+}
+
+#
+# Usage:
+# createVoyagerIngress voyagerIngressYaml namespace domainUID
+#
+function createVoyagerIngress {
+  if [ "$#" != 3 ] ; then
+    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
+  fi
+
+  # deploy Voyager Ingress resource
+  kubectl apply -f $1
+
+  local namespace=$2
+  local domainUID=$3
+  
+
+  echo "Checking Voyager Ingress resource..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    local vdep=$(kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } ')
+    if [ "$vdep" = "1" ]; then
+      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
+    fi
+    sleep 2
+  done
+
+  echo "Wait until HAProxy pod is running..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    local st=$(kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } ')
+    if [ "$st" = "Running" ]; then
+      echo "The HAProxy pod for Voyager Ingress ${domainUID}-voyager is running."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The HAProxy pod for Voyager Ingress ${domainUID}-voyager was not created or running."
+    fi
+    sleep 5
+  done
+
+  echo "Checking Voyager service..."
+  local maxwaitsecs=10
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
+    if [ "$vscv" = "1" ]; then
+      echo "The service ${domainUID}-voyager-stats is created successfully."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The service ${domainUID}-voyager-stats was not created."
+    fi
+    sleep 2
+  done
+  echo
+}
+
+#
+# Usage:
+# deleteVoyagerIngress voyagerIngressYaml namespace domainUID
+#
+function deleteVoyagerIngress {
+  if [ "$#" != 3 ] ; then
+    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
+  fi
+
+  kubectl delete -f $1
+  local namespace=$2
+  local domainUID=$3
+
+  echo "Wait until HAProxy pod stoped..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    if [ $(kubectl get pod -n ${namespace} | grep "^voyager-${domainUID}-voyager-" | wc -l) = 0 ]; then
+      echo "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is stopped."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The HAProxy pod for Voyaer Ingress ${domainUID}-voyager is NOT stopped."
+    fi
+    sleep 5
+  done
+  echo
 }

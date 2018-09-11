@@ -1,12 +1,11 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
 
-import oracle.kubernetes.operator.rest.AuthenticationFilter;
-import oracle.kubernetes.operator.rest.backend.RestBackend;
-import oracle.kubernetes.operator.rest.model.LinkContainerModel;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
@@ -14,22 +13,21 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.List;
+import oracle.kubernetes.operator.rest.AuthenticationFilter;
+import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.rest.model.LinkContainerModel;
 
 /**
- * BaseResource is the base resource of all the WebLogic operator's REST resources.
- * It provides a number of common utilities that they use.
+ * BaseResource is the base resource of all the WebLogic operator's REST resources. It provides a
+ * number of common utilities that they use.
  */
 public class BaseResource {
 
   private String pathSegment;
   private BaseResource parent;
 
-  @Context
-  private UriInfo uriInfo;
-  @Context
-  private ContainerRequestContext containerRequestContext;
+  @Context private UriInfo uriInfo;
+  @Context private ContainerRequestContext containerRequestContext;
 
   protected BaseResource(BaseResource parent, String pathSegment) {
     this.parent = parent;
@@ -45,7 +43,8 @@ public class BaseResource {
   }
 
   protected RestBackend getBackend() {
-    return (RestBackend) getContainerRequestContext().getProperty(AuthenticationFilter.REST_BACKEND_PROPERTY);
+    return (RestBackend)
+        getContainerRequestContext().getProperty(AuthenticationFilter.REST_BACKEND_PROPERTY);
   }
 
   protected UriInfo getUriInfo() {
@@ -78,7 +77,8 @@ public class BaseResource {
 
   protected WebApplicationException notFound(String pathSegment) {
     String notFoundHref = href(pathSegment);
-    return new WebApplicationException(Response.status(Status.NOT_FOUND).entity(notFoundHref).build());
+    return new WebApplicationException(
+        Response.status(Status.NOT_FOUND).entity(notFoundHref).build());
   }
 
   protected String href(String... pathSegments) {

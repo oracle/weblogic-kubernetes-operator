@@ -1,5 +1,6 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -12,9 +13,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.ContainerResolver;
 
-/**
- * Delegate authentication decisions to Kubernetes.
- */
+/** Delegate authentication decisions to Kubernetes. */
 public class AuthenticationProxy {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -24,9 +23,9 @@ public class AuthenticationProxy {
    * Check if the specified access token can be authenticated
    *
    * @param principal The user, group or service account.
-   * @param token  The access token that identifies the user.
-   * @return V1TokenReviewStatus containing either info about the authenticated user or
-   * an error explaining why the user couldn't be authenticated
+   * @param token The access token that identifies the user.
+   * @return V1TokenReviewStatus containing either info about the authenticated user or an error
+   *     explaining why the user couldn't be authenticated
    */
   public V1TokenReviewStatus check(String principal, String token) {
 
@@ -34,14 +33,17 @@ public class AuthenticationProxy {
 
     V1TokenReview result = null;
     try {
-      boolean allowed = authorizationProxy.check(principal,
-          AuthorizationProxy.Operation.create,
-          AuthorizationProxy.Resource.TOKENREVIEWS,
-          null,
-          AuthorizationProxy.Scope.cluster,
-          null);
+      boolean allowed =
+          authorizationProxy.check(
+              principal,
+              AuthorizationProxy.Operation.create,
+              AuthorizationProxy.Resource.TOKENREVIEWS,
+              null,
+              AuthorizationProxy.Scope.cluster,
+              null);
       if (allowed) {
-        CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        CallBuilderFactory factory =
+            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
         result = factory.create().createTokenReview(prepareTokenReview(token));
       } else {
         LOGGER.info(MessageKeys.CANNOT_CREATE_TOKEN_REVIEW);

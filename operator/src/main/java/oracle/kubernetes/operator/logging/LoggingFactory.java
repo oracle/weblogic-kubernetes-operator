@@ -1,28 +1,26 @@
 // Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
+import io.kubernetes.client.JSON;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import io.kubernetes.client.JSON;
-
-/**
- * A factory to create Loggers.
- */
+/** A factory to create Loggers. */
 public class LoggingFactory {
 
   // map from resourceBundleName to facade
   private static final Map<String, LoggingFacade> facade = new HashMap<String, LoggingFacade>();
-  
+
   private static JSON json = null;
-  
+
   public static void setJSON(JSON json) {
     LoggingFactory.json = json;
   }
-  
+
   static JSON getJSON() {
     return json;
   }
@@ -34,11 +32,11 @@ public class LoggingFactory {
   /**
    * Obtains a Logger from the underlying logging implementation and wraps it in a LoggingFacade.
    *
-   * @param name               the name of the logger to use
+   * @param name the name of the logger to use
    * @param resourceBundleName the resource bundle to use with this logger
    * @return a PlatformLogger object for the caller to use
    */
-  public synchronized static LoggingFacade getLogger(String name, String resourceBundleName) {
+  public static synchronized LoggingFacade getLogger(String name, String resourceBundleName) {
 
     LoggingFacade lf = facade.get(resourceBundleName);
     if (lf == null) {

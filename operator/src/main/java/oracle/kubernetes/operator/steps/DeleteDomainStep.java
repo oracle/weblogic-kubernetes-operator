@@ -1,23 +1,19 @@
 // Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.List;
-import java.util.Map;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1beta1IngressList;
-import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -36,76 +32,55 @@ public class DeleteDomainStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    CallBuilderFactory factory = ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+    return doNext(Step.chain(deleteIngresses(), deleteServices(), deletePods()), packet);
+  }
 
-    Step deletePods = factory.create().with($ -> {
-      $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID + ","
-          + LabelConstants.CREATEDBYOPERATOR_LABEL;
-    }).deleteCollectionPodAsync(namespace, new ResponseStep<V1Status>(next) {
-      @Override
-      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        if (statusCode == CallBuilder.NOT_FOUND) {
-          return onSuccess(packet, null, statusCode, responseHeaders);
-        }
-        return super.onFailure(packet, e, statusCode, responseHeaders);
-      }
+  private Step deleteIngresses() {
+    LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, this.domainUID, namespace);
+    return new CallBuilder()
+        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .listIngressAsync(
+            namespace,
+            new ActionResponseStep<V1beta1IngressList>() {
+              @Override
+              Step createSuccessStep(V1beta1IngressList result, Step next) {
+                return new DeleteIngressListStep(result.getItems(), next);
+              }
+            });
+  }
 
-      @Override
-      public NextAction onSuccess(Packet packet, V1Status result, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        return doNext(packet);
-      }
-    });
+  private Step deleteServices() {
+    return new CallBuilder()
+        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .listServiceAsync(
+            namespace,
+            new ActionResponseStep<V1ServiceList>() {
+              Step createSuccessStep(V1ServiceList result, Step next) {
+                return new DeleteServiceListStep(result.getItems(), next);
+              }
+            });
+  }
 
-    Step serviceList = factory.create().with($ -> {
-      $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID + ","
-          + LabelConstants.CREATEDBYOPERATOR_LABEL;
-    }).listServiceAsync(namespace, new ResponseStep<V1ServiceList>(deletePods) {
-      @Override
-      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        if (statusCode == CallBuilder.NOT_FOUND) {
-          return onSuccess(packet, null, statusCode, responseHeaders);
-        }
-        return super.onFailure(packet, e, statusCode, responseHeaders);
-      }
+  private Step deletePods() {
+    return new CallBuilder()
+        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(getNext()));
+  }
 
-      @Override
-      public NextAction onSuccess(Packet packet, V1ServiceList result, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        if (result != null) {
-          return doNext(new DeleteServiceListStep(result.getItems(), deletePods), packet);
-        }
-        return doNext(packet);
-      }
-    });
+  /**
+   * A response step which treats a NOT_FOUND status as success with a null result. On success with
+   * a non-null response, runs a specified new step before continuing the step chain.
+   */
+  abstract static class ActionResponseStep<T> extends DefaultResponseStep<T> {
+    ActionResponseStep() {}
 
-    LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, domainUID, namespace);
-    Step deleteIngress = factory.create().with($ -> {
-      $.labelSelector = LabelConstants.DOMAINUID_LABEL + "=" + domainUID + ","
-          + LabelConstants.CREATEDBYOPERATOR_LABEL;
-    }).listIngressAsync(namespace, new ResponseStep<V1beta1IngressList>(serviceList) {
-      @Override
-      public NextAction onFailure(Packet packet, ApiException e, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        if (statusCode == CallBuilder.NOT_FOUND) {
-          return onSuccess(packet, null, statusCode, responseHeaders);
-        }
-        return super.onFailure(packet, e, statusCode, responseHeaders);
-      }
+    abstract Step createSuccessStep(T result, Step next);
 
-      @Override
-      public NextAction onSuccess(Packet packet, V1beta1IngressList result, int statusCode,
-          Map<String, List<String>> responseHeaders) {
-        if (result != null) {
-
-          return doNext(new DeleteIngressListStep(result.getItems(), serviceList), packet);
-        }
-        return doNext(packet);
-      }
-    });
-
-    return doNext(deleteIngress, packet);
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+      return callResponse.getResult() == null
+          ? doNext(packet)
+          : doNext(createSuccessStep(callResponse.getResult(), getNext()), packet);
+    }
   }
 }
