@@ -6,7 +6,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
     weblogic.domainUID: {{ .Release.Name }}
@@ -37,7 +37,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
     weblogic.domainUID: {{ .Release.Name }}
@@ -46,9 +46,9 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
 subjects:
 - kind: ServiceAccount
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
   namespace: {{ .Release.Namespace }}
 {{- end }}
