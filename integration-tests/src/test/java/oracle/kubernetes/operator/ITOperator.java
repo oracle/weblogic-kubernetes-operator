@@ -96,7 +96,6 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
 
-
   @Test
   public void test2CreateAnotherDomainInDefaultNS() throws Exception {
     Assume.assumeFalse(
@@ -270,21 +269,21 @@ public class ITOperator extends BaseTest {
     domain7.verifyAdminConsoleViaLB();
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
-  private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
-	    logger.info("Creating Operator & waiting for the script to complete execution");
-	    // create operator1
-	    operator1 = TestUtils.createOperator(op1PropsFile, true);
-	  }
 
-	  private void testCreateDomainInDefaultNS() throws Exception {
-	    logger.info("Creating Domain domain1 & verifing the domain creation");
-	    // create domain1
-	    domain1 = testDomainCreation(domain1PropsFile);
-	    testDomainLifecyle(operator1, domain1);
-	    testClusterScaling(operator1, domain1);
-	    testOperatorLifecycle(operator1, domain1);
-	    
-	  }
+  private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    // create operator1
+    operator1 = TestUtils.createOperator(op1PropsFile, true);
+  }
+
+  private void testCreateDomainInDefaultNS() throws Exception {
+    logger.info("Creating Domain domain1 & verifing the domain creation");
+    // create domain1
+    domain1 = testDomainCreation(domain1PropsFile);
+    testDomainLifecyle(operator1, domain1);
+    testClusterScaling(operator1, domain1);
+    testOperatorLifecycle(operator1, domain1);
+  }
 
   private Domain testDomainCreation(String domainPropsFile) throws Exception {
     Domain domain = TestUtils.createDomain(domainPropsFile);
