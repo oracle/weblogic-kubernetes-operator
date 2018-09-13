@@ -146,9 +146,9 @@ public class BaseTest {
    * @throws Exception
    */
   public void testAdminServerExternalService(Domain domain) throws Exception {
-    logTestBegin("testAdminServerExternalService");
+    logger.info("Inside testAdminServerExternalService");
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    logger.info("SUCCESS");
+    logger.info("Done - testAdminServerExternalService");
   }
 
   /**
@@ -157,7 +157,7 @@ public class BaseTest {
    * @throws Exception
    */
   public void testAdminT3Channel(Domain domain) throws Exception {
-    logTestBegin("testAdminT3Channel");
+    logger.info("Inside testAdminT3Channel");
     Properties domainProps = domain.getDomainProps();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
@@ -172,7 +172,7 @@ public class BaseTest {
       throw new RuntimeException("FAILURE: exposeAdminT3Channel is not set or false");
     }
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
-    logger.info("SUCCESS");
+    logger.info("Done - testAdminT3Channel");
   }
 
   /**
@@ -182,7 +182,7 @@ public class BaseTest {
    * @throws Exception
    */
   public void testDomainLifecyle(Operator operator, Domain domain) throws Exception {
-    logTestBegin("testDomainLifecyle");
+    logger.info("Inside testDomainLifecyle");
     domain.destroy();
     domain.create();
     operator.verifyExternalRESTService();
@@ -190,7 +190,7 @@ public class BaseTest {
     domain.verifyDomainCreated();
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    logger.info("SUCCESS");
+    logger.info("Done - testDomainLifecyle");
   }
 
   /**
@@ -200,7 +200,7 @@ public class BaseTest {
    * @throws Exception
    */
   public void testClusterScaling(Operator operator, Domain domain) throws Exception {
-    logTestBegin("testClusterScaling");
+    logger.info("Inside testClusterScaling");
     Properties domainProps = domain.getDomainProps();
     String domainUid = domain.getDomainUid();
     String domainNS = domainProps.getProperty("namespace");
@@ -251,7 +251,7 @@ public class BaseTest {
     }
 
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
-    logger.info("SUCCESS");
+    logger.info("Done - testClusterScaling");
   }
 
   /**
@@ -260,13 +260,13 @@ public class BaseTest {
    * @throws Exception
    */
   public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
-    logTestBegin("testOperatorLifecycle");
+    logger.info("Inside testOperatorLifecycle");
     operator.destroy();
     operator.create();
     operator.verifyExternalRESTService();
     operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
-    logger.info("SUCCESS");
+    logger.info("Done - testOperatorLifecycle");
   }
 
   public static String getResultRoot() {
