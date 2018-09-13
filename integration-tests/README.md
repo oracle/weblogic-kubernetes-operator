@@ -8,7 +8,7 @@ The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" O
 
 * "Standalone" Oracle Linux, i.e, run the tests manually with mvn command. 
 * Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - integration-test-java is the pipeline name
-* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/
+* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development Process
 
 # Use Cases
 
@@ -273,6 +273,10 @@ java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, 
 ```
 JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITSingleDomain.xml". This file shows how much time each test case took to run and the failed test results if any.
 
+# How to run a single test
+
+mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS" -DfailIfNoTests=false integration-test -P java-integration-tests
+
 # Logging/Archiving
 
 Java utils logging is used, writes all the messages to console and java_test_suite.out in $RESULT_ROOT/acceptance_test_tmp directory.
@@ -290,8 +294,8 @@ Add a new JUnit test under integration-tests/src/test/java/oracle/kubernetes/ope
 
 class name must start with IT(Integration Test), IT*.java
 
-ITFirstDomain.java - take a look at this test for reference
+ITOperator.java - take a look at this test for reference
 
 # Future enhancement
 
-Add Full test use cases - part1 done.
+Add functional tests
