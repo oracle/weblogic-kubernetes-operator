@@ -517,7 +517,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void setDefaultReplicas(int replicas) {
-    configurator.setDefaultReplicas(replicas);
+    configurator.withDefaultReplicaCount(replicas);
   }
 
   private void configureServers(String... serverNames) {

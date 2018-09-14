@@ -37,28 +37,48 @@ public interface DomainConfigurator {
    *
    * @param replicas a non-negative number
    */
-  void setDefaultReplicas(int replicas);
+  void withDefaultReplicaCount(int replicas);
 
   /**
    * Sets the default image for the domain.
    *
    * @param image the name of the image
    */
-  void setDefaultImage(String image);
+  void withDefaultImage(String image);
 
   /**
    * Sets the default image pull policy for the domain.
    *
    * @param imagepullpolicy the new policy
    */
-  void setDefaultImagePullPolicy(String imagepullpolicy);
+  void withDefaultImagePullPolicy(String imagepullpolicy);
 
   /**
    * Sets the default image pull secret for the domain
    *
    * @param secretReference the object referring to the secret
    */
-  void setDefaultImagePullSecret(V1LocalObjectReference secretReference);
+  void withDefaultImagePullSecret(V1LocalObjectReference secretReference);
+
+  /**
+   * Sets the default settings for the readiness probe. Any settings left null will default to the
+   * tuning parameters.
+   *
+   * @param initialDelay the default initial delay, in seconds.
+   * @param timeout the default timeout, in seconds.
+   * @param period the default probe period, in seconds.
+   */
+  void withDefaultReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
+
+  /**
+   * Sets the default settings for the liveness probe. Any settings left null will default to the
+   * tuning parameters.
+   *
+   * @param initialDelay the default initial delay, in seconds.
+   * @param timeout the default timeout, in seconds.
+   * @param period the default probe period, in seconds.
+   */
+  void withDefaultLivenessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
 
   /**
    * Defines the startup control mechanism for the domain. Must be one of:

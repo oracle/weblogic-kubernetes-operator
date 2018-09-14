@@ -354,7 +354,7 @@ public class WlsDomainConfigTest {
   }
 
   private void configureDefaultReplicas(int replicas) {
-    configurator.setDefaultReplicas(replicas);
+    configurator.withDefaultReplicaCount(replicas);
   }
 
   @Test
