@@ -42,23 +42,35 @@ public class DomainV1Configurator implements DomainConfigurator {
   }
 
   @Override
-  public void setDefaultReplicas(int replicas) {
+  public void withDefaultReplicaCount(int replicas) {
     domain.getSpec().setReplicas(replicas);
   }
 
   @Override
-  public void setDefaultImage(String image) {
+  public void withDefaultImage(String image) {
     domain.getSpec().setImage(image);
   }
 
   @Override
-  public void setDefaultImagePullPolicy(String imagepullpolicy) {
+  public void withDefaultImagePullPolicy(String imagepullpolicy) {
     domain.getSpec().setImagePullPolicy(imagepullpolicy);
   }
 
   @Override
-  public void setDefaultImagePullSecret(V1LocalObjectReference secretReference) {
+  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
     domain.getSpec().setImagePullSecret(secretReference);
+  }
+
+  @Override
+  public void withDefaultReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period) {
+    throw new ConfigurationNotSupportedException("domain", "readinessProbe");
+  }
+
+  @Override
+  public void withDefaultLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period) {
+    throw new ConfigurationNotSupportedException("domain", "livenessProbe");
   }
 
   @Override
@@ -161,6 +173,18 @@ public class DomainV1Configurator implements DomainConfigurator {
     public ServerConfigurator withServerStartPolicy(String startNever) {
       throw new ConfigurationNotSupportedException("server", "serverStartPolicy");
     }
+
+    @Override
+    public ServerConfigurator withLivenessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("server", "livenessProbe");
+    }
+
+    @Override
+    public ServerConfigurator withReadinessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("server", "readinessProbe");
+    }
   }
 
   @SuppressWarnings("deprecation")
@@ -201,6 +225,18 @@ public class DomainV1Configurator implements DomainConfigurator {
     @Override
     public ClusterConfigurator withServerStartState(String state) {
       return withDesiredState(state);
+    }
+
+    @Override
+    public ClusterConfigurator withReadinessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("cluster", "readinessProbe");
+    }
+
+    @Override
+    public ClusterConfigurator withLivenessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("cluster", "livenessProbe");
     }
 
     @Override

@@ -84,7 +84,7 @@ public class DomainNormalizationTest {
   public void whenDomainSpecHasNoServersOrClustersConfigured_normalizationLeavesDefaultBehavior() {
     DomainConfiguratorFactory.forDomain(domain)
         .setStartupControl(AUTO_STARTUPCONTROL)
-        .setDefaultReplicas(REPLICAS);
+        .withDefaultReplicaCount(REPLICAS);
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 

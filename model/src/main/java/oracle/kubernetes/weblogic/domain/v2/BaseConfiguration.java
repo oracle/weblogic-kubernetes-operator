@@ -11,6 +11,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1Probe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -90,6 +91,26 @@ public abstract class BaseConfiguration {
   private String serverStartPolicy;
 
   /**
+   * Defines the settings for the liveness probe. Any that are not specified will default to the
+   * runtime liveness probe tuning settings.
+   *
+   * @since 2.0
+   */
+  @SerializedName("livenessProbe")
+  @Expose
+  private V1Probe livenessProbe = new V1Probe();
+
+  /**
+   * Defines the settings for the readiness probe. Any that are not specified will default to the
+   * runtime readiness probe tuning settings.
+   *
+   * @since 2.0
+   */
+  @SerializedName("readinessProbe")
+  @Expose
+  private V1Probe readinessProbe = new V1Probe();
+
+  /**
    * Fills in any undefined settings in this configuration from another configuration.
    *
    * @param other the other configuration which can override this one
@@ -104,6 +125,8 @@ public abstract class BaseConfiguration {
     if (serverStartPolicy == null) serverStartPolicy = other.getServerStartPolicy();
 
     for (V1EnvVar var : getV1EnvVars(other)) addIfMissing(var);
+    copyValues(livenessProbe, other.livenessProbe);
+    copyValues(readinessProbe, other.readinessProbe);
   }
 
   private List<V1EnvVar> getV1EnvVars(BaseConfiguration configuration) {
@@ -120,6 +143,14 @@ public abstract class BaseConfiguration {
       if (var.getName().equals(name)) return true;
     }
     return false;
+  }
+
+  private void copyValues(V1Probe toProbe, V1Probe fromProbe) {
+    if (toProbe.getInitialDelaySeconds() == null)
+      toProbe.setInitialDelaySeconds(fromProbe.getInitialDelaySeconds());
+    if (toProbe.getTimeoutSeconds() == null)
+      toProbe.setTimeoutSeconds(fromProbe.getTimeoutSeconds());
+    if (toProbe.getPeriodSeconds() == null) toProbe.setPeriodSeconds(fromProbe.getPeriodSeconds());
   }
 
   /**
@@ -197,6 +228,22 @@ public abstract class BaseConfiguration {
     return Optional.ofNullable(serverStartPolicy).orElse("undefined");
   }
 
+  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
+    livenessProbe.initialDelaySeconds(initialDelay).timeoutSeconds(timeout).periodSeconds(period);
+  }
+
+  V1Probe getLivenessProbe() {
+    return livenessProbe;
+  }
+
+  void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
+    readinessProbe.initialDelaySeconds(initialDelay).timeoutSeconds(timeout).periodSeconds(period);
+  }
+
+  V1Probe getReadinessProbe() {
+    return readinessProbe;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -205,6 +252,8 @@ public abstract class BaseConfiguration {
         .append("imagePullSecret", imagePullSecret)
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
+        .append("livenessProbe", livenessProbe)
+        .append("readinessProbe", readinessProbe)
         .append("env", env)
         .toString();
   }
@@ -224,6 +273,8 @@ public abstract class BaseConfiguration {
         .append(env, that.env)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
+        .append(livenessProbe, that.livenessProbe)
+        .append(readinessProbe, that.readinessProbe)
         .isEquals();
   }
 
@@ -236,6 +287,8 @@ public abstract class BaseConfiguration {
         .append(env)
         .append(serverStartState)
         .append(serverStartPolicy)
+        .append(livenessProbe)
+        .append(readinessProbe)
         .toHashCode();
   }
 }

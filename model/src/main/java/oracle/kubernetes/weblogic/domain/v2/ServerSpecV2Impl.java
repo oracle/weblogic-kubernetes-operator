@@ -11,8 +11,10 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1Probe;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
@@ -91,5 +93,17 @@ public class ServerSpecV2Impl extends ServerSpec {
       default:
         return clusterLimit == null;
     }
+  }
+
+  @Nonnull
+  @Override
+  public V1Probe getLivenessProbe() {
+    return server.getLivenessProbe();
+  }
+
+  @Nonnull
+  @Override
+  public V1Probe getReadinessProbe() {
+    return server.getReadinessProbe();
   }
 }
