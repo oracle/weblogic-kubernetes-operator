@@ -20,4 +20,6 @@ public interface ServerConfigurator {
   ServerConfigurator withImagePullSecret(String secretName);
 
   ServerConfigurator withServerStartState(String state);
+
+  ServerConfigurator withServerStartPolicy(String startNever);
 }

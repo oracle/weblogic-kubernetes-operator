@@ -94,6 +94,7 @@ import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.junit.Test;
 
@@ -440,7 +441,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                     .withAsPort(Integer.parseInt(getInputs().getAdminPort()))
                     .withStartupControl(getInputs().getStartupControl()));
 
-    DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
     configurator
         .configureAdminServer()
         .withDesiredState("RUNNING")

@@ -5,6 +5,9 @@
 package oracle.kubernetes.weblogic.domain.v2;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
@@ -15,9 +18,21 @@ import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 /** The effective configuration for a server configured by the version 2 domain model. */
 public class ServerSpecV2Impl extends ServerSpec {
   private final Server server;
+  private Integer clusterLimit;
 
-  public ServerSpecV2Impl(Server server, BaseConfiguration... configurations) {
+  /**
+   * Constructs an object to return the effective configuration
+   *
+   * @param server the server whose configuration is to be returned
+   * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
+   *     server
+   * @param configurations the additional configurations to search for values if the server lacks
+   *     them
+   */
+  public ServerSpecV2Impl(
+      Server server, Integer clusterLimit, BaseConfiguration... configurations) {
     this.server = getBaseConfiguration(server);
+    this.clusterLimit = clusterLimit;
     for (BaseConfiguration configuration : configurations) this.server.fillInFrom(configuration);
   }
 
@@ -66,6 +81,15 @@ public class ServerSpecV2Impl extends ServerSpec {
 
   @Override
   public boolean shouldStart(int currentReplicas) {
-    return false;
+    switch (server.getServerStartPolicy()) {
+      case START_NEVER:
+        return false;
+      case START_ALWAYS:
+        return true;
+      case START_IF_NEEDED:
+        return clusterLimit == null || currentReplicas < clusterLimit;
+      default:
+        return clusterLimit == null;
+    }
   }
 }

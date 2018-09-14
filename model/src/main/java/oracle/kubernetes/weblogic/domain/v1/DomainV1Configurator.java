@@ -17,6 +17,11 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 public class DomainV1Configurator implements DomainConfigurator {
   private Domain domain;
 
+  @Override
+  public DomainConfigurator createFor(Domain domain) {
+    return new DomainV1Configurator(domain);
+  }
+
   /**
    * Constructs a version 1 domain configurator
    *
@@ -150,6 +155,11 @@ public class DomainV1Configurator implements DomainConfigurator {
     @Override
     public ServerConfigurator withServerStartState(String state) {
       return withDesiredState(state);
+    }
+
+    @Override
+    public ServerConfigurator withServerStartPolicy(String startNever) {
+      throw new ConfigurationNotSupportedException("server", "serverStartPolicy");
     }
   }
 

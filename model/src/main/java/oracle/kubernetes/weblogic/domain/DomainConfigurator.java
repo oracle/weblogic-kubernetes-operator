@@ -7,7 +7,6 @@ package oracle.kubernetes.weblogic.domain;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainV1Configurator;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -16,9 +15,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainV1Configurator;
  */
 public interface DomainConfigurator {
 
-  static DomainConfigurator forDomain(Domain domain) {
-    return new DomainV1Configurator(domain);
-  }
+  DomainConfigurator createFor(Domain domain);
 
   /**
    * Defines a name for the domain's admin server.
@@ -63,6 +60,26 @@ public interface DomainConfigurator {
    */
   void setDefaultImagePullSecret(V1LocalObjectReference secretReference);
 
+  /**
+   * Defines the startup control mechanism for the domain. Must be one of:
+   *
+   * <ul>
+   *   <li>NONE indicates that no servers, including the administration server, will be started.
+   *   <li>ADMIN indicates that only the administration server will be started.
+   *   <li>ALL indicates that all servers in the domain will be started.
+   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
+   *       only those servers listed under serverStartup or managed servers belonging to cluster
+   *       listed under clusterStartup up to the cluster's replicas field will be started.
+   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
+   *       servers belonging to clusters not listed under clusterStartup will be started up to the
+   *       replicas field.
+   * </ul>
+   *
+   * <p>Defaults to AUTO.
+   *
+   * @param startupControl the new value
+   * @return this object
+   */
   DomainConfigurator setStartupControl(String startupControl);
 
   /**

@@ -78,6 +78,18 @@ public abstract class BaseConfiguration {
   private String serverStartState;
 
   /**
+   * Tells the operator whether the customer wants the server to be running. For non-clustered
+   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   */
+  @SerializedName("serverStartPolicy")
+  @Expose
+  private String serverStartPolicy;
+
+  /**
    * Fills in any undefined settings in this configuration from another configuration.
    *
    * @param other the other configuration which can override this one
@@ -89,6 +101,7 @@ public abstract class BaseConfiguration {
     if (imagePullPolicy == null) imagePullPolicy = other.getImagePullPolicy();
     if (imagePullSecret == null) imagePullSecret = other.getImagePullSecret();
     if (serverStartState == null) serverStartState = other.getServerStartState();
+    if (serverStartPolicy == null) serverStartPolicy = other.getServerStartPolicy();
 
     for (V1EnvVar var : getV1EnvVars(other)) addIfMissing(var);
   }
@@ -176,6 +189,14 @@ public abstract class BaseConfiguration {
     env.add(var);
   }
 
+  void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  String getServerStartPolicy() {
+    return Optional.ofNullable(serverStartPolicy).orElse("undefined");
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -183,6 +204,7 @@ public abstract class BaseConfiguration {
         .append("imagePullPolicy", imagePullPolicy)
         .append("imagePullSecret", imagePullSecret)
         .append("serverStartState", serverStartState)
+        .append("serverStartPolicy", serverStartPolicy)
         .append("env", env)
         .toString();
   }
@@ -201,6 +223,7 @@ public abstract class BaseConfiguration {
         .append(imagePullSecret, that.imagePullSecret)
         .append(env, that.env)
         .append(serverStartState, that.serverStartState)
+        .append(serverStartPolicy, that.serverStartPolicy)
         .isEquals();
   }
 
@@ -212,6 +235,7 @@ public abstract class BaseConfiguration {
         .append(imagePullSecret)
         .append(env)
         .append(serverStartState)
+        .append(serverStartPolicy)
         .toHashCode();
   }
 }

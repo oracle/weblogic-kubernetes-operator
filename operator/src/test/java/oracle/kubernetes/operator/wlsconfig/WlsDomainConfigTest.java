@@ -27,6 +27,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
@@ -38,7 +39,7 @@ public class WlsDomainConfigTest {
 
   private Domain domain = new Domain().withSpec(new DomainSpec());
   private DomainSpec domainSpec = domain.getSpec();
-  private DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
 
   // The log messages to be checked during this test
