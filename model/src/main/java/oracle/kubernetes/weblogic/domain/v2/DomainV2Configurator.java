@@ -7,6 +7,7 @@ package oracle.kubernetes.weblogic.domain.v2;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -15,7 +16,12 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 public class DomainV2Configurator implements DomainConfigurator {
   private Domain domain;
 
-  DomainV2Configurator(Domain domain) {
+  @Override
+  public DomainConfigurator createFor(Domain domain) {
+    return new DomainV2Configurator(domain);
+  }
+
+  public DomainV2Configurator(Domain domain) {
     this.domain = domain;
   }
 
@@ -45,7 +51,7 @@ public class DomainV2Configurator implements DomainConfigurator {
 
   @Override
   public DomainConfigurator setStartupControl(String startupControl) {
-    return null;
+    throw new ConfigurationNotSupportedException("domain", "startupControl");
   }
 
   @Override
@@ -147,6 +153,12 @@ public class DomainV2Configurator implements DomainConfigurator {
     @Override
     public ServerConfigurator withServerStartState(String state) {
       return withDesiredState(state);
+    }
+
+    @Override
+    public ServerConfigurator withServerStartPolicy(String policy) {
+      server.setServerStartPolicy(policy);
+      return this;
     }
   }
 

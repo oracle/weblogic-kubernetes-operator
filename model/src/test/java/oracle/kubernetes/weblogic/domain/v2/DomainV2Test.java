@@ -9,19 +9,27 @@ import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEP
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1EnvVar;
 import java.io.IOException;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import org.junit.Before;
 import org.junit.Test;
 
 public class DomainV2Test extends DomainTestBase {
 
   private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
+
+  @Before
+  public void setUp() {
+    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
+  }
 
   @Override
   protected DomainConfigurator configureDomain(Domain domain) {
@@ -80,6 +88,46 @@ public class DomainV2Test extends DomainTestBase {
     configureServer("server1").withServerStartState("server");
 
     assertThat(domain.getServer("server1", "cluster1").getDesiredState(), equalTo("server"));
+  }
+
+  @Test
+  public void whenServerStartPolicyNever_dontStartServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenServerStartPolicyAlways_startServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenNonClusteredServerStartPolicyUndefined_startServer() {
+    assertThat(domain.getServer("server1", null).shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenClusteredServerStartPolicyUndefined_dontStartServer() {
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenClusteredServerStartPolicyIfNeededAndNeedMoreServers_startServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
+  }
+
+  @Test
+  public void whenClusteredServerStartPolicyIfNeededAndDontNeedMoreServers_dontStartServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(5), is(false));
   }
 
   @Test

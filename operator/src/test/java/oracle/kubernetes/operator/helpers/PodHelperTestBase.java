@@ -67,6 +67,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.hamcrest.Description;
@@ -104,7 +105,7 @@ public abstract class PodHelperTestBase {
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
-  private final DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   protected AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   protected List<Memento> mementos = new ArrayList<>();
   protected List<LogRecord> logRecords = new ArrayList<>();
