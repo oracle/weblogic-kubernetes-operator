@@ -1,64 +1,171 @@
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.annotation.Nonnull;
+import oracle.kubernetes.operator.KubernetesConstants;
 
-public interface ServerSpec {
+/** Represents the effective configuration for a server, as seen by the operator runtime. */
+@SuppressWarnings("WeakerAccess")
+public abstract class ServerSpec {
+
+  private static final String ADMIN_MODE_FLAG = "-Dweblogic.management.startupMode=ADMIN";
+
+  public String getImage() {
+    return Optional.ofNullable(getConfiguredImage()).orElse(DEFAULT_IMAGE);
+  }
+
+  protected abstract String getConfiguredImage();
+
+  public String getImagePullPolicy() {
+    return Optional.ofNullable(getConfiguredImagePullPolicy()).orElse(getInferredPullPolicy());
+  }
+
+  protected abstract String getConfiguredImagePullPolicy();
+
+  private String getInferredPullPolicy() {
+    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+  }
+
+  private boolean useLatestImage() {
+    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
+  }
 
   /**
-   * Temporary: to enable refactoring only. Provides a means to obtain the old implementation object
-   * from the new one.
+   * The secret used to authenticate to a docker repository when pulling an image.
    *
-   * @deprecated should be removed once the refactoring is done.
+   * @return an object containing the name of a secret. May be null.
    */
-  @Deprecated
-  ServerStartup getServerStartup();
-
-  /**
-   * The WebLogic Docker image.
-   *
-   * @return image
-   */
-  String getImage();
-
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @return image pull policy
-   */
-  String getImagePullPolicy();
+  public abstract V1LocalObjectReference getImagePullSecret();
 
   /**
    * Returns the environment variables to be defined for this server.
    *
    * @return a list of environment variables
    */
-  List<V1EnvVar> getEnvironmentVariables();
+  public abstract List<V1EnvVar> getEnvironmentVariables();
+
+  protected List<V1EnvVar> withStateAdjustments(List<V1EnvVar> env) {
+    if (!getDesiredState().equals("ADMIN")) {
+      return env;
+    } else {
+      List<V1EnvVar> adjustedEnv = new ArrayList<>(env);
+      V1EnvVar var = getOrCreateVar(adjustedEnv, "JAVA_OPTIONS");
+      var.setValue(prepend(var.getValue(), ADMIN_MODE_FLAG));
+      return adjustedEnv;
+    }
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private V1EnvVar getOrCreateVar(List<V1EnvVar> env, String name) {
+    for (V1EnvVar var : env) {
+      if (var.getName().equals(name)) return var;
+    }
+    V1EnvVar var = new V1EnvVar().name(name);
+    env.add(var);
+    return var;
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private String prepend(String value, String prefix) {
+    return value == null ? prefix : value.contains(prefix) ? value : prefix + ' ' + value;
+  }
 
   /**
    * Desired startup state. Legal values are RUNNING or ADMIN.
    *
    * @return desired state
    */
-  String getDesiredState();
+  public abstract String getDesiredState();
 
   /**
    * Returns the port on which this server will be exposed.
    *
    * @return the port number. May be null.
    */
-  Integer getNodePort();
+  public abstract Integer getNodePort();
 
   /**
    * Returns true if the specified server should be started, based on the current domain spec.
    *
-   * @param replicaCount the number of replicas already selected for the cluster.
+   * @param currentReplicas the number of replicas already selected for the cluster.
    * @return whether to start the server
    */
-  boolean shouldStart(int replicaCount);
+  public abstract boolean shouldStart(int currentReplicas);
+
+  @Nonnull
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return Collections.emptyList();
+  }
+
+  @Nonnull
+  public List<V1Volume> getAdditionalVolumes() {
+    return Collections.emptyList();
+  }
+
+  @Nonnull
+  public V1Probe getLivenessProbe() {
+    return new V1Probe();
+  }
+
+  @Nonnull
+  public V1Probe getReadinessProbe() {
+    return new V1Probe();
+  }
+
+  @Nonnull
+  public Map<String, String> getPodLabels() {
+    return Collections.emptyMap();
+  }
+
+  @Nonnull
+  public Map<String, String> getPodAnnotations() {
+    return Collections.emptyMap();
+  }
+
+  @Nonnull
+  public Map<String, String> getListenAddressServiceLabels() {
+    return Collections.emptyMap();
+  }
+
+  @Nonnull
+  public Map<String, String> getListenAddressServiceAnnotations() {
+    return Collections.emptyMap();
+  }
+
+  @Nonnull
+  public Map<String, String> getNodeSelectors() {
+    return Collections.emptyMap();
+  }
+
+  public V1ResourceRequirements getResources() {
+    return null;
+  }
+
+  public V1PodSecurityContext getPodSecurityContext() {
+    return null;
+  }
+
+  public V1SecurityContext getContainerSecurityContext() {
+    return null;
+  }
 }

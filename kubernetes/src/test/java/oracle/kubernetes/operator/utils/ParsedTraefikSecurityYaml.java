@@ -7,10 +7,12 @@ package oracle.kubernetes.operator.utils;
 import io.kubernetes.client.models.V1beta1ClusterRole;
 import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import java.nio.file.Path;
+import oracle.kubernetes.operator.helpers.LegalNames;
 
 /**
- * Parses a generated weblogic-domain-traefik-security-inputs.getClusterName().toLowerCase().yaml
- * file into a set of typed k8s java objects
+ * Parses a generated
+ * weblogic-domain-traefik-security-inputs.LegalNames.toDNS1123LegalName(getClusterName()).yaml file
+ * into a set of typed k8s java objects
  */
 public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
 
@@ -43,6 +45,6 @@ public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
   }
 
   private String getClusterScope() {
-    return inputs.getDomainUID() + "-" + inputs.getClusterName().toLowerCase();
+    return inputs.getDomainUID() + "-" + LegalNames.toDNS1123LegalName(inputs.getClusterName());
   }
 }

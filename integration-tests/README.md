@@ -1,6 +1,6 @@
 # Integration Tests for Oracle WebLogic Server Kubernetes Operator
 
-This documentation describes the functional use cases that are covered in integration testing for he Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile. All the use cases covered in run.sh will be covered in Java integration tests. Currently, QUICKTEST use cases and some of Full test(till domain4) use cases are covered in Java tests.
+This documentation describes the functional use cases that are covered in integration testing for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile. All the use cases covered in run.sh are covered in Java integration tests. 
 
 # Environments
 
@@ -12,7 +12,7 @@ The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" O
 
 # Use Cases
 
-Currently Java integration tests cover all QUICKTEST and some Full test use cases from run.sh. The below are the use cases:
+Java integration tests cover all use cases from run.sh. The below are the use cases:
 
 * create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
 * create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
@@ -39,6 +39,7 @@ Full test use cases
 * test managed server 1 pod auto-restart in domain1
 * destroy domain1
 * test that create domain fails when its pv is already populated by a shutdown domain
+* create another domain domain7 with APACHE load balancer and access admin console via LB port. 
 
 
 # Directory Configuration and Structure
@@ -158,8 +159,12 @@ Secret - to create secret
 # How to run the Java integration tests
 
 Maven and latest Git should be in PATH
-
 export JAVA_HOME
+
+Command to run the tests:
+```
+mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
+```
 
 The tests accepts optional env var overrides:
 
@@ -185,10 +190,7 @@ WERCKER=true:
 | IMAGE_PULL_SECRET_OPERATOR | Default ''. |
  | IMAGE_PULL_SECRET_WEBLOGIC | Default ''.
 
-Command to run the tests:
-```
-mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
-```
+
 Successful run will have the output like below:
 ```
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 970.765 s - in oracle.kubernetes.operator.ITSingleDomain
@@ -279,6 +281,8 @@ At the end of the test run, all pods logs, describes are logged in individual fi
 $RESULT_ROOT/acceptance_test_tmp is archived under $RESULT_ROOT/acceptance_test_tmp_archive
 
 $PV_ROOT/acceptance_test_pv is archived under $PV_ROOT/acceptance_test_pv_archive
+
+On Wercker, these logs can be downloaded by clicking "Download artifact" on cleanup and store step. 
 
 # How to add a new test
 

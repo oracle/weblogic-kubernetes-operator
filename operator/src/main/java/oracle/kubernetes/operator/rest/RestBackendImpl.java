@@ -21,13 +21,12 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -36,8 +35,6 @@ import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
-import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -68,8 +65,7 @@ public class RestBackendImpl implements RestBackend {
    * @param targetNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
    *     operator manages.
    */
-  public RestBackendImpl(
-      String principal, String accessToken, Collection<String> targetNamespaces) {
+  RestBackendImpl(String principal, String accessToken, Collection<String> targetNamespaces) {
     LOGGER.entering(principal, targetNamespaces);
     this.principal = principal;
     userInfo = authenticate(accessToken);
@@ -84,7 +80,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void authorize(String domainUID, Operation operation) {
     LOGGER.entering(domainUID, operation);
-    boolean authorized = false;
+    boolean authorized;
     if (domainUID == null) {
       authorized =
           atz.check(
@@ -173,12 +169,10 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private List<Domain> getDomainsList() {
-    CallBuilderFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-    Collection<List<Domain>> c = new ArrayList<List<Domain>>();
+    Collection<List<Domain>> c = new ArrayList<>();
     try {
       for (String ns : targetNamespaces) {
-        DomainList dl = factory.create().listDomain(ns);
+        DomainList dl = new CallBuilder().listDomain(ns);
 
         if (dl != null) {
           c.add(dl.getItems());
@@ -194,9 +188,8 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
-    boolean result = false;
     authorize(null, Operation.list);
-    result = getDomainUIDs().contains(domainUID);
+    boolean result = getDomainUIDs().contains(domainUID);
     LOGGER.exiting(result);
     return result;
   }
@@ -261,53 +254,30 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void updateReplicasForDomain(
-      String namespace, Domain domain, String cluster, int managedServerCount) {
-    // Capacity of configured cluster is valid for scaling
-    // Set replicas value on corresponding ClusterStartup (if defined)
-    // or on the Domain level replicas value for cluster not defined in a ClusterStartup
-    String domainUID = domain.getSpec().getDomainUID();
-    boolean domainModified = false;
-    ClusterStartup clusterStartup = getClusterStartup(domain, cluster);
-    int currentReplicasCount =
-        clusterStartup != null ? clusterStartup.getReplicas() : domain.getSpec().getReplicas();
-
-    if (managedServerCount != currentReplicasCount) {
-      if (clusterStartup != null) {
-        // set replica value on corresponding ClusterStartup
-        clusterStartup.setReplicas(managedServerCount);
-        domainModified = true;
-      } else if (StartupControlConstants.AUTO_STARTUPCONTROL.equals(
-          domain.getSpec().getStartupControl())) {
-        // set replica on Domain for cluster not defined in ClusterStartup
-        domain.getSpec().setReplicas(managedServerCount);
-        domainModified = true;
-      } else {
-        // WebLogic Cluster is not defined in ClusterStartup AND Startup Control is not spec'd as
-        // AUTO
-        // so scaling will not occur since Domain.spec.Replicas property will be ignored.
-        throw createWebApplicationException(
-            Status.BAD_REQUEST, MessageKeys.SCALING_AUTO_CONTROL_AUTO, cluster);
-      }
+      String namespace, Domain domain, String cluster, int newReplicaCount) {
+    if (newReplicaCount != domain.getReplicaCount(cluster)) {
+      domain.setReplicaCount(cluster, newReplicaCount);
+      overwriteDomain(namespace, domain);
     }
+  }
 
-    if (domainModified) {
-      try {
-        CallBuilderFactory factory =
-            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-        // Write out the Domain with updated replica values
-        // TODO: Can we patch instead of replace?
-        factory.create().replaceDomain(domainUID, namespace, domain);
-      } catch (ApiException e) {
-        LOGGER.finer(
-            "Unexpected exception when updating Domain " + domainUID + " in namespace " + namespace,
-            e);
-        throw new WebApplicationException(e.getMessage());
-      }
+  private void overwriteDomain(String namespace, Domain domain) {
+    try {
+      // Write out the Domain with updated replica values
+      // TODO: Can we patch instead of replace?
+      new CallBuilder().replaceDomain(domain.getDomainUID(), namespace, domain);
+    } catch (ApiException e) {
+      LOGGER.finer(
+          String.format(
+              "Unexpected exception when updating Domain %s in namespace %s",
+              domain.getDomainUID(), namespace),
+          e);
+      throw new WebApplicationException(e.getMessage());
     }
   }
 
   private void verifyWLSConfiguredClusterCapacity(
-      String namespace, Domain domain, String cluster, int managedServerCount) {
+      String namespace, Domain domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
     String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
@@ -316,16 +286,13 @@ public class RestBackendImpl implements RestBackend {
         getWlsClusterConfig(namespace, cluster, adminServerServiceName, adminSecretName);
 
     // Verify the current configured cluster size
-    int clusterSize = wlsClusterConfig.getClusterSize();
-    if (wlsClusterConfig.hasDynamicServers()) {
-      clusterSize += wlsClusterConfig.getMaxDynamicClusterSize();
-    }
-    if (managedServerCount > clusterSize) {
+    int MaxClusterSize = wlsClusterConfig.getMaxClusterSize();
+    if (requestedSize > MaxClusterSize) {
       throw createWebApplicationException(
           Status.BAD_REQUEST,
           MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
-          managedServerCount,
-          clusterSize,
+          requestedSize,
+          MaxClusterSize,
           cluster,
           cluster);
     }
@@ -335,18 +302,6 @@ public class RestBackendImpl implements RestBackend {
     return domain.getSpec().getAdminSecret() == null
         ? null
         : domain.getSpec().getAdminSecret().getName();
-  }
-
-  private ClusterStartup getClusterStartup(Domain domain, String cluster) {
-    List<ClusterStartup> clusterStartups = domain.getSpec().getClusterStartup();
-    for (ClusterStartup clusterStartup : clusterStartups) {
-      String clusterName = clusterStartup.getClusterName();
-      if (cluster.equals(clusterName)) {
-        return clusterStartup;
-      }
-    }
-
-    return null;
   }
 
   private WlsClusterConfig getWlsClusterConfig(

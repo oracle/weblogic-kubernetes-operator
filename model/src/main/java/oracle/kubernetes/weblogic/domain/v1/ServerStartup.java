@@ -18,7 +18,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * ServerStartup describes the desired startup state and passed environment variables for a specific
  * managed server.
+ *
+ * @deprecated used internally for version 1 of the domain model.
  */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 public class ServerStartup {
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
@@ -26,6 +30,7 @@ public class ServerStartup {
   @Expose
   private String desiredState;
   /** Managed server name of instance to start. (Required) */
+  @SuppressWarnings("NullableProblems")
   @SerializedName("serverName")
   @Expose
   @NotNull
@@ -42,7 +47,7 @@ public class ServerStartup {
   @SerializedName("env")
   @Expose
   @Valid
-  private List<V1EnvVar> env = new ArrayList<V1EnvVar>();
+  private List<V1EnvVar> env = new ArrayList<>();
 
   /**
    * Desired startup state. Legal values are RUNNING or ADMIN.
@@ -68,7 +73,7 @@ public class ServerStartup {
    * @param desiredState desired state
    * @return this
    */
-  public ServerStartup withDesiredState(String desiredState) {
+  ServerStartup withDesiredState(String desiredState) {
     this.desiredState = desiredState;
     return this;
   }
@@ -97,7 +102,7 @@ public class ServerStartup {
    * @param serverName server name
    * @return this
    */
-  public ServerStartup withServerName(String serverName) {
+  ServerStartup withServerName(String serverName) {
     this.serverName = serverName;
     return this;
   }
@@ -161,7 +166,7 @@ public class ServerStartup {
    * @param env Environment variables
    * @return this
    */
-  public ServerStartup withEnv(List<V1EnvVar> env) {
+  ServerStartup withEnv(List<V1EnvVar> env) {
     this.env = env;
     return this;
   }
@@ -171,12 +176,10 @@ public class ServerStartup {
    *
    * @param name the name of the variable to add
    * @param value the value of the variable to add
-   * @return this
    */
-  public ServerStartup withEnvironmentVariable(String name, String value) {
+  void withEnvironmentVariable(String name, String value) {
     if (env == null) env = new ArrayList<>();
     env.add(new V1EnvVar().name(name).value(value));
-    return this;
   }
 
   @Override
@@ -204,7 +207,7 @@ public class ServerStartup {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ServerStartup) == false) {
+    if (!(other instanceof ServerStartup)) {
       return false;
     }
     ServerStartup rhs = ((ServerStartup) other);

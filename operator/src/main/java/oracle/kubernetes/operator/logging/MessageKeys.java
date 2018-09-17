@@ -80,7 +80,6 @@ public class MessageKeys {
   public static final String APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW = "WLSKO-0069";
   public static final String SUBJECT_ACCESS_REVIEW = "WLSKO-0070";
   public static final String REPLICA_MORE_THAN_WLS_SERVERS = "WLSKO-0071";
-  public static final String DOMAIN_REPLICAS_IGNORED = "WLSKO-0072";
   public static final String K8S_MIN_VERSION_CHECK_FAILED = "WLSKO-0073";
   public static final String VERIFY_K8S_MIN_VERSION = "WLSKO-0074";
   public static final String DOMAIN_UID_UNIQUENESS_FAILED = "WLSKO-0076";

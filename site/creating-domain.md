@@ -103,11 +103,11 @@ The following parameters must be provided in the input file.
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
 | `domainName` | Name of the WebLogic domain to create. | `base_domain` |
-| `domainUID` | Unique ID that will be used to identify this particular domain. This ID must be unique across all domains in a Kubernetes cluster. | no default |
+| `domainUID` | Unique ID that will be used to identify this particular domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | no default |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
-| `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: $(DOMAIN_NAME), $(DOMAIN_HOME), $(ADMIN_NAME), $(ADMIN_PORT), and $(SERVER_NAME). | `-Dweblogic.StdoutDebugEnabled=false` |
+| `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `loadBalancer` | Type of load balancer to create.  Legal values are `NONE` and `TRAEFIK`. | `TRAEFIK` |
 | `loadBalancerDashboardPort` | Node port for the load balancer to accept dashboard traffic. | `30315` |
 | `loadBalancerWebPort` | Node port for the load balancer to accept user traffic. | `30305` |
@@ -145,7 +145,7 @@ Finally, run the create script, pointing it at your inputs file and output direc
 
 ```
   ./create-weblogic-domain.sh \
-  –i create-domain-job-inputs.yaml \
+  –i create-weblogic-domain-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
 
@@ -154,7 +154,7 @@ Finally, run the create script, pointing it at your inputs file and output direc
 The script will perform the following steps:
 
 *	Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
-*	Create Kubernetes YAML files based on the provided inputs.
+*	Create Kubernetes YAML files based on the provided inputs. Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-weblogic-domain-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 *	Create a persistent volume for the shared state.
 *	Create a persistent volume claim for that volume.
 *	Create a Kubernetes job that will start up a utility WebLogic Server container and run WLST to create the domain on the shared storage.

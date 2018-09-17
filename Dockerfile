@@ -19,8 +19,9 @@ RUN mkdir /operator
 RUN mkdir /operator/lib
 ENV PATH=$PATH:/operator
 
+ARG VERSION
 COPY src/scripts/* /operator/
-COPY operator/target/weblogic-kubernetes-operator-1.1.jar /operator/weblogic-kubernetes-operator.jar
+COPY operator/target/weblogic-kubernetes-operator-$VERSION.jar /operator/weblogic-kubernetes-operator.jar
 COPY operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
