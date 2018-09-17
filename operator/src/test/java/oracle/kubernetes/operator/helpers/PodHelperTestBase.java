@@ -35,6 +35,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
@@ -65,6 +66,7 @@ import oracle.kubernetes.operator.work.BodyMatcher;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.hamcrest.Description;
@@ -77,8 +79,8 @@ import org.junit.Test;
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase {
   static final String NS = "namespace";
-  static final String DOMAIN_NAME = "domain1";
-  static final String UID = "uid1";
+  private static final String DOMAIN_NAME = "domain1";
+  private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
 
@@ -93,12 +95,16 @@ public abstract class PodHelperTestBase {
   private static final int LIVENESS_PERIOD = 6;
   private static final int LIVENESS_TIMEOUT = 5;
   private static final String DOMAIN_HOME = "/shared/domain/domain1";
+  private static final String LOG_HOME = "/shared/logs";
+  private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
 
   final TerminalStep terminalStep = new TerminalStep();
-  final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final Domain domain = createDomain();
+  final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  private final DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
   protected AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   protected List<Memento> mementos = new ArrayList<>();
   protected List<LogRecord> logRecords = new ArrayList<>();
@@ -116,8 +122,12 @@ public abstract class PodHelperTestBase {
     return actualBody.getMetadata().getName();
   }
 
-  public String getServerName() {
+  private String getServerName() {
     return serverName;
+  }
+
+  protected DomainConfigurator getConfigurator() {
+    return configurator;
   }
 
   @Before
@@ -147,14 +157,14 @@ public abstract class PodHelperTestBase {
     testSupport.verifyAllDefinedResponsesInvoked();
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo() {
-    DomainPresenceInfo domainPresenceInfo =
-        new DomainPresenceInfo(
-            new Domain()
-                .withMetadata(new V1ObjectMeta().namespace(NS))
-                .withSpec(createDomainSpec()));
+  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     domainPresenceInfo.setClaims(new V1PersistentVolumeClaimList());
     return domainPresenceInfo;
+  }
+
+  private Domain createDomain() {
+    return new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(createDomainSpec());
   }
 
   @SuppressWarnings("deprecation")
@@ -170,10 +180,6 @@ public abstract class PodHelperTestBase {
 
   void putTuningParameter(String name, String value) {
     TuningParametersStub.namedParameters.put(name, value);
-  }
-
-  AsyncCallTestSupport.CannedResponse expectReadPod(String podName) {
-    return testSupport.createCannedResponse("readPod").withNamespace(NS).withName(podName);
   }
 
   AsyncCallTestSupport.CannedResponse expectCreatePod(BodyMatcher bodyMatcher) {
@@ -234,6 +240,19 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreatedWithoutPullSecret_doNotAddToPod() {
+    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), nullValue());
+  }
+
+  @Test
+  public void whenPodCreatedWithPullSecret_addToPod() {
+    V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
+    domainPresenceInfo.getDomain().getSpec().setImagePullSecret(imagePullSecret);
+
+    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
+  }
+
+  @Test
   public void whenPodCreated_containerHasExpectedVolumeMounts() {
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
@@ -247,14 +266,14 @@ public abstract class PodHelperTestBase {
   public void whenPodCreated_lifecyclePreStopHasStopServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLifecycle().getPreStop().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/stopServer.sh", UID, getServerName(), DOMAIN_NAME));
+        contains("/weblogic-operator/scripts/stopServer.sh"));
   }
 
   @Test
   public void whenPodCreated_livenessProbeHasLivenessCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/livenessProbe.sh", DOMAIN_NAME, getServerName()));
+        contains("/weblogic-operator/scripts/livenessProbe.sh"));
   }
 
   @Test
@@ -268,7 +287,7 @@ public abstract class PodHelperTestBase {
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/readinessProbe.sh", DOMAIN_NAME, getServerName()));
+        contains("/weblogic-operator/scripts/readinessProbe.sh"));
   }
 
   @Test
@@ -290,7 +309,12 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
             hasEnvVar("ADMIN_USERNAME", null),
-            hasEnvVar("ADMIN_PASSWORD", null)));
+            hasEnvVar("ADMIN_PASSWORD", null),
+            hasEnvVar("DOMAIN_UID", UID),
+            hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
+            hasEnvVar("LOG_HOME", LOG_HOME),
+            hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
+            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -451,20 +475,12 @@ public abstract class PodHelperTestBase {
         .preStop(
             new V1Handler()
                 .exec(
-                    new V1ExecAction()
-                        .addCommandItem("/weblogic-operator/scripts/stopServer.sh")
-                        .addCommandItem(UID)
-                        .addCommandItem(getServerName())
-                        .addCommandItem(DOMAIN_NAME)));
+                    new V1ExecAction().addCommandItem("/weblogic-operator/scripts/stopServer.sh")));
   }
 
   private V1Probe createReadinessProbe() {
     return new V1Probe()
-        .exec(
-            new V1ExecAction()
-                .addCommandItem("/weblogic-operator/scripts/readinessProbe.sh")
-                .addCommandItem(DOMAIN_NAME)
-                .addCommandItem(getServerName()))
+        .exec(new V1ExecAction().addCommandItem("/weblogic-operator/scripts/readinessProbe.sh"))
         .initialDelaySeconds(READINESS_INITIAL_DELAY)
         .timeoutSeconds(READINESS_TIMEOUT)
         .periodSeconds(READINESS_PERIOD)
@@ -473,11 +489,7 @@ public abstract class PodHelperTestBase {
 
   private V1Probe createLivenessProbe() {
     return new V1Probe()
-        .exec(
-            new V1ExecAction()
-                .addCommandItem("/weblogic-operator/scripts/livenessProbe.sh")
-                .addCommandItem(DOMAIN_NAME)
-                .addCommandItem(getServerName()))
+        .exec(new V1ExecAction().addCommandItem("/weblogic-operator/scripts/livenessProbe.sh"))
         .initialDelaySeconds(LIVENESS_INITIAL_DELAY)
         .timeoutSeconds(LIVENESS_TIMEOUT)
         .periodSeconds(LIVENESS_PERIOD)
@@ -520,6 +532,11 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
         .addEnvItem(envItem("ADMIN_USERNAME", null))
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
+        .addEnvItem(envItem("DOMAIN_UID", UID))
+        .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
+        .addEnvItem(envItem("LOG_HOME", LOG_HOME))
+        .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
+        .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }

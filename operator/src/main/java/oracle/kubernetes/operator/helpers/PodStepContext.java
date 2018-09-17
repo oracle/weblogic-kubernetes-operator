@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
@@ -28,6 +29,7 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +62,8 @@ public abstract class PodStepContext {
   private static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   private static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   private static final String STORAGE_MOUNT_PATH = "/shared";
+  private static final String NODEMGR_HOME = "/u01/nodemanager";
+  private static final String LOG_HOME = "/shared/logs";
   private static final int FAILURE_THRESHOLD = 1;
 
   @SuppressWarnings("OctalInteger")
@@ -251,16 +255,6 @@ public abstract class PodStepContext {
     return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), replaceResponse(next));
   }
 
-  /**
-   * Reads the specified pod and records it.
-   *
-   * @param next the next step to perform after the pod creation is complete.
-   * @return a step to be scheduled.
-   */
-  private Step readPod(Step next) {
-    return new CallBuilder().readPodAsync(getPodName(), getNamespace(), readResponse(next));
-  }
-
   private void logPodCreated() {
     LOGGER.info(getPodCreatedMessageKey(), getDomainUID(), getServerName());
   }
@@ -386,32 +380,6 @@ public abstract class PodStepContext {
 
   Set<String> getExplicitRestartServers() {
     return info.getExplicitRestartServers();
-  }
-
-  private ResponseStep<V1Pod> readResponse(Step next) {
-    return new ReadResponseStep(next);
-  }
-
-  private class ReadResponseStep extends DefaultResponseStep<V1Pod> {
-
-    ReadResponseStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, callResponse);
-      }
-      return super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-      V1Pod currentPod = callResponse.getResult();
-      setRecordedPod(currentPod);
-      return doNext(packet);
-    }
   }
 
   private class VerifyPodStep extends Step {
@@ -609,6 +577,10 @@ public abstract class PodStepContext {
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
                             .defaultMode(ALL_READ_AND_EXECUTE)));
 
+    V1LocalObjectReference imagePullSecret = getServerSpec().getImagePullSecret();
+    if (imagePullSecret != null) {
+      podSpec.addImagePullSecretsItem(imagePullSecret);
+    }
     if (!getClaims().isEmpty()) {
       podSpec.addVolumesItem(
           new V1Volume()
@@ -644,7 +616,7 @@ public abstract class PodStepContext {
   }
 
   protected List<String> getContainerCommand() {
-    return Arrays.asList(START_SERVER, getDomainUID(), getServerName(), getDomainName());
+    return Collections.singletonList(START_SERVER);
   }
 
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
@@ -656,6 +628,12 @@ public abstract class PodStepContext {
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
     addEnvVar(vars, "SERVER_NAME", getServerName());
+    addEnvVar(vars, "DOMAIN_UID", getDomainUID());
+    addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
+    addEnvVar(vars, "LOG_HOME", LOG_HOME);
+    addEnvVar(
+        vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
+    addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
     hideAdminUserCredentials(vars);
   }
 
@@ -696,8 +674,7 @@ public abstract class PodStepContext {
   }
 
   private V1Lifecycle createLifecycle() {
-    return new V1Lifecycle()
-        .preStop(handler(STOP_SERVER, getDomainUID(), getServerName(), getDomainName()));
+    return new V1Lifecycle().preStop(handler(STOP_SERVER));
   }
 
   private V1Handler handler(String... commandItems) {
@@ -723,7 +700,7 @@ public abstract class PodStepContext {
         .timeoutSeconds(tuning.readinessProbeTimeoutSeconds)
         .periodSeconds(tuning.readinessProbePeriodSeconds)
         .failureThreshold(FAILURE_THRESHOLD)
-        .exec(execAction(READINESS_PROBE, getDomainName(), getServerName()));
+        .exec(execAction(READINESS_PROBE));
     return readinessProbe;
   }
 
@@ -733,6 +710,6 @@ public abstract class PodStepContext {
         .timeoutSeconds(tuning.livenessProbeTimeoutSeconds)
         .periodSeconds(tuning.livenessProbePeriodSeconds)
         .failureThreshold(FAILURE_THRESHOLD)
-        .exec(execAction(LIVENESS_PROBE, getDomainName(), getServerName()));
+        .exec(execAction(LIVENESS_PROBE));
   }
 }

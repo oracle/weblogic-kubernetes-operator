@@ -9,7 +9,7 @@ metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "operator-v1"
-  name: {{ list .Release.Namespace "operator-rolebinding-discovery" | join "-" | quote }}
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-discovery" | join "-" | quote }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: "ClusterRole"

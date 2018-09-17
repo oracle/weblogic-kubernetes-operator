@@ -1,7 +1,10 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# http://oss.oracle.com/licenses/upl.
+
 import sys;
 #
 # +++ Start of common code for reading domain secrets
-
 # Read username secret
 file = open('/weblogic-operator/secrets/username', 'r')
 admin_username = file.read()
@@ -14,20 +17,23 @@ file.close()
 
 # +++ End of common code for reading domain secrets
 #
-domain_uid = sys.argv[1]
-server_name = sys.argv[2]
-domain_name = sys.argv[3]
-if (len(sys.argv) == 5):
-  admin_server_url = sys.argv[4]
-else:
-  admin_server_url = None
 
-domain_path='/shared/domain/%s' % domain_name
+def getEnvVar(var):
+  val=os.environ.get(var)
+  if val==None:
+    print "ERROR: Env var ",var, " not set."
+    sys.exit(1)
+  return val
+
+domain_uid = getEnvVar('DOMAIN_UID')
+server_name = getEnvVar('SERVER_NAME')
+domain_name = getEnvVar('DOMAIN_NAME')
+domain_path = getEnvVar('DOMAIN_HOME')
+service_name = getEnvVar('SERVICE_NAME')
 
 print 'admin username is %s' % admin_username
 print 'domain path is %s' % domain_path
 print 'server name is %s' % server_name
-print 'admin server url is %s' % admin_server_url
 
 # Encrypt the admin username and password
 adminUsernameEncrypted=encrypt(admin_username, domain_path)
@@ -51,8 +57,6 @@ bpFile=open('%s/servers/%s/security/boot.properties' % (domain_path, server_name
 bpFile.write("username=%s\n" % adminUsernameEncrypted)
 bpFile.write("password=%s\n" % adminPasswordEncrypted)
 bpFile.close()
-
-service_name = domain_uid + "-" + server_name
 
 # Connect to nodemanager and start server
 try:

@@ -277,7 +277,7 @@ public class WlsRetriever {
 
           // This logs warning messages as well as returning a list of suggested
           // WebLogic configuration updates, but it does not update the DomainSpec.
-          wlsDomainConfig.validate(dom.getSpec(), suggestedConfigUpdates);
+          wlsDomainConfig.validate(dom, suggestedConfigUpdates);
 
           info.setScan(wlsDomainConfig);
           info.setLastScanTime(new DateTime());

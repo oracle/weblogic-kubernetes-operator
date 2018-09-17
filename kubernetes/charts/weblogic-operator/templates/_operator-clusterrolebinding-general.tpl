@@ -1,7 +1,7 @@
 # Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-{{- define "operator.clusterRoleBinding" }}
+{{- define "operator.clusterRoleBindingGeneral" }}
 ---
 apiVersion: "rbac.authorization.k8s.io/v1beta1"
 kind: "ClusterRoleBinding"
@@ -9,11 +9,11 @@ metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "operator-v1"
-  name: {{ list .Release.Namespace "operator-rolebinding" | join "-" | quote }}
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-general" | join "-" | quote }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: "ClusterRole"
-  name: "weblogic-operator-cluster-role"
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrole-general" | join "-" | quote }}
 subjects:
 - kind: "ServiceAccount"
   apiGroup: ""

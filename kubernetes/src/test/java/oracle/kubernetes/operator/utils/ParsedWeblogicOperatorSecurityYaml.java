@@ -36,37 +36,41 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   }
 
   public V1beta1ClusterRole getWeblogicOperatorClusterRole() {
-    return getClusterRoles().find("weblogic-operator-cluster-role");
+    return getClusterRoles().find(inputs.getNamespace() + "-weblogic-operator-clusterrole-general");
   }
 
   public V1beta1ClusterRole getWeblogicOperatorClusterRoleNonResource() {
-    return getClusterRoles().find("weblogic-operator-cluster-role-nonresource");
+    return getClusterRoles()
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrole-nonresource");
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBinding() {
-    return getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding");
+    return getClusterRoleBindings()
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-general");
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBindingNonResource() {
     return getClusterRoleBindings()
-        .find(inputs.getNamespace() + "-operator-rolebinding-nonresource");
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-nonresource");
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBindingDiscovery() {
-    return getClusterRoleBindings().find(inputs.getNamespace() + "-operator-rolebinding-discovery");
+    return getClusterRoleBindings()
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-discovery");
   }
 
   public V1beta1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() {
     return getClusterRoleBindings()
-        .find(inputs.getNamespace() + "-operator-rolebinding-auth-delegator");
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-auth-delegator");
   }
 
   public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() {
-    return getClusterRoles().find("weblogic-operator-namespace-role");
+    return getClusterRoles()
+        .find(inputs.getNamespace() + "-weblogic-operator-clusterrole-namespace");
   }
 
   public V1beta1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
-    return getRoleBindings().find("weblogic-operator-rolebinding", namespace);
+    return getRoleBindings().find("weblogic-operator-rolebinding-namespace", namespace);
   }
 
   public int getExpectedObjectCount() {
