@@ -10,7 +10,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalO
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNFSVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newStringList;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
-import static oracle.kubernetes.weblogic.domain.DomainConfigurator.forDomain;
+import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.kubernetes.client.models.V1Job;
