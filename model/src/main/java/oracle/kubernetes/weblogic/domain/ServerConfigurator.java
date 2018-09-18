@@ -4,10 +4,28 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+/** An interface for an object to configure a server in a test. */
+@SuppressWarnings("UnusedReturnValue")
 public interface ServerConfigurator {
   ServerConfigurator withNodePort(int nodePort);
 
   ServerConfigurator withDesiredState(String desiredState);
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
+
+  ServerConfigurator withImage(String imageName);
+
+  ServerConfigurator withImagePullPolicy(String policy);
+
+  ServerConfigurator withImagePullSecret(String secretName);
+
+  ServerConfigurator withServerStartState(String state);
+
+  ServerConfigurator withServerStartPolicy(String startNever);
+
+  ServerConfigurator withLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
+
+  ServerConfigurator withReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
 }

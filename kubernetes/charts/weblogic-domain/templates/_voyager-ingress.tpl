@@ -23,7 +23,7 @@ spec:
       nodePort: '{{ .loadBalancerWebPort }}'
       paths:
       - backend:
-          serviceName: {{ .Release.Name }}-cluster-{{ .clusterName | lower }}
+          serviceName: {{ .Release.Name }}-cluster-{{ .clusterName | lower | replace "_" "-" }}
           servicePort: '{{ .managedServerPort }}'
 
 ---

@@ -6,23 +6,31 @@ package oracle.kubernetes.weblogic.domain.v1;
 
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 
-import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import oracle.kubernetes.weblogic.domain.v2.AdminServer;
+import oracle.kubernetes.weblogic.domain.v2.BaseConfiguration;
+import oracle.kubernetes.weblogic.domain.v2.Cluster;
+import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
+import oracle.kubernetes.weblogic.domain.v2.Server;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainSpec is a description of a domain. */
 @SuppressWarnings("NullableProblems")
-public class DomainSpec {
+public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
   @SerializedName("domainUID")
@@ -35,37 +43,6 @@ public class DomainSpec {
   @Expose
   @NotNull
   private String domainName;
-
-  /**
-   * The WebLogic Docker image.
-   *
-   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
-   */
-  @SerializedName("image")
-  @Expose
-  private String image;
-
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   */
-  @SerializedName("imagePullPolicy")
-  @Expose
-  private String imagePullPolicy;
-
-  /**
-   * Reference to the secret used to authenticate a request for an image pull.
-   *
-   * <p>More info:
-   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
-   */
-  @SerializedName("imagePullSecret")
-  @Expose
-  private V1LocalObjectReference imagePullSecret;
 
   /**
    * Reference to secret containing domain administrator username and password. Secret must contain
@@ -150,29 +127,53 @@ public class DomainSpec {
   @Expose
   private Integer replicas;
 
+  /**
+   * The configuration for the admin server.
+   *
+   * @since 2.0
+   */
+  @SerializedName("adminServer")
+  @Expose
+  private AdminServer adminServer;
+
+  /**
+   * The configured managed servers.
+   *
+   * @since 2.0
+   */
+  @SerializedName("managedServers")
+  @Expose
+  private List<ManagedServer> managedServers = new ArrayList<>();
+
+  /**
+   * The configured clusters.
+   *
+   * @since 2.0
+   */
+  @SerializedName("clusters")
+  @Expose
+  protected List<Cluster> clusters = new ArrayList<>();
+
   String getEffectiveStartupControl() {
     return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
   }
 
-  ServerSpec getAdminServerSpec() {
-    return new ServerSpecV1Impl(this, getAsName(), null);
+  EffectiveConfigurationFactory getEffectiveConfigurationFactory(String apiVersion) {
+    return useVersion2(apiVersion)
+        ? new V2EffectiveConfigurationFactory()
+        : new V1EffectiveConfigurationFactory();
   }
 
-  @SuppressWarnings("deprecation")
-  ServerStartup getServerStartup(String name) {
-    if (getServerStartup() == null) return null;
-
-    for (ServerStartup ss : getServerStartup()) {
-      if (ss.getServerName().equals(name)) {
-        return ss;
-      }
-    }
-
-    return null;
+  private boolean useVersion2(String apiVersion) {
+    return isVersion2Specified(apiVersion) || hasV2Configuration() || hasV2Fields();
   }
 
-  public int getReplicaCount(String clusterName) {
-    return getReplicaCount(getClusterStartup(clusterName));
+  private boolean isVersion2Specified(String apiVersion) {
+    return KubernetesConstants.API_VERSION_ORACLE_V2.equals(apiVersion);
+  }
+
+  private boolean hasV2Configuration() {
+    return adminServer != null || !managedServers.isEmpty() || !clusters.isEmpty();
   }
 
   @SuppressWarnings("deprecation")
@@ -186,7 +187,7 @@ public class DomainSpec {
   }
 
   @SuppressWarnings("deprecation")
-  ClusterStartup getClusterStartup(String clusterName) {
+  private ClusterStartup getClusterStartup(String clusterName) {
     if (getClusterStartup() == null || clusterName == null) return null;
 
     for (ClusterStartup cs : getClusterStartup()) {
@@ -196,10 +197,6 @@ public class DomainSpec {
     }
 
     return null;
-  }
-
-  void setReplicaCount(String clusterName, int replicaLimit) {
-    getOrCreateClusterStartup(clusterName).setReplicas(replicaLimit);
   }
 
   @SuppressWarnings("deprecation")
@@ -273,66 +270,14 @@ public class DomainSpec {
   }
 
   /*
-   * The WebLogic Docker image.
-   *
-   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
-   *
-   * @return image
-   */
-  public String getImage() {
-    return image;
-  }
-
-  /*
-   * The WebLogic Docker image.
-   *
-   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
-   *
-   * @param image image
-   */
-  public void setImage(String image) {
-    this.image = image;
-  }
-
-  /*
-   * The WebLogic Docker image.
-   *
-   * <p> Defaults to store/oracle/weblogic:12.2.1.3.
+   * Fluent api for setting the image.
    *
    * @param image image
    * @return this
    */
   public DomainSpec withImage(String image) {
-    this.image = image;
+    setImage(image);
     return this;
-  }
-
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @return image pull policy
-   */
-  public String getImagePullPolicy() {
-    return imagePullPolicy;
-  }
-
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @param imagePullPolicy image pull policy
-   */
-  public void setImagePullPolicy(String imagePullPolicy) {
-    this.imagePullPolicy = imagePullPolicy;
   }
 
   /**
@@ -347,32 +292,8 @@ public class DomainSpec {
    * @return this
    */
   public DomainSpec withImagePullPolicy(String imagePullPolicy) {
-    this.imagePullPolicy = imagePullPolicy;
+    setImagePullPolicy(imagePullPolicy);
     return this;
-  }
-
-  /**
-   * Returns the reference to the secret used to authenticate a request for an image pull.
-   *
-   * <p>More info:
-   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
-   */
-  public V1LocalObjectReference getImagePullSecret() {
-    return hasImagePullSecret() ? imagePullSecret : null;
-  }
-
-  private boolean hasImagePullSecret() {
-    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
-  }
-
-  /**
-   * Reference to the secret used to authenticate a request for an image pull.
-   *
-   * <p>More info:
-   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
-   */
-  public void setImagePullSecret(V1LocalObjectReference imagePullSecret) {
-    this.imagePullSecret = imagePullSecret;
   }
 
   /**
@@ -382,26 +303,14 @@ public class DomainSpec {
    * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
    */
   public DomainSpec withImagePullSecretName(String imagePullSecretName) {
-    this.imagePullSecret = new V1LocalObjectReference().name(imagePullSecretName);
+    setImagePullSecret(new V1LocalObjectReference().name(imagePullSecretName));
     return this;
   }
 
-  /**
-   * Reference to secret containing domain administrator username and password. Secret must contain
-   * keys names 'username' and 'password' (Required)
-   *
-   * @return admin secret
-   */
   public V1SecretReference getAdminSecret() {
     return adminSecret;
   }
 
-  /**
-   * Reference to secret containing domain administrator username and password. Secret must contain
-   * keys names 'username' and 'password' (Required)
-   *
-   * @param adminSecret admin secret
-   */
   @SuppressWarnings("unused")
   public void setAdminSecret(V1SecretReference adminSecret) {
     this.adminSecret = adminSecret;
@@ -419,22 +328,10 @@ public class DomainSpec {
     return this;
   }
 
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   *
-   * @return admin server name
-   */
   public String getAsName() {
     return asName;
   }
 
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   *
-   * @param asName admin server name
-   */
   public void setAsName(String asName) {
     this.asName = asName;
   }
@@ -451,22 +348,10 @@ public class DomainSpec {
     return this;
   }
 
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   *
-   * @return admin server port
-   */
   public Integer getAsPort() {
     return asPort;
   }
 
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   *
-   * @param asPort admin server port
-   */
   @SuppressWarnings("WeakerAccess")
   // public access is needed for yaml processing
   public void setAsPort(Integer asPort) {
@@ -716,10 +601,9 @@ public class DomainSpec {
   @Override
   public String toString() {
     return new ToStringBuilder(this)
+        .appendSuper(super.toString())
         .append("domainUID", domainUID)
         .append("domainName", domainName)
-        .append("image", image)
-        .append("imagePullPolicy", imagePullPolicy)
         .append("adminSecret", adminSecret)
         .append("asName", asName)
         .append("asPort", asPort)
@@ -734,8 +618,7 @@ public class DomainSpec {
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(image)
-        .append(imagePullPolicy)
+        .appendSuper(super.hashCode())
         .append(asName)
         .append(replicas)
         .append(startupControl)
@@ -751,16 +634,12 @@ public class DomainSpec {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
-      return true;
-    }
-    if (!(other instanceof DomainSpec)) {
-      return false;
-    }
+    if (other == this) return true;
+    if (!(other instanceof DomainSpec)) return false;
+
     DomainSpec rhs = ((DomainSpec) other);
     return new EqualsBuilder()
-        .append(image, rhs.image)
-        .append(imagePullPolicy, rhs.imagePullPolicy)
+        .appendSuper(super.equals(other))
         .append(asName, rhs.asName)
         .append(replicas, rhs.replicas)
         .append(startupControl, rhs.startupControl)
@@ -772,5 +651,127 @@ public class DomainSpec {
         .append(serverStartup, rhs.serverStartup)
         .append(adminSecret, rhs.adminSecret)
         .isEquals();
+  }
+
+  private Server getServer(String serverName) {
+    for (ManagedServer managedServer : managedServers) {
+      if (Objects.equals(serverName, managedServer.getServerName())) return managedServer;
+    }
+
+    return null;
+  }
+
+  private Cluster getCluster(String clusterName) {
+    for (Cluster cluster : clusters) {
+      if (Objects.equals(clusterName, cluster.getClusterName())) return cluster;
+    }
+
+    return null;
+  }
+
+  private int getReplicaCountFor(Cluster cluster) {
+    return hasReplicaCount(cluster) ? cluster.getReplicas() : Domain.DEFAULT_REPLICA_LIMIT;
+  }
+
+  private boolean hasReplicaCount(Cluster cluster) {
+    return cluster != null && cluster.getReplicas() != null;
+  }
+
+  public AdminServer getAdminServer() {
+    return adminServer;
+  }
+
+  public void setAdminServer(AdminServer adminServer) {
+    this.adminServer = adminServer;
+  }
+
+  public List<ManagedServer> getManagedServers() {
+    return managedServers;
+  }
+
+  public List<Cluster> getClusters() {
+    return clusters;
+  }
+
+  private class V1EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
+    @Override
+    public ServerSpec getAdminServerSpec() {
+      return new ServerSpecV1Impl(DomainSpec.this, null, getServerStartup(getAsName()), null);
+    }
+
+    @Override
+    public ServerSpec getServerSpec(String serverName, String clusterName) {
+      return new ServerSpecV1Impl(
+          DomainSpec.this,
+          clusterName,
+          getServerStartup(serverName),
+          getClusterStartup(clusterName));
+    }
+
+    @Override
+    public int getReplicaCount(String clusterName) {
+      return DomainSpec.this.getReplicaCount(getClusterStartup(clusterName));
+    }
+
+    @Override
+    public void setReplicaCount(String clusterName, int replicaCount) {
+      getOrCreateClusterStartup(clusterName).setReplicas(replicaCount);
+    }
+
+    @SuppressWarnings("deprecation")
+    private ServerStartup getServerStartup(String name) {
+      if (DomainSpec.this.getServerStartup() == null) return null;
+
+      for (ServerStartup ss : DomainSpec.this.getServerStartup()) {
+        if (ss.getServerName().equals(name)) {
+          return ss;
+        }
+      }
+
+      return null;
+    }
+  }
+
+  class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
+    @Override
+    public ServerSpec getAdminServerSpec() {
+      return new ServerSpecV2Impl(adminServer, null, DomainSpec.this);
+    }
+
+    @Override
+    public ServerSpec getServerSpec(String serverName, String clusterName) {
+      return new ServerSpecV2Impl(
+          getServer(serverName),
+          getClusterLimit(clusterName),
+          getCluster(clusterName),
+          DomainSpec.this);
+    }
+
+    private Integer getClusterLimit(String clusterName) {
+      return clusterName == null ? null : getReplicaCount(clusterName);
+    }
+
+    @Override
+    public int getReplicaCount(String clusterName) {
+      return getReplicaCountFor(getCluster(clusterName));
+    }
+
+    @Override
+    public void setReplicaCount(String clusterName, int replicaCount) {
+      getOrCreateCluster(clusterName).setReplicas(replicaCount);
+    }
+
+    private Cluster getOrCreateCluster(String clusterName) {
+      Cluster cluster = getCluster(clusterName);
+      if (cluster != null) return cluster;
+
+      return createClusterWithName(clusterName);
+    }
+
+    private Cluster createClusterWithName(String clusterName) {
+      Cluster cluster = new Cluster().withClusterName(clusterName);
+      clusters.add(cluster);
+      return cluster;
+    }
   }
 }

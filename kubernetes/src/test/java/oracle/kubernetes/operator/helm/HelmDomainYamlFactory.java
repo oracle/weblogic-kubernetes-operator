@@ -7,6 +7,8 @@ package oracle.kubernetes.operator.helm;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.HashMap;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.DomainYamlFactory;
@@ -33,6 +35,11 @@ public class HelmDomainYamlFactory extends DomainYamlFactory {
   @Override
   public GeneratedDomainYamlFiles generate(DomainValues values) throws Exception {
     return new YamlGenerator(values).getGeneratedDomainYamlFiles();
+  }
+
+  @Override
+  public String getWeblogicDomainPersistentVolumeClaimName(DomainValues inputs) {
+    return inputs.getWeblogicDomainJobPersistentVolumeClaimName();
   }
 
   static class YamlGenerator extends oracle.kubernetes.operator.utils.YamlGeneratorBase {
@@ -95,6 +102,38 @@ public class HelmDomainYamlFactory extends DomainYamlFactory {
           new ParsedVoyagerOperatorYaml(chart, values),
           new ParsedVoyagerOperatorSecurityYaml(chart),
           new ParsedVoyagerIngressYaml(chart, values));
+    }
+  }
+
+  @Override
+  public Map<String, String> getExpectedDomainJobAnnotations() {
+    return new AnnotationMapBuilder().withHookWeight(0).build();
+  }
+
+  @Override
+  public Map<String, String> getExpectedConfigMapAnnotations() {
+    return new AnnotationMapBuilder().withHookWeight(-5).build();
+  }
+
+  private Map<String, String> getCommonAnnotations() {
+    return ImmutableMap.of(
+        "helm.sh/hook", "pre-install", "helm.sh/hook-delete-policy", "hook-succeeded");
+  }
+
+  class AnnotationMapBuilder {
+    private Map<String, String> annotations;
+
+    AnnotationMapBuilder() {
+      this.annotations = new HashMap<>(getCommonAnnotations());
+    }
+
+    AnnotationMapBuilder withHookWeight(int weight) {
+      annotations.put("helm.sh/hook-weight", Integer.toString(weight));
+      return this;
+    }
+
+    Map<String, String> build() {
+      return annotations;
     }
   }
 }

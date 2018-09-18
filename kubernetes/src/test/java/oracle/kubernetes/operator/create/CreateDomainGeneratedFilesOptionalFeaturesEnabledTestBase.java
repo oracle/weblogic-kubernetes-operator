@@ -10,7 +10,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalO
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNFSVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newStringList;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
-import static oracle.kubernetes.weblogic.domain.DomainConfigurator.forDomain;
+import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.kubernetes.client.models.V1Job;
@@ -18,7 +18,6 @@ import io.kubernetes.client.models.V1PersistentVolume;
 import oracle.kubernetes.operator.utils.DomainValues;
 import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import org.junit.BeforeClass;
 
 /**
  * Tests that the all artifacts in the yaml files that create-weblogic-domain.sh creates are correct
@@ -28,17 +27,12 @@ import org.junit.BeforeClass;
 public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTestBase
     extends CreateDomainGeneratedFilesBaseTest {
 
-  @BeforeClass
-  public static void setup() throws Exception {
-    defineDomainYamlFactory(new ScriptedDomainYamlFactory());
-  }
-
   protected static void defineDomainYamlFactory(DomainYamlFactory factory) throws Exception {
     setup(
         factory, withFeaturesEnabled(factory.newDomainValues()).loadBalancer(LOAD_BALANCER_APACHE));
   }
 
-  static DomainValues withFeaturesEnabled(DomainValues values) {
+  protected static DomainValues withFeaturesEnabled(DomainValues values) {
     return values
         .exposeAdminNodePort("true")
         .exposeAdminT3Channel("true")
@@ -68,7 +62,7 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTestBase
     expected.getSpec().withExportT3Channels(newStringList().addElement("T3Channel"));
     // set the node port for the admin server:
     forDomain(expected)
-        .configureServer(getInputs().getAdminServerName())
+        .configureAdminServer()
         .withNodePort(Integer.parseInt(getInputs().getAdminNodePort()));
 
     return expected;

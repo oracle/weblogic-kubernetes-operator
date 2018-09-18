@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
@@ -37,7 +38,7 @@ public class DomainNormalizationTest {
   private static final String CLUSTER_2 = "cluster2";
 
   private final Domain domain = new Domain().withSpec(new DomainSpec());
-  private final DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final DomainSpec domainSpec = domain.getSpec();
   private List<Memento> mementos = new ArrayList<>();
 
@@ -63,7 +64,7 @@ public class DomainNormalizationTest {
     assertThat(domainSpec.getExportT3Channels(), empty());
     assertThat(
         domainSpec.getStartupControl(), equalTo(StartupControlConstants.AUTO_STARTUPCONTROL));
-    assertThat(domainSpec.getReplicaCount("nocluster"), equalTo(1));
+    assertThat(domain.getReplicaCount("nocluster"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
   }
 
   @Test
@@ -81,9 +82,9 @@ public class DomainNormalizationTest {
 
   @Test
   public void whenDomainSpecHasNoServersOrClustersConfigured_normalizationLeavesDefaultBehavior() {
-    DomainConfigurator.forDomain(domain)
+    DomainConfiguratorFactory.forDomain(domain)
         .setStartupControl(AUTO_STARTUPCONTROL)
-        .setDefaultReplicas(REPLICAS);
+        .withDefaultReplicaCount(REPLICAS);
 
     DomainPresenceControl.normalizeDomainSpec(domainSpec);
 

@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+/** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
 public interface ClusterConfigurator {
   ClusterConfigurator withReplicas(int replicas);
@@ -11,4 +12,18 @@ public interface ClusterConfigurator {
   ClusterConfigurator withDesiredState(String state);
 
   ClusterConfigurator withEnvironmentVariable(String name, String value);
+
+  ClusterConfigurator withImage(String imageName);
+
+  ClusterConfigurator withImagePullPolicy(String policy);
+
+  ClusterConfigurator withImagePullSecret(String cluster);
+
+  ClusterConfigurator withServerStartState(String cluster);
+
+  ClusterConfigurator withReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
+
+  ClusterConfigurator withLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
 }

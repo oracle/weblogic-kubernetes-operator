@@ -4,16 +4,23 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import io.kubernetes.client.models.V1LocalObjectReference;
 import java.util.Collections;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
 /** An implementation of the domain configuration for the version 1 domain. */
 public class DomainV1Configurator implements DomainConfigurator {
   private Domain domain;
+
+  @Override
+  public DomainConfigurator createFor(Domain domain) {
+    return new DomainV1Configurator(domain);
+  }
 
   /**
    * Constructs a version 1 domain configurator
@@ -35,14 +42,51 @@ public class DomainV1Configurator implements DomainConfigurator {
   }
 
   @Override
-  public void setDefaultReplicas(int replicas) {
+  public void withDefaultReplicaCount(int replicas) {
     domain.getSpec().setReplicas(replicas);
+  }
+
+  @Override
+  public void withDefaultImage(String image) {
+    domain.getSpec().setImage(image);
+  }
+
+  @Override
+  public void withDefaultImagePullPolicy(String imagepullpolicy) {
+    domain.getSpec().setImagePullPolicy(imagepullpolicy);
+  }
+
+  @Override
+  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
+    domain.getSpec().setImagePullSecret(secretReference);
+  }
+
+  @Override
+  public void withDefaultReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period) {
+    throw new ConfigurationNotSupportedException("domain", "readinessProbe");
+  }
+
+  @Override
+  public void withDefaultLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period) {
+    throw new ConfigurationNotSupportedException("domain", "livenessProbe");
   }
 
   @Override
   public DomainConfigurator setStartupControl(String startupControl) {
     domain.getSpec().setStartupControl(startupControl);
     return this;
+  }
+
+  @Override
+  public DomainConfigurator withEnvironmentVariable(String name, String value) {
+    throw new ConfigurationNotSupportedException("domain", "env");
+  }
+
+  @Override
+  public ServerConfigurator configureAdminServer() {
+    return configureServer(domain.getAsName());
   }
 
   @Override
@@ -79,6 +123,7 @@ public class DomainV1Configurator implements DomainConfigurator {
     return startup;
   }
 
+  @SuppressWarnings("deprecation")
   class ServerStartupConfigurator implements ServerConfigurator {
     private ServerStartup serverStartup;
 
@@ -103,8 +148,46 @@ public class DomainV1Configurator implements DomainConfigurator {
       serverStartup.withEnvironmentVariable(name, value);
       return this;
     }
+
+    @Override
+    public ServerConfigurator withImage(String imageName) {
+      throw new ConfigurationNotSupportedException("server", "image");
+    }
+
+    @Override
+    public ServerConfigurator withImagePullPolicy(String policy) {
+      throw new ConfigurationNotSupportedException("server", "imagePullPolicy");
+    }
+
+    @Override
+    public ServerConfigurator withImagePullSecret(String secretName) {
+      throw new ConfigurationNotSupportedException("server", "imagePullSecret");
+    }
+
+    @Override
+    public ServerConfigurator withServerStartState(String state) {
+      return withDesiredState(state);
+    }
+
+    @Override
+    public ServerConfigurator withServerStartPolicy(String startNever) {
+      throw new ConfigurationNotSupportedException("server", "serverStartPolicy");
+    }
+
+    @Override
+    public ServerConfigurator withLivenessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("server", "livenessProbe");
+    }
+
+    @Override
+    public ServerConfigurator withReadinessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("server", "readinessProbe");
+    }
   }
 
+  @SuppressWarnings("deprecation")
   class ClusterStartupConfigurator implements ClusterConfigurator {
     private ClusterStartup clusterStartup;
 
@@ -122,6 +205,38 @@ public class DomainV1Configurator implements DomainConfigurator {
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       clusterStartup.withEnvironmentVariable(name, value);
       return this;
+    }
+
+    @Override
+    public ClusterConfigurator withImage(String imageName) {
+      throw new ConfigurationNotSupportedException("cluster", "image");
+    }
+
+    @Override
+    public ClusterConfigurator withImagePullPolicy(String policy) {
+      throw new ConfigurationNotSupportedException("cluster", "imagePullPolicy");
+    }
+
+    @Override
+    public ClusterConfigurator withImagePullSecret(String secretName) {
+      throw new ConfigurationNotSupportedException("cluster", "imagePullSecret");
+    }
+
+    @Override
+    public ClusterConfigurator withServerStartState(String state) {
+      return withDesiredState(state);
+    }
+
+    @Override
+    public ClusterConfigurator withReadinessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("cluster", "readinessProbe");
+    }
+
+    @Override
+    public ClusterConfigurator withLivenessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      throw new ConfigurationNotSupportedException("cluster", "livenessProbe");
     }
 
     @Override
