@@ -20,4 +20,12 @@ public interface ServerConfigurator {
   ServerConfigurator withImagePullSecret(String secretName);
 
   ServerConfigurator withServerStartState(String state);
+
+  ServerConfigurator withServerStartPolicy(String startNever);
+
+  ServerConfigurator withLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
+
+  ServerConfigurator withReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
 }

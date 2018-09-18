@@ -7,7 +7,6 @@ package oracle.kubernetes.weblogic.domain;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainV1Configurator;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -16,9 +15,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainV1Configurator;
  */
 public interface DomainConfigurator {
 
-  static DomainConfigurator forDomain(Domain domain) {
-    return new DomainV1Configurator(domain);
-  }
+  DomainConfigurator createFor(Domain domain);
 
   /**
    * Defines a name for the domain's admin server.
@@ -40,29 +37,69 @@ public interface DomainConfigurator {
    *
    * @param replicas a non-negative number
    */
-  void setDefaultReplicas(int replicas);
+  void withDefaultReplicaCount(int replicas);
 
   /**
    * Sets the default image for the domain.
    *
    * @param image the name of the image
    */
-  void setDefaultImage(String image);
+  void withDefaultImage(String image);
 
   /**
    * Sets the default image pull policy for the domain.
    *
    * @param imagepullpolicy the new policy
    */
-  void setDefaultImagePullPolicy(String imagepullpolicy);
+  void withDefaultImagePullPolicy(String imagepullpolicy);
 
   /**
    * Sets the default image pull secret for the domain
    *
    * @param secretReference the object referring to the secret
    */
-  void setDefaultImagePullSecret(V1LocalObjectReference secretReference);
+  void withDefaultImagePullSecret(V1LocalObjectReference secretReference);
 
+  /**
+   * Sets the default settings for the readiness probe. Any settings left null will default to the
+   * tuning parameters.
+   *
+   * @param initialDelay the default initial delay, in seconds.
+   * @param timeout the default timeout, in seconds.
+   * @param period the default probe period, in seconds.
+   */
+  void withDefaultReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
+
+  /**
+   * Sets the default settings for the liveness probe. Any settings left null will default to the
+   * tuning parameters.
+   *
+   * @param initialDelay the default initial delay, in seconds.
+   * @param timeout the default timeout, in seconds.
+   * @param period the default probe period, in seconds.
+   */
+  void withDefaultLivenessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
+
+  /**
+   * Defines the startup control mechanism for the domain. Must be one of:
+   *
+   * <ul>
+   *   <li>NONE indicates that no servers, including the administration server, will be started.
+   *   <li>ADMIN indicates that only the administration server will be started.
+   *   <li>ALL indicates that all servers in the domain will be started.
+   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
+   *       only those servers listed under serverStartup or managed servers belonging to cluster
+   *       listed under clusterStartup up to the cluster's replicas field will be started.
+   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
+   *       servers belonging to clusters not listed under clusterStartup will be started up to the
+   *       replicas field.
+   * </ul>
+   *
+   * <p>Defaults to AUTO.
+   *
+   * @param startupControl the new value
+   * @return this object
+   */
   DomainConfigurator setStartupControl(String startupControl);
 
   /**
