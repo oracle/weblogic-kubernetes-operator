@@ -15,7 +15,7 @@
 {{-     $ignore := include "utils.verifyResourceName" (list $scope "Namespace") -}}
 {{-     $ignore := include "utils.popValidationContext" $scope -}}
 {{-     $ignore := include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
-{{-     $ignore := include "utils.verifyString"  (list $scope "operatorServiceAccount") -}}
+{{-     $ignore := include "utils.verifyString"  (list $scope "serviceAccount") -}}
 {{-     $ignore := include "utils.verifyString"  (list $scope "image") -}}
 {{-     $ignore := include "utils.verifyEnum"    (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{-     $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}

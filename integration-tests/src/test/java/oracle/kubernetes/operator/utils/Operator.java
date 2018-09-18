@@ -333,7 +333,7 @@ public class Operator {
     ExecCommand.exec("kubectl create namespace " + operatorNS);
 
     // create operator service account
-    String serviceAccount = operatorProps.getProperty("operatorServiceAccount");
+    String serviceAccount = operatorProps.getProperty("serviceAccount");
     if (serviceAccount != null && !serviceAccount.equals("default")) {
       ExecResult result =
           ExecCommand.exec("kubectl create serviceaccount " + serviceAccount + " -n " + operatorNS);

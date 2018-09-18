@@ -793,7 +793,7 @@ function deploy_operator {
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
       echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
       echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "operatorServiceAccount: weblogic-operator" >> $inputs
+      echo "serviceAccount: weblogic-operator" >> $inputs
       trace "Contents after customization in file $inputs"
       cat $inputs
 

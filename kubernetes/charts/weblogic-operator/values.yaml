@@ -9,10 +9,10 @@ createSharedOperatorResources: true
 # createOperator specifies whether or not the installation should create the operator and its resources.
 createOperator: true
 
-# operatorServiceAccount specifies the name of the service account that the operator will use to
+# serviceAccount specifies the name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
 # The name must be lowercase
-operatorServiceAccount: "default"
+serviceAccount: "default"
 
 # domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages
 # The names must be lowercase.

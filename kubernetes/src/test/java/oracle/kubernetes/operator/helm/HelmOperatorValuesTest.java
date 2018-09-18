@@ -32,7 +32,7 @@ public class HelmOperatorValuesTest {
   public void whenServiceAccountSet_createdMapContainsValue() {
     operatorValues.serviceAccount(stringValue);
 
-    assertThat(operatorValues.createMap(), hasEntry("operatorServiceAccount", stringValue));
+    assertThat(operatorValues.createMap(), hasEntry("serviceAccount", stringValue));
   }
 
   @Test
@@ -52,7 +52,7 @@ public class HelmOperatorValuesTest {
   @Test
   public void whenCreatedFromMapWithServiceAccount_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("operatorServiceAccount", stringValue));
+        new HelmOperatorValues(ImmutableMap.of("serviceAccount", stringValue));
 
     assertThat(values.getServiceAccount(), equalTo(stringValue));
   }
@@ -448,7 +448,7 @@ public class HelmOperatorValuesTest {
     HelmOperatorValues values =
         new HelmOperatorValues(
             new ImmutableMap.Builder<String, Object>()
-                .put("operatorServiceAccount", "test-account")
+                .put("serviceAccount", "test-account")
                 .put("image", "test-image")
                 .put("javaLoggingLevel", "FINE")
                 .build());

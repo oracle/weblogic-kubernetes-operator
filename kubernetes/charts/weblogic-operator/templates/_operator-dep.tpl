@@ -20,7 +20,7 @@ spec:
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
     spec:
-      serviceAccountName: {{ .operatorServiceAccount | quote }}
+      serviceAccountName: {{ .serviceAccount | quote }}
       containers:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
