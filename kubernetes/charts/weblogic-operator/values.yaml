@@ -25,14 +25,23 @@ operatorServiceAccount: "default"
 #   - namespace2
 domainNamespaces: [ "default" ]
 
-# operatorImage specifies the docker image containing the operator code.
-operatorImage: "weblogic-kubernetes-operator:1.1"
+# image specifies the docker image containing the operator code.
+image: "weblogic-kubernetes-operator:1.1"
 
-# operatorImagePullPolicy specifies the image pull policy for the operator docker image.
-operatorImagePullPolicy: "IfNotPresent"
+# imagePullPolicy specifies the image pull policy for the operator docker image.
+imagePullPolicy: "IfNotPresent"
 
-# operatorImagePullSecret is the name of the Kubernetes secret the operator's namespace needed to access the registry containing the operator Docker image
-#operatorImagePullSecret:
+# imagePullSecrets contains an optional list of Kubernetes secrets, in the operator's namepace,
+# that are needed to access the registry containing the operator Docker image.
+# If no secrets are required, then omit this property.
+#
+# Example : a secret is needed, and has been stored in 'my-operator-secret'
+#
+# imagePullSecrets:
+# - name: my-operator-secret
+#
+# imagePullSecrets:
+# - name:
 
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:

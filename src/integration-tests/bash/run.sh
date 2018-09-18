@@ -786,8 +786,8 @@ function deploy_operator {
       do
         echo "  - $i" >> $inputs
       done
-      echo "operatorImagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
-      echo "operatorImage: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+      echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
+      echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
       echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
       echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'

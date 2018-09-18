@@ -313,18 +313,18 @@ public class Operator {
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorProps.put(
-          "operatorImage",
+          "image",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
     } else {
       operatorProps.put(
-          "operatorImage",
+          "image",
           "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
               + BaseTest.getBranchName().replaceAll("/", "_"));
     }
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
-      operatorProps.put("operatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+      operatorProps.put("imagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     }
 
     ExecCommand.exec("kubectl delete namespace " + operatorNS);
@@ -362,7 +362,7 @@ public class Operator {
     }
 
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      operatorProps.put("operatorImagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+      operatorProps.put("imagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_OPERATOR"),

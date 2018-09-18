@@ -28,11 +28,11 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
 
   private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {
-    "operatorServiceAccount", "operatorImage"
+    "operatorServiceAccount", "image"
   };
 
   private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
-    "operatorImagePullPolicy", "javaLoggingLevel", "externalRestOption", "internalRestOption"
+    "imagePullPolicy", "javaLoggingLevel", "externalRestOption", "internalRestOption"
   };
 
   private static final String[] LOGGING_LEVELS = {
@@ -162,7 +162,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
     assertThat(
         getProcessingError(),
         allOf(
-            containsEnumParameterError("operatorImagePullPolicy", badValue, PULL_POLICIES),
+            containsEnumParameterError("imagePullPolicy", badValue, PULL_POLICIES),
             containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS),
             containsEnumParameterError("externalRestOption", badValue, EXTERNAL_REST_OPTIONS),
             containsEnumParameterError("internalRestOption", badValue, INTERNAL_REST_OPTIONS)));
