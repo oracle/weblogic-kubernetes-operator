@@ -6,7 +6,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
@@ -18,7 +18,7 @@ metadata:
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
@@ -39,7 +39,7 @@ spec:
         weblogic.domainName: {{ .domainName }}
         weblogic.clusterName: {{ .clusterName }}
     spec:
-      serviceAccountName: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+      serviceAccountName: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
       terminationGracePeriodSeconds: 60
       containers:
       - image: traefik:1.4.5
@@ -82,13 +82,13 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik-cm
+          name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik-cm
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik-cm
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik-cm
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
@@ -113,7 +113,7 @@ data:
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
@@ -135,7 +135,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-{{ .clusterName | lower }}-traefik-dashboard
+  name: {{ .Release.Name }}-{{ .clusterName | lower | replace "_" "-" }}-traefik-dashboard
   namespace: {{ .Release.Namespace }}
   labels:
     weblogic.resourceVersion: traefik-load-balancer-v1
