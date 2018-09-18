@@ -24,7 +24,7 @@ class HelmOperatorValues extends OperatorValues {
   HelmOperatorValues() {}
 
   HelmOperatorValues(Map<String, Object> map) {
-    loadFromMap(map, this::setServiceAccount, "operatorServiceAccount");
+    loadFromMap(map, this::setServiceAccount, "serviceAccount");
     loadFromMap(map, this::setWeblogicOperatorImage, "image");
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
     loadFromMap(map, this::setNamespace, "operatorNamespace");
@@ -86,7 +86,7 @@ class HelmOperatorValues extends OperatorValues {
   Map<String, Object> createMap() {
     HashMap<String, Object> map = new HashMap<>();
 
-    addStringMapEntry(map, this::getServiceAccount, "operatorServiceAccount");
+    addStringMapEntry(map, this::getServiceAccount, "serviceAccount");
     addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");

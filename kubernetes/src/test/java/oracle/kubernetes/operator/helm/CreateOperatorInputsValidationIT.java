@@ -27,9 +27,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
 
-  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {
-    "operatorServiceAccount", "image"
-  };
+  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
 
   private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
     "imagePullPolicy", "javaLoggingLevel", "externalRestOption", "internalRestOption"

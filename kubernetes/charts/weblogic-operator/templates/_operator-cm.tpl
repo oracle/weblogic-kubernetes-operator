@@ -9,7 +9,7 @@ data:
   {{- if not (eq .externalRestOption "NONE") }}
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
-  serviceaccount: {{ .operatorServiceAccount | quote }}
+  serviceaccount: {{ .serviceAccount | quote }}
   targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
 kind: "ConfigMap"
 metadata:

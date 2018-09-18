@@ -13,7 +13,7 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 subjects:
 - kind: "ServiceAccount"
-  name: {{ .operatorServiceAccount | quote }}
+  name: {{ .serviceAccount | quote }}
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
