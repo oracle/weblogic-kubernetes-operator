@@ -38,6 +38,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -57,7 +58,7 @@ public class RestBackendImplTest {
   private List<Memento> mementos = new ArrayList<>();
   private RestBackend restBackend;
   private Domain domain = createDomain(NS, UID);
-  private DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
 
   private static Domain createDomain(String namespace, String uid) {
     return new Domain()

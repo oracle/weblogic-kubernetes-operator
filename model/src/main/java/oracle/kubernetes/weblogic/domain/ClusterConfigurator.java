@@ -20,4 +20,10 @@ public interface ClusterConfigurator {
   ClusterConfigurator withImagePullSecret(String cluster);
 
   ClusterConfigurator withServerStartState(String cluster);
+
+  ClusterConfigurator withReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
+
+  ClusterConfigurator withLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
 }

@@ -1,8 +1,8 @@
-package oracle.kubernetes.operator.helpers;
-
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
+package oracle.kubernetes.operator.helpers;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsFine;
@@ -67,8 +67,11 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -94,6 +97,9 @@ public abstract class PodHelperTestBase {
   private static final int LIVENESS_INITIAL_DELAY = 4;
   private static final int LIVENESS_PERIOD = 6;
   private static final int LIVENESS_TIMEOUT = 5;
+  private static final int CONFIGURED_DELAY = 21;
+  private static final int CONFIGURED_TIMEOUT = 27;
+  private static final int CONFIGURED_PERIOD = 35;
   private static final String DOMAIN_HOME = "/shared/domain/domain1";
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
@@ -103,8 +109,8 @@ public abstract class PodHelperTestBase {
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
-  final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
-  private final DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   protected AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   protected List<Memento> mementos = new ArrayList<>();
   protected List<LogRecord> logRecords = new ArrayList<>();
@@ -296,6 +302,31 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getReadinessProbe(),
         hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD));
   }
+
+  @Test
+  public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
+    configureDomainV2Server()
+        .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
+    assertThat(
+        getCreatedPodSpecContainer().getLivenessProbe(),
+        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
+  }
+
+  @Test
+  public void whenPodCreatedWithDomainV2Settings_readinessProbeHasConfiguredTuning() {
+    configureDomainV2Server()
+        .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
+    assertThat(
+        getCreatedPodSpecContainer().getReadinessProbe(),
+        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
+  }
+
+  private ServerConfigurator configureDomainV2Server() {
+    return getServerConfigurator(new DomainV2Configurator(domain), getServerName());
+  }
+
+  protected abstract ServerConfigurator getServerConfigurator(
+      DomainConfigurator configurator, String serverName);
 
   @SuppressWarnings("unchecked")
   @Test

@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.Test;
 
@@ -278,5 +279,11 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
+  }
+
+  @Override
+  protected ServerConfigurator getServerConfigurator(
+      DomainConfigurator configurator, String serverName) {
+    return configurator.configureAdminServer();
   }
 }
