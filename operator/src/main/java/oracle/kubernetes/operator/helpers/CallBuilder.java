@@ -685,9 +685,13 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step deleteJobAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
+  public Step deleteJobAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, null), DELETE_JOB);
+        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions), DELETE_JOB);
   }
 
   /* Services */
