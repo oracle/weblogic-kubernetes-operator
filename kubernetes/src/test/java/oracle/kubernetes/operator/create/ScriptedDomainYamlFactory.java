@@ -41,6 +41,11 @@ public class ScriptedDomainYamlFactory extends DomainYamlFactory {
     return new YamlGenerator(values).getGeneratedDomainYamlFiles();
   }
 
+  @Override
+  public String getWeblogicDomainPersistentVolumeClaimName(DomainValues inputs) {
+    return inputs.getWeblogicDomainPersistentVolumeClaimName();
+  }
+
   static class YamlGenerator extends YamlGeneratorBase {
     private final DomainValues values;
     private DomainFiles domainFiles;
