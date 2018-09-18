@@ -9,19 +9,30 @@ import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEP
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1EnvVar;
 import java.io.IOException;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import org.junit.Before;
 import org.junit.Test;
 
 public class DomainV2Test extends DomainTestBase {
 
   private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
+  private static final int INITIAL_DELAY = 17;
+  private static final int TIMEOUT = 23;
+  private static final int PERIOD = 5;
+
+  @Before
+  public void setUp() {
+    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
+  }
 
   @Override
   protected DomainConfigurator configureDomain(Domain domain) {
@@ -30,7 +41,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenImageConfiguredOnDomainAndAdminServer_userServerSetting() {
-    configureDomain(domain).setDefaultImage("domain-image");
+    configureDomain(domain).withDefaultImage("domain-image");
     configureAdminServer().withImage("server-image");
 
     assertThat(domain.getAdminServerSpec().getImage(), equalTo("server-image"));
@@ -38,7 +49,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenImageConfiguredOnDomainAndServer_userServerSetting() {
-    configureDomain(domain).setDefaultImage("domain-image");
+    configureDomain(domain).withDefaultImage("domain-image");
     configureServer("server1").withImage("server-image");
 
     assertThat(domain.getServer("server1", "cluster1").getImage(), equalTo("server-image"));
@@ -46,7 +57,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenImageConfiguredOnDomainAndCluster_useClusterSetting() {
-    configureDomain(domain).setDefaultImage("domain-image");
+    configureDomain(domain).withDefaultImage("domain-image");
     configureCluster("cluster1").withImage("cluster-image");
 
     assertThat(domain.getServer("ms1", "cluster1").getImage(), equalTo("cluster-image"));
@@ -83,6 +94,46 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenServerStartPolicyNever_dontStartServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenServerStartPolicyAlways_startServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenNonClusteredServerStartPolicyUndefined_startServer() {
+    assertThat(domain.getServer("server1", null).shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenClusteredServerStartPolicyUndefined_dontStartServer() {
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenClusteredServerStartPolicyIfNeededAndNeedMoreServers_startServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
+  }
+
+  @Test
+  public void whenClusteredServerStartPolicyIfNeededAndDontNeedMoreServers_dontStartServer() {
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(5), is(false));
+  }
+
+  @Test
   public void whenEnvironmentConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain)
         .withEnvironmentVariable("name1", "domain")
@@ -104,6 +155,52 @@ public class DomainV2Test extends DomainTestBase {
 
   private V1EnvVar envVar(String name, String value) {
     return new V1EnvVar().name(name).value(value);
+  }
+
+  @Test
+  public void livenessProbeSettings_returnsConfiguredValues() {
+    configureServer(SERVER1).withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
+    assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
+    assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
+  }
+
+  @Test
+  public void whenLivenessProbeConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain).withDefaultLivenessProbeSettings(INITIAL_DELAY, -2, -3);
+    configureCluster(CLUSTER_NAME).withLivenessProbeSettings(null, TIMEOUT, -4);
+    configureServer(SERVER1).withLivenessProbeSettings(null, null, PERIOD);
+
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
+    assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
+    assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
+  }
+
+  @Test
+  public void readinessProbeSettings_returnsConfiguredValues() {
+    configureServer(SERVER1).withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
+    assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
+    assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
+  }
+
+  @Test
+  public void whenReadinessProbeConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain).withDefaultReadinessProbeSettings(INITIAL_DELAY, -2, -3);
+    configureCluster(CLUSTER_NAME).withReadinessProbeSettings(null, TIMEOUT, -4);
+    configureServer(SERVER1).withReadinessProbeSettings(null, null, PERIOD);
+
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
+    assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
+    assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
   }
 
   @Test

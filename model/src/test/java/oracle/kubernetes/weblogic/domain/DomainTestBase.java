@@ -106,7 +106,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenDefaultImageSpecified_serversHaveSpecifiedImage() {
-    configureDomain(domain).setDefaultImage(IMAGE);
+    configureDomain(domain).withDefaultImage(IMAGE);
 
     assertThat(domain.getAdminServerSpec().getImage(), equalTo(IMAGE));
     assertThat(domain.getServer("aServer", "aCluster").getImage(), equalTo(IMAGE));
@@ -114,7 +114,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenLatestImageSpecifiedAsDefault_serversHaveAlwaysPullPolicy() {
-    configureDomain(domain).setDefaultImage(IMAGE + LATEST_IMAGE_SUFFIX);
+    configureDomain(domain).withDefaultImage(IMAGE + LATEST_IMAGE_SUFFIX);
 
     assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
     assertThat(
@@ -153,7 +153,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenImagePullPolicySpecifiedAsDefault_allServersHaveIt() {
-    configureDomain(domain).setDefaultImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
+    configureDomain(domain).withDefaultImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
 
     assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
     assertThat(
@@ -164,7 +164,7 @@ public abstract class DomainTestBase {
   @Test
   public void whenDefaultImagePullSecretSpecified_allServersHaveIt() {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
-    configureDomain(domain).setDefaultImagePullSecret(secretReference);
+    configureDomain(domain).withDefaultImagePullSecret(secretReference);
 
     assertThat(domain.getAdminServerSpec().getImagePullSecret(), equalTo(secretReference));
     assertThat(

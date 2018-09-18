@@ -735,12 +735,20 @@ public class DomainSpec extends BaseConfiguration {
   class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public ServerSpec getAdminServerSpec() {
-      return new ServerSpecV2Impl(adminServer, DomainSpec.this);
+      return new ServerSpecV2Impl(adminServer, null, DomainSpec.this);
     }
 
     @Override
     public ServerSpec getServerSpec(String serverName, String clusterName) {
-      return new ServerSpecV2Impl(getServer(serverName), getCluster(clusterName), DomainSpec.this);
+      return new ServerSpecV2Impl(
+          getServer(serverName),
+          getClusterLimit(clusterName),
+          getCluster(clusterName),
+          DomainSpec.this);
+    }
+
+    private Integer getClusterLimit(String clusterName) {
+      return clusterName == null ? null : getReplicaCount(clusterName);
     }
 
     @Override

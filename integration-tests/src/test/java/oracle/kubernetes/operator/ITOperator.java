@@ -68,93 +68,98 @@ public class ITOperator extends BaseTest {
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
 
-    if (getLeaseId() != "") {
-      logger.info("Release the k8s cluster lease");
-      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-    }
-
     StringBuffer cmd =
         new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
     cmd.append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
-
     logger.info("Running " + cmd);
+
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) logger.info("Executed statedump.sh " + result.stdout());
     else
       logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
 
-    logger.info("SUCCESS");
-  }
-
-  @Test
-  public void test1CreateOperatorManagingDefaultAndTest1NS() throws Exception {
-    logTestBegin("test1CreateOperatorManagingDefaultAndTest1NS");
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    // create operator1
-    operator1 = TestUtils.createOperator(op1PropsFile, true);
-    logger.info("SUCCESS");
-  }
-
-  @Test
-  public void test2CreateDomainInDefaultNS() throws Exception {
-    logTestBegin("test2CreateDomainInDefaultNS");
-    logger.info("Creating Domain domain1 & verifing the domain creation");
-    // create domain1
-    domain1 = testDomainCreation(domain1PropsFile);
-    testDomainLifecyle(operator1, domain1);
-    testClusterScaling(operator1, domain1);
-    testOperatorLifecycle(operator1, domain1);
+    if (getLeaseId() != "") {
+      logger.info("Release the k8s cluster lease");
+      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
+    }
 
     logger.info("SUCCESS");
   }
 
   @Test
-  public void test3CreateAnotherDomainInDefaultNS() throws Exception {
+  public void test1CreateFirstOperatorAndDomain() throws Exception {
+
+    logTestBegin("test1CreateFirstOperatorAndDomain");
+    testCreateOperatorManagingDefaultAndTest1NS();
+    testCreateDomainInDefaultNS();
+    logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
+  }
+
+  @Test
+  public void test2CreateAnotherDomainInDefaultNS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test3CreateAnotherDomainInDefaultNS");
+    logTestBegin("test2CreateAnotherDomainInDefaultNS");
     logger.info("Creating Domain domain2 & verifing the domain creation");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
     // create domain2
     Domain domain2 = testDomainCreation(domain2PropsFile);
 
     logger.info("Destroy domain2");
     domain2.destroy();
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test2CreateAnotherDomainInDefaultNS");
   }
 
   @Test
-  public void test4CreateDomainInTest1NS() throws Exception {
+  public void test3CreateDomainInTest1NS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test4CreateDomainInTest1NS");
+    logTestBegin("test3CreateDomainInTest1NS");
     logger.info("Creating Domain domain3 & verifing the domain creation");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
     // create domain3
     testDomainCreation(domain3PropsFile);
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
   @Test
-  public void test5CreateAnotherOperatorManagingTest2NS() throws Exception {
+  public void test4CreateAnotherOperatorManagingTest2NS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test5CreateAnotherOperatorManagingTest2NS");
+    logTestBegin("test4CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator2
     operator2 = TestUtils.createOperator(op2PropsFile, false);
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test4CreateAnotherOperatorManagingTest2NS");
   }
 
   @Test
-  public void test6CreateConfiguredDomainInTest2NS() throws Exception {
+  public void test5CreateConfiguredDomainInTest2NS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test6CreateDomainInTest2NS");
+    logTestBegin("test5CreateConfiguredDomainInTest2NS");
     logger.info("Creating Domain domain4 & verifing the domain creation");
+
+    logger.info("Checking if operator1 and domain1 are running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
+    if (domain1 == null) {
+      domain1 = TestUtils.createDomain(domain1PropsFile);
+    }
+    logger.info("Checking if operator2 is running, if not creating");
+    if (operator2 == null) {
+      operator2 = TestUtils.createOperator(op2PropsFile, false);
+    }
     // create domain4
     Domain domain4 = testDomainCreation(domain4PropsFile);
 
@@ -172,72 +177,112 @@ public class ITOperator extends BaseTest {
 
     logger.info("Verify no impact on domain4");
     domain4.verifyDomainCreated();
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
   }
 
   @Test
-  public void test7CreateDomainWithStartupControlAdmin() throws Exception {
+  public void test6CreateDomainWithStartupControlAdmin() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test7CreateDomainWithStartupControlAdmin");
+    logTestBegin("test6CreateDomainWithStartupControlAdmin");
+    logger.info("Checking if operator1 is running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
     logger.info("Creating Domain domain5 & verifing the domain creation");
     // create domain5
     TestUtils.createDomain(domain5PropsFile);
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test6CreateDomainWithStartupControlAdmin");
   }
 
   @Test
-  public void test8CreateDomainPVReclaimPolicyRecycle() throws Exception {
+  public void test7CreateDomainPVReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test8CreateDomainPVReclaimPolicyRecycle");
+    logTestBegin("test7CreateDomainPVReclaimPolicyRecycle");
+    logger.info("Checking if operator1 is running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain6
     Domain domain6 = TestUtils.createDomain(domain6PropsFile);
     domain6.shutdown();
     domain6.deletePVCAndCheckPVReleased();
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test7CreateDomainPVReclaimPolicyRecycle");
   }
 
   @Test
-  public void test9WlsLivenessProbe() throws Exception {
+  public void test8WlsLivenessProbe() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test9WlsLivenessProbe");
+    logTestBegin("test8WlsLivenessProbe");
+    logger.info("Checking if operator1 is running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
+    if (domain1 == null) {
+      domain1 = TestUtils.createDomain(domain1PropsFile);
+    }
     // test managed server1 pod auto restart
     String domain = domain1.getDomainUid();
     String namespace = domain1.getDomainProps().getProperty("namespace");
     String serverName = domain1.getDomainProps().getProperty("managedServerNameBase") + "1";
     TestUtils.testWlsLivenessProbe(domain, serverName, namespace);
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test8WlsLivenessProbe");
   }
 
   @Test
-  public void testACreateDomainOnExistingDir() throws Exception {
+  public void test9CreateDomainOnExistingDir() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test10CreateDomainOnExistingDir");
+    logTestBegin("test9CreateDomainOnExistingDir");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
+    if (domain1 == null) {
+      domain1 = TestUtils.createDomain(domain1PropsFile);
+    }
     logger.info("domain1 " + domain1);
     // create domain on existing dir
     domain1.destroy();
     domain1.createDomainOnExistingDirectory();
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - test9CreateDomainOnExistingDir");
   }
 
   @Test
-  public void testBCreateDomainApacheLB() throws Exception {
+  public void testACreateDomainApacheLB() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
-    logTestBegin("test11CreateDomainApacheLB");
+    logTestBegin("testACreateDomainApacheLB");
     logger.info("Creating Domain domain7 & verifing the domain creation");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1PropsFile, true);
+    }
+
     // create domain7
     Domain domain7 = TestUtils.createDomain(domain7PropsFile);
     domain7.verifyAdminConsoleViaLB();
-    logger.info("SUCCESS");
+    logger.info("SUCCESS - testACreateDomainApacheLB");
+  }
+
+  private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    // create operator1
+    operator1 = TestUtils.createOperator(op1PropsFile, true);
+  }
+
+  private void testCreateDomainInDefaultNS() throws Exception {
+    logger.info("Creating Domain domain1 & verifing the domain creation");
+    // create domain1
+    domain1 = testDomainCreation(domain1PropsFile);
+    testDomainLifecyle(operator1, domain1);
+    testClusterScaling(operator1, domain1);
+    testOperatorLifecycle(operator1, domain1);
   }
 
   private Domain testDomainCreation(String domainPropsFile) throws Exception {
