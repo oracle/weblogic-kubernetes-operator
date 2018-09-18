@@ -29,9 +29,11 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -254,16 +256,6 @@ public abstract class PodStepContext {
     return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), replaceResponse(next));
   }
 
-  /**
-   * Reads the specified pod and records it.
-   *
-   * @param next the next step to perform after the pod creation is complete.
-   * @return a step to be scheduled.
-   */
-  private Step readPod(Step next) {
-    return new CallBuilder().readPodAsync(getPodName(), getNamespace(), readResponse(next));
-  }
-
   private void logPodCreated() {
     LOGGER.info(getPodCreatedMessageKey(), getDomainUID(), getServerName());
   }
@@ -389,32 +381,6 @@ public abstract class PodStepContext {
 
   Set<String> getExplicitRestartServers() {
     return info.getExplicitRestartServers();
-  }
-
-  private ResponseStep<V1Pod> readResponse(Step next) {
-    return new ReadResponseStep(next);
-  }
-
-  private class ReadResponseStep extends DefaultResponseStep<V1Pod> {
-
-    ReadResponseStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, callResponse);
-      }
-      return super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-      V1Pod currentPod = callResponse.getResult();
-      setRecordedPod(currentPod);
-      return doNext(packet);
-    }
   }
 
   private class VerifyPodStep extends Step {
@@ -612,7 +578,7 @@ public abstract class PodStepContext {
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
                             .defaultMode(ALL_READ_AND_EXECUTE)));
 
-    V1LocalObjectReference imagePullSecret = info.getDomain().getSpec().getImagePullSecret();
+    V1LocalObjectReference imagePullSecret = getServerSpec().getImagePullSecret();
     if (imagePullSecret != null) {
       podSpec.addImagePullSecretsItem(imagePullSecret);
     }
@@ -651,7 +617,7 @@ public abstract class PodStepContext {
   }
 
   protected List<String> getContainerCommand() {
-    return Arrays.asList(START_SERVER);
+    return Collections.singletonList(START_SERVER);
   }
 
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
@@ -731,20 +697,50 @@ public abstract class PodStepContext {
   private V1Probe createReadinessProbe(TuningParameters.PodTuning tuning) {
     V1Probe readinessProbe = new V1Probe();
     readinessProbe
-        .initialDelaySeconds(tuning.readinessProbeInitialDelaySeconds)
-        .timeoutSeconds(tuning.readinessProbeTimeoutSeconds)
-        .periodSeconds(tuning.readinessProbePeriodSeconds)
+        .initialDelaySeconds(getReadinessProbeInitialDelaySeconds(tuning))
+        .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
+        .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
         .exec(execAction(READINESS_PROBE));
     return readinessProbe;
   }
 
+  private int getReadinessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe().getPeriodSeconds())
+        .orElse(tuning.readinessProbePeriodSeconds);
+  }
+
+  private int getReadinessProbeTimeoutSeconds(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe().getTimeoutSeconds())
+        .orElse(tuning.readinessProbeTimeoutSeconds);
+  }
+
+  private int getReadinessProbeInitialDelaySeconds(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe().getInitialDelaySeconds())
+        .orElse(tuning.readinessProbeInitialDelaySeconds);
+  }
+
   private V1Probe createLivenessProbe(TuningParameters.PodTuning tuning) {
     return new V1Probe()
-        .initialDelaySeconds(tuning.livenessProbeInitialDelaySeconds)
-        .timeoutSeconds(tuning.livenessProbeTimeoutSeconds)
-        .periodSeconds(tuning.livenessProbePeriodSeconds)
+        .initialDelaySeconds(getLivenessProbeInitialDelaySeconds(tuning))
+        .timeoutSeconds(getLivenessProbeTimeoutSeconds(tuning))
+        .periodSeconds(getLivenessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
         .exec(execAction(LIVENESS_PROBE));
+  }
+
+  private int getLivenessProbeInitialDelaySeconds(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getLivenessProbe().getInitialDelaySeconds())
+        .orElse(tuning.livenessProbeInitialDelaySeconds);
+  }
+
+  private int getLivenessProbeTimeoutSeconds(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getLivenessProbe().getTimeoutSeconds())
+        .orElse(tuning.livenessProbeTimeoutSeconds);
+  }
+
+  private int getLivenessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getLivenessProbe().getPeriodSeconds())
+        .orElse(tuning.livenessProbePeriodSeconds);
   }
 }

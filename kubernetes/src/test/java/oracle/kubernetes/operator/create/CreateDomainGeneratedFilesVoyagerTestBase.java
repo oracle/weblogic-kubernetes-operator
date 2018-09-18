@@ -10,38 +10,9 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.VOYAGER_LOAD_BALANCER_V1;
 import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_VOYAGER;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_GROUP_RBAC;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_RBAC_V1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_REGISTRATION_V1BETA1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_V1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_VOYAGER_V1BETA1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_CLUSTER_ROLE;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_ROLE;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE_ACCOUNT;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newAPIService;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newAPIServiceSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRole;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRoleBinding;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHTTPIngressBackend;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHTTPIngressPath;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHTTPIngressRuleValue;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIngress;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIngressRule;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIngressSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIntOrString;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectMeta;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPolicyRule;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleBinding;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecret;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newService;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServicePort;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceReference;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 import com.appscode.voyager.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1Secret;
@@ -144,13 +115,6 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
   @Test
   public void generatesCorrect_loadBalancerService1() {
     assertThat(getActualVoyagerIngressService(), yamlEqualTo(getExpectedVoyagerIngressService()));
-  }
-
-  @Test
-  public void loadBalancerIngressYaml_hasCorrectNumberOfObjects() {
-    assertThat(
-        getVoyagerIngressYaml().getObjectCount(),
-        is(getVoyagerIngressYaml().getExpectedObjectCount()));
   }
 
   private V1Secret getActualVoyagerSecret() {

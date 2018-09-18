@@ -27,6 +27,9 @@ spec:
   image: "{{ .weblogicImage }}"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
+  # Identify which Secret containst the credentials to access the docker repository
+  imagePullSecret:
+    name: {{ .weblogicImagePullSecretName }}
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   adminSecret: 
