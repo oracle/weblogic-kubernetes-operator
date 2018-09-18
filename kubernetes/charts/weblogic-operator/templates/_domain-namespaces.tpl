@@ -5,7 +5,6 @@
 {{- $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{- range $key := $args.domainNamespaces -}}
 {{-   $ignore := set $args "domainNamespace" $key -}}
-{{/*- include "operator.domainConfigMap" $args currently the GA operator runtime does this -*/}}
 {{-   include "operator.operatorRoleBindingNamespace" $args -}}
 {{- end }}
 {{- end }}
