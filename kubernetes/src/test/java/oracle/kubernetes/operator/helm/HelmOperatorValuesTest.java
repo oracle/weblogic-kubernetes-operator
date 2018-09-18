@@ -58,30 +58,29 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenOperatorImageSet_createdMapContainsValue() {
+  public void whenWeblogicOperatorImageSet_createdMapContainsValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
-    assertThat(operatorValues.createMap(), hasEntry("operatorImage", stringValue));
+    assertThat(operatorValues.createMap(), hasEntry("image", stringValue));
   }
 
   @Test
-  public void OperatorImageIsGettableStringValue() {
+  public void WeblogicOperatorImageIsGettableStringValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImage(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutOperatorImage_hasEmptyString() {
+  public void whenCreatedFromMapWithoutImage_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getWeblogicOperatorImage(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithOperatorImage_hasSpecifiedValue() {
-    HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("operatorImage", stringValue));
+  public void whenCreatedFromMapWithImage_hasSpecifiedValue() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of("image", stringValue));
 
     assertThat(values.getWeblogicOperatorImage(), equalTo(stringValue));
   }
@@ -157,7 +156,7 @@ public class HelmOperatorValuesTest {
   public void whenWeblogicOperatorImagePullPolicySet_createdMapContainsValue() {
     operatorValues.weblogicOperatorImagePullPolicy(stringValue);
 
-    assertThat(operatorValues.createMap(), hasEntry("operatorImagePullPolicy", stringValue));
+    assertThat(operatorValues.createMap(), hasEntry("imagePullPolicy", stringValue));
   }
 
   @Test
@@ -168,16 +167,16 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithoutWeblogicOperatorImagePullPolicy_hasEmptyString() {
+  public void whenCreatedFromMapWithoutImagePullPolicy_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithWeblogicOperatorImagePullPolicy_hasSpecifiedValue() {
+  public void whenCreatedFromMapWithImagePullPolicy_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("operatorImagePullPolicy", stringValue));
+        new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", stringValue));
 
     assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
   }
@@ -450,7 +449,7 @@ public class HelmOperatorValuesTest {
         new HelmOperatorValues(
             new ImmutableMap.Builder<String, Object>()
                 .put("operatorServiceAccount", "test-account")
-                .put("operatorImage", "test-image")
+                .put("image", "test-image")
                 .put("javaLoggingLevel", "FINE")
                 .build());
 

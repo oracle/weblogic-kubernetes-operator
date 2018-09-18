@@ -25,10 +25,10 @@ class HelmOperatorValues extends OperatorValues {
 
   HelmOperatorValues(Map<String, Object> map) {
     loadFromMap(map, this::setServiceAccount, "operatorServiceAccount");
-    loadFromMap(map, this::setWeblogicOperatorImage, "operatorImage");
+    loadFromMap(map, this::setWeblogicOperatorImage, "image");
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
     loadFromMap(map, this::setNamespace, "operatorNamespace");
-    loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
+    loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "imagePullPolicy");
     loadFromMap(map, this::setExternalRestOption, "externalRestOption");
     loadFromMap(map, this::setExternalSans, "externalOperatorCertSans");
     loadFromMap(map, this::setExternalOperatorCert, "externalOperatorCert");
@@ -45,7 +45,7 @@ class HelmOperatorValues extends OperatorValues {
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
 
     loadDomainNamespacesFromMap(map);
-    loadOperatorImagePullSecretsFromMap(map);
+    loadImagePullSecretsFromMap(map);
   }
 
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
@@ -71,12 +71,12 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   @SuppressWarnings("unchecked")
-  private void loadOperatorImagePullSecretsFromMap(Map<String, Object> map) {
-    List<Map<String, String>> operatorImagePullSecrets =
-        (List<Map<String, String>>) map.get("operatorImagePullSecrets");
-    if (operatorImagePullSecrets != null) {
+  private void loadImagePullSecretsFromMap(Map<String, Object> map) {
+    List<Map<String, String>> imagePullSecrets =
+        (List<Map<String, String>>) map.get("imagePullSecrets");
+    if (imagePullSecrets != null) {
       // TBD - enhance OperatorValues to have an array of image pull secrets, instead of just one
-      String secretName = (String) operatorImagePullSecrets.get(0).get("name");
+      String secretName = (String) imagePullSecrets.get(0).get("name");
       if (secretName != null) {
         setWeblogicOperatorImagePullSecretName(secretName);
       }
@@ -87,10 +87,10 @@ class HelmOperatorValues extends OperatorValues {
     HashMap<String, Object> map = new HashMap<>();
 
     addStringMapEntry(map, this::getServiceAccount, "operatorServiceAccount");
-    addStringMapEntry(map, this::getWeblogicOperatorImage, "operatorImage");
+    addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
-    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "operatorImagePullPolicy");
+    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "imagePullPolicy");
     addStringMapEntry(map, this::getExternalRestOption, "externalRestOption");
     addStringMapEntry(map, this::getExternalSans, "externalOperatorCertSans");
     addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
@@ -107,7 +107,7 @@ class HelmOperatorValues extends OperatorValues {
     addMapEntry(map, this::getInternalDebugHttpPortNum, "internalDebugHttpPort");
 
     addDomainNamespaces(map);
-    addOperatorImagePullSecrets(map);
+    addImagePullSecrets(map);
     return map;
   }
 
@@ -122,10 +122,10 @@ class HelmOperatorValues extends OperatorValues {
     }
   }
 
-  private void addOperatorImagePullSecrets(HashMap<String, Object> map) {
+  private void addImagePullSecrets(HashMap<String, Object> map) {
     String secretName = getWeblogicOperatorImagePullSecretName();
     if (!isNullOrEmpty(secretName)) {
-      map.put("operatorImagePullSecrets", singletonList(singletonMap("name", secretName)));
+      map.put("imagePullSecrets", singletonList(singletonMap("name", secretName)));
     }
   }
 

@@ -16,8 +16,9 @@
 {{-     $ignore := include "utils.popValidationContext" $scope -}}
 {{-     $ignore := include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
 {{-     $ignore := include "utils.verifyString"  (list $scope "operatorServiceAccount") -}}
-{{-     $ignore := include "utils.verifyString"  (list $scope "operatorImage") -}}
-{{-     $ignore := include "utils.verifyEnum"    (list $scope "operatorImagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
+{{-     $ignore := include "utils.verifyString"  (list $scope "image") -}}
+{{-     $ignore := include "utils.verifyEnum"    (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
+{{-     $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}
 {{-     $ignore := include "utils.verifyEnum"    (list $scope "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
 {{-     if include "utils.verifyEnum" (list $scope "externalRestOption" (list "NONE" "SELF_SIGNED_CERT" "CUSTOM_CERT")) -}}
 {{-       if eq $scope.externalRestOption "SELF_SIGNED_CERT" -}}

@@ -23,8 +23,8 @@ spec:
       serviceAccountName: {{ .operatorServiceAccount | quote }}
       containers:
       - name: "weblogic-operator"
-        image: {{ .operatorImage | quote }}
-        imagePullPolicy: {{ .operatorImagePullPolicy | quote }}
+        image: {{ .image | quote }}
+        imagePullPolicy: {{ .imagePullPolicy | quote }}
         command: ["bash"]
         args: ["/operator/operator.sh"]
         env:
@@ -71,9 +71,9 @@ spec:
         - name: "ELASTICSEARCH_PORT"
           value: "9200"
       {{- end }}
-      {{- if .operatorImagePullSecrets }}
+      {{- if .imagePullSecrets }}
       imagePullSecrets:
-      {{ .operatorImagePullSecrets | toYaml }}
+      {{ .imagePullSecrets | toYaml }}
       {{- end }}
       volumes:
       - name: "weblogic-operator-cm-volume"
