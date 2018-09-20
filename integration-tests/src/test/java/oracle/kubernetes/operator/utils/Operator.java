@@ -313,18 +313,18 @@ public class Operator {
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorProps.put(
-          "operatorImage",
+          "image",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
     } else {
       operatorProps.put(
-          "operatorImage",
+          "image",
           "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
               + BaseTest.getBranchName().replaceAll("/", "_"));
     }
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
-      operatorProps.put("operatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+      operatorProps.put("imagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     }
 
     ExecCommand.exec("kubectl delete namespace " + operatorNS);
@@ -333,7 +333,7 @@ public class Operator {
     ExecCommand.exec("kubectl create namespace " + operatorNS);
 
     // create operator service account
-    String serviceAccount = operatorProps.getProperty("operatorServiceAccount");
+    String serviceAccount = operatorProps.getProperty("serviceAccount");
     if (serviceAccount != null && !serviceAccount.equals("default")) {
       ExecResult result =
           ExecCommand.exec("kubectl create serviceaccount " + serviceAccount + " -n " + operatorNS);
@@ -349,20 +349,20 @@ public class Operator {
     }
 
     // create domain namespaces
-    String domainsNamespaces = operatorProps.getProperty("domainsNamespaces");
-    if (domainsNamespaces != null) {
-      StringTokenizer st = new StringTokenizer(domainsNamespaces, ",");
+    String domainNamespaces = operatorProps.getProperty("domainNamespaces");
+    if (domainNamespaces != null) {
+      StringTokenizer st = new StringTokenizer(domainNamespaces, ",");
       while (st.hasMoreTokens()) {
         String ns = st.nextToken();
         if (!ns.equals("default")) {
-          logger.info("Creating domainn namespace " + ns);
+          logger.info("Creating domain namespace " + ns);
           ExecCommand.exec("kubectl create namespace " + ns);
         }
       }
     }
 
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      operatorProps.put("operatorImagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+      operatorProps.put("imagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_OPERATOR"),

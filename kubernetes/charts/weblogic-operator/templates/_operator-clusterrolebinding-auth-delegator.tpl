@@ -17,6 +17,6 @@ roleRef:
 subjects:
 - kind: "ServiceAccount"
   apiGroup: ""
-  name: {{ .operatorServiceAccount | quote }}
+  name: {{ .serviceAccount | quote }}
   namespace: {{ .Release.Namespace | quote }}
 {{- end }}
