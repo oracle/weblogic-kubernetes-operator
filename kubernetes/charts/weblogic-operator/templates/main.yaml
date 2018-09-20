@@ -7,10 +7,4 @@
 {{- $ignore := set $scope "Release" .Release -}}
 
 {{ include "operator.validateInputs" $scope }}
-{{- if $scope.createSharedOperatorResources }}
-{{ include "operator.sharedOperatorResources" $scope }}
-{{- end }}
-
-{{- if $scope.createOperator }}
 {{- include "operator.operator" $scope }}
-{{- end }}
