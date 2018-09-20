@@ -1,0 +1,82 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to define a Domain Custom Resource.
+#
+apiVersion: "weblogic.oracle/v1"
+kind: Domain
+metadata:
+  name: %DOMAIN_UID%
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+spec:
+  # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
+  # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
+  # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
+  # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
+  domainUID: %DOMAIN_UID%
+  # The WebLogic Domain Name
+  domainName: %DOMAIN_NAME%
+  # The Operator currently does not support other images
+  image: "%WEBLOGIC_IMAGE%"
+  # imagePullPolicy defaults to "Always" if image version is :latest
+  imagePullPolicy: "IfNotPresent"
+  # Identify which Secret contains the credentials for pulling an image
+  imagePullSecret:
+    name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
+  # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
+  # how to create that Secret at the end of this file)
+  adminSecret: 
+    name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
+  # The name of the Admin Server
+  asName: "%ADMIN_SERVER_NAME%"
+  # The Admin Server's ListenPort
+  asPort: %ADMIN_PORT%
+  # startupControl legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
+  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # - "ALL" will start up all defined servers
+  # - "ADMIN" will start up only the AdminServer (no managed servers will be started)
+  # - "SPECIFIED" will start the AdminServer and then will look at the "serverStartup" and 
+  #   "clusterStartup" entries below to work out which servers to start
+  # - "AUTO" will start the servers as with "SPECIFIED", but then also start servers from
+  #   other clusters up to the replicas count
+  startupControl: "%STARTUP_CONTROL%"
+  # serverStartup is used to list the desired behavior for starting servers.  The Operator will
+  # use this field only if startupControl is set to "SPECIFIED" or "AUTO".  You may provide a list of 
+  # entries, each entry should contain the keys should below:
+  serverStartup:
+  # desiredState legal values are "RUNNING" or "ADMIN"
+  # "RUNNING" means the listed server will be started up to "RUNNING" mode
+  # "ADMIN" means the listed server will be start up to "ADMIN" mode
+  - desiredState: "RUNNING"
+    # the name of the server to apply these rules to
+    serverName: "%ADMIN_SERVER_NAME%"
+    # The Admin Server's NodePort
+    %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
+    # an (optional) list of environment variable to be set on the server
+    env:
+    - name: JAVA_OPTIONS
+      value: "%JAVA_OPTIONS%"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+  # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
+  # of a cluster instead of an individual server.  If you use this entry, then the rules will be
+  # applied to ALL servers that are members of the named clusters.
+  clusterStartup:
+  - desiredState: "RUNNING"
+    clusterName: "%CLUSTER_NAME%"
+    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
+    env:
+    - name: JAVA_OPTIONS
+      value: "%JAVA_OPTIONS%"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+  # The number of managed servers to start from clusters not listed by clusterStartup
+  # replicas: 1
+
+  # Uncomment to export the T3Channel as a service
+  %EXPOSE_T3_CHANNEL_PREFIX%exportT3Channels:
+  %EXPOSE_T3_CHANNEL_PREFIX%- T3Channel
