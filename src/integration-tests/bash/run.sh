@@ -680,7 +680,7 @@ function create_image_pull_secret_wercker {
 
 }
 
-# op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT CREATE_SHARED_OPERATOR_RESOURCES
+# op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT
 #   sets up table of operator values.
 #
 # op_get    OP_KEY
@@ -697,14 +697,13 @@ function create_image_pull_secret_wercker {
 #
 
 function op_define {
-    if [ "$#" != 5 ] ; then
-      fail "requires 5 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT CREATE_SHARED_OPERATOR_RESOURCES"
+    if [ "$#" != 4 ] ; then
+      fail "requires 4 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT"
     fi
     local opkey="`echo \"${1?}\" | sed 's/-/_/g'`"
     eval export OP_${opkey}_NAMESPACE="$2"
     eval export OP_${opkey}_TARGET_NAMESPACES="$3"
     eval export OP_${opkey}_EXTERNAL_REST_HTTPSPORT="$4"
-    eval export OP_${opkey}_CREATE_SHARED_OPERATOR_RESOURCES="$5"
 
     # generated TMP_DIR for operator = $USER_PROJECTS_DIR/weblogic-operators/$NAMESPACE :
     eval export OP_${opkey}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-operators/$2"
@@ -772,13 +771,10 @@ function deploy_operator {
     mkdir -p $TMP_DIR
     if [ "$USE_HELM" = "true" ]; then
       local inputs="$TMP_DIR/weblogic-operator-values.yaml"
-      local CREATE_SHARED_OPERATOR_RESOURCES="`op_get $opkey CREATE_SHARED_OPERATOR_RESOURCES`"
 
       # generate certificates
       $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
       $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
-
-      echo "createSharedOperatorResources: $CREATE_SHARED_OPERATOR_RESOURCES" >> $inputs
 
       trace 'customize the inputs yaml file to add test namespace'
       echo "domainNamespaces:" >> $inputs
@@ -3096,9 +3092,9 @@ function test_suite {
     
     declare_new_test 1 define_operators_and_domains
 
-    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT  CREATE_SHARED_OPERATOR_RESOURCES
-    op_define  oper1   weblogic-operator-1  "default,test1"    31001                    true
-    op_define  oper2   weblogic-operator-2  test2              32001                    false
+    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT
+    op_define  oper1   weblogic-operator-1  "default,test1"    31001
+    op_define  oper2   weblogic-operator-2  test2              32001
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
     dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
