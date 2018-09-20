@@ -781,19 +781,19 @@ function deploy_operator {
       echo "createSharedOperatorResources: $CREATE_SHARED_OPERATOR_RESOURCES" >> $inputs
 
       trace 'customize the inputs yaml file to add test namespace'
-      echo "domainsNamespaces:" >> $inputs
+      echo "domainNamespaces:" >> $inputs
       for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
       do
         echo "  - $i" >> $inputs
       done
-      echo "operatorImagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
-      echo "operatorImage: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+      echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
+      echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
       echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
       echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
       echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
       echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "operatorServiceAccount: weblogic-operator" >> $inputs
+      echo "serviceAccount: weblogic-operator" >> $inputs
       trace "Contents after customization in file $inputs"
       cat $inputs
 
