@@ -208,7 +208,7 @@ function validateWeblogicImagePullSecret {
 #
 function validateDomainPVC {
   # Check if the persistent volume claim is already available
-  checkPvcExists ${persistentVolumeClaim} ${namespace}
+  checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
     validationError "The domain persistent volume claim ${persistentVolumeClaimName} does not exist in namespace ${namespace}"
   fi
@@ -311,7 +311,7 @@ function initialize {
     namespace \
     t3PublicAddress \
     version \
-    persistentVolumeClaim \
+    persistentVolumeClaimName \
     podDomainRootDir
 
   validateIntegerInputParamsSpecified \
@@ -395,7 +395,7 @@ function createYamlFiles {
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
-  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaim}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${createJobOutput}
 
   # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
@@ -409,7 +409,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
-  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaim}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${deleteJobOutput}
 
   # Generate the yaml to create the domain custom resource
