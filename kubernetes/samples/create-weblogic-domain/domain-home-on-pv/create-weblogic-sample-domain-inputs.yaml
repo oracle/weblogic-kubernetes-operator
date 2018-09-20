@@ -82,8 +82,10 @@ namespace: default
 #Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
-# PVC name
-persistentVolumeClaim: domain1-weblogic-domain-pvc
+# Name of the persistent volume claim 
+persistentVolumeClaimName: domain1-weblogic-domain-pvc
 
 # Pod domain root dir
+# This should match the directory in the WebLogic Server pod's file system that 
+# the domain's persistent volume is mounted on.
 podDomainRootDir: /shared
