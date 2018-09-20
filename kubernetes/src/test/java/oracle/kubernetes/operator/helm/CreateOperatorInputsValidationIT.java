@@ -21,10 +21,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private static final String WRONG_TYPE = "%s must be a %s : %s";
 
-  private static final String[] TOP_LEVEL_BOOLEAN_PROPERTIES = {
-    "createSharedOperatorResources", "createOperator" // , "elkIntegrationEnabled"
-  };
-
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
 
   private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
@@ -52,12 +48,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenStringSpecifiedForBooleanTopLevelProperties_reportError() throws Exception {
-    whenStringSpecifiedForBooleanProperties_reportError(TOP_LEVEL_BOOLEAN_PROPERTIES);
-  }
-
-  @Test
-  public void whenStringSpecifiedForOperatorTopLevelProperties_reportError() throws Exception {
+  public void whenStringSpecifiedForOperatorLevelProperties_reportError() throws Exception {
     whenStringSpecifiedForBooleanProperties_reportError(OPERATOR_LEVEL_BOOLEAN_PROPERTIES);
   }
 
@@ -84,11 +75,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
     return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
-  }
-
-  @Test
-  public void whenTopLevelBooleanPropertiesMissing_reportError() throws Exception {
-    whenBooleanPropertiesMissing_reportError(TOP_LEVEL_BOOLEAN_PROPERTIES);
   }
 
   @Test
