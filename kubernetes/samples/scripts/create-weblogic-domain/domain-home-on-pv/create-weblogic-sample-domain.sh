@@ -21,7 +21,7 @@
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/utility.sh
+source ${scriptDir}/../../common/utility.sh
 
 function usage {
   echo usage: ${createScript} -o dir -i file [-v] [-h]
