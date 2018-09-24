@@ -60,16 +60,16 @@ spec:
           periodSeconds: 5
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
-        image: "logstash:5"
+        image: {{ .logStashImage | quote }}
         args: [ "-f", "/logs/logstash.conf" ]
         volumeMounts:
         - name: "log-dir"
           mountPath: "/logs"
         env:
         - name: "ELASTICSEARCH_HOST"
-          value: "elasticsearch.default.svc.cluster.local"
+          value: {{ .elasticSearchHost | quote }}
         - name: "ELASTICSEARCH_PORT"
-          value: "9200"
+          value: {{ .elasticSearchPort | quote }}
       {{- end }}
       {{- if .imagePullSecrets }}
       imagePullSecrets:
