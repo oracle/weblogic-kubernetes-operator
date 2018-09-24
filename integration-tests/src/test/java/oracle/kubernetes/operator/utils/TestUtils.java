@@ -527,12 +527,11 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opPropsFile, boolean createSharedOperatorResources)
-      throws Exception {
+  public static Operator createOperator(String opPropsFile) throws Exception {
     // load operator props defined
     Properties operatorProps = loadProps(opPropsFile);
     // create op
-    Operator operator = new Operator(operatorProps, createSharedOperatorResources);
+    Operator operator = new Operator(operatorProps);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();

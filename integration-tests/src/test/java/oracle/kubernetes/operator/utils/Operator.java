@@ -42,18 +42,10 @@ public class Operator {
    * @param inputProps
    * @throws Exception
    */
-  public Operator(Properties inputProps, boolean createSharedOperatorResources) throws Exception {
+  public Operator(Properties inputProps) throws Exception {
     this.operatorProps = inputProps;
     initialize();
     generateInputYaml();
-    if (createSharedOperatorResources) {
-      // This has stopped working after converting clusterRoles to per-Operator
-      // instead of shared. It isn't needed yet for integration testing
-      // as it only sets up kibana/elasticSearch, which don't have integration tests.
-      // Note that the sharing of kibana/elasticSearch will be revisited in 2.0
-      // via 'OWLS-68160 Extract ElasticStack, Kibana from operator Helm chart'
-      // createSharedOperatorResources();
-    }
     callHelmInstall();
   }
 
@@ -203,29 +195,7 @@ public class Operator {
         .append(operatorProps.getProperty("releaseName"))
         .append(" --values ")
         .append(generatedInputYamlFile)
-        .append(" --set createSharedOperatorResources=false --namespace ")
-        .append(operatorNS)
-        .append(" --wait");
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
-    String outputStr = result.stdout().trim();
-    logger.info("Command returned " + outputStr);
-  }
-
-  private void createSharedOperatorResources() throws Exception {
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-operator ");
-    cmd.append(" --name op --set createOperator=false --namespace ")
+        .append(" --namespace ")
         .append(operatorNS)
         .append(" --wait");
     logger.info("Running " + cmd);
