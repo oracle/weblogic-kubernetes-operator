@@ -1,38 +1,39 @@
 # Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-# createSharedOperatorResources specifies whether or not the installation should create the
-# Kubernetes resources that are shared by all operators in this Kubernetes cluster such as
-# elasticsearch, kibana, operator RBAC roles, etc.
-createSharedOperatorResources: true
-
-# createOperator specifies whether or not the installation should create the operator and its resources.
-createOperator: true
-
-# operatorServiceAccount specifies the name of the service account that the operator will use to
+# serviceAccount specifies the name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
 # The name must be lowercase
-operatorServiceAccount: "default"
+serviceAccount: "default"
 
-# domainsNamespaces specifies list of WebLogic Domain namespaces which the operator manages
+# domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages
 # The names must be lowercase.
 # The customer is responsible for creating these namespaces.
 #
 # Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
 #
-# domainsNamespaces:
+# domainNamespaces:
 #   - namespace1
 #   - namespace2
-domainsNamespaces: []
+domainNamespaces: [ "default" ]
 
-# operatorImage specifies the docker image containing the operator code.
-operatorImage: "weblogic-kubernetes-operator:1.1"
+# image specifies the docker image containing the operator code.
+image: "weblogic-kubernetes-operator:1.1"
 
-# operatorImagePullPolicy specifies the image pull policy for the operator docker image.
-operatorImagePullPolicy: "IfNotPresent"
+# imagePullPolicy specifies the image pull policy for the operator docker image.
+imagePullPolicy: "IfNotPresent"
 
-# operatorImagePullSecret is the name of the Kubernetes secret the operator's namespace needed to access the registry containing the operator Docker image
-#operatorImagePullSecret:
+# imagePullSecrets contains an optional list of Kubernetes secrets, in the operator's namepace,
+# that are needed to access the registry containing the operator Docker image.
+# If no secrets are required, then omit this property.
+#
+# Example : a secret is needed, and has been stored in 'my-operator-secret'
+#
+# imagePullSecrets:
+# - name: my-operator-secret
+#
+# imagePullSecrets:
+# - name:
 
 # Options for externally exposing the operator REST https interface
 # (i.e. outside of the Kubernetes cluster). Valid values are:
@@ -136,21 +137,13 @@ javaLoggingLevel: "INFO"
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
 
-# extraResources specifies an arbitrary list of extra Kubernetes resources that should be
-# created (and deleted) along with this chart.  It provides an easy way for the
-# customer to attach extra Kubernetes resources to the lifecycle of this chart.
-#
-# Example: create an extra persistent volume and persistent claim when this chart is
-# installed, and remove them when this chart is deleted:
-#
-# extraResources:
-# - kind: PersistentVolume
-#   apiVersion: v1
-#   metadata: ...
-#   spec: ...
-# - kind: PersistentVolumeClaim
-#   apiVersion: v1
-#   metadata: ...
-#   spec: ...
-#
-extraResources: []
+# logStashImage specifies the docker image containing logstash
+# TBD - should the logstash image pull policy and image pull secrets be configurable?
+logStashImage: "logstash:5"
+
+# elasticSearchHost specifies the hostname of where elasticsearch is running
+elasticSearchHost: "elasticsearch.default.svc.cluster.local"
+
+# elasticSearchPort specifies the port number of where elasticsearch is running
+elasticSearchPort: 9200
+

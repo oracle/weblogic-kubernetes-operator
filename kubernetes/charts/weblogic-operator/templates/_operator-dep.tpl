@@ -20,11 +20,11 @@ spec:
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
     spec:
-      serviceAccountName: {{ .operatorServiceAccount | quote }}
+      serviceAccountName: {{ .serviceAccount | quote }}
       containers:
       - name: "weblogic-operator"
-        image: {{ .operatorImage | quote }}
-        imagePullPolicy: {{ .operatorImagePullPolicy | quote }}
+        image: {{ .image | quote }}
+        imagePullPolicy: {{ .imagePullPolicy | quote }}
         command: ["bash"]
         args: ["/operator/operator.sh"]
         env:
@@ -60,20 +60,20 @@ spec:
           periodSeconds: 5
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
-        image: "logstash:5"
+        image: {{ .logStashImage | quote }}
         args: [ "-f", "/logs/logstash.conf" ]
         volumeMounts:
         - name: "log-dir"
           mountPath: "/logs"
         env:
         - name: "ELASTICSEARCH_HOST"
-          value: "elasticsearch.default.svc.cluster.local"
+          value: {{ .elasticSearchHost | quote }}
         - name: "ELASTICSEARCH_PORT"
-          value: "9200"
+          value: {{ .elasticSearchPort | quote }}
       {{- end }}
-      {{- if .operatorImagePullSecrets }}
+      {{- if .imagePullSecrets }}
       imagePullSecrets:
-      {{ .operatorImagePullSecrets | toYaml }}
+      {{ .imagePullSecrets | toYaml }}
       {{- end }}
       volumes:
       - name: "weblogic-operator-cm-volume"
