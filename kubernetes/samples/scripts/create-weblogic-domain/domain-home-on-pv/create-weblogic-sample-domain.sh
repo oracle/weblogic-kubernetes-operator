@@ -16,7 +16,6 @@
 #    * The kubernetes persisitent volume must already be created
 #    * The kubernetes persisitent volume claim must already be created
 #
-#
 
 # Initialize
 script="${BASH_SOURCE[0]}"
@@ -38,13 +37,16 @@ function usage {
 # Parse the command line options
 #
 doValidation=false
-while getopts "vhi:o:" opt; do
+executeIt=false
+while getopts "evhi:o:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
     ;;
-    v) doValidation="true";
+    v) doValidation=true
+    ;;
+    e) executeIt=true
     ;;
     h) usage 0
     ;;
@@ -454,7 +456,7 @@ createYamlFiles
 validateDomainSecret
 
 # Validate the domain's persistent volume claim
-if [ "$doValidation" == "true" ]; then
+if [ "$doValidation" == true ]; then
   validateDomainPVC
 fi
 

@@ -8,7 +8,7 @@
 #  The creation inputs can be customized by editing create-weblogic-sample-domain-load-balancer-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
-#    * The kubernetes namespace must already be created
+#    * The Kubernetes namespace must already be created
 #
 # Initialize
 script="${BASH_SOURCE[0]}"
@@ -31,11 +31,11 @@ function usage {
 executeIt=false
 while getopts "ehi:o:" opt; do
   case $opt in
-    e) executeIt=true
-    ;;
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
+    ;;
+    e) executeIt=true
     ;;
     h) usage 0
     ;;

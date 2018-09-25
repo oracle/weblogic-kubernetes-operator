@@ -6,7 +6,7 @@
 #  This sample script creates the Voyager operator and Ingress Controller
 #
 #  The following pre-requisites must be handled prior to running this script:
-#    * The kubernetes namespace must already be created
+#    * The Kubernetes namespace must already be created
 #
 # Initialize
 script="${BASH_SOURCE[0]}"
