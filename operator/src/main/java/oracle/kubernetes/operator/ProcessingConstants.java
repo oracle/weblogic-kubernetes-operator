@@ -29,4 +29,7 @@ public interface ProcessingConstants {
   public static final String SERVER_HEALTH_MAP = "serverHealthMap";
 
   public static final String STATUS_UNCHANGED = "statusUnchanged";
+
+  public static final String JOB_POD_NAME = "jobPodName";
+  public static final String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
 }

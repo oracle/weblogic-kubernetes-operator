@@ -9,10 +9,12 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
+import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
@@ -143,6 +145,48 @@ public class WatchBuilder {
       try {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
+                namespace,
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getIncludeUninitialized(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  /**
+   * Creates a web hook object to track jobs
+   *
+   * @param namespace the namespace
+   * @return the active web hook
+   * @throws ApiException if there is an error on the call that sets up the web hook.
+   */
+  public WatchI<V1Job> createJobWatch(String namespace) throws ApiException {
+    return FACTORY.createWatch(
+        ClientPool.getInstance(), callParams, V1Job.class, new ListJobCall(namespace));
+  }
+
+  private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListJobCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      try {
+        return new BatchV1Api(client)
+            .listNamespacedJobCall(
                 namespace,
                 callParams.getPretty(),
                 START_LIST,

@@ -648,6 +648,30 @@ public class CallBuilder {
         responseStep, new RequestParams("createJob", namespace, null, body), CREATE_JOB);
   }
 
+  private final CallFactory<V1Job> READ_JOB =
+      (requestParams, usage, cont, callback) ->
+          wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
+
+  private com.squareup.okhttp.Call readJobAsync(
+      ApiClient client, String name, String namespace, ApiCallback<V1Job> callback)
+      throws ApiException {
+    return new BatchV1Api(client)
+        .readNamespacedJobAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading job
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readJobAsync(String name, String namespace, ResponseStep<V1Job> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readJob", namespace, name, null), READ_JOB);
+  }
+
   private com.squareup.okhttp.Call deleteJobAsync(
       ApiClient client,
       String name,
@@ -1486,6 +1510,57 @@ public class CallBuilder {
         responseStep,
         new RequestParams("deleteIngress", namespace, name, deleteOptions),
         DELETE_INGRESS);
+  }
+
+  private final CallFactory<String> READ_POD_LOG =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              readPodLogAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  null,
+                  null,
+                  null,
+                  pretty,
+                  null,
+                  null,
+                  null,
+                  null,
+                  callback));
+
+  public Step readPodLogAsync(String name, String namespace, ResponseStep<String> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readPodLog", namespace, name, null), READ_POD_LOG);
+  }
+
+  private com.squareup.okhttp.Call readPodLogAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      String container,
+      Boolean follow,
+      Integer limitBytes,
+      String pretty,
+      Boolean previous,
+      Integer sinceSeconds,
+      Integer tailLines,
+      Boolean timestamps,
+      ApiCallback<String> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .readNamespacedPodLogAsync(
+            name,
+            namespace,
+            container,
+            follow,
+            limitBytes,
+            pretty,
+            previous,
+            sinceSeconds,
+            tailLines,
+            timestamps,
+            callback);
   }
 
   private static final AsyncRequestStepFactory STEP_FACTORY = AsyncRequestStep::new;
