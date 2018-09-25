@@ -9,7 +9,7 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.VOYAGER_LOAD_BALANCER_V1;
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_VOYAGER;
+import static oracle.kubernetes.operator.utils.DomainValues.LOAD_BALANCER_VOYAGER;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
