@@ -42,18 +42,10 @@ public class Operator {
    * @param inputProps
    * @throws Exception
    */
-  public Operator(Properties inputProps, boolean createSharedOperatorResources) throws Exception {
+  public Operator(Properties inputProps) throws Exception {
     this.operatorProps = inputProps;
     initialize();
     generateInputYaml();
-    if (createSharedOperatorResources) {
-      // This has stopped working after converting clusterRoles to per-Operator
-      // instead of shared. It isn't needed yet for integration testing
-      // as it only sets up kibana/elasticSearch, which don't have integration tests.
-      // Note that the sharing of kibana/elasticSearch will be revisited in 2.0
-      // via 'OWLS-68160 Extract ElasticStack, Kibana from operator Helm chart'
-      // createSharedOperatorResources();
-    }
     callHelmInstall();
   }
 
@@ -203,29 +195,7 @@ public class Operator {
         .append(operatorProps.getProperty("releaseName"))
         .append(" --values ")
         .append(generatedInputYamlFile)
-        .append(" --set createSharedOperatorResources=false --namespace ")
-        .append(operatorNS)
-        .append(" --wait");
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
-    String outputStr = result.stdout().trim();
-    logger.info("Command returned " + outputStr);
-  }
-
-  private void createSharedOperatorResources() throws Exception {
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-operator ");
-    cmd.append(" --name op --set createOperator=false --namespace ")
+        .append(" --namespace ")
         .append(operatorNS)
         .append(" --wait");
     logger.info("Running " + cmd);
@@ -313,18 +283,18 @@ public class Operator {
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorProps.put(
-          "operatorImage",
+          "image",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
     } else {
       operatorProps.put(
-          "operatorImage",
+          "image",
           "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
               + BaseTest.getBranchName().replaceAll("/", "_"));
     }
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
-      operatorProps.put("operatorImagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+      operatorProps.put("imagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     }
 
     ExecCommand.exec("kubectl delete namespace " + operatorNS);
@@ -333,7 +303,7 @@ public class Operator {
     ExecCommand.exec("kubectl create namespace " + operatorNS);
 
     // create operator service account
-    String serviceAccount = operatorProps.getProperty("operatorServiceAccount");
+    String serviceAccount = operatorProps.getProperty("serviceAccount");
     if (serviceAccount != null && !serviceAccount.equals("default")) {
       ExecResult result =
           ExecCommand.exec("kubectl create serviceaccount " + serviceAccount + " -n " + operatorNS);
@@ -349,20 +319,20 @@ public class Operator {
     }
 
     // create domain namespaces
-    String domainsNamespaces = operatorProps.getProperty("domainsNamespaces");
-    if (domainsNamespaces != null) {
-      StringTokenizer st = new StringTokenizer(domainsNamespaces, ",");
+    String domainNamespaces = operatorProps.getProperty("domainNamespaces");
+    if (domainNamespaces != null) {
+      StringTokenizer st = new StringTokenizer(domainNamespaces, ",");
       while (st.hasMoreTokens()) {
         String ns = st.nextToken();
         if (!ns.equals("default")) {
-          logger.info("Creating domainn namespace " + ns);
+          logger.info("Creating domain namespace " + ns);
           ExecCommand.exec("kubectl create namespace " + ns);
         }
       }
     }
 
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      operatorProps.put("operatorImagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+      operatorProps.put("imagePullSecret", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_OPERATOR"),

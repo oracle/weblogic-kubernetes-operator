@@ -107,7 +107,7 @@ public class TestUtils {
     while (enuKeys.hasMoreElements()) {
       String key = (String) enuKeys.nextElement();
       String value = props.getProperty(key);
-      if (key.equals("domainsNamespaces")) {
+      if (key.equals("domainNamespaces")) {
         valuesYaml.append(key).append(": [ ");
         if (value.contains(",")) {
           StringTokenizer st = new StringTokenizer(value, ",");
@@ -527,12 +527,11 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opPropsFile, boolean createSharedOperatorResources)
-      throws Exception {
+  public static Operator createOperator(String opPropsFile) throws Exception {
     // load operator props defined
     Properties operatorProps = loadProps(opPropsFile);
     // create op
-    Operator operator = new Operator(operatorProps, createSharedOperatorResources);
+    Operator operator = new Operator(operatorProps);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();

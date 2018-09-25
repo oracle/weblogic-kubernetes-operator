@@ -14,5 +14,5 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
-{{- include "operator.domainsNamespaces" . }}
+{{- include "operator.domainNamespaces" . }}
 {{- end }}
