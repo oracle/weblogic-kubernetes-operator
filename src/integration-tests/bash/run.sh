@@ -801,28 +801,7 @@ function deploy_operator {
       cat $outfile
       operator_ready_wait $opkey
     else
-      local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
-      cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
-
-      trace 'customize the inputs yaml file to use our pre-built docker image'
-      sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1 ${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-      sed -i -e "s|\(weblogicOperatorImage:\).*|\1 ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
-      if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-        sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
-      fi
-      trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
-      sed -i -e "s|\(externalRestOption:\).*|\1 SELF_SIGNED_CERT|g" $inputs
-      sed -i -e "s|\(externalSans:\).*|\1 DNS:${NODEPORT_HOST}|g" $inputs
-      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
-      sed -i -e "s|\(javaLoggingLevel:\).*|\1 $LOGLEVEL_OPERATOR|g" $inputs
-      sed -i -e "s|\(externalRestHttpsPort:\).*|\1 ${EXTERNAL_REST_HTTPSPORT}|g" $inputs
-      trace 'customize the inputs yaml file to add test namespace' 
-      sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
-      sed -i -e "s/^targetNamespaces:.*/targetNamespaces: ${TARGET_NAMESPACES}/" $inputs
-      sed -i -e "s/^serviceAccount:.*/serviceAccount: weblogic-operator/" $inputs
-      local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
-      trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-      sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfile}
+      fail "MOREAUT_DEBUG create-weblogic-operator.sh and create-weblogic-operator.sh are no longer supported"
     fi
 
     if [ "$?" = "0" ]; then
