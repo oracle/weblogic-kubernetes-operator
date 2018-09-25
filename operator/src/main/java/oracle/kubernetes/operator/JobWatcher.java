@@ -1,0 +1,216 @@
+// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
+package oracle.kubernetes.operator;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1JobCondition;
+import io.kubernetes.client.models.V1JobStatus;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.util.Watch;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.ContainerResolver;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+
+/** Watches for Jobs to become Ready or leave Ready state */
+public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  private final String ns;
+
+  // Map of Pod name to OnReady
+  private final ConcurrentMap<String, OnReady> readyCallbackRegistrations =
+      new ConcurrentHashMap<>();
+
+  /**
+   * Factory for JobWatcher
+   *
+   * @param factory thread factory
+   * @param ns Namespace
+   * @param initialResourceVersion Initial resource version or empty string
+   * @param isStopping Stop signal
+   * @return Job watcher for the namespace
+   */
+  public static JobWatcher create(
+      ThreadFactory factory, String ns, String initialResourceVersion, AtomicBoolean isStopping) {
+    JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, isStopping);
+    watcher.start(factory);
+    return watcher;
+  }
+
+  private JobWatcher(String ns, String initialResourceVersion, AtomicBoolean isStopping) {
+    super(initialResourceVersion, isStopping);
+    setListener(this);
+    this.ns = ns;
+  }
+
+  @Override
+  public WatchI<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    return watchBuilder
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .createJobWatch(ns);
+  }
+
+  public void receivedResponse(Watch.Response<V1Job> item) {
+    LOGGER.entering();
+
+    LOGGER.fine("JobWatcher.receivedResponse response item: " + item);
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        V1Job job = item.object;
+        Boolean isReady = isReady(job);
+        String jobName = job.getMetadata().getName();
+        if (isReady) {
+          OnReady ready = readyCallbackRegistrations.remove(jobName);
+          if (ready != null) {
+            ready.onReady();
+          }
+        }
+        break;
+      case "DELETED":
+      case "ERROR":
+      default:
+    }
+
+    LOGGER.exiting();
+  }
+
+  static boolean isReady(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    LOGGER.fine("++++ JobWatcher.isReady status: " + status);
+    if (status != null) {
+      List<V1JobCondition> conds = status.getConditions();
+      if (conds != null) {
+        for (V1JobCondition cond : conds) {
+          if ("Complete".equals(cond.getType())) {
+            if ("True".equals(cond.getStatus())) { // TODO: Verify V1JobStatus.succeeded count?
+              // Job is complete!
+              LOGGER.info(MessageKeys.JOB_IS_READY, job.getMetadata().getName());
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  static boolean isFailed(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    if (status != null) {
+      if (status.getFailed() > 0) {
+        LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Waits until the Job is Ready
+   *
+   * @param job Job to watch
+   * @param next Next processing step once Job is ready
+   * @return Asynchronous step
+   */
+  public Step waitForReady(V1Job job, Step next) {
+    return new WaitForJobReadyStep(job, next);
+  }
+
+  private class WaitForJobReadyStep extends Step {
+    private final V1Job job;
+
+    private WaitForJobReadyStep(V1Job job, Step next) {
+      super(next);
+      this.job = job;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (isReady(job)) {
+        return doNext(packet);
+      }
+
+      V1ObjectMeta metadata = job.getMetadata();
+
+      LOGGER.info(MessageKeys.WAITING_FOR_JOB_READY, metadata.getName());
+
+      AtomicBoolean didResume = new AtomicBoolean(false);
+      return doSuspend(
+          (fiber) -> {
+            OnReady ready =
+                () -> {
+                  if (didResume.compareAndSet(false, true)) {
+                    fiber.resume(packet);
+                  }
+                };
+            readyCallbackRegistrations.put(metadata.getName(), ready);
+
+            // Timing window -- job may have come ready before registration for callback
+            CallBuilderFactory factory =
+                ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+            fiber
+                .createChildFiber()
+                .start(
+                    factory
+                        .create()
+                        .readJobAsync(
+                            metadata.getName(),
+                            metadata.getNamespace(),
+                            new ResponseStep<V1Job>(null) {
+                              @Override
+                              public NextAction onFailure(
+                                  Packet packet,
+                                  ApiException e,
+                                  int statusCode,
+                                  Map<String, List<String>> responseHeaders) {
+                                // if (statusCode == CallBuilder.NOT_FOUND) {
+                                // return onSuccess(packet, null, statusCode, responseHeaders);
+                                // }
+                                return super.onFailure(packet, e, statusCode, responseHeaders);
+                              }
+
+                              @Override
+                              public NextAction onSuccess(
+                                  Packet packet,
+                                  V1Job result,
+                                  int statusCode,
+                                  Map<String, List<String>> responseHeaders) {
+                                if (result != null && isReady(result)) {
+                                  if (didResume.compareAndSet(false, true)) {
+                                    readyCallbackRegistrations.remove(metadata.getName(), ready);
+                                    fiber.resume(packet);
+                                  }
+                                }
+                                return doNext(packet);
+                              }
+                            }),
+                    packet.clone(),
+                    null);
+          });
+    }
+  }
+
+  @FunctionalInterface
+  private interface OnReady {
+    void onReady();
+  }
+}

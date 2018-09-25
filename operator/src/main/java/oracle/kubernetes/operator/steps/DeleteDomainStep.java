@@ -9,8 +9,10 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1IngressList;
+import java.util.ArrayList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -32,7 +34,19 @@ public class DeleteDomainStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    return doNext(Step.chain(deleteIngresses(), deleteServices(), deletePods()), packet);
+    return doNext(Step.chain(deleteResources()), packet);
+  }
+
+  private Step[] deleteResources() {
+    ArrayList<Step> resources = new ArrayList<>();
+    resources.add(deleteIngresses());
+    resources.add(deleteServices());
+    resources.add(deletePods());
+    if (Boolean.getBoolean("enableDomainIntrospectorJob")) {
+      resources.add(
+          JobHelper.deleteDomainIntrospectorJobStep(this.domainUID, this.namespace, getNext()));
+    }
+    return resources.toArray(new Step[0]);
   }
 
   private Step deleteIngresses() {

@@ -47,6 +47,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -141,6 +142,9 @@ public class Main {
   private static RestServer restServer = null;
   private static Thread livenessThread = null;
   private static KubernetesVersion version = null;
+
+  private static final boolean enableDomainInstrospectorJob =
+      Boolean.getBoolean("enableDomainIntrospectorJob");
 
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
@@ -679,9 +683,15 @@ public class Main {
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   private static Step bringAdminServerUp(Step next) {
-    return new ListPersistentVolumeClaimStep(
+    Step adminServerPodStep =
         PodHelper.createAdminPodStep(
-            new BeforeAdminServiceStep(ServiceHelper.createForServerStep(next))));
+            new BeforeAdminServiceStep(ServiceHelper.createForServerStep(next)));
+
+    if (enableDomainInstrospectorJob) {
+      adminServerPodStep = JobHelper.createDomainIntrospectorJobStep(adminServerPodStep);
+    }
+
+    return new ListPersistentVolumeClaimStep(adminServerPodStep);
   }
 
   private static Step connectToAdminAndInspectDomain(Step next) {

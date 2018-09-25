@@ -138,4 +138,8 @@ public class MessageKeys {
   public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0132";
   public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0133";
   public static final String SCRIPT_LOADED = "WLSKO-0134";
+  public static final String JOB_IS_READY = "WLSKO-0135";
+  public static final String JOB_IS_FAILED = "WLSKO-0136";
+  public static final String JOB_DELETED = "WLSKO-0137";
+  public static final String WAITING_FOR_JOB_READY = "WLSKO-0138";
 }

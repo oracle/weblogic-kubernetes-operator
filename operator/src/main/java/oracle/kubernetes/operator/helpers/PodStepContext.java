@@ -54,28 +54,14 @@ import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
-public abstract class PodStepContext {
+public abstract class PodStepContext implements StepContextConstants {
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  private static final String SECRETS_VOLUME = "weblogic-credentials-volume";
-  private static final String SCRIPTS_VOLUME = "weblogic-domain-cm-volume";
-  private static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";
-  private static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
-  private static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
-  private static final String STORAGE_MOUNT_PATH = "/shared";
-  private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String LOG_HOME = "/shared/logs";
-  private static final int FAILURE_THRESHOLD = 1;
-
-  @SuppressWarnings("OctalInteger")
-  private static final int ALL_READ_AND_EXECUTE = 0555;
 
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String READINESS_PROBE = "/weblogic-operator/scripts/readinessProbe.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
-
-  private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   private final DomainPresenceInfo info;
   private final Step conflictStep;

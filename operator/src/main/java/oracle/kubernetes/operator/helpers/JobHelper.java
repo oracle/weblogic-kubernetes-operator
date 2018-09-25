@@ -6,12 +6,18 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -51,11 +57,6 @@ public class JobHelper {
     }
 
     @Override
-    String getJobDeletedMessageKey() {
-      return "Domain Introspector job " + getJobName() + " deleted";
-    }
-
-    @Override
     String getJobName() {
       return LegalNames.toJobIntrospectorName(getDomainUID());
     }
@@ -81,7 +82,7 @@ public class JobHelper {
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(Step next) {
-    return new DomainIntrospectorJobStep(next);
+    return new DomainIntrospectorJobStep(readDomainIntrospectorPodLogStep(next));
   }
 
   static class DomainIntrospectorJobStep extends Step {
@@ -123,8 +124,16 @@ public class JobHelper {
       return doNext(deleteJob(getNext()), packet);
     }
 
+    String getJobDeletedMessageKey() {
+      return "Domain Introspector job " + createJobName(this.domainUID) + " deleted";
+    }
+
+    protected void logJobDeleted() {
+      LOGGER.info(getJobDeletedMessageKey());
+    }
+
     private Step deleteJob(Step next) {
-      // logJobDeleted();
+      logJobDeleted();
       String jobName = JobHelper.createJobName(this.domainUID);
       Step step =
           new CallBuilder()
@@ -134,6 +143,138 @@ public class JobHelper {
                   new V1DeleteOptions().propagationPolicy("Foreground"),
                   new DefaultResponseStep<>(next));
       return step;
+    }
+  }
+
+  private static Step createWatchDomainIntrospectorJobReadyStep(Step next) {
+    return new WatchDomainIntrospectorJobReadyStep(next);
+  }
+
+  /**
+   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log
+   *
+   * @param next Next processing step
+   * @return Step for reading WebLogic domain introspector pod log
+   */
+  public static Step readDomainIntrospectorPodLogStep(Step next) {
+    return createWatchDomainIntrospectorJobReadyStep(
+        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
+  }
+
+  private static class ReadDomainIntrospectorPodLogStep extends Step {
+
+    ReadDomainIntrospectorPodLogStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      String namespace = info.getNamespace();
+
+      String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
+
+      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, getNext()), packet);
+    }
+
+    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, Step next) {
+      Step step =
+          new CallBuilder()
+              .readPodLogAsync(
+                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep<>(next));
+      return step;
+    }
+  }
+
+  private static class ReadDomainIntrospectorPodLogResponseStep<String>
+      extends ResponseStep<String> {
+    public ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
+      super(nextStep);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<String> callResponse) {
+      cleanupJobArtifacts(packet);
+      return super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<String> callResponse) {
+      cleanupJobArtifacts(packet);
+      LOGGER.info("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + callResponse.getResult());
+      return doNext(packet);
+    }
+
+    private void cleanupJobArtifacts(Packet packet) {
+      packet.remove(ProcessingConstants.JOB_POD_NAME);
+      packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+    }
+  }
+
+  /**
+   * Factory for {@link Step} that reads WebLogic domain introspector pod
+   *
+   * @param next Next processing step
+   * @return Step for reading WebLogic domain introspector pod
+   */
+  public static Step readDomainIntrospectorPodStep(Step next) {
+    return new ReadDomainIntrospectorPodStep(next);
+  }
+
+  private static class ReadDomainIntrospectorPodStep extends Step {
+
+    ReadDomainIntrospectorPodStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      String domainUID = info.getDomain().getDomainUID();
+      String namespace = info.getNamespace();
+      return doNext(readDomainIntrospectorPod(domainUID, namespace, getNext()), packet);
+    }
+
+    private Step readDomainIntrospectorPod(String domainUID, String namespace, Step next) {
+
+      Step step =
+          new CallBuilder()
+              .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+              .listPodAsync(namespace, new PodListStep(domainUID, namespace, next));
+
+      return step;
+    }
+  }
+
+  private static class PodListStep extends ResponseStep<V1PodList> {
+    private final String ns;
+    private final String domainUID;
+
+    PodListStep(String domainUID, String ns, Step next) {
+      super(next);
+      this.domainUID = domainUID;
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
+      return super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+      String jobNamePrefix = createJobName(domainUID);
+      V1PodList result = callResponse.getResult();
+      if (result != null) {
+        for (V1Pod pod : result.getItems()) {
+          if (pod.getMetadata().getName().startsWith(jobNamePrefix)) {
+            LOGGER.fine("+++++ JobHelper.PodListStep pod: " + pod.toString());
+            packet.put(ProcessingConstants.JOB_POD_NAME, pod.getMetadata().getName());
+          }
+        }
+      }
+
+      return doNext(packet);
     }
   }
 }
