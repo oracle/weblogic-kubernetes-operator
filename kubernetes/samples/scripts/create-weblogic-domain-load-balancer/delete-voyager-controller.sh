@@ -55,8 +55,8 @@ if test "$(kubectl get pod -n $vnamespace --ignore-not-found | grep voyager | wc
 fi
 
 # purge CRDs
-kubectl delete crd $VOYAGER_ING_NAME --ignore-not-found
-kubectl delete crd $VOYAGER_CERT_NAME --ignore-not-found
+# kubectl delete crd $VOYAGER_ING_NAME --ignore-not-found
+# kubectl delete crd $VOYAGER_CERT_NAME --ignore-not-found
 
 echo "Deleting Voyager opreator resources"
 
