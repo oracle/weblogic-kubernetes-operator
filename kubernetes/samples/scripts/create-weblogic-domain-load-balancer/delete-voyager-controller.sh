@@ -3,13 +3,9 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates Voyager load balancer for the sample domain
+#  This sample script deletes all Kubernetes resources for the Voyager load balancer 
 #
-#  The creation inputs can be customized by editing create-weblogic-sample-domain-load-balancer-inputs.yaml
-#
-#  The following pre-requisites must be handled prior to running this script:
-#    * The kubernetes namespace must already be created
-#
+
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"

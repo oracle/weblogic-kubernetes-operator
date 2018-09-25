@@ -9,7 +9,7 @@
 #  The creation inputs can be customized by editing create-weblogic-sample-domain-pv-pvc-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
-#    * The kubernetes namespace must already be created
+#    * The Kubernetes namespace must already be created
 #
 
 # Initialize
@@ -33,11 +33,11 @@ function usage {
 executeIt=false
 while getopts "ehi:o:" opt; do
   case $opt in
-    e) executeIt="${OPTARG}"
-    ;;
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
+    ;;
+    e) executeIt=true
     ;;
     h) usage 0
     ;;
