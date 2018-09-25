@@ -22,7 +22,8 @@ function setup_jenkins {
 
     # create a docker image for the operator code being tested
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
-
+	docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest
+	
     docker images
     
     echo "Helm installation starts" 
