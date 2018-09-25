@@ -1,0 +1,120 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    weblogic.resourceVersion: sample-voyager-load-balancer-v1
+    app: voyager
+  name: voyager-operator
+  namespace: voyager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: voyager
+  template:
+    metadata:
+      labels:
+        app: voyager
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      serviceAccountName: voyager-operator
+      imagePullSecrets: []
+      containers:
+      - name: voyager
+        args:
+        - run
+        - --v=3
+        - --rbac=true
+        - --cloud-provider=
+        - --cloud-config= # ie. /etc/kubernetes/azure.json for azure
+        - --ingress-class=
+        - --restrict-to-operator-namespace=false
+        - --docker-registry=appscode
+        - --haproxy-image-tag=1.7.10-6.0.0
+        - --secure-port=8443
+        - --audit-log-path=-
+        - --tls-cert-file=/var/serving-cert/tls.crt
+        - --tls-private-key-file=/var/serving-cert/tls.key
+        image: appscode/voyager:6.0.0
+        ports:
+        - containerPort: 8443
+        - containerPort: 56790
+        - containerPort: 56791
+        volumeMounts:
+        - mountPath: /etc/kubernetes
+          name: cloudconfig
+          readOnly: true
+        - mountPath: /var/serving-cert
+          name: serving-cert
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+      volumes:
+      - hostPath:
+          path: /etc/kubernetes
+        name: cloudconfig
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: voyager-apiserver-cert
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+---
+# kube lacks the service serving cert signer, so provide a manual secret for it
+apiVersion: v1
+kind: Secret
+metadata:
+  name: voyager-apiserver-cert
+  namespace: voyager
+  labels:
+    weblogic.resourceVersion: sample-voyager-load-balancer-v1
+    app: voyager
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM5akNDQWQ2Z0F3SUJBZ0lJTzhzQmdHcitZZEV3RFFZSktvWklodmNOQVFFTEJRQXdEVEVMTUFrR0ExVUUKQXhNQ1kyRXdIaGNOTVRnd05URTJNRE0wTlRFMVdoY05NVGt3TlRFMk1ETTBOVEUyV2pBUk1ROHdEUVlEVlFRRApFd1p6WlhKMlpYSXdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFESkZkUytubGVjCjBZVmt5UTUwMUgrVURvTXZLcWUxS1lQYUZlYXM2NlE4YjI5WkF2VzJ0bHBVd2tLQkJBM2JrYW1lTThmUTFqZXMKeW1aNUo1SUVYOHRFaERWcjFrMjJ6Zk9ranlxUjRvSEUwKzdqeGg1MjQvcy9nQWNNQjJNRlEyeXRyMkNlbGN5ZQpnd2JTSlhyTnRwY2MxNm1IRmFKZG5iYUtvM3Z1UnZGREZCQ2t1U3dvcHpqWGZrbURYYUNiMGRYcjJuVzdLeXJ3Cks3eldLZnlrNHhnVnJFVS9LL3I2cTRSTlVGYW5DejBJeVpwRjhJeHpMdW1oK3FUMGJ3S1dqSVlESkdIQTFHSDcKWUF5UUVEcE4rbkRHalJEeFVXWCs5R0lnRDJXak5OcEZHMzN6UjUyRS9tN3Y3ZXNROVdrUjI3ZlF6eHluZ29TegpJV0EzcGhwcnl0L1RBZ01CQUFHalZqQlVNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyCkJnRUZCUWNEQVRBdEJnTlZIUkVFSmpBa2doeDJiM2xoWjJWeUxXOXdaWEpoZEc5eUxuWnZlV0ZuWlhJdWMzWmoKaHdSL0FBQUJNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUFWZDlNOXFucHZvdkdjWlM4a1N4UEl1cFNYamI1WAp5RUtsZTVib1p1YVdRRXhNMXdHOVc1R2R4Njhudkh1ajhMRnBjbzlXU3p5TmhLN3lKNCtIU0hBYmd1ZEY4VmtHCllCS1h4TGlJcnowVk81U1UrTnJGWURENVRlTXFXQXV5UWUvakwwVlJEOGRHZU9weTVRZUpPY0JTSWdocUk2NnoKNGRnd3pMLzNPVllRemVGdkd0VXUzMzdrRWJwUWx6UVovTFFEUzdqOUlaL2xzVFF4d1k4S2srMit3ZmU3dzhxRQpZY04vaGFPcmNKaHFQL3Fnd2pNcTF6QTJqUzdSUXhremdJNWIxdkhWYm1FUThFU2x2ZWdIL3M0MG1XcnV2YW9BClE1djFWSXUwWGZuSzBWZm9iZEduNXY4OWpIVTQyaFZ6K3FhRUFYU0dyV2dGSjJZQ21jandyQlhYCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBeVJYVXZwNVhuTkdGWk1rT2ROUi9sQTZETHlxbnRTbUQyaFhtck91a1BHOXZXUUwxCnRyWmFWTUpDZ1FRTjI1R3BualBIME5ZM3JNcG1lU2VTQkYvTFJJUTFhOVpOdHMzenBJOHFrZUtCeE5QdTQ4WWUKZHVQN1A0QUhEQWRqQlVOc3JhOWducFhNbm9NRzBpVjZ6YmFYSE5lcGh4V2lYWjIyaXFONzdrYnhReFFRcExrcwpLS2M0MTM1SmcxMmdtOUhWNjlwMXV5c3E4Q3U4MWluOHBPTVlGYXhGUHl2NitxdUVUVkJXcHdzOUNNbWFSZkNNCmN5N3BvZnFrOUc4Q2xveUdBeVJod05SaCsyQU1rQkE2VGZwd3hvMFE4VkZsL3ZSaUlBOWxvelRhUlJ0OTgwZWQKaFA1dTcrM3JFUFZwRWR1MzBNOGNwNEtFc3lGZ042WWFhOHJmMHdJREFRQUJBb0lCQVFDR09rZG44c1NqRG8xUApxSkk0MUh4UTlac0dDaUFtNHc1N3JuRHI3dVFUMzRMaFZRTjJNcVY3dkt5dCtHblRycGtkM0l5K1Q3Q2NiQU1aClRwdSt4YjhtL21XMmxUZ05GYzlVZ3FpMDl4RU90VFhhMzY0SVNNaTNLNXdJb0ltdHdzTXg4VWE2dFY0QVZaQmgKQ05tL3BlbWJQQzZTMkpNb2tKV0FWLzdySUhuOS9xRHdmMWhrUEN4MTZ2dXRGWUlIclNuUU1USVdlZVAxY0VnUwpoKzdZbWozV3NmTTIvZjdUcldBZk5iOHhyYmdBaXRvYm0xNDVYRUh5eVhKV0FjTlcra3BlZCtkQ0tOYy9ud1ZvCmRIQUJiaU5RNFFUcU9XVGZpekZHYWFQZGhLVWNGYUJsbTlsUWtiQ2NvYW1XWFBZRUFmOE1YSGdRRDB2NXBkaXAKd0thUU1mRFJBb0dCQU9RSG1GNDBORU1lUHVVYmwvS3p1bDBGUFhzRXdwR0RPb3FDODc5VlN1Yngza2tua1ZtRwo4SUxyTSttRk85QldDYWNENTRZMjdzbTkzSDlBbllQYmhHSmo1ZWJvYUU5VFBNMTBqTnRXMU9NQUE4K3BiaUE0ClQ0TWZUTlQ1ejNXclRhak1FMEUzMVFTVFBqVDlvQmZxV1FQRXA2MHhaZkNrUmZLQWlTQVZJckVaQW9HQkFPSEEKSmxGTk9VODFrckNGREQxeDc2N015ZjF2Z0lsZlAxdENlMEQzRmNhR2x6SFA5WGE5MGI4dGxmWHBCa3lRZHZ4ZAoxeUgxQWVyMkJhVWJGY0t0ZmltbEhpSHVyUlFXZU94SW96VkVHKzlVejBwNC9Sb2Fwd3NPejQzMURTZkl5TGllClJURGNYNk14Y2hLWHdjaklrZ1hvR1ErUitGZjNSbnJwMjhIa2hSbkxBb0dCQU15TUU1M05ibVFXcVl5UzZBYUsKT2s1ZStQdDFGYU81OTdWd0tuNGpZSUV4elpnSnFsU0l1dzUxTmFmd0grdU9naklUU29nV2xyVFpYd1czVEpTUApRWDJRNXhYdXZFTU1BNnE1TmZFN1B0UXhtem1ZWG5VQWpqS3N6UnJ1eTY1ZDc5Zk8yQ2JVa256OEovMFkxWmNlClhLTUlzUENuTXk1ZDdYRE81REtuUXV0aEFvR0JBSisxemlZRXFUL1ZtZkxTSGVlMm5LZ2c3K0locVdFR2hvOHMKeUlBY2prWkdYOTc0emlMMGhkaG9Dc2pQMUFvRXhua2lkcG5xZVRIZVhmNEIzSEkvUlp0MjJvdU5ETnZDVGtoegoxeXRQQlNoYjZzODRLMi8xWFNwZ2p3eFNTcjFUdWxXS2UwN25DYTR0eEJOTlUrYVZwMkVRWS9KMUJhcE9JWW5CCnV4eEFiTDNqQW9HQUVDQTdZcGI3WGlFam5uN2dXcTJwWWNFZWZ2dUFOZDM3R3ljbDFVekQ3Z1RuanQzYnNTUysKOEVkOVVqeVJ5TzFiQUZqV0cvUU1CQ3I5Uk4vdU0ybDF4dExxTGZYbWN0QUxrd3pCdHVZYUR4djA5Q215OGZJdApudW9XN0RoVGRzUWJlUHdCY1JINks1dEJkNURERFFIclNTallrcVJ6RmJrS0JOaGhtVXhodGZVPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+---
+# to be able to expose TSB inside the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: voyager-operator
+  namespace: voyager
+  labels:
+    weblogic.resourceVersion: sample-voyager-load-balancer-v1
+    app: voyager
+spec:
+  ports:
+  - name: admission
+    port: 443
+    targetPort: 8443
+  - name: ops
+    port: 56790
+    targetPort: 56790
+  - name: acme
+    port: 56791
+    targetPort: 56791
+  selector:
+    app: voyager
+---
+# register as aggregated apiserver
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.admission.voyager.appscode.com
+  labels:
+    weblogic.resourceVersion: sample-voyager-load-balancer-v1
+    app: voyager
+spec:
+  caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN1RENDQWFDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFOTVFzd0NRWURWUVFERXdKallUQWUKRncweE9EQTFNVFl3TXpRMU1UVmFGdzB5T0RBMU1UTXdNelExTVRWYU1BMHhDekFKQmdOVkJBTVRBbU5oTUlJQgpJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBcS9HL2xtUlZvTXNyKy82VTIrWjloZE1oCjZINU1aSkZnT3pNaWtHZEFxTnVnNnZKRklhNld4clloVVcvVnRybkRETVkyRjVkYTZuTTI3cVdpdXJla2YvTGkKOFJXRnltTmVrNXpGV1NSUGttYXlOVzRCNmRDNmE0V1VxSmtVbUNKOC9WdnI2QkRqVkZWemNIV3JPeDJQU1g2UgovY0tEcytsYzVYbVB3V0hta1ZMWmhmOERMcURhRXV1SUFDTlE2dkFxT3dyVklwQVFsOHpJN0FQVHY4M0NzWjVqCk1XQmZVNXBsRnlNNmZGYnVqKzdtSWtqa01QM2JjaXdQV0FQcTB4VHdjU0NMeU9DQ1Rhd3BsUHhIRTRiYVpReEEKTnZNUmxEVEMvTUdUMGFaMFIremNXcHkwZ3RtcXAzblhTWTRLTW5qY2xDYjhYZGp6SUExTU8vaWR1SEw1cHdJRApBUUFCb3lNd0lUQU9CZ05WSFE4QkFmOEVCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBTkJna3Foa2lHCjl3MEJBUXNGQUFPQ0FRRUFwaHU2eHVXQVVvNXkxdW9Gdkt6Y2tyOXA1MWpxWkJGdXAxV2JMOFkveXJUTVpRZkIKbUU3U240QVVCUS9xOEpFc1ZCcVJoRjFodHJtbzdUaDBDNVZNNmFZNnRaZDZuYWV5ZDlJaUt6ZkJyVnB5M08vUQpJaEZlZkNCTExienZlbnBwWnBkdUxKdEQ2VXRVb0FFTGdHNmR0Y2R4SUV6bzUxd0g4aVRKejBsQlBpY0prWjRkCnBXWUMyaFFOOFpRRU5aM29TTno5QWQrTkJXbWdXendsMXk4NmhxTTZHUkVKSCtpK3BZeWpkTk9qR3orbGVxU1AKa1lnbjZZVlA3TnZkcElYKzlzby9JUGF3RTJoRDAzOERtZVhscTFYRnhnc1FBVTRFd3JoSmU3WHMzWHZ3aFZlTwowYjBZWGVPNENkemtZNmtxNlpFci93Z0JxWEZjc3MwaHJ2WWZBUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  group: admission.voyager.appscode.com
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: voyager-operator
+    namespace: voyager
+  version: v1beta1

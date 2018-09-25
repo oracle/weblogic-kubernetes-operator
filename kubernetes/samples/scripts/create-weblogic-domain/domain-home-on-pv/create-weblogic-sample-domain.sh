@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain custom resource yaml
+#  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain custom resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-weblogic-sample-domain-inputs.yaml
@@ -22,11 +22,13 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../../common/utility.sh
+source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${createScript} -o dir -i file [-v] [-h]
+  echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -o Ouput directory for the generated yaml files, must be specified."
   echo "  -i Parameter input file, must be specified."
+  echo "  -e Also create the resources in the generated yaml files"
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
   exit $1
@@ -79,66 +81,6 @@ function initAndValidateOutputDir {
     create-weblogic-sample-domain-job.yaml \
     delete-weblogic-sample-domain-job.yaml \
     domain-custom-resource.yaml
-}
-
-#
-# Function to validate the version of the inputs file
-#
-function validateVersion {
-  local requiredVersion='create-weblogic-sample-domain-inputs-v1'
-  if [ "${version}" != "${requiredVersion}" ]; then
-    validationError "Invalid version: \"${version}\".  Must be ${requiredVersion}."
-  fi
-}
-
-#
-# Function to ensure the domain uid is a legal DNS name
-#
-function validateDomainUid {
-  validateLowerCase "domainUID" ${domainUID}
-  validateDNS1123LegalName domainUID ${domainUID}
-}
-
-#
-# Function to ensure the namespace is lowercase
-#
-function validateNamespace {
-  validateLowerCase "namespace" ${namespace}
-}
-
-#
-# Create an instance of clusterName to be used in cases where a legal DNS name is required.
-#
-function validateClusterName {
-  clusterNameSVC=$(toDNS1123Legal $clusterName)
-}
-
-#
-# Create an instance of adminServerName to be used in cases where a legal DNS name is required.
-#
-function validateAdminServerName {
-  adminServerNameSVC=$(toDNS1123Legal $adminServerName)
-}
-
-#
-# Create an instance of adminServerName to be used in cases where a legal DNS name is required.
-#
-function validateManagedServerNameBase {
-  managedServerNameBaseSVC=$(toDNS1123Legal $managedServerNameBase)
-}
-
-#
-# Function to validate the secret name
-#
-function validateWeblogicCredentialsSecretName {
-  validateLowerCase "weblogicCredentialsSecretName" ${weblogicCredentialsSecretName}
-}
-
-# try to execute kubectl to see whether kubectl is available
-function validateKubectlAvailable {
-  if ! [ -x "$(command -v kubectl)" ]; then
-    validationError "kubectl is not installed"
-  fi
 }
 
 #
@@ -215,47 +157,6 @@ function validateDomainPVC {
   failIfValidationErrors
 }
 
-# Function to validate the server startup control value
-#
-function validateStartupControl {
-  validateInputParamsSpecified startupControl
-  if [ ! -z "${startupControl}" ]; then
-    case ${startupControl} in
-      "NONE")
-      ;;
-      "ALL")
-      ;;
-      "ADMIN")
-      ;;
-      "SPECIFIED")
-      ;;
-      "AUTO")
-      ;;
-      *)
-        validationError "Invalid value for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
-      ;;
-    esac
-  fi
-}
-
-#
-# Function to validate the cluster type value
-#
-function validateClusterType {
-  validateInputParamsSpecified clusterType
-  if [ ! -z "${clusterType}" ]; then
-    case ${clusterType} in
-      "CONFIGURED")
-      ;;
-      "DYNAMIC")
-      ;;
-      *)
-        validationError "Invalid value for clusterType: ${clusterType}. Valid values are 'CONFIGURED' and 'DYNAMIC'."
-      ;;
-    esac
-  fi
-}
-
 #
 # Function to setup the environment to run the create domain job
 #
@@ -327,7 +228,9 @@ function initialize {
     exposeAdminT3Channel \
     exposeAdminNodePort
 
-  validateVersion
+  export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
+  validateVersion 
+
   validateDomainUid
   validateNamespace
   validateAdminServerName
@@ -451,7 +354,7 @@ function createYamlFiles {
 #
 # Function to run the job that creates the domain
 #
-function createDomain {
+function createDomainHome {
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
@@ -507,32 +410,9 @@ function createDomain {
 
 
 #
-# Function to obtain the IP address of the kubernetes cluster.  This information
-# is used to form the URL's for accessing services that were deployed.
-#
-function getKubernetesClusterIP {
-
-  # Get name of the current context
-  local CUR_CTX=`kubectl config current-context | awk ' { print $1; } '`
-
-  # Get the name of the current cluster
-  local CUR_CLUSTER_CMD="kubectl config view -o jsonpath='{.contexts[?(@.name == \"${CUR_CTX}\")].context.cluster}' | awk ' { print $1; } '"
-  local CUR_CLUSTER=`eval ${CUR_CLUSTER_CMD}`
-
-  # Get the server address for the current cluster
-  local SVR_ADDR_CMD="kubectl config view -o jsonpath='{.clusters[?(@.name == \"${CUR_CLUSTER}\")].cluster.server}' | awk ' { print $1; } '"
-  local SVR_ADDR=`eval ${SVR_ADDR_CMD}`
-
-  # Server address is expected to be of the form http://address:port.  Delimit
-  # string on the colon to obtain the address.  Leave the "//" on the resulting string.
-  local array=(${SVR_ADDR//:/ })
-  K8S_IP="${array[1]}"
-}
-
-#
 # Function to output to the console a summary of the work completed
 #
-function outputJobSummary {
+function printSummary {
 
   # Get the IP address of the kubernetes cluster (into K8S_IP)
   getKubernetesClusterIP
@@ -554,6 +434,13 @@ function outputJobSummary {
 }
 
 #
+# Function to create the domain's persistent volume
+#
+function createDomainResource {
+  kubectl apply -f ${dcrOutput}
+}
+
+#
 # Perform the following sequence of steps to create a domain
 #
 
@@ -572,10 +459,14 @@ if [ "$doValidation" == "true" ]; then
 fi
 
 # Create the WebLogic domain
-createDomain
+createDomainHome
 
-# Output a job summary
-outputJobSummary
+if [ "${executeIt}" = true ]; then
+  createDomainResource
+fi
+
+# Print a summary
+printSummary
 
 echo 
 echo Completed
