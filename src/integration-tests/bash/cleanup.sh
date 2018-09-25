@@ -146,18 +146,24 @@ function deleteWithLabels {
   NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
   HANDLE_VOYAGER="false"
-  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
-  if [ `kubectl get crd $VOYAGER_ING_NAME --ignore-not-found | grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
-    NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
-    HANDLE_VOYAGER="true"
-  fi
-
   DOMAIN_CRD="domains.weblogic.oracle"
   if [ `kubectl get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
     NAMESPACED_TYPES="$DOMAIN_CRD,$NAMESPACED_TYPES"
   fi
 
   NOT_NAMESPACED_TYPES="pv,crd,clusterroles,clusterrolebindings"
+  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
+  VOYAGER_CERT_NAME="certificates.voyager.appscode.com"
+  if [ `kubectl get crd $VOYAGER_ING_NAME --ignore-not-found | grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
+    NOT_NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NOT_NAMESPACED_TYPES"
+    HANDLE_VOYAGER="true"
+  fi
+
+  if [ `kubectl get crd $VOYAGER_CERT_NAME --ignore-not-found | grep $VOYAGER_CERT_NAME | wc -l` = 1 ]; then
+    NOT_NAMESPACED_TYPES="$VOYAGER_CERT_NAME,$NOT_NAMESPACED_TYPES"
+    HANDLE_VOYAGER="true"
+  fi
+
 
   tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
 
