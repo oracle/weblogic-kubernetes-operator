@@ -6,7 +6,7 @@
 apiVersion: "v1"
 kind: "Secret"
 data:
-  {{- if not (eq .externalRestOption "NONE") }}
+  {{- if .externalRestEnabled }}
   externalOperatorKey: {{ .externalOperatorKey | quote }}
   {{- end }}
 metadata:
