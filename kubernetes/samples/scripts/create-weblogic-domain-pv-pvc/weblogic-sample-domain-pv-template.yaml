@@ -1,0 +1,23 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: %DOMAIN_UID%-weblogic-domain-pv
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+spec:
+  storageClassName: %DOMAIN_UID%-weblogic-domain-storage-class
+  capacity:
+    storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
+  accessModes:
+    - ReadWriteMany
+  # Valid values are Retain, Delete or Recycle
+  persistentVolumeReclaimPolicy: %WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%
+  %HOST_PATH_PREFIX%hostPath:
+  %NFS_PREFIX%nfs:
+    %NFS_PREFIX%server: %WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%
+    path: "%WEBLOGIC_DOMAIN_STORAGE_PATH%"
