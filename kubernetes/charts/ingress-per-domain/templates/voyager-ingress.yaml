@@ -1,0 +1,42 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+{{- if eq .Values.ingressController.type "VOYAGER" }}
+---
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-voyager
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  rules:
+  - host: '*'
+    http:
+      nodePort: '{{ .Values.voyager.webPort }}'
+      paths:
+      - backend:
+          serviceName: '{{ .Values.wlsDomain.svcName }}'
+          servicePort: '{{ .Values.wlsDomain.svcPort }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-voyager-stats
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: NodePort
+  ports:
+    - name: client
+      protocol: TCP
+      port: 56789
+      targetPort: 56789
+      nodePort: {{ .Values.voyager.dashboardPort }}
+  selector:
+    origin: voyager
+    origin-name: {{ .Release.Name }}-voyager
+{{- end }}

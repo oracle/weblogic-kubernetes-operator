@@ -1,0 +1,22 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+{{- if eq .Values.ingressController.type "TRAEFIK" }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-traefik
+  namespace: {{ .Release.Namespace }}
+spec:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  rules:
+  - host: '{{ .Values.traefik.hostname }}'
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: '{{ .Values.wlsDomain.svcName }}'
+          servicePort: {{ .Values.wlsDomain.svcPort }}
+{{- end }}

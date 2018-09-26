@@ -1,0 +1,24 @@
+# Default values for ingress-per-domain.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+ingressController:
+  type: TRAEFIK 
+  lifecycleEnabled: true
+
+wlsDomain:
+  svcName: domain1-cluster-cluster-1
+  svcPort: 8001
+
+traefik:
+  hostname: doamin1.org
+
+voyager:
+  webPort: 30305
+  dashboardPort: 30315
+
+apache:
+  webPort: 30305
+  dashboardPort: 30315
+  VolumePath: /
+  exposeAdminPort: true
