@@ -302,6 +302,8 @@ function createYamlFiles {
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${createJobOutput}
+  sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptDir}:g" ${createJobOutput}
+  sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${createJobOutput}
 
   # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
   echo Generating ${deleteJobOutput}
@@ -348,6 +350,33 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
+
+  # customized external files if needed
+  if [ -z "${createDomainExternalFilesDir}" ]; then
+    filelist=$createDomainExternalFilesDir
+    mkdir -p $domainOutputDir/extra
+    for fname in fileList
+    do
+      outputFile=$domainOutputDir/extra/$fname
+      cp $fname $outputFile
+      sed -i -e "s:%NAMESPACE%:$namespace:g" ${outputFile}
+      sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${outputFile}
+      sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${outputFile}
+      sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${outputFile}
+      sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${outputFile}
+      sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${outputFile}
+      sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${outputFile}
+      sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${outputFile}
+      sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${outputFile}
+      sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${outputFile}
+      sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${outputFile}
+      sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${outputFile}
+      sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${outputFile}
+      sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${outputFile}
+      sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${outputFile}
+    done 
+    kubectl create configmap ${domainUID}-create-weblogic-sample-domain-job-cm-extra -n $namespace --from-file=$domainOutputDir/extra
+  fi
 
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
