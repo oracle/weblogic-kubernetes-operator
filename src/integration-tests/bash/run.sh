@@ -801,28 +801,7 @@ function deploy_operator {
       cat $outfile
       operator_ready_wait $opkey
     else
-      local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
-      cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
-
-      trace 'customize the inputs yaml file to use our pre-built docker image'
-      sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1 ${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-      sed -i -e "s|\(weblogicOperatorImage:\).*|\1 ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
-      if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-        sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
-      fi
-      trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
-      sed -i -e "s|\(externalRestOption:\).*|\1 SELF_SIGNED_CERT|g" $inputs
-      sed -i -e "s|\(externalSans:\).*|\1 DNS:${NODEPORT_HOST}|g" $inputs
-      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
-      sed -i -e "s|\(javaLoggingLevel:\).*|\1 $LOGLEVEL_OPERATOR|g" $inputs
-      sed -i -e "s|\(externalRestHttpsPort:\).*|\1 ${EXTERNAL_REST_HTTPSPORT}|g" $inputs
-      trace 'customize the inputs yaml file to add test namespace' 
-      sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
-      sed -i -e "s/^targetNamespaces:.*/targetNamespaces: ${TARGET_NAMESPACES}/" $inputs
-      sed -i -e "s/^serviceAccount:.*/serviceAccount: weblogic-operator/" $inputs
-      local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
-      trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-      sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfile}
+      fail "create-weblogic-operator.sh is longer supported"
     fi
 
     if [ "$?" = "0" ]; then
@@ -1320,22 +1299,7 @@ function create_domain_pv_pvc_load_balancer {
       trace "helm install output:"
       cat $outfile
     else
-      # create sample domain, including a pv and pvc, domain home on pv, and load balancer
-
-      domainOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains/${DOMAIN_UID}
-      trace "Run the sample scripts to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
-
-      # Create sample  domain pv and pvc
-      trace "Create and start domain pv and pvc"
-      create_pv_pvc_non_helm $@
-
-      # Create  sample domain home on pv 
-      trace "Create the domain home, and start domain resources"
-      create_domain_home_on_pv_non_helm $@
-
-      # Setup sample load balancer
-      trace "Create and start domain load balancer"
-      create_load_balancer_non_helm $@
+      fail "create-weblogic-domain.sh is longer supported"
     fi
 
     if [ "$?" = "0" ]; then
@@ -3075,43 +3039,6 @@ function test_cluster_scale {
     declare_test_pass
 }
 
-function test_create_domain_on_exist_dir {
-    declare_new_test 1 "$@"
-
-    if [ "$#" != 1 ] ; then
-      fail "requires 1 parameter: domainKey"
-    fi 
-
-    local DOM_KEY="$1"
-
-    local NAMESPACE="`dom_get $1 NAMESPACE`"
-    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
-    local TMP_DIR="`dom_get $1 TMP_DIR`"
-
-    trace "check domain directory exists"
-    local tmp_dir="$TMP_DIR"
-    local inputs="$tmp_dir/create-weblogic-sample-domain-inputs.yaml"
-    local domain_storage_path=`egrep 'weblogicDomainStoragePath' $inputs | awk '{print $2}'`
-    local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
-
-    local domain_dir=${domain_storage_path}"/domain/"${domain_name}
-    if [ ! -d ${domain_dir} ] ; then
-      fail "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
-    fi
-
-    trace "run the script to create the domain"
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR
-    local exit_code=$?
-    if [ ${exit_code} -eq 1 ] ; then
-      trace "[SUCCESS] create domain job failed, this is the expected behavior"
-    else
-      trace "[FAIL] unexpected result, create domain job exit code: "${exit_code}
-      fail "failed!"
-    fi
-
-    declare_test_pass
-}
-
 function test_elk_integration {
     # TODO Placeholder
     declare_new_test 1 "$@"
@@ -3442,9 +3369,6 @@ function test_suite {
     
       # shutdown domain1
       test_shutdown_domain domain1
-
-      # test that create domain fails when its pv is already populated by a shutdown domain
-      test_create_domain_on_exist_dir domain1
 
     fi 
 

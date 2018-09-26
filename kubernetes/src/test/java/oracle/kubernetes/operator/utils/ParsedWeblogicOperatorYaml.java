@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static oracle.kubernetes.operator.utils.CreateOperatorInputs.*;
+import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_NONE;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
