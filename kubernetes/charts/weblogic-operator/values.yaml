@@ -94,3 +94,13 @@ javaLoggingLevel: "INFO"
 
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
+
+# logStashImage specifies the docker image containing logstash
+# TBD - should the logstash image pull policy and image pull secrets be configurable?
+logStashImage: "logstash:5"
+
+# elasticSearchHost specifies the hostname of where elasticsearch is running
+elasticSearchHost: "elasticsearch.default.svc.cluster.local"
+
+# elasticSearchPort specifies the port number of where elasticsearch is running
+elasticSearchPort: 9200
