@@ -20,6 +20,7 @@ function setup_jenkins {
 
 	pull_tag_images
 
+    export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
     # create a docker image for the operator code being tested
     docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
 
@@ -200,6 +201,7 @@ else
 	docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
 	
 	
+  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
 	docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
 	
 fi
