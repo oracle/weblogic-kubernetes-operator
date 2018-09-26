@@ -1,0 +1,91 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# The version of this inputs file.  Do not modify.
+version: create-weblogic-sample-domain-inputs-v1
+
+# Port number for admin server
+adminPort: 7001
+
+# Name of the Admin Server
+adminServerName: admin-server
+
+# Name of the WebLogic domain to create
+domainName: base_domain
+
+# Unique ID identifying a domain.
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+#domainUID: domain1
+
+# Type of WebLogic Cluster
+# Legal values are "CONFIGURED" or "DYNAMIC" 
+clusterType: DYNAMIC
+
+# Determines which WebLogic Servers the Operator will start up
+# Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
+startupControl: AUTO
+
+# Cluster name
+clusterName: cluster-1
+
+# Number of managed servers to generate for the domain
+configuredManagedServerCount: 2
+
+# Number of managed servers to initially start for the domain
+initialManagedServerReplicas: 2
+
+# Base string used to generate managed server names
+managedServerNameBase: managed-server
+
+# Port number for each managed server
+managedServerPort: 8001
+
+# WebLogic Docker image
+weblogicImage: store/oracle/weblogic:12.2.1.3
+
+# Physical path of the domain's persistent storage.
+# The following line must be uncomment and customized:
+#weblogicDomainStoragePath: /scratch/k8s_dir/domain1
+
+# Boolean indicating if production mode is enabled for the domain
+productionModeEnabled: true
+
+# Name of the Kubernetes secret for the Admin Server's username and password
+# The name must be lowercase
+weblogicCredentialsSecretName: domain1-weblogic-credentials
+
+# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
+# The presence of the secret will be validated when this parameter is enabled.
+#weblogicImagePullSecretName:
+
+# Port for the T3Channel of the NetworkAccessPoint
+t3ChannelPort: 30012
+
+# Public address for T3Channel of the NetworkAccessPoint.  This value should be set to the
+# kubernetes server address, which you can get by running "kubectl cluster-info".  If this
+# value is not set to that address, WLST will not be able to connect from outside the
+# kubernetes cluster.
+t3PublicAddress: kubernetes
+
+# Boolean to indicate if the channel should be exposed as a service
+exposeAdminT3Channel: false
+
+# NodePort to expose for the admin server
+adminNodePort: 30701
+
+# Boolean to indicate if the adminNodePort will be exposed
+exposeAdminNodePort: false
+
+# Name of the domain namespace
+namespace: default
+
+#Java Option for Weblogic Server
+javaOptions: -Dweblogic.StdoutDebugEnabled=false
+
+# Name of the persistent volume claim 
+persistentVolumeClaimName: domain1-weblogic-domain-pvc
+
+# Pod domain root dir
+# This should match the directory in the WebLogic Server pod's file system that 
+# the domain's persistent volume is mounted on.
+podDomainRootDir: /shared
