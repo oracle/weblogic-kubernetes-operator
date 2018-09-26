@@ -1194,7 +1194,11 @@ function create_domain_pv_pvc_load_balancer {
 
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
+    if [ "$USE_HELM" = "true" ]; then
+      cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
+    else
+      cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputs
+    fi
 
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
@@ -1243,6 +1247,8 @@ function create_domain_pv_pvc_load_balancer {
         sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
         sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
       fi
+      sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
+
       # Customize more configuration 
       sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
       sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
@@ -1270,7 +1276,6 @@ function create_domain_pv_pvc_load_balancer {
       fi
       sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
       sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
-      sed -i -e "s/^persistentVolumeClaimName:.*/persistentVolumeClaimName: ${DOMAIN_UID}-weblogic-domain-pvc/" $inputs
 
       # we will test cluster scale up and down in domain1 and domain4 
       if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
