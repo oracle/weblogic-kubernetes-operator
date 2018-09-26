@@ -94,11 +94,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | exposeAdminT3Channel | Boolean to indicate if the channel should be exposed as a service | false |
 | adminNodePort | NodePort to expose for the admin server | 30701 |
 | exposeAdminNodePort | Boolean to indicate if the adminNodePort will be exposed | false |
-| loadBalancer | Load balancer to deploy.  Supported values are: APACHE, TRAEFIX, VOYAGER, NONE | TRAEFIK |
-| loadBalancerVolumePath | Docker volume path for APACHE. | |
-| loadBalancerExposeAdminPort| If the admin port is going to be exposed for APACHE | false |
-| loadBalancerWebPort| Load balancer web port | 30305 |
-| loadBalancerDashboardPort | Load balancer dashboard port | 30315 |
 | javaOptions | Java option for WebLogic Server | -Dweblogic.StdoutDebugEnabled=false |
  
 Specify parameters to override default values using the `--set key=value[,key=value]` argument to helm install. For example:
@@ -112,3 +107,4 @@ Alternatively, a YAML file that specifies the values for the parameters can be p
 ```bash
 helm install weblogic-domain --name my-domain-uid --namespace my-namespace --values values.yaml
 ```
+
