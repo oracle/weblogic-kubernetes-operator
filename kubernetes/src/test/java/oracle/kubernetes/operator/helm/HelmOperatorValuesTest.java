@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helm;
 
-import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_CUSTOM_CERT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -182,19 +181,18 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithExternalRestOption_hasSpecifiedValue() {
-    String option = EXTERNAL_REST_OPTION_CUSTOM_CERT;
+  public void whenCreatedFromMapWithExternalRestEnabled_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("externalRestOption", option));
+        new HelmOperatorValues(ImmutableMap.of("externalRestEnabled", true));
 
-    assertThat(values.getExternalRestOption(), equalTo(option));
+    assertThat(values.getExternalRestEnabled(), equalTo("true"));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutExternalRestOption_hasEmptyString() {
+  public void whenCreatedFromMapWithoutExternalRestEnabled_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
-    assertThat(values.getExternalRestOption(), equalTo(""));
+    assertThat(values.getExternalRestEnabled(), equalTo(""));
   }
 
   // --------------- remoteDebugNodePortEnabled

@@ -38,7 +38,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServic
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
-import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_NONE;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
@@ -103,11 +102,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                     .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
             .putDataItem("serviceaccount", getInputs().getServiceAccount())
-            .putDataItem("targetNamespaces", getInputs().getTargetNamespaces())
-            .putDataItem(
-                "internalOperatorCert",
-                Base64.encodeBase64String(
-                    getInputs().internalOperatorSelfSignedCertPem().getBytes()));
+            .putDataItem("targetNamespaces", getInputs().getTargetNamespaces());
     if (expectExternalCredentials()) {
       v1ConfigMap.putDataItem(
           "externalOperatorCert",
@@ -137,9 +132,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                     .namespace(getInputs().getNamespace())
                     .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-            .type("Opaque")
-            .putDataItem(
-                "internalOperatorKey", getInputs().internalOperatorSelfSignedKeyPem().getBytes());
+            .type("Opaque");
     if (expectExternalCredentials()) {
       v1Secret.putDataItem(
           "externalOperatorKey", getExpectedExternalWeblogicOperatorKey().getBytes());
@@ -148,12 +141,11 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   private boolean expectExternalCredentials() {
-    return isExternalRestPortEnabled() || factory.alwaysExpectExternalCredentials();
+    return isExternalRestPortEnabled();
   }
 
   private boolean isExternalRestPortEnabled() {
-    return getInputs().getExternalRestOption().length() > 0
-        && !getInputs().getExternalRestOption().equals(EXTERNAL_REST_OPTION_NONE);
+    return Boolean.parseBoolean(getInputs().getExternalRestEnabled());
   }
 
   protected abstract String getExpectedExternalWeblogicOperatorKey();
