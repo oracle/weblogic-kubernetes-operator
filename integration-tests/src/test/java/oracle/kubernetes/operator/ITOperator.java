@@ -30,7 +30,7 @@ public class ITOperator extends BaseTest {
   private static String op2PropsFile = "ITSecondOperator.properties";
 
   // property file used to customize domain properties for domain inputs yaml
-  private static String domain1PropsFile = "ITFirstDomain.properties";
+  private static String domain1PropsFile = "domain1.yaml";
   private static String domain2PropsFile = "ITSecondDomain.properties";
   private static String domain3PropsFile = "ITThirdDomain.properties";
   private static String domain4PropsFile = "ITFourthDomain.properties";
@@ -286,7 +286,7 @@ public class ITOperator extends BaseTest {
   }
 
   private Domain testDomainCreation(String domainPropsFile) throws Exception {
-    Domain domain = TestUtils.createDomain(domainPropsFile);
+    Domain domain = TestUtils.createDomainWithYaml(domainPropsFile);
     testAdminT3Channel(domain);
     testAdminServerExternalService(domain);
     return domain;
