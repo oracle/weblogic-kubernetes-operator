@@ -570,10 +570,9 @@ function setup_jenkins {
     helm init
     trace "Helm is configured."
 
-    if [ "$USE_HELM" = "true" ]; then
-      if [ ! -x "$(command -v helm)" ]; then
-        fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
-      fi
+    # we always use HELM for the operator now
+    if [ ! -x "$(command -v helm)" ]; then
+      fail "We always use HELM charts for the operator now. But helm binary not found in path.  the helm installation in this function must have failed "
     fi
 }
 
@@ -590,40 +589,35 @@ function setup_local {
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
 
-  if [ "$USE_HELM" = "true" ]; then
-    if [ ! -x "$(command -v helm)" ]; then
-      fail "USE_HELM set to true but helm binary not found in path, helm must be pre-installed prior to running integration tests locally"
-    fi
+  if [ ! -x "$(command -v helm)" ]; then
+    fail "We always use HELM charts for the operator now. But helm binary not found in path, helm must be pre-installed prior to running integration tests locally"
   fi
 }
 
 function setup_wercker {
   trace "Perform setup for running in wercker"
 
-  if [ "$USE_HELM" = "true" ]; then
+  trace "Install tiller"
 
-    trace "Install tiller"
+  kubectl create serviceaccount --namespace kube-system tiller
+  kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 
-    kubectl create serviceaccount --namespace kube-system tiller
-    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+  # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
+  helm init --service-account=tiller --wait
 
-    # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
-    helm init --service-account=tiller --wait
+  helm version
 
-    helm version
+  kubectl get po -n kube-system
 
-    kubectl get po -n kube-system
+  trace "Existing helm charts "
+  helm ls
+  trace "Deleting installed helm charts"
+  helm list --short --all | xargs -L1 helm delete --purge
+  trace "After helm delete, list of installed helm charts is: "
+  helm ls --all
 
-    trace "Existing helm charts "
-    helm ls
-    trace "Deleting installed helm charts"
-    helm list --short --all | xargs -L1 helm delete --purge
-    trace "After helm delete, list of installed helm charts is: "
-    helm ls --all
-
-    if [ ! -x "$(command -v helm)" ]; then
-      fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
-    fi
+  if [ ! -x "$(command -v helm)" ]; then
+    fail "We always use HELM charts for the operator now. But helm binary not found in path.  the helm installation in this function must have failed "
   fi
 
   trace "Completed setup_wercker"
@@ -769,40 +763,36 @@ function deploy_operator {
 
     trace 'customize the yaml'
     mkdir -p $TMP_DIR
-    if [ "$USE_HELM" = "true" ]; then
-      local inputs="$TMP_DIR/weblogic-operator-values.yaml"
+    local inputs="$TMP_DIR/weblogic-operator-values.yaml"
 
-      # generate certificates
-      $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
-      $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
+    # generate certificates
+    $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
+    $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
 
-      trace 'customize the inputs yaml file to add test namespace'
-      echo "domainNamespaces:" >> $inputs
-      for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
-      do
-        echo "  - $i" >> $inputs
-      done
-      echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
-      echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
-      echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
-      echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
-      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
-      echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
-      echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "serviceAccount: weblogic-operator" >> $inputs
-      trace "Contents after customization in file $inputs"
-      cat $inputs
+    trace 'customize the inputs yaml file to add test namespace'
+    echo "domainNamespaces:" >> $inputs
+    for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
+    do
+      echo "  - $i" >> $inputs
+    done
+    echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
+    echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+    echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
+    echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
+    trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
+    echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
+    echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
+    echo "serviceAccount: weblogic-operator" >> $inputs
+    trace "Contents after customization in file $inputs"
+    cat $inputs
 
-      local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
-      trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
-      cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
-      trace "helm install output:"
-      cat $outfile
-      operator_ready_wait $opkey
-    else
-      fail "create-weblogic-operator.sh is longer supported"
-    fi
+    local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
+    trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
+    cd $PROJECT_ROOT/kubernetes/charts
+    helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
+    trace "helm install output:"
+    cat $outfile
+    operator_ready_wait $opkey
 
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
@@ -1204,7 +1194,11 @@ function create_domain_pv_pvc_load_balancer {
 
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
+    if [ "$USE_HELM" = "true" ]; then
+      cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
+    else
+      cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputs
+    fi
 
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
@@ -1253,6 +1247,8 @@ function create_domain_pv_pvc_load_balancer {
         sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
         sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
       fi
+      sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
+
       # Customize more configuration 
       sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
       sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
@@ -1280,7 +1276,6 @@ function create_domain_pv_pvc_load_balancer {
       fi
       sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
       sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
-      sed -i -e "s/^persistentVolumeClaimName:.*/persistentVolumeClaimName: ${DOMAIN_UID}-weblogic-domain-pvc/" $inputs
 
       # we will test cluster scale up and down in domain1 and domain4 
       if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
@@ -1299,7 +1294,23 @@ function create_domain_pv_pvc_load_balancer {
       trace "helm install output:"
       cat $outfile
     else
-      fail "create-weblogic-domain.sh is longer supported"
+      # create sample domain, including a pv and pvc, domain home on pv, and load balancer
+ 
+      domainOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains/${DOMAIN_UID}
+      trace "Run the sample scripts to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
+
+      # Create sample  domain pv and pvc
+      trace "Create and start domain pv and pvc"
+      create_pv_pvc_non_helm $@
+
+      # Create  sample domain home on pv 
+      trace "Create the domain home, and start domain resources"
+      create_domain_home_on_pv_non_helm $@
+
+      # Setup sample load balancer
+      trace "Create and start domain load balancer"
+      create_load_balancer_non_helm $@
+
     fi
 
     if [ "$?" = "0" ]; then
@@ -1867,11 +1878,9 @@ function call_operator_rest {
     local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
     local ENCODED_TOKEN="`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`"
     local TOKEN="`echo ${ENCODED_TOKEN} | base64 --decode`"
-    if [ "$USE_HELM" = "true" ]; then
-      local OPERATOR_CERT_DATA="`grep externalOperatorCert: ${OPERATOR_TMP_DIR}/weblogic-operator-values.yaml | awk '{ print $2 }'`"
-    else
-      local OPERATOR_CERT_DATA="`grep externalOperatorCert ${OPERATOR_TMP_DIR}/weblogic-operator.yaml | awk '{ print $2 }'`"
-    fi
+
+    local OPERATOR_CERT_DATA="`grep externalOperatorCert: ${OPERATOR_TMP_DIR}/weblogic-operator-values.yaml | awk '{ print $2 }'`"
+
     local OPERATOR_CERT_FILE="${OPERATOR_TMP_DIR}/operator.cert.pem"
     echo ${OPERATOR_CERT_DATA} | base64 --decode > ${OPERATOR_CERT_FILE}
 
@@ -2082,13 +2091,8 @@ function test_mvn_integration_wercker {
     declare_new_test 1 "$@"
 
     local mstart=`date +%s`
-    if [ "$USE_HELM" = "true" ]; then
-      trace "Running mvn -P integration-tests.  Output in $RESULT_DIR/mvn.out"
-      mvn -P integration-tests  install 2>&1 | opt_tee $RESULT_DIR/mvn.out
-    else
-      trace "Running mvn -P integration-tests.  Output in $RESULT_DIR/mvn.out"
-      mvn -P integration-tests install 2>&1 | opt_tee $RESULT_DIR/mvn.out
-    fi
+    trace "Running mvn -P integration-tests.  Output in $RESULT_DIR/mvn.out"
+    mvn -P integration-tests  install 2>&1 | opt_tee $RESULT_DIR/mvn.out
     local mend=`date +%s`
     local msecs=$((mend-mstart))
     trace "mvn complete, runtime $msecs seconds"
@@ -2826,13 +2830,9 @@ function shutdown_operator {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    if [ "$USE_HELM" = "true" ]; then
-      helm delete $OP_KEY --purge
-      wait_for_operator_helm_chart_deleted $OP_KEY
-      wait_for_operator_deployment_deleted $OPERATOR_NS
-    else
-      kubectl delete -f $TMP_DIR/weblogic-operator.yaml
-    fi
+    helm delete $OP_KEY --purge
+    wait_for_operator_helm_chart_deleted $OP_KEY
+    wait_for_operator_deployment_deleted $OPERATOR_NS
 
     trace "Checking REST service is deleted"
     set +x
@@ -2852,15 +2852,11 @@ function startup_operator {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    if [ "$USE_HELM" = "true" ]; then
-      local inputs="$TMP_DIR/weblogic-operator-values.yaml"
-      local outfile="$TMP_DIR/startup-weblogic-operator.out"
-      helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
-      trace "helm install output:"
-      cat $outfile
-    else
-      kubectl create -f $TMP_DIR/weblogic-operator.yaml
-    fi
+    local inputs="$TMP_DIR/weblogic-operator-values.yaml"
+    local outfile="$TMP_DIR/startup-weblogic-operator.out"
+    helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
+    trace "helm install output:"
+    cat $outfile
 
     operator_ready_wait $OP_KEY
 
@@ -3423,6 +3419,7 @@ else
   fi
   trace See $TESTOUT for full trace.
 fi
+
 
 exit $exit_status
 
