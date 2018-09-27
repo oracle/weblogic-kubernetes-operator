@@ -222,7 +222,7 @@ public class Operator {
     // write certificates
     ExecCommand.exec(
         BaseTest.getProjectRoot()
-            + "/kubernetes/generate-external-weblogic-operator-certificate.sh "
+            + "/kubernetes/samples/scripts/generate-external-rest-identity.sh "
             + "DNS:"
             + TestUtils.getHostName()
             + " >> "
