@@ -449,7 +449,7 @@ The generated YAML files will look similar except with un-commented entries like
 ### Update the plugin WL module configuration
 
 
-Sometimes users need to add new WebLogic domains/clusters to a running system. Users can update or add new Apache plugin configuration first. Then run the following commands to restart Apache HTTP Server gracefully:
+Users can update or add the new Apache plugin configuration first, then run the following commands to restart the Apache HTTP Server gracefully:
 
 ```
 
