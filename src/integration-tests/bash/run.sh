@@ -680,7 +680,7 @@ function create_image_pull_secret_wercker {
 
 }
 
-# op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT CREATE_SHARED_OPERATOR_RESOURCES
+# op_define OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT
 #   sets up table of operator values.
 #
 # op_get    OP_KEY
@@ -697,14 +697,13 @@ function create_image_pull_secret_wercker {
 #
 
 function op_define {
-    if [ "$#" != 5 ] ; then
-      fail "requires 5 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT CREATE_SHARED_OPERATOR_RESOURCES"
+    if [ "$#" != 4 ] ; then
+      fail "requires 4 parameters: OP_KEY NAMESPACE TARGET_NAMESPACES EXTERNAL_REST_HTTPSPORT"
     fi
     local opkey="`echo \"${1?}\" | sed 's/-/_/g'`"
     eval export OP_${opkey}_NAMESPACE="$2"
     eval export OP_${opkey}_TARGET_NAMESPACES="$3"
     eval export OP_${opkey}_EXTERNAL_REST_HTTPSPORT="$4"
-    eval export OP_${opkey}_CREATE_SHARED_OPERATOR_RESOURCES="$5"
 
     # generated TMP_DIR for operator = $USER_PROJECTS_DIR/weblogic-operators/$NAMESPACE :
     eval export OP_${opkey}_TMP_DIR="$USER_PROJECTS_DIR/weblogic-operators/$2"
@@ -772,12 +771,9 @@ function deploy_operator {
     mkdir -p $TMP_DIR
     if [ "$USE_HELM" = "true" ]; then
       local inputs="$TMP_DIR/weblogic-operator-values.yaml"
-      local CREATE_SHARED_OPERATOR_RESOURCES="`op_get $opkey CREATE_SHARED_OPERATOR_RESOURCES`"
 
       # generate certificates
       $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
-
-      echo "createSharedOperatorResources: $CREATE_SHARED_OPERATOR_RESOURCES" >> $inputs
 
       trace 'customize the inputs yaml file to add test namespace'
       echo "domainNamespaces:" >> $inputs
@@ -788,7 +784,6 @@ function deploy_operator {
       echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
       echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
       echo "externalRestEnabled: true" >> $inputs
-      echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
       trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
       echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
       echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
@@ -804,28 +799,7 @@ function deploy_operator {
       cat $outfile
       operator_ready_wait $opkey
     else
-      local inputs="$TMP_DIR/create-weblogic-operator-inputs.yaml"
-      cp $PROJECT_ROOT/kubernetes/create-weblogic-operator-inputs.yaml $inputs
-
-      trace 'customize the inputs yaml file to use our pre-built docker image'
-      sed -i -e "s|\(weblogicOperatorImagePullPolicy:\).*|\1 ${IMAGE_PULL_POLICY_OPERATOR}|g" $inputs
-      sed -i -e "s|\(weblogicOperatorImage:\).*|\1 ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}|g" $inputs
-      if [ -n "${IMAGE_PULL_SECRET_OPERATOR}" ]; then
-        sed -i -e "s|#weblogicOperatorImagePullSecretName:.*|weblogicOperatorImagePullSecretName: ${IMAGE_PULL_SECRET_OPERATOR}|g" $inputs
-      fi
-      trace 'customize the inputs yaml file to generate a self-signed cert for the external Operator REST https port'
-      sed -i -e "s|\(externalRestOption:\).*|\1 SELF_SIGNED_CERT|g" $inputs
-      sed -i -e "s|\(externalSans:\).*|\1 DNS:${NODEPORT_HOST}|g" $inputs
-      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
-      sed -i -e "s|\(javaLoggingLevel:\).*|\1 $LOGLEVEL_OPERATOR|g" $inputs
-      sed -i -e "s|\(externalRestHttpsPort:\).*|\1 ${EXTERNAL_REST_HTTPSPORT}|g" $inputs
-      trace 'customize the inputs yaml file to add test namespace' 
-      sed -i -e "s/^namespace:.*/namespace: ${NAMESPACE}/" $inputs
-      sed -i -e "s/^targetNamespaces:.*/targetNamespaces: ${TARGET_NAMESPACES}/" $inputs
-      sed -i -e "s/^serviceAccount:.*/serviceAccount: weblogic-operator/" $inputs
-      local outfile="${TMP_DIR}/create-weblogic-operator.sh.out"
-      trace "Run the script to deploy the weblogic operator, see \"$outfile\" for tracking."
-      sh $PROJECT_ROOT/kubernetes/create-weblogic-operator.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfile}
+      fail "create-weblogic-operator.sh is longer supported"
     fi
 
     if [ "$?" = "0" ]; then
@@ -943,7 +917,250 @@ function dom_echo_all {
     env | grep "^DOM_${domkey}_"
 }
 
-function run_create_domain_job {
+#
+# Usage:
+# createVoyagerIngress voyagerIngressYaml namespace domainUID
+#
+function createVoyagerIngress {
+  if [ "$#" != 3 ] ; then
+    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
+  fi
+
+  # deploy Voyager Ingress resource
+  kubectl apply -f $1
+
+  local namespace=$2
+  local domainUID=$3
+
+
+  echo "Checking Voyager Ingress resource..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    local vdep=$(kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } ')
+    if [ "$vdep" = "1" ]; then
+      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
+    fi
+    sleep 2
+  done
+
+  echo "Wait until HAProxy pod is running..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    local st=$(kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } ')
+    if [ "$st" = "Running" ]; then
+      echo "The HAProxy pod for Voyager Ingress ${domainUID}-voyager is running."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The HAProxy pod for Voyager Ingress ${domainUID}-voyager was not created or running."
+    fi
+    sleep 5
+  done
+
+  echo "Checking Voyager service..."
+  local maxwaitsecs=10
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
+    if [ "$vscv" = "1" ]; then
+      echo "The service ${domainUID}-voyager-stats is created successfully."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The service ${domainUID}-voyager-stats was not created."
+    fi
+    sleep 2
+  done
+  echo
+}
+
+function create_pv_pvc_non_helm {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainkey"
+    fi
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
+    local WL_CLUSTER_TYPE="`dom_get $1 WL_CLUSTER_TYPE`"
+    local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
+    local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
+    local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
+    local ADMIN_NODE_PORT="`dom_get $1 ADMIN_NODE_PORT`"
+    local MS_PORT="`dom_get $1 MS_PORT`"
+
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local tmp_dir="$TMP_DIR"
+
+    local inputsPvPvc="$tmp_dir/create-weblogic-sample-domain-pv-pvc-inputs.yaml"
+
+    local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
+
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc-inputs.yaml $inputsPvPvc
+    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
+    sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputsPvPvc
+    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsPvPvc
+    sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputsPvPvc
+
+    if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
+      sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputsPvPvc
+      sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputsPvPvc
+    fi
+
+    trace "Run the script to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
+
+    local outfilePvPvc="${tmp_dir}/create-weblogic-sample-domain-pv-pvc.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc.sh -i $inputsPvPvc -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfilePvPvc}
+    pvOutput="${domainOutPutDir}/weblogic-sample-domain-pv.yaml"
+    echo Creating the pvresource using ${pvOutput}
+    kubectl apply -f ${pvOutput}
+    pvcOutput="${domainOutPutDir}/weblogic-sample-domain-pvc.yaml"
+    echo Creating the pvcresource using ${pvcOutput}
+    kubectl apply -f ${pvcOutput}
+}
+
+function create_domain_home_on_pv_non_helm {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainkey"
+    fi
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local STARTUP_CONTROL="`dom_get $1 STARTUP_CONTROL`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
+    local WL_CLUSTER_TYPE="`dom_get $1 WL_CLUSTER_TYPE`"
+    local MS_BASE_NAME="`dom_get $1 MS_BASE_NAME`"
+    local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
+    local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
+    local ADMIN_NODE_PORT="`dom_get $1 ADMIN_NODE_PORT`"
+    local MS_PORT="`dom_get $1 MS_PORT`"
+
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local tmp_dir="$TMP_DIR"
+
+    local WEBLOGIC_CREDENTIALS_SECRET_NAME="$DOMAIN_UID-weblogic-credentials"
+
+    local inputsDomain="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+
+    trace "Create the domain home, and start domain resources"
+
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputsDomain
+
+    # customize inputs properties
+    sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputsDomain
+    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsDomain
+    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsDomain
+    sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputsDomain
+    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsDomain
+    sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputsDomain
+    sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputsDomain
+    sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" $inputsDomain
+    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputsDomain
+    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputsDomain
+    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputsDomain
+    sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputsDomain
+    sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputsDomain
+    if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
+      sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputsDomain
+    fi
+    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputsDomain
+    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputsDomain
+    sed -i -e "s/^persistentVolumeClaimName:.*/persistentVolumeClaimName: ${DOMAIN_UID}-weblogic-domain-pvc/" $inputsDomain
+    # we will test cluster scale up and down in domain1 and domain4 
+    if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
+      sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputsDomain
+    fi
+
+    local outfileDomain="${tmp_dir}/create-weblogic-sample-domain.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain.sh -i $inputsDomain -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileDomain}
+    dcrOutput="${domainOutPutDir}/domain-custom-resource.yaml"
+    echo Creating the domain custom resource using ${dcrOutput}
+    kubectl apply -f ${dcrOutput}
+}
+
+function create_load_balancer_non_helm {
+    if [ "$#" != 1 ] ; then
+      fail "requires 1 parameter: domainkey"
+    fi
+
+    local NAMESPACE="`dom_get $1 NAMESPACE`"
+    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
+    local WL_CLUSTER_NAME="`dom_get $1 WL_CLUSTER_NAME`"
+    local ADMIN_PORT="`dom_get $1 ADMIN_PORT`"
+    local ADMIN_WLST_PORT="`dom_get $1 ADMIN_WLST_PORT`"
+    local ADMIN_NODE_PORT="`dom_get $1 ADMIN_NODE_PORT`"
+    local MS_PORT="`dom_get $1 MS_PORT`"
+    local LOAD_BALANCER_WEB_PORT="`dom_get $1 LOAD_BALANCER_WEB_PORT`"
+    local LOAD_BALANCER_DASHBOARD_PORT="`dom_get $1 LOAD_BALANCER_DASHBOARD_PORT`"
+    local LOAD_BALANCER_EXPOSE_ADMIN_PORT="`dom_get $1 LOAD_BALANCER_EXPOSE_ADMIN_PORT`"
+    # local LOAD_BALANCER_VOLUME_PATH="/scratch/DockerVolume/ApacheVolume"
+
+    local TMP_DIR="`dom_get $1 TMP_DIR`"
+    local tmp_dir="$TMP_DIR"
+
+    local inputsLoadBalancer="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer-inputs.yaml $inputsLoadBalancer
+    # accept the default domain name (i.e. don't customize it)
+    local domain_name=`egrep 'domainName' $inputsLoadBalancer | awk '{print $2}'`
+
+    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsLoadBalancer
+    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsLoadBalancer
+    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsLoadBalancer
+    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputsLoadBalancer
+    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputsLoadBalancer
+    sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputsLoadBalancer
+    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputsLoadBalancer
+    sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputsLoadBalancer
+    if [ "$LB_TYPE" == "APACHE" ]; then
+      local load_balancer_app_prepath="/weblogic"
+      sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputsLoadBalancer
+      sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputsLoadBalancer
+      sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputsLoadBalancer
+    fi 
+
+    trace "Create and start domain load balancer"
+    # Setup load balancer
+    local outfileLoadBalancer="${tmp_dir}/create-weblogic-sample-domain-load-balancer.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer.sh -i $inputsLoadBalancer -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileLoadBalancer}
+    if [ "${LB_TYPE}" == "TRAEFIK" ]; then
+      traefikSecurityOutput="${domainOutPutDir}/weblogic-sample-domain-traefik-security.yaml"
+      traefikOutput="${domainOutPutDir}/weblogic-sample-domain-traefik.yaml"
+      echo Creating the $LB_TYPE load balancer security resource using ${traefikSecurityOutput}
+      kubectl apply -f ${traefikSecurityOutput}
+      echo Creating the $LB_TYPE load balancer resource using ${traefikOutput}
+      kubectl apply -f ${traefikOutput}
+
+    elif [ "${LB_TYPE}" == "APACHE" ]; then
+      apacheOutput="${domainOutPutDir}/weblogic-sample-domain-apache.yaml"
+      apacheSecurityOutput="${domainOutPutDir}/weblogic-sample-domain-apache-security.yaml"
+      echo Creating the $LB_TYPE load balancer security resource using ${apacheSecurityOutput}
+      kubectl apply -f ${apacheSecurityOutput}
+      echo Creating the $LB_TYPE load balancer resource using ${apacheOutput}
+      kubectl apply -f ${apacheOutput}
+
+    elif [ "${LB_TYPE}" == "VOYAGER" ]; then
+      # start Voyager operator and ingress controller
+      echo Creating Voyager operator and ingress controller
+      sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/start-voyager-controller.sh -p ${domainOutPutDir} 2>&1 | opt_tee ${outfileLoadBalancer}
+      # start voyager ingress
+      voyagerIngressOutput="${domainOutPutDir}/weblogic-sample-domain-voyager-ingress.yaml"
+      echo Creating the $LB_TYPE load balancer resource using ${voyagerIngressOutput}
+      createVoyagerIngress $voyagerIngressOutput $NAMESPACE ${DOMAIN_UID}
+    fi
+}
+
+function create_domain_pv_pvc_load_balancer {
     if [ "$#" != 1 ] ; then
       fail "requires 1 parameter: domainkey"
     fi
@@ -985,11 +1202,7 @@ function run_create_domain_job {
 
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    if [ "$USE_HELM" = "true" ]; then
-      cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
-    else
-      cp $PROJECT_ROOT/kubernetes/create-weblogic-domain-inputs.yaml $inputs
-    fi
+    cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
 
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
@@ -1016,53 +1229,6 @@ function run_create_domain_job {
     # copy testwebapp.war for testing
     cp $PROJECT_ROOT/src/integration-tests/apps/testwebapp.war ${tmp_dir}/testwebapp.war
 
-    # Customize the create domain job inputs
-    sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
-
-    # Customize more configuration 
-    if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
-      sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
-      sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
-    fi
-    sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
-    if [ "$USE_HELM" != "true" ]; then
-      sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputs
-    fi
-    sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
-    sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
-    sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
-    sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
-    sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
-    sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" $inputs
-    sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputs
-    sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputs
-    sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputs
-    sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputs
-    sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputs
-    if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
-      sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
-    fi
-    sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
-    sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
-    sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
-    if [ "$LB_TYPE" == "APACHE" ] ; then
-      local load_balancer_app_prepath="/weblogic"
-      sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
-      sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
-      sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputs
-    fi
-    sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
-    sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
-
-    # we will test cluster scale up and down in domain1 and domain4 
-    if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
-      sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputs
-    fi
-
-    # we will test pv reclaim policy in domain6. We choose to do this way to void adding too many parameters in dom_define
-    if [ "$DOMAIN_UID" == "domain6" ] ; then
-      sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputs
-    fi
 
     local outfile="${tmp_dir}/mkdir_physical_nfs.out"
     trace "Use a job to create the k8s host directory \"$PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR\" that we will use for the domain's persistent volume, see \"$outfile\" for job tracing."
@@ -1078,18 +1244,60 @@ function run_create_domain_job {
        fail Job failed.  Could not create k8s cluster NFS directory.   
     fi
 
-    local outfile="${tmp_dir}/create-weblogic-domain.sh.out"
-
     if [ "$USE_HELM" = "true" ]; then
+      # Customize the create domain inputs
+      sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
+      if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
+        sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
+        sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
+      fi
+      # Customize more configuration 
+      sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
+      sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
+      sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
+
+      sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
+      sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
+      sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" $inputs
+      sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputs
+      sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputs
+      sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputs
+      sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputs
+      sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputs
+      if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
+        sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
+      fi
+      sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
+      sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
+      sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
+      if [ "$LB_TYPE" == "APACHE" ] ; then
+        local load_balancer_app_prepath="/weblogic"
+        sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
+        sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
+        sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputs
+      fi
+      sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
+      sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
+      sed -i -e "s/^persistentVolumeClaimName:.*/persistentVolumeClaimName: ${DOMAIN_UID}-weblogic-domain-pvc/" $inputs
+
+      # we will test cluster scale up and down in domain1 and domain4 
+      if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
+        sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputs
+      fi
+
+      # we will test pv reclaim policy in domain6. We choose to do this way to void adding too many parameters in dom_define
+      if [ "$DOMAIN_UID" == "domain6" ] ; then
+        sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputs
+      fi
+
+      local outfile="${tmp_dir}/create-weblogic-sample-domain.sh.out"
       trace "Run helm install to create the domain, see \"$outfile\" for tracing."
       cd $PROJECT_ROOT/kubernetes/charts
       helm install weblogic-domain --name $DOMAIN_UID -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
-      trace "Run the script to create the domain, see \"$outfile\" for tracing."
-
-      sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfile}
+      fail "create-weblogic-domain.sh is longer supported"
     fi
 
     if [ "$?" = "0" ]; then
@@ -1100,7 +1308,7 @@ function run_create_domain_job {
        fail Script failed.
     fi
 
-    trace 'run_create_domain_job done'
+    trace 'create_domain_pv_pvc_load_balancer done'
 }
 
 # note that this function has slightly different parameters than deploy_webapp_via_WLST
@@ -1594,7 +1802,7 @@ function test_domain_creation {
 
     local DOM_KEY="$1"
 
-    run_create_domain_job $DOM_KEY
+    create_domain_pv_pvc_load_balancer $DOM_KEY
     verify_domain_created $DOM_KEY 
     verify_managed_servers_ready $DOM_KEY
 
@@ -2751,7 +2959,7 @@ function test_create_domain_startup_control_admin {
     local DOM_KEY=${1}
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
 
-    run_create_domain_job $DOMAIN_UID
+    create_domain_pv_pvc_load_balancer $DOMAIN_UID
     verify_domain_created $DOMAIN_UID
 
     declare_test_pass
@@ -2769,7 +2977,7 @@ function test_create_domain_pv_reclaim_policy_recycle {
     local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
     local NAMESPACE="`dom_get $1 NAMESPACE`"
 
-    run_create_domain_job $DOMAIN_UID
+    create_domain_pv_pvc_load_balancer $DOMAIN_UID
     verify_domain_created $DOMAIN_UID
     shutdown_domain $DOM_KEY
 
@@ -2824,43 +3032,6 @@ function test_cluster_scale {
     # verify that scaling $DOM_KEY had no effect on another domain
     if [ ! "$VERIFY_DOM_KEY" = "" ]; then
       verify_domain $VERIFY_DOM_KEY 
-    fi
-
-    declare_test_pass
-}
-
-function test_create_domain_on_exist_dir {
-    declare_new_test 1 "$@"
-
-    if [ "$#" != 1 ] ; then
-      fail "requires 1 parameter: domainKey"
-    fi 
-
-    local DOM_KEY="$1"
-
-    local NAMESPACE="`dom_get $1 NAMESPACE`"
-    local DOMAIN_UID="`dom_get $1 DOMAIN_UID`"
-    local TMP_DIR="`dom_get $1 TMP_DIR`"
-
-    trace "check domain directory exists"
-    local tmp_dir="$TMP_DIR"
-    local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    local domain_storage_path=`egrep 'weblogicDomainStoragePath' $inputs | awk '{print $2}'`
-    local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
-
-    local domain_dir=${domain_storage_path}"/domain/"${domain_name}
-    if [ ! -d ${domain_dir} ] ; then
-      fail "ERROR: the domain directory ${domain_dir} does not exist, exiting!"
-    fi
-
-    trace "run the script to create the domain"
-    sh $PROJECT_ROOT/kubernetes/create-weblogic-domain.sh -i $inputs -o $USER_PROJECTS_DIR
-    local exit_code=$?
-    if [ ${exit_code} -eq 1 ] ; then
-      trace "[SUCCESS] create domain job failed, this is the expected behavior"
-    else
-      trace "[FAIL] unexpected result, create domain job exit code: "${exit_code}
-      fail "failed!"
     fi
 
     declare_test_pass
@@ -3095,9 +3266,9 @@ function test_suite {
     
     declare_new_test 1 define_operators_and_domains
 
-    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT  CREATE_SHARED_OPERATOR_RESOURCES
-    op_define  oper1   weblogic-operator-1  "default,test1"    31001                    true
-    op_define  oper2   weblogic-operator-2  test2              32001                    false
+    #          OP_KEY  NAMESPACE            TARGET_NAMESPACES  EXTERNAL_REST_HTTPSPORT
+    op_define  oper1   weblogic-operator-1  "default,test1"    31001
+    op_define  oper2   weblogic-operator-2  test2              32001
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
     dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
@@ -3196,9 +3367,6 @@ function test_suite {
     
       # shutdown domain1
       test_shutdown_domain domain1
-
-      # test that create domain fails when its pv is already populated by a shutdown domain
-      test_create_domain_on_exist_dir domain1
 
     fi 
 
