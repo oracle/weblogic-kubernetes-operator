@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
@@ -27,6 +28,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
@@ -92,6 +95,19 @@ public class TestUtils {
     }
   }
 
+  public static void createInputFile(Map<String, Object> map, String generatedInputYamlFile)
+      throws Exception {
+    logger.info("Creating input yaml file at " + generatedInputYamlFile);
+
+    DumperOptions options = new DumperOptions();
+    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+    options.setPrettyFlow(true);
+
+    Yaml yaml = new Yaml(options);
+    java.io.FileWriter writer = new java.io.FileWriter(generatedInputYamlFile);
+    yaml.dump(map, writer);
+    writer.close();
+  }
   /**
    * @param propsFile - input props file
    * @param generatedInputYamlFile - output file with replaced values
@@ -539,6 +555,13 @@ public class TestUtils {
     operator.verifyExternalRESTService();
 
     return operator;
+  }
+
+  public static Domain createDomainWithYaml(String inputYaml) throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    Domain domain = new Domain(inputYaml);
+    domain.verifyDomainCreated();
+    return domain;
   }
 
   public static Domain createDomain(String domainPropsFile) throws Exception {
