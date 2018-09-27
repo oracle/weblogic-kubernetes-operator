@@ -766,7 +766,7 @@ function deploy_operator {
     local inputs="$TMP_DIR/weblogic-operator-values.yaml"
 
     # generate certificates
-    $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} > $inputs
+    $PROJECT_ROOT/kubernetes/samples/scripts/generate-external-rest-identity.sh DNS:${NODEPORT_HOST} > $inputs
 
     trace 'customize the inputs yaml file to add test namespace'
     echo "domainNamespaces:" >> $inputs

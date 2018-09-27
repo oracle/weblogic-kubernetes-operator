@@ -4,8 +4,8 @@
 
 set -x
 
-if [ "$#" -gt 1 ] ; then
-  1>&2 echo "Syntax: ${BASH_SOURCE[0]} <operator namespace, optional, defaults to weblogic-operator>"
+if [ "$#" != 0 ] ; then
+  1>&2 echo "Syntax: ${BASH_SOURCE[0]}"
   exit 1
 fi
 
@@ -20,7 +20,7 @@ INTERNAL_CERT_BASE64_PEM="${INTERNAL_IDENTITY_DIR}/${CERT_PROPERTY}"
 INTERNAL_KEY_PEM="${INTERNAL_IDENTITY_DIR}/${KEY_PROPERTY}"
 
 function cleanup {
-  if [[ $succeeded != "true" ]]; then
+  if [[ $SUCCEEDED != "true" ]]; then
     exit 1
   fi
 }
@@ -147,5 +147,5 @@ else
   createInternalIdentity
 fi
 
-succeeded=true
+SUCCEEDED=true
 
