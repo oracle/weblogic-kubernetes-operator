@@ -555,7 +555,7 @@ function setup_jenkins {
 
     # create a docker image for the operator code being tested
     export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-    trace "Running docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
+    trace "Running docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
     docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true .
 
     docker images
@@ -2078,7 +2078,7 @@ function test_mvn_integration_local {
     confirm_mvn_build $RESULT_DIR/mvn.out
 
     export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-    trace "Running docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
+    trace "Running docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
     docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true . 2>&1 | opt_tee $RESULT_DIR/docker_build_tag.out
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image, see $RESULT_DIR/docker_build_tag.out".
 
