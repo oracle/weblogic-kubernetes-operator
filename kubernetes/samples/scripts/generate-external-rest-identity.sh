@@ -136,7 +136,7 @@ KEY_DATA=`base64 -i ${OP_KEY_PEM} | tr -d '\n'`
 
 # print out the cert and pem in the form that can be added to
 # the operator helm chart's values.yaml
-echo "externalOperatorCert: \"${CERT_DATA}\""
-echo "externalOperatorKey: \"${KEY_DATA}\""
+echo "externalOperatorCert: ${CERT_DATA}"
+echo "externalOperatorKey: ${KEY_DATA}"
 
 SUCCEEDED=true
