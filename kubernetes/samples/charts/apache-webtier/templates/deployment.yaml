@@ -1,0 +1,59 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: {{ template "apache.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "apache.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+        app: {{ template "apache.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+  template:
+    metadata:
+      labels:
+        app: {{ template "apache.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+    spec:
+      serviceAccountName: {{ template "apache.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 60
+{{- if .Values.persistence.enabled }}
+      volumes:
+      - name: {{ template "apache.fullname" . }}
+        hostPath:
+          path: "{{ .Values.persistence.hostPath }}"
+{{- end }}
+      containers:
+      - name: {{ template "apache.fullname" . }}
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+{{- if .Values.persistence.enabled }}
+        volumeMounts:
+        - name: {{ template "apache.fullname" . }}
+          mountPath: "{{ .Values.persistence.mountPath }}"
+{{- end }}
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2

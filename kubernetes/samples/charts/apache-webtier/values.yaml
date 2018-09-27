@@ -1,0 +1,43 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# 
+
+# Apache webtier image
+image:
+  registry: store/oracle
+  repository: apache
+  tag: 12.2.1.3
+  ## Specify a imagePullPolicy
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  # - myRegistrKeySecretName 
+
+persistence:
+  # Specifies whether enable persistent storage for apache webiter customized configuration files.
+  enabled: true
+  # Physical path of the persistent storage.
+  hostPath: /scratch/apache-webtier-config
+  # Mount point
+  mountPath: /config
+
+## Install Default RBAC roles and bindings.
+rbac:
+  # Specifies whether RBAC resources should be created.
+  create: true
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created.
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: apache-webtier
+
+service:
+  nodePorts:
+    http: 30305
