@@ -446,6 +446,20 @@ The generated YAML files will look similar except with un-commented entries like
 
 ```
 
+### Update the plugin WL module configuration
+
+
+Sometimes users need to add new WebLogic domains/clusters to a running system. Users can update or add new Apache plugin configuration first. Then run the following commands to restart Apache HTTP Server gracefully:
+
+```
+
+     $ kubectl exec -it <apache-http-server-pod-name> bash
+
+     $ httpd -k graceful
+
+```
+
+A graceful restart will take effect on the updated configuration without interrupting the current requests.
 
 
 ## Use the Apache load balancer with a manually created WebLogic Domain
