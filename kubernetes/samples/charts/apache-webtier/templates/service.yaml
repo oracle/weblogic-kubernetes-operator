@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "apache.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "apache.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  type: NodePort
+  selector:
+    app: {{ template "apache.fullname" . }}
+    release: "{{ .Release.Name }}"
+  ports:
+    - port: 80
+      nodePort: {{ .Values.service.nodePorts.http }}
+      name: rest-https
+
