@@ -1054,8 +1054,6 @@ function create_domain_home_on_pv_non_helm {
 
     local inputsDomain="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
 
-    trace "Create the domain home, and start domain resources"
-
     cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputsDomain
 
     # customize inputs properties
