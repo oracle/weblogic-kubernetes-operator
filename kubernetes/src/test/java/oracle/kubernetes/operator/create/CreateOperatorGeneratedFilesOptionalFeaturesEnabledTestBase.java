@@ -29,7 +29,7 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         factory,
         factory
             .newOperatorValues()
-            .setupExternalRestSelfSignedCert()
+            .setupExternalRestEnabled()
             .enableDebugging()
             .elkIntegrationEnabled("true")
             .weblogicOperatorImagePullSecretName("test-operator-image-pull-secret-name"));
@@ -37,12 +37,12 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
 
   @Override
   protected String getExpectedExternalWeblogicOperatorCert() {
-    return getInputs().externalOperatorSelfSignedCertPem();
+    return getInputs().externalOperatorCustomCertPem();
   }
 
   @Override
   protected String getExpectedExternalWeblogicOperatorKey() {
-    return getInputs().externalOperatorSelfSignedKeyPem();
+    return getInputs().externalOperatorCustomKeyPem();
   }
 
   @Override

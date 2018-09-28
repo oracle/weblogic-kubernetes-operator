@@ -555,8 +555,8 @@ function setup_jenkins {
 
     # create a docker image for the operator code being tested
     export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-    trace "Running docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
-    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true .
+    trace "Running docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
+    docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true .
 
     docker images
 
@@ -766,8 +766,7 @@ function deploy_operator {
     local inputs="$TMP_DIR/weblogic-operator-values.yaml"
 
     # generate certificates
-    $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
-    $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
+    $PROJECT_ROOT/kubernetes/samples/scripts/generate-external-rest-identity.sh DNS:${NODEPORT_HOST} > $inputs
 
     trace 'customize the inputs yaml file to add test namespace'
     echo "domainNamespaces:" >> $inputs
@@ -777,8 +776,7 @@ function deploy_operator {
     done
     echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
     echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
-    echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
-    echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
+    echo "externalRestEnabled: true" >> $inputs
     trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
     echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
     echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
@@ -2080,8 +2078,8 @@ function test_mvn_integration_local {
     confirm_mvn_build $RESULT_DIR/mvn.out
 
     export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-    trace "Running docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
-    docker build -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true . 2>&1 | opt_tee $RESULT_DIR/docker_build_tag.out
+    trace "Running docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true ."
+    docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" --build-arg VERSION=$JAR_VERSION --no-cache=true . 2>&1 | opt_tee $RESULT_DIR/docker_build_tag.out
     [ "$?" = "0" ] || fail "Error:  Failed to docker tag operator image, see $RESULT_DIR/docker_build_tag.out".
 
     declare_test_pass

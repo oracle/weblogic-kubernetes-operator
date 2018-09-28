@@ -26,7 +26,7 @@ public class Operator {
   // if the property is not defined here, it takes the property and its value from
   // create-weblogic-operator-inputs.yaml
   private String operatorNS = "weblogic-operator";
-  private String externalRestOption = "NONE";
+  private String externalRestEnabled = "false";
   private String externalRestHttpsPort = "31001";
   private String userProjectsDir = "";
 
@@ -116,7 +116,7 @@ public class Operator {
   }
 
   public void verifyExternalRESTService() throws Exception {
-    if (!externalRestOption.equals("NONE")) {
+    if (Boolean.parseBoolean(externalRestEnabled)) {
       logger.info("Checking REST service is running");
       String restCmd =
           "kubectl get services -n "
@@ -218,15 +218,13 @@ public class Operator {
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-operators/" + operatorNS));
     generatedInputYamlFile = parentDir + "/weblogic-operator-values.yaml";
     TestUtils.createInputFile(operatorProps, generatedInputYamlFile);
+
     // write certificates
     ExecCommand.exec(
         BaseTest.getProjectRoot()
-            + "/kubernetes/generate-internal-weblogic-operator-certificate.sh >> "
-            + generatedInputYamlFile);
-    ExecCommand.exec(
-        BaseTest.getProjectRoot()
-            + "/kubernetes/generate-external-weblogic-operator-certificate.sh "
-            + operatorProps.getProperty("externalOperatorCertSans")
+            + "/kubernetes/samples/scripts/generate-external-rest-identity.sh "
+            + "DNS:"
+            + TestUtils.getHostName()
             + " >> "
             + generatedInputYamlFile);
   }
@@ -257,14 +255,7 @@ public class Operator {
     }
     // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
     // https port
-    if (operatorProps.getProperty("externalRestOption") != null) {
-      externalRestOption = operatorProps.getProperty("externalRestOption");
-    }
-    externalRestOption = operatorProps.getProperty("externalRestOption");
-    if (externalRestOption != null && externalRestOption.equals("SELF_SIGNED_CERT")) {
-      if (operatorProps.getProperty("externalOperatorCertSans") == null) {
-        operatorProps.put("externalOperatorCertSans", "DNS:" + TestUtils.getHostName());
-      }
+    if (Boolean.parseBoolean(operatorProps.getProperty("externalRestEnabled"))) {
       if (operatorProps.getProperty("externalRestHttpsPort") != null) {
         externalRestHttpsPort = operatorProps.getProperty("externalRestHttpsPort");
         try {

@@ -5,8 +5,7 @@
 ---
 apiVersion: "v1"
 data:
-  internalOperatorCert: {{ .internalOperatorCert | quote }}
-  {{- if not (eq .externalRestOption "NONE") }}
+  {{- if .externalRestEnabled }}
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
