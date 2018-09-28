@@ -413,8 +413,16 @@ function create_domain_configmap {
   done 
 
   # create the configmap and label it properly
-  kubectl create configmap ${domainUID}-create-weblogic-sample-domain-job-cm -n $namespace --from-file $externalFilesTmpDir
-  kubectl label configmap ${domainUID}-create-weblogic-sample-domain-job-cm -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+  local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
+  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
+
+  echo Checking the configmap $cmName was created
+  local num=`kubectl get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`
+  if [ "$num" != "1" ]; then
+    fail "The configmap ${cmName} was not created"
+  fi
+
+  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 }
 
 #
