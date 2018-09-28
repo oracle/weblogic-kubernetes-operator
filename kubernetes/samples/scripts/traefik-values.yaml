@@ -1,0 +1,15 @@
+serviceType: NodePort
+service:
+  nodePorts:
+    http: "30305"
+    https: "30443"
+dashboard:
+  enabled: true
+  domain: traefik.example.com
+kubernetes:
+  namespaces:
+    - default
+    - kube-system
+    - traefik
+    - test1
+    - test2

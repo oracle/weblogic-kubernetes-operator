@@ -62,7 +62,8 @@ function createTraefik() {
 
   if [ "$(helm list | grep traefik-operator |  wc -l)" = 0 ]; then
     echo "Install Traefik Operator."
-    helm install --name traefik-operator --namespace traefik --values traefik-values.yaml stable/traefik
+    MYDIR="$(dirname "$(readlink -f "$0")")"
+    helm install --name traefik-operator --namespace traefik --values ${MYDIR}/traefik-values.yaml stable/traefik
   else
     echo "Traefik Operator is already installed."
   fi
