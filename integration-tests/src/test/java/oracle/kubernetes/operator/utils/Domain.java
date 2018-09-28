@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Logger;
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
@@ -23,8 +22,7 @@ public class Domain {
 
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  private Properties domainProps = new Properties();
-  Map<String, Object> domainMap;
+  private Map<String, Object> domainMap;
 
   // attributes from domain properties
   private String domainUid = "";
@@ -48,22 +46,6 @@ public class Domain {
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
-
-  /**
-   * Takes domain properties which should be customized while generating domain input yaml file.
-   *
-   * @param inputProps
-   * @throws Exception
-   */
-  public Domain(Properties inputProps) throws Exception {
-    this.domainProps = inputProps;
-
-    initialize();
-    createPV();
-    createSecret();
-    generateInputYaml();
-    callCreateDomainScript();
-  }
 
   public Domain(String inputYaml) throws Exception {
     Yaml yaml = new Yaml();
@@ -410,10 +392,6 @@ public class Domain {
     }
   }
 
-  public Properties getDomainProps() {
-    return domainProps;
-  }
-
   public Map<String, Object> getDomainMap() {
     return domainMap;
   }
@@ -731,60 +709,6 @@ public class Domain {
     if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
       domainMap.put("loadBalancerAppPrepath", "/weblogic");
       domainMap.put("loadBalancerExposeAdminPort", "true");
-    }
-  }
-
-  private void initialize() throws Exception {
-    this.userProjectsDir = BaseTest.getUserProjectsDir();
-    this.projectRoot = BaseTest.getProjectRoot();
-
-    domainUid = domainProps.getProperty("domainUID");
-    // Customize the create domain job inputs
-    domainNS = domainProps.getProperty("namespace", domainNS);
-    adminServerName = domainProps.getProperty("adminServerName", adminServerName);
-    managedServerNameBase = domainProps.getProperty("managedServerNameBase", managedServerNameBase);
-    initialManagedServerReplicas =
-        new Integer(
-                domainProps.getProperty(
-                    "initialManagedServerReplicas", initialManagedServerReplicas + ""))
-            .intValue();
-    exposeAdminT3Channel =
-        new Boolean(
-                domainProps.getProperty(
-                    "exposeAdminT3Channel", new Boolean(exposeAdminT3Channel).toString()))
-            .booleanValue();
-    t3ChannelPort =
-        new Integer(domainProps.getProperty("t3ChannelPort", t3ChannelPort + "")).intValue();
-    clusterName = domainProps.getProperty("clusterName", clusterName);
-    loadBalancer = domainProps.getProperty("loadBalancer", loadBalancer);
-    loadBalancerWebPort =
-        new Integer(domainProps.getProperty("loadBalancerWebPort", loadBalancerWebPort + ""))
-            .intValue();
-    if (exposeAdminT3Channel && domainProps.getProperty("t3PublicAddress") == null) {
-      domainProps.put("t3PublicAddress", TestUtils.getHostName());
-    }
-    if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
-      domainProps.put("weblogicImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-      // create docker registry secrets
-      TestUtils.createDockerRegistrySecret(
-          System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-          "index.docker.io/v1/",
-          System.getenv("DOCKER_USERNAME"),
-          System.getenv("DOCKER_PASSWORD"),
-          System.getenv("DOCKER_EMAIL"),
-          domainNS);
-    }
-    // test NFS for domain5 on JENKINS
-    if (domainUid.equals("domain5")
-        && (System.getenv("JENKINS") != null
-            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
-      domainProps.put("weblogicDomainStorageType", "NFS");
-      domainProps.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    }
-
-    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
-      domainProps.put("loadBalancerAppPrepath", "/weblogic");
-      domainProps.put("loadBalancerExposeAdminPort", "true");
     }
   }
 

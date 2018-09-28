@@ -557,21 +557,9 @@ public class TestUtils {
     return operator;
   }
 
-  public static Domain createDomainWithYaml(String inputYaml) throws Exception {
+  public static Domain createDomain(String inputYaml) throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     Domain domain = new Domain(inputYaml);
-    domain.verifyDomainCreated();
-    return domain;
-  }
-
-  public static Domain createDomain(String domainPropsFile) throws Exception {
-    Properties domainProps = loadProps(domainPropsFile);
-    return createDomain(domainProps);
-  }
-
-  public static Domain createDomain(Properties domainProps) throws Exception {
-    logger.info("Creating domain, waiting for the script to complete execution");
-    Domain domain = new Domain(domainProps);
     domain.verifyDomainCreated();
     return domain;
   }
