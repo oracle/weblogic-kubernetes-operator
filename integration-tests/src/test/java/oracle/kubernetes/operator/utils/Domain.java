@@ -311,6 +311,7 @@ public class Domain {
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
 
+      logger.info("Running " + curlCmdResCode);
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
@@ -787,7 +788,7 @@ public class Domain {
               + loadBalancer
               + "' is not correct. Valid values are APACHE, TRAEFIK, VOYAGER");
     }
-    System.out.println("&&&&&& loadBalancer: " + loadBalancer);
+
     if (loadBalancer.equals("NONE")) return;
 
     lbMap.put("type", loadBalancer);
