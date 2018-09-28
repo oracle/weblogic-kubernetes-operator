@@ -8,11 +8,6 @@ import java.util.Objects;
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {
-  public static final String EXTERNAL_REST_OPTION_NONE = "NONE";
-  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
-  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
-  public static final String INTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
-  public static final String INTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
   public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
   public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
   public static final String JAVA_LOGGING_LEVEL_INFO = "INFO";
@@ -25,8 +20,6 @@ public class OperatorValues {
   public static final String IMAGE_PULL_POLICY_NEVER = "Never";
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
-  private static final String INTERNAL_CUSTOM_CERT_PEM = "test-internal-custom-certificate-pem";
-  private static final String INTERNAL_CUSTOM_KEY_PEM = "test-internal-custom-private-key-pem";
   private String version = "";
   private String serviceAccount = "";
   private String namespace = "";
@@ -34,12 +27,8 @@ public class OperatorValues {
   private String weblogicOperatorImage = "";
   private String weblogicOperatorImagePullPolicy = "";
   private String weblogicOperatorImagePullSecretName = "";
-  private String internalRestOption = "";
-  private String internalOperatorCert = "";
-  private String internalOperatorKey = "";
-  private String externalRestOption = "";
+  private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
-  private String externalSans = "";
   private String externalOperatorCert = "";
   private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
@@ -54,8 +43,7 @@ public class OperatorValues {
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
         .weblogicOperatorImagePullPolicy("Never")
-        .javaLoggingLevel("FINEST")
-        .setupInternalRestSelfSignedCert();
+        .javaLoggingLevel("FINEST");
   }
 
   public OperatorValues enableDebugging() {
@@ -64,27 +52,11 @@ public class OperatorValues {
         .externalDebugHttpPort("30090");
   }
 
-  public OperatorValues setupExternalRestSelfSignedCert() {
+  public OperatorValues setupExternalRestEnabled() {
     return this.externalRestHttpsPort("30070")
-        .externalRestOption(EXTERNAL_REST_OPTION_SELF_SIGNED_CERT)
-        .externalSans("DNS:localhost");
-  }
-
-  public OperatorValues setupExternalRestCustomCert() {
-    return this.externalRestHttpsPort("30070")
-        .externalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT)
+        .externalRestEnabled("true")
         .externalOperatorCert(toBase64(externalOperatorCustomCertPem()))
         .externalOperatorKey(toBase64(externalOperatorCustomKeyPem()));
-  }
-
-  public OperatorValues setupInternalRestSelfSignedCert() {
-    return this.internalRestOption(INTERNAL_REST_OPTION_SELF_SIGNED_CERT);
-  }
-
-  public OperatorValues setupInternalRestCustomCert() {
-    return this.internalRestOption(INTERNAL_REST_OPTION_CUSTOM_CERT)
-        .internalOperatorCert(toBase64(internalOperatorCustomCertPem()))
-        .internalOperatorKey(toBase64(internalOperatorCustomKeyPem()));
   }
 
   public String externalOperatorCustomCertPem() {
@@ -93,64 +65,6 @@ public class OperatorValues {
 
   public String externalOperatorCustomKeyPem() {
     return EXTERNAL_CUSTOM_KEY_PEM;
-  }
-
-  public String internalOperatorCustomCertPem() {
-    return INTERNAL_CUSTOM_CERT_PEM;
-  }
-
-  public String internalOperatorCustomKeyPem() {
-    return INTERNAL_CUSTOM_KEY_PEM;
-  }
-
-  public String externalOperatorSelfSignedCertPem() {
-    return selfSignedCertPem(getExternalSans());
-  }
-
-  public String externalOperatorSelfSignedKeyPem() {
-    return selfSignedKeyPem(getExternalSans());
-  }
-
-  public String internalOperatorSelfSignedCertPem() {
-    return selfSignedCertPem(internalSans());
-  }
-
-  public String internalOperatorSelfSignedKeyPem() {
-    return selfSignedKeyPem(internalSans());
-  }
-
-  private String selfSignedCertPem(String sans) {
-    // Must match computation in src/tests/scripts/unit-test-generate-weblogic-operator-cert.sh
-    return "unit test mock cert pem for sans:" + sans + "\n";
-  }
-
-  private String selfSignedKeyPem(String sans) {
-    // Must match computation in src/tests/scripts/unit-test-generate-weblogic-operator-cert.sh
-    return "unit test mock key pem for sans:" + sans + "\n";
-  }
-
-  private String internalSans() {
-    // Must match internal sans computation in kubernetes/internal/create-weblogic-operator.sh
-    String host = "internal-weblogic-operator-svc";
-    String ns = getNamespace();
-    StringBuilder sb = new StringBuilder();
-    sb.append("DNS:")
-        .append(host)
-        .append(",DNS:")
-        .append(host)
-        .append(".")
-        .append(ns)
-        .append(",DNS:")
-        .append(host)
-        .append(".")
-        .append(ns)
-        .append(".svc")
-        .append(",DNS:")
-        .append(host)
-        .append(".")
-        .append(ns)
-        .append(".svc.cluster.local");
-    return sb.toString();
   }
 
   public String getVersion() {
@@ -244,16 +158,16 @@ public class OperatorValues {
     return this;
   }
 
-  public String getExternalRestOption() {
-    return externalRestOption;
+  public String getExternalRestEnabled() {
+    return externalRestEnabled;
   }
 
-  public void setExternalRestOption(String val) {
-    externalRestOption = convertNullToEmptyString(val);
+  public void setExternalRestEnabled(String val) {
+    externalRestEnabled = convertNullToEmptyString(val);
   }
 
-  public OperatorValues externalRestOption(String val) {
-    setExternalRestOption(val);
+  public OperatorValues externalRestEnabled(String val) {
+    setExternalRestEnabled(val);
     return this;
   }
 
@@ -267,19 +181,6 @@ public class OperatorValues {
 
   public OperatorValues externalRestHttpsPort(String val) {
     setExternalRestHttpsPort(val);
-    return this;
-  }
-
-  public String getExternalSans() {
-    return externalSans;
-  }
-
-  public void setExternalSans(String val) {
-    externalSans = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues externalSans(String val) {
-    setExternalSans(val);
     return this;
   }
 
@@ -306,45 +207,6 @@ public class OperatorValues {
 
   public OperatorValues externalOperatorKey(String val) {
     setExternalOperatorKey(val);
-    return this;
-  }
-
-  public String getInternalRestOption() {
-    return internalRestOption;
-  }
-
-  public void setInternalRestOption(String val) {
-    internalRestOption = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues internalRestOption(String val) {
-    setInternalRestOption(val);
-    return this;
-  }
-
-  public String getInternalOperatorCert() {
-    return internalOperatorCert;
-  }
-
-  public void setInternalOperatorCert(String val) {
-    internalOperatorCert = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues internalOperatorCert(String val) {
-    setInternalOperatorCert(val);
-    return this;
-  }
-
-  public String getInternalOperatorKey() {
-    return internalOperatorKey;
-  }
-
-  public void setInternalOperatorKey(String val) {
-    internalOperatorKey = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues internalOperatorKey(String val) {
-    setInternalOperatorKey(val);
     return this;
   }
 
