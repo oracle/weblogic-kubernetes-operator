@@ -4,11 +4,9 @@
 adminServerName: admin-server
 domainName: base_domain
 domainUID: domain3
-adminPort: 7021
 clusterName: cluster-1
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
-managedServerPort: 8031
 managedServerNameBase: managed-server
 #weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
 #weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
@@ -17,6 +15,5 @@ t3ChannelPort: 30041
 exposeAdminNodePort: true
 adminNodePort: 30703
 namespace: test1
-javaOptions: -Dweblogic.StdoutDebugEnabled=false
 loadBalancerWebPort: 30307
 loadBalancerDashboardPort: 30317
