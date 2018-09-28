@@ -13,4 +13,3 @@ managedServerNameBase: managed-server
 exposeAdminT3Channel: true
 exposeAdminNodePort: true
 namespace: default
-javaOptions: -Dweblogic.StdoutDebugEnabled=false
