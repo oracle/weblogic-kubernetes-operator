@@ -214,10 +214,7 @@ function initialize {
     namespace \
     t3PublicAddress \
     version \
-    persistentVolumeClaimName \
-    podDomainRootDir \
-    createDomainScriptDir \
-    createDomainScript 
+    persistentVolumeClaimName 
 
   validateIntegerInputParamsSpecified \
     adminPort \
@@ -276,6 +273,22 @@ function createYamlFiles {
   if [ -z "${weblogicImage}" ]; then
     weblogicImage="store/oracle/weblogic:12.2.1.3"
   fi
+  
+  # Use the default value if not defined.
+  if [ -z "${domainPVMountPath}" ]; then
+    domainPVMountPath="/shared"
+  fi
+
+  # Use the default value if not defined.
+  if [ -z "${createDomainScriptsMountPath}" ]; then
+    createDomainScriptsMountPath="/u01/weblogic"
+  fi
+
+  # Use the default value if not defined.
+  if [ -z "${createDomainScriptName}" ]; then
+    createDomainScriptName="create-domain-job.sh"
+  fi
+
   # Must escape the ':' value in weblogicImage for sed to properly parse and replace
   weblogicImage=$(echo ${weblogicImage} | sed -e "s/\:/\\\:/g")
 
@@ -303,9 +316,9 @@ function createYamlFiles {
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
-  sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${createJobOutput}
-  sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptDir}:g" ${createJobOutput}
-  sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${createJobOutput}
+  sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${createJobOutput}
+  sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScriptName}:g" ${createJobOutput}
 
   # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
   echo Generating ${deleteJobOutput}
@@ -319,8 +332,7 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
-  sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${deleteJobOutput}
-  sed -i -e "s:%DOMAIN_LOGS_DIR%:${podDomainRootDir}/logs:g" ${outputFile}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
@@ -393,10 +405,10 @@ function create_domain_configmap {
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${outputFile}
     sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${outputFile}
     sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_LOGS_DIR%:${podDomainRootDir}/logs:g" ${outputFile}
-    sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptDir}:g" ${outputFile}
-    sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_LOGS_DIR%:${domainPVMountPath}/logs:g" ${outputFile}
+    sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${outputFile}
+    sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScriptName}:g" ${outputFile}
 
   done 
 
