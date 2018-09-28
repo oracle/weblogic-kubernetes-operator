@@ -215,7 +215,9 @@ function initialize {
     t3PublicAddress \
     version \
     persistentVolumeClaimName \
-    podDomainRootDir
+    podDomainRootDir \
+    createDomainScriptDir \
+    createDomainScript 
 
   validateIntegerInputParamsSpecified \
     adminPort \
@@ -302,6 +304,8 @@ function createYamlFiles {
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${createJobOutput}
+  sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptDir}:g" ${createJobOutput}
+  sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${createJobOutput}
 
   # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
   echo Generating ${deleteJobOutput}
@@ -316,6 +320,7 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_LOGS_DIR%:${podDomainRootDir}/logs:g" ${outputFile}
 
   # Generate the yaml to create the domain custom resource
   echo Generating ${dcrOutput}
@@ -348,15 +353,65 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
-
+ 
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
+}
+
+# create domain configmap using what is in the createDomainFilesDir
+function create_domain_configmap {
+  # Use the default files if createDomainFilesDir is not specified
+  if [ -z "${createDomainFilesDir}" ]; then
+    createDomainFilesDir=${scriptDir}/wlst
+  fi
+
+  # customize the files with domain information
+  local externalFilesTmpDir=$domainOutputDir/tmp
+  mkdir -p $externalFilesTmpDir
+  cp ${createDomainFilesDir}/* ${externalFilesTmpDir}/
+ 
+  for fname in ${externalFilesTmpDir}/*
+  do
+    local outputFile=$fname
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${outputFile}
+    sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${outputFile}
+    sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${outputFile}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${outputFile}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${outputFile}
+    sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${outputFile}
+    sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${outputFile}
+    sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${outputFile}
+    sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${outputFile}
+    sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${outputFile}
+    sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${outputFile}
+    sed -i -e "s:%MANAGED_SERVER_NAME_BASE_SVC%:${managedServerNameBaseSVC}:g" ${outputFile}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${outputFile}
+    sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${outputFile}
+    sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${outputFile}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${outputFile}
+    sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_ROOT_DIR%:${podDomainRootDir}:g" ${outputFile}
+    sed -i -e "s:%DOMAIN_LOGS_DIR%:${podDomainRootDir}/logs:g" ${outputFile}
+    sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptDir}:g" ${outputFile}
+    sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScript}:g" ${outputFile}
+
+  done 
+
+  # create the configmap and label it properly
+  kubectl create configmap ${domainUID}-create-weblogic-sample-domain-job-cm -n $namespace --from-file $externalFilesTmpDir
+  kubectl label configmap ${domainUID}-create-weblogic-sample-domain-job-cm -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 }
 
 #
 # Function to run the job that creates the domain
 #
 function createDomainHome {
+
+  # create the config map for the job
+  create_domain_configmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
