@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -158,9 +159,9 @@ public class BaseTest {
    */
   public void testAdminT3Channel(Domain domain) throws Exception {
     logger.info("Inside testAdminT3Channel");
-    Properties domainProps = domain.getDomainProps();
+    Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
-    Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
+    Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
 
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
       domain.deployWebAppViaWLST(
@@ -201,17 +202,17 @@ public class BaseTest {
    */
   public void testClusterScaling(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testClusterScaling");
-    Properties domainProps = domain.getDomainProps();
+    Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
-    String domainNS = domainProps.getProperty("namespace");
-    String managedServerNameBase = domainProps.getProperty("managedServerNameBase");
+    String domainNS = domainMap.get("namespace").toString();
+    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
     int replicas = 3;
     String podName = domain.getDomainUid() + "-" + managedServerNameBase + replicas;
-    String clusterName = domainProps.getProperty("clusterName");
+    String clusterName = domainMap.get("clusterName").toString();
 
     logger.info(
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
-    operator.scale(domainUid, domainProps.getProperty("clusterName"), replicas);
+    operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
 
     logger.info("Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
