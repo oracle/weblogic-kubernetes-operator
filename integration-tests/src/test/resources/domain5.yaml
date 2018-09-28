@@ -6,7 +6,7 @@ domainName: base_domain
 domainUID: domain5
 adminPort: 7051
 clusterName: cluster-1
-clusterType=DYNAMIC
+clusterType: DYNAMIC
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
 managedServerPort: 8051
