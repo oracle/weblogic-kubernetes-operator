@@ -778,10 +778,10 @@ public class Domain {
     } else if (System.getenv("LB_TYPE") != null) {
       loadBalancer = System.getenv("LB_TYPE");
     }
-    if (loadBalancer != "APACHE"
-        && loadBalancer != "TRAEFIK"
-        && loadBalancer != "VOYAGER"
-        && loadBalancer != "NONE") {
+    if (!loadBalancer.equals("APACHE")
+        && !loadBalancer.equals("TRAEFIK")
+        && !loadBalancer.equals("VOYAGER")
+        && !loadBalancer.equals("NONE")) {
       throw new RuntimeException(
           "FAILURE: given load balancer type '"
               + loadBalancer
