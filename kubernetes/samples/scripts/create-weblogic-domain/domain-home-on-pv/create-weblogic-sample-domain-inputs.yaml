@@ -85,20 +85,18 @@ javaOptions: -Dweblogic.StdoutDebugEnabled=false
 # Name of the persistent volume claim 
 persistentVolumeClaimName: domain1-weblogic-domain-pvc
 
-# Pod domain root directory
-# This should match the directory in the WebLogic Server pod's file system that 
-# the domain's persistent volume is mounted on.
-podDomainRootDir: /shared
+# Mount path of the domain persistent volume. The default is /shared.
+domainPVMountPath: 
 
-# Pod script root directory
-# This should match the directory in the WebLogic Server pod's file system that 
-# the create domain scripts are located
-createDomainScriptDir: /u01/weblogic
+# Mount path of the directory where the create domain scripts are located inside the pod
+# The default is /u01/weblogic.
+createDomainScriptsMountPath: 
 
-# Script that creates the domain
-createDomainScript: create-domain-job.sh
+# Script that creates the domain. The default is create-domain-job.sh.
+createDomainScriptName: 
 
-# Directory that contains the files/scripts that are needed to create the domain.
-# This directory should contain all the files that are required for creating a domain, including
-# the script that is specified by createDomainScript.
+# Directory to get all the create domain scripts and supporting files, including 
+# the script that is specified by the createDomainScriptName property.
+# The default is the "wlst" subdirectory under the directory where the 
+# create-weblogic-sample-domain.sh script is located.
 createDomainFilesDir:
