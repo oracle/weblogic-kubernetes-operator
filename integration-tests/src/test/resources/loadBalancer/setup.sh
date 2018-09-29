@@ -26,7 +26,7 @@ function createVoyager() {
       --namespace voyager \
       --set cloudProvider=baremetal \
       --set apiserver.ca="$(${MYDIR}/onessl get kube-ca)" \
-      --set apiserver.enableValidatingWebhook=true
+      --set apiserver.enableValidatingWebhook=false
   else
     echo "Voyager operator is already installed."
   fi 
