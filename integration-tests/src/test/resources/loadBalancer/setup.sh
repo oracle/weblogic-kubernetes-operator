@@ -45,6 +45,7 @@ function createVoyager() {
     sleep 5
   done
   echo "Error: Voyager operator failed to start."
+  exit 1
 
 }
 
@@ -73,6 +74,7 @@ function createTraefik() {
     sleep 5
   done
   echo "Error: Traefik operator failed to start."
+  exit 1
 }
 
 function deleteVoyager() {
