@@ -6,8 +6,10 @@
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-voyager
+  name: {{ .Values.wlsDomain.domainUID }}-voyager
   namespace: {{ .Values.wlsDomain.namespace }}
+  labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
@@ -19,15 +21,17 @@ spec:
       nodePort: '{{ .Values.webPort }}'
       paths:
       - backend:
-          serviceName: '{{ .Values.wlsDomain.svcName }}'
-          servicePort: '{{ .Values.wlsDomain.svcPort }}'
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower }}'
+          servicePort: '{{ .Values.wlsDomain.managedServerPort }}'
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-voyager-stats
+  name: {{ .Values.wlsDomain.domainUID }}-voyager-stats
   namespace: {{ .Values.wlsDomain.namespace }}
+  labels:
+    weblogic.resourceVersion: voyager-load-balancer-v1
 spec:
   type: NodePort
   ports:
@@ -38,5 +42,5 @@ spec:
       nodePort: {{ .Values.dashboardPort }}
   selector:
     origin: voyager
-    origin-name: {{ .Release.Name }}-voyager
+    origin-name: {{ .Values.wlsDomain.domainUID }}-voyager
 {{- end }}

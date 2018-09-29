@@ -14,8 +14,13 @@ dashboardPort: 30315
 # WLS domain as backend to the load balancer
 wlsDomain:
   namespace: default
-  svcName: domain1-cluster-cluster-1
-  svcPort: 8001
+  domainUID: domain1
+  domainName: base_domain
+  clusterName: cluster-1
+  managedServerPort: 8001
+  # adminServerName and adminPort is only used by APACHE and only if apache.exposeAdminPort is true
+  adminServerName: admin-server
+  adminPort: 7001
 
 # Traefik specific values
 traefik:
@@ -24,5 +29,14 @@ traefik:
 
 # Apache specific values
 apache:
-  VolumePath: /
-  exposeAdminPort: true
+  # Docker volume path for APACHE. By default, it is empty, which causes the volume mount be
+  # disabled and, thereforem the built-in Apache plugin config be used.
+  # Use this to provide your own Apache plugin configuration as needed; simply define this
+  # path and put your own custom_mod_wl_apache.conf file under this path.
+  volumePath:
+
+  # Boolean to indicate if the admin port is going to be exposed for APACHE.
+  exposeAdminPort: false
+
+  # This defines the /location in the built-in Apache plugin configuration module for WebLogic
+  appPrepath: /

@@ -806,8 +806,12 @@ public class Domain {
     // create wlsDomain section
     Map<String, String> wlsDomainMap = new HashMap<>();
     wlsDomainMap.put("namespace", domainNS);
-    wlsDomainMap.put("svcName", domainUid + "-cluster-" + clusterName);
-    wlsDomainMap.put("svcPort", "8001");
+    wlsDomainMap.put("domainUID", domainUid);
+    wlsDomainMap.put("domainName", "base_domain");
+    wlsDomainMap.put("clusterName", clusterName);
+    wlsDomainMap.put("managedServerPort", "8001");
+    wlsDomainMap.put("adminServerName", "admin-server");
+    wlsDomainMap.put("adminPort", "7001");
     lbMap.put("wlsDomain", wlsDomainMap);
 
     // create Traefik section
@@ -818,12 +822,14 @@ public class Domain {
     }
 
     // create apache section
-    /*if (loadBalancer.equals("APACHE")) {
+    if (loadBalancer.equals("APACHE")) {
       Map<String, String> apacheMap = new HashMap<>();
-      apacheMap.put("VolumePath", xxx);
-      apacheMap.put("exposeAdminPort", xxx);
+      // TODO: only for domain7?
+      apacheMap.put("loadBalancerAppPrepath", "/weblogic");
+      apacheMap.put("loadBalancerExposeAdminPort", "true");
+
       lbMap.put("apache", apacheMap);
-    }*/
+    }
   }
 
   private String getNodeHost() throws Exception {
