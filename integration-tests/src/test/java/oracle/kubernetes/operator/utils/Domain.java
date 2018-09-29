@@ -586,11 +586,11 @@ public class Domain {
       lbParam = "voyager";
     }
 
-    // loadBalancer.sh only support traefik and voyager
+    // setup.sh is only needed for traefik and voyager
     if (lbParam != null) {
       StringBuffer cmd = new StringBuffer();
       cmd.append(BaseTest.getProjectRoot())
-          .append("/integration-tests/src/test/resources/loadBalancer.sh create ")
+          .append("/integration-tests/src/test/resources/loadBalancer/setup.sh create ")
           .append(lbParam);
       logger.info("Running " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
