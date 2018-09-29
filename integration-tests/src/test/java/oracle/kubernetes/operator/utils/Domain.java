@@ -302,7 +302,7 @@ public class Domain {
 
       // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
-      curlCmd.append(TestUtils.getHostName());
+      curlCmd.append(TestUtils.getHostName()).append(" ");
       if (loadBalancer.equals("TRAEFIK")) {
         curlCmd.append(" -H 'host: " + domainUid + ".org' ");
       }
