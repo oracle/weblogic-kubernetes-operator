@@ -590,7 +590,7 @@ public class Domain {
     if (lbParam != null) {
       StringBuffer cmd = new StringBuffer();
       cmd.append(BaseTest.getProjectRoot())
-          .append("/kubernetes/samples/scripts/loadBalancer.sh create ")
+          .append("/integration-tests/src/test/resources/loadBalancer.sh create ")
           .append(lbParam);
       logger.info("Running " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());

@@ -6,10 +6,3 @@ service:
 dashboard:
   enabled: true
   domain: traefik.example.com
-kubernetes:
-  namespaces:
-    - default
-    - kube-system
-    - traefik
-    - test1
-    - test2
