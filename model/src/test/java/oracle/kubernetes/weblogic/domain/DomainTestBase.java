@@ -58,6 +58,10 @@ public abstract class DomainTestBase {
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
+  public static String getDomainUid() {
+    return DOMAIN_UID;
+  }
+
   @Test
   public void canGetAdminServerInfoFromDomain() {
     assertThat(domain.getAsName(), equalTo(AS_NAME));
