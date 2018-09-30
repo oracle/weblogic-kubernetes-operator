@@ -18,7 +18,6 @@ function createVoyager() {
   fi
   echo
 
-  # Install Voyager to K8S 1.9.x - 1.10.x
   if [ "$(helm list | grep voyager-operator |  wc -l)" = 0 ]; then
     echo "Ihstall voyager operator."
     

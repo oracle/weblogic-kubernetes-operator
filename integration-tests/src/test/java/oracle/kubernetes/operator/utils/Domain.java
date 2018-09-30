@@ -578,20 +578,13 @@ public class Domain {
 
   private void callCreateLBScript() throws Exception {
     if (loadBalancer.equals("NONE")) return;
-    // call script to install Ingress controller.
-    String lbParam = null;
-    if (loadBalancer.equals("TRAEFIK")) {
-      lbParam = "traefik";
-    } else if (loadBalancer.equals("VOYAGER")) {
-      lbParam = "voyager";
-    }
 
-    // setup.sh is only needed for traefik and voyager
-    if (lbParam != null) {
+    // Call script to install Ingress controller. This step is only needed for traefik and voyager
+    if (loadBalancer.equals("TRAEFIK") || loadBalancer.equals("VOYAGER")) {
       StringBuffer cmd = new StringBuffer();
       cmd.append(BaseTest.getProjectRoot())
           .append("/integration-tests/src/test/resources/loadBalancer/setup.sh create ")
-          .append(lbParam);
+          .append(loadBalancer.toLowerCase());
       logger.info("Running " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
@@ -787,7 +780,7 @@ public class Domain {
       throw new RuntimeException(
           "FAILURE: given load balancer type '"
               + loadBalancer
-              + "' is not correct. Valid values are APACHE, TRAEFIK, VOYAGER");
+              + "' is not correct. Valid values are NONE, APACHE, TRAEFIK, VOYAGER");
     }
 
     if (loadBalancer.equals("NONE")) return;
@@ -824,7 +817,6 @@ public class Domain {
     // create apache section
     if (loadBalancer.equals("APACHE")) {
       Map<String, String> apacheMap = new HashMap<>();
-      // TODO: only for domain7?
       apacheMap.put("appPrepath", "/weblogic");
       apacheMap.put("exposeAdminPort", "true");
 
