@@ -70,7 +70,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   @SuppressWarnings("unchecked")
   void sendInitialRequest(int initialResourceVersion) {
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
   }
@@ -123,7 +123,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     Watch.Response[] firstSet = {createAddResponse(object1), createModifyResponse(object2)};
     int resourceAfterFirstSet = resourceVersion - 1;
     StubWatchFactory.addCallResponses(firstSet);
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -137,7 +137,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
     try {
       StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
-      StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
+      scheduleDeleteResponse(createObjectWithMetaData());
 
       createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -152,8 +152,8 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterDelete_nextRequestSendsIncrementedResourceVersion() {
-    StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleDeleteResponse(createObjectWithMetaData());
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -166,11 +166,23 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @Test
   public void afterExceptionDuringNext_closeWatchAndTryAgain() {
     StubWatchFactory.throwExceptionOnNext(hasNextException);
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(2));
+  }
+
+  protected void scheduleAddResponse(Object object) {
+    StubWatchFactory.addCallResponses(createAddResponse(object));
+  }
+
+  protected void scheduleModifyResponse(Object object) {
+    StubWatchFactory.addCallResponses(createModifyResponse(object));
+  }
+
+  protected void scheduleDeleteResponse(Object object) {
+    StubWatchFactory.addCallResponses(createDeleteResponse(object));
   }
 
   @SuppressWarnings("SameParameterValue")

@@ -63,6 +63,7 @@ import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.BodyMatcher;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -132,7 +133,7 @@ public abstract class PodHelperTestBase {
     return serverName;
   }
 
-  protected DomainConfigurator getConfigurator() {
+  DomainConfigurator getConfigurator() {
     return configurator;
   }
 
@@ -188,7 +189,7 @@ public abstract class PodHelperTestBase {
     TuningParametersStub.namedParameters.put(name, value);
   }
 
-  AsyncCallTestSupport.CannedResponse expectCreatePod(BodyMatcher bodyMatcher) {
+  CallTestSupport.CannedResponse expectCreatePod(BodyMatcher bodyMatcher) {
     return testSupport.createCannedResponse("createPod").withNamespace(NS).withBody(bodyMatcher);
   }
 
@@ -451,7 +452,7 @@ public abstract class PodHelperTestBase {
     return new V1PersistentVolumeList().items(Collections.singletonList(pv));
   }
 
-  AsyncCallTestSupport.CannedResponse<V1PersistentVolumeList> expectListPersistentVolume() {
+  CallTestSupport.CannedResponse expectListPersistentVolume() {
     return testSupport
         .createCannedResponse("listPersistentVolume")
         .withLabelSelectors("weblogic.domainUID=" + UID);

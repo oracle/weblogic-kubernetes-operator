@@ -5,14 +5,11 @@
 package oracle.kubernetes.operator.rest;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.rest.RestBackendImplTest.AuthorizationCallFactoryStub.getUpdatedDomain;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
@@ -27,13 +24,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.validation.constraints.NotNull;
+import javax.annotation.Nonnull;
 import javax.ws.rs.WebApplicationException;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.work.BodyMatcher;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -59,6 +57,14 @@ public class RestBackendImplTest {
   private RestBackend restBackend;
   private Domain domain = createDomain(NS, UID);
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
+  private CallTestSupport testSupport = new CallTestSupport();
+  private Domain updatedDomain;
+  private SecurityControl securityControl = new SecurityControl();
+  private BodyMatcher fetchDomain =
+      actualBody -> {
+        updatedDomain = (Domain) actualBody;
+        return true;
+      };
 
   private static Domain createDomain(String namespace, String uid) {
     return new Domain()
@@ -69,8 +75,12 @@ public class RestBackendImplTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(AuthorizationCallFactoryStub.install());
     mementos.add(WlsRetrievalExecutor.install(configSupport));
+    mementos.add(testSupport.installSynchronousCallDispatcher());
+
+    expectSecurityCalls();
+    expectPossibleListDomainCall();
+    expectPossibleReplaceDomainCall();
 
     domains.clear();
     domains.add(domain);
@@ -78,9 +88,37 @@ public class RestBackendImplTest {
     restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
   }
 
+  private void expectSecurityCalls() {
+    testSupport
+        .createCannedResponse("createTokenReview")
+        .ignoringBody()
+        .returning(securityControl.getTokenReviewResponse());
+    testSupport
+        .createCannedResponse("createSubjectAccessReview")
+        .ignoringBody()
+        .returning(securityControl.getSubjectAccessResponse());
+  }
+
+  private void expectPossibleListDomainCall() {
+    testSupport
+        .createOptionalCannedResponse("listDomain")
+        .withNamespace(NS)
+        .returning(new DomainList().withItems(domains));
+  }
+
+  private void expectPossibleReplaceDomainCall() {
+    testSupport
+        .createOptionalCannedResponse("replaceDomain")
+        .withNamespace(NS)
+        .withUid(UID)
+        .withBody(fetchDomain)
+        .returning(new Domain());
+  }
+
   @After
   public void tearDown() {
     for (Memento memento : mementos) memento.revert();
+    testSupport.verifyAllDefinedResponsesInvoked();
   }
 
   @Test(expected = WebApplicationException.class)
@@ -95,6 +133,10 @@ public class RestBackendImplTest {
     restBackend.scaleCluster(UID, "cluster1", 5);
 
     assertThat(getUpdatedDomain(), nullValue());
+  }
+
+  private Domain getUpdatedDomain() {
+    return updatedDomain;
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
@@ -126,55 +168,20 @@ public class RestBackendImplTest {
     assertThat(getUpdatedDomain(), nullValue());
   }
 
-  abstract static class AuthorizationCallFactoryStub
-      implements oracle.kubernetes.operator.helpers.SynchronousCallFactory {
-
-    private static AuthorizationCallFactoryStub callFactory;
+  private static class SecurityControl {
     private final boolean allowed = true;
     private final boolean authenticated = true;
-    private Domain updatedDomain;
 
-    static Memento install() throws NoSuchFieldException {
-      callFactory = createStrictStub(AuthorizationCallFactoryStub.class);
-      return StaticStubSupport.install(CallBuilder.class, "CALL_FACTORY", callFactory);
+    private V1TokenReview getTokenReviewResponse() {
+      return new V1TokenReview().status(getTokenReviewStatus());
     }
 
-    static Domain getUpdatedDomain() {
-      return callFactory.updatedDomain;
+    private V1TokenReviewStatus getTokenReviewStatus() {
+      return new V1TokenReviewStatus().authenticated(authenticated).user(new V1UserInfo());
     }
 
-    @Override
-    public Domain replaceWebLogicOracleV1NamespacedDomain(
-        ApiClient client, String name, String namespace, Domain body, String pretty) {
-      return updatedDomain = body;
-    }
-
-    @Override
-    public V1SubjectAccessReview createSubjectAccessReview(
-        ApiClient client, V1SubjectAccessReview body, String pretty) {
+    private V1SubjectAccessReview getSubjectAccessResponse() {
       return new V1SubjectAccessReview().status(new V1SubjectAccessReviewStatus().allowed(allowed));
-    }
-
-    @Override
-    public V1TokenReview createTokenReview(ApiClient client, V1TokenReview body, String pretty) {
-      return new V1TokenReview()
-          .status(new V1TokenReviewStatus().authenticated(authenticated).user(new V1UserInfo()));
-    }
-
-    @Override
-    public DomainList getDomainList(
-        ApiClient client,
-        String namespace,
-        String pretty,
-        String _continue,
-        String fieldSelector,
-        Boolean includeUninitialized,
-        String labelSelector,
-        Integer limit,
-        String resourceVersion,
-        Integer timeoutSeconds,
-        Boolean watch) {
-      return new DomainList().withItems(domains);
     }
   }
 
@@ -198,7 +205,7 @@ public class RestBackendImplTest {
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull <T> Future<T> submit(@NotNull Callable<T> task) {
+    public @Nonnull <T> Future<T> submit(@Nonnull Callable<T> task) {
       return (Future<T>) createStrictStub(WlsDomainConfigFuture.class, configSupport);
     }
   }
@@ -211,7 +218,7 @@ public class RestBackendImplTest {
     }
 
     @Override
-    public WlsDomainConfig get(long timeout, @NotNull TimeUnit unit) {
+    public WlsDomainConfig get(long timeout, @Nonnull TimeUnit unit) {
       return configSupport.createDomainConfig();
     }
   }

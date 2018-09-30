@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import org.junit.After;
 import org.junit.Before;
@@ -38,7 +39,7 @@ public class DeleteIngressListStepTest {
   }
 
   @Test
-  public void whenCollectionEmpty_makeNoCalls() throws Exception {
+  public void whenCollectionEmpty_makeNoCalls() {
     runDeleteStep();
   }
 
@@ -48,7 +49,7 @@ public class DeleteIngressListStepTest {
   }
 
   @Test
-  public void whenCollectionContainsItems_invokeDeleteCalls() throws Exception {
+  public void whenCollectionContainsItems_invokeDeleteCalls() {
     defineResponse("namespace1", "name1").returning(new V1Status());
     defineResponse("namespace2", "name2").returning(new V1Status());
 
@@ -60,7 +61,7 @@ public class DeleteIngressListStepTest {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> AsyncCallTestSupport.CannedResponse<T> defineResponse(String namespace, String name) {
+  private CallTestSupport.CannedResponse defineResponse(String namespace, String name) {
     return testSupport
         .createCannedResponse("deleteIngress")
         .withNamespace(namespace)
@@ -69,7 +70,7 @@ public class DeleteIngressListStepTest {
   }
 
   @Test
-  public void onFailureResponse_reportError() throws Exception {
+  public void onFailureResponse_reportError() {
     defineResponse("namespace1", "name1").failingWithStatus(HttpURLConnection.HTTP_FORBIDDEN);
 
     runDeleteStep(
@@ -79,7 +80,7 @@ public class DeleteIngressListStepTest {
   }
 
   @Test
-  public void onNotFoundResponse_dontReportError() throws Exception {
+  public void onNotFoundResponse_dontReportError() {
     defineResponse("namespace1", "name1").failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
 
     runDeleteStep(
