@@ -609,7 +609,7 @@ public class Domain {
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/loadBalancer-per-domain");
     cmd.append(" --name ")
-        .append(domainMap.get("domainUID") + "-lb")
+        .append(domainMap.get("domainUID") + "-loadBalancer")
         .append(" --values ")
         .append(generatedLBYamlFile)
         .append(" --wait");
