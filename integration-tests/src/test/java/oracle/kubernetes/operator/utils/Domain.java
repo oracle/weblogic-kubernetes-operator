@@ -545,7 +545,7 @@ public class Domain {
     TestUtils.createInputFile(domainMap, generatedDomainYamlFile);
 
     if (!loadBalancer.equals("NONE")) {
-      generatedLBYamlFile = parentDir + "loadBalancer-values.yaml";
+      generatedLBYamlFile = parentDir + "/loadBalancer-values.yaml";
       TestUtils.createInputFile(lbMap, generatedLBYamlFile);
     }
   }
