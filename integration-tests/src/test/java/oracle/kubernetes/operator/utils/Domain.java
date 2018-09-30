@@ -825,8 +825,8 @@ public class Domain {
     if (loadBalancer.equals("APACHE")) {
       Map<String, String> apacheMap = new HashMap<>();
       // TODO: only for domain7?
-      apacheMap.put("loadBalancerAppPrepath", "/weblogic");
-      apacheMap.put("loadBalancerExposeAdminPort", "true");
+      apacheMap.put("appPrepath", "/weblogic");
+      apacheMap.put("exposeAdminPort", "true");
 
       lbMap.put("apache", apacheMap);
     }
