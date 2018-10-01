@@ -1,0 +1,48 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: %DOMAIN_UID%-%CLUSTER_NAME_SVC%-traefik
+  labels:
+    weblogic.resourceVersion: sample-traefik-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+    weblogic.clusterName: %CLUSTER_NAME%
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: %DOMAIN_UID%-%CLUSTER_NAME_SVC%-traefik
+  labels:
+    weblogic.resourceVersion: sample-traefik-load-balancer-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+    weblogic.clusterName: %CLUSTER_NAME%
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: %DOMAIN_UID%-%CLUSTER_NAME_SVC%-traefik
+subjects:
+- kind: ServiceAccount
+  name: %DOMAIN_UID%-%CLUSTER_NAME_SVC%-traefik
+  namespace: %NAMESPACE%

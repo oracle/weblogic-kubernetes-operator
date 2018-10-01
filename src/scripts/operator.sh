@@ -2,6 +2,8 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+set -x
+
 export PATH=$PATH:/operator
 
 echo "Launching Oracle WebLogic Server Kubernetes Operator..."
@@ -14,6 +16,8 @@ function relay_SIGTERM {
 }
 
 trap relay_SIGTERM SIGTERM
+
+/operator/initialize-internal-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=$HOSTNAME:$REMOTE_DEBUG_PORT"

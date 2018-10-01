@@ -138,7 +138,7 @@ public class DomainV1Test extends DomainTestBase {
 
   @Test
   public void whenClusterNotConfigured_useDefaultReplicaCount() {
-    configureDomain(domain).setDefaultReplicas(5);
+    configureDomain(domain).withDefaultReplicaCount(5);
 
     assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(5));
   }
@@ -152,7 +152,7 @@ public class DomainV1Test extends DomainTestBase {
 
   @Test
   public void whenClusterDefinedWithReplicas_useClusterReplicaCount() {
-    configureDomain(domain).setDefaultReplicas(5);
+    configureDomain(domain).withDefaultReplicaCount(5);
     configureCluster("cluster1").withReplicas(3);
 
     assertThat(domain.getReplicaCount("cluster1"), equalTo(3));
@@ -160,7 +160,7 @@ public class DomainV1Test extends DomainTestBase {
 
   @Test
   public void whenClusterDefinedWithoutReplicas_useDomainReplicaCount() {
-    configureDomain(domain).setDefaultReplicas(5);
+    configureDomain(domain).withDefaultReplicaCount(5);
     configureCluster("cluster1");
 
     assertThat(domain.getReplicaCount("cluster1"), equalTo(5));

@@ -7,6 +7,7 @@ package oracle.kubernetes.weblogic.domain.v2;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -15,7 +16,12 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 public class DomainV2Configurator implements DomainConfigurator {
   private Domain domain;
 
-  DomainV2Configurator(Domain domain) {
+  @Override
+  public DomainConfigurator createFor(Domain domain) {
+    return new DomainV2Configurator(domain);
+  }
+
+  public DomainV2Configurator(Domain domain) {
     this.domain = domain;
   }
 
@@ -26,26 +32,38 @@ public class DomainV2Configurator implements DomainConfigurator {
   public void defineAdminServer(String adminServerName, int port) {}
 
   @Override
-  public void setDefaultReplicas(int replicas) {}
+  public void withDefaultReplicaCount(int replicas) {}
 
   @Override
-  public void setDefaultImage(String image) {
+  public void withDefaultImage(String image) {
     getDomainSpec().setImage(image);
   }
 
   @Override
-  public void setDefaultImagePullPolicy(String imagepullpolicy) {
+  public void withDefaultImagePullPolicy(String imagepullpolicy) {
     getDomainSpec().setImagePullPolicy(imagepullpolicy);
   }
 
   @Override
-  public void setDefaultImagePullSecret(V1LocalObjectReference secretReference) {
+  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
     getDomainSpec().setImagePullSecret(secretReference);
   }
 
   @Override
+  public void withDefaultReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period) {
+    ((BaseConfiguration) getDomainSpec()).setReadinessProbe(initialDelay, timeout, period);
+  }
+
+  @Override
+  public void withDefaultLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period) {
+    ((BaseConfiguration) getDomainSpec()).setLivenessProbe(initialDelay, timeout, period);
+  }
+
+  @Override
   public DomainConfigurator setStartupControl(String startupControl) {
-    return null;
+    throw new ConfigurationNotSupportedException("domain", "startupControl");
   }
 
   @Override
@@ -148,6 +166,26 @@ public class DomainV2Configurator implements DomainConfigurator {
     public ServerConfigurator withServerStartState(String state) {
       return withDesiredState(state);
     }
+
+    @Override
+    public ServerConfigurator withServerStartPolicy(String policy) {
+      server.setServerStartPolicy(policy);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withLivenessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      server.setLivenessProbe(initialDelay, timeout, period);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withReadinessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      server.setReadinessProbe(initialDelay, timeout, period);
+      return this;
+    }
   }
 
   @Override
@@ -215,6 +253,20 @@ public class DomainV2Configurator implements DomainConfigurator {
     @Override
     public ClusterConfigurator withServerStartState(String state) {
       return withDesiredState(state);
+    }
+
+    @Override
+    public ClusterConfigurator withReadinessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      cluster.setReadinessProbe(initialDelay, timeout, period);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withLivenessProbeSettings(
+        Integer initialDelay, Integer timeout, Integer period) {
+      cluster.setLivenessProbe(initialDelay, timeout, period);
+      return this;
     }
   }
 }
