@@ -2,61 +2,150 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{/*
-Record a validation error (it will get reported later by operator reportValidationErrors)
+Start validation
 */}}
-{{- define "operator.recordValidationError" -}}
+{{- define "utils.startValidation" -}}
+{{- $scope := . -}}
+{{- $context := dict "scope" $scope "path" list -}}
+{{- $stack := list $context -}}
+{{- $ignore := set $scope "validationContextStack" $stack -}}
+{{- $ignore := include "utils.setCurrentValidationContext" $scope -}}
+{{- end -}}
+
+{{/*
+End validation
+If there were any validation errors, report them and kill the helm chart installation.
+*/}}
+{{- define "utils.endValidation" -}}
+{{- $scope := . -}}
+{{- if hasKey $scope "validationErrors" -}}
+{{-   fail $scope.validationErrors -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Push a new validation context
+*/}}
+{{- define "utils.pushValidationContext" -}}
+{{- $scope := index . 0 }}
+{{- $scopeName := index . 1 }}
+{{- $newScope := index $scope.validationScope $scopeName -}}
+{{- $newPath := append $scope.validationPath $scopeName -}}
+{{- $newContext := dict "scope" $newScope "path" $newPath -}}
+{{- $newStack := append $scope.validationContextStack $newContext -}}
+{{- $ignore := set $scope "validationContextStack" $newStack -}}
+{{- $ignore := include "utils.setCurrentValidationContext" $scope -}}
+{{- end -}}
+
+{{/*
+Pop the validation context
+*/}}
+{{- define "utils.popValidationContext" -}}
+{{- $scope := . }}
+{{- $stack := $scope.validationContextStack -}}
+{{- $ignore := set $scope "validationContextStack" (initial $stack) -}}
+{{- $ignore := include "utils.setCurrentValidationContext" $scope -}}
+{{- end -}}
+
+{{/*
+Set the current validation context from the stack
+*/}}
+{{- define "utils.setCurrentValidationContext" -}}
+{{- $scope := . }}
+{{- $context := $scope.validationContextStack | last -}}
+{{- $ignore := set $scope "validationScope" (index $context "scope") -}}
+{{- $ignore := set $scope "validationPath" (index $context "path") -}}
+{{- end -}}
+
+{{/*
+Record a validation error (it will get reported later by utils.reportValidationErrors)
+*/}}
+{{- define "utils.recordValidationError" -}}
 {{- $scope := index . 0 -}}
 {{- $errorMsg := index . 1 -}}
+{{- $path := $scope.validationPath -}}
+{{- $pathStr := $path | join "." | trim -}}
+{{- $scopedErrorMsg := (list "\n" $pathStr $errorMsg) | compact | join " " -}}
 {{- if hasKey $scope "validationErrors" -}}
-{{-   $newValidationErrors := cat $scope.validationErrors "\n" $errorMsg -}}
+{{-   $newValidationErrors := cat $scope.validationErrors $scopedErrorMsg -}}
 {{-   $ignore := set $scope "validationErrors" $newValidationErrors -}}
 {{- else -}}
-{{-   $newValidationErrors := cat "\n" $errorMsg -}}
+{{-   $newValidationErrors := $scopedErrorMsg -}}
 {{-   $ignore := set $scope "validationErrors" $newValidationErrors -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Verify that an input value of a specific kind has been specified.
+Returns whether any errors have been reported
 */}}
-{{- define "operator.verifyInputKind" -}}
+{{- define "utils.haveValidationErrors" -}}
+{{- if hasKey . "validationErrors" -}}
+      true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Determine whether a dictionary has a non-null value for a key
+*/}}
+{{- define "utils.dictionaryHasNonNullValue" -}}
+{{- $dict := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- if and (hasKey $dict $name) (not ( eq (typeOf (index $dict $name)) "<nil>" )) -}}
+      true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Verify that a value of a specific kind has been specified.
+*/}}
+{{- define "utils.verifyValue" -}}
 {{- $requiredKind := index . 0 -}}
 {{- $scope := index . 1 -}}
-{{- $parent := index . 2 -}}
-{{- $name := index . 3 -}}
-{{- if hasKey $parent $name -}}
+{{- $name := index . 2 -}}
+{{- $isRequired := index . 3 -}}
+{{- if $scope.trace -}}
+{{-   $errorMsg := cat "TRACE" $name $requiredKind $isRequired -}}
+{{-   $ignore := include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
+{{- $parent := $scope.validationScope -}}
+{{- if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
 {{-   $value := index $parent $name -}}
 {{-   $actualKind := kindOf $value -}}
 {{-   if eq $requiredKind $actualKind -}}
         true
 {{-   else -}}
-{{-     $errorMsg := cat "The" $actualKind "property" $name "must be a" $requiredKind "instead." -}}
-{{-     include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-     $errorMsg := cat $name "must be a" $requiredKind ":" $actualKind -}}
+{{-     include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{-   end -}}
 {{- else -}}
-{{-   $errorMsg := cat "The" $requiredKind "property" $name "must be specified." -}}
-{{-   include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-   if $isRequired -}}
+{{-     $errorMsg := cat $requiredKind $name "must be specified" -}}
+{{-     include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{-   else -}}
+        true
+{{-   end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Verify that a list input value has been specified
+Verify that a list value has been specified
 */}}
-{{- define "operator.verifyListInput" -}}
+{{- define "utils.verifyListValue" -}}
 {{- $requiredKind := index . 0 -}}
 {{- $scope := index . 1 -}}
-{{- $parent := index . 2 -}}
-{{- $name := index . 3 -}}
+{{- $name := index . 2 -}}
+{{- $isRequired := index . 3 -}}
+{{- $parent := $scope.validationScope -}}
 {{- $args := . -}}
-{{- if include "operator.verifyInputKind" (list "slice" $scope $parent $name) -}}
+{{- if include "utils.verifyValue" (list "slice" $scope $name $isRequired) -}}
 {{-   $status := dict -}}
 {{-   if hasKey $parent $name -}}
 {{-     $list := index $parent $name -}}
 {{-     range $value := $list -}}
 {{-       $actualKind := kindOf $value -}}
 {{-       if not (eq $requiredKind $actualKind) -}}
-{{-         $errorMsg := cat "The list property" $name "has a" $actualKind "element.  It must only contain" $requiredKind "elements." -}}
-{{-         include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{-         $errorMsg := cat $name "must only contain" $requiredKind "elements:" $actualKind -}}
+{{-         include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{-         $ignore := set $status "error" true -}}
 {{-       end -}}
 {{-     end -}}
@@ -68,74 +157,206 @@ Verify that a list input value has been specified
 {{- end -}}
 
 {{/*
-Verify that a string input value has been specified
+Verify a string value
 */}}
-{{- define "operator.verifyStringInput" -}}
-{{- $args := . -}}
-{{- include "operator.verifyInputKind" (prepend $args "string") -}} 
+{{- define "utils.baseVerifyString" -}}
+{{- include "utils.verifyValue" (prepend . "string") -}} 
 {{- end -}}
 
 {{/*
-Verify that a boolean input value has been specified
+Verify a required string value
 */}}
-{{- define "operator.verifyBooleanInput" -}}
-{{- include "operator.verifyInputKind" (prepend . "bool") -}} 
+{{- define "utils.verifyString" -}}
+{{- include "utils.baseVerifyString" (append . true) -}} 
 {{- end -}}
 
 {{/*
-Verify that an integer input value has been specified
+Verify an optional string value
 */}}
-{{- define "operator.verifyIntegerInput" -}}
-{{- include "operator.verifyInputKind" (prepend . "float64") -}} 
+{{- define "utils.verifyOptionalString" -}}
+{{- include "utils.baseVerifyString" (append . false) -}} 
 {{- end -}}
 
 {{/*
-Verify that a dictionary input value has been specified
+Verify a boolean value
 */}}
-{{- define "operator.verifyDictInput" -}}
-{{- include "operator.verifyInputKind" (prepend . "map") -}} 
+{{- define "utils.baseVerifyBoolean" -}}
+{{- include "utils.verifyValue" (prepend . "bool") -}} 
 {{- end -}}
 
 {{/*
-Verify that an enum string input value has been specified
+Verify a required boolean value
 */}}
-{{- define "operator.verifyEnumInput" -}}
+{{- define "utils.verifyBoolean" -}}
+{{- include "utils.baseVerifyBoolean" (append . true) -}} 
+{{- end -}}
+
+{{/*
+Verify an optional boolean value
+*/}}
+{{- define "utils.verifyOptionalBoolean" -}}
+{{- include "utils.baseVerifyBoolean" (append . false) -}} 
+{{- end -}}
+
+{{/*
+Verify an integer value
+*/}}
+{{- define "utils.baseVerifyInteger" -}}
+{{- include "utils.verifyValue" (prepend . "float64") -}} 
+{{- end -}}
+
+{{/*
+Verify a required integer value
+*/}}
+{{- define "utils.verifyInteger" -}}
+{{- include "utils.baseVerifyInteger" (append . true) -}} 
+{{- end -}}
+
+{{/*
+Verify an optional required integer value
+*/}}
+{{- define "utils.verifyOptionalInteger" -}}
+{{- include "utils.baseVerifyInteger" (append . false) -}} 
+{{- end -}}
+
+{{/*
+Verify a dictionary value
+*/}}
+{{- define "utils.baseVerifyDictionary" -}}
+{{- include "utils.verifyValue" (prepend . "map") -}} 
+{{- end -}}
+
+{{/*
+Verify a required dictionary value
+*/}}
+{{- define "utils.verifyDictionary" -}}
+{{- include "utils.baseVerifyDictionary" (append . true) -}} 
+{{- end -}}
+
+{{/*
+Verify an optional dictionary value
+*/}}
+{{- define "utils.verifyOptionalDictionary" -}}
+{{- include "utils.baseVerifyDictionary" (append . false) -}} 
+{{- end -}}
+
+{{/*
+Verify a enum string value
+*/}}
+{{- define "utils.baseVerifyEnum" -}}
 {{- $scope := index . 0 -}}
-{{- $parent := index . 1 -}}
-{{- $name := index . 2 -}}
-{{- $legalValues := index . 3 -}}
-{{- if include "operator.verifyStringInput" (list $scope $parent $name) -}}
-{{-   $value := index $parent $name -}}
-{{-   if has $value $legalValues -}}
-      true
-{{-   else -}}
-{{      $errorMsg := cat "The property" $name "must be one of the following values" $legalValues "instead of" $value -}}
-{{-     include "operator.recordValidationError" (list $scope $errorMsg) -}}
+{{- $name := index . 1 -}}
+{{- $legalValues := index . 2 -}}
+{{- $isRequired := index . 3 -}}
+{{- if include "utils.baseVerifyString" (list $scope $name $isRequired) -}}
+{{-   $parent := $scope.validationScope -}}
+{{-   if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
+{{-     $value := index $parent $name -}}
+{{-     if has $value $legalValues -}}
+          true
+{{-     else -}}
+{{        $errorMsg := cat $name "must be one of the following values" $legalValues ":" $value -}}
+{{-       include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{-     end -}}
 {{-   end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Verify that a list of strings input value has been specified
+Verify a required enum string value
 */}}
-{{- define "operator.verifyStringListInput" -}}
-{{- include "operator.verifyListInput" (prepend . "string") -}} 
+{{- define "utils.verifyEnum" -}}
+{{- include "utils.baseVerifyEnum" (append . true) -}} 
 {{- end -}}
 
 {{/*
-Verify that a list of dictionaries input value has been specified
+Verify an optional enum string value
 */}}
-{{- define "operator.verifyDictListInput" -}}
-{{- include "operator.verifyListInput" (prepend . "map") -}} 
+{{- define "utils.verifyOptionalEnum" -}}
+{{- include "utils.baseVerifyEnum" (append . false) -}} 
 {{- end -}}
 
 {{/*
-Report the validation errors that have been found then kill the helm chart install
+Verify a kubernetes resource name string value
 */}}
-{{- define "operator.reportValidationErrors" -}}
-{{- if .validationErrors -}}
-{{-   fail .validationErrors -}}
+{{- define "utils.baseVerifyResourceName" -}}
+{{- if include "utils.baseVerifyString" . -}}
+{{/*   https://kubernetes.io/docs/concepts/overview/working-with-objects/names */}}
+{{/*     names: only lower case, numbers, dot, dash, max 253 */}}
+{{/*   https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set  */}}
+{{/*     labels/selectors - upper & lower case, numbers, dot, dash, underscore, max 63  */}}
+{{-   $scope := index . 0 -}}
+{{-   $name := index . 1 -}}
+{{-   $isRequired := index 2 -}}
+{{-   $parent := $scope.validationScope -}}
+{{-   if include "utils.dictionaryHasNonNullValue" (list $parent $name) -}}
+{{-     $value := index $parent $name -}}
+{{-     $len := len $value -}}
+{{-     if and (lt $len 64) (regexMatch "^[a-z0-9.-]+$" $value) -}}
+          true
+{{-     else -}}
+{{-       $errorMsg := cat $name "must only contain lower case letters, numbers, dashes and dots, and must not contain more than 63 characters: " $value -}}
+{{-       include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{-     end -}}
+{{-   end -}}
+{{- else -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Verify a required kubernetes resource name string value
+*/}}
+{{- define "utils.verifyResourceName" -}}
+{{- include "utils.baseVerifyResourceName" (append . true) -}} 
+{{- end -}}
+
+{{/*
+Verify an optional kubernetes resource name string value
+*/}}
+{{- define "utils.verifyOptionalResourceName" -}}
+{{- include "utils.baseVerifyResourceName" (append . false) -}} 
+{{- end -}}
+
+{{/*
+Verify a list of strings value
+*/}}
+{{- define "utils.baseVerifyStringList" -}}
+{{- include "utils.verifyListValue" (prepend . "string") -}} 
+{{- end -}}
+
+{{/*
+Verify a required list of strings value
+*/}}
+{{- define "utils.verifyStringList" -}}
+{{- include "utils.baseVerifyStringList" (append . true) -}} 
+{{- end -}}
+
+{{/*
+Verify an optional list of strings value
+*/}}
+{{- define "utils.verifyOptionalStringList" -}}
+{{- include "utils.baseVerifyStringList" (append . false) -}} 
+{{- end -}}
+
+{{/*
+Verify a list of dictionaries value
+*/}}
+{{- define "utils.baseVerifyDictionaryList" -}}
+{{- include "utils.verifyListValue" (prepend . "map") -}} 
+{{- end -}}
+
+{{/*
+Verify a required list of dictionaries value
+*/}}
+{{- define "utils.verifyDictionaryList" -}}
+{{- include "utils.baseVerifyDictionaryList" (append . true) -}} 
+{{- end -}}
+
+{{/*
+Verify an optional list of dictionaries value
+*/}}
+{{- define "utils.verifyOptionalDictionaryList" -}}
+{{- include "utils.baseVerifyDictionaryList" (append . false) -}} 
 {{- end -}}
 
 {{/*
@@ -152,12 +373,12 @@ If a value is null, then it removes that key from the destination dictionary.
 If the value is already present in the destination dictionary, and the old and
 new values are both dictionaries, it merges them into the destination.
 */}}
-{{- define "operator.mergeDictionaries" -}}
+{{- define "utils.mergeDictionaries" -}}
 {{- $dest := dict -}}
 {{- range $src := . -}}
 {{-   if not (empty $src) -}}
 {{-     range $key, $value := $src -}}
-{{-       $ignore := include "operator.mergeDictionaryValue" (list $dest $key $value) -}}
+{{-       $ignore := include "utils.mergeDictionaryValue" (list $dest $key $value) -}}
 {{-     end -}}
 {{-   end -}}
 {{- end -}}
@@ -168,7 +389,7 @@ new values are both dictionaries, it merges them into the destination.
 Merge a value into a dictionary.
 This is like helm's 'merge' function, except that it handles null entries too.
 */}}
-{{- define "operator.mergeDictionaryValue" -}}
+{{- define "utils.mergeDictionaryValue" -}}
 {{- $dest := index . 0 -}}
 {{- $key := index . 1 -}}
 {{- $newValue := index . 2 -}}
@@ -183,7 +404,7 @@ This is like helm's 'merge' function, except that it handles null entries too.
 {{-     $newKind := kindOf $newValue -}}
 {{-     if (and (eq $oldKind "map") (eq $newKind "map")) -}}
 {{/*       # if both values are maps, merge them */}}
-{{-       $merged := include "operator.mergeDictionaries" (list $oldValue $newValue) | fromYaml -}}
+{{-       $merged := include "utils.mergeDictionaries" (list $oldValue $newValue) | fromYaml -}}
 {{-       $ignore := set $dest $key $merged -}}
 {{-     else -}}
 {{/*       # replace the old value with the new one */}}
@@ -202,6 +423,6 @@ This is like helm's 'merge' function, except that it handles null entries too.
 Make a writable copy of a dictionary.
 TBD - does helm provide a clone method we can use instead?
 */}}
-{{- define "operator.cloneDictionary" -}}
-{{- include "operator.mergeDictionaries" (list .) -}}
+{{- define "utils.cloneDictionary" -}}
+{{- include "utils.mergeDictionaries" (list .) -}}
 {{- end -}}

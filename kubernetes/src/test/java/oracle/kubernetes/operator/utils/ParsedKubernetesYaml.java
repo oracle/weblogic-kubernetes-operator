@@ -312,11 +312,15 @@ public class ParsedKubernetesYaml {
       if (specAsMap == null) {
         return;
       }
-      String caBundleValueAsBase64EncodedString = (String) specAsMap.get("caBundle");
-      if (caBundleValueAsBase64EncodedString == null) {
-        return;
+      Object caBundle = specAsMap.get("caBundle");
+      if (caBundle == null) return;
+
+      byte[] caBundleAsBytes;
+      if (caBundle instanceof byte[]) caBundleAsBytes = (byte[]) caBundle;
+      else {
+        String caBundleValueAsBase64EncodedString = (String) caBundle;
+        caBundleAsBytes = Base64.decodeBase64(caBundleValueAsBase64EncodedString);
       }
-      byte[] caBundleAsBytes = Base64.decodeBase64(caBundleValueAsBase64EncodedString);
       specAsMap.put("caBundle", caBundleAsBytes);
     }
   }

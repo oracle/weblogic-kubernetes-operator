@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helm;
 
-import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_CUSTOM_CERT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -32,7 +31,7 @@ public class HelmOperatorValuesTest {
   public void whenServiceAccountSet_createdMapContainsValue() {
     operatorValues.serviceAccount(stringValue);
 
-    assertThat(operatorValues.createMap(), hasEntry("operatorServiceAccount", stringValue));
+    assertThat(operatorValues.createMap(), hasEntry("serviceAccount", stringValue));
   }
 
   @Test
@@ -52,36 +51,35 @@ public class HelmOperatorValuesTest {
   @Test
   public void whenCreatedFromMapWithServiceAccount_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("operatorServiceAccount", stringValue));
+        new HelmOperatorValues(ImmutableMap.of("serviceAccount", stringValue));
 
     assertThat(values.getServiceAccount(), equalTo(stringValue));
   }
 
   @Test
-  public void whenOperatorImageSet_createdMapContainsValue() {
+  public void whenWeblogicOperatorImageSet_createdMapContainsValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
-    assertThat(operatorValues.createMap(), hasEntry("operatorImage", stringValue));
+    assertThat(operatorValues.createMap(), hasEntry("image", stringValue));
   }
 
   @Test
-  public void OperatorImageIsGettableStringValue() {
+  public void WeblogicOperatorImageIsGettableStringValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImage(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutOperatorImage_hasEmptyString() {
+  public void whenCreatedFromMapWithoutImage_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getWeblogicOperatorImage(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithOperatorImage_hasSpecifiedValue() {
-    HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("operatorImage", stringValue));
+  public void whenCreatedFromMapWithImage_hasSpecifiedValue() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of("image", stringValue));
 
     assertThat(values.getWeblogicOperatorImage(), equalTo(stringValue));
   }
@@ -157,7 +155,7 @@ public class HelmOperatorValuesTest {
   public void whenWeblogicOperatorImagePullPolicySet_createdMapContainsValue() {
     operatorValues.weblogicOperatorImagePullPolicy(stringValue);
 
-    assertThat(operatorValues.createMap(), hasEntry("operatorImagePullPolicy", stringValue));
+    assertThat(operatorValues.createMap(), hasEntry("imagePullPolicy", stringValue));
   }
 
   @Test
@@ -168,34 +166,33 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithoutWeblogicOperatorImagePullPolicy_hasEmptyString() {
+  public void whenCreatedFromMapWithoutImagePullPolicy_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithWeblogicOperatorImagePullPolicy_hasSpecifiedValue() {
+  public void whenCreatedFromMapWithImagePullPolicy_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("operatorImagePullPolicy", stringValue));
+        new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", stringValue));
 
     assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithExternalRestOption_hasSpecifiedValue() {
-    String option = EXTERNAL_REST_OPTION_CUSTOM_CERT;
+  public void whenCreatedFromMapWithExternalRestEnabled_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("externalRestOption", option));
+        new HelmOperatorValues(ImmutableMap.of("externalRestEnabled", true));
 
-    assertThat(values.getExternalRestOption(), equalTo(option));
+    assertThat(values.getExternalRestEnabled(), equalTo("true"));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutExternalRestOption_hasEmptyString() {
+  public void whenCreatedFromMapWithoutExternalRestEnabled_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
-    assertThat(values.getExternalRestOption(), equalTo(""));
+    assertThat(values.getExternalRestEnabled(), equalTo(""));
   }
 
   // --------------- remoteDebugNodePortEnabled
@@ -362,30 +359,30 @@ public class HelmOperatorValuesTest {
 
   @Test
   public void whenTargetNamespacesNotDefined_createdMapLacksValue() {
-    assertThat(operatorValues.createMap(), not(hasKey("domainsNamespaces")));
+    assertThat(operatorValues.createMap(), not(hasKey("domainNamespaces")));
   }
 
   @Test
   public void whenSingleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.targetNamespaces(stringValue);
 
-    assertThat(getDomainsNamespaces(), hasItem(stringValue));
+    assertThat(getDomainNamespaces(), hasItem(stringValue));
   }
 
   @SuppressWarnings("unchecked")
-  private List<String> getDomainsNamespaces() {
-    return (List<String>) operatorValues.createMap().get("domainsNamespaces");
+  private List<String> getDomainNamespaces() {
+    return (List<String>) operatorValues.createMap().get("domainNamespaces");
   }
 
   @Test
   public void whenMultipleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.targetNamespaces("aaa,bbb");
 
-    assertThat(getDomainsNamespaces(), hasItems("aaa", "bbb"));
+    assertThat(getDomainNamespaces(), hasItems("aaa", "bbb"));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutDomainsNamespaces_hasEmptyString() {
+  public void whenCreatedFromMapWithoutDomainNamespaces_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getTargetNamespaces(), equalTo(""));
@@ -394,8 +391,7 @@ public class HelmOperatorValuesTest {
   @Test
   public void whenCreatedFromMapWithSingleNamespace_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(
-            ImmutableMap.of("domainsNamespaces", ImmutableList.of("namespace1")));
+        new HelmOperatorValues(ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1")));
 
     assertThat(values.getTargetNamespaces(), equalTo("namespace1"));
   }
@@ -404,7 +400,7 @@ public class HelmOperatorValuesTest {
   public void whenCreatedFromMapWithMultipleNamespaces_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(
-            ImmutableMap.of("domainsNamespaces", ImmutableList.of("namespace1", "namespace2")));
+            ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1", "namespace2")));
 
     assertThat(values.getTargetNamespaces(), equalTo("namespace1,namespace2"));
   }
@@ -450,8 +446,8 @@ public class HelmOperatorValuesTest {
     HelmOperatorValues values =
         new HelmOperatorValues(
             new ImmutableMap.Builder<String, Object>()
-                .put("operatorServiceAccount", "test-account")
-                .put("operatorImage", "test-image")
+                .put("serviceAccount", "test-account")
+                .put("image", "test-image")
                 .put("javaLoggingLevel", "FINE")
                 .build());
 

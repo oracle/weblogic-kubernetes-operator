@@ -14,55 +14,7 @@ import static oracle.kubernetes.operator.VersionConstants.APACHE_LOAD_BALANCER_V
 import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
 import static oracle.kubernetes.operator.VersionConstants.TRAEFIK_LOAD_BALANCER_V1;
 import static oracle.kubernetes.operator.VersionConstants.VOYAGER_LOAD_BALANCER_V1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_GROUP_RBAC;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_APPS_V1BETA1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_EXTENSIONS_V1BETA1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.API_VERSION_RBAC_V1;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_CLUSTER_ROLE;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE_ACCOUNT;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.containsRegexps;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.getThenEmptyConfigMapDataValue;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRole;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newClusterRoleBinding;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMap;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newConfigMapVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainer;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainerPort;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeployment;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeploymentSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDomain;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDomainSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHTTPGetAction;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newHostPathVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newIntOrString;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newJob;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newJobSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLabelSelector;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalObjectReferenceList;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectMeta;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolume;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeClaim;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeClaimSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeClaimVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPersistentVolumeSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodTemplateSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPolicyRule;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newProbe;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newResourceRequirements;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretReference;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecretVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newService;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceAccount;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServicePort;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newServiceSpec;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSubject;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newTCPSocketAction;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newToleration;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.*;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -94,6 +46,7 @@ import oracle.kubernetes.operator.utils.ParsedVoyagerOperatorYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeClaimYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicDomainPersistentVolumeYaml;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.junit.Test;
 
@@ -196,6 +149,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return newJob()
         .metadata(
             newObjectMeta()
+                .annotations(factory.getExpectedDomainJobAnnotations())
                 .name(getInputs().getDomainUID() + "-create-weblogic-domain-job")
                 .namespace(getInputs().getNamespace()))
         .spec(
@@ -249,8 +203,9 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                                         .persistentVolumeClaim(
                                             newPersistentVolumeClaimVolumeSource()
                                                 .claimName(
-                                                    getInputs()
-                                                        .getWeblogicDomainPersistentVolumeClaimName())))
+                                                    factory
+                                                        .getWeblogicDomainPersistentVolumeClaimName(
+                                                            getInputs()))))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-credentials-volume")
@@ -304,6 +259,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
     return newConfigMap()
         .metadata(
             newObjectMeta()
+                .annotations(factory.getExpectedConfigMapAnnotations())
                 .name(getInputs().getDomainUID() + "-create-weblogic-domain-job-cm")
                 .namespace(getInputs().getNamespace())
                 .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
@@ -440,7 +396,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
                     .withAsPort(Integer.parseInt(getInputs().getAdminPort()))
                     .withStartupControl(getInputs().getStartupControl()));
 
-    DomainConfigurator configurator = DomainConfigurator.forDomain(domain);
+    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
     configurator
         .configureAdminServer()
         .withDesiredState("RUNNING")

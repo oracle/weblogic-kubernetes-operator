@@ -17,20 +17,18 @@ import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
-  private static final String WRONG_TYPE = "The %s property %s must be a %s instead";
+  private static final String MISSING = "%s %s must be specified";
 
-  private static final String[] TOP_LEVEL_BOOLEAN_PROPERTIES = {
-    "createSharedOperatorResources", "createOperator" // , "elkIntegrationEnabled"
+  private static final String WRONG_TYPE = "%s must be a %s : %s";
+
+  private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {
+    "elkIntegrationEnabled", "externalRestEnabled"
   };
 
-  private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
-
-  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {
-    "operatorServiceAccount", "operatorImage"
-  };
+  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
 
   private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
-    "operatorImagePullPolicy", "javaLoggingLevel", "externalRestOption", "internalRestOption"
+    "imagePullPolicy", "javaLoggingLevel"
   };
 
   private static final String[] LOGGING_LEVELS = {
@@ -38,10 +36,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   };
 
   private static final String[] PULL_POLICIES = {"Always", "IfNotPresent", "Never"};
-
-  private static final String[] EXTERNAL_REST_OPTIONS = {"NONE", "SELF_SIGNED_CERT", "CUSTOM_CERT"};
-
-  private static final String[] INTERNAL_REST_OPTIONS = {"SELF_SIGNED_CERT", "CUSTOM_CERT"};
 
   private HelmOperatorYamlFactory factory = new HelmOperatorYamlFactory();
   private Map<String, Object> overrides;
@@ -52,12 +46,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenStringSpecifiedForBooleanTopLevelProperties_reportError() throws Exception {
-    whenStringSpecifiedForBooleanProperties_reportError(TOP_LEVEL_BOOLEAN_PROPERTIES);
-  }
-
-  @Test
-  public void whenStringSpecifiedForOperatorTopLevelProperties_reportError() throws Exception {
+  public void whenStringSpecifiedForOperatorLevelProperties_reportError() throws Exception {
     whenStringSpecifiedForBooleanProperties_reportError(OPERATOR_LEVEL_BOOLEAN_PROPERTIES);
   }
 
@@ -83,12 +72,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
-    return containsString(String.format(WRONG_TYPE, actualType, name, expectedType));
-  }
-
-  @Test
-  public void whenTopLevelBooleanPropertiesMissing_reportError() throws Exception {
-    whenBooleanPropertiesMissing_reportError(TOP_LEVEL_BOOLEAN_PROPERTIES);
+    return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
   }
 
   @Test
@@ -113,7 +97,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingBoolParameterError(String propertyName) {
-    return containsString(String.format("The bool property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "bool", propertyName));
   }
 
   @Test
@@ -130,7 +114,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingStringParameterError(String propertyName) {
-    return containsString(String.format("The string property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "string", propertyName));
   }
 
   @Test
@@ -147,37 +131,36 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingEnumParameterError(String propertyName) {
-    return containsString(String.format("The string property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "string", propertyName));
   }
 
   @Test
   public void whenBadValuesSpecifiedForOperatorLevelEnumProperties_reportError() throws Exception {
+    String badValue = "bogus";
     for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
-      setProperty(propertyName, "bogus");
+      setProperty(propertyName, badValue);
     }
 
     assertThat(
         getProcessingError(),
         allOf(
-            containsEnumParameterError("operatorImagePullPolicy", PULL_POLICIES),
-            containsEnumParameterError("javaLoggingLevel", LOGGING_LEVELS),
-            containsEnumParameterError("externalRestOption", EXTERNAL_REST_OPTIONS),
-            containsEnumParameterError("internalRestOption", INTERNAL_REST_OPTIONS)));
+            containsEnumParameterError("imagePullPolicy", badValue, PULL_POLICIES),
+            containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS)));
   }
 
-  private Matcher<String> containsEnumParameterError(String propertyName, String... validValues) {
+  private Matcher<String> containsEnumParameterError(
+      String propertyName, String badValue, String... validValues) {
     return containsString(
         String.format(
-            "The property %s must be one of the following values [%s]",
-            propertyName, String.join(" ", validValues)));
+            "%s must be one of the following values [%s] : %s",
+            propertyName, String.join(" ", validValues), badValue));
   }
 
   @Test
   public void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
-    setProperty("externalRestOption", "NONE");
+    setProperty("externalRestEnabled", false);
 
     removeProperty("externalRestHttpsPort");
-    removeProperty("externalOperatorCertSans");
     removeProperty("externalOperatorCert");
     removeProperty("externalOperatorKey");
 
@@ -186,10 +169,9 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   @Test
   public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
-    setProperty("externalRestOption", "NONE");
+    setProperty("externalRestEnabled", false);
 
     setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCertSans", false);
     setProperty("externalOperatorCert", 1234);
     setProperty("externalOperatorKey", true);
 
@@ -197,21 +179,12 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenExternalRestSelfSignedCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureExternalRestSelfSignedCert();
+  public void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
+    setProperty("externalRestEnabled", true);
 
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("externalRestHttpsPort", "float64", "string"),
-            containsTypeError("externalOperatorCertSans", "string", "bool"),
-            containsTypeError("externalOperatorCert", "string", "float64"),
-            containsTypeError("externalOperatorKey", "string", "bool")));
-  }
-
-  @Test
-  public void whenExternalRestCustomCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureExternalRestCustomCert();
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalOperatorCert", 1234);
+    setProperty("externalOperatorKey", true);
 
     assertThat(
         getProcessingError(),
@@ -219,59 +192,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
             containsTypeError("externalRestHttpsPort", "float64", "string"),
             containsTypeError("externalOperatorCert", "string", "float64"),
             containsTypeError("externalOperatorKey", "string", "bool")));
-  }
-
-  private void misconfigureExternalRestSelfSignedCert() {
-    setProperty("externalRestOption", "SELF_SIGNED_CERT");
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCertSans", false);
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
-  }
-
-  private void misconfigureExternalRestCustomCert() {
-    setProperty("externalRestOption", "CUSTOM_CERT");
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
-  }
-
-  @Test
-  public void whenInternalRestSelfSignedCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureInternalRestSelfSignedCert();
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("internalOperatorCert", "string", "float64"),
-            containsTypeError("internalOperatorKey", "string", "bool")));
-  }
-
-  @Test
-  public void whenInternalRestCustomCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureInternalRestCustomCert();
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("internalOperatorCert", "string", "float64"),
-            containsTypeError("internalOperatorKey", "string", "bool")));
-  }
-
-  private void misconfigureInternalRestSelfSignedCert() {
-    setProperty("internalRestOption", "SELF_SIGNED_CERT");
-
-    setProperty("internalOperatorCert", 1234);
-    setProperty("internalOperatorKey", true);
-  }
-
-  private void misconfigureInternalRestCustomCert() {
-    setProperty("internalRestOption", "CUSTOM_CERT");
-
-    setProperty("internalOperatorCert", 1234);
-    setProperty("internalOperatorKey", true);
   }
 
   @Test
@@ -298,7 +218,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   private Matcher<String> containsMissingIntParameterError(String propertyName) {
-    return containsString(String.format("The float64 property %s must be specified", propertyName));
+    return containsString(String.format(MISSING, "float64", propertyName));
   }
 
   @Test
@@ -315,9 +235,9 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenDomainsNamespacesPrimitiveType_reportError() throws Exception {
-    setProperty("domainsNamespaces", true);
+  public void whenDomainNamespacesPrimitiveType_reportError() throws Exception {
+    setProperty("domainNamespaces", true);
 
-    assertThat(getProcessingError(), containsTypeError("domainsNamespaces", "slice", "bool"));
+    assertThat(getProcessingError(), containsTypeError("domainNamespaces", "slice", "bool"));
   }
 }

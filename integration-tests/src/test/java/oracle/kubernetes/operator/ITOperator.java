@@ -30,13 +30,13 @@ public class ITOperator extends BaseTest {
   private static String op2PropsFile = "ITSecondOperator.properties";
 
   // property file used to customize domain properties for domain inputs yaml
-  private static String domain1PropsFile = "ITFirstDomain.properties";
-  private static String domain2PropsFile = "ITSecondDomain.properties";
-  private static String domain3PropsFile = "ITThirdDomain.properties";
-  private static String domain4PropsFile = "ITFourthDomain.properties";
-  private static String domain5PropsFile = "ITFifthDomain.properties";
-  private static String domain6PropsFile = "ITSixthDomain.properties";
-  private static String domain7PropsFile = "ITSeventhDomain.properties";
+  private static String domain1YamlFile = "domain1.yaml";
+  private static String domain2YamlFile = "domain2.yaml";
+  private static String domain3YamlFile = "domain3.yaml";
+  private static String domain4YamlFile = "domain4.yaml";
+  private static String domain5YamlFile = "domain5.yaml";
+  private static String domain6YamlFile = "domain6.yaml";
+  private static String domain7YamlFile = "domain7.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -104,10 +104,10 @@ public class ITOperator extends BaseTest {
     logTestBegin("test2CreateAnotherDomainInDefaultNS");
     logger.info("Creating Domain domain2 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     // create domain2
-    Domain domain2 = testDomainCreation(domain2PropsFile);
+    Domain domain2 = testDomainCreation(domain2YamlFile);
 
     logger.info("Destroy domain2");
     domain2.destroy();
@@ -122,10 +122,10 @@ public class ITOperator extends BaseTest {
     logTestBegin("test3CreateDomainInTest1NS");
     logger.info("Creating Domain domain3 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     // create domain3
-    testDomainCreation(domain3PropsFile);
+    testDomainCreation(domain3YamlFile);
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
@@ -137,7 +137,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test4CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator2
-    operator2 = TestUtils.createOperator(op2PropsFile, false);
+    operator2 = TestUtils.createOperator(op2PropsFile);
     logger.info("SUCCESS - test4CreateAnotherOperatorManagingTest2NS");
   }
 
@@ -151,17 +151,17 @@ public class ITOperator extends BaseTest {
 
     logger.info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1PropsFile);
+      domain1 = TestUtils.createDomain(domain1YamlFile);
     }
     logger.info("Checking if operator2 is running, if not creating");
     if (operator2 == null) {
-      operator2 = TestUtils.createOperator(op2PropsFile, false);
+      operator2 = TestUtils.createOperator(op2PropsFile);
     }
     // create domain4
-    Domain domain4 = testDomainCreation(domain4PropsFile);
+    Domain domain4 = testDomainCreation(domain4YamlFile);
 
     logger.info("Verify the only remaining running domain domain1 is unaffected");
     domain1.verifyDomainCreated();
@@ -188,11 +188,11 @@ public class ITOperator extends BaseTest {
     logTestBegin("test6CreateDomainWithStartupControlAdmin");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     logger.info("Creating Domain domain5 & verifing the domain creation");
     // create domain5
-    TestUtils.createDomain(domain5PropsFile);
+    TestUtils.createDomain(domain5YamlFile);
     logger.info("SUCCESS - test6CreateDomainWithStartupControlAdmin");
   }
 
@@ -204,11 +204,11 @@ public class ITOperator extends BaseTest {
     logTestBegin("test7CreateDomainPVReclaimPolicyRecycle");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain6
-    Domain domain6 = TestUtils.createDomain(domain6PropsFile);
+    Domain domain6 = TestUtils.createDomain(domain6YamlFile);
     domain6.shutdown();
     domain6.deletePVCAndCheckPVReleased();
     logger.info("SUCCESS - test7CreateDomainPVReclaimPolicyRecycle");
@@ -222,15 +222,15 @@ public class ITOperator extends BaseTest {
     logTestBegin("test8WlsLivenessProbe");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1PropsFile);
+      domain1 = TestUtils.createDomain(domain1YamlFile);
     }
     // test managed server1 pod auto restart
     String domain = domain1.getDomainUid();
-    String namespace = domain1.getDomainProps().getProperty("namespace");
-    String serverName = domain1.getDomainProps().getProperty("managedServerNameBase") + "1";
+    String namespace = domain1.getDomainMap().get("namespace").toString();
+    String serverName = domain1.getDomainMap().get("managedServerNameBase").toString() + "1";
     TestUtils.testWlsLivenessProbe(domain, serverName, namespace);
     logger.info("SUCCESS - test8WlsLivenessProbe");
   }
@@ -242,10 +242,10 @@ public class ITOperator extends BaseTest {
 
     logTestBegin("test9CreateDomainOnExistingDir");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
     if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1PropsFile);
+      domain1 = TestUtils.createDomain(domain1YamlFile);
     }
     logger.info("domain1 " + domain1);
     // create domain on existing dir
@@ -261,11 +261,11 @@ public class ITOperator extends BaseTest {
     logTestBegin("testACreateDomainApacheLB");
     logger.info("Creating Domain domain7 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile, true);
+      operator1 = TestUtils.createOperator(op1PropsFile);
     }
 
     // create domain7
-    Domain domain7 = TestUtils.createDomain(domain7PropsFile);
+    Domain domain7 = TestUtils.createDomain(domain7YamlFile);
     domain7.verifyAdminConsoleViaLB();
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
@@ -273,20 +273,20 @@ public class ITOperator extends BaseTest {
   private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
-    operator1 = TestUtils.createOperator(op1PropsFile, true);
+    operator1 = TestUtils.createOperator(op1PropsFile);
   }
 
   private void testCreateDomainInDefaultNS() throws Exception {
     logger.info("Creating Domain domain1 & verifing the domain creation");
     // create domain1
-    domain1 = testDomainCreation(domain1PropsFile);
+    domain1 = testDomainCreation(domain1YamlFile);
     testDomainLifecyle(operator1, domain1);
     testClusterScaling(operator1, domain1);
     testOperatorLifecycle(operator1, domain1);
   }
 
-  private Domain testDomainCreation(String domainPropsFile) throws Exception {
-    Domain domain = TestUtils.createDomain(domainPropsFile);
+  private Domain testDomainCreation(String domainYamlFile) throws Exception {
+    Domain domain = TestUtils.createDomain(domainYamlFile);
     testAdminT3Channel(domain);
     testAdminServerExternalService(domain);
     return domain;

@@ -7,13 +7,13 @@ kind: "RoleBinding"
 apiVersion: "rbac.authorization.k8s.io/v1beta1"
 metadata:
   name: "weblogic-operator-rolebinding-namespace"
-  namespace: {{ .domainsNamespace | quote }}
+  namespace: {{ .domainNamespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 subjects:
 - kind: "ServiceAccount"
-  name: {{ .operatorServiceAccount | quote }}
+  name: {{ .serviceAccount | quote }}
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
