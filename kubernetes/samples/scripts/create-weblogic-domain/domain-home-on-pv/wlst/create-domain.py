@@ -1,25 +1,32 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+def getEnvVar(var):
+  val=os.environ.get(var)
+  if val==None:
+    print "ERROR: Env var ",var, " not set."
+    sys.exit(1)
+  return val
+
 # This python script is used to create a WebLogic domain
 
-domain_uid                   = os.environ.get("DOMAIN_UID")
-server_port                  = int(os.environ.get("MANAGED_SERVER_PORT"))
-domain_path                  = os.environ.get("DOMAIN_HOME")
-cluster_name                 = os.environ.get("CLUSTER_NAME")
-admin_server_name            = os.environ.get("ADMIN_SERVER_NAME")
-admin_server_name_svc        = os.environ.get("ADMIN_SERVER_NAME_SVC")
-admin_port                   = int(os.environ.get("ADMIN_PORT"))
-domain_name                  = os.environ.get("DOMAIN_NAME")
-t3_channel_port              = int(os.environ.get("T3_CHANNEL_PORT"))
-t3_public_address            = os.environ.get("T3_PUBLIC_ADDRESS")
-number_of_ms                 = int(os.environ.get("CONFIGURED_MANAGED_SERVER_COUNT"))
-cluster_type                 = os.environ.get("CLUSTER_TYPE")
-managed_server_name_base     = os.environ.get("MANAGED_SERVER_NAME_BASE")
-managed_server_name_base_svc = os.environ.get("MANAGED_SERVER_NAME_BASE_SVC")
-domain_logs                  = os.environ.get("DOMAIN_LOGS_DIR")
-script_dir                   = os.environ.get("CREATE_DOMAIN_SCRIPT_DIR")
-production_mode_enabled      = os.environ.get("PROUDCTION_MODE_ENABLED")
+domain_uid                   = getEnvVar("DOMAIN_UID")
+server_port                  = int(getEnvVar("MANAGED_SERVER_PORT"))
+domain_path                  = getEnvVar("DOMAIN_HOME")
+cluster_name                 = getEnvVar("CLUSTER_NAME")
+admin_server_name            = getEnvVar("ADMIN_SERVER_NAME")
+admin_server_name_svc        = getEnvVar("ADMIN_SERVER_NAME_SVC")
+admin_port                   = int(getEnvVar("ADMIN_PORT"))
+domain_name                  = getEnvVar("DOMAIN_NAME")
+t3_channel_port              = int(getEnvVar("T3_CHANNEL_PORT"))
+t3_public_address            = getEnvVar("T3_PUBLIC_ADDRESS")
+number_of_ms                 = int(getEnvVar("CONFIGURED_MANAGED_SERVER_COUNT"))
+cluster_type                 = getEnvVar("CLUSTER_TYPE")
+managed_server_name_base     = getEnvVar("MANAGED_SERVER_NAME_BASE")
+managed_server_name_base_svc = getEnvVar("MANAGED_SERVER_NAME_BASE_SVC")
+domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
+script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
+production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
 
 # Read the domain secrets from the common python file
 execfile('%s/read-domain-secret.py' % script_dir)

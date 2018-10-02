@@ -18,7 +18,7 @@ spec:
       containers:
         - name: create-weblogic-sample-domain-job
           image: %WEBLOGIC_IMAGE%
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
           ports:
             - containerPort: 7001
           volumeMounts:
