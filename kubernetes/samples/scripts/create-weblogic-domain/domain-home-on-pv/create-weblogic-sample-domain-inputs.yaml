@@ -44,7 +44,8 @@ managedServerPort: 8001
 image: store/oracle/weblogic:12.2.1.3
 
 # Image pull policy
-imagePullPolicy: Never
+# Legal values are "IfNotPresent", "Always", or "Never"
+imagePullPolicy: IfNotPresent
 
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
