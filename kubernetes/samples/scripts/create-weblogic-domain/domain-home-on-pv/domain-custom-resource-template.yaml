@@ -23,7 +23,7 @@ spec:
   # The Operator currently does not support other images
   image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
   # Identify which Secret contains the credentials for pulling an image
   imagePullSecret:
     name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%

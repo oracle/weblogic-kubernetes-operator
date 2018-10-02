@@ -108,6 +108,29 @@ function validateDomainSecret {
 }
 
 #
+# Function to validate the weblogic image pull policy
+#
+function validateWeblogicImagePullPolicy {
+  if [ ! -z ${imagePullPolicy} ]; then
+    case ${imagePullPolicy} in
+      "IfNotPresent")
+      ;;
+      "Always")
+      ;;
+      "Never")
+      ;;
+      *)
+        validationError "Invalid value for imagePullPolicy: ${imagePullPolicy}. Valid values are IfNotPresent, Always, and Never."
+      ;;
+    esac
+  else
+    # Set the default
+    imagePullPolicy="IfNotPresent"
+  fi
+  failIfValidationErrors
+}
+
+#
 # Function to validate the weblogic image pull secret name
 #
 function validateWeblogicImagePullSecretName {
@@ -238,6 +261,7 @@ function initialize {
   validateManagedServerNameBase
   validateClusterName
   validateWeblogicCredentialsSecretName
+  validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
   initAndValidateOutputDir
   validateStartupControl
@@ -299,6 +323,7 @@ function createYamlFiles {
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${createJobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${createJobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
@@ -326,6 +351,7 @@ function createYamlFiles {
   cp ${deleteJobInput} ${deleteJobOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${deleteJobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${deleteJobOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${deleteJobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${deleteJobOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${deleteJobOutput}
@@ -356,6 +382,7 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}

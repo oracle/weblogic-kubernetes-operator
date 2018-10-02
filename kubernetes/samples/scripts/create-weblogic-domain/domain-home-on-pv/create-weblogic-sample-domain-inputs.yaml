@@ -43,6 +43,9 @@ managedServerPort: 8001
 # WebLogic Docker image
 image: store/oracle/weblogic:12.2.1.3
 
+# Image pull policy
+imagePullPolicy: Never
+
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
