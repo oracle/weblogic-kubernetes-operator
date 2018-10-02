@@ -111,16 +111,16 @@ function validateDomainSecret {
 # Function to validate the weblogic image pull secret name
 #
 function validateWeblogicImagePullSecretName {
-  if [ ! -z ${weblogicImagePullSecretName} ]; then
-    validateLowerCase weblogicImagePullSecretName ${weblogicImagePullSecretName}
-    weblogicImagePullSecretPrefix=""
+  if [ ! -z ${imagePullSecretName} ]; then
+    validateLowerCase imagePullSecretName ${imagePullSecretName}
+    imagePullSecretPrefix=""
     if [ "${generateOnly}" = false ]; then
       validateWeblogicImagePullSecret
     fi
   else
     # Set name blank when not specified, and comment out the yaml
-    weblogicImagePullSecretName=""
-    weblogicImagePullSecretPrefix="#"
+    imagePullSecretName=""
+    imagePullSecretPrefix="#"
   fi
 }
 
@@ -142,7 +142,7 @@ function validateSecretExists {
 function validateWeblogicImagePullSecret {
   # The kubernetes secret for pulling images from the docker store is optional.
   # If it was specified, make sure it exists.
-  validateSecretExists ${weblogicImagePullSecretName} ${namespace}
+  validateSecretExists ${imagePullSecretName} ${namespace}
   failIfValidationErrors
 }
 
@@ -270,8 +270,8 @@ function createYamlFiles {
 
   # For backward compatability, default to "store/oracle/weblogic:12.2.1.3" if not defined in
   # create-weblogic-sample-domain-inputs.yaml
-  if [ -z "${weblogicImage}" ]; then
-    weblogicImage="store/oracle/weblogic:12.2.1.3"
+  if [ -z "${image}" ]; then
+    image="store/oracle/weblogic:12.2.1.3"
   fi
   
   # Use the default value if not defined.
@@ -289,8 +289,8 @@ function createYamlFiles {
     createDomainScriptName="create-domain-job.sh"
   fi
 
-  # Must escape the ':' value in weblogicImage for sed to properly parse and replace
-  weblogicImage=$(echo ${weblogicImage} | sed -e "s/\:/\\\:/g")
+  # Must escape the ':' value in image for sed to properly parse and replace
+  image=$(echo ${image} | sed -e "s/\:/\\\:/g")
 
   # Generate the yaml to create the kubernetes job that will create the weblogic domain
   echo Generating ${createJobOutput}
@@ -298,9 +298,9 @@ function createYamlFiles {
   cp ${createJobInput} ${createJobOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${createJobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${createJobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${createJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
@@ -325,10 +325,10 @@ function createYamlFiles {
 
   cp ${deleteJobInput} ${deleteJobOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${deleteJobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${deleteJobOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${deleteJobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${deleteJobOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${deleteJobOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
@@ -355,8 +355,8 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
@@ -382,36 +382,6 @@ function create_domain_configmap {
   mkdir -p $externalFilesTmpDir
   cp ${createDomainFilesDir}/* ${externalFilesTmpDir}/
  
-  for fname in ${externalFilesTmpDir}/*
-  do
-    local outputFile=$fname
-    sed -i -e "s:%NAMESPACE%:$namespace:g" ${outputFile}
-    sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${outputFile}
-    sed -i -e "s:%WEBLOGIC_IMAGE%:${weblogicImage}:g" ${outputFile}
-    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${weblogicImagePullSecretName}:g" ${outputFile}
-    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${weblogicImagePullSecretPrefix}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${outputFile}
-    sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${outputFile}
-    sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${outputFile}
-    sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${outputFile}
-    sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${outputFile}
-    sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${outputFile}
-    sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${outputFile}
-    sed -i -e "s:%MANAGED_SERVER_NAME_BASE_SVC%:${managedServerNameBaseSVC}:g" ${outputFile}
-    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${outputFile}
-    sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${outputFile}
-    sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${outputFile}
-    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${outputFile}
-    sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${outputFile}
-    sed -i -e "s:%DOMAIN_LOGS_DIR%:${domainPVMountPath}/logs:g" ${outputFile}
-    sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${outputFile}
-    sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScriptName}:g" ${outputFile}
-
-  done 
-
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir

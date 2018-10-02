@@ -108,6 +108,25 @@ function toDNS1123Legal {
 }
 
 #
+# Check the state of a persistent volume.
+# $1 - name of volume
+# $2 - expected state of volume
+function checkPvState {
+
+  echo "Checking if the persistent volume ${1:?} is ${2:?}"
+  local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+  attempts=0
+  while [ ! "$pv_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
+    attempts=$((attempts + 1))
+    sleep 1
+    pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+  done
+  if [ "$pv_state" != "$2" ]; then
+    fail "The persistent volume state should be $2 but is $pv_state"
+  fi
+}
+
+#
 # Function to check if a persistent volume exists
 # $1 - name of volume
 function checkPvExists {

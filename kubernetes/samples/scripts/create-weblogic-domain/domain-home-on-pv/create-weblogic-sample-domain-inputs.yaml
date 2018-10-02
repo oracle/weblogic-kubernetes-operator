@@ -41,11 +41,7 @@ managedServerNameBase: managed-server
 managedServerPort: 8001
 
 # WebLogic Docker image
-weblogicImage: store/oracle/weblogic:12.2.1.3
-
-# Physical path of the domain's persistent storage.
-# The following line must be uncomment and customized:
-#weblogicDomainStoragePath: /scratch/k8s_dir/domain1
+image: store/oracle/weblogic:12.2.1.3
 
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
@@ -56,7 +52,7 @@ weblogicCredentialsSecretName: domain1-weblogic-credentials
 
 # Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
 # The presence of the secret will be validated when this parameter is enabled.
-#weblogicImagePullSecretName:
+#imagePullSecretName:
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
