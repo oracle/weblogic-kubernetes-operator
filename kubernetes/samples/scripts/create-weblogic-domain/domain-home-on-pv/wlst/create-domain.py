@@ -3,56 +3,66 @@
 
 # This python script is used to create a WebLogic domain
 
-# Read the domain secrets from the common python file
-execfile("%CREATE_DOMAIN_SCRIPT_DIR%/read-domain-secret.py")
+domain_uid                   = os.environ.get("DOMAIN_UID")
+server_port                  = int(os.environ.get("MANAGED_SERVER_PORT"))
+domain_path                  = os.environ.get("DOMAIN_HOME")
+cluster_name                 = os.environ.get("CLUSTER_NAME")
+admin_server_name            = os.environ.get("ADMIN_SERVER_NAME")
+admin_server_name_svc        = os.environ.get("ADMIN_SERVER_NAME_SVC")
+admin_port                   = int(os.environ.get("ADMIN_PORT"))
+domain_name                  = os.environ.get("DOMAIN_NAME")
+t3_channel_port              = int(os.environ.get("T3_CHANNEL_PORT"))
+t3_public_address            = os.environ.get("T3_PUBLIC_ADDRESS")
+number_of_ms                 = int(os.environ.get("CONFIGURED_MANAGED_SERVER_COUNT"))
+cluster_type                 = os.environ.get("CLUSTER_TYPE")
+managed_server_name_base     = os.environ.get("MANAGED_SERVER_NAME_BASE")
+managed_server_name_base_svc = os.environ.get("MANAGED_SERVER_NAME_BASE_SVC")
+domain_logs                  = os.environ.get("DOMAIN_LOGS_DIR")
+script_dir                   = os.environ.get("CREATE_DOMAIN_SCRIPT_DIR")
+production_mode_enabled      = os.environ.get("PROUDCTION_MODE_ENABLED")
 
-server_port        = %MANAGED_SERVER_PORT%
-domain_path        = os.environ.get("DOMAIN_HOME")
-cluster_name       = "%CLUSTER_NAME%"
-number_of_ms       = %CONFIGURED_MANAGED_SERVER_COUNT%
-cluster_type       = "%CLUSTER_TYPE%"
-domain_logs        = os.environ.get("DOMAIN_LOGS_DIR")
+# Read the domain secrets from the common python file
+execfile('%s/read-domain-secret.py' % script_dir)
 
 print('domain_path        : [%s]' % domain_path);
-print('domain_name        : [%DOMAIN_NAME%]');
+print('domain_name        : [%s]' % domain_name);
+print('admin_server_name  : [%s]' % admin_server_name);
 print('admin_username     : [%s]' % admin_username);
-print('admin_port         : [%ADMIN_PORT%]');
+print('admin_port         : [%s]' % admin_port);
 print('cluster_name       : [%s]' % cluster_name);
 print('server_port        : [%s]' % server_port);
-print('cluster_type       : [%s]' % cluster_type);
-
 # Open default domain template
 # ============================
 readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
 
-set('Name', '%DOMAIN_NAME%')
-setOption('DomainName', '%DOMAIN_NAME%')
-create('%DOMAIN_NAME%','Log')
-cd('/Log/%DOMAIN_NAME%');
-set('FileName', '%DOMAIN_LOGS_DIR%/%DOMAIN_NAME%.log')
+set('Name', domain_name)
+setOption('DomainName', domain_name)
+create(domain_name,'Log')
+cd('/Log/%s' % domain_name);
+set('FileName', '%s/%s.log' % (domain_logs, domain_name))
 
 # Configure the Administration Server
 # ===================================
 cd('/Servers/AdminServer')
-set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_SVC%')
-set('ListenPort', %ADMIN_PORT%)
-set('Name', '%ADMIN_SERVER_NAME%')
+set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
+set('ListenPort', admin_port)
+set('Name', admin_server_name)
 
 create('T3Channel', 'NetworkAccessPoint')
-cd('/Servers/%ADMIN_SERVER_NAME%/NetworkAccessPoints/T3Channel')
-set('PublicPort', %T3_CHANNEL_PORT%)
-set('PublicAddress', '%T3_PUBLIC_ADDRESS%')
-set('ListenAddress', '%DOMAIN_UID%-%ADMIN_SERVER_NAME_SVC%')
-set('ListenPort', %T3_CHANNEL_PORT%)
+cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
+set('PublicPort', t3_channel_port)
+set('PublicAddress', t3_public_address)
+set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
+set('ListenPort', t3_channel_port)
 
-cd('/Servers/%ADMIN_SERVER_NAME%')
-create('%ADMIN_SERVER_NAME%', 'Log')
-cd('/Servers/%ADMIN_SERVER_NAME%/Log/%ADMIN_SERVER_NAME%')
-set('FileName', '%DOMAIN_LOGS_DIR%/%ADMIN_SERVER_NAME%.log')
+cd('/Servers/%s' % admin_server_name)
+create(admin_server_name, 'Log')
+cd('/Servers/%s/Log/%s' % (admin_server_name, admin_server_name))
+set('FileName', '%s/%s.log' % (domain_logs, admin_server_name))
 
 # Set the admin user's username and password
 # ==========================================
-cd('/Security/%DOMAIN_NAME%/User/weblogic')
+cd('/Security/%s/User/weblogic' % domain_name)
 cmo.setName(admin_username)
 cmo.setPassword(admin_password)
 
@@ -89,13 +99,13 @@ if cluster_type == "CONFIGURED":
     cd('/')
 
     msIndex = index+1
-    name = '%MANAGED_SERVER_NAME_BASE%%s' % msIndex
-    name_svc = '%MANAGED_SERVER_NAME_BASE_SVC%%s' % msIndex
+    name = '%s%s' % (managed_server_name_base, msIndex)
+    name_svc = '%s%s' % (managed_server_name_base_svc, msIndex)
 
     create(name, 'Server')
     cd('/Servers/%s/' % name )
     print('managed server name is %s' % name);
-    set('ListenAddress', '%DOMAIN_UID%-%s' % name_svc)
+    set('ListenAddress', '%s-%s' % (domain_uid, name_svc))
     set('ListenPort', server_port)
     set('NumOfRetriesBeforeMSIMode', 0)
     set('RetryIntervalBeforeMSIMode', 1)
@@ -103,7 +113,7 @@ if cluster_type == "CONFIGURED":
 
     create(name,'Log')
     cd('/Servers/%s/Log/%s' % (name, name))
-    set('FileName', '%DOMAIN_LOGS_DIR%/%s.log' % name)
+    set('FileName', '%s/%s.log' % (domain_logs,name))
 else:
   print('Configuring Dynamic Cluster %s' % cluster_name)
 
@@ -113,7 +123,7 @@ else:
   print('Done creating Server Template: %s' % templateName)
   cd('/ServerTemplates/%s' % templateName)
   cmo.setListenPort(server_port)
-  cmo.setListenAddress('%DOMAIN_UID%-%MANAGED_SERVER_NAME_BASE_SVC%${id}')
+  cmo.setListenAddress('%s-%s${id}' % (domain_uid, managed_server_name_base_svc))
   cmo.setCluster(cl)
   print('Done setting attributes for Server Template: %s' % templateName);
 
@@ -122,7 +132,7 @@ else:
   create(cluster_name, 'DynamicServers')
   cd('DynamicServers/%s' % cluster_name)
   set('ServerTemplate', st1)
-  set('ServerNamePrefix', "%MANAGED_SERVER_NAME_BASE%")
+  set('ServerNamePrefix', managed_server_name_base)
   set('DynamicClusterSize', number_of_ms)
   set('MaxDynamicClusterSize', number_of_ms)
   set('CalculatedListenPorts', false)
@@ -139,7 +149,10 @@ print 'Domain Created'
 # Update Domain
 readDomain(domain_path)
 cd('/')
-cmo.setProductionModeEnabled(%PRODUCTION_MODE_ENABLED%)
+if production_mode_enabled == "true":
+  cmo.setProductionModeEnabled(true)
+else: 
+  cmo.setProductionModeEnabled(false)
 updateDomain()
 closeDomain()
 print 'Domain Updated'

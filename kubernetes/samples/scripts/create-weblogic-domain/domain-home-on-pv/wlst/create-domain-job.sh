@@ -4,10 +4,10 @@
 #
 
 # Include common utility functions
-source %CREATE_DOMAIN_SCRIPT_DIR%/utility.sh
+source ${CREATE_DOMAIN_SCRIPT_DIR}/utility.sh
 
 # Verify the script to create the domain exists
-script=%CREATE_DOMAIN_SCRIPT_DIR%/create-domain-script.sh
+script=${CREATE_DOMAIN_SCRIPT_DIR}/create-domain-script.sh
 if [ -f $script ]; then
   echo The domain will be created using the script $script
 else

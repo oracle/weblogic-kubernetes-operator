@@ -31,12 +31,42 @@ spec:
           command: ["/bin/sh"]
           args: ["%CREATE_DOMAIN_SCRIPT_DIR%/%CREATE_DOMAIN_SCRIPT%"]
           env:
+            - name: DOMAIN_UID
+              value: "%DOMAIN_UID%"
+            - name: DOMAIN_NAME
+              value: "%DOMAIN_NAME%"
+            - name: ADMIN_SERVER_NAME
+              value: "%ADMIN_SERVER_NAME%"
+            - name: ADMIN_SERVER_NAME_SVC
+              value: "%ADMIN_SERVER_NAME_SVC%"
+            - name: ADMIN_PORT
+              value: "%ADMIN_PORT%"
+            - name: CLUSTER_NAME
+              value: "%CLUSTER_NAME%"
+            - name: CLUSTER_TYPE
+              value: "%CLUSTER_TYPE%"
+            - name: T3_CHANNEL_PORT
+              value: "%T3_CHANNEL_PORT%"
+            - name: T3_PUBLIC_ADDRESS
+              value: "%T3_PUBLIC_ADDRESS%"
+            - name: MANAGED_SERVER_NAME_BASE_SVC
+              value: "%MANAGED_SERVER_NAME_BASE_SVC%"
+            - name: MANAGED_SERVER_NAME_BASE
+              value: "%MANAGED_SERVER_NAME_BASE%"
+            - name: CONFIGURED_MANAGED_SERVER_COUNT
+              value: "%CONFIGURED_MANAGED_SERVER_COUNT%"
+            - name: MANAGED_SERVER_PORT
+              value: "%MANAGED_SERVER_PORT%"
+            - name: PRODUCTION_MODE_ENABLED
+              value: "%PRODUCTION_MODE_ENABLED%"
+            - name: CREATE_DOMAIN_SCRIPT_DIR
+              value: "%CREATE_DOMAIN_SCRIPT_DIR%"
             - name: DOMAIN_ROOT_DIR
-              value: %DOMAIN_ROOT_DIR%
+              value: "%DOMAIN_ROOT_DIR%"
             - name: DOMAIN_HOME_DIR
-              value: %DOMAIN_ROOT_DIR%/domain/%DOMAIN_NAME%
+              value: "%DOMAIN_ROOT_DIR%/domain/%DOMAIN_NAME%"
             - name: DOMAIN_LOGS_DIR
-              value: %DOMAIN_ROOT_DIR%/logs
+              value: "%DOMAIN_ROOT_DIR%/logs"
       volumes:
         - name: create-weblogic-sample-domain-job-cm-volume
           configMap:
