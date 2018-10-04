@@ -562,16 +562,17 @@ public abstract class PodStepContext implements StepContextConstants {
                     .configMap(
                         new V1ConfigMapVolumeSource()
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-                            .defaultMode(ALL_READ_AND_EXECUTE)))
-            .addVolumesItem(
-                new V1Volume()
-                    .name(getSitConfigMapVolumeName(getDomainUID()))
-                    .configMap(
-                        new V1ConfigMapVolumeSource()
-                            .name(
-                                ConfigMapHelper.SitConfigMapContext.getConfigMapName(
-                                    getDomainUID()))
                             .defaultMode(ALL_READ_AND_EXECUTE)));
+
+    if (isEnableDomainIntrospectorJob()) {
+      podSpec.addVolumesItem(
+          new V1Volume()
+              .name(getSitConfigMapVolumeName(getDomainUID()))
+              .configMap(
+                  new V1ConfigMapVolumeSource()
+                      .name(ConfigMapHelper.SitConfigMapContext.getConfigMapName(getDomainUID()))
+                      .defaultMode(ALL_READ_AND_EXECUTE)));
+    }
 
     V1LocalObjectReference imagePullSecret = getServerSpec().getImagePullSecret();
     if (imagePullSecret != null) {
@@ -588,21 +589,37 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   private V1Container createContainer(TuningParameters tuningParameters) {
-    return new V1Container()
-        .name(KubernetesConstants.CONTAINER_NAME)
-        .image(getImageName())
-        .imagePullPolicy(getImagePullPolicy())
-        .command(getContainerCommand())
-        .env(getEnvironmentVariables(tuningParameters))
-        .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
-        .lifecycle(createLifecycle())
-        .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
-        .addVolumeMountsItem(
-            volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() + "/optconfig"))
-        .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
-        .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+    V1Container container =
+        new V1Container()
+            .name(KubernetesConstants.CONTAINER_NAME)
+            .image(getImageName())
+            .imagePullPolicy(getImagePullPolicy())
+            .command(getContainerCommand())
+            .env(getEnvironmentVariables(tuningParameters))
+            .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
+            .lifecycle(createLifecycle())
+            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+            .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
+            .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+
+    if (isEnableDomainIntrospectorJob()) {
+      container.addVolumeMountsItem(
+          volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() + "/optconfig"));
+    }
+
+    return container;
+  }
+
+  private boolean isEnableDomainIntrospectorJob() {
+    String strEnableDomainIntrospectorJob = System.getenv("ENABLE_DOMAIN_INTROSPECTOR_JOB");
+    boolean enableDomainInstrospectorJob =
+        strEnableDomainIntrospectorJob != null
+            ? Boolean.parseBoolean(strEnableDomainIntrospectorJob)
+            : false;
+
+    return enableDomainInstrospectorJob;
   }
 
   private static String getSitConfigMapVolumeName(String domainUID) {

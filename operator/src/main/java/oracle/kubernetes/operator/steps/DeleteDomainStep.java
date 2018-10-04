@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
-import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -43,15 +42,22 @@ public class DeleteDomainStep extends Step {
     resources.add(deleteIngresses());
     resources.add(deleteServices());
     resources.add(deletePods());
-    if (Boolean.getBoolean("enableDomainIntrospectorJob")) {
+    if (isEnableDomainIntrospectorJob()) {
       resources.add(
-          JobHelper.deleteDomainIntrospectorJobStep(
-              this.domainUID,
-              this.namespace,
-              ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(
-                  this.domainUID, this.namespace, getNext())));
+          ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(
+              this.domainUID, this.namespace, getNext()));
     }
     return resources.toArray(new Step[0]);
+  }
+
+  private boolean isEnableDomainIntrospectorJob() {
+    String strEnableDomainIntrospectorJob = System.getenv("ENABLE_DOMAIN_INTROSPECTOR_JOB");
+    boolean enableDomainInstrospectorJob =
+        strEnableDomainIntrospectorJob != null
+            ? Boolean.parseBoolean(strEnableDomainIntrospectorJob)
+            : false;
+
+    return enableDomainInstrospectorJob;
   }
 
   private Step deleteIngresses() {
