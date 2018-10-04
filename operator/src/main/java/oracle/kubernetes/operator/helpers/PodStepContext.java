@@ -562,6 +562,15 @@ public abstract class PodStepContext implements StepContextConstants {
                     .configMap(
                         new V1ConfigMapVolumeSource()
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+                            .defaultMode(ALL_READ_AND_EXECUTE)))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(getSitConfigMapVolumeName(getDomainUID()))
+                    .configMap(
+                        new V1ConfigMapVolumeSource()
+                            .name(
+                                ConfigMapHelper.SitConfigMapContext.getConfigMapName(
+                                    getDomainUID()))
                             .defaultMode(ALL_READ_AND_EXECUTE)));
 
     V1LocalObjectReference imagePullSecret = getServerSpec().getImagePullSecret();
@@ -590,8 +599,14 @@ public abstract class PodStepContext implements StepContextConstants {
         .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+        .addVolumeMountsItem(
+            volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() + "/optconfig"))
         .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
         .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+  }
+
+  private static String getSitConfigMapVolumeName(String domainUID) {
+    return domainUID + SIT_CONFIG_MAP_VOLUME_SUFFIX;
   }
 
   private String getImageName() {

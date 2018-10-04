@@ -417,6 +417,54 @@ public class CallBuilder {
         CREATE_CONFIGMAP);
   }
 
+  private com.squareup.okhttp.Call deleteConfigMapAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      V1DeleteOptions body,
+      ApiCallback<V1Status> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .deleteNamespacedConfigMapAsync(
+            name,
+            namespace,
+            body,
+            pretty,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_CONFIG_MAP =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              deleteConfigMapAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for deleting config map
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteConfigMapAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deleteConfigMap", namespace, name, deleteOptions),
+        DELETE_CONFIG_MAP);
+  }
+
   private com.squareup.okhttp.Call replaceConfigMapAsync(
       ApiClient client,
       String name,

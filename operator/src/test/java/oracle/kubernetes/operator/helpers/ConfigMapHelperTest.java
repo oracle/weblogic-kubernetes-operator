@@ -50,7 +50,8 @@ public class ConfigMapHelperTest {
     "start-server.py",
     "startServer.sh",
     "stop-server.py",
-    "stopServer.sh"
+    "stopServer.sh",
+    "introspectDomain.sh"
   };
 
   private static final String[] PARTIAL_SCRIPT_NAMES = {"livenessProbe.sh", "additional.sh"};
