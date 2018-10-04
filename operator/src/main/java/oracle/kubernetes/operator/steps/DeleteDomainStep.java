@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1beta1IngressList;
 import java.util.ArrayList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -44,7 +45,11 @@ public class DeleteDomainStep extends Step {
     resources.add(deletePods());
     if (Boolean.getBoolean("enableDomainIntrospectorJob")) {
       resources.add(
-          JobHelper.deleteDomainIntrospectorJobStep(this.domainUID, this.namespace, getNext()));
+          JobHelper.deleteDomainIntrospectorJobStep(
+              this.domainUID,
+              this.namespace,
+              ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(
+                  this.domainUID, this.namespace, getNext())));
     }
     return resources.toArray(new Step[0]);
   }

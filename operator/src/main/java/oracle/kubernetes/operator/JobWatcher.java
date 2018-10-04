@@ -116,7 +116,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   static boolean isFailed(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null) {
-      if (status.getFailed() > 0) {
+      if (status.getFailed() != null && status.getFailed() > 0) {
         LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
         return true;
       }

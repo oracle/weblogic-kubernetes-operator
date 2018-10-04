@@ -247,6 +247,10 @@ public abstract class JobStepContext implements StepContextConstants {
         .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
+  protected V1ConfigMapVolumeSource getConfigMapVolumeSource(String name, int mode) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(mode);
+  }
+
   protected V1PersistentVolumeClaimVolumeSource getPersistenVolumeClaimVolumeSource(
       String claimName) {
     return new V1PersistentVolumeClaimVolumeSource().claimName(claimName);

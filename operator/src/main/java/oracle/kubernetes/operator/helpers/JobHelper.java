@@ -82,7 +82,9 @@ public class JobHelper {
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(Step next) {
-    return new DomainIntrospectorJobStep(readDomainIntrospectorPodLogStep(next));
+
+    return new DomainIntrospectorJobStep(
+        readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
   }
 
   static class DomainIntrospectorJobStep extends Step {
@@ -201,7 +203,11 @@ public class JobHelper {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<String> callResponse) {
       cleanupJobArtifacts(packet);
-      LOGGER.info("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + callResponse.getResult());
+      String result = callResponse.getResult();
+      LOGGER.info("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
+      if (result != null) {
+        packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
+      }
       return doNext(packet);
     }
 
