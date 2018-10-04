@@ -208,7 +208,14 @@ public class JobHelper {
       if (result != null) {
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
       }
-      return doNext(packet);
+
+      // Delete the job once we've successfully read the result
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      java.lang.String domainUID = info.getDomain().getDomainUID();
+      java.lang.String namespace = info.getNamespace();
+
+      return doNext(
+          JobHelper.deleteDomainIntrospectorJobStep(domainUID, namespace, getNext()), packet);
     }
 
     private void cleanupJobArtifacts(Packet packet) {
