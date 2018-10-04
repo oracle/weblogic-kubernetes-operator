@@ -304,7 +304,7 @@ function createYamlFiles {
 # Deploy Voyager/HAProxy load balancer
 #
 function startupVoyagerLoadBalancer {
-  createVoyagerOperator ${voyagerSecurityOutput} ${voyagerOperatorOutput}
+  sh ${scriptDir}/start-voyager-controller.sh -p $domainOutputDir
   createVoyagerIngress ${voyagerIngressOutput} ${namespace} ${domainUID}
 }
 
@@ -461,6 +461,72 @@ function printSummary {
     echo "  ${voyagerSecurityOutput}"
     echo "  ${voyagerIngressOutput}"
   fi
+}
+
+#
+# Usage:
+# createVoyagerIngress voyagerIngressYaml namespace domainUID
+#
+function createVoyagerIngress {
+  if [ "$#" != 3 ] ; then
+    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
+  fi
+
+  # deploy Voyager Ingress resource
+  kubectl apply -f $1
+
+  local namespace=$2
+  local domainUID=$3
+  
+
+  echo "Checking Voyager Ingress resource..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    local vdep=$(kubectl get ingresses.voyager.appscode.com -n ${namespace} | grep ${domainUID}-voyager | wc | awk ' { print $1; } ')
+    if [ "$vdep" = "1" ]; then
+      echo "The Voyager Ingress resource ${domainUID}-voyager is created successfully."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The Voyager Ingress resource ${domainUID}-voyager was not created."
+    fi
+    sleep 2
+  done
+
+  echo "Wait until HAProxy pod is running..."
+  local maxwaitsecs=100
+  local mstart=$(date +%s)
+  while : ; do
+    local mnow=$(date +%s)
+    local st=$(kubectl get pod -n ${namespace} | grep ^voyager-${domainUID}-voyager- | awk ' { print $3; } ')
+    if [ "$st" = "Running" ]; then
+      echo "The HAProxy pod for Voyager Ingress ${domainUID}-voyager is running."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The HAProxy pod for Voyager Ingress ${domainUID}-voyager was not created or running."
+    fi
+    sleep 5
+  done
+
+  echo "Checking Voyager service..."
+  local maxwaitsecs=10
+  local mstart=`date +%s`
+  while : ; do
+    local mnow=`date +%s`
+    local vscv=`kubectl get service ${domainUID}-voyager-stats -n ${namespace} | grep ${domainUID}-voyager-stats | wc | awk ' { print $1; } '`
+    if [ "$vscv" = "1" ]; then
+      echo "The service ${domainUID}-voyager-stats is created successfully."
+      break
+    fi
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      fail "The service ${domainUID}-voyager-stats was not created."
+    fi
+    sleep 2
+  done
+  echo
 }
 
 #
