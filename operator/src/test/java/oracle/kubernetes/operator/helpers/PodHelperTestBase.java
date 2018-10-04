@@ -265,7 +265,10 @@ public abstract class PodHelperTestBase {
         containsInAnyOrder(
             writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
             readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
+            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts"),
+            writableVolumeMount(
+                UID + StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX,
+                DOMAIN_HOME + "/optconfig")));
   }
 
   @Test
@@ -555,6 +558,10 @@ public abstract class PodHelperTestBase {
                 .name("weblogic-domain-cm-volume")
                 .mountPath("/weblogic-operator/scripts")
                 .readOnly(true))
+        .addVolumeMountsItem(
+            new V1VolumeMount()
+                .name(UID + StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX)
+                .mountPath(DOMAIN_HOME + "/optconfig"))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
         .addEnvItem(envItem("DOMAIN_HOME", DOMAIN_HOME))
