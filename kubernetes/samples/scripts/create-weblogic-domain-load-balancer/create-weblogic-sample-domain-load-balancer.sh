@@ -76,7 +76,7 @@ function initAndValidateOutputDir {
                   weblogic-sample-domain-apache-security.yaml "
       ;;
       "VOYAGER")
-        fileList="weblogic-sample-domain-voyager.yaml \
+        fileList="weblogic-sample-domain-voyager-ingress.yaml \
                   weblogic-sample-domain-voyager-operator.yaml \
                   weblogic-sample-domain-voyager-operator-security.yaml"
       ;;
@@ -305,7 +305,7 @@ function createYamlFiles {
 #
 function startupVoyagerLoadBalancer {
   sh ${scriptDir}/start-voyager-controller.sh -p $domainOutputDir
-  createVoyagerIngress ${voyagerIngressOutput} ${namespace} ${domainUID}
+  createVoyagerIngress 
 }
 
 #
@@ -464,20 +464,12 @@ function printSummary {
 }
 
 #
-# Usage:
-# createVoyagerIngress voyagerIngressYaml namespace domainUID
+# Deploy Voyager ingress resource, and make sure that the K8S runtime artifacts
+# are successfully created 
 #
 function createVoyagerIngress {
-  if [ "$#" != 3 ] ; then
-    fail "requires 1 parameter: voyagerIngressYaml namespace domainUID"
-  fi
-
   # deploy Voyager Ingress resource
-  kubectl apply -f $1
-
-  local namespace=$2
-  local domainUID=$3
-  
+  kubectl apply -f ${voyagerIngressOutput}
 
   echo "Checking Voyager Ingress resource..."
   local maxwaitsecs=100
