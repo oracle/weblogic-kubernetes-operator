@@ -58,7 +58,7 @@ public abstract class DomainTestBase {
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
-  public static String getDomainUid() {
+  protected static String getDomainUid() {
     return DOMAIN_UID;
   }
 

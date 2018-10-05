@@ -252,6 +252,30 @@
 		</profile>
 	</profiles>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+          <groupId>io.kubernetes</groupId>
+          <artifactId>client-java</artifactId>
+          <version>2.0.0</version>
+      </dependency>
+      <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+          <version>1.7.25</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path-assert</artifactId>
+			<version>2.4.0</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
 	<properties>
 		<java.version>1.8</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
