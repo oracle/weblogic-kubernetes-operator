@@ -9,6 +9,9 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -247,8 +250,11 @@ public class ConfigMapHelper {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       Domain domain = info.getDomain();
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
-      Map<String, String> data = new HashMap<>();
-      data.put("situational-config.xml", result);
+      // Parse results into separate data files
+      Map<String, String> data = parseIntrospectorResult(result);
+      System.out.println("================");
+      System.out.println(data);
+      System.out.println("================");
       SitConfigMapContext context =
           new SitConfigMapContext(
               this,
@@ -430,5 +436,52 @@ public class ConfigMapHelper {
                   new DefaultResponseStep<>(next));
       return step;
     }
+  }
+
+  static Map<String, String> parseIntrospectorResult(String text) {
+    Map<String, String> map = new HashMap<>();
+    try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
+      String line = reader.readLine();
+      while (line != null) {
+        System.out.println(line);
+        if (line.startsWith(">>>") && !line.endsWith("EOF")) {
+          // Beginning of file, extract file name
+          String filename = extractFilename(line);
+          readFile(reader, filename, map);
+        }
+        line = reader.readLine();
+      }
+    } catch (IOException exc) {
+      // quit
+    }
+
+    return map;
+  }
+
+  static void readFile(BufferedReader reader, String fileName, Map<String, String> map) {
+    StringBuilder stringBuilder = new StringBuilder();
+    try {
+      String line = reader.readLine();
+      while (line != null) {
+        System.out.println(line);
+        if (line.startsWith(">>>") && line.endsWith("EOF")) {
+          map.put(fileName, stringBuilder.toString());
+          return;
+        } else {
+          // add line to StringBuilder
+          stringBuilder.append(line);
+          stringBuilder.append(System.getProperty("line.separator"));
+        }
+        line = reader.readLine();
+      }
+    } catch (IOException ioe) {
+
+    }
+  }
+
+  static String extractFilename(String line) {
+    int lastSlash = line.lastIndexOf('/');
+    String fname = line.substring(lastSlash + 1, line.length());
+    return fname;
   }
 }

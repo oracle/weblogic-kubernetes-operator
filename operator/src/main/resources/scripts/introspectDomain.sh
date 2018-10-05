@@ -1,16 +1,40 @@
 #!/bin/sh
 
 request_body=$(cat <<EOF
-<?xml version='1.0' encoding='UTF-8'?>
-<d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
-  <s:expiration> 2020-07-16T19:20+01:00 </s:expiration>
-  <d:server>
-      <d:name>admin-server</d:name>
-      <d:log f:combine-mode="replace">
-           <d:file-name>/shared/logs/admin-server-with-sit-config-override-name.log</d:file-name>
-      </d:log>
-  </d:server>
-</d:domain>
+>>>  /u01/introspect/domain1/userConfigNodeManager.secure
+#WebLogic User Configuration File; 2
+#Thu Oct 04 21:07:06 GMT 2018
+weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\=
+weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\=
+
+>>> EOF
+
+@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure
+
+>>>  /u01/introspect/domain1/userKeyNodeManager.secure
+BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==
+
+>>> EOF
+
+@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/topology.yaml
+
+>>>  /u01/introspect/domain1/topology.yaml
+domainValid: true
+domain:
+  name: "base_domain"
+  adminServerName: "admin-server"
+  configuredClusters:
+    "mycluster":
+      port: 8001
+      servers:
+        "managed-server1": {}
+        "managed-server2": {}
+  dynamicClusters: {}
+  servers:
+    "admin-server":
+      port: 7001
+
+>>> EOF
 EOF
 )
 

@@ -606,7 +606,10 @@ public abstract class PodStepContext implements StepContextConstants {
 
     if (isEnableDomainIntrospectorJob()) {
       container.addVolumeMountsItem(
-          volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() + "/optconfig"));
+          // volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() +
+          // "/optconfig"));
+          volumeMount(
+              getSitConfigMapVolumeName(getDomainUID()), "/weblogic-operator/introspector"));
     }
 
     return container;
