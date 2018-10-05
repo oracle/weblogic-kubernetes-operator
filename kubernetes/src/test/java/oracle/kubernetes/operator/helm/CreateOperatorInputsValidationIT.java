@@ -21,12 +21,14 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private static final String WRONG_TYPE = "%s must be a %s : %s";
 
-  private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {"elkIntegrationEnabled"};
+  private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {
+    "elkIntegrationEnabled", "externalRestEnabled"
+  };
 
   private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
 
   private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
-    "imagePullPolicy", "javaLoggingLevel", "externalRestOption", "internalRestOption"
+    "imagePullPolicy", "javaLoggingLevel"
   };
 
   private static final String[] LOGGING_LEVELS = {
@@ -34,10 +36,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   };
 
   private static final String[] PULL_POLICIES = {"Always", "IfNotPresent", "Never"};
-
-  private static final String[] EXTERNAL_REST_OPTIONS = {"NONE", "SELF_SIGNED_CERT", "CUSTOM_CERT"};
-
-  private static final String[] INTERNAL_REST_OPTIONS = {"SELF_SIGNED_CERT", "CUSTOM_CERT"};
 
   private HelmOperatorYamlFactory factory = new HelmOperatorYamlFactory();
   private Map<String, Object> overrides;
@@ -147,9 +145,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
         getProcessingError(),
         allOf(
             containsEnumParameterError("imagePullPolicy", badValue, PULL_POLICIES),
-            containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS),
-            containsEnumParameterError("externalRestOption", badValue, EXTERNAL_REST_OPTIONS),
-            containsEnumParameterError("internalRestOption", badValue, INTERNAL_REST_OPTIONS)));
+            containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS)));
   }
 
   private Matcher<String> containsEnumParameterError(
@@ -162,10 +158,9 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   @Test
   public void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
-    setProperty("externalRestOption", "NONE");
+    setProperty("externalRestEnabled", false);
 
     removeProperty("externalRestHttpsPort");
-    removeProperty("externalOperatorCertSans");
     removeProperty("externalOperatorCert");
     removeProperty("externalOperatorKey");
 
@@ -174,10 +169,9 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   @Test
   public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
-    setProperty("externalRestOption", "NONE");
+    setProperty("externalRestEnabled", false);
 
     setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCertSans", false);
     setProperty("externalOperatorCert", 1234);
     setProperty("externalOperatorKey", true);
 
@@ -185,21 +179,12 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenExternalRestSelfSignedCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureExternalRestSelfSignedCert();
+  public void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
+    setProperty("externalRestEnabled", true);
 
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("externalRestHttpsPort", "float64", "string"),
-            containsTypeError("externalOperatorCertSans", "string", "bool"),
-            containsTypeError("externalOperatorCert", "string", "float64"),
-            containsTypeError("externalOperatorKey", "string", "bool")));
-  }
-
-  @Test
-  public void whenExternalRestCustomCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureExternalRestCustomCert();
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalOperatorCert", 1234);
+    setProperty("externalOperatorKey", true);
 
     assertThat(
         getProcessingError(),
@@ -207,59 +192,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
             containsTypeError("externalRestHttpsPort", "float64", "string"),
             containsTypeError("externalOperatorCert", "string", "float64"),
             containsTypeError("externalOperatorKey", "string", "bool")));
-  }
-
-  private void misconfigureExternalRestSelfSignedCert() {
-    setProperty("externalRestOption", "SELF_SIGNED_CERT");
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCertSans", false);
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
-  }
-
-  private void misconfigureExternalRestCustomCert() {
-    setProperty("externalRestOption", "CUSTOM_CERT");
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
-  }
-
-  @Test
-  public void whenInternalRestSelfSignedCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureInternalRestSelfSignedCert();
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("internalOperatorCert", "string", "float64"),
-            containsTypeError("internalOperatorKey", "string", "bool")));
-  }
-
-  @Test
-  public void whenInternalRestCustomCert_reportRelatedParameterErrors() throws Exception {
-    misconfigureInternalRestCustomCert();
-
-    assertThat(
-        getProcessingError(),
-        allOf(
-            containsTypeError("internalOperatorCert", "string", "float64"),
-            containsTypeError("internalOperatorKey", "string", "bool")));
-  }
-
-  private void misconfigureInternalRestSelfSignedCert() {
-    setProperty("internalRestOption", "SELF_SIGNED_CERT");
-
-    setProperty("internalOperatorCert", 1234);
-    setProperty("internalOperatorKey", true);
-  }
-
-  private void misconfigureInternalRestCustomCert() {
-    setProperty("internalRestOption", "CUSTOM_CERT");
-
-    setProperty("internalOperatorCert", 1234);
-    setProperty("internalOperatorKey", true);
   }
 
   @Test
