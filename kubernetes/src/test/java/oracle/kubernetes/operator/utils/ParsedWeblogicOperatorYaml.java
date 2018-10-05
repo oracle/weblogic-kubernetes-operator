@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static oracle.kubernetes.operator.utils.OperatorValues.EXTERNAL_REST_OPTION_NONE;
-
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Secret;
@@ -50,7 +48,7 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   public int getExpectedObjectCount() {
     int rtn = 4;
     if (inputs.getRemoteDebugNodePortEnabled().equals("true")
-        || !(inputs.getExternalRestOption().equals(EXTERNAL_REST_OPTION_NONE))) {
+        || !(inputs.getExternalRestEnabled().equals("true"))) {
       // the external operator service is enabled if the remote debug port is enabled or external
       // rest is enabled
       rtn++;
