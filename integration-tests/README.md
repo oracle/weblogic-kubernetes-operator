@@ -277,6 +277,10 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
 
 mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS" -DfailIfNoTests=false integration-test -P java-integration-tests
 
+# How to run multiple tests
+
+mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS+test7CreateDomainPVReclaimPolicyRecycle" -DfailIfNoTests=false integration-test -P java-integration-tests
+
 # Logging/Archiving
 
 Java utils logging is used, writes all the messages to console and java_test_suite.out in $RESULT_ROOT/acceptance_test_tmp directory.
