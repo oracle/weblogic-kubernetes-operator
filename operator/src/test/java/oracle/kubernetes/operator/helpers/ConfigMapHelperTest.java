@@ -5,6 +5,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.ProcessingConstants.SCRIPT_CONFIG_MAP;
@@ -20,8 +22,12 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -53,6 +59,42 @@ public class ConfigMapHelperTest {
     "stopServer.sh",
     "introspectDomain.sh"
   };
+
+  private static final String introspectResult =
+      ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
+          + "#WebLogic User Configuration File; 2\n"
+          + "#Thu Oct 04 21:07:06 GMT 2018\n"
+          + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
+          + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
+          + "\n"
+          + ">>> EOF\n"
+          + "\n"
+          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
+          + "\n"
+          + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
+          + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
+          + "\n"
+          + ">>> EOF\n"
+          + "\n"
+          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/topology.yaml\n"
+          + "\n"
+          + ">>>  /u01/introspect/domain1/topology.yaml\n"
+          + "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "    \"mycluster\":\n"
+          + "      port: 8001\n"
+          + "      servers:\n"
+          + "        \"managed-server1\": {}\n"
+          + "        \"managed-server2\": {}\n"
+          + "  dynamicClusters: {}\n"
+          + "  servers:\n"
+          + "    \"admin-server\":\n"
+          + "      port: 7001\n"
+          + "\n"
+          + ">>> EOF";
 
   private static final String[] PARTIAL_SCRIPT_NAMES = {"livenessProbe.sh", "additional.sh"};
   private static final String[] COMBINED_SCRIPT_NAMES = combine(SCRIPT_NAMES, PARTIAL_SCRIPT_NAMES);
@@ -181,6 +223,43 @@ public class ConfigMapHelperTest {
 
     testSupport.verifyCompletionThrowable(ApiException.class);
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptConfigMapStep));
+  }
+
+  @Test
+  public void parseIntrospectorResult() {
+    Map<String, String> result = ConfigMapHelper.parseIntrospectorResult(introspectResult);
+    System.out.println("ConfigMapHelperTest.parseIntrospectorResult: " + result);
+    assertEquals(3, result.size());
+    assertTrue(result.containsKey("userConfigNodeManager.secure"));
+    assertTrue(result.containsKey("userKeyNodeManager.secure"));
+    assertTrue(result.containsKey("topology.yaml"));
+  }
+
+  @Test
+  public void readSingleFile() throws IOException {
+    Map<String, String> map = new HashMap<>();
+    String text =
+        ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
+            + "#WebLogic User Configuration File; 2\n"
+            + "#Thu Oct 04 21:07:06 GMT 2018\n"
+            + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
+            + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
+            + "\n"
+            + ">>> EOF\n"
+            + "\n"
+            + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
+            + "\n";
+
+    BufferedReader reader = new BufferedReader(new StringReader(text));
+    String line = reader.readLine();
+    System.out.println("ConfigMapHelperTest.readSingleFile line: " + line);
+    assertTrue(line.startsWith(">>>"));
+    String fileName = ConfigMapHelper.extractFilename(line);
+    System.out.println("ConfigMapHelperTest.readSingleFile fileName: " + fileName);
+    ConfigMapHelper.readFile(reader, fileName, map);
+    System.out.println("ConfigMapHelperTest.readSingleFile map: " + map);
+    assertEquals(1, map.size());
+    assertTrue(map.containsKey("userConfigNodeManager.secure"));
   }
 
   private AsyncCallTestSupport.CannedResponse expectReadConfigMap() {
