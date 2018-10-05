@@ -26,7 +26,7 @@ public class Operator {
   // if the property is not defined here, it takes the property and its value from
   // create-weblogic-operator-inputs.yaml
   private String operatorNS = "weblogic-operator";
-  private String externalRestEnabled = "false";
+  private boolean externalRestEnabled = false;
   private String externalRestHttpsPort = "31001";
   private String userProjectsDir = "";
 
@@ -116,7 +116,7 @@ public class Operator {
   }
 
   public void verifyExternalRESTService() throws Exception {
-    if (Boolean.parseBoolean(externalRestEnabled)) {
+    if (externalRestEnabled) {
       logger.info("Checking REST service is running");
       String restCmd =
           "kubectl get services -n "
@@ -255,7 +255,8 @@ public class Operator {
     }
     // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
     // https port
-    if (Boolean.parseBoolean(operatorProps.getProperty("externalRestEnabled"))) {
+    externalRestEnabled = Boolean.parseBoolean(operatorProps.getProperty("externalRestEnabled"));
+    if (externalRestEnabled) {
       if (operatorProps.getProperty("externalRestHttpsPort") != null) {
         externalRestHttpsPort = operatorProps.getProperty("externalRestHttpsPort");
         try {
