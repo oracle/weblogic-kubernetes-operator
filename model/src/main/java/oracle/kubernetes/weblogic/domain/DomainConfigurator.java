@@ -7,22 +7,31 @@ package oracle.kubernetes.weblogic.domain;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v1.DomainStorage;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
  * Note that the configurator uses a predefined domain schema, and should only be used for testing.
  * Using it in the runtime runs the risk of corrupting the domain.
  */
-public interface DomainConfigurator {
+@SuppressWarnings("UnusedReturnValue")
+public abstract class DomainConfigurator {
 
-  DomainConfigurator createFor(Domain domain);
+  private Domain domain;
+
+  protected DomainConfigurator(Domain domain) {
+    this.domain = domain;
+  }
+
+  public abstract DomainConfigurator createFor(Domain domain);
 
   /**
    * Defines a name for the domain's admin server.
    *
    * @param adminServerName the name of the admin server
    */
-  void defineAdminServer(String adminServerName);
+  public abstract void defineAdminServer(String adminServerName);
 
   /**
    * Defines a name and port for the domain's admin server.
@@ -30,35 +39,97 @@ public interface DomainConfigurator {
    * @param adminServerName the name of the admin server
    * @param port the admin server port
    */
-  void defineAdminServer(String adminServerName, int port);
+  public abstract void defineAdminServer(String adminServerName, int port);
 
   /**
    * Sets the default number of replicas to be run in a cluster.
    *
    * @param replicas a non-negative number
    */
-  void withDefaultReplicaCount(int replicas);
+  public abstract void withDefaultReplicaCount(int replicas);
 
   /**
    * Sets the default image for the domain.
    *
    * @param image the name of the image
    */
-  void withDefaultImage(String image);
+  public void withDefaultImage(String image) {
+    getDomainSpec().setImage(image);
+  }
 
   /**
    * Sets the default image pull policy for the domain.
    *
    * @param imagepullpolicy the new policy
    */
-  void withDefaultImagePullPolicy(String imagepullpolicy);
+  public void withDefaultImagePullPolicy(String imagepullpolicy) {
+    getDomainSpec().setImagePullPolicy(imagepullpolicy);
+  }
 
   /**
    * Sets the default image pull secret for the domain
    *
    * @param secretReference the object referring to the secret
    */
-  void withDefaultImagePullSecret(V1LocalObjectReference secretReference);
+  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
+    getDomainSpec().setImagePullSecret(secretReference);
+  }
+
+  /**
+   * Configures the domain to use a persistent volume claim defined before the domain is created.
+   *
+   * @param claimName the name of the persistent volume claim
+   * @return this object
+   */
+  public DomainConfigurator withPredefinedClaim(String claimName) {
+    getDomainSpec().setStorage(DomainStorage.createPredefinedClaim(claimName));
+    return this;
+  }
+
+  /**
+   * Configures the domain to use storage in the local node.
+   *
+   * @param path the path to the storage
+   * @return this object
+   */
+  public DomainConfigurator withHostPathStorage(String path) {
+    getDomainSpec().setStorage(DomainStorage.createHostPathStorage(path));
+    return this;
+  }
+
+  /**
+   * Configures the domain to use storage on a remote server.
+   *
+   * @param server the server hosting the storage
+   * @param path the path to the storage
+   * @return this object
+   */
+  public DomainConfigurator withNfsStorage(String server, String path) {
+    getDomainSpec().setStorage(DomainStorage.createNfsStorage(server, path));
+    return this;
+  }
+
+  /**
+   * Defines the amount of storage to allocate for the domain.
+   *
+   * @param size the size to allocate
+   * @return this object
+   */
+  public DomainConfigurator withStorageSize(String size) {
+    getDomainSpec().getStorage().setStorageSize(size);
+    return this;
+  }
+
+  /**
+   * Defines the amount of storage to allocate for the domain.
+   *
+   * @param policy the size to allocate
+   * @return this object
+   */
+  public DomainConfigurator withStorageReclaimPolicy(String policy) {
+    getDomainSpec().getStorage().setStorageReclaimPolicy(policy);
+    return this;
+  }
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the
@@ -68,7 +139,8 @@ public interface DomainConfigurator {
    * @param timeout the default timeout, in seconds.
    * @param period the default probe period, in seconds.
    */
-  void withDefaultReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
+  public abstract void withDefaultReadinessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
 
   /**
    * Sets the default settings for the liveness probe. Any settings left null will default to the
@@ -78,7 +150,8 @@ public interface DomainConfigurator {
    * @param timeout the default timeout, in seconds.
    * @param period the default probe period, in seconds.
    */
-  void withDefaultLivenessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
+  public abstract void withDefaultLivenessProbeSettings(
+      Integer initialDelay, Integer timeout, Integer period);
 
   /**
    * Defines the startup control mechanism for the domain. Must be one of:
@@ -100,7 +173,7 @@ public interface DomainConfigurator {
    * @param startupControl the new value
    * @return this object
    */
-  DomainConfigurator setStartupControl(String startupControl);
+  public abstract DomainConfigurator setStartupControl(String startupControl);
 
   /**
    * Add an environment variable to the domain
@@ -109,14 +182,22 @@ public interface DomainConfigurator {
    * @param value value
    * @return this object
    */
-  DomainConfigurator withEnvironmentVariable(String name, String value);
+  public abstract DomainConfigurator withEnvironmentVariable(String name, String value);
 
   /**
    * Adds an admin server configuration to the domain, if not already present.
    *
    * @return an object to add additional configurations
    */
-  ServerConfigurator configureAdminServer();
+  public abstract ServerConfigurator configureAdminServer();
+
+  protected DomainSpec getDomainSpec() {
+    return domain.getSpec();
+  }
+
+  protected String getAsName() {
+    return domain.getAsName();
+  }
 
   /**
    * Adds a default server configuration to the domain, if not already present.
@@ -124,7 +205,7 @@ public interface DomainConfigurator {
    * @param serverName the name of the server to add
    * @return an object to add additional configurations
    */
-  ServerConfigurator configureServer(@Nonnull String serverName);
+  public abstract ServerConfigurator configureServer(@Nonnull String serverName);
 
   /**
    * Adds a default cluster configuration to the domain, if not already present.
@@ -132,5 +213,5 @@ public interface DomainConfigurator {
    * @param clusterName the name of the server to add
    * @return an object to add additional configurations
    */
-  ClusterConfigurator configureCluster(@Nonnull String clusterName);
+  public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
 }

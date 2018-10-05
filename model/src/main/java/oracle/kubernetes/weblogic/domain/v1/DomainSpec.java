@@ -32,6 +32,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @SuppressWarnings("NullableProblems")
 public class DomainSpec extends BaseConfiguration {
 
+  /** The pattern for computing the default persistent volume claim name. */
+  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
+
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
   @SerializedName("domainUID")
   @Expose
@@ -105,15 +108,25 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   private String startupControl;
 
-  /** List of server startup details for selected servers. */
-  @SuppressWarnings("deprecation")
+  /**
+   * List of server startup details for selected servers.
+   *
+   * @deprecated as of 2.0 use #managedServers field instead
+   */
+  @SuppressWarnings({"deprecation", "DeprecatedIsStillUsed"})
+  @Deprecated
   @SerializedName("serverStartup")
   @Expose
   @Valid
   private List<ServerStartup> serverStartup = new ArrayList<>();
 
-  /** List of server startup details for selected clusters. */
-  @SuppressWarnings("deprecation")
+  /**
+   * List of server startup details for selected clusters.
+   *
+   * @deprecated as of 2.0 use #clusters field instead
+   */
+  @SuppressWarnings({"deprecation", "DeprecatedIsStillUsed"})
+  @Deprecated
   @SerializedName("clusterStartup")
   @Expose
   @Valid
@@ -122,10 +135,27 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusterStartup.
+   *
+   * @deprecated as of 2.0 defaults to Domain.DEFAULT_REPLICA_LIMIT
    */
+  @Deprecated
   @SerializedName("replicas")
   @Expose
   private Integer replicas;
+
+  /**
+   * Whether the domain home is part of the image.
+   *
+   * @since 2.0
+   */
+  @SerializedName("domainHomeInImage")
+  @Expose
+  private boolean domainHomeInImage;
+
+  /** The definition of the storage used for this domain. */
+  @SerializedName("storage")
+  @Expose
+  private DomainStorage storage;
 
   /**
    * The configuration for the admin server.
@@ -410,6 +440,16 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Returns true if this domain's home is defined in the default docker image for the domain.
+   *
+   * @return true or false
+   * @since 2.0
+   */
+  public boolean isDomainHomeInImage() {
+    return domainHomeInImage;
+  }
+
+  /**
    * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
    * and AUTO.
    *
@@ -582,6 +622,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param replicas replicas
    */
+  @SuppressWarnings("deprecation")
   public void setReplicas(Integer replicas) {
     this.replicas = replicas;
   }
@@ -593,11 +634,46 @@ public class DomainSpec extends BaseConfiguration {
    * @param replicas replicas
    * @return this
    */
+  @SuppressWarnings("deprecation")
   public DomainSpec withReplicas(Integer replicas) {
     this.replicas = replicas;
     return this;
   }
 
+  /**
+   * Specifies the storage for the domain.
+   *
+   * @param storage the definition of the domain storage.
+   */
+  public void setStorage(DomainStorage storage) {
+    this.storage = storage;
+  }
+
+  /**
+   * Returns the storage for the domain.
+   *
+   * @return the definition of the domain storage.
+   */
+  public DomainStorage getStorage() {
+    return storage;
+  }
+
+  /**
+   * Returns the name of the persistent volume claim for the logs and PV-based domain.
+   *
+   * @return volume claim
+   * @param domainUID the UID of this domain
+   */
+  String getPersistentVolumeClaimName(String domainUID) {
+    return Optional.ofNullable(getConfiguredClaimName())
+        .orElse(String.format(PVC_NAME_PATTERN, domainUID));
+  }
+
+  private String getConfiguredClaimName() {
+    return (storage == null) ? null : storage.getPersistentVolumeClaimName();
+  }
+
+  @SuppressWarnings("deprecation")
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -612,9 +688,11 @@ public class DomainSpec extends BaseConfiguration {
         .append("serverStartup", serverStartup)
         .append("clusterStartup", clusterStartup)
         .append("replicas", replicas)
+        .append("storage", storage)
         .toString();
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
@@ -629,9 +707,11 @@ public class DomainSpec extends BaseConfiguration {
         .append(exportT3Channels)
         .append(serverStartup)
         .append(adminSecret)
+        .append(storage)
         .toHashCode();
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public boolean equals(Object other) {
     if (other == this) return true;
@@ -650,6 +730,7 @@ public class DomainSpec extends BaseConfiguration {
         .append(exportT3Channels, rhs.exportT3Channels)
         .append(serverStartup, rhs.serverStartup)
         .append(adminSecret, rhs.adminSecret)
+        .append(storage, rhs.storage)
         .isEquals();
   }
 

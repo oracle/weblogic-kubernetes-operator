@@ -7,6 +7,8 @@ package oracle.kubernetes.weblogic.domain.v1;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
 import javax.validation.Valid;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -277,6 +279,33 @@ public class Domain {
    */
   public String getDomainName() {
     return spec.getDomainName();
+  }
+
+  /**
+   * Returns the name of the persistent volume claim for the logs and PV-based domain.
+   *
+   * @return volume claim
+   */
+  public String getPersistentVolumeClaimName() {
+    return spec.getPersistentVolumeClaimName(getDomainUID());
+  }
+
+  /**
+   * Returns the persistent volume that must be created for domain storage. May be null.
+   *
+   * @return a definition of the kubernetes resource to create
+   */
+  public V1PersistentVolume getRequiredPersistentVolume() {
+    return spec.getStorage().getRequiredPersistentVolume(getDomainUID());
+  }
+
+  /**
+   * Returns the persistent volume claim that must be created for domain storage. May be null.
+   *
+   * @return a definition of the kubernetes resource to create
+   */
+  public V1PersistentVolumeClaim getRequiredPersistentVolumeClaim() {
+    return spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID());
   }
 
   @Override
