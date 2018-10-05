@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -662,15 +663,14 @@ public class DomainSpec extends BaseConfiguration {
    * Returns the name of the persistent volume claim for the logs and PV-based domain.
    *
    * @return volume claim
-   * @param domainUID the UID of this domain
    */
-  String getPersistentVolumeClaimName(String domainUID) {
-    return Optional.ofNullable(getConfiguredClaimName())
-        .orElse(String.format(PVC_NAME_PATTERN, domainUID));
+  String getPersistentVolumeClaimName() {
+    return storage == null ? null : getConfiguredClaimName(storage);
   }
 
-  private String getConfiguredClaimName() {
-    return (storage == null) ? null : storage.getPersistentVolumeClaimName();
+  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
+    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
+        .orElse(String.format(PVC_NAME_PATTERN, domainUID));
   }
 
   @SuppressWarnings("deprecation")

@@ -92,8 +92,8 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenNotSpecified_persistentVolumeClaimDefaultsToUIDBasedPattern() {
-    assertThat(domain.getPersistentVolumeClaimName(), equalTo(getDefaultPVCName()));
+  public void whenStorageNotConfigured_persistentVolumeClaimIsNull() {
+    assertThat(domain.getPersistentVolumeClaimName(), nullValue());
   }
 
   @Test
@@ -182,7 +182,7 @@ public class DomainV2Test extends DomainTestBase {
 
   private void assertPersistentVolumeClaim() {
     String pv = toJson(domain.getRequiredPersistentVolumeClaim());
-    assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeClaimName())));
+    assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getDefaultPVCName())));
     assertThat(
         pv, hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo(getDomainUid())));
     assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
@@ -190,8 +190,11 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(pv, hasJsonPath("$.spec.resources.requests.storage", equalTo("10Gi")));
   }
 
-  private String getPersistentVolumeClaimName() {
-    return getDomainUid() + "-weblogic-domain-pvc";
+  @Test
+  public void whenNfsDefinedStorageConfigured_useDefaultPersistentClaim() {
+    configureDomain(domain).withNfsStorage("myserver", "/tmp").withStorageReclaimPolicy("Retain");
+
+    assertThat(domain.getPersistentVolumeClaimName(), equalTo(getDefaultPVCName()));
   }
 
   @Test

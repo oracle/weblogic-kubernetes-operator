@@ -371,6 +371,19 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenDomainSpecifiesClaimName_podSpecUsesIt() {
+    configurator.withPredefinedClaim("predefined");
+    domainPresenceInfo
+        .getClaims()
+        .addItemsItem(
+            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
+
+    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
+
+    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("predefined"));
+  }
+
+  @Test
   public void createdPod_hasCredentialsVolume() {
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CREDENTIALS_VOLUME_NAME);
 
@@ -417,7 +430,7 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("getCreatedPodSpecContainer is returing null because Pod is not yet created")
+  @Ignore("Ignored: getCreatedPodSpecContainer is returing null because Pod is not yet created")
   public void whenPodCreated_containerUsesListenPort() {
     V1Container v1Container = getCreatedPodSpecContainer();
 
