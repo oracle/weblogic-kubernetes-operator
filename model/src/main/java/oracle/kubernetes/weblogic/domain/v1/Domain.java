@@ -287,7 +287,7 @@ public class Domain {
    * @return volume claim
    */
   public String getPersistentVolumeClaimName() {
-    return spec.getPersistentVolumeClaimName(getDomainUID());
+    return spec.getPersistentVolumeClaimName();
   }
 
   /**
