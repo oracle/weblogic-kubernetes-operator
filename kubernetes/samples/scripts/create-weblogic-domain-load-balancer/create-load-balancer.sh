@@ -5,7 +5,7 @@
 # Description
 #  This sample script creates load balancer resources for the sample domain
 #
-#  The creation inputs can be customized by editing create-weblogic-sample-domain-load-balancer-inputs.yaml
+#  The creation inputs can be customized by editing create-load-balancer-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The Kubernetes namespace must already be created
@@ -68,17 +68,17 @@ function initAndValidateOutputDir {
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in
       "TRAEFIK")
-        fileList="weblogic-sample-domain-traefik.yaml \
-                  weblogic-sample-domain-traefik-security.yaml "
+        fileList="traefik.yaml \
+                  traefik-security.yaml "
       ;;
       "APACHE")
-        fileList="weblogic-sample-domain-apache.yaml \
-                  weblogic-sample-domain-apache-security.yaml "
+        fileList="apache.yaml \
+                  apache-security.yaml "
       ;;
       "VOYAGER")
-        fileList="weblogic-sample-domain-voyager-ingress.yaml \
-                  weblogic-sample-domain-voyager-operator.yaml \
-                  weblogic-sample-domain-voyager-operator-security.yaml"
+        fileList="voyager-ingress.yaml \
+                  voyager-operator.yaml \
+                  voyager-operator-security.yaml"
       ;;
       "NONE")
       ;;
@@ -90,7 +90,7 @@ function initAndValidateOutputDir {
   validateOutputDir \
     ${domainOutputDir} \
     ${valuesInputFile} \
-    create-weblogic-sample-domain-load-balancer-inputs.yaml \
+    create-load-balancer-inputs.yaml \
     ${fileList}
 }
 
@@ -103,7 +103,7 @@ function initialize {
   validateErrors=false
 
   if [ -z "${valuesInputFile}" ]; then
-    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/create-weblogic-sample-domain-load-balander-inputs.yaml)."
+    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balander-inputs.yaml)."
   else
     if [ ! -f ${valuesInputFile} ]; then
       validationError "Unable to locate the input parameters file ${valuesInputFile}"
@@ -118,37 +118,37 @@ function initialize {
     fi
   fi
 
-  traefikSecurityInput="${scriptDir}/weblogic-sample-domain-traefik-security-template.yaml"
+  traefikSecurityInput="${scriptDir}/traefik-security-template.yaml"
   if [ ! -f ${traefikSecurityInput} ]; then
     validationError "The file ${traefikSecurityInput} for generating the traefik RBAC was not found"
   fi
 
-  traefikInput="${scriptDir}/weblogic-sample-domain-traefik-template.yaml"
+  traefikInput="${scriptDir}/traefik-template.yaml"
   if [ ! -f ${traefikInput} ]; then
     validationError "The template file ${traefikInput} for generating the traefik deployment was not found"
   fi
 
-  apacheSecurityInput="${scriptDir}/weblogic-sample-domain-apache-security-template.yaml"
+  apacheSecurityInput="${scriptDir}/apache-security-template.yaml"
   if [ ! -f ${apacheSecurityInput} ]; then
     validationError "The file ${apacheSecurityInput} for generating the apache-webtier RBAC was not found"
   fi
 
-  apacheInput="${scriptDir}/weblogic-sample-domain-apache-template.yaml"
+  apacheInput="${scriptDir}/apache-template.yaml"
   if [ ! -f ${apacheInput} ]; then
     validationError "The template file ${apacheInput} for generating the apache-webtier deployment was not found"
   fi
   
-  voyagerOperatorInput="${scriptDir}/weblogic-sample-domain-voyager-operator.yaml"
+  voyagerOperatorInput="${scriptDir}/voyager-operator.yaml"
   if [ ! -f ${voyagerOperatorInput} ]; then
     validationError "The file ${voyagerOperatorInput} for Voyager Operator was not found"
   fi
 
-  voyagerSecurityInput="${scriptDir}/weblogic-sample-domain-voyager-operator-security.yaml"
+  voyagerSecurityInput="${scriptDir}/voyager-operator-security.yaml"
   if [ ! -f ${voyagerSecurityInput} ]; then
     validationError "The file ${voyagerSecurityInput} for generating the Voyager RBAC was not found"
   fi
 
-  voyagerIngressInput="${scriptDir}/weblogic-sample-domain-voyager-ingress-template.yaml"
+  voyagerIngressInput="${scriptDir}/voyager-ingress-template.yaml"
   if [ ! -f ${voyagerIngressInput} ]; then
     validationError "The template file ${voyagerIngressInput} for generating the Voyager Ingress was not found"
   fi
@@ -194,15 +194,15 @@ function createYamlFiles {
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-load-balancer-inputs.yaml"
 
-  traefikSecurityOutput="${domainOutputDir}/weblogic-sample-domain-traefik-security.yaml"
-  traefikOutput="${domainOutputDir}/weblogic-sample-domain-traefik.yaml"
-  apacheOutput="${domainOutputDir}/weblogic-sample-domain-apache.yaml"
-  apacheSecurityOutput="${domainOutputDir}/weblogic-sample-domain-apache-security.yaml"
-  voyagerSecurityOutput="${domainOutputDir}/weblogic-sample-domain-voyager-operator-security.yaml"
-  voyagerOperatorOutput="${domainOutputDir}/weblogic-sample-domain-voyager-operator.yaml"
-  voyagerIngressOutput="${domainOutputDir}/weblogic-sample-domain-voyager-ingress.yaml"
+  traefikSecurityOutput="${domainOutputDir}/traefik-security.yaml"
+  traefikOutput="${domainOutputDir}/traefik.yaml"
+  apacheOutput="${domainOutputDir}/apache.yaml"
+  apacheSecurityOutput="${domainOutputDir}/apache-security.yaml"
+  voyagerSecurityOutput="${domainOutputDir}/voyager-operator-security.yaml"
+  voyagerOperatorOutput="${domainOutputDir}/voyager-operator.yaml"
+  voyagerIngressOutput="${domainOutputDir}/voyager-ingress.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -445,7 +445,7 @@ function printSummary {
 
   fi
   echo "The following files were generated:"
-  echo "  ${domainOutputDir}/create-weblogic-sample-domain-load-balander-inputs.yaml"
+  echo "  ${domainOutputDir}/create-load-balander-inputs.yaml"
   echo "  ${domainPVOutput}"
   echo "  ${domainPVCOutput}"
   echo "  ${createJobOutput}"

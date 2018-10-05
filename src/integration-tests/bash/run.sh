@@ -570,10 +570,8 @@ function setup_jenkins {
     helm init
     trace "Helm is configured."
 
-    if [ "$USE_HELM" = "true" ]; then
-      if [ ! -x "$(command -v helm)" ]; then
-        fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
-      fi
+    if [ ! -x "$(command -v helm)" ]; then
+      fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
     fi
 }
 
@@ -590,40 +588,35 @@ function setup_local {
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
 
-  if [ "$USE_HELM" = "true" ]; then
-    if [ ! -x "$(command -v helm)" ]; then
-      fail "USE_HELM set to true but helm binary not found in path, helm must be pre-installed prior to running integration tests locally"
-    fi
+  if [ ! -x "$(command -v helm)" ]; then
+    fail "USE_HELM set to true but helm binary not found in path, helm must be pre-installed prior to running integration tests locally"
   fi
 }
 
 function setup_wercker {
   trace "Perform setup for running in wercker"
 
-  if [ "$USE_HELM" = "true" ]; then
+  trace "Install tiller"
 
-    trace "Install tiller"
+  kubectl create serviceaccount --namespace kube-system tiller
+  kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 
-    kubectl create serviceaccount --namespace kube-system tiller
-    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+  # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
+  helm init --service-account=tiller --wait
 
-    # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
-    helm init --service-account=tiller --wait
+  helm version
 
-    helm version
+  kubectl get po -n kube-system
 
-    kubectl get po -n kube-system
+  trace "Existing helm charts "
+  helm ls
+  trace "Deleting installed helm charts"
+  helm list --short --all | xargs -L1 helm delete --purge
+  trace "After helm delete, list of installed helm charts is: "
+  helm ls --all
 
-    trace "Existing helm charts "
-    helm ls
-    trace "Deleting installed helm charts"
-    helm list --short --all | xargs -L1 helm delete --purge
-    trace "After helm delete, list of installed helm charts is: "
-    helm ls --all
-
-    if [ ! -x "$(command -v helm)" ]; then
-      fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
-    fi
+  if [ ! -x "$(command -v helm)" ]; then
+    fail "USE_HELM set to true but helm binary not found in path.  the helm installation in this function must have failed "
   fi
 
   trace "Completed setup_wercker"
@@ -769,40 +762,36 @@ function deploy_operator {
 
     trace 'customize the yaml'
     mkdir -p $TMP_DIR
-    if [ "$USE_HELM" = "true" ]; then
-      local inputs="$TMP_DIR/weblogic-operator-values.yaml"
+    local inputs="$TMP_DIR/weblogic-operator-values.yaml"
 
-      # generate certificates
-      $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
-      $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
+    # generate certificates
+    $PROJECT_ROOT/kubernetes/generate-internal-weblogic-operator-certificate.sh > $inputs
+    $PROJECT_ROOT/kubernetes/generate-external-weblogic-operator-certificate.sh DNS:${NODEPORT_HOST} >> $inputs
 
-      trace 'customize the inputs yaml file to add test namespace'
-      echo "domainNamespaces:" >> $inputs
-      for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
-      do
-        echo "  - $i" >> $inputs
-      done
-      echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
-      echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
-      echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
-      echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
-      trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
-      echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
-      echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
-      echo "serviceAccount: weblogic-operator" >> $inputs
-      trace "Contents after customization in file $inputs"
-      cat $inputs
+    trace 'customize the inputs yaml file to add test namespace'
+    echo "domainNamespaces:" >> $inputs
+    for i in $(echo $TARGET_NAMESPACES | sed "s/,/ /g")
+    do
+      echo "  - $i" >> $inputs
+    done
+    echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
+    echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+    echo "externalRestOption: SELF_SIGNED_CERT" >> $inputs
+    echo "externalOperatorCertSans: DNS:${NODEPORT_HOST}" >> $inputs
+    trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
+    echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
+    echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
+    echo "serviceAccount: weblogic-operator" >> $inputs
+    trace "Contents after customization in file $inputs"
+    cat $inputs
 
-      local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
-      trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
-      cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
-      trace "helm install output:"
-      cat $outfile
-      operator_ready_wait $opkey
-    else
-      fail "create-weblogic-operator.sh is longer supported"
-    fi
+    local outfile="${TMP_DIR}/create-weblogic-operator-helm.out"
+    trace "Run helm install to deploy the weblogic operator, see \"$outfile\" for tracking."
+    cd $PROJECT_ROOT/kubernetes/charts
+    helm install weblogic-operator --name ${opkey} --namespace ${NAMESPACE} -f $inputs 2>&1 | opt_tee ${outfile}
+    trace "helm install output:"
+    cat $outfile
+    operator_ready_wait $opkey
 
     if [ "$?" = "0" ]; then
        # Prepend "+" to detailed debugging to make it easy to filter out
@@ -1004,11 +993,11 @@ function create_pv_pvc_non_helm {
     local TMP_DIR="`dom_get $1 TMP_DIR`"
     local tmp_dir="$TMP_DIR"
 
-    local inputsPvPvc="$tmp_dir/create-weblogic-sample-domain-pv-pvc-inputs.yaml"
+    local inputsPvPvc="$tmp_dir/create-pv-pvc-inputs.yaml"
 
     local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
-    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc-inputs.yaml $inputsPvPvc
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml $inputsPvPvc
     sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputsPvPvc
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsPvPvc
@@ -1021,12 +1010,12 @@ function create_pv_pvc_non_helm {
 
     trace "Run the script to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
 
-    local outfilePvPvc="${tmp_dir}/create-weblogic-sample-domain-pv-pvc.sh.out"
-    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc.sh -i $inputsPvPvc -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfilePvPvc}
-    pvOutput="${domainOutPutDir}/weblogic-sample-domain-pv.yaml"
+    local outfilePvPvc="${tmp_dir}/create-pv-pvc.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh -i $inputsPvPvc -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfilePvPvc}
+    pvOutput="${domainOutPutDir}/pv.yaml"
     echo Creating the pvresource using ${pvOutput}
     kubectl apply -f ${pvOutput}
-    pvcOutput="${domainOutPutDir}/weblogic-sample-domain-pvc.yaml"
+    pvcOutput="${domainOutPutDir}/pvc.yaml"
     echo Creating the pvcresource using ${pvcOutput}
     kubectl apply -f ${pvcOutput}
 }
@@ -1052,9 +1041,9 @@ function create_domain_home_on_pv_non_helm {
 
     local WEBLOGIC_CREDENTIALS_SECRET_NAME="$DOMAIN_UID-weblogic-credentials"
 
-    local inputsDomain="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+    local inputsDomain="$tmp_dir/create-domain-inputs.yaml"
 
-    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputsDomain
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml $inputsDomain
 
     # customize inputs properties
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputsDomain
@@ -1081,8 +1070,8 @@ function create_domain_home_on_pv_non_helm {
       sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputsDomain
     fi
 
-    local outfileDomain="${tmp_dir}/create-weblogic-sample-domain.sh.out"
-    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain.sh -i $inputsDomain -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileDomain}
+    local outfileDomain="${tmp_dir}/create-domain.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i $inputsDomain -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileDomain}
     dcrOutput="${domainOutPutDir}/domain-custom-resource.yaml"
     echo Creating the domain custom resource using ${dcrOutput}
     kubectl apply -f ${dcrOutput}
@@ -1108,9 +1097,9 @@ function create_load_balancer_non_helm {
     local TMP_DIR="`dom_get $1 TMP_DIR`"
     local tmp_dir="$TMP_DIR"
 
-    local inputsLoadBalancer="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+    local inputsLoadBalancer="$tmp_dir/create-load-balancer-inputs.yaml"
 
-    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer-inputs.yaml $inputsLoadBalancer
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml $inputsLoadBalancer
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputsLoadBalancer | awk '{print $2}'`
 
@@ -1131,19 +1120,19 @@ function create_load_balancer_non_helm {
 
     trace "Create and start domain load balancer"
     # Setup load balancer
-    local outfileLoadBalancer="${tmp_dir}/create-weblogic-sample-domain-load-balancer.sh.out"
-    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer.sh -i $inputsLoadBalancer -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileLoadBalancer}
+    local outfileLoadBalancer="${tmp_dir}/create-load-balancer.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer.sh -i $inputsLoadBalancer -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileLoadBalancer}
     if [ "${LB_TYPE}" == "TRAEFIK" ]; then
-      traefikSecurityOutput="${domainOutPutDir}/weblogic-sample-domain-traefik-security.yaml"
-      traefikOutput="${domainOutPutDir}/weblogic-sample-domain-traefik.yaml"
+      traefikSecurityOutput="${domainOutPutDir}/traefik-security.yaml"
+      traefikOutput="${domainOutPutDir}/traefik.yaml"
       echo Creating the $LB_TYPE load balancer security resource using ${traefikSecurityOutput}
       kubectl apply -f ${traefikSecurityOutput}
       echo Creating the $LB_TYPE load balancer resource using ${traefikOutput}
       kubectl apply -f ${traefikOutput}
 
     elif [ "${LB_TYPE}" == "APACHE" ]; then
-      apacheOutput="${domainOutPutDir}/weblogic-sample-domain-apache.yaml"
-      apacheSecurityOutput="${domainOutPutDir}/weblogic-sample-domain-apache-security.yaml"
+      apacheOutput="${domainOutPutDir}/apache.yaml"
+      apacheSecurityOutput="${domainOutPutDir}/apache-security.yaml"
       echo Creating the $LB_TYPE load balancer security resource using ${apacheSecurityOutput}
       kubectl apply -f ${apacheSecurityOutput}
       echo Creating the $LB_TYPE load balancer resource using ${apacheOutput}
@@ -1154,7 +1143,7 @@ function create_load_balancer_non_helm {
       echo Creating Voyager operator and ingress controller
       sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/start-voyager-controller.sh -p ${domainOutPutDir} 2>&1 | opt_tee ${outfileLoadBalancer}
       # start voyager ingress
-      voyagerIngressOutput="${domainOutPutDir}/weblogic-sample-domain-voyager-ingress.yaml"
+      voyagerIngressOutput="${domainOutPutDir}/voyager-ingress.yaml"
       echo Creating the $LB_TYPE load balancer resource using ${voyagerIngressOutput}
       createVoyagerIngress $voyagerIngressOutput $NAMESPACE ${DOMAIN_UID}
     fi
@@ -1290,14 +1279,30 @@ function create_domain_pv_pvc_load_balancer {
         sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputs
       fi
 
-      local outfile="${tmp_dir}/create-weblogic-sample-domain.sh.out"
+      local outfile="${tmp_dir}/create-domain.sh.out"
       trace "Run helm install to create the domain, see \"$outfile\" for tracing."
       cd $PROJECT_ROOT/kubernetes/charts
       helm install weblogic-domain --name $DOMAIN_UID -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
       trace "helm install output:"
       cat $outfile
     else
-      fail "create-weblogic-domain.sh is longer supported"
+      # create sample domain, including a pv and pvc, domain home on pv, and load balancer
+
+      domainOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains/${DOMAIN_UID}
+      trace "Run the sample scripts to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
+
+      # Create sample  domain pv and pvc
+      trace "Create and start domain pv and pvc"
+      create_pv_pvc_non_helm $@
+
+      # Create  sample domain home on pv
+      trace "Create the domain home, and start domain resources"
+      create_domain_home_on_pv_non_helm $@
+
+      # Setup sample load balancer
+      trace "Create and start domain load balancer"
+      create_load_balancer_non_helm $@
+
     fi
 
     if [ "$?" = "0" ]; then
@@ -1865,11 +1870,7 @@ function call_operator_rest {
     local SECRET="`kubectl get serviceaccount weblogic-operator -n $OPERATOR_NS -o jsonpath='{.secrets[0].name}'`"
     local ENCODED_TOKEN="`kubectl get secret ${SECRET} -n $OPERATOR_NS -o jsonpath='{.data.token}'`"
     local TOKEN="`echo ${ENCODED_TOKEN} | base64 --decode`"
-    if [ "$USE_HELM" = "true" ]; then
-      local OPERATOR_CERT_DATA="`grep externalOperatorCert: ${OPERATOR_TMP_DIR}/weblogic-operator-values.yaml | awk '{ print $2 }'`"
-    else
-      local OPERATOR_CERT_DATA="`grep externalOperatorCert ${OPERATOR_TMP_DIR}/weblogic-operator.yaml | awk '{ print $2 }'`"
-    fi
+    local OPERATOR_CERT_DATA="`grep externalOperatorCert: ${OPERATOR_TMP_DIR}/weblogic-operator-values.yaml | awk '{ print $2 }'`"
     local OPERATOR_CERT_FILE="${OPERATOR_TMP_DIR}/operator.cert.pem"
     echo ${OPERATOR_CERT_DATA} | base64 --decode > ${OPERATOR_CERT_FILE}
 
@@ -2824,13 +2825,9 @@ function shutdown_operator {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    if [ "$USE_HELM" = "true" ]; then
-      helm delete $OP_KEY --purge
-      wait_for_operator_helm_chart_deleted $OP_KEY
-      wait_for_operator_deployment_deleted $OPERATOR_NS
-    else
-      kubectl delete -f $TMP_DIR/weblogic-operator.yaml
-    fi
+    helm delete $OP_KEY --purge
+    wait_for_operator_helm_chart_deleted $OP_KEY
+    wait_for_operator_deployment_deleted $OPERATOR_NS
 
     trace "Checking REST service is deleted"
     set +x
@@ -2850,15 +2847,11 @@ function startup_operator {
     local OPERATOR_NS="`op_get $OP_KEY NAMESPACE`"
     local TMP_DIR="`op_get $OP_KEY TMP_DIR`"
 
-    if [ "$USE_HELM" = "true" ]; then
-      local inputs="$TMP_DIR/weblogic-operator-values.yaml"
-      local outfile="$TMP_DIR/startup-weblogic-operator.out"
-      helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
-      trace "helm install output:"
-      cat $outfile
-    else
-      kubectl create -f $TMP_DIR/weblogic-operator.yaml
-    fi
+    local inputs="$TMP_DIR/weblogic-operator-values.yaml"
+    local outfile="$TMP_DIR/startup-weblogic-operator.out"
+    helm install weblogic-operator --name ${OP_KEY} --namespace ${OPERATOR_NS} -f $inputs 2>&1 | opt_tee ${outfile}
+    trace "helm install output:"
+    cat $outfile
 
     operator_ready_wait $OP_KEY
 

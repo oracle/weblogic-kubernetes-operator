@@ -6,7 +6,7 @@
 #  This sample script generates the Kubernetes yaml files for a persistent volume and persistent volume claim
 #  that can be used by a domain custom resource.
 #
-#  The creation inputs can be customized by editing create-weblogic-sample-domain-pv-pvc-inputs.yaml
+#  The creation inputs can be customized by editing create-pv-pvc-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The Kubernetes namespace must already be created
@@ -70,9 +70,9 @@ function initAndValidateOutputDir {
   validateOutputDir \
     ${domainOutputDir} \
     ${valuesInputFile} \
-    create-weblogic-sample-domain-pv-pvc-inputs.yaml \
-    weblogic-domain-pv.yaml \
-    weblogic-domain-pvc.yaml 
+    create-pv-pvc-inputs.yaml \
+    pv.yaml \
+    pvc.yaml 
 }
 
 #
@@ -84,7 +84,7 @@ function initialize {
   validateErrors=false
 
   if [ -z "${valuesInputFile}" ]; then
-    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/create-weblogic-domain-inputs.yaml)."
+    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml)."
   else
     if [ ! -f ${valuesInputFile} ]; then
       validationError "Unable to locate the input parameters file ${valuesInputFile}"
@@ -99,12 +99,12 @@ function initialize {
     fi
   fi
 
-  domainPVInput="${scriptDir}/weblogic-sample-domain-pv-template.yaml"
+  domainPVInput="${scriptDir}/pv-template.yaml"
   if [ ! -f ${domainPVInput} ]; then
     validationError "The template file ${domainPVInput} for generating a persistent volume was not found"
   fi
 
-  domainPVCInput="${scriptDir}/weblogic-sample-domain-pvc-template.yaml"
+  domainPVCInput="${scriptDir}/pvc-template.yaml"
   if [ ! -f ${domainPVCInput} ]; then
     validationError "The template file ${domainPVCInput} for generating a persistent volume claim was not found"
   fi
@@ -144,10 +144,10 @@ function createYamlFiles {
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-weblogic-sample-domain-pv-pvc-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-pv-pvc-inputs.yaml"
 
-  domainPVOutput="${domainOutputDir}/weblogic-sample-domain-pv.yaml"
-  domainPVCOutput="${domainOutputDir}/weblogic-sample-domain-pvc.yaml"
+  domainPVOutput="${domainOutputDir}/pv.yaml"
+  domainPVCOutput="${domainOutputDir}/pvc.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
