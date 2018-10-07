@@ -20,6 +20,8 @@ import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
@@ -989,6 +991,63 @@ public class CallBuilder {
         LIST_PERSISTENTVOLUME);
   }
 
+  private SynchronousCallFactory<V1PersistentVolume> CREATE_PV_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty);
+
+  public V1PersistentVolume createPersistentVolume(V1PersistentVolume volume) throws ApiException {
+    RequestParams requestParams = new RequestParams("createPV", null, null, volume);
+    return executeSynchronousCall(requestParams, CREATE_PV_CALL);
+  }
+
+  private SynchronousCallFactory<V1Status> DELETE_PV_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .deletePersistentVolume(
+                  requestParams.name,
+                  (V1DeleteOptions) requestParams.body,
+                  pretty,
+                  gracePeriodSeconds,
+                  orphanDependents,
+                  propagationPolicy);
+
+  public V1Status deletePersistentVolume(String name, V1DeleteOptions deleteOptions)
+      throws ApiException {
+    RequestParams requestParams =
+        new RequestParams("deletePersistentVolume", null, name, deleteOptions);
+    return executeSynchronousCall(requestParams, DELETE_PV_CALL);
+  }
+
+  private final CallFactory<V1Status> DELETE_PERSISTENTVOLUME =
+      (requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .deletePersistentVolumeAsync(
+                      requestParams.name,
+                      (V1DeleteOptions) requestParams.body,
+                      pretty,
+                      gracePeriodSeconds,
+                      orphanDependents,
+                      propagationPolicy,
+                      callback));
+
+  /**
+   * Asynchronous step for deleting persistent volumes.
+   *
+   * @param name the name of the volume to delete
+   * @param deleteOptions options to control deletion
+   * @param responseStep the step to invoke when the call completes
+   * @return a new asynchronous step
+   */
+  public Step deletePersistentVolumeAsync(
+      String name, V1DeleteOptions deleteOptions, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deletePersistentVolume", null, name, deleteOptions),
+        DELETE_PERSISTENTVOLUME);
+  }
+
   /* Persistent Volume Claims */
 
   private com.squareup.okhttp.Call listPersistentVolumeClaimAsync(
@@ -1029,6 +1088,65 @@ public class CallBuilder {
         responseStep,
         new RequestParams("listPersistentVolumeClaim", namespace, null, null),
         LIST_PERSISTENTVOLUMECLAIM);
+  }
+
+  private SynchronousCallFactory<V1PersistentVolumeClaim> CREATE_PVC_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .createNamespacedPersistentVolumeClaim(
+                  requestParams.namespace, (V1PersistentVolumeClaim) requestParams.body, pretty);
+
+  public V1PersistentVolumeClaim createPersistentVolumeClaim(V1PersistentVolumeClaim claim)
+      throws ApiException {
+    RequestParams requestParams = new RequestParams("createPVC", getNamespace(claim), null, claim);
+    return executeSynchronousCall(requestParams, CREATE_PVC_CALL);
+  }
+
+  protected String getNamespace(V1PersistentVolumeClaim claim) {
+    return claim.getMetadata().getNamespace();
+  }
+
+  private SynchronousCallFactory<V1Status> DELETE_PVC_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .deleteNamespacedPersistentVolumeClaim(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  pretty,
+                  gracePeriodSeconds,
+                  orphanDependents,
+                  propagationPolicy);
+
+  public V1Status deletePersistentVolumeClaim(
+      String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
+    return executeSynchronousCall(
+        new RequestParams("deletePVC", namespace, name, deleteOptions), DELETE_PVC_CALL);
+  }
+
+  private final CallFactory<V1Status> DELETE_PERSISTENTVOLUMECLAIM =
+      (requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .deleteNamespacedPersistentVolumeClaimAsync(
+                      requestParams.name,
+                      requestParams.namespace,
+                      (V1DeleteOptions) requestParams.body,
+                      pretty,
+                      gracePeriodSeconds,
+                      orphanDependents,
+                      propagationPolicy,
+                      callback));
+
+  public Step deletePersistentVolumeClaimAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deletePersistentVolumeClaim", namespace, name, deleteOptions),
+        DELETE_PERSISTENTVOLUMECLAIM);
   }
 
   /* Secrets */

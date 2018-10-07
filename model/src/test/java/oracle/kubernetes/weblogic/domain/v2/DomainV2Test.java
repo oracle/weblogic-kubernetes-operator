@@ -23,6 +23,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,6 +35,8 @@ public class DomainV2Test extends DomainTestBase {
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
+  private static final String CREATED_BY_OPERATOR_LABEL_PATH =
+      "$.metadata.labels.['weblogic.createdByOperator']";
 
   @Before
   public void setUp() {
@@ -148,13 +151,21 @@ public class DomainV2Test extends DomainTestBase {
 
     String pv = toJson(domain.getRequiredPersistentVolume());
     assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeName())));
-    assertThat(
-        pv, hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo(getDomainUid())));
+    assertThat(pv, hasDomainUidLabel(getDomainUid()));
+    assertThat(pv, hasCreatedByOperatorLabel());
     assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
     assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("10Gi")));
     assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
     assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Delete")));
     assertThat(pv, hasJsonPath("$.spec.hostPath.path", equalTo("/tmp")));
+  }
+
+  private static Matcher<? super Object> hasDomainUidLabel(String domainUid) {
+    return hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo(domainUid));
+  }
+
+  private Matcher<? super Object> hasCreatedByOperatorLabel() {
+    return hasJsonPath(CREATED_BY_OPERATOR_LABEL_PATH, equalTo("true"));
   }
 
   private String getPersistentVolumeName() {
@@ -183,8 +194,8 @@ public class DomainV2Test extends DomainTestBase {
   private void assertPersistentVolumeClaim() {
     String pv = toJson(domain.getRequiredPersistentVolumeClaim());
     assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getDefaultPVCName())));
-    assertThat(
-        pv, hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo(getDomainUid())));
+    assertThat(pv, hasDomainUidLabel(getDomainUid()));
+    assertThat(pv, hasCreatedByOperatorLabel());
     assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
     assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
     assertThat(pv, hasJsonPath("$.spec.resources.requests.storage", equalTo("10Gi")));
@@ -203,8 +214,8 @@ public class DomainV2Test extends DomainTestBase {
 
     String pv = toJson(domain.getRequiredPersistentVolume());
     assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeName())));
-    assertThat(
-        pv, hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo(getDomainUid())));
+    assertThat(pv, hasDomainUidLabel(getDomainUid()));
+    assertThat(pv, hasCreatedByOperatorLabel());
     assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
     assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("10Gi")));
     assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
@@ -395,7 +406,8 @@ public class DomainV2Test extends DomainTestBase {
 
     String pv = toJson(domain.getRequiredPersistentVolume());
     assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeName("test-domain"))));
-    assertThat(pv, hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo("test-domain")));
+    assertThat(pv, hasDomainUidLabel("test-domain"));
+    assertThat(pv, hasCreatedByOperatorLabel());
     assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass("test-domain"))));
     assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("8Gi")));
     assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));

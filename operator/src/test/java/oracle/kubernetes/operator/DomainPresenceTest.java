@@ -31,6 +31,10 @@ import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
@@ -72,6 +76,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private final V1EventList events = createEmptyEventList();
   private final V1PodList pods = createEmptyPodList();
   private final V1ConfigMap domainConfigMap = createEmptyConfigMap();
+  private final V1PersistentVolumeList persistentVolumes = createEmptyPersistentVolumeList();
+  private final V1PersistentVolumeClaimList claims = createEmptyPersistentVolumeClaimList();
 
   private List<Memento> mementos = new ArrayList<>();
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
@@ -207,10 +213,24 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private V1ObjectMeta createServerMetadata(String uid, String namespace, String serverName) {
+    return createServerMetadata(uid, serverName).namespace(namespace);
+  }
+
+  private V1ObjectMeta createServerMetadata(String uid, String name) {
     return new V1ObjectMeta()
-        .namespace(namespace)
-        .name(serverName)
-        .labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, serverName));
+        .name(name)
+        .labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, name));
+  }
+
+  private void addPersistentVolumeResource(String uid, String name) {
+    V1PersistentVolume volume = new V1PersistentVolume().metadata(createServerMetadata(uid, name));
+    persistentVolumes.getItems().add(volume);
+  }
+
+  private void addPersistentVolumeClaimResource(String uid, String namespace, String name) {
+    V1PersistentVolumeClaim claim =
+        new V1PersistentVolumeClaim().metadata(createServerMetadata(uid, namespace, name));
+    claims.getItems().add(claim);
   }
 
   @Test
@@ -367,13 +387,23 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return new V1ObjectMeta().resourceVersion("1");
   }
 
+  private V1PersistentVolumeList createEmptyPersistentVolumeList() {
+    return new V1PersistentVolumeList().metadata(createListMetadata());
+  }
+
+  private V1PersistentVolumeClaimList createEmptyPersistentVolumeClaimList() {
+    return new V1PersistentVolumeClaimList().metadata(createListMetadata());
+  }
+
   @SuppressWarnings("unchecked")
   @Test
-  public void whenStrandedPodsExist_removeThem() {
+  public void whenStrandedResourcesExist_removeThem() {
     addIngressResource(UID, NS, "cluster1");
     addIngressResource(UID, NS, "cluster2");
     addServiceResource(UID, NS, "admin");
     addServiceResource(UID, NS, "ms1", "channel1");
+    addPersistentVolumeResource(UID, "volume1");
+    addPersistentVolumeClaimResource(UID, NS, "claim1");
 
     readExistingResources();
 
@@ -416,6 +446,28 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .createCannedResponse("deleteIngress")
         .withNamespace(NS)
         .withName("TEST-cluster2")
+        .ignoringBody()
+        .returning(new V1Status());
+
+    testSupport
+        .createCannedResponse("listPersistentVolume")
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(persistentVolumes);
+    testSupport
+        .createCannedResponse("deletePersistentVolume")
+        .withName("volume1")
+        .ignoringBody()
+        .returning(new V1Status());
+
+    testSupport
+        .createCannedResponse("listPersistentVolumeClaim")
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .withNamespace(NS)
+        .returning(claims);
+    testSupport
+        .createCannedResponse("deletePersistentVolumeClaim")
+        .withNamespace(NS)
+        .withName("claim1")
         .ignoringBody()
         .returning(new V1Status());
 

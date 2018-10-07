@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.google.gson.GsonBuilder;
@@ -15,7 +16,13 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.VersionInfo;
 import java.io.IOException;
@@ -42,6 +49,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
       String.format("/apis/weblogic.oracle/v1/namespaces/%s/domains", NAMESPACE);
   private static final String CRD_RESOURCE =
       "/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions";
+  private static final String PV_RESOURCE = "/api/v1/persistentvolumes";
+  private static final String PVC_RESOURCE =
+      String.format("/api/v1/namespaces/%s/persistentvolumeclaims", NAMESPACE);
 
   private static ApiClient apiClient = new ApiClient();
   private List<Memento> mementos = new ArrayList<>();
@@ -84,6 +94,74 @@ public class CallBuilderTest extends HttpUserAgentTest {
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
 
     assertThat(requestBody, equalTo(domain));
+  }
+
+  @Test
+  public void createPV_returnsVolumeAsJson() throws ApiException {
+    V1PersistentVolume volume = createPersistentVolume();
+    defineHttpPostResponse(PV_RESOURCE, volume);
+
+    assertThat(callBuilder.createPersistentVolume(volume), equalTo(volume));
+  }
+
+  private V1PersistentVolume createPersistentVolume() {
+    return new V1PersistentVolume().metadata(createMetadata()).spec(new V1PersistentVolumeSpec());
+  }
+
+  @Test
+  public void createPV_sendsClaimAsJson() throws ApiException {
+    V1PersistentVolume volume = createPersistentVolume();
+    defineHttpPostResponse(
+        PV_RESOURCE, volume, (json) -> requestBody = fromJson(json, V1PersistentVolume.class));
+
+    callBuilder.createPersistentVolume(volume);
+
+    assertThat(requestBody, equalTo(volume));
+  }
+
+  @Test
+  public void deletePV_returnsStatus() throws ApiException {
+    defineHttpDeleteResponse(PV_RESOURCE, NAME, new V1Status());
+
+    assertThat(
+        callBuilder.deletePersistentVolume(NAME, new V1DeleteOptions()),
+        instanceOf(V1Status.class));
+  }
+
+  @Test
+  public void createPVC_returnsClaimAsJson() throws ApiException {
+    V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
+    defineHttpPostResponse(PVC_RESOURCE, claim);
+
+    assertThat(callBuilder.createPersistentVolumeClaim(claim), equalTo(claim));
+  }
+
+  private V1PersistentVolumeClaim createPersistentVolumeClaim() {
+    return new V1PersistentVolumeClaim().metadata(createMetadata()).spec(createSpec());
+  }
+
+  @Test
+  public void createPVC_sendsClaimAsJson() throws ApiException {
+    V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
+    defineHttpPostResponse(
+        PVC_RESOURCE, claim, (json) -> requestBody = fromJson(json, V1PersistentVolumeClaim.class));
+
+    callBuilder.createPersistentVolumeClaim(claim);
+
+    assertThat(requestBody, equalTo(claim));
+  }
+
+  @Test
+  public void deletePVC_returnsStatus() throws ApiException {
+    defineHttpDeleteResponse(PVC_RESOURCE, NAME, new V1Status());
+
+    assertThat(
+        callBuilder.deletePersistentVolumeClaim(NAME, NAMESPACE, new V1DeleteOptions()),
+        instanceOf(V1Status.class));
+  }
+
+  private V1PersistentVolumeClaimSpec createSpec() {
+    return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
   }
 
   @Test

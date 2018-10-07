@@ -168,6 +168,7 @@ public class DomainStorage {
     void configure(V1PersistentVolume pv, String domainUid) {
       pv.getMetadata()
           .name(String.format(PV_NAME_PATTERN, domainUid))
+          .putLabelsItem("weblogic.createdByOperator", "true")
           .putLabelsItem("weblogic.domainUID", domainUid);
       pv.getSpec()
           .storageClassName(String.format(STORAGE_CLASS_PATTERN, domainUid))
@@ -182,6 +183,7 @@ public class DomainStorage {
     void configure(V1PersistentVolumeClaim pvc, String domainUid) {
       pvc.getMetadata()
           .name(String.format(PVC_NAME_PATTERN, domainUid))
+          .putLabelsItem("weblogic.createdByOperator", "true")
           .putLabelsItem("weblogic.domainUID", domainUid);
       pvc.getSpec()
           .storageClassName(String.format(STORAGE_CLASS_PATTERN, domainUid))
