@@ -1,0 +1,37 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# The version of this inputs file.  Do not modify.
+version: create-weblogic-sample-domain-pv-pvc-inputs-v1
+
+# Name of the WebLogic domain to create
+domainName: base_domain
+
+# Unique ID identifying a domain.
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+#domainUID: domain1
+
+# Persistent volume type for the domain's storage.
+# The value must be 'HOST_PATH' or 'NFS'. 
+# If using 'NFS', weblogicDomainStorageNFSServer must be specified.
+weblogicDomainStorageType: HOST_PATH
+
+# The server name or ip address of the NFS server to use for the domain's storage.
+# The following line must be uncomment and customized if weblogicDomainStorateType is NFS:
+#weblogicDomainStorageNFSServer: nfsServer
+
+# Physical path of the domain's persistent storage.
+# The following line must be uncomment and customized:
+#weblogicDomainStoragePath: /scratch/k8s_dir/domain1
+
+# Reclaim policy of the domain's persistent storage
+# The valid values are: 'Retain', 'Delete', and 'Recycle'
+weblogicDomainStorageReclaimPolicy: Retain
+
+# Total storage allocated to the domain's persistent storage.
+weblogicDomainStorageSize: 10Gi
+
+# Name of the domain namespace
+namespace: default
+
+

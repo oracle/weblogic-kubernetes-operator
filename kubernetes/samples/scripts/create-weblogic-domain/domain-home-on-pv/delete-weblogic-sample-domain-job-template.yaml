@@ -1,0 +1,62 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: %DOMAIN_UID%-delete-weblogic-domain-job-cm
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: %DOMAIN_UID%
+    weblogic.domainName: %DOMAIN_NAME%
+data:
+  delete-domain-job.sh: |-
+      #!/bin/bash
+      #
+      # delete domainHome folder
+      rm -rf ${DOMAIN_HOME_DIR}
+
+      echo "Delete Completed"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: %DOMAIN_UID%-delete-weblogic-domain-job
+  namespace: %NAMESPACE%
+spec:
+  template:
+    metadata:
+      labels:
+        weblogic.resourceVersion: domain-v1
+        weblogic.domainUID: %DOMAIN_UID%
+        weblogic.domainName: %DOMAIN_NAME%
+        app: %DOMAIN_UID%-delete-weblogic-domain-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: delete-weblogic-domain-job
+          image: %WEBLOGIC_IMAGE%
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7001
+          volumeMounts:
+          - mountPath: /u01/weblogic
+            name: delete-weblogic-domain-job-cm-volume
+          - mountPath: %DOMAIN_ROOT_DIR%
+            name: weblogic-domain-storage-volume
+          command: ["/bin/sh"]
+          args: ["/u01/weblogic/delete-domain-job.sh"]
+          env:
+            - name: DOMAIN_HOME_DIR
+              value: %DOMAIN_ROOT_DIR%/domain/%DOMAIN_NAME%
+            - name: DOMAIN_LOGS_DIR
+              value: %DOMAIN_ROOT_DIR%/logs
+      volumes:
+        - name: delete-weblogic-domain-job-cm-volume
+          configMap:
+            name: %DOMAIN_UID%-delete-weblogic-domain-job-cm
+        - name: weblogic-domain-storage-volume
+          persistentVolumeClaim:
+            claimName: %DOMAIN_PVC_NAME%
+      %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+      %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
