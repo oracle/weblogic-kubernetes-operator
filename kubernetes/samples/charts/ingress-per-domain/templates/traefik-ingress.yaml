@@ -6,10 +6,8 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ .Values.wlsDomain.domainUID }}-traefik
+  name: {{ .Release.Name }}-traefik
   namespace: {{ .Values.wlsDomain.namespace }}
-  labels:
-    weblogic.resourceVersion: traefik-load-balancer-v1
 spec:
   annotations:
     kubernetes.io/ingress.class: traefik
@@ -19,6 +17,6 @@ spec:
       paths:
       - path:
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower }}'
-          servicePort: {{ .Values.wlsDomain.managedServerPort }}
+          serviceName: '{{ .Values.wlsDomain.svcName }}'
+          servicePort: {{ .Values.wlsDomain.svcPort }}
 {{- end }}

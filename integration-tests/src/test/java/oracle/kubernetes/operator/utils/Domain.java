@@ -600,7 +600,7 @@ public class Domain {
 
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/loadBalancer-per-domain");
+        .append(" && helm install kubernetes/samples/charts/ingress-per-domain");
     cmd.append(" --name ")
         .append(domainMap.get("domainUID") + "-lb")
         .append(" --values ")
@@ -785,26 +785,21 @@ public class Domain {
 
     if (loadBalancer.equals("NONE")) return;
 
-    lbMap.put("type", loadBalancer);
-
-    // For TRAEFIK all domains share the same default web port.
     if (domainMap.get("loadBalancerWebPort") != null && !loadBalancer.equals("TRAEFIK")) {
       loadBalancerWebPort = ((Integer) domainMap.get("loadBalancerWebPort")).intValue();
-      lbMap.put("webPort", loadBalancerWebPort);
     }
+    String dashboardPort = "30315";
     if (domainMap.get("loadBalancerDashboardPort") != null) {
-      lbMap.put("dashboardPort", domainMap.get("loadBalancerDashboardPort"));
+      dashboardPort = domainMap.get("loadBalancerDashboardPort").toString();
     }
+
+    lbMap.put("type", loadBalancer);
 
     // create wlsDomain section
     Map<String, String> wlsDomainMap = new HashMap<>();
     wlsDomainMap.put("namespace", domainNS);
-    wlsDomainMap.put("domainUID", domainUid);
-    wlsDomainMap.put("domainName", "base_domain");
-    wlsDomainMap.put("clusterName", clusterName);
-    wlsDomainMap.put("managedServerPort", "8001");
-    wlsDomainMap.put("adminServerName", "admin-server");
-    wlsDomainMap.put("adminPort", "7001");
+    wlsDomainMap.put("svcName", domainUid + "-cluster-" + clusterName.toLowerCase());
+    wlsDomainMap.put("svcPort", "8001");
     lbMap.put("wlsDomain", wlsDomainMap);
 
     // create Traefik section
@@ -814,14 +809,22 @@ public class Domain {
       lbMap.put("traefik", traefikMap);
     }
 
-    // create apache section
-    if (loadBalancer.equals("APACHE")) {
+    // create Voyager section
+    if (loadBalancer.equals("VOYAGER")) {
+      Map<String, String> voyagerMap = new HashMap<>();
+      voyagerMap.put("webPort", new Integer(loadBalancerWebPort).toString());
+      voyagerMap.put("statsPort", dashboardPort);
+      lbMap.put("voyager", voyagerMap);
+    }
+
+    // create apache section TODO
+    /*if (loadBalancer.equals("APACHE")) {
       Map<String, String> apacheMap = new HashMap<>();
       apacheMap.put("appPrepath", "/weblogic");
       apacheMap.put("exposeAdminPort", "true");
 
       lbMap.put("apache", apacheMap);
-    }
+    }*/
   }
 
   private String getNodeHost() throws Exception {
