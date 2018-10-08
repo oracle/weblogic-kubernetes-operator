@@ -47,8 +47,8 @@ fi
 VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
 VOYAGER_CERT_NAME="certificates.voyager.appscode.com"
 
-voyagerSecurityOutput="${resourceDir}/weblogic-sample-domain-voyager-operator-security.yaml"
-voyagerOperatorOutput="${resourceDir}/weblogic-sample-domain-voyager-operator.yaml"
+voyagerSecurityOutput="${resourceDir}/voyager-operator-security.yaml"
+voyagerOperatorOutput="${resourceDir}/voyager-operator.yaml"
 
 vnamespace=voyager
 # only deploy Voyager Operator once

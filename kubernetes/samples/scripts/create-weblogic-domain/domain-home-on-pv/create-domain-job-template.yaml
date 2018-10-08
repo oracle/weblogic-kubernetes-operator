@@ -25,7 +25,7 @@ spec:
           - mountPath: %CREATE_DOMAIN_SCRIPT_DIR%
             name: create-weblogic-sample-domain-job-cm-volume
           - mountPath: %DOMAIN_ROOT_DIR%
-            name: weblogic-domain-storage-volume
+            name: weblogic-sample-domain-storage-volume
           - mountPath: /weblogic-operator/secrets
             name: weblogic-credentials-volume
           command: ["/bin/sh"]
@@ -71,7 +71,7 @@ spec:
         - name: create-weblogic-sample-domain-job-cm-volume
           configMap:
             name: %DOMAIN_UID%-create-weblogic-sample-domain-job-cm
-        - name: weblogic-domain-storage-volume
+        - name: weblogic-sample-domain-storage-volume
           persistentVolumeClaim:
             claimName: %DOMAIN_PVC_NAME%
         - name: weblogic-credentials-volume
