@@ -405,9 +405,15 @@ function create_domain_configmap {
   fi
 
   # customize the files with domain information
-  local externalFilesTmpDir=$domainOutputDir/tmp
+  externalFilesTmpDir=$domainOutputDir/tmp
   mkdir -p $externalFilesTmpDir
   cp ${createDomainFilesDir}/* ${externalFilesTmpDir}/
+  cp ${scriptDir}/common/* ${externalFilesTmpDir}/
+  cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
+
+  if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
+   sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
+  fi
  
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm

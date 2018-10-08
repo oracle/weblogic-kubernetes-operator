@@ -29,3 +29,36 @@ function checkFileExists {
   fi
 }
 
+function checkCreateDomainScript {
+  if [ -f $1 ]; then
+    echo The domain will be created using the script $1
+  else
+    fail "Could not locate the domain creation script ${1}"
+  fi
+}
+ 
+function checkDomainSecret { 
+
+  # Validate the domain secrets exist before proceeding.
+  if [ ! -f /weblogic-operator/secrets/username ]; then
+    fail "The domain secret /weblogic-operator/secrets/username was not found"
+  fi
+  if [ ! -f /weblogic-operator/secrets/password ]; then
+    fail "The domain secret /weblogic-operator/secrets/password was not found"
+  fi
+}
+
+function prepareDomainHomeDir { 
+  # Do not proceed if the domain already exists
+  domainFolder=${DOMAIN_HOME_DIR}
+  if [ -d ${domainFolder} ]; then
+    fail "The create domain job will not overwrite an existing domain. The domain folder ${domainFolder} already exists"
+  fi
+
+  # Create the base folders
+  createFolder ${DOMAIN_ROOT_DIR}/domain
+  createFolder ${DOMAIN_LOGS_DIR}
+  createFolder ${DOMAIN_ROOT_DIR}/applications
+  createFolder ${DOMAIN_ROOT_DIR}/stores
+}
+
