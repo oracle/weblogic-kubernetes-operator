@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
+
 import io.kubernetes.client.models.V1LocalObjectReference;
 import java.util.Collections;
 import java.util.Optional;
@@ -126,6 +129,11 @@ public class DomainV1Configurator extends DomainConfigurator {
   @Override
   public ClusterConfigurator configureCluster(@Nonnull String clusterName) {
     return new ClusterStartupConfigurator(getOrCreateClusterStartup(clusterName));
+  }
+
+  @Override
+  public void setShuttingDown(boolean shuttingDown) {
+    getDomainSpec().setStartupControl(shuttingDown ? NONE_STARTUPCONTROL : AUTO_STARTUPCONTROL);
   }
 
   @SuppressWarnings("deprecation")

@@ -18,6 +18,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import oracle.kubernetes.weblogic.domain.v2.AdminServer;
 import oracle.kubernetes.weblogic.domain.v2.BaseConfiguration;
@@ -799,6 +800,11 @@ public class DomainSpec extends BaseConfiguration {
       getOrCreateClusterStartup(clusterName).setReplicas(replicaCount);
     }
 
+    @Override
+    public boolean isShuttingDown() {
+      return StartupControlConstants.NONE_STARTUPCONTROL.equals(getEffectiveStartupControl());
+    }
+
     @SuppressWarnings("deprecation")
     private ServerStartup getServerStartup(String name) {
       if (DomainSpec.this.getServerStartup() == null) return null;
@@ -830,6 +836,11 @@ public class DomainSpec extends BaseConfiguration {
 
     private Integer getClusterLimit(String clusterName) {
       return clusterName == null ? null : getReplicaCount(clusterName);
+    }
+
+    @Override
+    public boolean isShuttingDown() {
+      return !getAdminServerSpec().shouldStart(0);
     }
 
     @Override

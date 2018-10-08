@@ -214,4 +214,6 @@ public abstract class DomainConfigurator {
    * @return an object to add additional configurations
    */
   public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
+
+  public abstract void setShuttingDown(boolean start);
 }

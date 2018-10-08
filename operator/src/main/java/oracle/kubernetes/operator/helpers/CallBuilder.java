@@ -1001,6 +1001,28 @@ public class CallBuilder {
     return executeSynchronousCall(requestParams, CREATE_PV_CALL);
   }
 
+  private final CallFactory<V1PersistentVolume> CREATE_PERSISTENTVOLUME =
+      ((requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .createPersistentVolumeAsync(
+                      (V1PersistentVolume) requestParams.body, pretty, callback)));
+
+  /**
+   * Asynchronous step for creating persistent volumes.
+   *
+   * @param persistentVolume a resource describing the volume to create
+   * @param responseStep the step to invoke when the call completes
+   * @return a new asynchronous step
+   */
+  public Step createPersistentVolumeAsync(
+      V1PersistentVolume persistentVolume, ResponseStep<V1PersistentVolume> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createPersistentVolume", null, null, persistentVolume),
+        CREATE_PERSISTENTVOLUME);
+  }
+
   private SynchronousCallFactory<V1Status> DELETE_PV_CALL =
       (client, requestParams) ->
           new CoreV1Api(client)
@@ -1104,6 +1126,24 @@ public class CallBuilder {
 
   protected String getNamespace(V1PersistentVolumeClaim claim) {
     return claim.getMetadata().getNamespace();
+  }
+
+  private final CallFactory<V1PersistentVolumeClaim> CREATE_PERSISTENTVOLUMECLAIM =
+      (requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .createNamespacedPersistentVolumeClaimAsync(
+                      requestParams.namespace,
+                      (V1PersistentVolumeClaim) requestParams.body,
+                      pretty,
+                      callback));
+
+  public Step createPersistentVolumeClaimAsync(
+      V1PersistentVolumeClaim claim, ResponseStep<V1PersistentVolumeClaim> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createPersistentVolumeClaim", getNamespace(claim), null, claim),
+        CREATE_PERSISTENTVOLUMECLAIM);
   }
 
   private SynchronousCallFactory<V1Status> DELETE_PVC_CALL =

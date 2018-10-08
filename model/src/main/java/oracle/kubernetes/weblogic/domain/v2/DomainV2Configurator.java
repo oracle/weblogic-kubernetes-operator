@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
+
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -184,6 +187,11 @@ public class DomainV2Configurator extends DomainConfigurator {
     Cluster cluster = new Cluster().withClusterName(clusterName);
     getDomainSpec().getClusters().add(cluster);
     return cluster;
+  }
+
+  @Override
+  public void setShuttingDown(boolean shuttingDown) {
+    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
