@@ -86,14 +86,14 @@ javaOptions: -Dweblogic.StdoutDebugEnabled=false
 persistentVolumeClaimName: domain1-weblogic-domain-pvc
 
 # Mount path of the domain persistent volume. The default is /shared.
-domainPVMountPath: 
+domainPVMountPath: /shared
 
 # Mount path of the directory where the create domain scripts are located inside the pod
 # The default is /u01/weblogic.
-createDomainScriptsMountPath: 
+createDomainScriptsMountPath: /u01/weblogic
 
 # Script that creates the domain. The default is create-domain-job.sh.
-createDomainScriptName: 
+createDomainScriptName: create-domain-job.sh
 
 # Directory to get all the create domain scripts and supporting files, including 
 # the script that is specified by the createDomainScriptName property.
