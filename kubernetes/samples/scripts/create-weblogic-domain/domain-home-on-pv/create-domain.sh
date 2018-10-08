@@ -6,7 +6,7 @@
 #  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain custom resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
-#  The domain creation inputs can be customized by editing create-weblogic-sample-domain-inputs.yaml
+#  The domain creation inputs can be customized by editing create-domain-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The kubernetes namespace must already be created
@@ -79,9 +79,9 @@ function initAndValidateOutputDir {
   validateOutputDir \
     ${domainOutputDir} \
     ${valuesInputFile} \
-    create-weblogic-sample-domain-inputs.yaml \
-    create-weblogic-sample-domain-job.yaml \
-    delete-weblogic-sample-domain-job.yaml \
+    create-domain-inputs.yaml \
+    create-domain-job.yaml \
+    delete-domain-job.yaml \
     domain-custom-resource.yaml
 }
 
@@ -193,7 +193,7 @@ function initialize {
   validateKubectlAvailable
 
   if [ -z "${valuesInputFile}" ]; then
-    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/create-weblogic-sample-domain-inputs.yaml)."
+    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml)."
   else
     if [ ! -f ${valuesInputFile} ]; then
       validationError "Unable to locate the input parameters file ${valuesInputFile}"
@@ -208,12 +208,12 @@ function initialize {
     fi
   fi
 
-  createJobInput="${scriptDir}/create-weblogic-sample-domain-job-template.yaml"
+  createJobInput="${scriptDir}/create-domain-job-template.yaml"
   if [ ! -f ${createJobInput} ]; then
     validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
   fi
 
-  deleteJobInput="${scriptDir}/delete-weblogic-sample-domain-job-template.yaml"
+  deleteJobInput="${scriptDir}/delete-domain-job-template.yaml"
   if [ ! -f ${deleteJobInput} ]; then
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
@@ -283,17 +283,17 @@ function createYamlFiles {
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-weblogic-sample-domain-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-domain-inputs.yaml"
 
-  createJobOutput="${domainOutputDir}/create-weblogic-sample-domain-job.yaml"
-  deleteJobOutput="${domainOutputDir}/delete-weblogic-sample-domain-job.yaml"
+  createJobOutput="${domainOutputDir}/create-domain-job.yaml"
+  deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
   # For backward compatability, default to "store/oracle/weblogic:12.2.1.3" if not defined in
-  # create-weblogic-sample-domain-inputs.yaml
+  # create-domain-inputs.yaml
   if [ -z "${image}" ]; then
     image="store/oracle/weblogic:12.2.1.3"
   fi
@@ -501,7 +501,7 @@ function printSummary {
     echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
   fi
   echo "The following files were generated:"
-  echo "  ${domainOutputDir}/create-weblogic-sample-domain-inputs.yaml"
+  echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${domainPVCOutput}"
   echo "  ${createJobOutput}"
   echo "  ${dcrOutput}"

@@ -98,5 +98,5 @@ createDomainScriptName:
 # Directory to get all the create domain scripts and supporting files, including 
 # the script that is specified by the createDomainScriptName property.
 # The default is the "wlst" subdirectory under the directory where the 
-# create-weblogic-sample-domain.sh script is located.
+# create-domain.sh script is located.
 createDomainFilesDir:
