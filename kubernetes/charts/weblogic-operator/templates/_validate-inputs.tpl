@@ -12,29 +12,11 @@
 {{- $ignore := include "utils.verifyEnum" (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{- $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}
 {{- $ignore := include "utils.verifyEnum" (list $scope "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
-{{- if include "utils.verifyEnum" (list $scope "externalRestOption" (list "NONE" "SELF_SIGNED_CERT" "CUSTOM_CERT")) -}}
-{{-   if eq $scope.externalRestOption "SELF_SIGNED_CERT" -}}
+{{- if include "utils.verifyBoolean" (list $scope "externalRestEnabled") -}}
+{{-   if $scope.externalRestEnabled -}}
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalRestHttpsPort") -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "externalOperatorCertSans") -}}
-{{/*    TBD - temporarily require the cert and key too until the operator runtime is updated to generate them */}}
-{{-     $ignore := include "utils.verifyString" (list $scope "externalOperatorCert") -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "externalOperatorKey") -}}
-{{-   end -}}
-{{-   if eq $scope.externalRestOption "CUSTOM_CERT" -}}
-{{-     $ignore := include "utils.verifyInteger" (list $scope "externalRestHttpsPort") -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "externalOperatorCert") -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "externalOperatorKey") -}}
-{{-   end -}}
-{{- end -}}
-{{- if include "utils.verifyEnum" (list $scope "internalRestOption" (list "SELF_SIGNED_CERT" "CUSTOM_CERT")) -}}
-{{-   if eq $scope.internalRestOption "SELF_SIGNED_CERT" -}}
-{{/*    TBD - temporarily require the cert and key too until the operator runtime is updated to generate them */}}
-{{-     $ignore := include "utils.verifyString" (list $scope "internalOperatorCert") -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "internalOperatorKey") -}}
-{{-   end -}}
-{{-   if eq $scope.internalRestOption "CUSTOM_CERT" -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "internalOperatorCert") -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "internalOperatorKey") -}}
+{{-     $ignore := include "utils.verifyString"  (list $scope "externalOperatorCert") -}}
+{{-     $ignore := include "utils.verifyString"  (list $scope "externalOperatorKey") -}}
 {{-   end -}}
 {{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "remoteDebugNodePortEnabled") -}}

@@ -4,8 +4,8 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.LOAD_BALANCER_APACHE;
-import static oracle.kubernetes.operator.utils.CreateDomainInputs.STORAGE_TYPE_NFS;
+import static oracle.kubernetes.operator.utils.DomainValues.LOAD_BALANCER_APACHE;
+import static oracle.kubernetes.operator.utils.DomainValues.STORAGE_TYPE_NFS;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalObjectReference;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNFSVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newStringList;

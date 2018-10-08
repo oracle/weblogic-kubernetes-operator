@@ -29,14 +29,10 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
     loadFromMap(map, this::setNamespace, "operatorNamespace");
     loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "imagePullPolicy");
-    loadFromMap(map, this::setExternalRestOption, "externalRestOption");
-    loadFromMap(map, this::setExternalSans, "externalOperatorCertSans");
     loadFromMap(map, this::setExternalOperatorCert, "externalOperatorCert");
     loadFromMap(map, this::setExternalOperatorKey, "externalOperatorKey");
-    loadFromMap(map, this::setInternalRestOption, "internalRestOption");
-    loadFromMap(map, this::setInternalOperatorCert, "internalOperatorCert");
-    loadFromMap(map, this::setInternalOperatorKey, "internalOperatorKey");
 
+    loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
 
@@ -46,6 +42,12 @@ class HelmOperatorValues extends OperatorValues {
 
     loadDomainNamespacesFromMap(map);
     loadImagePullSecretsFromMap(map);
+  }
+
+  private void setExternalRestEnabled(Boolean enabled) {
+    if (enabled != null) {
+      setExternalRestEnabled(enabled.toString());
+    }
   }
 
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
@@ -91,14 +93,10 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
     addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "imagePullPolicy");
-    addStringMapEntry(map, this::getExternalRestOption, "externalRestOption");
-    addStringMapEntry(map, this::getExternalSans, "externalOperatorCertSans");
     addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
     addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");
-    addStringMapEntry(map, this::getInternalRestOption, "internalRestOption");
-    addStringMapEntry(map, this::getInternalOperatorCert, "internalOperatorCert");
-    addStringMapEntry(map, this::getInternalOperatorKey, "internalOperatorKey");
 
+    addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
 
@@ -129,6 +127,10 @@ class HelmOperatorValues extends OperatorValues {
     }
   }
 
+  private Boolean isExternalRestEnabled() {
+    return MapUtils.valueOf(getExternalRestEnabled());
+  }
+
   private Boolean isRemoteDebugNotPortEnabled() {
     return MapUtils.valueOf(getRemoteDebugNodePortEnabled());
   }
@@ -147,22 +149,5 @@ class HelmOperatorValues extends OperatorValues {
 
   private Integer getInternalDebugHttpPortNum() {
     return MapUtils.integerValue(getInternalDebugHttpPort());
-  }
-
-  // Eventually in 2.0 the operator runtime will create the self signed certs.
-  // For now, they must be in the values:
-
-  @Override
-  public OperatorValues setupExternalRestSelfSignedCert() {
-    return super.setupExternalRestSelfSignedCert()
-        .externalOperatorCert(toBase64(externalOperatorSelfSignedCertPem()))
-        .externalOperatorKey(toBase64(externalOperatorSelfSignedKeyPem()));
-  }
-
-  @Override
-  public OperatorValues setupInternalRestSelfSignedCert() {
-    return super.setupInternalRestSelfSignedCert()
-        .internalOperatorCert(toBase64(internalOperatorSelfSignedCertPem()))
-        .internalOperatorKey(toBase64(internalOperatorSelfSignedKeyPem()));
   }
 }
