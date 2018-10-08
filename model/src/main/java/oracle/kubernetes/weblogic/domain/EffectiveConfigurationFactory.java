@@ -11,6 +11,7 @@ import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
  * operator runtime.
  */
 public interface EffectiveConfigurationFactory {
+
   ServerSpec getAdminServerSpec();
 
   ServerSpec getServerSpec(String serverName, String clusterName);
@@ -18,4 +19,6 @@ public interface EffectiveConfigurationFactory {
   int getReplicaCount(String clusterName);
 
   void setReplicaCount(String clusterName, int replicaCount);
+
+  boolean isShuttingDown();
 }

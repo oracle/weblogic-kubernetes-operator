@@ -88,14 +88,14 @@ public class DomainStorage {
     return pv;
   }
 
-  public V1PersistentVolumeClaim getRequiredPersistentVolumeClaim(String domainUid) {
+  public V1PersistentVolumeClaim getRequiredPersistentVolumeClaim(String uid, String namespace) {
     if (getOperatorDefinedStorage() == null) return null;
 
     V1PersistentVolumeClaim pvc =
         new V1PersistentVolumeClaim()
-            .metadata(new V1ObjectMeta())
+            .metadata(new V1ObjectMeta().namespace(namespace))
             .spec(new V1PersistentVolumeClaimSpec());
-    getOperatorDefinedStorage().configure(pvc, domainUid);
+    getOperatorDefinedStorage().configure(pvc, uid);
     return pvc;
   }
 

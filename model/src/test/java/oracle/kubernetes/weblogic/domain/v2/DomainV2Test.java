@@ -194,6 +194,7 @@ public class DomainV2Test extends DomainTestBase {
   private void assertPersistentVolumeClaim() {
     String pv = toJson(domain.getRequiredPersistentVolumeClaim());
     assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getDefaultPVCName())));
+    assertThat(pv, hasJsonPath("$.metadata.namespace", equalTo(getNamespace())));
     assertThat(pv, hasDomainUidLabel(getDomainUid()));
     assertThat(pv, hasCreatedByOperatorLabel());
     assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));

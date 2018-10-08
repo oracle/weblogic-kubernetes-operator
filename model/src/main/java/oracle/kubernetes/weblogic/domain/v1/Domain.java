@@ -263,6 +263,7 @@ public class Domain {
   public Integer getAsPort() {
     return spec.getAsPort();
   }
+
   /**
    * Returns the domain unique identifier.
    *
@@ -281,6 +282,10 @@ public class Domain {
     return spec.getDomainName();
   }
 
+  public boolean isShuttingDown() {
+    return spec.getEffectiveConfigurationFactory(apiVersion).isShuttingDown();
+  }
+
   /**
    * Returns the name of the persistent volume claim for the logs and PV-based domain.
    *
@@ -296,7 +301,9 @@ public class Domain {
    * @return a definition of the kubernetes resource to create
    */
   public V1PersistentVolume getRequiredPersistentVolume() {
-    return spec.getStorage().getRequiredPersistentVolume(getDomainUID());
+    return spec.getStorage() == null
+        ? null
+        : spec.getStorage().getRequiredPersistentVolume(getDomainUID());
   }
 
   /**
@@ -305,7 +312,13 @@ public class Domain {
    * @return a definition of the kubernetes resource to create
    */
   public V1PersistentVolumeClaim getRequiredPersistentVolumeClaim() {
-    return spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID());
+    return spec.getStorage() == null
+        ? null
+        : spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID(), getNamespace());
+  }
+
+  private String getNamespace() {
+    return getMetadata().getNamespace();
   }
 
   @Override

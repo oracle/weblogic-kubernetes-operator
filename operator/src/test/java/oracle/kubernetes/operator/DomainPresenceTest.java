@@ -95,10 +95,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(installStub(Main.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
     Map<String, AtomicBoolean> isNamespaceStopping = getStoppingVariable();
-    isNamespaceStopping.forEach(
-        (key, value) -> {
-          value.set(true);
-        });
+    isNamespaceStopping.forEach((key, value) -> value.set(true));
   }
 
   private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
