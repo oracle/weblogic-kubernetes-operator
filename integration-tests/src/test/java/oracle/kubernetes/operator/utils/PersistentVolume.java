@@ -48,7 +48,7 @@ public class PersistentVolume {
     // create PV/PVC
     String cmdPvPvc =
         BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc.sh "
+            + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir
             + "/pv-inputs.yaml -e -o "
