@@ -14,7 +14,10 @@ domain_name                  = getEnvVar("DOMAIN_NAME")
 domain_path                  = getEnvVar("DOMAIN_HOME_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 
+<<<<<<< HEAD
 print 'Setting up WebLogic NodeManager'
+=======
+>>>>>>> cac3f6da1b5930581ae804ac86490ab3982d5bd6
 print('domain_path        : [%s]' % domain_path);
 
 # Read the domain secrets from the common python file
