@@ -408,7 +408,9 @@ function create_domain_configmap {
   externalFilesTmpDir=$domainOutputDir/tmp
   mkdir -p $externalFilesTmpDir
   cp ${createDomainFilesDir}/* ${externalFilesTmpDir}/
-  cp ${scriptDir}/common/* ${externalFilesTmpDir}/
+  if [ -d "${scriptDir}/common" ]; then
+    cp ${scriptDir}/common/* ${externalFilesTmpDir}/
+  fi
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
