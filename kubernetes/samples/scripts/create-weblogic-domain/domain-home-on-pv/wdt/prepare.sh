@@ -27,15 +27,13 @@ while getopts "hi:t:" opt; do
   esac
 done
 
-echo clusterType = $clusterType
+echo Preparing the scripts with clusterType $clusterType
 
 if [ "${clusterType}" = "CONFIGURED" ]; then
   source_model=${externalFilesTmpDir}/wdt_model_configured.yaml
 else
   source_model=${externalFilesTmpDir}/wdt_model_dynamic.yaml
 fi
-
-echo model file $source_model
 
 cp $source_model ${externalFilesTmpDir}/wdt_model.yaml
 
