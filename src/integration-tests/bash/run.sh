@@ -1194,7 +1194,7 @@ function create_domain_pv_pvc_load_balancer {
     if [ "$USE_HELM" = "true" ]; then
       cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
     else
-      cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputs
+      cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml $inputs
     fi
 
     # accept the default domain name (i.e. don't customize it)
