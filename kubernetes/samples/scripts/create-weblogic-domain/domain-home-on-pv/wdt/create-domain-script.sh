@@ -13,7 +13,7 @@
 # Usage:
 #
 #   Export customized values for the input shell environment variables as needed
-#   before calling this script.   See also README.
+#   before calling this script.   
 #
 # Outputs:
 #
