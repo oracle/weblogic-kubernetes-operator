@@ -522,7 +522,7 @@ public class Domain {
         new FileInputStream(
             new File(
                 BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc-inputs.yaml"));
+                    + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     Map<String, Object> pvMap = yaml.load(pv_is);
     pv_is.close();
     pvMap.put("domainName", domainMap.get("domainName"));
@@ -573,7 +573,7 @@ public class Domain {
   private void callCreateDomainScript() throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
     cmd.append(
-            "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain.sh -i ")
+            "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
         .append(" -e -v -o ")
         .append(userProjectsDir);
@@ -598,7 +598,7 @@ public class Domain {
         new FileInputStream(
             new File(
                 BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer-inputs.yaml"));
+                    + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml"));
     Map<String, Object> lbMap = yaml.load(lbIs);
     lbIs.close();
     lbMap.put("domainName", domainMap.get("domainName"));
@@ -729,11 +729,11 @@ public class Domain {
         new FileInputStream(
             new File(
                 BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml"));
+                    + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml"));
     logger.info(
         "loading domain inputs template file "
             + BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml");
+            + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml");
     domainMap = dyaml.load(domainInputStream);
     domainInputStream.close();
 

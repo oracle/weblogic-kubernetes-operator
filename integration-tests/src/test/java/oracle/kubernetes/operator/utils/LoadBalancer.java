@@ -29,7 +29,7 @@ public class LoadBalancer {
     // create load balancer
     String cmdLb =
         BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer.sh "
+            + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer.sh "
             + " -i "
             + parentDir
             + "/lb-inputs.yaml -e -o "
