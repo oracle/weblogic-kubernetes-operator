@@ -41,7 +41,6 @@ set('NodeManagerUsername', admin_username)
 set('NodeManagerPasswordEncrypted', admin_password)
 
 updateDomain()
-closeDomain()
 print 'NodeManger has been set up'
 print 'Done'
 
