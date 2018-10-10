@@ -50,7 +50,7 @@ build:
   - wercker/maven:
     goals: clean install
     version: 3.5.2
-    profiles: helm-installation-test 
+    profiles: helm-installation-test
     cache_repo: true
   - internal/docker-build:
     dockerfile: Dockerfile
