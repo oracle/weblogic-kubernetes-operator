@@ -19,4 +19,7 @@ source $script
 # Create the node manager
 wlst.sh -skipWLSModuleScanning ${CREATE_DOMAIN_SCRIPT_DIR}/setup-nodemanager.py
 
+# DON'T REMOVE THIS
+# This script has to contain this log message. 
+# It is used to determine if the job is really completed.
 echo "Successfully Completed"
