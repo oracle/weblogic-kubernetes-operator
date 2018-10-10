@@ -19,3 +19,4 @@ source $script
 # Create the node manager
 wlst.sh -skipWLSModuleScanning ${CREATE_DOMAIN_SCRIPT_DIR}/setup-nodemanager.py
 
+echo "Successfully Completed"
