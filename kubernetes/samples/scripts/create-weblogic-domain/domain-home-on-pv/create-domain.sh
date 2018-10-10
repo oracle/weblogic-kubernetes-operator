@@ -465,7 +465,7 @@ function createDomainHome {
         echo A failure was detected in the log file for job $JOB_NAME
         echo $JOB_ERRORS
         echo Check the log output for additional information
-        fail "Exiting due to failure"
+        fail "Exiting due to failure - the job has failed"
       fi
     fi
   done
@@ -476,7 +476,7 @@ function createDomainHome {
     echo The create domain job is not showing status completed after waiting 300 seconds
     echo Check the log output for errors
     kubectl logs jobs/$JOB_NAME -n ${namespace}
-    fail "Exiting due to failure"
+    fail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
@@ -485,7 +485,7 @@ function createDomainHome {
     echo The log file for the create domain job does not contain a successful completion status
     echo Check the log output for errors
     kubectl logs $JOB_POD -n ${namespace}
-    fail "Exiting due to failure"
+    fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
 
 }
