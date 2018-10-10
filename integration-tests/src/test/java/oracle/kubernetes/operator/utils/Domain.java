@@ -717,11 +717,7 @@ public class Domain {
     this.projectRoot = BaseTest.getProjectRoot();
 
     // read input domain yaml to test
-    Map<String, Object> inputDomainMap = new HashMap<String, Object>();
-    Yaml yaml = new Yaml();
-    InputStream domain_is = this.getClass().getClassLoader().getResourceAsStream(inputYaml);
-    inputDomainMap = yaml.load(domain_is);
-    domain_is.close();
+    Map<String, Object> inputDomainMap = TestUtils.loadYaml(inputYaml);
 
     // read sample domain inputs and override the values for some
     Yaml dyaml = new Yaml();
