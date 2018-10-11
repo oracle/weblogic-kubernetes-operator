@@ -236,8 +236,7 @@ function initialize {
     weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
-    version \
-    persistentVolumeClaimName 
+    version 
 
   validateIntegerInputParamsSpecified \
     adminPort \
@@ -311,6 +310,11 @@ function createYamlFiles {
   # Use the default value if not defined.
   if [ -z "${createDomainScriptName}" ]; then
     createDomainScriptName="create-domain-job.sh"
+  fi
+
+  # Use the default value if not defined.
+  if [ -z "${persistentVolumeClaimName}" ]; then
+    persistentVolumeClaimName=${domainUID}-weblogic-domain-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
