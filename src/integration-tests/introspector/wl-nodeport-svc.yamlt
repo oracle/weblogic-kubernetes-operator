@@ -1,0 +1,28 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    weblogic.createdByOperator: "true"
+    weblogic.domainName: ${DOMAIN_NAME}
+    weblogic.domainUID: ${DOMAIN_UID}
+    weblogic.resourceVersion: domain-v1
+    weblogic.serverName: ${SERVER_NAME}
+  name: ${SERVICE_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+  - nodePort: ${SERVICE_EXTERNAL_PORT}
+    port: ${SERVICE_INTERNAL_PORT}
+    protocol: TCP
+    targetPort: ${SERVICE_INTERNAL_PORT}
+  publishNotReadyAddresses: true
+  selector:
+    weblogic.createdByOperator: "true"
+    weblogic.domainUID: ${DOMAIN_UID}
+    weblogic.serverName: ${SERVER_NAME}
+  sessionAffinity: None
+  type: NodePort
