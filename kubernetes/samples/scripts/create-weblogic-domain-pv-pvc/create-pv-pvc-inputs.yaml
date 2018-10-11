@@ -9,7 +9,7 @@ domainName: base_domain
 
 # Unique ID identifying a domain.
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
-#domainUID: domain1
+domainUID: domain1
 
 # Persistent volume type for the domain's storage.
 # The value must be 'HOST_PATH' or 'NFS'. 

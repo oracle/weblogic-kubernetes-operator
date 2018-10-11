@@ -229,15 +229,13 @@ function initialize {
   parseCommonInputs
   validateInputParamsSpecified \
     adminServerName \
-    domainName \
     domainUID \
     clusterName \
     managedServerNameBase \
     weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
-    version \
-    persistentVolumeClaimName 
+    version 
 
   validateIntegerInputParamsSpecified \
     adminPort \
@@ -299,6 +297,11 @@ function createYamlFiles {
   fi
   
   # Use the default value if not defined.
+  if [ -z "${domainName}" ]; then
+    domainName=${domainUID}
+  fi
+
+  # Use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
   fi
@@ -311,6 +314,11 @@ function createYamlFiles {
   # Use the default value if not defined.
   if [ -z "${createDomainScriptName}" ]; then
     createDomainScriptName="create-domain-job.sh"
+  fi
+
+  # Use the default value if not defined.
+  if [ -z "${persistentVolumeClaimName}" ]; then
+    persistentVolumeClaimName=${domainUID}-weblogic-domain-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
