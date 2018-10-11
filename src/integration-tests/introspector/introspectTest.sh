@@ -32,16 +32,6 @@
 #   IMAGE_NAME, etc, all have defaults, or can be passed in.  See the 'export'
 #   calls in the implementation below for the complete list.
 #
-#
-# TBD -
-#    - Document test's PV_ROOT path (especially helps Wercker & Jenkins) here and in README
-#    - Have test_home env var leverage RESULT_ROOT (to match integration tests, and
-#      so we can delegate to the integration test cleanup script for local directory
-#      cleanup).
-#    - Wire this test into the !QUICKTEST run.sh & java integration tests, make
-#      sure it works on Wercker and Jenkins.
-#    - Do we need a NODEMGR_HOME in domain CR?  OR NODEMGR_LOG_HOME?
-#    
 
 #############################################################################
 #
