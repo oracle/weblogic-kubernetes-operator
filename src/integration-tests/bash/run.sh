@@ -998,7 +998,7 @@ function create_pv_pvc_non_helm {
     local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
     cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml $inputsPvPvc
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
+    sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputsPvPvc
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsPvPvc
     sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputsPvPvc
@@ -1047,7 +1047,7 @@ function create_domain_home_on_pv_non_helm {
 
     # customize inputs properties
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputsDomain
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsDomain
+    sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsDomain
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsDomain
     sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputsDomain
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsDomain
@@ -1103,7 +1103,7 @@ function create_load_balancer_non_helm {
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputsLoadBalancer | awk '{print $2}'`
 
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsLoadBalancer
+    sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsLoadBalancer
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsLoadBalancer
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsLoadBalancer
     sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputsLoadBalancer

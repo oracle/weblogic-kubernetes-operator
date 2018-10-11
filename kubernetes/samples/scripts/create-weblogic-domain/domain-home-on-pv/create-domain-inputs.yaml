@@ -15,7 +15,7 @@ domainName: base_domain
 
 # Unique ID identifying a domain.
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
-#domainUID: domain1
+domainUID: domain1
 
 # Type of WebLogic Cluster
 # Legal values are "CONFIGURED" or "DYNAMIC" 
@@ -83,7 +83,8 @@ namespace: default
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
-persistentVolumeClaimName: domain1-weblogic-domain-pvc
+# The default value is <domainUID>-weblogic-domain-pvc
+persistentVolumeClaimName: 
 
 # Mount path of the domain persistent volume. The default is /shared.
 domainPVMountPath: /shared
@@ -99,4 +100,4 @@ createDomainScriptName: create-domain-job.sh
 # the script that is specified by the createDomainScriptName property.
 # The default is the "wlst" subdirectory under the directory where the 
 # create-domain.sh script is located.
-createDomainFilesDir:
+createDomainFilesDir: 
