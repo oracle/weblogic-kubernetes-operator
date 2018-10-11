@@ -10,5 +10,4 @@ export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 # Create the domain
 wlst.sh -skipWLSModuleScanning ${CREATE_DOMAIN_SCRIPT_DIR}/create-domain.py
 
-echo "Successfully Completed"
 

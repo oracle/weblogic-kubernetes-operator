@@ -405,9 +405,17 @@ function create_domain_configmap {
   fi
 
   # customize the files with domain information
-  local externalFilesTmpDir=$domainOutputDir/tmp
+  externalFilesTmpDir=$domainOutputDir/tmp
   mkdir -p $externalFilesTmpDir
   cp ${createDomainFilesDir}/* ${externalFilesTmpDir}/
+  if [ -d "${scriptDir}/common" ]; then
+    cp ${scriptDir}/common/* ${externalFilesTmpDir}/
+  fi
+  cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
+
+  if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
+   sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
+  fi
  
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
@@ -457,7 +465,7 @@ function createDomainHome {
         echo A failure was detected in the log file for job $JOB_NAME
         echo $JOB_ERRORS
         echo Check the log output for additional information
-        fail "Exiting due to failure"
+        fail "Exiting due to failure - the job has failed"
       fi
     fi
   done
@@ -468,7 +476,7 @@ function createDomainHome {
     echo The create domain job is not showing status completed after waiting 300 seconds
     echo Check the log output for errors
     kubectl logs jobs/$JOB_NAME -n ${namespace}
-    fail "Exiting due to failure"
+    fail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
@@ -477,7 +485,7 @@ function createDomainHome {
     echo The log file for the create domain job does not contain a successful completion status
     echo Check the log output for errors
     kubectl logs $JOB_POD -n ${namespace}
-    fail "Exiting due to failure"
+    fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
 
 }
