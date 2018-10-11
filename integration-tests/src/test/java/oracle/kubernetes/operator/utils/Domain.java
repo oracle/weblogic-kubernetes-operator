@@ -23,6 +23,7 @@ public class Domain {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   private Map<String, Object> domainMap;
+  private Map<String, Object> lbMap;
 
   // attributes from domain properties
   private String domainUid = "";
@@ -42,7 +43,8 @@ public class Domain {
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
-  private String generatedInputYamlFile;
+  private String generatedDomainYamlFile;
+  private String generatedLBYamlFile;
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
@@ -58,6 +60,7 @@ public class Domain {
     createSecret();
     generateInputYaml();
     callCreateDomainScript();
+    callCreateLBScript();
   }
 
   /**
@@ -292,19 +295,24 @@ public class Domain {
           .append(loadBalancerWebPort)
           .append("/");
 
-      if (domainMap.get("loadBalancer") != null && domainMap.get("loadBalancer").equals("APACHE")) {
+      if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
       testAppUrl.append(webappName).append("/");
 
       // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
-      curlCmd.append(TestUtils.getHostName()).append(" ").append(testAppUrl.toString());
+      curlCmd.append(TestUtils.getHostName()).append(" ");
+      if (loadBalancer.equals("TRAEFIK")) {
+        curlCmd.append(" -H 'host: " + domainUid + ".org' ");
+      }
+      curlCmd.append(testAppUrl.toString());
 
       // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
 
+      logger.info("Running " + curlCmdResCode);
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
@@ -327,7 +335,7 @@ public class Domain {
     cmd.append(" --name ")
         .append(domainMap.get("domainUID"))
         .append(" --values ")
-        .append(generatedInputYamlFile)
+        .append(generatedDomainYamlFile)
         .append(" --set createWebLogicDomain=false --namespace ")
         .append(domainNS)
         .append(" --wait");
@@ -430,7 +438,7 @@ public class Domain {
     cmd.append(" --name ")
         .append(domainMap.get("domainUID"))
         .append(" --values ")
-        .append(generatedInputYamlFile)
+        .append(generatedDomainYamlFile)
         .append(" --namespace ")
         .append(domainNS)
         .append(" --wait");
@@ -533,8 +541,13 @@ public class Domain {
   private void generateInputYaml() throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
-    generatedInputYamlFile = parentDir + "/weblogic-domain-values.yaml";
-    TestUtils.createInputFile(domainMap, generatedInputYamlFile);
+    generatedDomainYamlFile = parentDir + "/weblogic-domain-values.yaml";
+    TestUtils.createInputFile(domainMap, generatedDomainYamlFile);
+
+    if (!loadBalancer.equals("NONE")) {
+      generatedLBYamlFile = parentDir + "/loadBalancer-values.yaml";
+      TestUtils.createInputFile(lbMap, generatedLBYamlFile);
+    }
   }
 
   private void callCreateDomainScript() throws Exception {
@@ -544,9 +557,54 @@ public class Domain {
     cmd.append(" --name ")
         .append(domainMap.get("domainUID"))
         .append(" --values ")
-        .append(generatedInputYamlFile)
+        .append(generatedDomainYamlFile)
         .append(" --namespace ")
         .append(domainNS)
+        .append(" --wait");
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  private void callCreateLBScript() throws Exception {
+    if (loadBalancer.equals("NONE")) return;
+
+    // Call script to install Ingress controller. This step is only needed for traefik and voyager
+    if (loadBalancer.equals("TRAEFIK") || loadBalancer.equals("VOYAGER")) {
+      StringBuffer cmd = new StringBuffer();
+      cmd.append(BaseTest.getProjectRoot())
+          .append("/integration-tests/src/test/resources/loadBalancer/setup.sh create ")
+          .append(loadBalancer.toLowerCase());
+      logger.info("Running " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command "
+                + cmd
+                + " failed, returned "
+                + result.stdout()
+                + "\n"
+                + result.stderr());
+      }
+    }
+
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm install kubernetes/samples/charts/ingress-per-domain");
+    cmd.append(" --name ")
+        .append(domainMap.get("domainUID") + "-lb")
+        .append(" --values ")
+        .append(generatedLBYamlFile)
         .append(" --wait");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -681,9 +739,7 @@ public class Domain {
             .booleanValue();
     t3ChannelPort = ((Integer) domainMap.getOrDefault("t3ChannelPort", t3ChannelPort)).intValue();
     clusterName = domainMap.getOrDefault("clusterName", clusterName).toString();
-    loadBalancer = domainMap.getOrDefault("loadBalancer", loadBalancer).toString();
-    loadBalancerWebPort =
-        ((Integer) domainMap.getOrDefault("loadBalancerWebPort", loadBalancerWebPort)).intValue();
+
     if (exposeAdminT3Channel && domainMap.get("t3PublicAddress") == null) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
@@ -706,10 +762,69 @@ public class Domain {
       domainMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
     }
 
-    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
-      domainMap.put("loadBalancerAppPrepath", "/weblogic");
-      domainMap.put("loadBalancerExposeAdminPort", "true");
+    initLoadBalancer();
+  }
+  // Initialize load balancer values.
+  private void initLoadBalancer() throws Exception {
+    lbMap = new HashMap<String, Object>();
+
+    if (domainMap.get("loadBalancer") != null) {
+      loadBalancer = domainMap.get("loadBalancer").toString();
+    } else if (System.getenv("LB_TYPE") != null) {
+      loadBalancer = System.getenv("LB_TYPE");
     }
+    if (!loadBalancer.equals("APACHE")
+        && !loadBalancer.equals("TRAEFIK")
+        && !loadBalancer.equals("VOYAGER")
+        && !loadBalancer.equals("NONE")) {
+      throw new RuntimeException(
+          "FAILURE: given load balancer type '"
+              + loadBalancer
+              + "' is not correct. Valid values are NONE, APACHE, TRAEFIK, VOYAGER");
+    }
+
+    if (loadBalancer.equals("NONE")) return;
+
+    if (domainMap.get("loadBalancerWebPort") != null && !loadBalancer.equals("TRAEFIK")) {
+      loadBalancerWebPort = ((Integer) domainMap.get("loadBalancerWebPort")).intValue();
+    }
+    String dashboardPort = "30315";
+    if (domainMap.get("loadBalancerDashboardPort") != null) {
+      dashboardPort = domainMap.get("loadBalancerDashboardPort").toString();
+    }
+
+    lbMap.put("type", loadBalancer);
+
+    // create wlsDomain section
+    Map<String, String> wlsDomainMap = new HashMap<>();
+    wlsDomainMap.put("namespace", domainNS);
+    wlsDomainMap.put("svcName", domainUid + "-cluster-" + clusterName.toLowerCase());
+    wlsDomainMap.put("svcPort", "8001");
+    lbMap.put("wlsDomain", wlsDomainMap);
+
+    // create Traefik section
+    if (loadBalancer.equals("TRAEFIK")) {
+      Map<String, String> traefikMap = new HashMap<>();
+      traefikMap.put("hostname", domainUid + ".org");
+      lbMap.put("traefik", traefikMap);
+    }
+
+    // create Voyager section
+    if (loadBalancer.equals("VOYAGER")) {
+      Map<String, String> voyagerMap = new HashMap<>();
+      voyagerMap.put("webPort", new Integer(loadBalancerWebPort).toString());
+      voyagerMap.put("statsPort", dashboardPort);
+      lbMap.put("voyager", voyagerMap);
+    }
+
+    // create apache section TODO
+    /*if (loadBalancer.equals("APACHE")) {
+      Map<String, String> apacheMap = new HashMap<>();
+      apacheMap.put("appPrepath", "/weblogic");
+      apacheMap.put("exposeAdminPort", "true");
+
+      lbMap.put("apache", apacheMap);
+    }*/
   }
 
   private String getNodeHost() throws Exception {

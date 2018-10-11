@@ -15,19 +15,3 @@
 {{-   include "domain.createDomainPersistentVolume" $scope }}
 {{-   include "domain.createDomainPersistentVolumeClaim" $scope }}
 {{- end }}
-
-{{- if eq $scope.loadBalancer "TRAEFIK" }}
-{{-   include "domain.traefik" $scope }}
-{{-   include "domain.traefikSecurity" $scope }}
-{{- end }}
-
-{{- if eq $scope.loadBalancer "APACHE" }}
-{{-   include "domain.apache" $scope }}
-{{-   include "domain.apacheSecurity" $scope }}
-{{- end }}
-
-{{- if eq $scope.loadBalancer "VOYAGER" }}
-{{-   include "domain.voyager" $scope }}
-{{-   include "domain.voyagerSecurity" $scope }}
-{{-   include "domain.voyagerIngress" $scope }}
-{{- end }}
