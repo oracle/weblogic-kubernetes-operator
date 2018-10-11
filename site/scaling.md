@@ -2,9 +2,7 @@
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/1221/wls/CLUST/dynamic_clusters.htm#CLUST678).
 
-The following blogs provide more in-depth information on support for scaling WebLogic clusters in Kubernetes:
-* [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
-* [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
+The following blog provides more in-depth information on support for scaling WebLogic clusters in Kubernetes, [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes).
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
@@ -112,25 +110,25 @@ are used to enable and configure the external REST endpoint:
 #    interface.  They are specified by the 'externalOperatorCert' and
 #    'eternalOperatorKey' properties.
 externalRestOption: NONE
-  
+
 # The node port that should be allocated for the external operator REST https interface.
 # This parameter is required if 'externalRestOption' is not 'NONE'.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
-  
+
 # The subject alternative names to put into the generated self-signed certificate
 # for the external WebLogic Operator REST https interface, for example:
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1
 # This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
 # Otherwise, it is ignored.
 externalSans:
-  
+
 # The customer supplied certificate to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM certificate.
 # This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
 # Otherwise, it is ignored.
 externalOperatorCert:
-  
+
 # The customer supplied private key to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM key.
 # This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
@@ -184,13 +182,13 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
     ```
     ```
     Name:         `weblogic-operator-cm`
-      
+
     Namespace:    `weblogic-operator`
-      
+
     Labels:       `weblogic.operatorName=weblogic-operator`
-      
+
     Annotations:  `kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"v1","data":{"externalOperatorCert":"","internalOperatorCert":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t...`
-      
+
     Data
 
     ====
@@ -231,10 +229,7 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
     * REST
     * JMX application    
 
-A more in-depth description and example on using WLDF's Policies and Actions component for initiating scaling requests through the operator's REST endpoint can be found in the blogs:
-* [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
-* [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
-
+A more in-depth description and example on using WLDF's Policies and Actions component for initiating scaling requests through the operator's REST endpoint can be found in the blog [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes).
 
 
 ### Create cluster role bindings to allow a namespace user to query WLS Kubernetes cluster information
@@ -340,31 +335,31 @@ size=3 #New cluster size
 domdir=${PWD}
 ns=weblogic-operator # Operator NameSpace
 domainuid=domain1
-  
+
 # Retrieve service account name for given namespace   
 sec=`kubectl get serviceaccount ${ns} -n ${ns} -o jsonpath='{.secrets[0].name}'`
 #echo "Secret [${sec}]"
-  
+
 # Retrieve base64 encoded secret for the given service account   
 enc_token=`kubectl get secret ${sec} -n ${ns} -o jsonpath='{.data.token}'`
 #echo "enc_token [${enc_token}]"
-  
+
 # Decode the base64 encoded token  
 token=`echo ${enc_token} | base64 --decode`
 #echo "token [${token}]"
-  
+
 # Retrieve SSL certificate for the external REST endpoint from the generated yaml file for the Operator  
 operator_cert_data=`kubectl get cm -n ${ns} weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'`
 #echo "operator_cert_data [${operator_cert_data}]"
-  
+
 # clean up any temporary files
 rm -rf operator.rest.response.body operator.rest.stderr operator.cert.pem
-  
+
 # Decode and store the encoded SSL certificate into a pem file  
 echo ${operator_cert_data} | base64 --decode > operator.cert.pem
-  
+
 echo "Rest EndPoint url https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale"
-  
+
 # Issue 'curl' request to external REST endpoint  
 curl --noproxy '*' -v --cacert operator.cert.pem \
 -H "Authorization: Bearer ${token}" \
