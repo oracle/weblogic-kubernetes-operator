@@ -249,6 +249,7 @@ public class ConfigMapHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       Domain domain = info.getDomain();
+
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
       Map<String, String> data = parseIntrospectorResult(result);
