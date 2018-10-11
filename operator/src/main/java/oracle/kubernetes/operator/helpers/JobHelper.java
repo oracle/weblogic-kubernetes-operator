@@ -6,10 +6,12 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -202,20 +204,32 @@ public class JobHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<String> callResponse) {
-      cleanupJobArtifacts(packet);
       String result = callResponse.getResult();
+
+      // Log output to Operator log
       LOGGER.info("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
-      if (result != null) {
-        packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
+
+      V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+      System.out.println(
+          "----------- JobHelper.ReadDomainIntrospectorPodLogResponseStep job status: "
+              + domainIntrospectorJob.getStatus());
+      if (domainIntrospectorJob != null && JobWatcher.isReady(domainIntrospectorJob)) {
+        if (result != null) {
+          packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
+        }
+
+        // Delete the job once we've successfully read the result
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        java.lang.String domainUID = info.getDomain().getDomainUID();
+        java.lang.String namespace = info.getNamespace();
+
+        cleanupJobArtifacts(packet);
+
+        return doNext(
+            JobHelper.deleteDomainIntrospectorJobStep(domainUID, namespace, getNext()), packet);
       }
 
-      // Delete the job once we've successfully read the result
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      java.lang.String domainUID = info.getDomain().getDomainUID();
-      java.lang.String namespace = info.getNamespace();
-
-      return doNext(
-          JobHelper.deleteDomainIntrospectorJobStep(domainUID, namespace, getNext()), packet);
+      return onFailure(packet, callResponse);
     }
 
     private void cleanupJobArtifacts(Packet packet) {
@@ -245,6 +259,7 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       String domainUID = info.getDomain().getDomainUID();
       String namespace = info.getNamespace();
+
       return doNext(readDomainIntrospectorPod(domainUID, namespace, getNext()), packet);
     }
 

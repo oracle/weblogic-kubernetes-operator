@@ -76,12 +76,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       case "ADDED":
       case "MODIFIED":
         V1Job job = item.object;
-        Boolean isReady = isReady(job);
+        Boolean isComplete = isComplete(job); // isReady(job);
         String jobName = job.getMetadata().getName();
-        if (isReady) {
+        if (isComplete) {
           OnReady ready = readyCallbackRegistrations.remove(jobName);
           if (ready != null) {
-            ready.onReady();
+            ready.onReady(job);
           }
         }
         break;
@@ -93,7 +93,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     LOGGER.exiting();
   }
 
-  static boolean isReady(V1Job job) {
+  public static boolean isReady(V1Job job) {
     V1JobStatus status = job.getStatus();
     LOGGER.fine("++++ JobWatcher.isReady status: " + status);
     if (status != null) {
@@ -113,12 +113,29 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
-  static boolean isFailed(V1Job job) {
+  public static boolean isFailed(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null) {
       if (status.getFailed() != null && status.getFailed() > 0) {
         LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
         return true;
+      }
+    }
+    return false;
+  }
+
+  static boolean isComplete(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    LOGGER.info("++++ JobWatcher.isCpmplete status: " + status);
+    if (status != null) {
+      List<V1JobCondition> conds = status.getConditions();
+      if (conds != null) {
+        for (V1JobCondition cond : conds) {
+          if ("Complete".equals(cond.getType())) {
+            // Job is complete!
+            return true;
+          }
+        }
       }
     }
     return false;
@@ -145,7 +162,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (isReady(job)) {
+      // if (isReady(job)) {
+      if (isComplete(job)) {
         return doNext(packet);
       }
 
@@ -157,8 +175,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       return doSuspend(
           (fiber) -> {
             OnReady ready =
-                () -> {
+                (V1Job job) -> {
                   if (didResume.compareAndSet(false, true)) {
+                    System.out.println(
+                        "============== JobWatcher.WaitForJobReadyStep job status: "
+                            + job.getStatus());
+                    packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
                     fiber.resume(packet);
                   }
                 };
@@ -182,9 +204,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                                   ApiException e,
                                   int statusCode,
                                   Map<String, List<String>> responseHeaders) {
-                                // if (statusCode == CallBuilder.NOT_FOUND) {
-                                // return onSuccess(packet, null, statusCode, responseHeaders);
-                                // }
                                 return super.onFailure(packet, e, statusCode, responseHeaders);
                               }
 
@@ -194,7 +213,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                                   V1Job result,
                                   int statusCode,
                                   Map<String, List<String>> responseHeaders) {
-                                if (result != null && isReady(result)) {
+                                if (result != null && isComplete(result) /*isReady(result)*/) {
                                   if (didResume.compareAndSet(false, true)) {
                                     readyCallbackRegistrations.remove(metadata.getName(), ready);
                                     fiber.resume(packet);
@@ -211,6 +230,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   @FunctionalInterface
   private interface OnReady {
-    void onReady();
+    void onReady(V1Job job);
   }
 }
