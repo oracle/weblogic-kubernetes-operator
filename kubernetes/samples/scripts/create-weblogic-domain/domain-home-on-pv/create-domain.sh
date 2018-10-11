@@ -229,7 +229,6 @@ function initialize {
   parseCommonInputs
   validateInputParamsSpecified \
     adminServerName \
-    domainName \
     domainUID \
     clusterName \
     managedServerNameBase \
@@ -297,6 +296,11 @@ function createYamlFiles {
     image="store/oracle/weblogic:12.2.1.3"
   fi
   
+  # Use the default value if not defined.
+  if [ -z "${domainName}" ]; then
+    domainName=${domainUID}
+  fi
+
   # Use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
