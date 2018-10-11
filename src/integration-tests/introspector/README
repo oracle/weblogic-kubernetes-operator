@@ -7,7 +7,7 @@ Description:
 
 This test performs some basic end-to-end introspector tests while emulating (mocking) the operator pod.  It's useful for verifying the introspector is working correctly, and for quickly testing changes to its overall flow.
 
-The test mainly works via a series of yaml and python template files in combination with a set of environment variables.  The environment variables, such as PV_ROOT, DOMAIN_UID, NAMESPACE, IMAGE_NAME, ..., all have defaults, or can be passed in.  See the 'export' calls in the implementation below for the complete list.
+The test mainly works via a series of yaml and python template files in combination with a set of environment variables.  The environment variables, such as PV_ROOT, DOMAIN_UID, NAMESPACE, IMAGE_NAME, ..., all have defaults, or can be passed in.  See the 'export' calls in introspectTest.sh for the complete list.
 
 The test can work with any arbitrary domain, or it can create a domain.
 
