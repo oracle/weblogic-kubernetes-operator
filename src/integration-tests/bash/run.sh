@@ -2067,7 +2067,11 @@ function test_mvn_integration_local {
     [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    mvn -P integration-tests clean install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    if [ ! "$QUICKTEST2" = "true" ]; then
+      mvn -P integration-tests clean install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    else
+      mvn clean install -Dmaven.test.skip=true 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    fi
 
     local mend=`date +%s`
     local msecs=$((mend-mstart))
@@ -3074,6 +3078,9 @@ function test_suite_init {
     export JVM_ARGS="${JVM_ARGS:-'-Dweblogic.StdoutDebugEnabled=false'}"
     export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
 
+    #TBDTEB Remove QUICKTEST2 - temporarily there to aid in introspector testing.
+    [ "`hostname -a`" = "slc16okc" ] && export QUICKTEST2="${QUICKTEST2:-true}"
+
     if [ -z "$BRANCH_NAME" ]; then
       export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
       [ ! "$?" = "0" ] && fail "Error: Could not determine branch.  Run script from within a git repo".
@@ -3097,7 +3104,11 @@ function test_suite_init {
     #
     if [ -x "$(command -v helm)" ]; then
       trace 'helm is installed, assume user wants to use helm if USE_HELM is not set'
-      USE_HELM="${USE_HELM:-true}"
+      if [ ! "$QUICKTEST2" = "true" ]; then
+        USE_HELM="${USE_HELM:-true}"
+      else
+        USE_HELM="${USE_HELM:-false}"
+      fi
     else
       trace 'helm is not installed and USE_HELM="$USE_HELM", if USE_HELM is true future steps may try install helm'
     fi
@@ -3119,6 +3130,7 @@ function test_suite_init {
                    VERBOSE \
                    DEBUG_OUT \
                    QUICKTEST \
+                   QUICKTEST2 \
                    NODEPORT_HOST \
                    JVM_ARGS \
                    BRANCH_NAME \
@@ -3265,7 +3277,11 @@ function test_suite {
     op_define  oper2   weblogic-operator-2  test2              32001
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
-    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
+    if [ "$QUICKTEST2" = "true" ]; then
+      dom_define domain1  oper1   default   domain1    AUTO            cluster-1       CONFIGURED       managed-server 7001       30012           30701           8001    30305                  30315
+    else
+      dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
+    fi
 
     # TODO: we need to figure out how to support invalid characters in the helm use cases
     # for now, invalid characters are only tested in the none helm cases
@@ -3311,6 +3327,8 @@ function test_suite {
 
     # create first domain in default namespace and verify it
     test_domain_creation domain1 
+
+if [ ! "${QUICKTEST2}" = true ]; then
 
     # test shutting down and restarting a domain 
     test_domain_lifecycle domain1 
@@ -3363,6 +3381,7 @@ function test_suite {
       test_shutdown_domain domain1
 
     fi 
+fi
 
     local duration=$SECONDS
     trace "Running integration tests spent $(($duration / 60)) minutes and $(($duration % 60)) seconds."
