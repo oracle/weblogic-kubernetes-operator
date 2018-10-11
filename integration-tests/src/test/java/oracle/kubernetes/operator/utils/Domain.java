@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,11 +33,18 @@ public class Domain {
   private String adminServerName = "admin-server";
   private String managedServerNameBase = "managed-server";
   private int initialManagedServerReplicas = 2;
+  private int configuredManagedServerCount = 2;
   private boolean exposeAdminT3Channel = false;
+  private boolean exposeAdminNodePort = false;
   private int t3ChannelPort = 30012;
   private String clusterName = "cluster-1";
+  private String clusterType = "DYNAMIC";
+  private String startupControl = "AUTO";
+  private String weblogicDomainStorageReclaimPolicy = "Retain";
+  private String weblogicDomainStorageSize = "10Gi";
   private String loadBalancer = "TRAEFIK";
   private int loadBalancerWebPort = 30305;
+  private int loadBalancerDashboardPort = 30315;
   private String userProjectsDir = "";
   private String projectRoot = "";
 
@@ -48,16 +56,13 @@ public class Domain {
   private static int waitTime = BaseTest.getWaitTimePod();
 
   public Domain(String inputYaml) throws Exception {
-    Yaml yaml = new Yaml();
-    InputStream domain_is = this.getClass().getClassLoader().getResourceAsStream(inputYaml);
-    domainMap = yaml.load(domain_is);
-    domain_is.close();
 
     initialize(inputYaml);
     createPV();
     createSecret();
     generateInputYaml();
     callCreateDomainScript();
+    createLoadBalancer();
   }
 
   /**
@@ -321,16 +326,11 @@ public class Domain {
    * @throws Exception
    */
   public void create() throws Exception {
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-domain");
-    cmd.append(" --name ")
-        .append(domainMap.get("domainUID"))
-        .append(" --values ")
-        .append(generatedInputYamlFile)
-        .append(" --set createWebLogicDomain=false --namespace ")
-        .append(domainNS)
-        .append(" --wait");
+    StringBuffer cmd = new StringBuffer("kubectl create -f ");
+    cmd.append(userProjectsDir)
+        .append("/weblogic-domains/")
+        .append(domainUid)
+        .append("/domain-custom-resource.yaml");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -355,8 +355,12 @@ public class Domain {
    */
   public void destroy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    String cmd = "helm del --purge " + domainUid;
-    ExecResult result = ExecCommand.exec(cmd);
+    StringBuffer cmd = new StringBuffer("kubectl delete -f ");
+    cmd.append(userProjectsDir)
+        .append("/weblogic-domains/")
+        .append(domainUid)
+        .append("/domain-custom-resource.yaml");
+    ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command " + cmd + " failed, returned " + result.stderr());
@@ -405,7 +409,7 @@ public class Domain {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
     TestUtils.deletePVC(domainUid + "-weblogic-domain-pvc", domainNS);
-    String reclaimPolicy = domainMap.get("weblogicDomainStorageReclaimPolicy").toString();
+    String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
     boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
       throw new RuntimeException(
@@ -512,13 +516,42 @@ public class Domain {
   }
 
   private void createPV() throws Exception {
-    // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch
-    new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid);
 
-    // set pv path, weblogicDomainStoragePath in domain props file is ignored
+    Yaml yaml = new Yaml();
+    InputStream pv_is =
+        new FileInputStream(
+            new File(
+                BaseTest.getProjectRoot()
+                    + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
+    Map<String, Object> pvMap = yaml.load(pv_is);
+    pv_is.close();
+    pvMap.put("domainName", domainMap.get("domainName"));
+    pvMap.put("domainUID", domainUid);
+    pvMap.put("weblogicDomainStorageReclaimPolicy", weblogicDomainStorageReclaimPolicy);
+    pvMap.put("weblogicDomainStorageSize", weblogicDomainStorageSize);
+    pvMap.put("namespace", domainNS);
+
+    // test NFS for domain5 on JENKINS
+    if (domainUid.equals("domain5")
+        && (System.getenv("JENKINS") != null
+            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
+      pvMap.put("weblogicDomainStorageType", "NFS");
+      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+    } else {
+      pvMap.put("weblogicDomainStorageType", "HOST_PATH");
+      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+    }
+    // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
         BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
+
+    pvMap.put(
+        "weblogicDomainStoragePath",
+        BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
+
+    // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
+    new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
 
   private void createSecret() throws Exception {
@@ -538,16 +571,12 @@ public class Domain {
   }
 
   private void callCreateDomainScript() throws Exception {
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-domain");
-    cmd.append(" --name ")
-        .append(domainMap.get("domainUID"))
-        .append(" --values ")
+    StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
+    cmd.append(
+            "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
-        .append(" --namespace ")
-        .append(domainNS)
-        .append(" --wait");
+        .append(" -e -v -o ")
+        .append(userProjectsDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -561,6 +590,30 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+  }
+
+  private void createLoadBalancer() throws Exception {
+    Yaml yaml = new Yaml();
+    InputStream lbIs =
+        new FileInputStream(
+            new File(
+                BaseTest.getProjectRoot()
+                    + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml"));
+    Map<String, Object> lbMap = yaml.load(lbIs);
+    lbIs.close();
+    lbMap.put("domainName", domainMap.get("domainName"));
+    lbMap.put("domainUID", domainUid);
+    lbMap.put("namespace", domainNS);
+    lbMap.put("loadBalancer", loadBalancer);
+    lbMap.put("loadBalancerWebPort", new Integer(loadBalancerWebPort));
+    lbMap.put("loadBalancerDashboardPort", loadBalancerDashboardPort);
+    lbMap.put("loadBalancerVolumePath", domainMap.get("loadBalancerVolumePath"));
+
+    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
+      lbMap.put("loadBalancerAppPrepath", "/weblogic");
+      lbMap.put("loadBalancerExposeAdminPort", new Boolean(true));
+    }
+    new LoadBalancer(lbMap);
   }
 
   private void callShellScriptByExecToPod(String username, String password, String webappName)
@@ -663,32 +716,108 @@ public class Domain {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
-    domainUid = domainMap.get("domainUID").toString();
-    // Customize the create domain job inputs
-    domainNS = domainMap.getOrDefault("namespace", domainNS).toString();
+    // read input domain yaml to test
+    Map<String, Object> inputDomainMap = TestUtils.loadYaml(inputYaml);
 
-    adminServerName = domainMap.getOrDefault("adminServerName", adminServerName).toString();
+    // read sample domain inputs and override the values for some
+    Yaml dyaml = new Yaml();
+    InputStream domainInputStream =
+        new FileInputStream(
+            new File(
+                BaseTest.getProjectRoot()
+                    + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml"));
+    logger.info(
+        "loading domain inputs template file "
+            + BaseTest.getProjectRoot()
+            + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml");
+    domainMap = dyaml.load(domainInputStream);
+    domainInputStream.close();
+
+    domainUid = inputDomainMap.get("domainUID").toString();
+    // Customize the create domain job inputs
+    domainNS = inputDomainMap.getOrDefault("namespace", domainNS).toString();
+    adminServerName = inputDomainMap.getOrDefault("adminServerName", adminServerName).toString();
     managedServerNameBase =
-        domainMap.getOrDefault("managedServerNameBase", managedServerNameBase).toString();
+        inputDomainMap.getOrDefault("managedServerNameBase", managedServerNameBase).toString();
     initialManagedServerReplicas =
         ((Integer)
-                domainMap.getOrDefault(
+                inputDomainMap.getOrDefault(
                     "initialManagedServerReplicas", initialManagedServerReplicas))
+            .intValue();
+    configuredManagedServerCount =
+        ((Integer)
+                inputDomainMap.getOrDefault(
+                    "configuredManagedServerCount", configuredManagedServerCount))
             .intValue();
     exposeAdminT3Channel =
         ((Boolean)
-                domainMap.getOrDefault("exposeAdminT3Channel", new Boolean(exposeAdminT3Channel)))
+                inputDomainMap.getOrDefault(
+                    "exposeAdminT3Channel", new Boolean(exposeAdminT3Channel)))
             .booleanValue();
-    t3ChannelPort = ((Integer) domainMap.getOrDefault("t3ChannelPort", t3ChannelPort)).intValue();
-    clusterName = domainMap.getOrDefault("clusterName", clusterName).toString();
-    loadBalancer = domainMap.getOrDefault("loadBalancer", loadBalancer).toString();
+    exposeAdminNodePort =
+        ((Boolean)
+                inputDomainMap.getOrDefault(
+                    "exposeAdminNodePort", new Boolean(exposeAdminNodePort)))
+            .booleanValue();
+    t3ChannelPort =
+        ((Integer) inputDomainMap.getOrDefault("t3ChannelPort", t3ChannelPort)).intValue();
+    clusterName = inputDomainMap.getOrDefault("clusterName", clusterName).toString();
+    clusterType = inputDomainMap.getOrDefault("clusterType", clusterType).toString();
+    startupControl = inputDomainMap.getOrDefault("startupControl", startupControl).toString();
+    weblogicDomainStorageReclaimPolicy =
+        inputDomainMap
+            .getOrDefault("weblogicDomainStorageReclaimPolicy", weblogicDomainStorageReclaimPolicy)
+            .toString();
+    weblogicDomainStorageSize =
+        inputDomainMap
+            .getOrDefault("weblogicDomainStorageSize", weblogicDomainStorageSize)
+            .toString();
+    loadBalancer = inputDomainMap.getOrDefault("loadBalancer", loadBalancer).toString();
     loadBalancerWebPort =
-        ((Integer) domainMap.getOrDefault("loadBalancerWebPort", loadBalancerWebPort)).intValue();
-    if (exposeAdminT3Channel && domainMap.get("t3PublicAddress") == null) {
+        ((Integer) inputDomainMap.getOrDefault("loadBalancerWebPort", loadBalancerWebPort))
+            .intValue();
+    loadBalancerDashboardPort =
+        ((Integer)
+                inputDomainMap.getOrDefault("loadBalancerDashboardPort", loadBalancerDashboardPort))
+            .intValue();
+
+    domainMap.put("domainUID", domainUid);
+    domainMap.put("namespace", domainNS);
+    domainMap.put("adminServerName", adminServerName);
+    domainMap.put("managedServerNameBase", managedServerNameBase);
+    domainMap.put("initialManagedServerReplicas", initialManagedServerReplicas);
+    domainMap.put("configuredManagedServerCount", configuredManagedServerCount);
+    domainMap.put("exposeAdminT3Channel", new Boolean(exposeAdminT3Channel));
+    domainMap.put("exposeAdminNodePort", new Boolean(exposeAdminNodePort));
+    domainMap.put("t3ChannelPort", t3ChannelPort);
+    domainMap.put("clusterName", clusterName);
+    domainMap.put("clusterType", clusterType);
+    domainMap.put("startupControl", startupControl);
+    domainMap.put("persistentVolumeClaimName", domainUid + "-weblogic-domain-pvc");
+    domainMap.put("domainName", inputDomainMap.getOrDefault("domainName", "base_domain"));
+    domainMap.put(
+        "adminNodePort", inputDomainMap.getOrDefault("adminNodePort", new Integer("30701")));
+    domainMap.put(
+        "loadBalancerVolumePath",
+        inputDomainMap.getOrDefault("loadBalancerVolumePath", new String("")));
+    domainMap.put("weblogicDomainStorageReclaimPolicy", weblogicDomainStorageReclaimPolicy);
+    domainMap.put(
+        "domainPVMountPath", inputDomainMap.getOrDefault("domainPVMountPath", new String("")));
+    domainMap.put(
+        "createDomainScriptsMountPath",
+        inputDomainMap.getOrDefault("createDomainScriptsMountPath", new String("")));
+    domainMap.put(
+        "createDomainScriptName",
+        inputDomainMap.getOrDefault("createDomainScriptName", new String("")));
+    domainMap.put(
+        "createDomainFilesDir",
+        inputDomainMap.getOrDefault("createDomainFilesDir", new String("")));
+
+    if (exposeAdminT3Channel && inputDomainMap.get("t3PublicAddress") == null) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
-      domainMap.put("weblogicImagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+      domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
@@ -697,18 +826,6 @@ public class Domain {
           System.getenv("DOCKER_PASSWORD"),
           System.getenv("DOCKER_EMAIL"),
           domainNS);
-    }
-    // test NFS for domain5 on JENKINS
-    if (domainUid.equals("domain5")
-        && (System.getenv("JENKINS") != null
-            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
-      domainMap.put("weblogicDomainStorageType", "NFS");
-      domainMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    }
-
-    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
-      domainMap.put("loadBalancerAppPrepath", "/weblogic");
-      domainMap.put("loadBalancerExposeAdminPort", "true");
     }
   }
 

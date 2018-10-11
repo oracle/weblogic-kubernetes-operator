@@ -4,19 +4,14 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.InputStream;
 import java.security.KeyStore;
-import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -95,6 +90,11 @@ public class TestUtils {
     }
   }
 
+  /**
+   * @param map - map with attributes
+   * @param generatedInputYamlFile - output file with replaced values
+   * @throws Exception
+   */
   public static void createInputFile(Map<String, Object> map, String generatedInputYamlFile)
       throws Exception {
     logger.info("Creating input yaml file at " + generatedInputYamlFile);
@@ -107,85 +107,6 @@ public class TestUtils {
     java.io.FileWriter writer = new java.io.FileWriter(generatedInputYamlFile);
     yaml.dump(map, writer);
     writer.close();
-  }
-  /**
-   * @param propsFile - input props file
-   * @param generatedInputYamlFile - output file with replaced values
-   * @throws Exception
-   */
-  public static void createInputFile(Properties props, String generatedInputYamlFile)
-      throws Exception {
-    logger.info("Creating input yaml file at " + generatedInputYamlFile);
-
-    StringBuffer valuesYaml = new StringBuffer();
-
-    Enumeration enuKeys = props.keys();
-    while (enuKeys.hasMoreElements()) {
-      String key = (String) enuKeys.nextElement();
-      String value = props.getProperty(key);
-      if (key.equals("domainNamespaces")) {
-        valuesYaml.append(key).append(": [ ");
-        if (value.contains(",")) {
-          StringTokenizer st = new StringTokenizer(value, ",");
-          while (st.hasMoreTokens()) {
-            valuesYaml.append("\"").append(st.nextToken()).append("\"");
-            if (st.hasMoreTokens()) valuesYaml.append(", ");
-          }
-        } else {
-          valuesYaml.append("\"").append(value).append("\"");
-        }
-        valuesYaml.append(" ]\n");
-      } else if (!key.equals("releaseName")
-          && !key.equals("namespace")
-          && !key.equals("domainUID")) {
-        valuesYaml.append(key).append(": ").append(value).append("\n");
-      }
-    }
-    // writing to the file
-    Files.write(Paths.get(generatedInputYamlFile), valuesYaml.toString().getBytes());
-  }
-
-  /**
-   * @param propsFile - input props file
-   * @param inputFileTemplate - operator/domain inputs template file
-   * @param generatedInputYamlFile - output file with replaced values
-   * @throws Exception
-   */
-  public static void createInputFile(
-      Properties props, String inputFileTemplate, String generatedInputYamlFile) throws Exception {
-    logger.info("Creating input yaml file at " + generatedInputYamlFile);
-
-    // copy input template file and modify it
-    Files.copy(
-        new File(inputFileTemplate).toPath(),
-        Paths.get(generatedInputYamlFile),
-        StandardCopyOption.REPLACE_EXISTING);
-
-    // read each line in input template file and replace only customized props
-    BufferedReader reader = new BufferedReader(new FileReader(generatedInputYamlFile));
-    String line = "";
-    StringBuffer changedLines = new StringBuffer();
-    boolean isLineChanged = false;
-    while ((line = reader.readLine()) != null) {
-      Enumeration enuKeys = props.keys();
-      while (enuKeys.hasMoreElements()) {
-        String key = (String) enuKeys.nextElement();
-        // if a line starts with the props key then replace
-        // the line with key:value in the file
-        if (line.startsWith(key + ":") || line.startsWith("#" + key + ":")) {
-          changedLines.append(key).append(":").append(props.getProperty(key)).append("\n");
-          isLineChanged = true;
-          break;
-        }
-      }
-      if (!isLineChanged) {
-        changedLines.append(line).append("\n");
-      }
-      isLineChanged = false;
-    }
-    reader.close();
-    // writing to the file
-    Files.write(Paths.get(generatedInputYamlFile), changedLines.toString().getBytes());
   }
 
   public static String getHostName() throws Exception {
@@ -543,11 +464,9 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opPropsFile) throws Exception {
-    // load operator props defined
-    Properties operatorProps = loadProps(opPropsFile);
+  public static Operator createOperator(String opYamlFile) throws Exception {
     // create op
-    Operator operator = new Operator(operatorProps);
+    Operator operator = new Operator(opYamlFile);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();
@@ -562,6 +481,16 @@ public class TestUtils {
     Domain domain = new Domain(inputYaml);
     domain.verifyDomainCreated();
     return domain;
+  }
+
+  public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
+    // read input domain yaml to test
+    Map<String, Object> map = new HashMap<String, Object>();
+    Yaml yaml = new Yaml();
+    InputStream is = TestUtils.class.getClassLoader().getResourceAsStream(yamlFile);
+    map = yaml.load(is);
+    is.close();
+    return map;
   }
 
   public static Properties loadProps(String propsFile) throws Exception {
