@@ -26,8 +26,8 @@ import org.junit.runners.MethodSorters;
 public class ITOperator extends BaseTest {
 
   // property file used to customize operator properties for operator inputs yaml
-  private static String op1PropsFile = "ITFirstOperator.properties";
-  private static String op2PropsFile = "ITSecondOperator.properties";
+  private static String op1YamlFile = "operator1.yaml";
+  private static String op2YamlFile = "operator2.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -104,7 +104,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test2CreateAnotherDomainInDefaultNS");
     logger.info("Creating Domain domain2 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     // create domain2
     Domain domain2 = testDomainCreation(domain2YamlFile);
@@ -122,7 +122,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test3CreateDomainInTest1NS");
     logger.info("Creating Domain domain3 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     // create domain3
     testDomainCreation(domain3YamlFile);
@@ -137,7 +137,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test4CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator2
-    operator2 = TestUtils.createOperator(op2PropsFile);
+    operator2 = TestUtils.createOperator(op2YamlFile);
     logger.info("SUCCESS - test4CreateAnotherOperatorManagingTest2NS");
   }
 
@@ -151,14 +151,14 @@ public class ITOperator extends BaseTest {
 
     logger.info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
     }
     logger.info("Checking if operator2 is running, if not creating");
     if (operator2 == null) {
-      operator2 = TestUtils.createOperator(op2PropsFile);
+      operator2 = TestUtils.createOperator(op2YamlFile);
     }
     // create domain4
     Domain domain4 = testDomainCreation(domain4YamlFile);
@@ -188,7 +188,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test6CreateDomainWithStartupControlAdmin");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     logger.info("Creating Domain domain5 & verifing the domain creation");
     // create domain5
@@ -204,7 +204,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test7CreateDomainPVReclaimPolicyRecycle");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain6
@@ -222,7 +222,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test8WlsLivenessProbe");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
@@ -242,7 +242,7 @@ public class ITOperator extends BaseTest {
 
     logTestBegin("test9CreateDomainOnExistingDir");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
@@ -261,7 +261,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("testACreateDomainApacheLB");
     logger.info("Creating Domain domain7 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1PropsFile);
+      operator1 = TestUtils.createOperator(op1YamlFile);
     }
 
     // create domain7
@@ -273,7 +273,7 @@ public class ITOperator extends BaseTest {
   private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
-    operator1 = TestUtils.createOperator(op1PropsFile);
+    operator1 = TestUtils.createOperator(op1YamlFile);
   }
 
   private void testCreateDomainInDefaultNS() throws Exception {
