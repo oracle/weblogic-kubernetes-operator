@@ -29,7 +29,8 @@ function generateInternalIdentity {
   TEMP_DIR="${INTERNAL_IDENTITY_DIR}/temp"
   mkdir ${TEMP_DIR}
 
-  host="internal-weblogic-operator-service"
+  # note : host must match the name of the node port for the operator internal REST api
+  host="internal-weblogic-operator-svc"
   SANS="DNS:${host},DNS:${host}.${NAMESPACE},DNS:${host}.${NAMESPACE}.svc,DNS:${host}.${NAMESPACE}.svc.cluster.local"
   DAYS_VALID="3650"
   TEMP_PW="temp_password"
