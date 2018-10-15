@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.BodyMatcher;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
@@ -182,7 +183,7 @@ public class ConfigMapHelperTest {
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptConfigMapStep));
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadConfigMap() {
+  private CallTestSupport.CannedResponse expectReadConfigMap() {
     return testSupport
         .createCannedResponse("readConfigMap")
         .withNamespace(DOMAIN_NS)
@@ -194,7 +195,7 @@ public class ConfigMapHelperTest {
     expectCreateConfigMap(expectedConfig).returning(expectedConfig);
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateConfigMap(V1ConfigMap expectedConfig) {
+  private CallTestSupport.CannedResponse expectCreateConfigMap(V1ConfigMap expectedConfig) {
     return testSupport
         .createCannedResponse("createConfigMap")
         .withNamespace(DOMAIN_NS)
@@ -206,7 +207,7 @@ public class ConfigMapHelperTest {
     expectReplaceConfigMap(expectedConfig).returning(expectedConfig);
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReplaceConfigMap(V1ConfigMap expectedConfig) {
+  private CallTestSupport.CannedResponse expectReplaceConfigMap(V1ConfigMap expectedConfig) {
     return testSupport
         .createCannedResponse("replaceConfigMap")
         .withNamespace(DOMAIN_NS)

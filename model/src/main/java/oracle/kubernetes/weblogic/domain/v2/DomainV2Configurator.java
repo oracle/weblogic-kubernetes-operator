@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
+
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -11,10 +14,8 @@ import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
-public class DomainV2Configurator implements DomainConfigurator {
-  private Domain domain;
+public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator createFor(Domain domain) {
@@ -22,7 +23,7 @@ public class DomainV2Configurator implements DomainConfigurator {
   }
 
   public DomainV2Configurator(Domain domain) {
-    this.domain = domain;
+    super(domain);
   }
 
   @Override
@@ -33,21 +34,6 @@ public class DomainV2Configurator implements DomainConfigurator {
 
   @Override
   public void withDefaultReplicaCount(int replicas) {}
-
-  @Override
-  public void withDefaultImage(String image) {
-    getDomainSpec().setImage(image);
-  }
-
-  @Override
-  public void withDefaultImagePullPolicy(String imagepullpolicy) {
-    getDomainSpec().setImagePullPolicy(imagepullpolicy);
-  }
-
-  @Override
-  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
-    getDomainSpec().setImagePullSecret(secretReference);
-  }
 
   @Override
   public void withDefaultReadinessProbeSettings(
@@ -88,10 +74,6 @@ public class DomainV2Configurator implements DomainConfigurator {
     if (adminServer != null) return adminServer;
 
     return createAdminServer();
-  }
-
-  private DomainSpec getDomainSpec() {
-    return domain.getSpec();
   }
 
   private AdminServer createAdminServer() {
@@ -205,6 +187,11 @@ public class DomainV2Configurator implements DomainConfigurator {
     Cluster cluster = new Cluster().withClusterName(clusterName);
     getDomainSpec().getClusters().add(cluster);
     return cluster;
+  }
+
+  @Override
+  public void setShuttingDown(boolean shuttingDown) {
+    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {

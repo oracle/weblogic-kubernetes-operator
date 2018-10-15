@@ -52,6 +52,7 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.helpers.StorageHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -60,7 +61,7 @@ import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
-import oracle.kubernetes.operator.steps.DomainPrescenceStep;
+import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
 import oracle.kubernetes.operator.steps.ListPersistentVolumeClaimStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
@@ -610,23 +611,7 @@ public class Main {
     String ns = dom.getMetadata().getNamespace();
     if (!isNamespaceStopping(ns).get()) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
-      Step managedServerStrategy =
-          bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(null));
-      Step adminServerStrategy =
-          bringAdminServerUp(connectToAdminAndInspectDomain(managedServerStrategy));
-
-      Step strategy =
-          DomainStatusUpdater.createProgressingStep(
-              DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
-              true,
-              new DomainPrescenceStep(adminServerStrategy, managedServerStrategy));
-
-      Packet p = new Packet();
-
-      PodWatcher pw = podWatchers.get(ns);
-      p.getComponents()
-          .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
-      p.put(ProcessingConstants.PRINCIPAL, principal);
+      Step.StepAndPacket plan = createDomainUpPlan(info, ns);
 
       CompletionCallback cc =
           new CompletionCallback() {
@@ -643,7 +628,7 @@ public class Main {
                   domainUID,
                   Fiber.getCurrentIfSet(),
                   DomainStatusUpdater.createFailedStep(throwable, null),
-                  p,
+                  plan.packet,
                   new CompletionCallback() {
                     @Override
                     public void onCompletion(Packet packet) {
@@ -666,9 +651,9 @@ public class Main {
           };
 
       if (isWillInterrupt) {
-        FIBER_GATE.startFiber(domainUID, strategy, p, cc);
+        FIBER_GATE.startFiber(domainUID, plan.step, plan.packet, cc);
       } else {
-        FIBER_GATE.startFiberIfNoCurrentFiber(domainUID, strategy, p, cc);
+        FIBER_GATE.startFiberIfNoCurrentFiber(domainUID, plan.step, plan.packet, cc);
       }
 
       scheduleDomainStatusUpdating(info);
@@ -676,17 +661,40 @@ public class Main {
     LOGGER.exiting();
   }
 
-  // pre-conditions: DomainPresenceInfo SPI
-  // "principal"
-  private static Step bringAdminServerUp(Step next) {
-    return new ListPersistentVolumeClaimStep(
-        PodHelper.createAdminPodStep(
-            new BeforeAdminServiceStep(ServiceHelper.createForServerStep(next))));
+  static Step.StepAndPacket createDomainUpPlan(DomainPresenceInfo info, String ns) {
+    PodWatcher pw = podWatchers.get(ns);
+    Step managedServerStrategy =
+        bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(null));
+    Step adminServerStrategy = bringAdminServerUp(info, managedServerStrategy);
+
+    Step strategy =
+        DomainStatusUpdater.createProgressingStep(
+            DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
+            true,
+            DomainPresenceStep.createDomainPresenceStep(
+                info, adminServerStrategy, managedServerStrategy));
+
+    Packet p = new Packet();
+    p.getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
+    p.put(ProcessingConstants.PRINCIPAL, principal);
+
+    return new Step.StepAndPacket(strategy, p);
   }
 
-  private static Step connectToAdminAndInspectDomain(Step next) {
-    return new WatchPodReadyAdminStep(
-        podWatchers, WlsRetriever.readConfigStep(new ExternalAdminChannelsStep(next)));
+  // pre-conditions: DomainPresenceInfo SPI
+  // "principal"
+  private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
+    return StorageHelper.insertStorageSteps(
+        info,
+        Step.chain(
+            new ListPersistentVolumeClaimStep(null),
+            PodHelper.createAdminPodStep(null),
+            new BeforeAdminServiceStep(null),
+            ServiceHelper.createForServerStep(null),
+            new WatchPodReadyAdminStep(podWatchers, null),
+            WlsRetriever.readConfigStep(null),
+            new ExternalAdminChannelsStep(next)));
   }
 
   private static Step bringManagedServersUp(Step next) {

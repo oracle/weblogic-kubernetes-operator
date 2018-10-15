@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
 import java.io.IOException;
 import java.net.URL;
@@ -38,6 +39,7 @@ public abstract class DomainTestBase {
   private static final String VALUE2 = "value2";
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
   private static final int AS_PORT = 8000;
+  private static final String NS = "test-namespace";
   private static final String DOMAIN_NAME = "test";
   private static final String DOMAIN_UID = "uid1";
   private static final String DOMAIN_V1_SAMPLE_YAML = "v1/domain-sample.yaml";
@@ -48,6 +50,7 @@ public abstract class DomainTestBase {
   protected static final String SERVER1 = "ms1";
   protected final Domain domain =
       new Domain()
+          .withMetadata(new V1ObjectMeta().namespace(NS))
           .withSpec(
               new DomainSpec()
                   .withAdminSecret(SECRET)
@@ -57,6 +60,14 @@ public abstract class DomainTestBase {
                   .withDomainUID(DOMAIN_UID));
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
+
+  protected static String getDomainUid() {
+    return DOMAIN_UID;
+  }
+
+  protected static String getNamespace() {
+    return NS;
+  }
 
   @Test
   public void canGetAdminServerInfoFromDomain() {

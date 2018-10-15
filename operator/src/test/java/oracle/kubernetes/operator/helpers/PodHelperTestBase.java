@@ -63,6 +63,7 @@ import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.BodyMatcher;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -132,7 +133,7 @@ public abstract class PodHelperTestBase {
     return serverName;
   }
 
-  protected DomainConfigurator getConfigurator() {
+  DomainConfigurator getConfigurator() {
     return configurator;
   }
 
@@ -188,7 +189,7 @@ public abstract class PodHelperTestBase {
     TuningParametersStub.namedParameters.put(name, value);
   }
 
-  AsyncCallTestSupport.CannedResponse expectCreatePod(BodyMatcher bodyMatcher) {
+  CallTestSupport.CannedResponse expectCreatePod(BodyMatcher bodyMatcher) {
     return testSupport.createCannedResponse("createPod").withNamespace(NS).withBody(bodyMatcher);
   }
 
@@ -370,6 +371,19 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenDomainSpecifiesClaimName_podSpecUsesIt() {
+    configurator.withPredefinedClaim("predefined");
+    domainPresenceInfo
+        .getClaims()
+        .addItemsItem(
+            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
+
+    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
+
+    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("predefined"));
+  }
+
+  @Test
   public void createdPod_hasCredentialsVolume() {
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CREDENTIALS_VOLUME_NAME);
 
@@ -416,7 +430,7 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("getCreatedPodSpecContainer is returing null because Pod is not yet created")
+  @Ignore("Ignored: getCreatedPodSpecContainer is returing null because Pod is not yet created")
   public void whenPodCreated_containerUsesListenPort() {
     V1Container v1Container = getCreatedPodSpecContainer();
 
@@ -451,7 +465,7 @@ public abstract class PodHelperTestBase {
     return new V1PersistentVolumeList().items(Collections.singletonList(pv));
   }
 
-  AsyncCallTestSupport.CannedResponse<V1PersistentVolumeList> expectListPersistentVolume() {
+  CallTestSupport.CannedResponse expectListPersistentVolume() {
     return testSupport
         .createCannedResponse("listPersistentVolume")
         .withLabelSelectors("weblogic.domainUID=" + UID);

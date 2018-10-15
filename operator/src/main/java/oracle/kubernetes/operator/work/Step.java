@@ -197,7 +197,7 @@ public abstract class Step {
     return na;
   }
 
-  protected Step getNext() {
+  public Step getNext() {
     return next;
   }
 
