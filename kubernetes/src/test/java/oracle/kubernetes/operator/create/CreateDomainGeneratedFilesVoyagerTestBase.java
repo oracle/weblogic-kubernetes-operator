@@ -23,6 +23,7 @@ import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
 import io.kubernetes.client.models.V1beta1RoleBinding;
 import oracle.kubernetes.operator.utils.DomainYamlFactory;
 import org.apache.commons.codec.binary.Base64;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -40,46 +41,54 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
 
   @Test
   @Override
+  @Ignore
   public void generatesCorrect_loadBalancerDeployment() {
     assertThat(getActualVoyagerDeployment(), yamlEqualTo(getExpectedVoyagerDeployment()));
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerSecret() {
     assertThat(getActualVoyagerSecret(), yamlEqualTo(getExpectedVoyagerSecret()));
   }
 
   @Test
   @Override
+  @Ignore
   public void generatesCorrect_loadBalancerService() {
     assertThat(getActualVoyagerService(), yamlEqualTo(getExpectedVoyagerService()));
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerAPIService() {
     assertThat(getActualVoyagerAPIService(), yamlEqualTo(getExpectedVoyagerAPIService()));
   }
 
   @Test
   @Override
+  @Ignore
   public void generatesCorrect_loadBalancerServiceAccount() {
     assertThat(getActualVoyagerServiceAccount(), yamlEqualTo(getExpectedVoyagerServiceAccount()));
   }
 
   @Test
   @Override
+  @Ignore
   public void generatesCorrect_loadBalancerClusterRole() {
     assertThat(getActualVoyagerClusterRole(), yamlEqualTo(getExpectedVoyagerClusterRole()));
   }
 
   @Test
   @Override
+  @Ignore
   public void generatesCorrect_loadBalancerClusterRoleBinding() {
     assertThat(
         getActualVoyagerClusterRoleBinding(), yamlEqualTo(getExpectedVoyagerClusterRoleBinding()));
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerAuthenticationReaderRoleBinding() {
     assertThat(
         getActualVoyagerAuthenticationReaderRoleBinding(),
@@ -87,6 +96,7 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerAuthDelegatorClusterRoleBinding() {
     assertThat(
         getActualVoyagerAuthDelegatorClusterRoleBinding(),
@@ -94,6 +104,7 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerAppsCodeEditClusterRole() {
     assertThat(
         getActualVoyagerAppsCodeEditClusterRole(),
@@ -101,6 +112,7 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerAppsCodeVidwClusterRole() {
     assertThat(
         getActualVoyagerAppsCodeViewClusterRole(),
@@ -108,11 +120,13 @@ public abstract class CreateDomainGeneratedFilesVoyagerTestBase
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerIngress() {
     assertThat(getActualVoyagerIngress(), yamlEqualTo(getExpectedVoyagerIngress()));
   }
 
   @Test
+  @Ignore
   public void generatesCorrect_loadBalancerService1() {
     assertThat(getActualVoyagerIngressService(), yamlEqualTo(getExpectedVoyagerIngressService()));
   }
