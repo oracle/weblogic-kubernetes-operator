@@ -55,6 +55,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -148,7 +149,7 @@ public class ServiceHelperTest {
     assertThat(sko.getService().get(), nullValue());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectDeleteServiceCall() {
+  private CallTestSupport.CannedResponse expectDeleteServiceCall() {
     return testSupport
         .createCannedResponse("deleteService")
         .withName(SERVICE_NAME)
@@ -317,7 +318,7 @@ public class ServiceHelperTest {
     assertThat(logRecords, containsInfo(CLUSTER_SERVICE_REPLACED));
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadClusterService() {
+  private CallTestSupport.CannedResponse expectReadClusterService() {
     return expectReadService(getClusterServiceName());
   }
 
@@ -349,7 +350,7 @@ public class ServiceHelperTest {
     expectCreateClusterService().returning(createClusterService());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateClusterService() {
+  private CallTestSupport.CannedResponse expectCreateClusterService() {
     return expectCreateService(createClusterService());
   }
 
@@ -371,7 +372,7 @@ public class ServiceHelperTest {
     expectDeleteService(serviceName).returning(new V1Status());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectDeleteService(String serviceName) {
+  private CallTestSupport.CannedResponse expectDeleteService(String serviceName) {
     return testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
@@ -541,11 +542,11 @@ public class ServiceHelperTest {
     expectCreateService(service).returning(service);
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateServerService() {
+  private CallTestSupport.CannedResponse expectCreateServerService() {
     return expectCreateService(createServerService());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateService(V1Service service) {
+  private CallTestSupport.CannedResponse expectCreateService(V1Service service) {
     return testSupport.createCannedResponse("createService").withNamespace(NS).withBody(service);
   }
 
@@ -622,7 +623,7 @@ public class ServiceHelperTest {
     return service;
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadExternalChannelService() {
+  private CallTestSupport.CannedResponse expectReadExternalChannelService() {
     return expectReadService(getExternalChannelServiceName());
   }
 
@@ -674,7 +675,7 @@ public class ServiceHelperTest {
                 new V1ServicePort().port(TEST_PORT).nodePort(TEST_NODE_PORT)));
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadService(String serviceName) {
+  private CallTestSupport.CannedResponse expectReadService(String serviceName) {
     return testSupport.createCannedResponse("readService").withNamespace(NS).withName(serviceName);
   }
 }

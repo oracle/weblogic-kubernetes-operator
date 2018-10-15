@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
+
 import io.kubernetes.client.models.V1LocalObjectReference;
 import java.util.Collections;
 import java.util.Optional;
@@ -14,8 +17,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
 /** An implementation of the domain configuration for the version 1 domain. */
-public class DomainV1Configurator implements DomainConfigurator {
-  private Domain domain;
+public class DomainV1Configurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator createFor(Domain domain) {
@@ -28,37 +30,55 @@ public class DomainV1Configurator implements DomainConfigurator {
    * @param domain the domain to be configured
    */
   public DomainV1Configurator(Domain domain) {
-    this.domain = domain;
+    super(domain);
   }
 
   @Override
   public void defineAdminServer(String adminServerName) {
-    domain.getSpec().setAsName(adminServerName);
+    getDomainSpec().setAsName(adminServerName);
   }
 
   @Override
   public void defineAdminServer(String adminServerName, int port) {
-    domain.getSpec().withAsName(adminServerName).setAsPort(port);
+    getDomainSpec().withAsName(adminServerName).setAsPort(port);
   }
 
   @Override
   public void withDefaultReplicaCount(int replicas) {
-    domain.getSpec().setReplicas(replicas);
+    getDomainSpec().setReplicas(replicas);
   }
 
   @Override
   public void withDefaultImage(String image) {
-    domain.getSpec().setImage(image);
+    getDomainSpec().setImage(image);
   }
 
   @Override
   public void withDefaultImagePullPolicy(String imagepullpolicy) {
-    domain.getSpec().setImagePullPolicy(imagepullpolicy);
+    getDomainSpec().setImagePullPolicy(imagepullpolicy);
   }
 
   @Override
   public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
-    domain.getSpec().setImagePullSecret(secretReference);
+    getDomainSpec().setImagePullSecret(secretReference);
+  }
+
+  @Override
+  public DomainConfigurator withPredefinedClaim(String claimName) {
+    getDomainSpec().setStorage(DomainStorage.createPredefinedClaim(claimName));
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withHostPathStorage(String path) {
+    getDomainSpec().setStorage(DomainStorage.createHostPathStorage(path));
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withStorageSize(String size) {
+    getDomainSpec().getStorage().setStorageSize(size);
+    return this;
   }
 
   @Override
@@ -75,7 +95,7 @@ public class DomainV1Configurator implements DomainConfigurator {
 
   @Override
   public DomainConfigurator setStartupControl(String startupControl) {
-    domain.getSpec().setStartupControl(startupControl);
+    getDomainSpec().setStartupControl(startupControl);
     return this;
   }
 
@@ -86,7 +106,7 @@ public class DomainV1Configurator implements DomainConfigurator {
 
   @Override
   public ServerConfigurator configureAdminServer() {
-    return configureServer(domain.getAsName());
+    return configureServer(getAsName());
   }
 
   @Override
@@ -97,12 +117,12 @@ public class DomainV1Configurator implements DomainConfigurator {
   @SuppressWarnings("deprecation")
   private ServerStartup getOrCreateServerStartup(@Nonnull String serverName) {
     for (ServerStartup startup :
-        Optional.ofNullable(domain.getSpec().getServerStartup()).orElse(Collections.emptyList())) {
+        Optional.ofNullable(getDomainSpec().getServerStartup()).orElse(Collections.emptyList())) {
       if (serverName.equals(startup.getServerName())) return startup;
     }
 
     ServerStartup serverStartup = new ServerStartup().withServerName(serverName);
-    domain.getSpec().addServerStartupItem(serverStartup);
+    getDomainSpec().addServerStartupItem(serverStartup);
     return serverStartup;
   }
 
@@ -111,15 +131,20 @@ public class DomainV1Configurator implements DomainConfigurator {
     return new ClusterStartupConfigurator(getOrCreateClusterStartup(clusterName));
   }
 
+  @Override
+  public void setShuttingDown(boolean shuttingDown) {
+    getDomainSpec().setStartupControl(shuttingDown ? NONE_STARTUPCONTROL : AUTO_STARTUPCONTROL);
+  }
+
   @SuppressWarnings("deprecation")
   private ClusterStartup getOrCreateClusterStartup(String clusterName) {
     for (ClusterStartup startup :
-        Optional.ofNullable(domain.getSpec().getClusterStartup()).orElse(Collections.emptyList())) {
+        Optional.ofNullable(getDomainSpec().getClusterStartup()).orElse(Collections.emptyList())) {
       if (clusterName.equals(startup.getClusterName())) return startup;
     }
 
     ClusterStartup startup = new ClusterStartup().withClusterName(clusterName);
-    domain.getSpec().addClusterStartupItem(startup);
+    getDomainSpec().addClusterStartupItem(startup);
     return startup;
   }
 

@@ -4,13 +4,9 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.HealthCheckHelperTest.AccessReviewCallFactoryStub.expectAccessCheck;
-import static oracle.kubernetes.operator.HealthCheckHelperTest.AccessReviewCallFactoryStub.setMayAccessCluster;
-import static oracle.kubernetes.operator.HealthCheckHelperTest.AccessReviewCallFactoryStub.setMayAccessNamespace;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
@@ -30,15 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 
-import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeList;
-import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1ResourceAttributes;
 import io.kubernetes.client.models.V1ResourceRule;
 import io.kubernetes.client.models.V1SelfSubjectAccessReview;
@@ -49,20 +37,14 @@ import io.kubernetes.client.models.VersionInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
-import oracle.kubernetes.operator.helpers.SynchronousCallFactory;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -120,8 +102,6 @@ public class HealthCheckHelperTest {
   private static final List<Operation> READ_UPDATE_OPERATIONS =
       Arrays.asList(get, list, watch, update, patch);
 
-  private static final String DOMAIN_UID_LABEL = "weblogic.domainUID";
-  private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
   private static final String POD_LOGS = "pods/logs";
   private static final String DOMAINS = "domains//weblogic.oracle";
   private static final String NAMESPACES = "namespaces";
@@ -133,12 +113,15 @@ public class HealthCheckHelperTest {
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
+  private CallTestSupport testSupport = new CallTestSupport();
+  private AccessChecks accessChecks = new AccessChecks();
 
   @Before
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
     mementos.add(consoleControl);
     mementos.add(ClientFactoryStub.install());
+    mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
   @After
@@ -147,50 +130,26 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMajorVersionLessThanOne_returnVersionZeroZero() throws Exception {
+  public void whenK8sMajorVersionLessThanOne_returnVersionZeroZero() {
     ignoreMessage(K8S_MIN_VERSION_CHECK_FAILED);
     specifyK8sVersion("0", "", "");
 
     assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(0, 0));
   }
 
-  private void specifyK8sVersion(String majorVersion, String minorVersion, String gitVersion)
-      throws NoSuchFieldException {
-    VersionCodeCallFactoryStub callFactory =
-        VersionCodeCallFactoryStub.create(majorVersion, minorVersion, gitVersion);
-    mementos.add(VersionCodeCallFactoryStub.install(callFactory));
+  @SuppressWarnings("unchecked")
+  private void specifyK8sVersion(String majorVersion, String minorVersion, String gitVersion) {
+    testSupport
+        .createCannedResponse("getVersion")
+        .returning(createVersionInfo(majorVersion, minorVersion, gitVersion));
   }
 
-  abstract static class VersionCodeCallFactoryStub implements SynchronousCallFactory {
-    private final VersionInfo versionInfo;
-
-    VersionCodeCallFactoryStub(String majorVersion, String minorVersion, String gitVersion) {
-      versionInfo = setVersionInfo(majorVersion, minorVersion, gitVersion);
-    }
-
-    private VersionInfo setVersionInfo(
-        String majorVersion, String minorVersion, String gitVersion) {
-      VersionInfo versionInfo;
-      versionInfo = new VersionInfo().major(majorVersion).minor(minorVersion);
-      versionInfo.setGitVersion(majorVersion + "." + minorVersion + "." + gitVersion);
-      return versionInfo;
-    }
-
-    private static Memento install(VersionCodeCallFactoryStub callFactory)
-        throws NoSuchFieldException {
-      return StaticStubSupport.install(CallBuilder.class, "CALL_FACTORY", callFactory);
-    }
-
-    private static VersionCodeCallFactoryStub create(
-        String majorVersion, String minorVersion, String gitVersion) {
-      return createStrictStub(
-          VersionCodeCallFactoryStub.class, majorVersion, minorVersion, gitVersion);
-    }
-
-    @Override
-    public VersionInfo getVersionCode(ApiClient client) throws ApiException {
-      return versionInfo;
-    }
+  private static VersionInfo createVersionInfo(
+      String majorVersion, String minorVersion, String gitVersion) {
+    VersionInfo versionInfo;
+    versionInfo = new VersionInfo().major(majorVersion).minor(minorVersion);
+    versionInfo.setGitVersion(majorVersion + "." + minorVersion + "." + gitVersion);
+    return versionInfo;
   }
 
   private void ignoreMessage(String message) {
@@ -202,7 +161,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMajorVersionLessThanOne_warnOfVersionTooLow() throws Exception {
+  public void whenK8sMajorVersionLessThanOne_warnOfVersionTooLow() {
     specifyK8sVersion("0", "", "");
 
     HealthCheckHelper.performK8sVersionCheck();
@@ -211,7 +170,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test // todo this doesn't seem correct behavior; shouldn't it return (2, 7)?
-  public void whenK8sMajorVersionGreaterThanOne_returnVersionTwoZero() throws Exception {
+  public void whenK8sMajorVersionGreaterThanOne_returnVersionTwoZero() {
     ignoreMessage(K8S_VERSION_CHECK);
 
     specifyK8sVersion("2", "7", "");
@@ -220,7 +179,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMajorVersionGreaterThanOne_logGitVersion() throws Exception {
+  public void whenK8sMajorVersionGreaterThanOne_logGitVersion() {
     specifyK8sVersion("2", "", "");
 
     HealthCheckHelper.performK8sVersionCheck();
@@ -229,7 +188,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMinorLessThanSeven_warnOfVersionTooLow() throws Exception {
+  public void whenK8sMinorLessThanSeven_warnOfVersionTooLow() {
     specifyK8sVersion("1", "6+", "");
 
     HealthCheckHelper.performK8sVersionCheck();
@@ -238,7 +197,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMinorGreaterThanSeven_returnVersionObject() throws Exception {
+  public void whenK8sMinorGreaterThanSeven_returnVersionObject() {
     ignoreMessage(K8S_VERSION_CHECK);
     specifyK8sVersion("1", "8", "3");
 
@@ -246,7 +205,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMinorGreaterThanSeven_logGitVersion() throws Exception {
+  public void whenK8sMinorGreaterThanSeven_logGitVersion() {
     specifyK8sVersion("1", "8", "3");
 
     HealthCheckHelper.performK8sVersionCheck();
@@ -255,8 +214,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMinorEqualSevenAndGitVersionThirdFieldLessThanFive_warnOfVersionTooLow()
-      throws Exception {
+  public void whenK8sMinorEqualSevenAndGitVersionThirdFieldLessThanFive_warnOfVersionTooLow() {
     specifyK8sVersion("1", "7", "1+coreos.0");
 
     HealthCheckHelper.performK8sVersionCheck();
@@ -265,113 +223,12 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenK8sMinorEqualSevenAndGitVersionThirdFieldAtLeastFive_logGitVersion()
-      throws Exception {
+  public void whenK8sMinorEqualSevenAndGitVersionThirdFieldAtLeastFive_logGitVersion() {
     specifyK8sVersion("1", "7", "5+coreos.0");
 
     HealthCheckHelper.performK8sVersionCheck();
 
     assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  abstract static class DomainListCallFactoryStub implements SynchronousCallFactory {
-    private static DomainListCallFactoryStub callFactory;
-    private Map<String, DomainList> namespacesToDomains = new HashMap<>();
-    private List<V1PersistentVolume> persistentVolumes = new ArrayList<>();
-
-    static Memento install() throws NoSuchFieldException {
-      callFactory = createStrictStub(DomainListCallFactoryStub.class);
-      return StaticStubSupport.install(CallBuilder.class, "CALL_FACTORY", callFactory);
-    }
-
-    static void defineDomainUids(String namespace, String... uids) {
-      callFactory.namespacesToDomains.put(namespace, createDomainList(uids));
-      for (String uid : uids) callFactory.persistentVolumes.add(createPersistentVolume(uid));
-    }
-
-    private static V1PersistentVolume createPersistentVolume(String uid) {
-      return new V1PersistentVolume()
-          .metadata(createUidMetadata(uid))
-          .spec(createPersistentVolumeSpec());
-    }
-
-    private static V1ObjectMeta createUidMetadata(String uid) {
-      return new V1ObjectMeta().labels(ImmutableMap.of(DOMAIN_UID_LABEL, uid));
-    }
-
-    private static V1PersistentVolumeSpec createPersistentVolumeSpec() {
-      return new V1PersistentVolumeSpec().accessModes(singletonList(READ_WRITE_MANY_ACCESS));
-    }
-
-    private static DomainList createDomainList(String[] uids) {
-      List<Domain> domains = new ArrayList<>();
-      for (int i = 0; i < uids.length; i++) {
-        domains.add(createDomain(i + 1, uids[i]));
-      }
-
-      return new DomainList().withItems(domains);
-    }
-
-    private static Domain createDomain(int i, String uid) {
-      return new Domain()
-          .withSpec(new DomainSpec().withDomainUID(uid))
-          .withMetadata(new V1ObjectMeta().name("domain" + i));
-    }
-
-    @Override
-    public V1PersistentVolumeList listPersistentVolumes(
-        ApiClient client,
-        String pretty,
-        String _continue,
-        String fieldSelector,
-        Boolean includeUninitialized,
-        String labelSelector,
-        Integer limit,
-        String resourceVersion,
-        Integer timeoutSeconds,
-        Boolean watch)
-        throws ApiException {
-      return new V1PersistentVolumeList().items(persistentVolumes);
-    }
-
-    @Override
-    public DomainList getDomainList(
-        ApiClient client,
-        String namespace,
-        String pretty,
-        String _continue,
-        String fieldSelector,
-        Boolean includeUninitialized,
-        String labelSelector,
-        Integer limit,
-        String resourceVersion,
-        Integer timeoutSeconds,
-        Boolean watch)
-        throws ApiException {
-      return Optional.ofNullable(namespacesToDomains.get(namespace))
-          .orElse(new DomainList().withItems(Collections.emptyList()));
-    }
-
-    static void removePersistentVolume(String uid) {
-      callFactory.persistentVolumes.removeIf(volume -> hasUid(volume, uid));
-    }
-
-    private static boolean hasUid(V1PersistentVolume volume, String uid) {
-      return volume.getMetadata().getLabels().get(DOMAIN_UID_LABEL).equals(uid);
-    }
-
-    static void setPersistentVolumeReadOnly(String uid) {
-      callFactory
-          .persistentVolumes
-          .stream()
-          .filter(volume -> hasUid(volume, uid))
-          .forEach(DomainListCallFactoryStub::setReadOnly);
-    }
-
-    private static void setReadOnly(V1PersistentVolume volume) {
-      volume.getSpec().setAccessModes(Collections.emptyList());
-    }
   }
 
   @Test
@@ -383,11 +240,10 @@ public class HealthCheckHelperTest {
       HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
     }
 
-    assertThat(AccessReviewCallFactoryStub.getExpectedAccessChecks(), empty());
+    assertThat(accessChecks.getExpectedAccessChecks(), empty());
   }
 
-  private void expectAccessChecks() throws NoSuchFieldException, ApiException {
-    mementos.add(AccessReviewCallFactoryStub.install());
+  private void expectAccessChecks() throws NoSuchFieldException {
     TARGET_NAMESPACES.forEach(this::expectAccessReviewsByNamespace);
     expectClusterAccessChecks();
   }
@@ -395,7 +251,10 @@ public class HealthCheckHelperTest {
   @Test
   public void whenRulesReviewNotSupportedAndNoNamespaceAccess_logWarning() throws Exception {
     expectAccessChecks();
-    setMayAccessNamespace(false);
+    accessChecks.setMayAccessNamespace(false);
+    testSupport
+        .createCannedResponse("selfSubjectAccessReview")
+        .computingResult(accessChecks::computeResponse);
 
     for (String ns : TARGET_NAMESPACES) {
       HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
@@ -407,7 +266,10 @@ public class HealthCheckHelperTest {
   @Test
   public void whenRulesReviewNotSupportedAndNoClusterAccess_logWarning() throws Exception {
     expectAccessChecks();
-    setMayAccessCluster(false);
+    accessChecks.setMayAccessCluster(false);
+    testSupport
+        .createCannedResponse("selfSubjectAccessReview")
+        .computingResult(accessChecks::computeResponse);
 
     for (String ns : TARGET_NAMESPACES) {
       HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
@@ -418,7 +280,7 @@ public class HealthCheckHelperTest {
 
   @Test
   public void whenRulesReviewSupported_accessGrantedForEverything() throws Exception {
-    mementos.add(AccessReviewCallFactoryStub.install());
+    expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
       HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
@@ -427,14 +289,21 @@ public class HealthCheckHelperTest {
 
   @Test
   public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() throws Exception {
-    mementos.add(AccessReviewCallFactoryStub.install());
-    setMayAccessNamespace(false);
+    accessChecks.setMayAccessNamespace(false);
+    expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
       HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
     }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
+  }
+
+  private void expectSelfSubjectRulesReview() {
+    testSupport
+        .createCannedResponse("selfSubjectRulesReview")
+        .ignoringBody()
+        .returning(new V1SelfSubjectRulesReview().status(accessChecks.createRulesStatus()));
   }
 
   private void expectAccessReviewsByNamespace(String namespace) {
@@ -467,34 +336,31 @@ public class HealthCheckHelperTest {
     expectAccessCheck(null, resource, operation);
   }
 
-  abstract static class AccessReviewCallFactoryStub
-      implements oracle.kubernetes.operator.helpers.SynchronousCallFactory {
-    private static AccessReviewCallFactoryStub callFactory;
+  private void expectAccessCheck(String namespace, String resource, Operation operation) {
+    accessChecks.expectAccessCheck(namespace, resource, operation);
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  static class AccessChecks {
 
     private List<V1ResourceAttributes> expectedAccessChecks = new ArrayList<>();
     private boolean mayAccessNamespace = true;
     private boolean mayAccessCluster = true;
 
-    static Memento install() throws NoSuchFieldException {
-      callFactory = createStrictStub(AccessReviewCallFactoryStub.class);
-      return StaticStubSupport.install(CallBuilder.class, "CALL_FACTORY", callFactory);
+    private void expectAccessCheck(String namespace, String resource, Operation operation) {
+      this.expectedAccessChecks.add(createResourceAttributes(namespace, resource, operation));
     }
 
-    static void setMayAccessNamespace(boolean mayAccessNamespace) {
-      callFactory.mayAccessNamespace = mayAccessNamespace;
+    void setMayAccessNamespace(boolean mayAccessNamespace) {
+      this.mayAccessNamespace = mayAccessNamespace;
     }
 
-    static void setMayAccessCluster(boolean mayAccessCluster) {
-      callFactory.mayAccessCluster = mayAccessCluster;
+    void setMayAccessCluster(boolean mayAccessCluster) {
+      this.mayAccessCluster = mayAccessCluster;
     }
 
-    static void expectAccessCheck(String namespace, String resource, Operation operation) {
-      callFactory.expectedAccessChecks.add(
-          createResourceAttributes(namespace, resource, operation));
-    }
-
-    static List<V1ResourceAttributes> getExpectedAccessChecks() {
-      return Collections.unmodifiableList(callFactory.expectedAccessChecks);
+    List<V1ResourceAttributes> getExpectedAccessChecks() {
+      return Collections.unmodifiableList(expectedAccessChecks);
     }
 
     private static V1ResourceAttributes createResourceAttributes(
@@ -521,25 +387,8 @@ public class HealthCheckHelperTest {
       return split.length <= 2 ? "" : split[2];
     }
 
-    @Override
-    public V1SelfSubjectAccessReview createSelfSubjectAccessReview(
-        ApiClient client, V1SelfSubjectAccessReview body, String pretty) throws ApiException {
-      V1ResourceAttributes resourceAttributes = body.getSpec().getResourceAttributes();
-      boolean allowed = isAllowedByDefault(resourceAttributes);
-      if (!expectedAccessChecks.remove(resourceAttributes)) allowed = false;
-
-      body.setStatus(new V1SubjectAccessReviewStatus().allowed(allowed));
-      return body;
-    }
-
     private boolean isAllowedByDefault(V1ResourceAttributes resourceAttributes) {
       return resourceAttributes.getNamespace() == null ? mayAccessCluster : mayAccessNamespace;
-    }
-
-    @Override
-    public V1SelfSubjectRulesReview createSelfSubjectRulesReview(
-        ApiClient client, V1SelfSubjectRulesReview body, String pretty) throws ApiException {
-      return new V1SelfSubjectRulesReview().status(createRulesStatus());
     }
 
     private V1SubjectRulesReviewStatus createRulesStatus() {
@@ -576,7 +425,7 @@ public class HealthCheckHelperTest {
     private List<String> getApiGroups(List<String> resourceStrings) {
       return resourceStrings
           .stream()
-          .map(AccessReviewCallFactoryStub::getApiGroup)
+          .map(AccessChecks::getApiGroup)
           .distinct()
           .collect(Collectors.toList());
     }
@@ -593,6 +442,21 @@ public class HealthCheckHelperTest {
 
     private List<String> toVerbs(List<Operation> operations) {
       return operations.stream().map(Enum::name).collect(Collectors.toList());
+    }
+
+    private boolean isResourceCheckAllowed(V1SelfSubjectAccessReview body) {
+      V1ResourceAttributes resourceAttributes = body.getSpec().getResourceAttributes();
+      return isAllowedByDefault(resourceAttributes)
+          && expectedAccessChecks.remove(resourceAttributes);
+    }
+
+    private V1SelfSubjectAccessReview computeResponse(RequestParams requestParams) {
+      return computeResponse((V1SelfSubjectAccessReview) requestParams.body);
+    }
+
+    private V1SelfSubjectAccessReview computeResponse(V1SelfSubjectAccessReview body) {
+      body.setStatus(new V1SubjectAccessReviewStatus().allowed(isResourceCheckAllowed(body)));
+      return body;
     }
   }
 }
