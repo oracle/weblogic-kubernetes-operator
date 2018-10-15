@@ -1,0 +1,41 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: path-routing
+  namespace: default
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/rewrite-target: "/testwebapp"
+spec:
+  rules:
+  - host: '*'
+    http:
+      nodePort: '30307'
+      paths:
+      - path: /domain1
+        backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: '8001'
+      - path: /domain2
+        backend:
+          serviceName: domain2-cluster-cluster-1.test1
+          servicePort: '8001'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: path-routing-stats
+  labels:
+    app: voyager-stats
+spec:
+  type: NodePort
+  ports:
+    - name: client
+      protocol: TCP
+      port: 56789
+      targetPort: 56789
+      nodePort: 30317
+  selector:
+    origin: voyager
+    origin-name: path-routing
