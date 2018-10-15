@@ -167,7 +167,17 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   private String getClaimName() {
-    return getClaims().iterator().next().getMetadata().getName();
+    return Optional.ofNullable(info.getDomain().getPersistentVolumeClaimName())
+        .orElse(getDiscoveredClaim());
+  }
+
+  /**
+   * Returns the claim name of a PVC labeled with this domain's UID, if any.
+   *
+   * @return the found PVC's claim name
+   */
+  private String getDiscoveredClaim() {
+    return getClaims().isEmpty() ? null : getClaims().iterator().next().getMetadata().getName();
   }
 
   ServerKubernetesObjects getSko() {
@@ -578,7 +588,7 @@ public abstract class PodStepContext implements StepContextConstants {
     if (imagePullSecret != null) {
       podSpec.addImagePullSecretsItem(imagePullSecret);
     }
-    if (!getClaims().isEmpty()) {
+    if (getClaimName() != null) {
       podSpec.addVolumesItem(
           new V1Volume()
               .name(STORAGE_VOLUME)

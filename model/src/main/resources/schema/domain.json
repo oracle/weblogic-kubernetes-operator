@@ -22,7 +22,7 @@
      },
      "spec": {
       "description": "Specification of the desired behavior of the domain. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status",
-      "$ref": "spec.json"
+      "$ref": "resource:/schema/spec.json"
      },
      "status": {
       "description": "Most recently observed status of the domain. This data may not be up to date. Populated by the operator. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status",

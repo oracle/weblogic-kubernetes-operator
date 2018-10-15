@@ -35,6 +35,14 @@ spec:
   - name: var1
     value: value0
 
+  # Configured storage using nfs style
+  storage:
+    generated:
+      storageSize: 8Gi
+      nfs:
+        server: thatServer
+        path: /local/path
+
   adminServer:
     image: "store/oracle/weblogic:latest"
     env:

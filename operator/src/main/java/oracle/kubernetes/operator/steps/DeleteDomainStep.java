@@ -7,6 +7,8 @@ package oracle.kubernetes.operator.steps;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
+import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1IngressList;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ public class DeleteDomainStep extends Step {
     resources.add(deleteIngresses());
     resources.add(deleteServices());
     resources.add(deletePods());
+    resources.add(deletePersistentVolumes());
+    resources.add(deletePersistentVolumeClaims());
     if (isEnableDomainIntrospectorJob()) {
       resources.add(
           ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(
@@ -90,6 +94,31 @@ public class DeleteDomainStep extends Step {
     return new CallBuilder()
         .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(getNext()));
+  }
+
+  private Step deletePersistentVolumes() {
+    return new CallBuilder()
+        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .listPersistentVolumeAsync(
+            new ActionResponseStep<V1PersistentVolumeList>() {
+              @Override
+              Step createSuccessStep(V1PersistentVolumeList result, Step next) {
+                return new DeletePersistentVolumeListStep(result.getItems(), next);
+              }
+            });
+  }
+
+  private Step deletePersistentVolumeClaims() {
+    return new CallBuilder()
+        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .listPersistentVolumeClaimAsync(
+            namespace,
+            new ActionResponseStep<V1PersistentVolumeClaimList>() {
+              @Override
+              Step createSuccessStep(V1PersistentVolumeClaimList result, Step next) {
+                return new DeletePersistentVolumeClaimListStep(result.getItems(), next);
+              }
+            });
   }
 
   /**
