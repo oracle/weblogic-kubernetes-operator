@@ -27,7 +27,7 @@ function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -o Ouput directory for the generated yaml files, must be specified."
   echo "  -i Parameter input file, must be specified."
-  echo "  -e Also create the resources in the generated yaml files"
+  echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
   exit $1
@@ -318,7 +318,7 @@ function createYamlFiles {
 
   # Use the default value if not defined.
   if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=${domainUID}-weblogic-domain-pvc
+    persistentVolumeClaimName=weblogic-sample-domain-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
@@ -400,6 +400,7 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
@@ -410,6 +411,8 @@ function create_domain_configmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
+  elif [[ ! ${createDomainFilesDir} == /* ]]; then
+    createDomainFilesDir=${scriptDir}/${createDomainFilesDir}
   fi
 
   # customize the files with domain information
