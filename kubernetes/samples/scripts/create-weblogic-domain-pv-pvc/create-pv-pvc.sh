@@ -65,6 +65,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
+  domainOutputDir="${outputDir}
 
   validateOutputDir \
     ${outputDir} \
