@@ -156,7 +156,7 @@
 #
 #      Local tmp files:      RESULT_ROOT/acceptance_test_tmp/...
 #
-#      PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/domain-${domain_uid}-storage/...
+#      PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/domain-storage/...
 #
 #      Archives of above:    PV_ROOT/acceptance_test_pv_archive/...
 #                            RESULT_ROOT/acceptance_test_tmp_archive/...
@@ -995,7 +995,7 @@ function create_pv_pvc_non_helm {
 
     local inputsPvPvc="$tmp_dir/create-pv-pvc-inputs.yaml"
 
-    local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
+    local DOMAIN_STORAGE_DIR="domain-storage"
 
     cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml $inputsPvPvc
     sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
@@ -1008,14 +1008,15 @@ function create_pv_pvc_non_helm {
       sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputsPvPvc
     fi
 
-    trace "Run the script to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
+    pvPvcOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains
+    trace "Run the script to create the domain into output dir $pvPvcOutPutDir, see \"$outfile\" for tracing."
 
     local outfilePvPvc="${tmp_dir}/create-pv-pvc.sh.out"
     sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh -i $inputsPvPvc -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfilePvPvc}
-    pvOutput="${domainOutPutDir}/pv.yaml"
+    pvOutput="${pvPvcOutPutDir}/pv.yaml"
     echo Creating the pvresource using ${pvOutput}
     kubectl apply -f ${pvOutput}
-    pvcOutput="${domainOutPutDir}/pvc.yaml"
+    pvcOutput="${pvPvcOutPutDir}/pvc.yaml"
     echo Creating the pvcresource using ${pvcOutput}
     kubectl apply -f ${pvcOutput}
 }
@@ -1179,7 +1180,7 @@ function create_domain_pv_pvc_load_balancer {
 
     trace "WLS_JAVA_OPTIONS = \"$WLS_JAVA_OPTIONS\""
 
-    local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
+    local DOMAIN_STORAGE_DIR="domain-storage"
 
     trace "Create $DOMAIN_UID in $NAMESPACE namespace with load balancer $LB_TYPE"
   

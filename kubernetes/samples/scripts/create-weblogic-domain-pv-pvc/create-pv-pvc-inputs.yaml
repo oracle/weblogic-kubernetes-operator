@@ -4,12 +4,8 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-pv-pvc-inputs-v1
 
-# Name of the WebLogic domain to create
-domainName: base_domain
-
-# Unique ID identifying a domain.
-# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
-domainUID: domain1
+# The base name of the pv and pvc
+baseName: weblogic-sample-domain
 
 # Persistent volume type for the domain's storage.
 # The value must be 'HOST_PATH' or 'NFS'. 
@@ -22,7 +18,7 @@ weblogicDomainStorageType: HOST_PATH
 
 # Physical path of the domain's persistent storage.
 # The following line must be uncomment and customized:
-#weblogicDomainStoragePath: /scratch/k8s_dir/domain1
+#weblogicDomainStoragePath: /scratch/k8s_dir
 
 # Reclaim policy of the domain's persistent storage
 # The valid values are: 'Retain', 'Delete', and 'Recycle'
