@@ -1,8 +1,4 @@
 # Install and Configure Traefik
-This is to:
-* Provide detail steps how to install and uninstall Traefik operator with helm chart.
-* Provide workable Ingress samples to route workload traffic to multiple WLS domains with Traefik.
-
 ## Install Traefik Operator with Helm Chart
 Traefik helm chart is in official Charts of Helm: https://github.com/helm/charts/tree/master/stable/traefik. 
 The chart is in the default repository for Helm which is located at https://kubernetes-charts.storage.googleapis.com/ and is installed by default.
@@ -15,9 +11,9 @@ Or with a given values.yaml:
 ```
 helm install --name traefik-operator --namespace traefik --values values.yaml stable/traefik
 ```
-With dashboard enabled, you can access the Traefik dashboard with URL `http://${HOSTNAME}:30301` with http Host `traefik.example.com`.
+With dashboard enabled, you can access the Traefik dashboard with URL `http://${HOSTNAME}:30305` with http Host `traefik.example.com`.
 ```
-curl -H 'host: traefik.example.com' http://${HOSTNAME}:30301/
+curl -H 'host: traefik.example.com' http://${HOSTNAME}:30305/
 ```
 
 ## Optionally Download Traefik Helm Chart
@@ -46,8 +42,8 @@ $ kubectl create -f samples/host-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different hostname.
 ```
-$ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30301/testwebapp/
-$ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30301/testwebapp/
+$ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 #### Install Path-routing Ingress
 ```
@@ -55,8 +51,8 @@ $ kubectl create -f samples/path-routing.yaml
 ```
 Now you can send request to different WLS domains with the unique entry point of Traefik with different path.
 ```
-$ curl --silent http://${HOSTNAME}:30301/testwebapp/
-$ curl --silent http://${HOSTNAME}:30301/testwebapp1/
+$ curl --silent http://${HOSTNAME}:30305/testwebapp/
+$ curl --silent http://${HOSTNAME}:30305/testwebapp1/
 ```
 
 ## Uninstall Traefik Operator
