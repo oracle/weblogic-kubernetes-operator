@@ -2,7 +2,7 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-#  This script is to create or delete Ingress controllers.
+#  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
 
 MYDIR="$(dirname "$(readlink -f "$0")")"
 
@@ -55,7 +55,7 @@ function createTraefik() {
 
   if [ "$(helm list | grep traefik-operator |  wc -l)" = 0 ]; then
     echo "Install Traefik Operator."
-    helm install --name traefik-operator --namespace traefik --values ${MYDIR}/traefik-values.yaml stable/traefik
+    helm install --name traefik-operator --namespace traefik --values ${MYDIR}/../traefik/values.yaml stable/traefik
   else
     echo "Traefik Operator is already installed."
   fi
