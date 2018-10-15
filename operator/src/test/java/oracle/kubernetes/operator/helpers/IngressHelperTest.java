@@ -32,6 +32,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
@@ -146,7 +147,7 @@ public class IngressHelperTest {
   }
 
   private void createCannedReadResponse() {
-    AsyncCallTestSupport.CannedResponse cannedResponse =
+    CallTestSupport.CannedResponse cannedResponse =
         testSupport
             .createCannedResponse("readIngress")
             .withNamespace(NS)

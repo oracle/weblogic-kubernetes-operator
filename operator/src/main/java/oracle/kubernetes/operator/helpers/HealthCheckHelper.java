@@ -247,8 +247,7 @@ public final class HealthCheckHelper {
     int major = 0;
     int minor = 0;
     try {
-      CallBuilderFactory factory = new CallBuilderFactory();
-      info = factory.create().readVersionCode();
+      info = new CallBuilder().readVersionCode();
 
       String gitVersion = info.getGitVersion();
       major = Integer.parseInt(info.getMajor());

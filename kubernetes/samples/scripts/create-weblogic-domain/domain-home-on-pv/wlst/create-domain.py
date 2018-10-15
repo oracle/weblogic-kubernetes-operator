@@ -77,23 +77,6 @@ cmo.setPassword(admin_password)
 # ==============================================
 setOption('OverwriteDomain', 'true')
 
-# Configure the node manager
-# ==========================
-cd('/NMProperties')
-set('ListenAddress','0.0.0.0')
-set('ListenPort',5556)
-set('CrashRecoveryEnabled', 'true')
-set('NativeVersionEnabled', 'true')
-set('StartScriptEnabled', 'false')
-set('SecureListener', 'false')
-set('LogLevel', 'FINEST')
-set('DomainsDirRemoteSharingEnabled', 'true')
-
-# Set the Node Manager user name and password (domain name will change after writeDomain)
-cd('/SecurityConfiguration/base_domain')
-set('NodeManagerUsername', admin_username)
-set('NodeManagerPasswordEncrypted', admin_password)
-
 # Create a cluster
 # ======================
 cd('/')

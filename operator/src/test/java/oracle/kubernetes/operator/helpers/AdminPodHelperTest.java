@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -83,7 +83,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
   }
 
-  private AsyncCallTestSupport.CannedResponse<V1Status> expectDeletePod(String podName) {
+  private CallTestSupport.CannedResponse expectDeletePod(String podName) {
     return testSupport
         .createCannedResponse("deletePod")
         .withNamespace(NS)

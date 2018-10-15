@@ -777,6 +777,7 @@ function deploy_operator {
     echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
     echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
     echo "externalRestEnabled: true" >> $inputs
+
     trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
     echo "javaLoggingLevel: \"$LOGLEVEL_OPERATOR\"" >> $inputs
     echo "externalRestHttpsPort: ${EXTERNAL_REST_HTTPSPORT}" >>  $inputs
@@ -992,12 +993,12 @@ function create_pv_pvc_non_helm {
     local TMP_DIR="`dom_get $1 TMP_DIR`"
     local tmp_dir="$TMP_DIR"
 
-    local inputsPvPvc="$tmp_dir/create-weblogic-sample-domain-pv-pvc-inputs.yaml"
+    local inputsPvPvc="$tmp_dir/create-pv-pvc-inputs.yaml"
 
     local DOMAIN_STORAGE_DIR="domain-${DOMAIN_UID}-storage"
 
-    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc-inputs.yaml $inputsPvPvc
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml $inputsPvPvc
+    sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsPvPvc
     sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputsPvPvc
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsPvPvc
     sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputsPvPvc
@@ -1009,12 +1010,12 @@ function create_pv_pvc_non_helm {
 
     trace "Run the script to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
 
-    local outfilePvPvc="${tmp_dir}/create-weblogic-sample-domain-pv-pvc.sh.out"
-    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-weblogic-sample-domain-pv-pvc.sh -i $inputsPvPvc -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfilePvPvc}
-    pvOutput="${domainOutPutDir}/weblogic-sample-domain-pv.yaml"
+    local outfilePvPvc="${tmp_dir}/create-pv-pvc.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh -i $inputsPvPvc -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfilePvPvc}
+    pvOutput="${domainOutPutDir}/pv.yaml"
     echo Creating the pvresource using ${pvOutput}
     kubectl apply -f ${pvOutput}
-    pvcOutput="${domainOutPutDir}/weblogic-sample-domain-pvc.yaml"
+    pvcOutput="${domainOutPutDir}/pvc.yaml"
     echo Creating the pvcresource using ${pvcOutput}
     kubectl apply -f ${pvcOutput}
 }
@@ -1040,13 +1041,13 @@ function create_domain_home_on_pv_non_helm {
 
     local WEBLOGIC_CREDENTIALS_SECRET_NAME="$DOMAIN_UID-weblogic-credentials"
 
-    local inputsDomain="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+    local inputsDomain="$tmp_dir/create-domain-inputs.yaml"
 
-    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputsDomain
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml $inputsDomain
 
     # customize inputs properties
     sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputsDomain
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsDomain
+    sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsDomain
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsDomain
     sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputsDomain
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsDomain
@@ -1069,8 +1070,8 @@ function create_domain_home_on_pv_non_helm {
       sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputsDomain
     fi
 
-    local outfileDomain="${tmp_dir}/create-weblogic-sample-domain.sh.out"
-    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain.sh -i $inputsDomain -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileDomain}
+    local outfileDomain="${tmp_dir}/create-domain.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i $inputsDomain -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileDomain}
     dcrOutput="${domainOutPutDir}/domain-custom-resource.yaml"
     echo Creating the domain custom resource using ${dcrOutput}
     kubectl apply -f ${dcrOutput}
@@ -1096,13 +1097,13 @@ function create_load_balancer_non_helm {
     local TMP_DIR="`dom_get $1 TMP_DIR`"
     local tmp_dir="$TMP_DIR"
 
-    local inputsLoadBalancer="$tmp_dir/create-weblogic-sample-domain-load-balancer-inputs.yaml"
+    local inputsLoadBalancer="$tmp_dir/create-load-balancer-inputs.yaml"
 
-    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer-inputs.yaml $inputsLoadBalancer
+    cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml $inputsLoadBalancer
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputsLoadBalancer | awk '{print $2}'`
 
-    sed -i -e "s/^#domainUID:.*/domainUID: $DOMAIN_UID/" $inputsLoadBalancer
+    sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsLoadBalancer
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsLoadBalancer
     sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputsLoadBalancer
     sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputsLoadBalancer
@@ -1119,19 +1120,19 @@ function create_load_balancer_non_helm {
 
     trace "Create and start domain load balancer"
     # Setup load balancer
-    local outfileLoadBalancer="${tmp_dir}/create-weblogic-sample-domain-load-balancer.sh.out"
-    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-weblogic-sample-domain-load-balancer.sh -i $inputsLoadBalancer -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileLoadBalancer}
+    local outfileLoadBalancer="${tmp_dir}/create-load-balancer.sh.out"
+    sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer.sh -i $inputsLoadBalancer -o $USER_PROJECTS_DIR 2>&1 | opt_tee ${outfileLoadBalancer}
     if [ "${LB_TYPE}" == "TRAEFIK" ]; then
-      traefikSecurityOutput="${domainOutPutDir}/weblogic-sample-domain-traefik-security.yaml"
-      traefikOutput="${domainOutPutDir}/weblogic-sample-domain-traefik.yaml"
+      traefikSecurityOutput="${domainOutPutDir}/traefik-security.yaml"
+      traefikOutput="${domainOutPutDir}/traefik.yaml"
       echo Creating the $LB_TYPE load balancer security resource using ${traefikSecurityOutput}
       kubectl apply -f ${traefikSecurityOutput}
       echo Creating the $LB_TYPE load balancer resource using ${traefikOutput}
       kubectl apply -f ${traefikOutput}
 
     elif [ "${LB_TYPE}" == "APACHE" ]; then
-      apacheOutput="${domainOutPutDir}/weblogic-sample-domain-apache.yaml"
-      apacheSecurityOutput="${domainOutPutDir}/weblogic-sample-domain-apache-security.yaml"
+      apacheOutput="${domainOutPutDir}/apache.yaml"
+      apacheSecurityOutput="${domainOutPutDir}/apache-security.yaml"
       echo Creating the $LB_TYPE load balancer security resource using ${apacheSecurityOutput}
       kubectl apply -f ${apacheSecurityOutput}
       echo Creating the $LB_TYPE load balancer resource using ${apacheOutput}
@@ -1142,7 +1143,7 @@ function create_load_balancer_non_helm {
       echo Creating Voyager operator and ingress controller
       sh $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/start-voyager-controller.sh -p ${domainOutPutDir} 2>&1 | opt_tee ${outfileLoadBalancer}
       # start voyager ingress
-      voyagerIngressOutput="${domainOutPutDir}/weblogic-sample-domain-voyager-ingress.yaml"
+      voyagerIngressOutput="${domainOutPutDir}/voyager-ingress.yaml"
       echo Creating the $LB_TYPE load balancer resource using ${voyagerIngressOutput}
       createVoyagerIngress $voyagerIngressOutput $NAMESPACE ${DOMAIN_UID}
     fi
@@ -1193,7 +1194,7 @@ function create_domain_pv_pvc_load_balancer {
     if [ "$USE_HELM" = "true" ]; then
       cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
     else
-      cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-weblogic-sample-domain-inputs.yaml $inputs
+      cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml $inputs
     fi
 
     # accept the default domain name (i.e. don't customize it)
@@ -1283,7 +1284,7 @@ function create_domain_pv_pvc_load_balancer {
         sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputs
       fi
 
-      local outfile="${tmp_dir}/create-weblogic-sample-domain.sh.out"
+      local outfile="${tmp_dir}/create-domain.sh.out"
       trace "Run helm install to create the domain, see \"$outfile\" for tracing."
       cd $PROJECT_ROOT/kubernetes/charts
       helm install weblogic-domain --name $DOMAIN_UID -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
@@ -1291,7 +1292,7 @@ function create_domain_pv_pvc_load_balancer {
       cat $outfile
     else
       # create sample domain, including a pv and pvc, domain home on pv, and load balancer
- 
+
       domainOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains/${DOMAIN_UID}
       trace "Run the sample scripts to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
 
@@ -1300,6 +1301,7 @@ function create_domain_pv_pvc_load_balancer {
       create_pv_pvc_non_helm $@
 
       # Create  sample domain home on pv 
+
       trace "Create the domain home, and start domain resources"
       create_domain_home_on_pv_non_helm $@
 

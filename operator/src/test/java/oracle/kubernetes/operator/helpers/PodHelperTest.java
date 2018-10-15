@@ -23,6 +23,7 @@ import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -83,7 +84,7 @@ public class PodHelperTest {
     MatcherAssert.assertThat(sko.getPod().get(), nullValue());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectDeletePodCall() {
+  private CallTestSupport.CannedResponse expectDeletePodCall() {
     return testSupport
         .createCannedResponse("deletePod")
         .withName(POD_NAME)
