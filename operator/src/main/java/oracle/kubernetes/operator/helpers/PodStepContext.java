@@ -649,7 +649,7 @@ public abstract class PodStepContext {
   }
 
   private String getDomainHome() {
-    return "/shared/domain/" + getDomainName();
+    return "/shared/domains/" + getDomainName();
   }
 
   // Hide the admin account's user name and password.
