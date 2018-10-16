@@ -1065,7 +1065,7 @@ function create_domain_home_on_pv_non_helm {
     fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputsDomain
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputsDomain
-    sed -i -e "s/^persistentVolumeClaimName:.*/persistentVolumeClaimName: ${DOMAIN_UID}-weblogic-domain-pvc/" $inputsDomain
+    sed -i -e "s/^persistentVolumeClaimName:.*/persistentVolumeClaimName: weblogic-sample-domain-pvc/" $inputsDomain
     # we will test cluster scale up and down in domain1 and domain4 
     if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
       sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputsDomain
