@@ -50,7 +50,7 @@ spec:
             - name: DOMAIN_HOME_DIR
               value: %DOMAIN_ROOT_DIR%/domains/%DOMAIN_UID%
             - name: DOMAIN_LOGS_DIR
-              value: %DOMAIN_ROOT_DIR%/logs%
+              value: %DOMAIN_ROOT_DIR%/logs
       volumes:
         - name: delete-weblogic-sample-domain-job-cm-volume
           configMap:
