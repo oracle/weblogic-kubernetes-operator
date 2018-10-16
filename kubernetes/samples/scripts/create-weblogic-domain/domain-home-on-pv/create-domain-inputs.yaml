@@ -99,4 +99,4 @@ createDomainScriptName: create-domain-job.sh
 # the script that is specified by the createDomainScriptName property.
 # The default is the "wlst" subdirectory under the directory where the 
 # create-domain.sh script is located.
-createDomainFilesDir: wlst
+createDomainFilesDir:
