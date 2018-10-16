@@ -65,10 +65,10 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}/weblogic-domains"
+  pvPvcOutputDir="${outputDir}/weblogic-domains"
 
   validateOutputDir \
-    ${domainOutputDir} \
+    ${pvPvcOutputDir} \
     ${valuesInputFile} \
     create-pv-pvc-inputs.yaml \
     pv.yaml \
@@ -135,17 +135,17 @@ function initialize {
 function createYamlFiles {
 
   # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
+  mkdir -p ${pvPvcOutputDir}
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-pv-pvc-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${pvPvcOutputDir}/create-pv-pvc-inputs.yaml"
 
-  domainPVOutput="${domainOutputDir}/pv.yaml"
-  domainPVCOutput="${domainOutputDir}/pvc.yaml"
+  domainPVOutput="${pvPvcOutputDir}/pv.yaml"
+  domainPVCOutput="${pvPvcOutputDir}/pvc.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -179,7 +179,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
+  rm -f ${pvPvcOutputDir}/*.yaml-e
 }
 
 #
