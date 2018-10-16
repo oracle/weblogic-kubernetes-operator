@@ -1,9 +1,6 @@
 # Install and Configure Voyager
-This is to:
-* Provide detail steps how to install and uninstall Voyager operator with helm chart.
-* Provide workable Ingress samples to route workload traffic to multiple WLS domains with Voyager.
 
-## Install Voyager Operator with Helm Chart
+## Step-by-step Guide to Install Voyager Operator
 Appscode has provided helm chart to install Voyager. See official installation document: https://appscode.com/products/voyager/7.4.0/setup/install/.
 
 As a demonstration, following are the detail steps to install Voyager operator using helm chart in hostlinux.
@@ -41,7 +38,7 @@ $ helm fetch appscode/voyager --untar --version 7.4.0
 ```
 
 ## Configure Voyager as Load Balancer for WLS Domains
-This chapter we'll demonstrate how to use Voyager to handle traffic to backend WLS domains.
+We'll demonstrate how to use Voyager to handle traffic to backend WLS domains.
 
 ### 1. Install some WLS Domains
 Now we need to prepare some backends for Voyager to do load balancer. 
@@ -78,5 +75,17 @@ To see the Voyager path-routing stats web page, access URL `http://${HOSTNAME}:3
 After removing all Voyager Ingress resources, uninstall Voyager operator.
 ```
 helm delete --purge voyager-operator
+```
+
+## Install and Uninstall Voyager Operator with setup.sh
+Alternatively, you can run the helper script setup.sh under the folder `kubernetes/samples/charts/util` to install and uninstall Voyager.
+
+To install Voyager:
+```
+$ ./setup.sh create voyager
+```
+To uninstall Voyager:
+```
+$ ./setup.sh delete voyager
 ```
 

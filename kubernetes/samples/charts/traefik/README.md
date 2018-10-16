@@ -60,5 +60,14 @@ After removing all Ingress resources, uninstall Traefik operator.
 ```
 helm delete --purge traefik-operator
 ```
-## References
-Configuration guide on Ingress for Traefik: https://docs.traefik.io/configuration/backends/kubernetes/
+## Install and Uninstall Traefik Operator with setup.sh
+Alternatively, you can run the helper script setup.sh under the folder `kubernetes/samples/charts/util` to install and uninstall Traefik.
+
+To install Traefik:
+```
+$ ./setup.sh create traefik
+```
+To uninstall Traefik:
+```
+$ ./setup.sh delete traefik
+```
