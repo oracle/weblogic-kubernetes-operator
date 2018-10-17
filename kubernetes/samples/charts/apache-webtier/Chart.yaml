@@ -11,7 +11,7 @@ keywords:
 - proxy
 home: https://httpd.apache.org
 sources:
-- https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/charts/apache-webtier
+- https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-webtier
 maintainers:
 - name: Oracle
 engine: gotpl
