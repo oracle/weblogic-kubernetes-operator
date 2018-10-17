@@ -27,6 +27,7 @@ import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,6 +153,32 @@ public abstract class PodStepContext implements StepContextConstants {
 
   Integer getAsPort() {
     return getDomain().getAsPort();
+  }
+
+  String getLogHome() {
+    return getDomain().getLogHome();
+  }
+
+  String getEffectiveLogHome() {
+    String logHome = getLogHome();
+    if (logHome == null || "".equals(logHome.trim())) {
+      // logHome not specified, use default value
+      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+    }
+    return logHome;
+  }
+
+  String getRedirectLogs() {
+    String logHome = getLogHome();
+    if (logHome == null || "".equals(logHome.trim())) {
+      // logHome not explicitly specified, return false to indicate default log locations to be used
+      return "false";
+    }
+    return "true";
+  }
+
+  String getIncludeServerOutInPodLog() {
+    return getDomain().getIncludeServerOutInPodLog();
   }
 
   abstract Integer getPort();
@@ -662,7 +689,9 @@ public abstract class PodStepContext implements StepContextConstants {
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
-    addEnvVar(vars, "LOG_HOME", LOG_HOME);
+    addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
+    addEnvVar(vars, "REDIRECT_LOGS", getRedirectLogs());
+    addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));

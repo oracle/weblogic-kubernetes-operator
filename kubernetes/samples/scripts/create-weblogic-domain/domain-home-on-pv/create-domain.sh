@@ -235,6 +235,7 @@ function initialize {
     weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
+    includeServerOutInPodLog \
     version 
 
   validateIntegerInputParamsSpecified \
@@ -248,7 +249,8 @@ function initialize {
   validateBooleanInputParamsSpecified \
     productionModeEnabled \
     exposeAdminT3Channel \
-    exposeAdminNodePort
+    exposeAdminNodePort \
+    includeServerOutInPodLog
 
   export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
   validateVersion 
@@ -321,6 +323,15 @@ function createYamlFiles {
     persistentVolumeClaimName=${domainUID}-weblogic-domain-pvc
   fi
 
+  # If logHome is not specified, defaults DOMAIN_LOGS_DIR to ${domainPVMountPath}/logs/${domainUID}
+  if [ -z "${logHome}" ]; then
+    domainLogsDir="${domainPVMountPath}/logs/${domainUID}"
+    useDefaultLogsDir="true"
+  else
+    domainLogsDir="${logHome}"
+    useDefaultLogsDir="false"
+  fi
+
   # Must escape the ':' value in image for sed to properly parse and replace
   image=$(echo ${image} | sed -e "s/\:/\\\:/g")
 
@@ -350,6 +361,8 @@ function createYamlFiles {
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_LOGS_DIR%:${domainLogsDir}:g" ${createJobOutput}
+  sed -i -e "s:%USE_DEFAULT_LOGS_DIR%:${useDefaultLogsDir}:g" ${createJobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${createJobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScriptName}:g" ${createJobOutput}
 
@@ -400,6 +413,10 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_LOGS_DIR%:${domainLogsDir}:g" ${createJobOutput}
+  sed -i -e "s:%USE_DEFAULT_LOGS_DIR%:${useDefaultLogsDir}:g" ${createJobOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e

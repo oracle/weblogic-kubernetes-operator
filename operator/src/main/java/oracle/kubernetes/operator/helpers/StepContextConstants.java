@@ -10,7 +10,7 @@ public interface StepContextConstants {
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";
-  static final String LOG_HOME = "/shared/logs";
+  static final String DEFAULT_LOG_HOME = "/shared/logs";
   static final int FAILURE_THRESHOLD = 1;
 
   static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
