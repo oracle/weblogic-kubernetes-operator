@@ -47,22 +47,18 @@ The following table lists the configurable parameters of the Apache webiter char
 
 | Parameter                          | Description                                                   | Default               |
 | -----------------------------------| ------------------------------------------------------------- | ----------------------|
-| `image.registry`                   | Docker registry used to pull oracle images                    | `wlsldi-v2.docker.oraclecorp.com` |
-| `image.repository`                 | WebLogic Apache webtier image                                 | `weblogic-webtier-apache-12.2.1.3.0` |
-| `image.tag`                        | Tag of the image                                              | `latest`              |
-| `image.pullPolicy`                 | Image pull policy                        `                    | `IfNotPresent`        |
-| `persistence.enabled`              | Enable persistent storage for Apache webtier configuration    | `true`                |
-| `persistence.hostPath`             | Physical path of the persistent storage                       | `/scratch/apache-webtier-config` |
-| `persistence.mountPath`            | Mount point                                                   | `/config`             |
-| `rbac.create`                      | If `true`, create and use RBAC resources                      | `true`                |
-| `serviceAccount.create`            | If `true`, create a new service account                       | `true`                |
-| `serviceAccount.name`              | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template | `apache-webtier` |
-| `service.nodePorts.http`           | Apache webiter web port                                       | `30305`               |
+| `imageRegistry`                    | Docker registry used to pull image                            | `store/oracle`        |
+| `image`                            | Apache webtier docker image                                   | `apache`              |
+| `imageTag`                         | Image tag for the apache webtier docker image                 | `12.2.1.3`            |
+| `imagePullPolicy`                  | Image pull policy for the apache webiter docker image         | `IfNotPresent`        |
+| `volumePath`                       | Docker volume path for apache webtier                         | ``                    |
+| `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
+| `httpNodePort`                     | NodePort to expose for http access                            | `30305`               |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```console
-$ helm install --name my-release --set persistence.hostPath=/scratch/my-config apache-webtier
+$ helm install --name my-release --set volumePath=/scratch/my-config apache-webtier
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while
@@ -73,7 +69,7 @@ $ helm install --name my-release --values values.yaml apache-webtier
 ```
 
 ## RBAC
-By default the chart will not install the recommended RBAC roles and rolebindings.
+By default the chart will install the recommended RBAC roles and rolebindings.
 
 You need to have the flag `--authorization-mode=RBAC` on the api server. See the following document for how to enable [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/).
 
@@ -85,10 +81,10 @@ $ kubectl api-versions | grep rbac
 
 If the output contains "beta", you may install the chart with RBAC enabled (see below).
 
-### Enable RBAC role/rolebinding creation
+### Disable RBAC role/rolebinding creation
 
-To enable the creation of RBAC resources (On clusters with RBAC). Do the following:
+To disable the creation of RBAC resources (On clusters with RBAC). Do the following:
 
 ```console
-$ helm install --name my-release apache-webtier --set rbac.create=true
+$ helm install --name my-release apache-webtier --set createRBAC=false
 ```

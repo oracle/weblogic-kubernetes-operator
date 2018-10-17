@@ -1,13 +1,11 @@
-{{ if .Values.rbac.create }}
+{{ if .Values.createRBAC }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: {{ template "apache.fullname" . }}
   labels:
     app: {{ template "apache.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 rules:
   - apiGroups:
       - ""

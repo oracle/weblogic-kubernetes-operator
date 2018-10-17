@@ -1,19 +1,17 @@
-{{ if .Values.rbac.create }}
+{{ if .Values.createRBAC }}
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: {{ template "apache.fullname" . }}
   labels:
     app: {{ template "apache.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: {{ template "apache.fullname" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ .Values.serviceAccount.name }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "apache.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace | quote }}
 {{ end }}

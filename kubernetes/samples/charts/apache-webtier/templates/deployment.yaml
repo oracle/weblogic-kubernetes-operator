@@ -5,41 +5,35 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "apache.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
 spec:
   replicas: 1
   selector:
     matchLabels:
         app: {{ template "apache.fullname" . }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
-        heritage: "{{ .Release.Service }}"
   template:
     metadata:
       labels:
         app: {{ template "apache.fullname" . }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
-        heritage: "{{ .Release.Service }}"
     spec:
       serviceAccountName: {{ template "apache.serviceAccountName" . }}
       terminationGracePeriodSeconds: 60
-{{- if .Values.persistence.enabled }}
+{{- if .Values.volumePath }}
       volumes:
       - name: {{ template "apache.fullname" . }}
         hostPath:
-          path: "{{ .Values.persistence.hostPath }}"
+          path: {{ .Values.volumePath | quote }}
 {{- end }}
       containers:
       - name: {{ template "apache.fullname" . }}
-        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-{{- if .Values.persistence.enabled }}
+        image: "{{ .Values.imageRegistry }}/{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
+{{- if .Values.volumePath }}
         volumeMounts:
         - name: {{ template "apache.fullname" . }}
-          mountPath: "{{ .Values.persistence.mountPath }}"
+          mountPath: "/config"
 {{- end }}
         readinessProbe:
           tcpSocket:

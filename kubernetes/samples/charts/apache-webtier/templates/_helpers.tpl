@@ -18,9 +18,5 @@ Create a default fully qualified app name.
 Create the name of the service account to use
 */}}
 {{- define "apache.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-    {{ default (include "apache.fullname" .) .Values.serviceAccount.name }}
-{{- else -}}
-    {{ default "default" .Values.serviceAccount.name }}
-{{- end -}}
+{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 -}}
 {{- end -}}
