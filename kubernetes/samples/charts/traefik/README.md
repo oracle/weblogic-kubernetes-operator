@@ -23,17 +23,15 @@ $ helm fetch  stable/traefik --untar
 ```
 
 ## Configure Traefik as Load Balancer for WLS Domains
-This chapter we'll demonstrate how to use Traefik to handle traffic to backend WLS domains.
+In this section we'll demonstrate how to use Traefik to handle traffic to backend WLS domains.
 
-### 1. Install some WLS Domains
-Now we need to prepare some backends for Traefik to do load balancer. 
+### 1. Install WLS Domains
+Now we need to prepare some backends for Traefik to do load balancing.
 
 Create two WLS domains: 
 - One domain with name 'domain1' under namespace 'default'.
 - One domain with name 'domain2' under namespace 'test1'.
 - Each domain has a webapp installed with url context 'testwebapp'.
-
-Note: After all WLS domains are running, for now we need to stop WLS operator and remove the per-domain Ingresses created by WLS operator. Otherwise the WLS operator keeps monitor the Ingresses and restore them to the original version if they are changed.
 
 ### 2. Install Ingress
 #### Install Host-routing Ingress
