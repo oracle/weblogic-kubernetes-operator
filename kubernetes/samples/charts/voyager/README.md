@@ -3,7 +3,7 @@
 ## Step-by-step Guide to Install Voyager Operator
 Appscode has provided helm chart to install Voyager. See official installation document: https://appscode.com/products/voyager/7.4.0/setup/install/.
 
-As a demonstration, following are the detail steps to install Voyager operator using helm chart in hostlinux.
+As a demonstration, the following are the detailed steps to install the Voyager operator by using a Helm chart in Linux OS.
 
 ### 1. Install Onessl
 Onessl is a utility provided by Appscode. We'll use it to get CA certificate for K8S cluster later.
