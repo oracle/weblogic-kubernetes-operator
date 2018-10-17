@@ -117,6 +117,8 @@ done
 #
 
 trace "Start node manager"
+# call script to start node manager in same shell 
+# $SERVER_OUT_FILE will be set in startNodeManager.sh
 . ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
 #

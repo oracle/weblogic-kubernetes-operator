@@ -42,11 +42,6 @@ spec:
   # If not specified or empty, then these files will be stored in their normal locations under the
   # domain home.
   logHome: %LOG_HOME%
-  # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
-  # files in.
-  # If not specified or empty, then these files will be stored in their normal locations under the
-  # domain home.
-  logHome: %LOG_HOME%
   # startupControl legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "ALL" will start up all defined servers
