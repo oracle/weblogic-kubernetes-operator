@@ -40,8 +40,8 @@ $ helm fetch appscode/voyager --untar --version 7.4.0
 ## Configure Voyager as Load Balancer for WLS Domains
 We'll demonstrate how to use Voyager to handle traffic to backend WLS domains.
 
-### 1. Install some WLS Domains
-Now we need to prepare some backends for Voyager to do load balancer. 
+### 1. Install WLS Domains
+Now we need to prepare some backends for Traefik to do load balancing.
 
 Create two WLS domains: 
 - One domain with name 'domain1' under namespace 'default'.
