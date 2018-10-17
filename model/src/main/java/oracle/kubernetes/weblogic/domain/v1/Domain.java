@@ -282,6 +282,14 @@ public class Domain {
     return spec.getDomainName();
   }
 
+  public String getLogHome() {
+    return spec.getLogHome();
+  }
+
+  public String getIncludeServerOutInPodLog() {
+    return spec.getIncludeServerOutInPodLog();
+  }
+
   public boolean isShuttingDown() {
     return spec.getEffectiveConfigurationFactory(apiVersion).isShuttingDown();
   }

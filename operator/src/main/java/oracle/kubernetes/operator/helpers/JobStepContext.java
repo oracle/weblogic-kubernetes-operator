@@ -1,6 +1,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.*;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -105,7 +106,29 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   protected String getLogHome() {
-    return LOG_HOME;
+    return getDomain().getLogHome();
+  }
+
+  String getEffectiveLogHome() {
+    String logHome = getLogHome();
+    if (logHome == null || "".equals(logHome.trim())) {
+      // logHome not specified, use default value
+      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+    }
+    return logHome;
+  }
+
+  String getRedirectLogs() {
+    String logHome = getLogHome();
+    if (logHome == null || "".equals(logHome.trim())) {
+      // logHome not explicitly specified, return false to indicate default log locations to be used
+      return "false";
+    }
+    return "true";
+  }
+
+  String getIncludeServerOutInPodLog() {
+    return getDomain().getIncludeServerOutInPodLog();
   }
 
   protected String getIntrospectHome() {

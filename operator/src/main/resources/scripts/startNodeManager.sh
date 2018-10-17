@@ -83,6 +83,31 @@ function createFolder {
 
 ###############################################################################
 #
+# Determine WebLogic server log and out files locations
+#
+# -Dweblogic.Stdout system property is used to tell node manager to send server .out 
+#  file to the configured location
+#
+redirect_logs=${REDIRECT_LOGS:-false}
+server_out_in_pod_log=${SERVER_OUT_IN_POD_LOG?}
+
+if [ "${redirect_logs}" == "true" ] ; then
+  # redirect_logs is true means log_home is explicitly set, and 
+  # log files should be redirected to the specified log_home
+  trace " logHome is specified and log files will be written to ${log_home} "
+  serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"
+else
+  # default server log file location
+  trace " logHome is not specified and log files will be written to the default locations "
+  serverOutFile="${DOMAIN_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}.out"
+fi
+
+export SERVER_OUT_FILE=${serverOutFile}
+
+createFolder ${LOG_HOME}
+
+###############################################################################
+#
 # Init/create nodemanager home and nodemanager log env vars and directory
 #
 
@@ -90,7 +115,11 @@ export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 
 createFolder ${NODEMGR_HOME} 
 
-NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}}}/${DOMAIN_UID}/${SERVER_NAME}
+if [ "${redirect_logs}" == "true" ] ; then
+  NODEMGR_LOG_HOME=${LOG_HOME}/${SERVER_NAME}
+else
+  NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}}}/${DOMAIN_UID}/${SERVER_NAME}
+fi
 
 createFolder ${NODEMGR_LOG_HOME}
 
@@ -98,6 +127,7 @@ nodemgr_log_file=${NODEMGR_LOG_HOME}/nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/nodemanager.out
 
 checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file
+
 
 
 ###############################################################################
@@ -206,7 +236,7 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.Stdout=${serverOutFile} ${JAVA_OPTIONS}
 
 EOF
  

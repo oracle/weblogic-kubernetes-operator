@@ -57,9 +57,13 @@ checkEnv \
   SERVICE_NAME \
   ADMIN_NAME \
   ADMIN_PORT \
+  SERVER_OUT_IN_POD_LOG \
+  REDIRECT_LOGS \
   AS_SERVICE_NAME || exit 1
 
 trace "LOG_HOME=${LOG_HOME}"
+trace "REDIRECT_LOGS=${REDIRECT_LOGS}"
+trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
 trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
 trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 
@@ -113,7 +117,7 @@ done
 #
 
 trace "Start node manager"
-${SCRIPTPATH}/startNodeManager.sh || exit 1
+. ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
 #
 # Start WL Server
@@ -126,6 +130,11 @@ ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
 # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
 #
 
-trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
-while true; do sleep 60; done
+if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
+  trace "Showing the server out file from ${SERVER_OUT_FILE}"
+  tail -F -n +0 ${SERVER_OUT_FILE}
+else
+  trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+  while true; do sleep 60; done
+fi
 

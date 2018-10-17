@@ -65,6 +65,9 @@ public class DomainNormalizationTest {
     assertThat(
         domainSpec.getStartupControl(), equalTo(StartupControlConstants.AUTO_STARTUPCONTROL));
     assertThat(domain.getReplicaCount("nocluster"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
+    assertThat(
+        domain.getIncludeServerOutInPodLog(),
+        equalTo(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG));
   }
 
   @Test
