@@ -37,3 +37,6 @@ createRBAC: true
 
 # NodePort to expose for http access
 httpNodePort: 30305
+
+# NodePort to expose for https access
+httpsNodePort: 30443

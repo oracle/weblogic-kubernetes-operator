@@ -14,5 +14,8 @@ spec:
   ports:
     - port: 80
       nodePort: {{ .Values.httpNodePort }}
-      name: rest-https
+      name: http
+    - port: 443
+      nodePort: {{ .Values.httpsNodePort }}
+      name: https
 

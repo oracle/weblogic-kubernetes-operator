@@ -54,6 +54,7 @@ The following table lists the configurable parameters of the Apache webtier char
 | `volumePath`                       | Docker volume path for apache webtier                         | ``                    |
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
 | `httpNodePort`                     | NodePort to expose for http access                            | `30305`               |
+| `httpsNodePort`                    | NodePort to expose for https access                           | `30443`               |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
