@@ -1,0 +1,29 @@
+{{ if .Values.createRBAC }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{ template "apache.fullname" . }}
+  labels:
+    app: {{ template "apache.fullname" . }}
+    release: "{{ .Release.Name }}"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+{{ end }}

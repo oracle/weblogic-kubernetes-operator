@@ -1,0 +1,42 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+ 
+
+# Docker registry used to pull apache webtier docker image
+imageRegistry: "store/oracle"
+
+# Apache webtier docker image
+image: "apache"
+
+# Tag of the image
+imageTag: "12.2.1.3"
+
+# imagePullPolicy specifies the image pull policy for the apache webiter docker image
+imagePullPolicy: "IfNotPresent"
+
+# imagePullSecrets contains an optional list of Kubernetes secrets, that are needed
+# to access the registry containing the apache webtier Docker image.
+# If no secrets are required, then omit this property.
+# 
+# Example : a secret is needed, and has been stored in 'my-apache-webtier-secret'
+#
+# imagePullSecrets:
+# - name: my-apache-webtier-secret
+#
+# imagePullSecrets:
+# - name:
+
+# Docker volume path for Apache webtier. By default, it is empty, which causes the volume
+# mount be disabled and, thereforem the built-in Apache plugin config be used.
+# Use this to provide your own Apache webtier configuration as needed; simply define this 
+# path and put your own custom_mod_wl_apache.conf file under this path.
+volumePath:
+
+# Boolean indicating if RBAC resources should be created
+createRBAC: true
+
+# NodePort to expose for http access
+httpNodePort: 30305
+
+# NodePort to expose for https access
+httpsNodePort: 30443
