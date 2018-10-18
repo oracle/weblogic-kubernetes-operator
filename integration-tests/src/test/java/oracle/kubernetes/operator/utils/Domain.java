@@ -402,13 +402,13 @@ public class Domain {
 
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(domainNS);
+    cmd.append(domainUid).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(domainUid + "-weblogic-domain-pvc", domainNS);
+    TestUtils.deletePVC(domainUid + "-pvc", domainNS);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
     boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
@@ -421,7 +421,7 @@ public class Domain {
 
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domain/" + domainMap.get("domainName").toString();
+    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainName").toString();
     logger.info("making sure the domain directory exists");
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
@@ -525,8 +525,8 @@ public class Domain {
                     + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     Map<String, Object> pvMap = yaml.load(pv_is);
     pv_is.close();
-    pvMap.put("domainName", domainMap.get("domainName"));
     pvMap.put("domainUID", domainUid);
+    pvMap.put("baseName", domainUid);
     pvMap.put("weblogicDomainStorageReclaimPolicy", weblogicDomainStorageReclaimPolicy);
     pvMap.put("weblogicDomainStorageSize", weblogicDomainStorageSize);
     pvMap.put("namespace", domainNS);
@@ -576,7 +576,7 @@ public class Domain {
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
         .append(" -e -v -o ")
-        .append(userProjectsDir);
+        .append(userProjectsDir + "/weblogic-domains/" + domainUid);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -793,7 +793,7 @@ public class Domain {
     domainMap.put("clusterName", clusterName);
     domainMap.put("clusterType", clusterType);
     domainMap.put("startupControl", startupControl);
-    domainMap.put("persistentVolumeClaimName", domainUid + "-weblogic-domain-pvc");
+    domainMap.put("persistentVolumeClaimName", domainUid + "-pvc");
     domainMap.put("domainName", inputDomainMap.getOrDefault("domainName", "base_domain"));
     domainMap.put(
         "adminNodePort", inputDomainMap.getOrDefault("adminNodePort", new Integer("30701")));
