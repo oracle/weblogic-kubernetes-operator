@@ -74,7 +74,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
+  domainOutputDir="${outputDir}"
 
   validateOutputDir \
     ${domainOutputDir} \
