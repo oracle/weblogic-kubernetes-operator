@@ -1,4 +1,4 @@
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 apiVersion: v1
 kind: ConfigMap
@@ -48,7 +48,7 @@ spec:
           args: ["/u01/weblogic/delete-domain-job.sh"]
           env:
             - name: DOMAIN_HOME_DIR
-              value: %DOMAIN_ROOT_DIR%/domains/%DOMAIN_UID%
+              value: %DOMAIN_ROOT_DIR%/domains/%DOMAIN_NAME%
             - name: DOMAIN_LOGS_DIR
               value: %DOMAIN_ROOT_DIR%/logs
       volumes:
