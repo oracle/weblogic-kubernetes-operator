@@ -199,7 +199,7 @@ public class ServiceHelper {
     }
 
     private String getAsName() {
-      return info.getDomain().getSpec().getAsName();
+      return info.getDomain().getAsName();
     }
 
     @Override

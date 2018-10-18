@@ -31,15 +31,7 @@ public abstract class DomainConfigurator {
    *
    * @param adminServerName the name of the admin server
    */
-  public abstract void defineAdminServer(String adminServerName);
-
-  /**
-   * Defines a name and port for the domain's admin server.
-   *
-   * @param adminServerName the name of the admin server
-   * @param port the admin server port
-   */
-  public abstract void defineAdminServer(String adminServerName, int port);
+  public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
 
   /**
    * Sets the default number of replicas to be run in a cluster.
@@ -52,27 +44,33 @@ public abstract class DomainConfigurator {
    * Sets the default image for the domain.
    *
    * @param image the name of the image
+   * @return this object
    */
-  public void withDefaultImage(String image) {
+  public DomainConfigurator withDefaultImage(String image) {
     getDomainSpec().setImage(image);
+    return this;
   }
 
   /**
    * Sets the default image pull policy for the domain.
    *
    * @param imagepullpolicy the new policy
+   * @return this object
    */
-  public void withDefaultImagePullPolicy(String imagepullpolicy) {
+  public DomainConfigurator withDefaultImagePullPolicy(String imagepullpolicy) {
     getDomainSpec().setImagePullPolicy(imagepullpolicy);
+    return this;
   }
 
   /**
    * Sets the default image pull secret for the domain
    *
    * @param secretReference the object referring to the secret
+   * @return this object
    */
-  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
+  public DomainConfigurator withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
     getDomainSpec().setImagePullSecret(secretReference);
+    return this;
   }
 
   /**
@@ -154,7 +152,14 @@ public abstract class DomainConfigurator {
       Integer initialDelay, Integer timeout, Integer period);
 
   /**
-   * Defines the startup control mechanism for the domain. Must be one of:
+   * Sets the default server start policy ("ALWAYS", "NEVER" or "IF_NEEDED") for the domain.
+   *
+   * @param startPolicy the new default policy
+   */
+  public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
+
+  /**
+   * Defines the startup control mechanism for a version 1 domain. Must be one of:
    *
    * <ul>
    *   <li>NONE indicates that no servers, including the administration server, will be started.
@@ -173,7 +178,7 @@ public abstract class DomainConfigurator {
    * @param startupControl the new value
    * @return this object
    */
-  public abstract DomainConfigurator setStartupControl(String startupControl);
+  public abstract DomainConfigurator withStartupControl(String startupControl);
 
   /**
    * Add an environment variable to the domain
@@ -183,13 +188,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withEnvironmentVariable(String name, String value);
-
-  /**
-   * Adds an admin server configuration to the domain, if not already present.
-   *
-   * @return an object to add additional configurations
-   */
-  public abstract ServerConfigurator configureAdminServer();
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();
@@ -216,4 +214,11 @@ public abstract class DomainConfigurator {
   public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
 
   public abstract void setShuttingDown(boolean start);
+
+  /**
+   * Returns true if this configurator supports use of the startup control flag.
+   *
+   * @return true or false
+   */
+  public abstract boolean useDomainV1();
 }
