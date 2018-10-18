@@ -15,8 +15,11 @@ The test can work with any arbitrary domain, or it can create a domain.
 Usage:
 ----------
 
-(1) Optionally specify values for input env vars (see introspectTest.sh for the list).
-(2) Run introspectTest.sh
+(1) Make sure a WebLogic image is available.  This test does not build, tag, or pull images to a local repo.
+    One way to do this when running locally is to run the integration tests.
+    (Note that this test doesn't depend on Operator image as of 2018/10/16, but may in the future.)
+(2) Optionally specify values for input env vars (see introspectTest.sh for the list).
+(3) Run introspectTest.sh
 
 -------------------
 Internal Test Flow:
