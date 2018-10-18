@@ -4,6 +4,11 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-pv-pvc-inputs-v1
 
+# Unique ID identifying a domain. 
+# If left empty, the generated pv can be shared by multiple domains
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+domainUID:
+
 # The base name of the pv and pvc
 baseName: weblogic-sample-domain
 
