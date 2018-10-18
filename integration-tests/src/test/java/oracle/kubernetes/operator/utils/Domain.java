@@ -411,13 +411,13 @@ public class Domain {
 
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(domainNS);
+    cmd.append(domainUid).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(domainUid + "-weblogic-domain-pvc", domainNS);
+    TestUtils.deletePVC(domainUid + "-pvc", domainNS);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
     boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
@@ -430,7 +430,7 @@ public class Domain {
 
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domain/" + domainMap.get("domainName").toString();
+    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainName").toString();
     logger.info("making sure the domain directory exists");
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
@@ -534,7 +534,6 @@ public class Domain {
                     + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     Map<String, Object> pvMap = yaml.load(pv_is);
     pv_is.close();
-    pvMap.put("domainName", domainMap.get("domainName"));
     pvMap.put("domainUID", domainUid);
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
@@ -545,6 +544,7 @@ public class Domain {
     if (domainMap.get("weblogicDomainStorageSize") != null) {
       pvMap.put("weblogicDomainStorageSize", domainMap.get("weblogicDomainStorageSize"));
     }
+    pvMap.put("baseName", domainUid);
     pvMap.put("namespace", domainNS);
 
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
@@ -596,7 +596,7 @@ public class Domain {
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
         .append(" -e -v -o ")
-        .append(userProjectsDir);
+        .append(userProjectsDir + "/weblogic-domains/" + domainUid);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
