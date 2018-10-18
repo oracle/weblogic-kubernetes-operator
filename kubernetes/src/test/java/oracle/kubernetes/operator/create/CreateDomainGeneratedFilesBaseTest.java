@@ -127,6 +127,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected static void setup(DomainYamlFactory factory, DomainValues values) throws Exception {
+    DomainConfiguratorFactory.selectV1DomainModel();
     CreateDomainGeneratedFilesBaseTest.factory = factory;
     inputs = values;
     generatedFiles = factory.generate(values);
