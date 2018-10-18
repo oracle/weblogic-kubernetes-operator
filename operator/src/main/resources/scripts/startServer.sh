@@ -119,6 +119,8 @@ ${SCRIPTPATH}/startNodeManager.sh || exit 1
 # Start WL Server
 #
 
+# TBD We should probably || exit 1 if start-server.py itself fails, and dump NM log to stdout
+
 trace "Start WebLogic Server via the nodemanager"
 ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
 
