@@ -5,10 +5,14 @@
 package oracle.kubernetes.operator.steps;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -19,6 +23,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -28,6 +33,7 @@ import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -51,6 +57,7 @@ import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -64,6 +71,7 @@ public class ManagedServersUpStepTest {
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace";
   private static final String UID = "uid1";
+  private static final String ADMIN = "asName";
   private final Domain domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
 
@@ -75,6 +83,7 @@ public class ManagedServersUpStepTest {
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
   private ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private Memento factoryMemento;
 
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);
@@ -89,13 +98,13 @@ public class ManagedServersUpStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID).withReplicas(1);
+    return new DomainSpec().withDomainUID(UID).withReplicas(1).withAsName(ADMIN);
   }
 
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
-    mementos.add(TestStepFactory.install());
+    mementos.add(factoryMemento = TestStepFactory.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
@@ -159,6 +168,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenStartupControlAuto_startServers() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1());
     setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
 
     invokeStepWithConfiguredServer();
@@ -167,30 +177,32 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartupControlAll_startServers() {
-    setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
+  public void whenStartupAllRequested_startServers() {
+    startAllServers();
 
     invokeStepWithConfiguredServer();
 
     assertServersToBeStarted();
+  }
+
+  private void startAllServers() {
+    if (DomainConfiguratorFactory.useDomainV1())
+      setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
+    else configurator.withDefaultServerStartPolicy(START_ALWAYS);
   }
 
   @Test
   public void whenStartupControlSpecified_startServers() {
-    setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL);
+    startConfiguredServers();
 
     invokeStepWithConfiguredServer();
 
     assertServersToBeStarted();
   }
 
-  @Test
-  public void whenStartupControlLowerCase_recognizeIt() {
-    setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL.toLowerCase());
-
-    invokeStepWithConfiguredServer();
-
-    assertServersToBeStarted();
+  private void startConfiguredServers() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1());
+    setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL);
   }
 
   private void assertServersToBeStarted() {
@@ -199,24 +211,40 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenStartupControlAdmin_dontStartServers() {
-    setStartupControl(StartupControlConstants.ADMIN_STARTUPCONTROL);
+    startAdminServerOnly();
 
     invokeStepWithConfiguredServer();
 
     assertServersWillNotBeStarted();
   }
 
+  private void startAdminServerOnly() {
+    if (DomainConfiguratorFactory.useDomainV1())
+      setStartupControl(StartupControlConstants.ADMIN_STARTUPCONTROL);
+    else
+      configurator
+          .withDefaultServerStartPolicy(START_NEVER)
+          .configureAdminServer(ADMIN)
+          .withServerStartPolicy(START_ALWAYS);
+  }
+
   @Test
-  public void whenStartupControlNone_dontStartServers() {
-    setStartupControl(StartupControlConstants.NONE_STARTUPCONTROL);
+  public void whenNoServerStartRequested_dontStartServers() {
+    startNoServers();
 
     invokeStepWithConfiguredServer();
 
     assertServersWillNotBeStarted();
+  }
+
+  private void startNoServers() {
+    if (DomainConfiguratorFactory.useDomainV1()) setStartupControl(NONE_STARTUPCONTROL);
+    else configurator.withDefaultServerStartPolicy(START_NEVER);
   }
 
   @Test
   public void whenStartupControlNotRecognized_dontStartServers() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1());
     setStartupControl("xyzzy");
 
     invokeStepWithConfiguredServer();
@@ -226,7 +254,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenWlsServerInDomainSpec_addToServerList() {
-    configureServer("wls1");
+    configureServerToStart("wls1");
     addWlsServer("wls1");
 
     invokeStep();
@@ -236,6 +264,9 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenWlsServerNotInDomainSpec_dontAddToServerList() {
+    assumeTrue(
+        DomainConfiguratorFactory
+            .useDomainV1()); // in domain 2, non-clusters servers start by default
     addWlsServer("wls1");
 
     invokeStep();
@@ -245,7 +276,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenServerInDomainSpecButNotDefinedInWls_dontAddToServerList() {
-    configureServer("wls1");
+    configureServerToStart("wls1");
 
     invokeStep();
 
@@ -277,7 +308,7 @@ public class ManagedServersUpStepTest {
   public void whenWlsServersDuplicatedInDomainSpec_skipDuplicates() {
     defineAdminServer("admin");
     configureServers("wls1", "wls1", "wls2");
-    addWlsServers("wls1", "wls2", "wls3");
+    addWlsServers("wls1", "wls2");
 
     invokeStep();
 
@@ -286,8 +317,8 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenWlsServersInDomainSpec_addStartupInfo() {
-    configureServer("wls1");
-    configureServer("wls2");
+    configureServerToStart("wls1");
+    configureServerToStart("wls2");
     addWlsServers("wls1", "wls2");
 
     invokeStep();
@@ -298,7 +329,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void serverStartupInfo_containsWlsServerStartupAndConfig() {
-    configureServer("wls1").withNodePort(17);
+    configureServerToStart("wls1").withNodePort(17);
     addWlsServer("wls1");
 
     invokeStep();
@@ -309,7 +340,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void serverStartupInfo_containsEnvironmentVariable() {
-    configureServer("wls1")
+    configureServerToStart("wls1")
         .withEnvironmentVariable("item1", "value1")
         .withEnvironmentVariable("item2", "value2");
     addWlsServer("wls1");
@@ -323,7 +354,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenDesiredStateIsAdmin_serverStartupCreatesJavaOptionsEnvironment() {
-    configureServer("wls1").withDesiredState(ADMIN_STATE);
+    configureServerToStart("wls1").withDesiredState(ADMIN_STATE);
     addWlsServer("wls1");
 
     invokeStep();
@@ -335,7 +366,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenDesiredStateIsAdmin_serverStartupAddsToJavaOptionsEnvironment() {
-    configureServer("wls1")
+    configureServerToStart("wls1")
         .withDesiredState(ADMIN_STATE)
         .withEnvironmentVariable("JAVA_OPTIONS", "value1");
     addWlsServer("wls1");
@@ -349,7 +380,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenWlsServerNotInCluster_serverStartupInfoHasNoClusterConfig() {
-    configureServer("wls1");
+    configureServerToStart("wls1");
     addWlsServer("wls1");
 
     invokeStep();
@@ -359,7 +390,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenWlsServerInCluster_serverStartupInfoHasMatchingClusterConfig() {
-    configureServer("ms1");
+    configureServerToStart("ms1");
 
     addWlsCluster("cluster1", "ms1");
     addWlsCluster("cluster2");
@@ -371,7 +402,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenClusterStartupDefinedForServerNotRunning_addToServers() {
-    configureServer("ms1");
+    configureServerToStart("ms1");
     configureCluster("cluster1");
     addWlsCluster("cluster1", "ms1");
 
@@ -382,7 +413,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenClusterStartupDefinedForServerNotRunning_addServerStartup() {
-    configureServer("ms1").withNodePort(23);
+    configureServerToStart("ms1").withNodePort(23);
     configureCluster("cluster1");
     addWlsCluster("cluster1", "ms1");
 
@@ -400,6 +431,9 @@ public class ManagedServersUpStepTest {
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
 
+    if (!DomainConfiguratorFactory.useDomainV1())
+      configureCluster("cluster1").withServerStartupPolicy(START_IF_NEEDED);
+
     invokeStep();
 
     assertThat(getServerStartupInfo("ms1").getEnvironment(), contains(envVar("item1", "value1")));
@@ -407,8 +441,10 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenServerStartupDefined_overrideEnvFromCluster() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1()); // In v1, we do not combine env configs
+
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
-    configureServer("ms1").withEnvironmentVariable("item2", "value2");
+    configureServerToStart("ms1").withEnvironmentVariable("item2", "value2");
     addWlsCluster("cluster1", "ms1");
 
     invokeStep();
@@ -423,6 +459,9 @@ public class ManagedServersUpStepTest {
         .withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
 
+    if (!DomainConfiguratorFactory.useDomainV1())
+      configureCluster("cluster1").withServerStartupPolicy(START_IF_NEEDED);
+
     invokeStep();
 
     assertThat(
@@ -432,7 +471,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void withStartSpecifiedWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
-    setStartupControl(StartupControlConstants.SPECIFIED_STARTUPCONTROL);
+    startConfiguredServers();
     setDefaultReplicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -443,7 +482,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void withStartNoneWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
-    setStartupControl(StartupControlConstants.NONE_STARTUPCONTROL);
+    startNoServers();
     setDefaultReplicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -454,7 +493,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void withStartAdminWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
-    setStartupControl(StartupControlConstants.ADMIN_STARTUPCONTROL);
+    startAdminServerOnly();
     setDefaultReplicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -465,6 +504,8 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void withStartAutoWhenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1());
+
     setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
     setDefaultReplicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -476,7 +517,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void withStartAllWhenWlsClusterNotInDomainSpec_addClusteredServersToListUpWithoutLimit() {
-    setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
+    startAllServers();
     setDefaultReplicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -488,6 +529,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
+  @Ignore
   public void whenWlsClusterNotInDomainSpec_recordServerAndClusterConfigs() {
     setDefaultReplicas(3);
     addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
@@ -503,7 +545,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void withStartupControlAll_addNonManagedServers() {
-    setStartupControl(StartupControlConstants.ALL_STARTUPCONTROL);
+    startAllServers();
     addWlsServer("ms1");
 
     invokeStep();
@@ -512,17 +554,79 @@ public class ManagedServersUpStepTest {
     assertThat(getServerStartupInfo("ms1").serverConfig, equalTo(getWlsServer("ms1")));
   }
 
+  @Test
+  public void whenShuttingDown_insertCreateAvailableHookStep() {
+    configurator.setShuttingDown(true);
+
+    assertThat(createNextStep().getClass().getSimpleName(), equalTo("AvailableHookStep"));
+  }
+
+  @Test
+  public void whenNotShuttingDown_dontInsertCreateAvailableHookStep() {
+    configurator.setShuttingDown(false);
+
+    assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
+  }
+
+  @Test
+  public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
+
+    assertThat(createNextStep(), instanceOf(ServerDownIteratorStep.class));
+  }
+
+  @Test
+  public void whenExclusionsSpecified_doNotAddToListOfServers() {
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server2");
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server3");
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", ADMIN);
+
+    assertStoppingServers(createNextStepWithout("server2"), "server1", "server3");
+  }
+
+  @Test
+  public void whenShuttingDown_allowAdminServerNameInListOfServers() {
+    configurator.setShuttingDown(true);
+
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server2");
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server3");
+    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", ADMIN);
+
+    assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
+  }
+
+  private void assertStoppingServers(Step step, String... servers) {
+    assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
+  }
+
+  private Step createNextStep() {
+    return createNextStep(Collections.emptyList());
+  }
+
+  private Step createNextStepWithout(String... serverNames) {
+    return createNextStep(Arrays.asList(serverNames));
+  }
+
+  private Step createNextStep(List<String> servers) {
+    domainPresenceInfo.setScan(configSupport.createDomainConfig());
+    ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
+    return factory.createServerStep(domainPresenceInfo, servers, nextStep);
+  }
+
   private void addWlsServer(String serverName) {
     configSupport.addWlsServer(serverName);
   }
 
   private void setDefaultReplicas(int replicas) {
-    configurator.withDefaultReplicaCount(replicas);
+    if (DomainConfiguratorFactory.useDomainV1()) configurator.withDefaultReplicaCount(replicas);
+    else configureCluster("cluster1").withReplicas(replicas);
   }
 
   private void configureServers(String... serverNames) {
     for (String serverName : serverNames) {
-      configureServer(serverName);
+      configureServerToStart(serverName);
     }
   }
 
@@ -533,7 +637,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void defineAdminServer(String adminServerName) {
-    configurator.defineAdminServer(adminServerName);
+    configurator.configureAdminServer(adminServerName);
   }
 
   private WlsServerConfig getWlsServer(String serverName) {
@@ -546,6 +650,13 @@ public class ManagedServersUpStepTest {
 
   private ServerConfigurator configureServer(String serverName) {
     return configurator.configureServer(serverName);
+  }
+
+  private ServerConfigurator configureServerToStart(String serverName) {
+    ServerConfigurator serverConfigurator = configurator.configureServer(serverName);
+    if (!DomainConfiguratorFactory.useDomainV1())
+      serverConfigurator.withServerStartPolicy(START_ALWAYS);
+    return serverConfigurator;
   }
 
   private V1EnvVar envVar(String name, String value) {
@@ -572,7 +683,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void setStartupControl(String startupcontrol) {
-    configurator.setStartupControl(startupcontrol);
+    configurator.withStartupControl(startupcontrol);
   }
 
   private void invokeStep() {
