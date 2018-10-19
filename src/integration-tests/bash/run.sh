@@ -646,10 +646,10 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server='index.docker.io/v1/' \
-    --docker-username='$DOCKER_USERNAME' \
-    --docker-password='$DOCKER_PASSWORD' \
-    --docker-email='$DOCKER_EMAIL' \
+    --docker-server='$REPO_SERVER' \
+    --docker-username='$REPO_USERNAME' \
+    --docker-password='$REPO_PASSWORD' \
+    --docker-email='$REPO_EMAIL' \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -776,6 +776,7 @@ function deploy_operator {
     done
     echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
     echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+    echo "imagePullSecrets: { name: ${IMAGE_PULL_SECRET_OPERATOR} }" >> $inputs
     echo "externalRestEnabled: true" >> $inputs
 
     trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
@@ -1060,7 +1061,7 @@ function create_domain_home_on_pv_non_helm {
     sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputsDomain
     sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputsDomain
     if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
-      sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputsDomain
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputsDomain
     fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputsDomain
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputsDomain
