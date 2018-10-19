@@ -421,7 +421,7 @@ public class Domain {
 
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainName").toString();
+    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
     logger.info("making sure the domain directory exists");
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
