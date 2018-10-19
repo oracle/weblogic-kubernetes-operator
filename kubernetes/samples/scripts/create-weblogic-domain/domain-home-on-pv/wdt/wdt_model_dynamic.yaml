@@ -30,5 +30,7 @@ topology:
             Cluster: '@@PROP:clusterName@@'
             ListenAddress: '@@PROP:domainUID@@-@@PROP:managedServerNameBase@@${id}'
             ListenPort: '@@PROP:managedServerPort@@'
+            Log:
+                FileName: '/shared/logs/@@PROP:domainUID@@/@@PROP:managedServerNameBase@@${id}.log'
             JTAMigratableTarget:
                 Cluster: '@@PROP:clusterName@@'
