@@ -44,8 +44,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String ITEM2 = "item2";
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
-  private static final String RAW_VALUE_1 = "find $(DOMAIN_NAME) at $(DOMAIN_HOME)";
-  private static final String END_VALUE_1 = "find domain1 at /shared/domains/domain1";
+  private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
+  private static final String END_VALUE_1 = "find uid1 at /shared/domains/uid1";
   private static final String RAW_VALUE_2 = "$(SERVER_NAME) is not $(ADMIN_NAME):$(ADMIN_PORT)";
   private static final String END_VALUE_2 = "ms1 is not ADMIN_SERVER:7001";
   private static final String CLUSTER_NAME = "test-cluster";
