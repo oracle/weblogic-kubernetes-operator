@@ -804,7 +804,7 @@ public class Domain {
     domainMap.put("clusterType", clusterType);
     domainMap.put("startupControl", startupControl);
     domainMap.put("persistentVolumeClaimName", domainUid + "-pvc");
-    domainMap.put("domainName", inputDomainMap.getOrDefault("domainName", "base_domain"));
+    domainMap.put("domainName", inputDomainMap.getOrDefault("domainName", domainUid));
     domainMap.put(
         "adminNodePort", inputDomainMap.getOrDefault("adminNodePort", new Integer("30701")));
     domainMap.put(
