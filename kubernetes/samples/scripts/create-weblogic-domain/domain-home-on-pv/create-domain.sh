@@ -423,6 +423,7 @@ function create_domain_configmap {
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
+  sed -i -e "s/^domainName:.*/domainName: $domainName/" ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
    sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
