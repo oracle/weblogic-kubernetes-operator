@@ -32,10 +32,21 @@ checkEnv NAMESPACE JOB_YAML JOB_NAME
 
 [ ! -f "$JOB_YAML" ] && trace "Error:  JOB_YAML not found." && exit 1
 
+# Handle '--show-all' deprecation for 'kubectl get jobs' and 'kubectl get pods'.
+# --show-all yields a deprecation warning in stderr in 1.10 in later, since
+# it isn't needed in 1.10 and later. 
+# TBD It's not clear if we should check the Client version or the Server version.
+k8s_minor=`kubectl version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
+k8s_major=`kubectl version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
+show_all="--show-all"
+if [ $k8s_major -gt 1 ] || [ $k8s_minor -gt 9 ]; then
+  show_all=""
+fi
+
 function getJobs() {
   # fn to get jobs for NAMESPACE/JOB_NAME
 
-  cmd="kubectl -n $NAMESPACE get jobs --show-all --output=jsonpath='{.items[?(@.metadata.name == \"$JOB_NAME\")]..metadata.name}'"
+  cmd="kubectl -n $NAMESPACE get jobs $show_all --output=jsonpath='{.items[?(@.metadata.name == \"$JOB_NAME\")]..metadata.name}'"
   eval $cmd || exit 1
 }
 
@@ -43,7 +54,7 @@ function getJobSucceededCount() {
   # fn to get job succeeded count for NAMESPACE/JOB_NAME
   # * job succeeded/failed counts go up from "" to "something" (should be "1")
 
-  cmd="kubectl -n $NAMESPACE get jobs --show-all --output=jsonpath='{.items[?(@.metadata.name == \"$JOB_NAME\")]..status.succeeded}'"
+  cmd="kubectl -n $NAMESPACE get jobs $show_all --output=jsonpath='{.items[?(@.metadata.name == \"$JOB_NAME\")]..status.succeeded}'"
   eval $cmd || exit 1
 }
 
@@ -51,7 +62,7 @@ function getJobFailedCount() {
   # fn to get job failed count for NAMESPACE/JOB_NAME
   # * job succeeded/failed counts go up from "" to "something" (should be "1" if backoffLimit=0)
 
-  cmd="kubectl -n $NAMESPACE get jobs --show-all --output=jsonpath='{.items[?(@.metadata.name == \"$JOB_NAME\")]..status.failed}'"
+  cmd="kubectl -n $NAMESPACE get jobs $show_all --output=jsonpath='{.items[?(@.metadata.name == \"$JOB_NAME\")]..status.failed}'"
   eval $cmd || exit 1
 }
 
@@ -59,7 +70,7 @@ function getPodNames() {
   # fn to get pod name(s) for NAMESPACE/JOB_NAME
   # * pod name(s) should be  "" or a single name if backoffLimit=0
 
-  cmd="kubectl -n $NAMESPACE get pods --show-all --output=jsonpath='{.items[?(@.metadata.labels.job-name == \"$JOB_NAME\")]..metadata.name}'"
+  cmd="kubectl -n $NAMESPACE get pods $show_all --output=jsonpath='{.items[?(@.metadata.labels.job-name == \"$JOB_NAME\")]..metadata.name}'"
   eval $cmd || exit 1
 }
 
@@ -70,7 +81,7 @@ function getPodStatus() {
   # * This function can return multiple statuses if the job hasn't 
   #   been carefully constrained to only try once (backoffLimit: 0)
 
-  cmd="kubectl -n $NAMESPACE get pods --show-all --output=jsonpath='{.items[?(@.metadata.labels.job-name == \"$JOB_NAME\")]..status.phase}'"
+  cmd="kubectl -n $NAMESPACE get pods $show_all --output=jsonpath='{.items[?(@.metadata.labels.job-name == \"$JOB_NAME\")]..status.phase}'"
   eval $cmd || exit 1
 }
 
@@ -173,7 +184,7 @@ function launchCommandJob {
     fi
   done
 
-  local pods=$(kubectl -n $NAMESPACE get pods  --show-all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
+  local pods=$(kubectl -n $NAMESPACE get pods $show_all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
   local pod
   for pod in $pods; do
     # trace 
