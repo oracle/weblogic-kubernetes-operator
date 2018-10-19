@@ -2570,7 +2570,7 @@ function verify_domain_created {
 
     # Prepend "+" to detailed debugging to make it easy to filter out
 
-    kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get all -n $NAMESPACE $show_all 2>&1 | sed 's/^/+/' 2>&1
 
     kubectl get domains  -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
@@ -2674,7 +2674,7 @@ function verify_domain_deleted {
 
     # Prepend "+" to detailed debugging to make it easy to filter out
 
-    kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get all -n $NAMESPACE $show_all 2>&1 | sed 's/^/+/' 2>&1
 
     kubectl get domains -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
@@ -3176,6 +3176,18 @@ function test_suite_init {
     declare_new_test 1 "$@"
 
     cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
+ 
+    # Handle '--show-all' deprecation for 'kubectl get jobs' and 'kubectl get pods'.
+    # --show-all yields a deprecation warning in stderr in 1.10 in later, since
+    # it isn't needed in 1.10 and later.
+    # TBD It's not clear if we should check the Client version or the Server version.
+ 
+    k8s_minor=`kubectl version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
+    k8s_major=`kubectl version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
+    export show_all="--show-all"
+    if [ $k8s_major -gt 1 ] || [ $k8s_minor -gt 9 ]; then
+      export show_all=""
+    fi
    
     if [ "$WERCKER" = "true" ]; then 
       trace "Test Suite is running locally on Wercker and k8s is running on remote nodes."
@@ -3279,7 +3291,7 @@ function test_suite {
     op_define  oper2   weblogic-operator-2  test2              32001
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
-    if [ "$QUICKTEST2" = "true" ]; then
+    if [ "$QUICKTEST2" = "true" ] || [ "$WERCKER" = "true" ]; then
       dom_define domain1  oper1   default   domain1    AUTO            cluster-1       CONFIGURED       managed-server 7001       30012           30701           8001    30305                  30315
     else
       dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
@@ -3330,7 +3342,7 @@ function test_suite {
     # create first domain in default namespace and verify it
     test_domain_creation domain1 
 
-if [ ! "${QUICKTEST2}" = true ]; then
+    if [ ! "${QUICKTEST2}" = true ]; then
 
     # test shutting down and restarting a domain 
     test_domain_lifecycle domain1 
@@ -3383,7 +3395,7 @@ if [ ! "${QUICKTEST2}" = true ]; then
       test_shutdown_domain domain1
 
     fi 
-fi
+    fi
 
     local duration=$SECONDS
     trace "Running integration tests spent $(($duration / 60)) minutes and $(($duration % 60)) seconds."

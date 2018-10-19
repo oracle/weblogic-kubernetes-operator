@@ -16,7 +16,11 @@
 #   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
 #   example:  20181001T14:00:00.001 UTC
 function timestamp() {
-  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z'`"
+  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1`"
+  if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
+    # old shell versions don't support %N or --utc
+    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S 000000 %s %Z' 2>&1`"
+  fi
   local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
   # convert nano to milli
   local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
