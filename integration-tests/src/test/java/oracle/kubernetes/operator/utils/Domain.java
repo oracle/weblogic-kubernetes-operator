@@ -262,7 +262,7 @@ public class Domain {
 
     TestUtils.kubectlcp(
         webappLocation,
-        "/shared/applications/testwebapp.war",
+        "/shared/applications/" + webappName + ".war",
         domainUid + "-" + adminServerName,
         domainNS);
 
@@ -273,8 +273,8 @@ public class Domain {
         domainNS);
 
     TestUtils.kubectlcp(
-        projectRoot + "/integration-tests/src/test/resources/calldeploywebapp.sh",
-        "/shared/calldeploywebapp.sh",
+        projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
+        "/shared/callpyscript.sh",
         domainUid + "-" + adminServerName,
         domainNS);
 
@@ -288,6 +288,12 @@ public class Domain {
    * @throws Exception
    */
   public void verifyWebAppLoadBalancing(String webappName) throws Exception {
+
+    callWebAppAndVerifyLoadBalancing(webappName, true);
+  }
+
+  public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
+      throws Exception {
     if (!loadBalancer.equals("NONE")) {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
@@ -313,8 +319,10 @@ public class Domain {
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
-      // execute curl and look for the managed server name in response
-      callWebAppAndCheckForServerNameInResponse(curlCmd.toString());
+      if (verifyLoadBalance) {
+        // execute curl and look for the managed server name in response
+        callWebAppAndCheckForServerNameInResponse(curlCmd.toString());
+      }
       // logger.info("curlCmd "+curlCmd);
 
     }
@@ -626,7 +634,7 @@ public class Domain {
         .append(domainUid)
         .append("-")
         .append(adminServerName)
-        .append(" /shared/calldeploywebapp.sh /shared/deploywebapp.py ")
+        .append(" /shared/callpyscript.sh /shared/deploywebapp.py ")
         .append(username)
         .append(" ")
         .append(password)
@@ -639,7 +647,9 @@ public class Domain {
         .append(t3ChannelPort)
         .append(" ")
         .append(webappName)
-        .append(" /shared/applications/testwebapp.war ")
+        .append(" /shared/applications/")
+        .append(webappName)
+        .append(".war ")
         .append(clusterName);
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
