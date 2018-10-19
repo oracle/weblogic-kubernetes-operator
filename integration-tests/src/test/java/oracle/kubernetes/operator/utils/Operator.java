@@ -324,7 +324,8 @@ public class Operator {
     }
 
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      operatorMap.put("imagePullSecrets", "{ name: " + System.getenv("IMAGE_PULL_SECRET_OPERATOR") + " }");
+      operatorMap.put(
+          "imagePullSecrets", "{ name: " + System.getenv("IMAGE_PULL_SECRET_OPERATOR") + " }");
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_OPERATOR"),
