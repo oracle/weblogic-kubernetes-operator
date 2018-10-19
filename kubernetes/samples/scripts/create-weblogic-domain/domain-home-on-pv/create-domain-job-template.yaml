@@ -64,9 +64,9 @@ spec:
             - name: DOMAIN_ROOT_DIR
               value: "%DOMAIN_ROOT_DIR%"
             - name: DOMAIN_HOME_DIR
-              value: "%DOMAIN_ROOT_DIR%/domains/%DOMAIN_NAME%"
+              value: "%DOMAIN_ROOT_DIR%/domains/%DOMAIN_UID%"
             - name: DOMAIN_LOGS_DIR
-              value: "%DOMAIN_ROOT_DIR%/logs"
+              value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
       volumes:
         - name: create-weblogic-sample-domain-job-cm-volume
           configMap:
