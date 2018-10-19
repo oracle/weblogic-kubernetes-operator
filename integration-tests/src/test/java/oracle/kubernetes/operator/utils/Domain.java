@@ -816,15 +816,22 @@ public class Domain {
     if (exposeAdminT3Channel && inputDomainMap.get("t3PublicAddress") == null) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
+    
+    String imageNamePrefix = "store/oracle/";
+    if (System.getenv("REPO_PREFIX") != null) {
+	imageNamePrefix = System.getenv("REPO_PREFIX");
+    }
+    domainMap.put("image", imageNamePrefix + "weblogic" + ":12.2.1.3");
+    
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-          "index.docker.io/v1/",
-          System.getenv("DOCKER_USERNAME"),
-          System.getenv("DOCKER_PASSWORD"),
-          System.getenv("DOCKER_EMAIL"),
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
           domainNS);
     }
   }
