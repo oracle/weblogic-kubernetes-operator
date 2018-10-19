@@ -62,7 +62,7 @@
 #   DOMAIN_DIR     Target location for generated domain. When wdt completes,
 #                  this will contain a directory named after the domain
 #                  defined in the WDT_MODEL_FILE.
-#                  default:  /shared/domain
+#                  default:  /shared/domains
 #
 
 # Initialize globals
@@ -75,7 +75,7 @@ WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
 
-DOMAIN_DIR=${DOMAIN_DIR:-/shared/domain}
+DOMAIN_DIR=${DOMAIN_DIR:-/shared/domains}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.12/$WDT_INSTALL_ZIP_FILE"}
