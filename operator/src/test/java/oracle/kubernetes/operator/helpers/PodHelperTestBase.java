@@ -101,7 +101,7 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
-  private static final String DOMAIN_HOME = "/shared/domains/domain1";
+  private static final String DOMAIN_HOME = "/shared/domains/uid1";
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
@@ -344,7 +344,7 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
-            hasEnvVar("LOG_HOME", LOG_HOME),
+            hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
@@ -579,7 +579,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
-        .addEnvItem(envItem("LOG_HOME", LOG_HOME))
+        .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
