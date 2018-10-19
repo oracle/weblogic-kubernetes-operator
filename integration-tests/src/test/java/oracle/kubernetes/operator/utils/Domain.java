@@ -781,6 +781,7 @@ public class Domain {
     initialManagedServerReplicas =
         ((Integer) domainMap.get("initialManagedServerReplicas")).intValue();
     configuredManagedServerCount =
+<<<<<<< HEAD
         ((Integer) domainMap.get("configuredManagedServerCount")).intValue();
     exposeAdminT3Channel = ((Boolean) domainMap.get("exposeAdminT3Channel")).booleanValue();
     exposeAdminNodePort = ((Boolean) domainMap.get("exposeAdminNodePort")).booleanValue();
@@ -796,6 +797,75 @@ public class Domain {
               + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
               + domainMap.get("createDomainFilesDir"));
     }
+=======
+        ((Integer)
+                inputDomainMap.getOrDefault(
+                    "configuredManagedServerCount", configuredManagedServerCount))
+            .intValue();
+    exposeAdminT3Channel =
+        ((Boolean)
+                inputDomainMap.getOrDefault(
+                    "exposeAdminT3Channel", new Boolean(exposeAdminT3Channel)))
+            .booleanValue();
+    exposeAdminNodePort =
+        ((Boolean)
+                inputDomainMap.getOrDefault(
+                    "exposeAdminNodePort", new Boolean(exposeAdminNodePort)))
+            .booleanValue();
+    t3ChannelPort =
+        ((Integer) inputDomainMap.getOrDefault("t3ChannelPort", t3ChannelPort)).intValue();
+    clusterName = inputDomainMap.getOrDefault("clusterName", clusterName).toString();
+    clusterType = inputDomainMap.getOrDefault("clusterType", clusterType).toString();
+    startupControl = inputDomainMap.getOrDefault("startupControl", startupControl).toString();
+    weblogicDomainStorageReclaimPolicy =
+        inputDomainMap
+            .getOrDefault("weblogicDomainStorageReclaimPolicy", weblogicDomainStorageReclaimPolicy)
+            .toString();
+    weblogicDomainStorageSize =
+        inputDomainMap
+            .getOrDefault("weblogicDomainStorageSize", weblogicDomainStorageSize)
+            .toString();
+    loadBalancer = inputDomainMap.getOrDefault("loadBalancer", loadBalancer).toString();
+    loadBalancerWebPort =
+        ((Integer) inputDomainMap.getOrDefault("loadBalancerWebPort", loadBalancerWebPort))
+            .intValue();
+    loadBalancerDashboardPort =
+        ((Integer)
+                inputDomainMap.getOrDefault("loadBalancerDashboardPort", loadBalancerDashboardPort))
+            .intValue();
+
+    domainMap.put("domainUID", domainUid);
+    domainMap.put("namespace", domainNS);
+    domainMap.put("adminServerName", adminServerName);
+    domainMap.put("managedServerNameBase", managedServerNameBase);
+    domainMap.put("initialManagedServerReplicas", initialManagedServerReplicas);
+    domainMap.put("configuredManagedServerCount", configuredManagedServerCount);
+    domainMap.put("exposeAdminT3Channel", new Boolean(exposeAdminT3Channel));
+    domainMap.put("exposeAdminNodePort", new Boolean(exposeAdminNodePort));
+    domainMap.put("t3ChannelPort", t3ChannelPort);
+    domainMap.put("clusterName", clusterName);
+    domainMap.put("clusterType", clusterType);
+    domainMap.put("startupControl", startupControl);
+    domainMap.put("persistentVolumeClaimName", domainUid + "-pvc");
+    domainMap.put("domainName", inputDomainMap.getOrDefault("domainName", domainUid));
+    domainMap.put(
+        "adminNodePort", inputDomainMap.getOrDefault("adminNodePort", new Integer("30701")));
+    domainMap.put(
+        "loadBalancerVolumePath",
+        inputDomainMap.getOrDefault("loadBalancerVolumePath", new String("")));
+    domainMap.put("weblogicDomainStorageReclaimPolicy", weblogicDomainStorageReclaimPolicy);
+    domainMap.put(
+        "domainPVMountPath", inputDomainMap.getOrDefault("domainPVMountPath", new String("")));
+    domainMap.put(
+        "createDomainScriptsMountPath",
+        inputDomainMap.getOrDefault("createDomainScriptsMountPath", new String("")));
+    domainMap.put(
+        "createDomainScriptName",
+        inputDomainMap.getOrDefault("createDomainScriptName", new String("")));
+    domainMap.put(
+        "createDomainFilesDir",
+        inputDomainMap.getOrDefault("createDomainFilesDir", new String("")));
+>>>>>>> Change default log home to /shared/logs/domainUID and domain home to /shared/domains/domainUID.
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
