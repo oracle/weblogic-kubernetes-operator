@@ -63,7 +63,6 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  # lbOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   lbOutputDir=${outputDir}
 
   if [ ! -z "${loadBalancer}" ]; then
