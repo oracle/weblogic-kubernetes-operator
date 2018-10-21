@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v1.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -236,7 +238,7 @@ public class ServiceHelper {
         if (other == this) {
           return true;
         }
-        if ((other instanceof ConflictStep) == false) {
+        if (!(other instanceof ConflictStep)) {
           return false;
         }
         ConflictStep rhs = ((ConflictStep) other);
@@ -271,11 +273,15 @@ public class ServiceHelper {
     }
 
     String getDomainName() {
-      return info.getDomain().getDomainName();
+      return getDomain().getDomainName();
+    }
+
+    Domain getDomain() {
+      return info.getDomain();
     }
 
     String getDomainUID() {
-      return info.getDomain().getDomainUID();
+      return getDomain().getDomainUID();
     }
 
     String getNamespace() {
@@ -586,14 +592,14 @@ public class ServiceHelper {
 
     @Override
     protected ServiceStepContext createContext(Packet packet) {
-      return new ExternalStepContext(this, packet);
+      return new ExternalChannelServiceStepContext(this, packet);
     }
   }
 
-  private static class ExternalStepContext extends ServerServiceStepContext {
+  private static class ExternalChannelServiceStepContext extends ServerServiceStepContext {
     private final NetworkAccessPoint networkAccessPoint;
 
-    ExternalStepContext(Step conflictStep, Packet packet) {
+    ExternalChannelServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       networkAccessPoint =
           (NetworkAccessPoint) packet.get(ProcessingConstants.NETWORK_ACCESS_POINT);
@@ -610,8 +616,22 @@ public class ServiceHelper {
     }
 
     protected V1ObjectMeta createMetadata() {
-      return super.createMetadata()
-          .putLabelsItem(LabelConstants.CHANNELNAME_LABEL, getChannelName());
+      V1ObjectMeta metadata =
+          super.createMetadata().putLabelsItem(LabelConstants.CHANNELNAME_LABEL, getChannelName());
+
+      for (Map.Entry<String, String> entry : getChannelServiceLabels().entrySet())
+        metadata.putLabelsItem(entry.getKey(), entry.getValue());
+      for (Map.Entry<String, String> entry : getChannelServiceAnnotations().entrySet())
+        metadata.putAnnotationsItem(entry.getKey(), entry.getValue());
+      return metadata;
+    }
+
+    Map<String, String> getChannelServiceLabels() {
+      return getDomain().getChannelServiceLabels(getChannelName());
+    }
+
+    private Map<String, String> getChannelServiceAnnotations() {
+      return getDomain().getChannelServiceAnnotations(getChannelName());
     }
 
     private String getChannelName() {
