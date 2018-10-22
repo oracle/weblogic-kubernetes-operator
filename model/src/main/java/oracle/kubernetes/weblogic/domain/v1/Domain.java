@@ -10,6 +10,8 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
+import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -166,6 +168,13 @@ public class Domain {
     return spec.getEffectiveConfigurationFactory(apiVersion).getAdminServerSpec();
   }
 
+  /**
+   * Returns the specification applicable to a particular server/cluster combination.
+   *
+   * @param serverName the name of the server
+   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the server
+   */
   public ServerSpec getServer(String serverName, String clusterName) {
     return spec.getEffectiveConfigurationFactory(apiVersion).getServerSpec(serverName, clusterName);
   }
@@ -284,6 +293,23 @@ public class Domain {
 
   public boolean isShuttingDown() {
     return spec.getEffectiveConfigurationFactory(apiVersion).isShuttingDown();
+  }
+
+  /**
+   * Return the names of the exported admin NAPs.
+   *
+   * @return a list of names; may be empty
+   */
+  public List<String> getExportedNetworkAccessPointNames() {
+    return spec.getEffectiveConfigurationFactory(apiVersion).getExportedNetworkAccessPointNames();
+  }
+
+  public Map<String, String> getChannelServiceLabels(String channel) {
+    return spec.getEffectiveConfigurationFactory(apiVersion).getChannelServiceLabels(channel);
+  }
+
+  public Map<String, String> getChannelServiceAnnotations(String channel) {
+    return spec.getEffectiveConfigurationFactory(apiVersion).getChannelServiceAnnotations(channel);
   }
 
   /**
