@@ -60,8 +60,6 @@
 #   to the node manager later in the server pods (so that the server pods don't
 #   have to mount the secret containing the username and password).
 #
-# TBD listen-addresses need to each be modified to be 'DNS safe' if needed...
-#
 
 import base64
 import sys
@@ -183,6 +181,9 @@ class OfflineWlstEnv(object):
     if val == None or val == "null":
       return deflt
     return val
+
+  def toDNS1123Legal(self, address):
+    return address.lower().replace('_','-')
 
 class SecretManager(object):
 
@@ -570,10 +571,11 @@ class SitConfigGenerator(Generator):
 
   def customizeServer(self, server):
     name=server.getName()
+    listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + name)
     self.writeln("<d:server>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
-    self.writeln("<d:listen-address f:combine-mode=\"replace\">" + self.env.getDomainUID() + "-" + name + "</d:listen-address>")
+    self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
     self.customizeLog(name)
     self.undent()
     self.writeln("</d:server>")
@@ -585,12 +587,13 @@ class SitConfigGenerator(Generator):
   def customizeServerTemplate(self, template):
     name=template.getName()
     server_name_prefix=template.getCluster().getDynamicServers().getServerNamePrefix()
+    listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "\${id}") 
     self.writeln("<d:server-template>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
-    #TBD why is this commented out?
-    #self.writeln("<d:listen-address f:combine-mode=\"replace\">" + self.env.getDomainUID() + "-" + server_name_prefix + "\${i}</d:listen-address>")
-    self.customizeLog(server_name_prefix + "\${i}.log")
+    #TBD test dynamic cluster mgd server
+    self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
+    self.customizeLog(server_name_prefix + "\${id}.log")
     self.undent()
     self.writeln("</d:server-template>")
 
