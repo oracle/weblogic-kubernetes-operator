@@ -65,8 +65,8 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenStartupControlNotNone_runAdminStepOnly() {
-    domain.getSpec().setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
+  public void whenNotShuttingDown_runAdminStepOnly() {
+    configurator.setShuttingDown(false);
 
     testSupport.runSteps(getDomainPresenceStep());
 
@@ -75,8 +75,8 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenStartupControlNone_runManagedServersStepOnly() {
-    domain.getSpec().setStartupControl(StartupControlConstants.NONE_STARTUPCONTROL);
+  public void whenShuttingDown_runManagedServersStepOnly() {
+    configurator.setShuttingDown(true);
 
     testSupport.runSteps(getDomainPresenceStep());
 
