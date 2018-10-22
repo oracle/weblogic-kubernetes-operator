@@ -18,7 +18,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 public class ExternalAdminChannelsStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -58,19 +57,14 @@ public class ExternalAdminChannelsStep extends Step {
     Integer nodePortMin = 30000;
     Integer nodePortMax = 32767;
 
-    DomainSpec spec = dom.getSpec();
-    if (spec.getExportT3Channels() == null) {
-      return null;
-    }
-
-    WlsServerConfig adminServerConfig = scan.getServerConfig(spec.getAsName());
+    WlsServerConfig adminServerConfig = scan.getServerConfig(dom.getAsName());
 
     List<NetworkAccessPoint> naps = adminServerConfig.getNetworkAccessPoints();
     // This will become a list of valid channels to create services for.
     Collection<NetworkAccessPoint> channels = new ArrayList<>();
 
     // Pick out externalized channels from the server channels list
-    for (String incomingChannel : spec.getExportT3Channels()) {
+    for (String incomingChannel : dom.getExportedNetworkAccessPointNames()) {
       boolean missingChannel = true;
       for (NetworkAccessPoint nap : naps) {
         if (nap.getName().equalsIgnoreCase(incomingChannel)) {
@@ -80,7 +74,7 @@ public class ExternalAdminChannelsStep extends Step {
         }
       }
       if (missingChannel) {
-        LOGGER.warning(MessageKeys.EXCH_CHANNEL_NOT_DEFINED, incomingChannel, spec.getAsName());
+        LOGGER.warning(MessageKeys.EXCH_CHANNEL_NOT_DEFINED, incomingChannel, dom.getAsName());
       }
     }
 

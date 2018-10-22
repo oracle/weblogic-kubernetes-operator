@@ -239,7 +239,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   private ServerConfigurator configureAdminServer() {
-    return getConfigurator().configureAdminServer();
+    return getConfigurator().configureAdminServer(ADMIN_SERVER).withPort(ADMIN_PORT);
   }
 
   @Test
@@ -284,6 +284,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   protected ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName) {
-    return configurator.configureAdminServer();
+    return configurator.configureAdminServer(serverName);
   }
 }

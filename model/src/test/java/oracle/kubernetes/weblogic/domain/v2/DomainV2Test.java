@@ -9,7 +9,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -19,6 +21,7 @@ import com.google.gson.GsonBuilder;
 import io.kubernetes.client.models.V1EnvVar;
 import java.io.IOException;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -233,11 +236,71 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenExportT3ChannelsNotDefined_exportedNamesIsEmpty() {
+    assertThat(domain.getExportedNetworkAccessPointNames(), empty());
+  }
+
+  @Test
+  public void whenExportT3ChannelsDefined_returnChannelNames() {
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    configurator.withExportedNetworkAccessPoints("channel1", "channel2");
+
+    assertThat(
+        domain.getExportedNetworkAccessPointNames(), containsInAnyOrder("channel1", "channel2"));
+  }
+
+  @Test
+  public void whenExportT3ChannelsDefinedWithLabels_returnChannelNames() {
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    configurator
+        .configureExportedNetworkAccessPoint("channel1")
+        .addLabel("label1", "value1")
+        .addLabel("label2", "value2");
+    configurator
+        .configureExportedNetworkAccessPoint("channel2")
+        .addLabel("label3", "value3")
+        .addLabel("label4", "value4");
+
+    assertThat(
+        domain.getExportedNetworkAccessPointNames(), containsInAnyOrder("channel1", "channel2"));
+  }
+
+  @Test
+  public void whenExportT3ChannelsDefinedWithLabels_returnLabels() {
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    configurator
+        .configureExportedNetworkAccessPoint("channel1")
+        .addLabel("label1", "value1")
+        .addLabel("label2", "value2");
+
+    assertThat(domain.getChannelServiceLabels("channel1"), hasEntry("label1", "value1"));
+  }
+
+  @Test
+  public void whenExportT3ChannelsDefinedWithAnnotations_returnAnnotations() {
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    configurator
+        .configureExportedNetworkAccessPoint("channel1")
+        .addAnnotation("annotation1", "value1")
+        .addAnnotation("annotation2", "value2");
+
+    assertThat(domain.getChannelServiceAnnotations("channel1"), hasEntry("annotation1", "value1"));
+  }
+
+  @Test
   public void whenServerStartStateConfiguredOnClusterAndServer_useServerSetting() {
     configureCluster("cluster1").withServerStartState("cluster");
     configureServer("server1").withServerStartState("server");
 
     assertThat(domain.getServer("server1", "cluster1").getDesiredState(), equalTo("server"));
+  }
+
+  @Test
+  public void whenServerStartPolicyAlwaysConfiguredOnlyOnDomain_startServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+    configureServer("server1");
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(true));
   }
 
   @Test
@@ -435,5 +498,27 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
     assertThat(domain.getPersistentVolumeClaimName(), equalTo("magic-drive"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_hasExportedNaps() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+
+    assertThat(
+        domain.getExportedNetworkAccessPointNames(), containsInAnyOrder("channelA", "channelB"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_channelHasLabels() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+
+    assertThat(domain.getChannelServiceLabels("channelB"), hasEntry("color", "red"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_channelHasAnnotations() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+
+    assertThat(domain.getChannelServiceAnnotations("channelB"), hasEntry("time", "midnight"));
   }
 }
