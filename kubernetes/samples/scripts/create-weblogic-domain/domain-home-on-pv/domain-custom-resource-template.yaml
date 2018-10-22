@@ -41,7 +41,8 @@ spec:
   # files in.
   # If not specified or empty, domain log file, server logs and server out files will be stored in
   # their normal locations under the domain home, while node manager logs will be stored in the
-  # default logHome location of /shared/logs/<domainUID>/
+  # default logHome location of /shared/logs/<domainUID>/ , or /shared/logs/ if the domain home
+  # is in a weblogic image
   logHome: %LOG_HOME%
   # startupControl legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
