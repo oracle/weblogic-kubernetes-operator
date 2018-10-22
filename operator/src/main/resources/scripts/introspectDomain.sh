@@ -58,6 +58,7 @@ checkEnv DOMAIN_UID \
          JAVA_HOME \
          NODEMGR_HOME \
          LOG_HOME \
+         REDIRECT_LOGS \
          WL_HOME \
          MW_HOME \
          || exit 1
