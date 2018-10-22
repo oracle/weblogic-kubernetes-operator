@@ -290,6 +290,10 @@ public class Domain {
     return spec.getIncludeServerOutInPodLog();
   }
 
+  public boolean isDomainHomeInImage() {
+    return spec.isDomainHomeInImage();
+  }
+
   public boolean isShuttingDown() {
     return spec.getEffectiveConfigurationFactory(apiVersion).isShuttingDown();
   }
