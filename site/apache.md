@@ -17,7 +17,7 @@ You need to build the Docker image for the Apache HTTP Server that embeds the Or
 
 ```
 
-For more information about the Apache plugin, see [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/12213/webtier/develop-plugin/apache.htm#PLGWL395).
+For more information about the Apache plugin, see [Configuring the Plug-In for Apache HTTP Server](https://docs.oracle.com/middleware/12213/webtier/develop-plugin/apache.htm#PLGWL395).
 
 After you have access to the Docker image of the Apache HTTP Server, you can follow the instructions below to set up and start the Kubernetes resources for the Apache HTTP Server.
 
@@ -410,13 +410,13 @@ You can fine tune the behavior of the Apache plugin by providing your own Apache
 
 # Docker volume path for APACHE
 
-# By default, the VolumePath is empty, which will cause the volume mount be disabled
+# By default, the VolumePath is empty, which will cause the volume mount to be disabled
 
 loadBalancerVolumePath: <host-config-dir>
 
 ```
 
-After the `loadBalancerVolumePath` property is specified, the `create-weblogic-domain.sh` script will use the `custom_mod_wl_apache.conf` file in `<host-config-dir>` directory to replace what is in the Docker image.
+After the `loadBalancerVolumePath` property is specified, the `create-weblogic-domain.sh` script will use the `custom_mod_wl_apache.conf` file in the `<host-config-dir>` directory to replace what is in the Docker image.
 
 The generated YAML files will look similar except with un-commented entries like below:
 
@@ -448,12 +448,12 @@ The generated YAML files will look similar except with un-commented entries like
 
 
 
-## Use the Apache load balancer with a manually created WebLogic Domain
+## Use the Apache load balancer with a manually created WebLogic domain
 
-If your WebLogic domain is not created by the WebLogic Operator, you need to manually create and start all Kubernetes' resources for the Apache HTTP Server.
+If your WebLogic domain is not created by the WebLogic Operator, you need to manually create and start all Kubernetes resources for the Apache HTTP Server.
 
 
-  1. Create your own `custom_mod_wl_apache.conf` file, and put it in a local directory, for example, `<host-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker](https://docs.oracle.com/middleware/1213/webtier/develop-plugin/apache.htm#PLGWL395).
+  1. Create your own `custom_mod_wl_apache.conf` file, and put it in a local directory, for example, `<host-conf-dir>`. See the instructions in [Apache Web Server with Oracle WebLogic Server Proxy Plugin on Docker]](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
   2. Create the Apache deployment YAML file. See the example above. Note that you need to use the **volumes** and **volumeMounts** to mount `<host-config-dir>` into the `/config` directory inside the pod that runs the Apache web tier. Note that the Apache HTTP Server needs to be in the same Kubernetes namespace as the WebLogic domain that it needs to access.
 
