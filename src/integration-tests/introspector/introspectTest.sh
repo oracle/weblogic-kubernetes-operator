@@ -272,6 +272,20 @@ createConfigMapFromDir() {
     2>&1 | tracePipe "kubectl output: " || exit 1 
 }
 
+
+#############################################################################
+#
+# Helper function to lowercase a value and make it a legal DNS1123 name
+# $1 - value to convert to lowercase
+#
+
+function toDNS1123Legal {
+  local val=`echo $1 | tr "[:upper:]" "[:lower:]"`
+  val=${val//"_"/"-"}
+  echo "$val"
+}
+
+
 #############################################################################
 #
 # Deploy domain cm 
@@ -444,10 +458,9 @@ function deployPod() {
 
   ( 
     export SERVER_NAME=${server_name}
-    # TBD SERVICE_NAME and AS_SERVICE_NAME should be derived from introspect results
-    #     or should be generated via a 'convertToDNS' function of some sort
-    export SERVICE_NAME=${DOMAIN_UID}-${server_name}
-    export AS_SERVICE_NAME=${DOMAIN_UID}-${ADMIN_NAME}
+    # TBD SERVER_NAME should be derived from introspect results
+    export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
+    export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
@@ -476,13 +489,11 @@ function deployPod() {
   echo
 }
 
-function deployService() {
+function deploySinglePodService() {
   local server_name=${1?}
   local internal_port=${2?}
   local external_port=${3?}
-  # TBD SERVICE_NAME and AS_SERVICE_NAME should be derived from introspect results
-  #     or should be generated via a 'convertToDNS' function of some sort
-  local service_name=${DOMAIN_UID}-${server_name}
+  local service_name=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
   local target_yaml=${test_home}/wl-nodeport-svc-${service_name}.yaml
 
   trace "Info: Launching service '$service_name' internal_port=$internal_port external_port=$external_port."
@@ -542,10 +553,20 @@ deployCreateDomainJob
 
 deployIntrospectJob
 
+#
+# TBD ADMIN_NAME, 7001, and MANAGED_SERVER_NAME_BASE
+#     below should all be derived from introspect
+#     topology file
+#
+
 deployPod ${ADMIN_NAME}
 
-deployService ${ADMIN_NAME} 7001 30701
+deploySinglePodService ${ADMIN_NAME} 7001 30701
 
 deployPod ${MANAGED_SERVER_NAME_BASE}1
+
+#
+# TBD potentially add additional checks to verify wl pods are healthy
+#
 
 trace "Info: success!"
