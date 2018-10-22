@@ -49,8 +49,8 @@ $ kubectl create -f samples/path-routing.yaml
 ```
 Now you can send request to different WLS domains with the unique entry point of Traefik with different path.
 ```
-$ curl --silent http://${HOSTNAME}:30305/testwebapp/
-$ curl --silent http://${HOSTNAME}:30305/testwebapp1/
+$ curl --silent http://${HOSTNAME}:30305/domain1/
+$ curl --silent http://${HOSTNAME}:30305/domain2/
 ```
 
 ## Uninstall Traefik Operator
