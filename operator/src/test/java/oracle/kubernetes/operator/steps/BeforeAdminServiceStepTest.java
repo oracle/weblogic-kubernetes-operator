@@ -66,7 +66,7 @@ public class BeforeAdminServiceStepTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.installRequestStepFactory());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
-    configurator.defineAdminServer(ADMIN_NAME, ADMIN_PORT_NUM);
+    configurator.configureAdminServer(ADMIN_NAME).withPort(ADMIN_PORT_NUM);
   }
 
   @After
@@ -86,7 +86,10 @@ public class BeforeAdminServiceStepTest {
 
   @Test
   public void whenAdminServerNodePortDefined_packetContainsItAfterProcessing() {
-    configurator.configureAdminServer().withNodePort(NODE_PORT_NUM);
+    configurator
+        .configureAdminServer(ADMIN_NAME)
+        .withPort(ADMIN_PORT_NUM)
+        .withNodePort(NODE_PORT_NUM);
     Packet packet = invokeStep();
 
     assertThat(packet, hasEntry(NODE_PORT, NODE_PORT_NUM));

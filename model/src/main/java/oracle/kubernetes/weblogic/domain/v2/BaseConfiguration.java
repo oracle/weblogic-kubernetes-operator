@@ -156,10 +156,10 @@ public abstract class BaseConfiguration {
   /**
    * Returns true if any version 2 configuration fields are specified.
    *
-   * @return whether there is version 2 configuration in this instance
+   * @return whether there is version 2 configuration field in this instance
    */
   protected boolean hasV2Fields() {
-    return serverStartState != null || !env.isEmpty();
+    return serverStartState != null || serverStartPolicy != null || !env.isEmpty();
   }
 
   @Nullable
@@ -225,7 +225,7 @@ public abstract class BaseConfiguration {
   }
 
   String getServerStartPolicy() {
-    return Optional.ofNullable(serverStartPolicy).orElse("undefined");
+    return serverStartPolicy;
   }
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
