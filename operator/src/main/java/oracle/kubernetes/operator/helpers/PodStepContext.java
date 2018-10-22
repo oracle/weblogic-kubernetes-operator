@@ -159,11 +159,19 @@ public abstract class PodStepContext implements StepContextConstants {
     return getDomain().getLogHome();
   }
 
+  protected boolean isDomainHomeInImage() {
+    return getDomain().isDomainHomeInImage();
+  }
+
   String getEffectiveLogHome() {
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+      if (isDomainHomeInImage()) {
+        return DEFAULT_LOG_HOME;
+      } else {
+        return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+      }
     }
     return logHome;
   }
