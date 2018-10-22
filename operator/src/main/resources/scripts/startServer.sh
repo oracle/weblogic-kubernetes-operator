@@ -136,7 +136,7 @@ ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
 
 if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
   trace "Showing the server out file from ${SERVER_OUT_FILE}"
-  tail -F -n +0 ${SERVER_OUT_FILE}
+  tail -F -n +0 ${SERVER_OUT_FILE} || exit 1
 else
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do sleep 60; done
