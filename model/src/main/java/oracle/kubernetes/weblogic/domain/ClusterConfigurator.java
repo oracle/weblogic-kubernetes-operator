@@ -21,6 +21,8 @@ public interface ClusterConfigurator {
 
   ClusterConfigurator withServerStartState(String cluster);
 
+  ClusterConfigurator withServerStartupPolicy(String policy);
+
   ClusterConfigurator withReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
 

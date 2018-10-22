@@ -6,12 +6,13 @@ package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -23,7 +24,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
@@ -144,32 +144,43 @@ public class ManagedServersUpStep extends Step {
 
   private static Step scaleDownIfNecessary(
       DomainPresenceInfo info, Collection<String> servers, Step next) {
-    Domain dom = info.getDomain();
-    DomainSpec spec = dom.getSpec();
 
-    boolean shouldStopAdmin = false;
-    String sc = spec.getStartupControl();
-    if (sc != null && StartupControlConstants.NONE_STARTUPCONTROL.equals(sc.toUpperCase())) {
-      shouldStopAdmin = true;
-      next =
-          DomainStatusUpdater.createAvailableStep(
-              DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, next);
+    List<Step> steps = new ArrayList<>(Collections.singletonList(next));
+
+    List<String> serversToIgnore = new ArrayList<>(servers);
+    if (info.getDomain().isShuttingDown()) {
+      insert(steps, createAvailableHookStep());
+    } else {
+      serversToIgnore.add(info.getDomain().getAsName());
     }
 
-    String adminName = spec.getAsName();
-    Map<String, ServerKubernetesObjects> currentServers = info.getServers();
+    Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop =
+        getServersToStop(info, serversToIgnore);
+
+    if (!serversToStop.isEmpty()) {
+      insert(steps, new ServerDownIteratorStep(serversToStop, null));
+    }
+
+    return Step.chain(steps.toArray(new Step[0]));
+  }
+
+  private static Collection<Map.Entry<String, ServerKubernetesObjects>> getServersToStop(
+      DomainPresenceInfo info, List<String> serversToIgnore) {
     Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : currentServers.entrySet()) {
-      if ((shouldStopAdmin || !entry.getKey().equals(adminName))
-          && !servers.contains(entry.getKey())) {
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      if (!serversToIgnore.contains(entry.getKey())) {
         serversToStop.add(entry);
       }
     }
+    return serversToStop;
+  }
 
-    if (!serversToStop.isEmpty()) {
-      return new ServerDownIteratorStep(serversToStop, next);
-    }
+  private static Step createAvailableHookStep() {
+    return DomainStatusUpdater.createAvailableStep(
+        DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, null);
+  }
 
-    return next;
+  private static void insert(List<Step> steps, Step step) {
+    steps.add(0, step);
   }
 }

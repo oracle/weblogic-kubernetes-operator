@@ -83,7 +83,7 @@ public class ServerSpecV2Impl extends ServerSpec {
 
   @Override
   public boolean shouldStart(int currentReplicas) {
-    switch (server.getServerStartPolicy()) {
+    switch (getEffectiveServerStartPolicy()) {
       case START_NEVER:
         return false;
       case START_ALWAYS:
@@ -93,6 +93,10 @@ public class ServerSpecV2Impl extends ServerSpec {
       default:
         return clusterLimit == null;
     }
+  }
+
+  private String getEffectiveServerStartPolicy() {
+    return Optional.ofNullable(server.getServerStartPolicy()).orElse("undefined");
   }
 
   @Nonnull

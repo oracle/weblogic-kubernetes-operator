@@ -10,17 +10,21 @@ import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 
 public class DomainConfiguratorFactory {
 
-  private static DomainConfigurator examplar = new DomainV1Configurator(null);
+  private static DomainConfigurator exemplar = new DomainV2Configurator(null);
 
   public static DomainConfigurator forDomain(Domain domain) {
-    return examplar.createFor(domain);
+    return exemplar.createFor(domain);
+  }
+
+  public static boolean useDomainV1() {
+    return exemplar.useDomainV1();
   }
 
   public static void selectV1DomainModel() {
-    examplar = new DomainV1Configurator(null);
+    exemplar = new DomainV1Configurator(null);
   }
 
   public static void selectV2DomainModel() {
-    examplar = new DomainV2Configurator(null);
+    exemplar = new DomainV2Configurator(null);
   }
 }
