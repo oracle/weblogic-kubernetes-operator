@@ -199,7 +199,7 @@ public abstract class DomainTestBase {
   }
 
   protected ServerConfigurator configureAdminServer() {
-    return configureDomain(domain).configureAdminServer();
+    return configureDomain(domain).configureAdminServer(AS_NAME).withPort(AS_PORT);
   }
 
   private V1EnvVar[] createEnvironment() {

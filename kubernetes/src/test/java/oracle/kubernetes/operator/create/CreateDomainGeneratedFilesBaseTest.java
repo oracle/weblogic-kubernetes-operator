@@ -127,6 +127,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
   }
 
   protected static void setup(DomainYamlFactory factory, DomainValues values) throws Exception {
+    DomainConfiguratorFactory.selectV1DomainModel();
     CreateDomainGeneratedFilesBaseTest.factory = factory;
     inputs = values;
     generatedFiles = factory.generate(values);
@@ -399,7 +400,7 @@ public abstract class CreateDomainGeneratedFilesBaseTest {
 
     DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
     configurator
-        .configureAdminServer()
+        .configureAdminServer(getInputs().getAdminServerName())
         .withDesiredState("RUNNING")
         .withEnvironmentVariable("JAVA_OPTIONS", getInputs().getJavaOptions())
         .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m ");

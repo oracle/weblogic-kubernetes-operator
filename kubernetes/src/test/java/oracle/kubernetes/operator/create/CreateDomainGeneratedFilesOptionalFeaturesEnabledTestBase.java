@@ -8,7 +8,6 @@ import static oracle.kubernetes.operator.utils.DomainValues.LOAD_BALANCER_APACHE
 import static oracle.kubernetes.operator.utils.DomainValues.STORAGE_TYPE_NFS;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalObjectReference;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNFSVolumeSource;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newStringList;
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,10 +58,10 @@ public class CreateDomainGeneratedFilesOptionalFeaturesEnabledTestBase
   @Override
   protected Domain getExpectedDomain() {
     Domain expected = super.getExpectedDomain();
-    expected.getSpec().withExportT3Channels(newStringList().addElement("T3Channel"));
-    // set the node port for the admin server:
+
     forDomain(expected)
-        .configureAdminServer()
+        .configureAdminServer(getInputs().getAdminServerName())
+        .withExportedNetworkAccessPoints("T3Channel")
         .withNodePort(Integer.parseInt(getInputs().getAdminNodePort()));
 
     return expected;
