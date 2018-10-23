@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -26,6 +28,14 @@ public class ServerDownIteratorStep extends Step {
       Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop, Step next) {
     super(next);
     this.c = serversToStop;
+  }
+
+  public List<String> getServersToStop() {
+    List<String> serverNames = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : c) {
+      serverNames.add(entry.getKey());
+    }
+    return Collections.unmodifiableList(serverNames);
   }
 
   @Override

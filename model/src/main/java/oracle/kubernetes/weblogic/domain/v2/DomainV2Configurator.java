@@ -9,11 +9,14 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v1.ExportedNetworkAccessPoint;
 
 public class DomainV2Configurator extends DomainConfigurator {
 
@@ -24,16 +27,18 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   public DomainV2Configurator(Domain domain) {
     super(domain);
+    if (domain != null) domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
   }
 
   @Override
-  public void defineAdminServer(String adminServerName) {}
+  public AdminServerConfigurator configureAdminServer(String adminServerName) {
+    return new AdminServerConfiguratorImpl(getOrCreateAdminServer(adminServerName));
+  }
 
   @Override
-  public void defineAdminServer(String adminServerName, int port) {}
-
-  @Override
-  public void withDefaultReplicaCount(int replicas) {}
+  public void withDefaultReplicaCount(int replicas) {
+    throw new ConfigurationNotSupportedException("domain", "defaultReplicas");
+  }
 
   @Override
   public void withDefaultReadinessProbeSettings(
@@ -48,7 +53,13 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator setStartupControl(String startupControl) {
+  public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
+    ((BaseConfiguration) getDomainSpec()).setServerStartPolicy(startPolicy);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withStartupControl(String startupControl) {
     throw new ConfigurationNotSupportedException("domain", "startupControl");
   }
 
@@ -58,25 +69,41 @@ public class DomainV2Configurator extends DomainConfigurator {
     return this;
   }
 
-  @Override
-  public ServerConfigurator configureAdminServer() {
-    return new AdminServerConfiguratorImpl(getOrCreateAdminServer());
-  }
-
-  class AdminServerConfiguratorImpl extends ServerConfiguratorImpl {
+  class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
+      implements AdminServerConfigurator {
     AdminServerConfiguratorImpl(AdminServer adminServer) {
       super(adminServer);
     }
+
+    @Override
+    public AdminServerConfigurator withPort(int port) {
+      getDomainSpec().setAsPort(port);
+      return this;
+    }
+
+    @Override
+    public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
+      for (String name : names) {
+        getDomainSpec().addExportedNetworkAccessPoint(name);
+      }
+      return this;
+    }
+
+    @Override
+    public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
+      return getDomainSpec().addExportedNetworkAccessPoint(channelName);
+    }
   }
 
-  private AdminServer getOrCreateAdminServer() {
+  private AdminServer getOrCreateAdminServer(String adminServerName) {
     AdminServer adminServer = getDomainSpec().getAdminServer();
     if (adminServer != null) return adminServer;
 
-    return createAdminServer();
+    return createAdminServer(adminServerName);
   }
 
-  private AdminServer createAdminServer() {
+  private AdminServer createAdminServer(String adminServerName) {
+    getDomainSpec().setAsName(adminServerName);
     AdminServer adminServer = new AdminServer();
     getDomainSpec().setAdminServer(adminServer);
     return adminServer;
@@ -191,7 +218,12 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   public void setShuttingDown(boolean shuttingDown) {
-    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
+    configureAdminServer("").withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
+  }
+
+  @Override
+  public boolean useDomainV1() {
+    return false;
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -240,6 +272,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withServerStartState(String state) {
       return withDesiredState(state);
+    }
+
+    @Override
+    public ClusterConfigurator withServerStartupPolicy(String policy) {
+      cluster.setServerStartPolicy(policy);
+      return this;
     }
 
     @Override
