@@ -104,7 +104,6 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_PERIOD = 35;
   private static final String DOMAIN_HOME = "/shared/domain/domain1";
   private static final String LOG_HOME = "/shared/logs/" + UID;
-  private static final String LOG_HOME_DOMAIN_IN_IMAGE = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
@@ -358,32 +357,16 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreated_withLogHomeSpecified_hasLogHomeAndTrueRedirectLogsEnvVariables() {
+  public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
     final String MY_LOG_HOME = "/shared/mylogs";
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(),
-        allOf(hasEnvVar("LOG_HOME", MY_LOG_HOME), hasEnvVar("REDIRECT_LOGS", "true")));
+    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", MY_LOG_HOME)));
   }
 
   @Test
-  public void
-      whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeAndFalseRedirectLogsEnvVariables() {
+  public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(),
-        allOf(hasEnvVar("LOG_HOME", LOG_HOME), hasEnvVar("REDIRECT_LOGS", "false")));
-  }
-
-  @Test
-  public void
-      whenPodCreated_withoutLogHomeSpecified_domainInImage_hasDefaultLogHomeAndFalseRedirectLogsEnvVariables() {
-    domainPresenceInfo.getDomain().getSpec().setLogHome(null);
-    domainPresenceInfo.getDomain().getSpec().setDomainHomeInImage(true);
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(),
-        allOf(
-            hasEnvVar("LOG_HOME", LOG_HOME_DOMAIN_IN_IMAGE), hasEnvVar("REDIRECT_LOGS", "false")));
+    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME)));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -617,7 +600,6 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
         .addEnvItem(envItem("LOG_HOME", LOG_HOME))
-        .addEnvItem(envItem("REDIRECT_LOGS", "false"))
         .addEnvItem(envItem("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))

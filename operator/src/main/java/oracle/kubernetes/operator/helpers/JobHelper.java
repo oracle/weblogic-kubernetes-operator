@@ -72,7 +72,6 @@ public class JobHelper {
       addEnvVar(envVarList, "NODEMGR_HOME", getNodeManagerHome());
       addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
       addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
-      addEnvVar(envVarList, "REDIRECT_LOGS", getRedirectLogs());
       addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
 
       return envVarList;
