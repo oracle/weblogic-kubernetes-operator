@@ -12,7 +12,7 @@ adminServerName: admin-server
 
 # Name of the WebLogic domain to create
 # By default, the domainName will be the same as the domainUID
-domainName:
+domainName: domain1
 
 # Unique ID identifying a domain.
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
@@ -99,4 +99,4 @@ createDomainScriptName: create-domain-job.sh
 # the script that is specified by the createDomainScriptName property.
 # The default is the "wlst" subdirectory under the directory where the 
 # create-domain.sh script is located.
-createDomainFilesDir:
+createDomainFilesDir: wlst
