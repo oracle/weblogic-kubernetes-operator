@@ -64,10 +64,8 @@ includeServerOutInPodLog: true
 
 # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
 # files in.
-# If not specified or empty, domain log file, server logs and server out files will be stored in
-# their normal locations under the domain home, while node manager logs will be stored in the
-# default logHome location of /shared/logs/<domainUID>/ , or /shared/logs/ if the domain home
-# is in a weblogic image
+# If not specified or empty, domain log file, server logs, server out, and node manager log files 
+# will be stored in the default logHome location of /shared/logs/<domainUID>/.
 #logHome: /shared/logs
 
 # Port for the T3Channel of the NetworkAccessPoint
