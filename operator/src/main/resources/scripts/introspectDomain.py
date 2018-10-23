@@ -90,7 +90,6 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID         = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME        = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME           = self.getEnv('LOG_HOME')
-    self.REDIRECT_LOGS      = self.getEnv('REDIRECT_LOGS')
 
     # initialize globals
 
@@ -138,10 +137,7 @@ class OfflineWlstEnv(object):
     return self.DOMAIN_HOME
 
   def getDomainLogHome(self):
-    if self.REDIRECT_LOGS == "true" :
-      return self.LOG_HOME
-    else :
-      return None
+    return self.LOG_HOME
 
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
