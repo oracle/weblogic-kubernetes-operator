@@ -13,6 +13,9 @@ import io.kubernetes.client.models.V1SecretReference;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -165,7 +168,18 @@ public class Domain {
   }
 
   public ServerSpec getAdminServerSpec() {
-    return spec.getEffectiveConfigurationFactory(apiVersion).getAdminServerSpec();
+    return getEffectiveConfigurationFactory().getAdminServerSpec();
+  }
+
+  private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
+    return spec.getEffectiveConfigurationFactory(getResourceVersion());
+  }
+
+  private String getResourceVersion() {
+    if (metadata == null) return VersionConstants.DEFAULT_DOMAIN_VERSION;
+    Map<String, String> labels = metadata.getLabels();
+    if (labels == null) return VersionConstants.DEFAULT_DOMAIN_VERSION;
+    return labels.get(LabelConstants.RESOURCE_VERSION_LABEL);
   }
 
   /**
@@ -176,7 +190,7 @@ public class Domain {
    * @return the effective configuration for the server
    */
   public ServerSpec getServer(String serverName, String clusterName) {
-    return spec.getEffectiveConfigurationFactory(apiVersion).getServerSpec(serverName, clusterName);
+    return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
   }
 
   /**
@@ -186,11 +200,11 @@ public class Domain {
    * @return the result of applying any configurations for this value
    */
   public int getReplicaCount(String clusterName) {
-    return spec.getEffectiveConfigurationFactory(apiVersion).getReplicaCount(clusterName);
+    return getEffectiveConfigurationFactory().getReplicaCount(clusterName);
   }
 
   public void setReplicaCount(String clusterName, int replicaLimit) {
-    spec.getEffectiveConfigurationFactory(apiVersion).setReplicaCount(clusterName, replicaLimit);
+    getEffectiveConfigurationFactory().setReplicaCount(clusterName, replicaLimit);
   }
 
   String getEffectiveStartupControl() {
@@ -292,7 +306,7 @@ public class Domain {
   }
 
   public boolean isShuttingDown() {
-    return spec.getEffectiveConfigurationFactory(apiVersion).isShuttingDown();
+    return getEffectiveConfigurationFactory().isShuttingDown();
   }
 
   /**
@@ -301,15 +315,15 @@ public class Domain {
    * @return a list of names; may be empty
    */
   public List<String> getExportedNetworkAccessPointNames() {
-    return spec.getEffectiveConfigurationFactory(apiVersion).getExportedNetworkAccessPointNames();
+    return getEffectiveConfigurationFactory().getExportedNetworkAccessPointNames();
   }
 
   public Map<String, String> getChannelServiceLabels(String channel) {
-    return spec.getEffectiveConfigurationFactory(apiVersion).getChannelServiceLabels(channel);
+    return getEffectiveConfigurationFactory().getChannelServiceLabels(channel);
   }
 
   public Map<String, String> getChannelServiceAnnotations(String channel) {
-    return spec.getEffectiveConfigurationFactory(apiVersion).getChannelServiceAnnotations(channel);
+    return getEffectiveConfigurationFactory().getChannelServiceAnnotations(channel);
   }
 
   /**
