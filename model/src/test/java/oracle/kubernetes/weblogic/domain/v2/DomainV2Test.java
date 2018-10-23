@@ -20,7 +20,6 @@ import static org.junit.Assert.assertThat;
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.models.V1EnvVar;
 import java.io.IOException;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
@@ -43,7 +42,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Before
   public void setUp() {
-    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
+    configureDomain(domain);
   }
 
   @Override
