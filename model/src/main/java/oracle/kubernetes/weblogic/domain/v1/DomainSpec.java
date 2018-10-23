@@ -419,6 +419,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return The in-pod name of the directory to store the domain, node manager, server logs, and
    *     server .out files in.
+   * @since 2.0
    */
   public String getLogHome() {
     return logHome;
@@ -428,6 +429,7 @@ public class DomainSpec extends BaseConfiguration {
    * Log Home
    *
    * @param logHome
+   * @since 2.0
    */
   public void setLogHome(String logHome) {
     this.logHome = logHome;
@@ -438,6 +440,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param logHome
    * @return this
+   * @since 2.0
    */
   public DomainSpec withLogHome(String logHome) {
     this.logHome = logHome;
@@ -448,6 +451,7 @@ public class DomainSpec extends BaseConfiguration {
    * Whether to include server .out to the pod's stdout
    *
    * @return whether server .out should be included in pod's stdout.
+   * @since 2.0
    */
   public String getIncludeServerOutInPodLog() {
     return includeServerOutInPodLog;
@@ -457,6 +461,7 @@ public class DomainSpec extends BaseConfiguration {
    * Whether to include server .out to the pod's stdout
    *
    * @param includeServerOutInPodLog Whether to include server .out to the pod's stdout
+   * @since 2.0
    */
   public void setIncludeServerOutInPodLog(String includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
@@ -467,6 +472,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param includeServerOutInPodLog Whether to include server .out to the pod's stdout
    * @return this
+   * @since 2.0
    */
   public DomainSpec withIncludeServerOutInPodLog(String includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
@@ -520,6 +526,17 @@ public class DomainSpec extends BaseConfiguration {
    */
   public boolean isDomainHomeInImage() {
     return domainHomeInImage;
+  }
+
+  /**
+   * Whether this domain's home is defined in the default docker image for the domain
+   *
+   * @param domainHomeInImage true if this domain's home is defined in the default docker image for
+   *     the domain, false otherwise
+   * @since 2.0
+   */
+  public void setDomainHomeInImage(boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
   }
 
   /**
