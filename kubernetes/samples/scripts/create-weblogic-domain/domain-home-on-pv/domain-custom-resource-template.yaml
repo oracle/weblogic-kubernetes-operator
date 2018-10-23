@@ -35,7 +35,7 @@ spec:
   asName: "%ADMIN_SERVER_NAME%"
   # The Admin Server's ListenPort
   asPort: %ADMIN_PORT%
-  # Whether to include the server out file into the pod's stdout
+  # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
   # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
   # files in.
