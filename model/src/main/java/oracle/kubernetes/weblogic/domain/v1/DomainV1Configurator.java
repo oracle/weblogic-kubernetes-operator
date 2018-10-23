@@ -7,10 +7,13 @@ package oracle.kubernetes.weblogic.domain.v1;
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
 
-import io.kubernetes.client.models.V1LocalObjectReference;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -34,33 +37,14 @@ public class DomainV1Configurator extends DomainConfigurator {
   }
 
   @Override
-  public void defineAdminServer(String adminServerName) {
+  public AdminServerConfigurator configureAdminServer(String adminServerName) {
     getDomainSpec().setAsName(adminServerName);
-  }
-
-  @Override
-  public void defineAdminServer(String adminServerName, int port) {
-    getDomainSpec().withAsName(adminServerName).setAsPort(port);
+    return new AdminServerStartupConfigurator(getOrCreateServerStartup(getAsName()));
   }
 
   @Override
   public void withDefaultReplicaCount(int replicas) {
     getDomainSpec().setReplicas(replicas);
-  }
-
-  @Override
-  public void withDefaultImage(String image) {
-    getDomainSpec().setImage(image);
-  }
-
-  @Override
-  public void withDefaultImagePullPolicy(String imagepullpolicy) {
-    getDomainSpec().setImagePullPolicy(imagepullpolicy);
-  }
-
-  @Override
-  public void withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
-    getDomainSpec().setImagePullSecret(secretReference);
   }
 
   @Override
@@ -94,7 +78,13 @@ public class DomainV1Configurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator setStartupControl(String startupControl) {
+  public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
+    throw new ConfigurationNotSupportedException("domain", "serverStartPolicy");
+  }
+
+  @SuppressWarnings("deprecation")
+  @Override
+  public DomainConfigurator withStartupControl(String startupControl) {
     getDomainSpec().setStartupControl(startupControl);
     return this;
   }
@@ -102,11 +92,6 @@ public class DomainV1Configurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withEnvironmentVariable(String name, String value) {
     throw new ConfigurationNotSupportedException("domain", "env");
-  }
-
-  @Override
-  public ServerConfigurator configureAdminServer() {
-    return configureServer(getAsName());
   }
 
   @Override
@@ -131,9 +116,15 @@ public class DomainV1Configurator extends DomainConfigurator {
     return new ClusterStartupConfigurator(getOrCreateClusterStartup(clusterName));
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void setShuttingDown(boolean shuttingDown) {
     getDomainSpec().setStartupControl(shuttingDown ? NONE_STARTUPCONTROL : AUTO_STARTUPCONTROL);
+  }
+
+  @Override
+  public boolean useDomainV1() {
+    return true;
   }
 
   @SuppressWarnings("deprecation")
@@ -212,6 +203,43 @@ public class DomainV1Configurator extends DomainConfigurator {
     }
   }
 
+  class AdminServerStartupConfigurator extends ServerStartupConfigurator
+      implements AdminServerConfigurator {
+
+    @SuppressWarnings("deprecation")
+    AdminServerStartupConfigurator(ServerStartup serverStartup) {
+      super(serverStartup);
+    }
+
+    @Override
+    public AdminServerConfigurator withPort(int port) {
+      getDomainSpec().setAsPort(port);
+      return this;
+    }
+
+    @Override
+    public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
+      getExportT3Channels().addAll(Arrays.asList(names));
+      return this;
+    }
+
+    @Override
+    public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
+      throw new ConfigurationNotSupportedException("adminServer", "networkAccessPoint");
+    }
+
+    private List<String> getExportT3Channels() {
+      List<String> existingChannels = getDomainSpec().getExportT3Channels();
+      return existingChannels != null ? existingChannels : createExportT3Channels();
+    }
+
+    private List<String> createExportT3Channels() {
+      List<String> channels = new ArrayList<>();
+      getDomainSpec().setExportT3Channels(channels);
+      return channels;
+    }
+  }
+
   @SuppressWarnings("deprecation")
   class ClusterStartupConfigurator implements ClusterConfigurator {
     private ClusterStartup clusterStartup;
@@ -250,6 +278,11 @@ public class DomainV1Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withServerStartState(String state) {
       return withDesiredState(state);
+    }
+
+    @Override
+    public ClusterConfigurator withServerStartupPolicy(String policy) {
+      throw new ConfigurationNotSupportedException("cluster", "serverStartupPolicy");
     }
 
     @Override

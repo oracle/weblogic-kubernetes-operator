@@ -199,7 +199,11 @@ public abstract class PodHelperTestBase {
 
   @SuppressWarnings("deprecation")
   private void defineDomainImage(String image) {
-    domainPresenceInfo.getDomain().getSpec().setImage(image);
+    configureDomain().withDefaultImage(image);
+  }
+
+  private DomainConfigurator configureDomain() {
+    return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
   String getPodName() {
@@ -254,7 +258,7 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodCreatedWithPullSecret_addToPod() {
     V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
-    domainPresenceInfo.getDomain().getSpec().setImagePullSecret(imagePullSecret);
+    configureDomain().withDefaultImagePullSecret(imagePullSecret);
 
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
   }
@@ -594,7 +598,8 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenDomainPresenceInfoLacksImageName_createdPodUsesDefaultImage() {
-    domainPresenceInfo.getDomain().getSpec().setImage(null);
+    configureDomain().withDefaultImage(null);
+
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
   }
 

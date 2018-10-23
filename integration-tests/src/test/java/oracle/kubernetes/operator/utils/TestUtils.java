@@ -607,6 +607,100 @@ public class TestUtils {
     }
   }
 
+  public static String callShellScriptByExecToPod(
+      String scriptPath, String arguments, String podName, String namespace) throws Exception {
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(namespace)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" ")
+        .append(scriptPath)
+        .append(" ")
+        .append(arguments);
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
+    }
+    return result.stdout().trim();
+  }
+
+  public static void createDirUnderDomainPV(String dirPath) throws Exception {
+
+    String crdCmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/job.sh \"mkdir -p "
+            + dirPath
+            + "\"";
+    ExecResult result = ExecCommand.exec(crdCmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create domain scripts directory "
+              + crdCmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
+    }
+    logger.info("command result " + result.stdout().trim());
+  }
+
+  public static void createWLDFModule(String adminPodName, String domainNS, int t3ChannelPort)
+      throws Exception {
+
+    // copy wldf.py script tp pod
+    TestUtils.kubectlcp(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
+        "/shared/wldf.py",
+        adminPodName,
+        domainNS);
+
+    // copy callpyscript.sh to pod
+    TestUtils.kubectlcp(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        "/shared/callpyscript.sh",
+        adminPodName,
+        domainNS);
+
+    // arguments to shell script to call py script
+    String arguments =
+        "/shared/wldf.py "
+            + BaseTest.getUsername()
+            + " "
+            + BaseTest.getPassword()
+            + " t3://"
+            + adminPodName
+            + ":"
+            + t3ChannelPort;
+
+    // call callpyscript.sh in pod to deploy wldf module
+    TestUtils.callShellScriptByExecToPod(
+        "/shared/callpyscript.sh", arguments, adminPodName, domainNS);
+  }
+
+  public static void createRBACPoliciesForWLDFScaling() throws Exception {
+    // create rbac policies
+    StringBuffer cmd = new StringBuffer("kubectl apply -f ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append("/integration-tests/src/test/resources/wldf/wldf-policy.yaml");
+    logger.info("Running " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
   private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
       throws Exception {
     // get operator external certificate from weblogic-operator.yaml

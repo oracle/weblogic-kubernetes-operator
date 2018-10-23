@@ -161,9 +161,10 @@ public class RestBackendImplTest {
 
   @Test
   public void whenNoPerClusterReplicaSettingAndDefaultMatchesRequest_doNothing() {
-    domain.getSpec().setReplicas(5);
+    if (DomainConfiguratorFactory.useDomainV1())
+      configurator.withDefaultReplicaCount(Domain.DEFAULT_REPLICA_LIMIT);
 
-    restBackend.scaleCluster(UID, "cluster1", 5);
+    restBackend.scaleCluster(UID, "cluster1", Domain.DEFAULT_REPLICA_LIMIT);
 
     assertThat(getUpdatedDomain(), nullValue());
   }

@@ -256,6 +256,62 @@ public class BaseTest {
   }
 
   /**
+   * Scale the cluster up using Weblogic WLDF scaling,
+   *
+   * @throws Exception
+   */
+  public void testWLDFScaling(Operator operator, Domain domain) throws Exception {
+    logger.info("Inside testWLDFScaling");
+
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainUid = domain.getDomainUid();
+    String domainNS = (String) domainMap.get("namespace");
+    String adminServerName = (String) domainMap.get("adminServerName");
+    String adminPodName = domainUid + "-" + adminServerName;
+    String domainName = (String) domainMap.get("domainName");
+
+    String scriptsDir =
+        "/scratch/acceptance_test_pv/persistentVolume-"
+            + domainUid
+            + "/domain/"
+            + domainName
+            + "/bin/scripts";
+
+    copyScalingScriptToPod(scriptsDir, domainName, adminPodName, domainNS);
+    TestUtils.createRBACPoliciesForWLDFScaling();
+
+    // deploy opensessionapp
+    domain.deployWebAppViaWLST(
+        "opensessionapp",
+        getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
+        getUsername(),
+        getPassword());
+
+    TestUtils.createWLDFModule(
+        adminPodName, domainNS, ((Integer) domainMap.get("t3ChannelPort")).intValue());
+
+    String clusterName = domainMap.get("clusterName").toString();
+    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    logger.info("replica count before scaleup " + replicaCnt);
+
+    logger.info("Scale domain " + domainUid + " by calling the webapp");
+
+    int replicas = 3;
+    callWebAppAndVerifyScaling(domain, replicas);
+
+    replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    if (replicaCnt != replicas) {
+      throw new RuntimeException(
+          "FAILURE: Cluster replica doesn't match with scaled up size "
+              + replicaCnt
+              + "/"
+              + replicas);
+    }
+
+    logger.info("Done - testWLDFScaling");
+  }
+
+  /**
    * Restarting Operator should not impact the running domain
    *
    * @throws Exception
@@ -268,6 +324,26 @@ public class BaseTest {
     operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
     logger.info("Done - testOperatorLifecycle");
+  }
+
+  public static ExecResult cleanup() throws Exception {
+    String cmd =
+        "export RESULT_ROOT="
+            + getResultRoot()
+            + " export PV_ROOT="
+            + getPvRoot()
+            + " && "
+            + getProjectRoot()
+            + "/src/integration-tests/bash/cleanup.sh";
+    logger.info("Command to call cleanup script " + cmd);
+    return ExecCommand.exec(cmd);
+  }
+
+  protected void logTestBegin(String testName) throws Exception {
+    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    logger.info("BEGIN " + testName);
+    // renew lease at the beginning for every test method, leaseId is set only for Wercker
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
   public static String getResultRoot() {
@@ -314,23 +390,40 @@ public class BaseTest {
     return branchName;
   }
 
-  public static ExecResult cleanup() throws Exception {
-    String cmd =
-        "export RESULT_ROOT="
-            + getResultRoot()
-            + " export PV_ROOT="
-            + getPvRoot()
-            + " && "
-            + getProjectRoot()
-            + "/src/integration-tests/bash/cleanup.sh";
-    logger.info("Command to call cleanup script " + cmd);
-    return ExecCommand.exec(cmd);
+  private void copyScalingScriptToPod(
+      String dirPathToCreate, String domainName, String podName, String domainNS) throws Exception {
+
+    // create scripts dir under domain pv
+    TestUtils.createDirUnderDomainPV(dirPathToCreate);
+
+    // copy script to pod
+    TestUtils.kubectlcp(
+        getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
+        "/shared/domain/" + domainName + "/bin/scripts/scalingAction.sh",
+        // "/shared/scalingAction.sh",
+        podName,
+        domainNS);
   }
 
-  protected void logTestBegin(String testName) throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN " + testName);
-    // renew lease at the beginning for every test method, leaseId is set only for Wercker
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+  private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainNS = (String) domainMap.get("namespace");
+
+    // call opensessionapp
+    domain.callWebAppAndVerifyLoadBalancing("opensessionapp", false);
+    logger.info("Sleeping for 30 seconds for scaleup");
+    Thread.sleep(30 * 1000);
+
+    String managedServerNameBase = (String) domainMap.get("managedServerNameBase");
+    String podName = domain.getDomainUid() + "-" + managedServerNameBase + replicas;
+
+    logger.info("Checking if managed pod(" + podName + ") is Running");
+    TestUtils.checkPodCreated(podName, domainNS);
+
+    logger.info("Checking if managed server (" + podName + ") is Running");
+    TestUtils.checkPodReady(podName, domainNS);
+
+    logger.info("Checking if managed service(" + podName + ") is created");
+    TestUtils.checkServiceCreated(podName, domainNS);
   }
 }
