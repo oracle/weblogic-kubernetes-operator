@@ -8,6 +8,7 @@ metadata:
   namespace: %NAMESPACE%
   labels:
     weblogic.resourceVersion: domain-v1
+    %DOMAIN_UID_LABEL_PREFIX%weblogic.domainUID: %DOMAIN_UID%
 spec:
   storageClassName: %BASE_NAME%-storage-class
   accessModes:

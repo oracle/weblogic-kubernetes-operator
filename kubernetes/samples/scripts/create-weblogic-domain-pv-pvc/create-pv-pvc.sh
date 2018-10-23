@@ -160,8 +160,13 @@ function createYamlFiles {
 
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
   if [ -z ${domainUID} ]; then
+    domainUIDLabelPrefix="${disabledPrefix}"
+  else
     sed -i -e "s:%DOMAIN_UID%:$domainUID:g" ${domainPVOutput}
+    domainUIDLabelPrefix="${enabledPrefix}"
   fi
+  sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${domainPVOutput}
+
   sed -i -e "s:%BASE_NAME%:$baseName:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${domainPVOutput}
@@ -175,9 +180,12 @@ function createYamlFiles {
   cp ${domainPVCInput} ${domainPVCOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
   sed -i -e "s:%BASE_NAME%:${baseName}:g" ${domainPVCOutput}
-  if [ -z ${domainUID} ]; then
+
+  if [ ! -z ${domainUID} ]; then
     sed -i -e "s:%DOMAIN_UID%:$domainUID:g" ${domainPVCOutput}
   fi
+  sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${domainPVCOutput}
+
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Remove any "...yaml-e" files left over from running sed
