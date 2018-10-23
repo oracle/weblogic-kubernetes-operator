@@ -59,7 +59,7 @@ weblogicCredentialsSecretName: domain1-weblogic-credentials
 # The presence of the secret will be validated when this parameter is enabled.
 #imagePullSecretName:
 
-# Whether to include server .out to the pod's stdout
+# Whether to include server .out to the pod's stdout, default is true
 includeServerOutInPodLog: true
 
 # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
