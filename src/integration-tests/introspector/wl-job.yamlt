@@ -16,7 +16,7 @@ spec:
     metadata:
     spec:
       restartPolicy: Never
-      activeDeadlineSeconds: 60
+      activeDeadlineSeconds: 180
       containers:
       - command:
         - ${JOB_SCRIPT}
