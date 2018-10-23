@@ -1,0 +1,20 @@
+# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+{{ if .Values.createRBAC }}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{ template "apache.fullname" . }}
+  labels:
+    app: {{ template "apache.fullname" . }}
+    release: "{{ .Release.Name }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "apache.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "apache.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace | quote }}
+{{ end }}

@@ -7,19 +7,18 @@ package oracle.kubernetes.operator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Handler;
-import java.util.logging.Logger;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
@@ -28,10 +27,10 @@ import org.junit.Test;
 
 public class ExternalChannelTest {
 
-  private Domain domain = new Domain();
+  private static final String ADMIN_SERVER = "admin-server";
   private DomainSpec spec = new DomainSpec();
-  private V1ObjectMeta meta = new V1ObjectMeta();
-  private List<String> chlist = new ArrayList<>();
+  private V1ObjectMeta meta = new V1ObjectMeta().namespace("default");
+  private Domain domain = new Domain().withMetadata(meta).withSpec(spec);
   private WlsDomainConfig wlsDomainConfig;
 
   private Field protocol;
@@ -68,33 +67,23 @@ public class ExternalChannelTest {
           + "    }"
           + "]}}";
 
-  private static final Logger UNDERLYING_LOGGER =
-      LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
-  private List<Handler> savedhandlers;
+  private List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void disableConsoleLogging() {
-    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+    mementos.add(TestUtils.silenceOperatorLogger());
   }
 
   @After
   public void restoreConsoleLogging() {
-    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+    for (Memento memento : mementos) memento.revert();
   }
 
   @Before
   public void setupConstants() throws NoSuchFieldException {
-
-    domain.setMetadata(meta);
-    domain.setSpec(spec);
-
-    meta.setNamespace("default");
-    spec.setAsName("admin-server");
-    spec.setExportT3Channels(chlist);
-
     wlsDomainConfig = WlsDomainConfig.create(jsonString);
 
-    WlsServerConfig adminServerConfig = wlsDomainConfig.getServerConfig(spec.getAsName());
+    WlsServerConfig adminServerConfig = wlsDomainConfig.getServerConfig(ADMIN_SERVER);
     List<NetworkAccessPoint> naps = adminServerConfig.getNetworkAccessPoints();
 
     nap = naps.get(0);
@@ -108,10 +97,15 @@ public class ExternalChannelTest {
     publicPort.setAccessible(true);
   }
 
+  private void configureExternalChannels(String... names) {
+    DomainConfiguratorFactory.forDomain(domain)
+        .configureAdminServer(ADMIN_SERVER)
+        .withExportedNetworkAccessPoints(names);
+  }
+
   @Test
   public void externalChannelNotDefinedTest() {
-    chlist.clear();
-    chlist.add("channel-99");
+    configureExternalChannels("channel-99");
 
     Collection<NetworkAccessPoint> validNaps =
         ExternalAdminChannelsStep.adminChannelsToCreate(wlsDomainConfig, domain);
@@ -135,9 +129,7 @@ public class ExternalChannelTest {
 
   @Test
   public void externalChannelOutsideRangeTest() throws Exception {
-
-    chlist.clear();
-    chlist.add("Channel-3");
+    configureExternalChannels("Channel-3");
     setListenPort(7001);
     setPublicPort(7001);
 
@@ -149,9 +141,7 @@ public class ExternalChannelTest {
 
   @Test
   public void externalChannelUnequalListenPortsTest() throws IllegalAccessException {
-
-    chlist.clear();
-    chlist.add("Channel-3");
+    configureExternalChannels("Channel-3");
     setListenPort(39001);
     setPublicPort(39002);
 
@@ -163,9 +153,7 @@ public class ExternalChannelTest {
 
   @Test
   public void externalChannelWrongProtocolTest() throws IllegalAccessException {
-
-    chlist.clear();
-    chlist.add("Channel-3");
+    configureExternalChannels("Channel-3");
     setListenPort(39001);
     setPublicPort(39001);
     setProtocol("http");
@@ -178,9 +166,7 @@ public class ExternalChannelTest {
 
   @Test
   public void externalChannelTest() throws IllegalAccessException {
-
-    chlist.clear();
-    chlist.add("Channel-3");
+    configureExternalChannels("Channel-3");
     setListenPort(30999);
     setPublicPort(30999);
     setProtocol("t3");

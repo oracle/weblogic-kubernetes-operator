@@ -58,6 +58,9 @@ import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import org.junit.After;
@@ -584,6 +587,27 @@ public class ServiceHelperTest {
 
     assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
+  }
+
+  @Test
+  public void onExternalChannelStepWithChannelLabelsAndAnnotations_createIt() {
+    configureAdminServer()
+        .configureExportedNetworkAccessPoint(NAP_NAME)
+        .addLabel("label1", "value1")
+        .addAnnotation("annotation1", "value2");
+    V1Service externalChannelService = createExternalChannelService();
+    externalChannelService.getMetadata().putLabelsItem("label1", "value1");
+    externalChannelService.getMetadata().putAnnotationsItem("annotation1", "value2");
+
+    verifyMissingExternalChannelServiceCreated(externalChannelService);
+  }
+
+  private AdminServerConfigurator configureAdminServer() {
+    return configureDomain().configureAdminServer(ADMIN_SERVER);
+  }
+
+  private DomainConfigurator configureDomain() {
+    return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
   @Test

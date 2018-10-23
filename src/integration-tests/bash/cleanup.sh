@@ -317,7 +317,9 @@ mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 # first, if helm is installed, delete all installed helm charts
 if [ -x "$(command -v helm)" ]; then
   echo @@ Deleting installed helm charts
-  helm list --short | xargs -L1 --no-run-if-empty helm delete --purge
+  helm list --short | while read helm_name; do
+     helm delete --purge  $helm_name
+  done
 
   # cleanup tiller artifacts that are created in run.sh
   if [ "$WERCKER" = "true" ]; then
