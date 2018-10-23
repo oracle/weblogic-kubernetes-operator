@@ -21,8 +21,8 @@
 #   WL_HOME           = WebLogic Install Home - defaults to /u01/oracle/wlserver
 #
 #   NODEMGR_LOG_HOME  = Directory that will contain contain both
-#                          ${DOMAIN_UID}/${SERVER_NAME}/nodemanager.log
-#                          ${DOMAIN_UID}/${SERVER_NAME}/nodemanager.out
+#                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.log
+#                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
 #
@@ -88,19 +88,10 @@ function createFolder {
 # -Dweblogic.Stdout system property is used to tell node manager to send server .out 
 #  file to the configured location
 #
-redirect_logs=${REDIRECT_LOGS:-false}
 server_out_in_pod_log=${SERVER_OUT_IN_POD_LOG?}
 
-if [ "${redirect_logs}" == "true" ] ; then
-  # redirect_logs is true means log_home is explicitly set, and 
-  # log files should be redirected to the specified log_home
-  trace " logHome is specified and log files will be written to ${log_home} "
-  serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"
-else
-  # default server out file location
-  trace " logHome is not specified and server out files will be written to the default locations "
-  serverOutFile="${DOMAIN_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}.out"
-fi
+# server .out file goes to the path specified in LOG_HOME
+serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"
 
 export SERVER_OUT_FILE=${serverOutFile}
 
@@ -115,16 +106,15 @@ export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 
 createFolder ${NODEMGR_HOME} 
 
-if [ "${redirect_logs}" == "true" ] ; then
-  NODEMGR_LOG_HOME=${LOG_HOME}/${SERVER_NAME}
-else
-  NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}}}/${SERVER_NAME}
-fi
+NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
 
 createFolder ${NODEMGR_LOG_HOME}
 
-nodemgr_log_file=${NODEMGR_LOG_HOME}/nodemanager.log
-nodemgr_out_file=${NODEMGR_LOG_HOME}/nodemanager.out
+#nodemgr_log_file=${NODEMGR_LOG_HOME}/nodemanager.log
+#nodemgr_out_file=${NODEMGR_LOG_HOME}/nodemanager.out
+
+nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
+nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
 
 checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file
 

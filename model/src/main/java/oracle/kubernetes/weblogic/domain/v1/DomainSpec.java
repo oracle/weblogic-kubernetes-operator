@@ -470,6 +470,11 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   public String getIncludeServerOutInPodLog() {
+    return Optional.ofNullable(getConfiguredIncludeServerOutInPodLog())
+        .orElse(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG);
+  }
+
+  String getConfiguredIncludeServerOutInPodLog() {
     return includeServerOutInPodLog;
   }
 
@@ -564,17 +569,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public boolean isDomainHomeInImage() {
     return domainHomeInImage;
-  }
-
-  /**
-   * Whether this domain's home is defined in the default docker image for the domain
-   *
-   * @param domainHomeInImage true if this domain's home is defined in the default docker image for
-   *     the domain, false otherwise
-   * @since 2.0
-   */
-  public void setDomainHomeInImage(boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
   }
 
   /**
