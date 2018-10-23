@@ -208,7 +208,7 @@ function runJob() {
 
   # Run the job
 
-  env - \
+  env \
     KUBECONFIG=$KUBECONFIG \
     JOB_YAML=${test_home}/${yaml_file} \
     JOB_NAME=${job_name} \
@@ -434,7 +434,7 @@ function deployIntrospectJob() {
 
 #############################################################################
 #
-# Launch admin pod and wait up to 60 seconds for it to succeed, then launch
+# Launch admin pod and wait up to 180 seconds for it to succeed, then launch
 # a managed server pod.
 #
 
@@ -472,7 +472,7 @@ function deployPod() {
   tracen "Waiting for pod readiness"
   local status="0/1"
   local startsecs=$SECONDS
-  local maxsecs=60
+  local maxsecs=180
   while [ "${status}" != "1/1" ] ; do
     if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
       echo
