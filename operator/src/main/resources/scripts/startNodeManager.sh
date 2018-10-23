@@ -97,8 +97,8 @@ if [ "${redirect_logs}" == "true" ] ; then
   trace " logHome is specified and log files will be written to ${log_home} "
   serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"
 else
-  # default server log file location
-  trace " logHome is not specified and log files will be written to the default locations "
+  # default server out file location
+  trace " logHome is not specified and server out files will be written to the default locations "
   serverOutFile="${DOMAIN_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}.out"
 fi
 
