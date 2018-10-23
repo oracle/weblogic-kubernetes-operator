@@ -354,7 +354,7 @@ public class WlsDomainConfigTest {
   }
 
   private void configureDefaultReplicas(int replicas) {
-    configurator.withDefaultReplicaCount(replicas);
+    if (DomainConfiguratorFactory.useDomainV1()) configurator.withDefaultReplicaCount(replicas);
   }
 
   @Test

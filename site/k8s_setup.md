@@ -5,7 +5,7 @@
 
 # Cheat sheet for setting up Kubernetes
 
-If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is an on-premises installation of Kubernetes; for example, on Bare Metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that is suitable for development or testing purposes.  So your options look like this:
+If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environment is an on-premises installation of Kubernetes; for example, on Bare Metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options look like this:
 
 "Production" options:
 
@@ -111,7 +111,8 @@ $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generat
 8. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
 In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Server Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.
-Note: Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
+
+**Note**: Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
 
 
 ```
@@ -398,7 +399,7 @@ $ kubectl config set-cluster docker-for-desktop-cluster
 Cluster "docker-for-desktop-cluster" set.
 ```
 
-5. You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must use an admin user to edit this file:
+5. You should add `docker-for-desktop` to your `/etc/hosts` file entry for `127.0.0.1`, as shown in this example, and you must be an admin user to edit this file:
 
 ```
 ##

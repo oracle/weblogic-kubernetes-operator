@@ -125,7 +125,9 @@ public class ITOperator extends BaseTest {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
     // create domain3
-    testDomainCreation(domain3YamlFile);
+    Domain domain3 = testDomainCreation(domain3YamlFile);
+
+    testWLDFScaling(operator1, domain3);
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
