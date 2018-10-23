@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
@@ -27,7 +28,11 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   public DomainV2Configurator(Domain domain) {
     super(domain);
-    if (domain != null) domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
+    if (domain != null && domain.getMetadata() != null) setApiVersion(domain);
+  }
+
+  private void setApiVersion(Domain domain) {
+    domain.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V2);
   }
 
   @Override
