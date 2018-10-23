@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-pathrouting-1
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/rewrite-target: /testwebapp
+    ingress.kubernetes.io/rule-type: PathPrefix
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - path: /domain1
+        backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: 8001
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-pathrouting-2
+  namespace: test1
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/rewrite-target: /testwebapp
+    ingress.kubernetes.io/rule-type: PathPrefix
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - path: /domain2
+        backend:
+          serviceName: domain2-cluster-cluster-1
+          servicePort: 8001
