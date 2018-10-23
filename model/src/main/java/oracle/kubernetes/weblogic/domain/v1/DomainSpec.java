@@ -11,7 +11,10 @@ import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -101,6 +104,14 @@ public class DomainSpec extends BaseConfiguration {
   private List<String> exportT3Channels = new ArrayList<>();
 
   /**
+   * List of T3 network access points to export, along with label and annotations to apply to
+   * corresponding channel services.
+   *
+   * @since 2.0
+   */
+  private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
+
+  /**
    * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
    * and AUTO.
    *
@@ -117,7 +128,11 @@ public class DomainSpec extends BaseConfiguration {
    * </ul>
    *
    * <p>Defaults to AUTO.
+   *
+   * @deprecated as of 2.0, use BaseConfiguration#serverStartPolicy
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   @SerializedName("startupControl")
   @Expose
   private String startupControl;
@@ -198,6 +213,7 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   protected List<Cluster> clusters = new ArrayList<>();
 
+  @SuppressWarnings("deprecation")
   String getEffectiveStartupControl() {
     return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
   }
@@ -519,6 +535,28 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Map of T3 network access points to export, with associated labels/annotations.
+   *
+   * @return exported channels
+   */
+  public Map<String, ExportedNetworkAccessPoint> getExportedNetworkAccessPoints() {
+    return exportedNetworkAccessPoints;
+  }
+
+  /**
+   * Configures an exported T3 network access point.
+   *
+   * @param name the name of the NAP
+   */
+  public ExportedNetworkAccessPoint addExportedNetworkAccessPoint(String name) {
+    if (exportedNetworkAccessPoints == null) exportedNetworkAccessPoints = new HashMap<>();
+
+    ExportedNetworkAccessPoint exportedNetworkAccessPoint = new ExportedNetworkAccessPoint();
+    exportedNetworkAccessPoints.put(name, exportedNetworkAccessPoint);
+    return exportedNetworkAccessPoint;
+  }
+
+  /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *
    * @return true or false
@@ -558,7 +596,10 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to AUTO.
    *
    * @return startup control
+   * @deprecated as of 2.0, use BaseConfiguration#setServerStartPolicy
    */
+  @SuppressWarnings({"deprecation", "DeprecatedIsStillUsed"})
+  @Deprecated
   public String getStartupControl() {
     return startupControl;
   }
@@ -581,8 +622,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * <p>Defaults to AUTO.
    *
+   * @deprecated as of 2.0, using BaseConfiguration#setServerStartPolicy
    * @param startupControl startup control
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
   public void setStartupControl(String startupControl) {
     this.startupControl = startupControl;
   }
@@ -605,9 +648,11 @@ public class DomainSpec extends BaseConfiguration {
    *
    * <p>Defaults to AUTO.
    *
+   * @deprecated as of 2.0, using BaseConfiguration#withServerStartPolicy
    * @param startupControl startup control
    * @return this
    */
+  @SuppressWarnings("deprecation")
   public DomainSpec withStartupControl(String startupControl) {
     this.startupControl = startupControl;
     return this;
@@ -897,6 +942,21 @@ public class DomainSpec extends BaseConfiguration {
       return StartupControlConstants.NONE_STARTUPCONTROL.equals(getEffectiveStartupControl());
     }
 
+    @Override
+    public List<String> getExportedNetworkAccessPointNames() {
+      return Optional.ofNullable(exportT3Channels).orElse(Collections.emptyList());
+    }
+
+    @Override
+    public Map<String, String> getChannelServiceLabels(String channel) {
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, String> getChannelServiceAnnotations(String channel) {
+      return Collections.emptyMap();
+    }
+
     @SuppressWarnings("deprecation")
     private ServerStartup getServerStartup(String name) {
       if (DomainSpec.this.getServerStartup() == null) return null;
@@ -943,6 +1003,25 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public void setReplicaCount(String clusterName, int replicaCount) {
       getOrCreateCluster(clusterName).setReplicas(replicaCount);
+    }
+
+    @Override
+    public List<String> getExportedNetworkAccessPointNames() {
+      return new ArrayList<>(exportedNetworkAccessPoints.keySet());
+    }
+
+    @Override
+    public Map<String, String> getChannelServiceLabels(String channelName) {
+      ExportedNetworkAccessPoint accessPoint = exportedNetworkAccessPoints.get(channelName);
+
+      return accessPoint == null ? Collections.emptyMap() : accessPoint.getLabels();
+    }
+
+    @Override
+    public Map<String, String> getChannelServiceAnnotations(String channel) {
+      ExportedNetworkAccessPoint accessPoint = exportedNetworkAccessPoints.get(channel);
+
+      return accessPoint == null ? Collections.emptyMap() : accessPoint.getAnnotations();
     }
 
     private Cluster getOrCreateCluster(String clusterName) {

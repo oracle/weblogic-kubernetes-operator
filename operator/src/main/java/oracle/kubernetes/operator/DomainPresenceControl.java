@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.ArrayList;
+import com.google.common.base.Strings;
 import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -16,17 +16,15 @@ class DomainPresenceControl {
   static void normalizeDomainSpec(DomainSpec spec) {
     normalizeImage(spec);
     normalizeImagePullPolicy(spec);
-    normalizeExportT3Channels(spec);
     normalizeStartupControl(spec);
-    normalizeIncludeServerOutInPodLog(spec);
   }
 
   private static void normalizeImage(DomainSpec spec) {
-    if (isNotDefined(spec.getImage())) spec.setImage(KubernetesConstants.DEFAULT_IMAGE);
+    if (Strings.isNullOrEmpty(spec.getImage())) spec.setImage(KubernetesConstants.DEFAULT_IMAGE);
   }
 
   private static void normalizeImagePullPolicy(DomainSpec spec) {
-    if (isNotDefined(spec.getImagePullPolicy())) {
+    if (Strings.isNullOrEmpty(spec.getImagePullPolicy())) {
       spec.setImagePullPolicy(
           (spec.getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
               ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
@@ -34,23 +32,9 @@ class DomainPresenceControl {
     }
   }
 
-  private static void normalizeExportT3Channels(DomainSpec spec) {
-    if (spec.getExportT3Channels() == null) spec.setExportT3Channels(new ArrayList<>());
-  }
-
   private static void normalizeStartupControl(DomainSpec spec) {
-    if (isNotDefined(spec.getStartupControl()))
+    if (Strings.isNullOrEmpty(spec.getStartupControl()))
       spec.setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
-  }
-
-  private static boolean isNotDefined(String value) {
-    return value == null || value.length() == 0;
-  }
-
-  private static void normalizeIncludeServerOutInPodLog(DomainSpec spec) {
-    if (isNotDefined(spec.getIncludeServerOutInPodLog())) {
-      spec.setIncludeServerOutInPodLog(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG);
-    }
   }
 
   static void cancelDomainStatusUpdating(DomainPresenceInfo info) {

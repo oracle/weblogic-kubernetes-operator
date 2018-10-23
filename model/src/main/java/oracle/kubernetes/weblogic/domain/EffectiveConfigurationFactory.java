@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import java.util.List;
+import java.util.Map;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 /**
@@ -21,4 +23,10 @@ public interface EffectiveConfigurationFactory {
   void setReplicaCount(String clusterName, int replicaCount);
 
   boolean isShuttingDown();
+
+  List<String> getExportedNetworkAccessPointNames();
+
+  Map<String, String> getChannelServiceLabels(String channel);
+
+  Map<String, String> getChannelServiceAnnotations(String channel);
 }
