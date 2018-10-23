@@ -89,7 +89,7 @@ function getPodCount() {
   # fn to get pod count for NAMESPACE/JOB_NAME
   # * Should be 0 or 1 if backoffLimit has been set to 0
 
-  getPodNames | wc -w
+  getPodNames | wc -w |  sed 's/[[:space:]]*//'
 }
 
 function deleteJob() {
