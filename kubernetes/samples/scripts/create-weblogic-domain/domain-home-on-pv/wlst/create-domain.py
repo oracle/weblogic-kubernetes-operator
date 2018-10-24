@@ -24,7 +24,6 @@ number_of_ms                 = int(getEnvVar("CONFIGURED_MANAGED_SERVER_COUNT"))
 cluster_type                 = getEnvVar("CLUSTER_TYPE")
 managed_server_name_base     = getEnvVar("MANAGED_SERVER_NAME_BASE")
 managed_server_name_base_svc = getEnvVar("MANAGED_SERVER_NAME_BASE_SVC")
-domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
 
@@ -44,9 +43,6 @@ readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
 
 set('Name', domain_name)
 setOption('DomainName', domain_name)
-create(domain_name,'Log')
-cd('/Log/%s' % domain_name);
-set('FileName', '%s/%s.log' % (domain_logs, domain_name))
 
 # Configure the Administration Server
 # ===================================
@@ -61,11 +57,6 @@ set('PublicPort', t3_channel_port)
 set('PublicAddress', t3_public_address)
 set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
 set('ListenPort', t3_channel_port)
-
-cd('/Servers/%s' % admin_server_name)
-create(admin_server_name, 'Log')
-cd('/Servers/%s/Log/%s' % (admin_server_name, admin_server_name))
-set('FileName', '%s/%s.log' % (domain_logs, admin_server_name))
 
 # Set the admin user's username and password
 # ==========================================
@@ -101,9 +92,6 @@ if cluster_type == "CONFIGURED":
     set('RetryIntervalBeforeMSIMode', 1)
     set('Cluster', cluster_name)
 
-    create(name,'Log')
-    cd('/Servers/%s/Log/%s' % (name, name))
-    set('FileName', '%s/%s.log' % (domain_logs,name))
 else:
   print('Configuring Dynamic Cluster %s' % cluster_name)
 
@@ -115,6 +103,7 @@ else:
   cmo.setListenPort(server_port)
   cmo.setListenAddress('%s-%s${id}' % (domain_uid, managed_server_name_base_svc))
   cmo.setCluster(cl)
+
   print('Done setting attributes for Server Template: %s' % templateName);
 
 
