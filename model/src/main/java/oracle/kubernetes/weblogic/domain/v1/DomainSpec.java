@@ -20,8 +20,8 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.StartupControlConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import oracle.kubernetes.weblogic.domain.v2.AdminServer;
 import oracle.kubernetes.weblogic.domain.v2.BaseConfiguration;
@@ -206,18 +206,18 @@ public class DomainSpec extends BaseConfiguration {
     return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
   }
 
-  EffectiveConfigurationFactory getEffectiveConfigurationFactory(String apiVersion) {
-    return useVersion2(apiVersion)
+  EffectiveConfigurationFactory getEffectiveConfigurationFactory(String resourceVersionLabel) {
+    return useVersion2(resourceVersionLabel)
         ? new V2EffectiveConfigurationFactory()
         : new V1EffectiveConfigurationFactory();
   }
 
-  private boolean useVersion2(String apiVersion) {
-    return isVersion2Specified(apiVersion) || hasV2Configuration() || hasV2Fields();
+  private boolean useVersion2(String resourceVersionLabel) {
+    return isVersion2Specified(resourceVersionLabel) || hasV2Configuration() || hasV2Fields();
   }
 
-  private boolean isVersion2Specified(String apiVersion) {
-    return KubernetesConstants.API_VERSION_ORACLE_V2.equals(apiVersion);
+  private boolean isVersion2Specified(String resourceVersionLabel) {
+    return VersionConstants.DOMAIN_V2.equals(resourceVersionLabel);
   }
 
   private boolean hasV2Configuration() {
