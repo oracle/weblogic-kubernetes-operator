@@ -481,6 +481,15 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainReadFromYaml_hasDefaultIncludeServerOutToPodLog() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+
+    assertThat(
+        domain.getIncludeServerOutInPodLog(),
+        equalTo(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG));
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_hostPathStorageDefinesRequiredPV() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
