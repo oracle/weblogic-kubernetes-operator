@@ -74,6 +74,14 @@
       "type": "integer",
       "format": "int32"
     },
+     "logHome": {
+      "description": "The in-pod name of the directory to store the domain, node manager, server logs, and server .out files in",
+      "type": "string",
+     },
+     "includeServerOutInPodLog": {
+      "description": "Whether to include the server .out file to the pod's stdout",
+      "type": "string",
+    },
     "storage": {
       "predefined": {
         "description": "A definition of domain storage that is externally defined.",

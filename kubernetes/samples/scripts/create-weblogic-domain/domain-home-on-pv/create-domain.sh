@@ -235,6 +235,7 @@ function initialize {
     weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
+    includeServerOutInPodLog \
     version 
 
   validateIntegerInputParamsSpecified \
@@ -248,7 +249,8 @@ function initialize {
   validateBooleanInputParamsSpecified \
     productionModeEnabled \
     exposeAdminT3Channel \
-    exposeAdminNodePort
+    exposeAdminNodePort \
+    includeServerOutInPodLog
 
   export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
   validateVersion 
@@ -400,6 +402,8 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e

@@ -70,8 +70,9 @@ public class JobHelper {
       addEnvVar(envVarList, "DOMAIN_UID", getDomainUID());
       addEnvVar(envVarList, "DOMAIN_HOME", getDomainHome());
       addEnvVar(envVarList, "NODEMGR_HOME", getNodeManagerHome());
-      addEnvVar(envVarList, "LOG_HOME", getLogHome());
+      addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
       addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
+      addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
 
       return envVarList;
     }
