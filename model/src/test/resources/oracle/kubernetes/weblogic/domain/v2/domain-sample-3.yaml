@@ -36,7 +36,7 @@ spec:
   domainUID: test-domain-3
 
 
-  # Configured storage using host-path style
+  # Configured storage using externally defined persistent volume claim
   storage:
     predefined:
       claim: magic-drive

@@ -26,6 +26,11 @@ spec:
   # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
   domainUID: test-domain-2
 
+  # Tells the operator whether the customer wants the server to be running. For non-clustered
+  # servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+  # operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+  # to be started to get to the cluster's replica count..
+  serverStartPolicy: NEVER
 
   # Configured storage using host-path style
   storage:
