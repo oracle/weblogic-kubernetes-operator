@@ -69,11 +69,7 @@ public abstract class BaseConfiguration {
   @Valid
   private List<V1EnvVar> env = new ArrayList<>();
 
-  /**
-   * Desired startup state. Legal values are RUNNING or ADMIN.
-   *
-   * @since 2.0
-   */
+  /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @SerializedName("serverStartState")
   @Expose
   private String serverStartState;
@@ -224,7 +220,7 @@ public abstract class BaseConfiguration {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  String getServerStartPolicy() {
+  protected String getServerStartPolicy() {
     return serverStartPolicy;
   }
 
