@@ -88,7 +88,7 @@ function createFolder {
 # -Dweblogic.Stdout system property is used to tell node manager to send server .out 
 #  file to the configured location
 #
-server_out_in_pod_log=${SERVER_OUT_IN_POD_LOG?}
+server_out_in_pod_log=${SERVER_OUT_IN_POD_LOG:-true}
 
 # server .out file goes to the path specified in LOG_HOME
 serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"

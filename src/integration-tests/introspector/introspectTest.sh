@@ -95,6 +95,7 @@ export DOMAIN_UID=${DOMAIN_UID:-domain1}
 export NAMESPACE=${NAMESPACE:-default}
 
 export LOG_HOME=${LOG_HOME:-/shared/logs}
+export SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG:-true}
 export DOMAIN_HOME=${DOMAIN_HOME:-/shared/domain/base_domain}
 
 [ -z ${WEBLOGIC_CREDENTIALS_SECRET_NAME} ] && \
