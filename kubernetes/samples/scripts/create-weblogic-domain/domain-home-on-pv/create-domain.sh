@@ -532,6 +532,10 @@ function printSummary {
 #
 function createDomainResource {
   kubectl apply -f ${dcrOutput}
+  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
+  if [ "${DCR_AVAIL}" != "1" ]; then
+    fail "The domain custom resource ${domainUID} was not found"
+  fi
 }
 
 #
