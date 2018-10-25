@@ -37,6 +37,8 @@ spec:
       value: "${NODEMGR_HOME}"
     - name: LOG_HOME
       value: "${LOG_HOME}"
+    - name: SERVER_OUT_IN_POD_LOG
+      value: "${SERVER_OUT_IN_POD_LOG}"
     - name: SERVICE_NAME
       value: "${SERVICE_NAME}"
     - name: AS_SERVICE_NAME
