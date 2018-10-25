@@ -35,7 +35,8 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
 
     V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
-    if (domainIntrospectorJob != null) {
+    // No need to spawn a watcher if the job is already complete
+    if (domainIntrospectorJob != null && !JobWatcher.isComplete(domainIntrospectorJob)) {
       JobWatcher jw =
           JobWatcher.create(
               ThreadFactorySingleton.getInstance(),
