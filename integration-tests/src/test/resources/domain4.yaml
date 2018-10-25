@@ -18,3 +18,4 @@ adminNodePort: 30704
 namespace: test2
 loadBalancerWebPort: 30308
 loadBalancerDashboardPort: 30318
+createDomainFilesDir: wdt
