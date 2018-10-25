@@ -17,6 +17,9 @@ import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Defines the persistent storage for a domain. */
 @SuppressWarnings("WeakerAccess")
@@ -117,6 +120,28 @@ public class DomainStorage {
     public void setClaimName(String claimName) {
       this.claimName = claimName;
     }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this).append("claimName", claimName).toString();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder().append(claimName).toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if (!(other instanceof PredefinedStorage)) {
+        return false;
+      }
+      PredefinedStorage rhs = ((PredefinedStorage) other);
+      return new EqualsBuilder().append(claimName, rhs.claimName).isEquals();
+    }
   }
 
   static class OperatorDefinedStorage {
@@ -192,6 +217,43 @@ public class DomainStorage {
               new V1ResourceRequirements()
                   .putRequestsItem("storage", new Quantity(getStorageSize())));
     }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this)
+          .append("storageSize", storageSize)
+          .append("storageReclaimPolicy", storageReclaimPolicy)
+          .append("hostPathStorage", hostPathStorage)
+          .append("nfsStorage", nfsStorage)
+          .toString();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder()
+          .append(storageSize)
+          .append(storageReclaimPolicy)
+          .append(hostPathStorage)
+          .append(nfsStorage)
+          .toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if (!(other instanceof OperatorDefinedStorage)) {
+        return false;
+      }
+      OperatorDefinedStorage rhs = ((OperatorDefinedStorage) other);
+      return new EqualsBuilder()
+          .append(storageSize, rhs.storageSize)
+          .append(storageReclaimPolicy, rhs.storageReclaimPolicy)
+          .append(hostPathStorage, rhs.hostPathStorage)
+          .append(nfsStorage, rhs.nfsStorage)
+          .isEquals();
+    }
   }
 
   static class HostPathStorage {
@@ -207,6 +269,28 @@ public class DomainStorage {
 
     void configure(V1PersistentVolume pv) {
       pv.getSpec().hostPath(new V1HostPathVolumeSource().path(path));
+    }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this).append("path", path).toString();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder().append(path).toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if (!(other instanceof HostPathStorage)) {
+        return false;
+      }
+      HostPathStorage rhs = ((HostPathStorage) other);
+      return new EqualsBuilder().append(path, rhs.path).isEquals();
     }
   }
 
@@ -231,5 +315,58 @@ public class DomainStorage {
     void configure(V1PersistentVolume pv) {
       pv.getSpec().nfs(new V1NFSVolumeSource().server(server).path(path));
     }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this).append("path", path).append("server", server).toString();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder().append(path).append(server).toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if (!(other instanceof NfsStorage)) {
+        return false;
+      }
+      NfsStorage rhs = ((NfsStorage) other);
+      return new EqualsBuilder().append(path, rhs.path).append(server, rhs.server).isEquals();
+    }
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .append("predefinedStorage", predefinedStorage)
+        .append("operatorDefinedStorage", operatorDefinedStorage)
+        .toString();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder()
+        .append(predefinedStorage)
+        .append(operatorDefinedStorage)
+        .toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof DomainStorage)) {
+      return false;
+    }
+    DomainStorage rhs = ((DomainStorage) other);
+    return new EqualsBuilder()
+        .append(predefinedStorage, rhs.predefinedStorage)
+        .append(operatorDefinedStorage, rhs.operatorDefinedStorage)
+        .isEquals();
   }
 }
