@@ -543,8 +543,10 @@ public class Domain {
                     + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     Map<String, Object> pvMap = yaml.load(pv_is);
     pv_is.close();
-    // Only set the baseName to the domainUID if you want dedicated pv for a domain
-    //  pvMap.put("domainUID", domainUid);
+    pvMap.put("domainUID", domainUid);
+
+    // each domain uses its own pv for now
+    domainMap.put("persistentVolumeClaimName", domainUid + "-pvc");
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
       pvMap.put(
@@ -554,8 +556,7 @@ public class Domain {
     if (domainMap.get("weblogicDomainStorageSize") != null) {
       pvMap.put("weblogicDomainStorageSize", domainMap.get("weblogicDomainStorageSize"));
     }
-    // Only set the baseName to the domainUID if you want dedicated pv for a domain
-    // pvMap.put("baseName", domainUid);
+    pvMap.put("baseName", domainUid);
     pvMap.put("namespace", domainNS);
 
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
