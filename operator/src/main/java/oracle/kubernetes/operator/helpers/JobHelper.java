@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.work.NextAction;
@@ -55,7 +56,7 @@ public class JobHelper {
 
     @Override
     String getJobCreatedMessageKey() {
-      return "Domain Introspector job " + getJobName() + " created";
+      return MessageKeys.JOB_CREATED;
     }
 
     @Override
@@ -129,16 +130,16 @@ public class JobHelper {
     }
 
     String getJobDeletedMessageKey() {
-      return "Domain Introspector job " + createJobName(this.domainUID) + " deleted";
+      return MessageKeys.JOB_DELETED;
     }
 
-    protected void logJobDeleted() {
-      LOGGER.info(getJobDeletedMessageKey());
+    protected void logJobDeleted(String domainUID, String namespace, String jobName) {
+      LOGGER.info(getJobDeletedMessageKey(), domainUID, namespace, jobName);
     }
 
     private Step deleteJob(Step next) {
-      logJobDeleted();
       String jobName = JobHelper.createJobName(this.domainUID);
+      logJobDeleted(this.domainUID, namespace, jobName);
       Step step =
           new CallBuilder()
               .deleteJobAsync(
@@ -210,9 +211,6 @@ public class JobHelper {
       LOGGER.info("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
 
       V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-      System.out.println(
-          "----------- JobHelper.ReadDomainIntrospectorPodLogResponseStep job status: "
-              + domainIntrospectorJob.getStatus());
       if (domainIntrospectorJob != null && JobWatcher.isReady(domainIntrospectorJob)) {
         if (result != null) {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
