@@ -1105,8 +1105,6 @@ function create_load_balancer_non_helm {
     local inputsLoadBalancer="$tmp_dir/create-load-balancer-inputs.yaml"
 
     cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml $inputsLoadBalancer
-    # accept the default domain name (i.e. don't customize it)
-    local domain_name=`egrep 'domainName' $inputsLoadBalancer | awk '{print $2}'`
 
     sed -i -e "s/^domainUID:.*/domainUID: $DOMAIN_UID/" $inputsLoadBalancer
     sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputsLoadBalancer
@@ -1204,6 +1202,9 @@ function create_domain_pv_pvc_load_balancer {
 
     # accept the default domain name (i.e. don't customize it)
     local domain_name=`egrep 'domainName' $inputs | awk '{print $2}'`
+    if [ -z "${domain_name}" ]; then
+      domain_name=`egrep 'domainUID' $inputs | awk '{print $2}'`
+    fi
 
     trace 'Create the secret with weblogic admin credentials'
     cp $CUSTOM_YAML/weblogic-credentials-template.yaml  $WEBLOGIC_CREDENTIALS_FILE
