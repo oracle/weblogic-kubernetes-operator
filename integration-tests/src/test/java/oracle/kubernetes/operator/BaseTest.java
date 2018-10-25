@@ -273,11 +273,11 @@ public class BaseTest {
     String scriptsDir =
         "/scratch/acceptance_test_pv/persistentVolume-"
             + domainUid
-            + "/domain/"
-            + domainName
+            + "/domains/"
+            + domainUid
             + "/bin/scripts";
 
-    copyScalingScriptToPod(scriptsDir, domainName, adminPodName, domainNS);
+    copyScalingScriptToPod(scriptsDir, domainUid, adminPodName, domainNS);
     TestUtils.createRBACPoliciesForWLDFScaling();
 
     // deploy opensessionapp
@@ -391,7 +391,7 @@ public class BaseTest {
   }
 
   private void copyScalingScriptToPod(
-      String dirPathToCreate, String domainName, String podName, String domainNS) throws Exception {
+      String dirPathToCreate, String domainUID, String podName, String domainNS) throws Exception {
 
     // create scripts dir under domain pv
     TestUtils.createDirUnderDomainPV(dirPathToCreate);
@@ -399,7 +399,7 @@ public class BaseTest {
     // copy script to pod
     TestUtils.kubectlcp(
         getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-        "/shared/domain/" + domainName + "/bin/scripts/scalingAction.sh",
+        "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
         // "/shared/scalingAction.sh",
         podName,
         domainNS);
