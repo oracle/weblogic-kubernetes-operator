@@ -62,7 +62,7 @@ public class Domain {
     createPV();
     createSecret();
     generateInputYaml();
-    callCreateDomainScript();
+    callCreateDomainScript(userProjectsDir + "/weblogic-domains/" + domainUid);
     createLoadBalancer();
   }
 
@@ -437,7 +437,16 @@ public class Domain {
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
     }
     logger.info("Run the script to create domain");
-    StringBuffer cmd = new StringBuffer("cd ");
+    try {
+      callCreateDomainScript(userProjectsDir + "/weblogic-domains2/" + domainUid);
+    } catch (RuntimeException re) {
+      re.printStackTrace();
+      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+      return;
+    }
+    throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
+
+    /*    StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/weblogic-domain");
     cmd.append(" --name ")
@@ -454,7 +463,7 @@ public class Domain {
     } else {
       throw new RuntimeException(
           "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
-    }
+    } */
   }
 
   public void verifyAdminConsoleViaLB() throws Exception {
@@ -590,13 +599,13 @@ public class Domain {
     TestUtils.createInputFile(domainMap, generatedInputYamlFile);
   }
 
-  private void callCreateDomainScript() throws Exception {
+  private void callCreateDomainScript(String outputDir) throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
     cmd.append(
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
         .append(" -e -v -o ")
-        .append(userProjectsDir + "/weblogic-domains/" + domainUid);
+        .append(outputDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
