@@ -253,9 +253,9 @@ public class ConfigMapHelper {
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
       Map<String, String> data = parseIntrospectorResult(result);
-      System.out.println("================");
-      System.out.println(data);
-      System.out.println("================");
+      LOGGER.fine("================");
+      LOGGER.fine(data.toString());
+      LOGGER.fine("================");
       SitConfigMapContext context =
           new SitConfigMapContext(
               this,
@@ -444,7 +444,6 @@ public class ConfigMapHelper {
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
-        System.out.println(line);
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           // Beginning of file, extract file name
           String filename = extractFilename(line);
@@ -464,7 +463,6 @@ public class ConfigMapHelper {
     try {
       String line = reader.readLine();
       while (line != null) {
-        System.out.println(line);
         if (line.startsWith(">>>") && line.endsWith("EOF")) {
           map.put(fileName, stringBuilder.toString());
           return;

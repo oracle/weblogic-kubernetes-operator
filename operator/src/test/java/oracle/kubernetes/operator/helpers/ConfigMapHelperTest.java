@@ -45,6 +45,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ConfigMapHelperTest {
@@ -232,6 +233,7 @@ public class ConfigMapHelperTest {
   }
 
   // @Test
+  @Ignore
   public void parseIntrospectorResult() {
     Map<String, String> result = ConfigMapHelper.parseIntrospectorResult(introspectResult);
     System.out.println("ConfigMapHelperTest.parseIntrospectorResult: " + result);
@@ -242,6 +244,7 @@ public class ConfigMapHelperTest {
   }
 
   // @Test
+  @Ignore
   public void readSingleFile() throws IOException {
     Map<String, String> map = new HashMap<>();
     String text =

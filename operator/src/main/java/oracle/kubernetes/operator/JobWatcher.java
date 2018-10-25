@@ -124,7 +124,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
-  static boolean isComplete(V1Job job) {
+  public static boolean isComplete(V1Job job) {
     V1JobStatus status = job.getStatus();
     LOGGER.info("++++ JobWatcher.isCpmplete status: " + status);
     if (status != null) {
@@ -162,7 +162,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
     @Override
     public NextAction apply(Packet packet) {
-      // if (isReady(job)) {
       if (isComplete(job)) {
         return doNext(packet);
       }

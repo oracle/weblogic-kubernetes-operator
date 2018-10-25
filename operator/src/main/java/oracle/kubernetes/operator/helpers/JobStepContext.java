@@ -90,12 +90,11 @@ public abstract class JobStepContext implements StepContextConstants {
    * @return a step to be scheduled.
    */
   Step createJob(Step next) {
-    logJobCreated();
     return new CallBuilder().createJobAsync(getNamespace(), getJobModel(), createResponse(next));
   }
 
   protected void logJobCreated() {
-    LOGGER.info(getJobCreatedMessageKey(), getDomainUID());
+    LOGGER.info(getJobCreatedMessageKey(), getJobName());
   }
 
   abstract String getJobCreatedMessageKey();
@@ -145,7 +144,7 @@ public abstract class JobStepContext implements StepContextConstants {
         .spec(createJobSpec(TuningParameters.getInstance()));
   }
 
-  protected V1ObjectMeta createMetadata() {
+  V1ObjectMeta createMetadata() {
     V1ObjectMeta metadata =
         new V1ObjectMeta()
             .name(getJobName())
