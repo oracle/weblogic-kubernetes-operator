@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -208,6 +208,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         LOGGER.fine("{0} resumed", new Object[] {getName()});
       }
 
+      boolean doAddRunnable = false;
       lock.lock();
       try {
         if (callback != null) {
@@ -220,7 +221,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         }
         packet = resumePacket;
         if (--suspendedCount == 0) {
-          owner.addRunnable(this);
+          doAddRunnable = true;
         } else {
           if (LOGGER.isFinerEnabled()) {
             LOGGER.finer(
@@ -230,6 +231,10 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         }
       } finally {
         lock.unlock();
+
+        if (doAddRunnable) {
+          owner.addRunnable(this);
+        }
       }
     }
   }
@@ -731,8 +736,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       LOGGER.fine("{0} cancelled", new Object[] {getName()});
     }
 
-    AtomicInteger count =
-        new AtomicInteger(1); // ensure we don't hit zero before iterating children
+    AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating
+    // children
     synchronized (this) {
       if (currentThread != null) {
         if (mayInterrupt) {
