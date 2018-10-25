@@ -5,6 +5,7 @@
 package oracle.kubernetes.weblogic.domain.v1;
 
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.StartupControlConstants;
@@ -426,7 +428,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return exported channels
    */
-  public List<String> getExportT3Channels() {
+  List<String> getExportT3Channels() {
     return exportT3Channels;
   }
 
@@ -438,7 +440,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param exportT3Channels exported channels
    */
-  public void setExportT3Channels(List<String> exportT3Channels) {
+  void setExportT3Channels(List<String> exportT3Channels) {
     this.exportT3Channels = exportT3Channels;
   }
 
@@ -717,6 +719,12 @@ public class DomainSpec extends BaseConfiguration {
   private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
     return Optional.ofNullable(storage.getPersistentVolumeClaimName())
         .orElse(String.format(PVC_NAME_PATTERN, domainUID));
+  }
+
+  @Nullable
+  @Override
+  protected String getServerStartPolicy() {
+    return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
   }
 
   @SuppressWarnings("deprecation")
