@@ -56,8 +56,8 @@ function prepareDomainHomeDir {
   fi
 
   # Create the base folders
+  echo "DOMAIN_ROOT_DIR is ${DOMAIN_ROOT_DIR}"
   createFolder ${DOMAIN_ROOT_DIR}/domain
-  createFolder ${DOMAIN_LOGS_DIR}
   createFolder ${DOMAIN_ROOT_DIR}/applications
   createFolder ${DOMAIN_ROOT_DIR}/stores
 }
