@@ -39,8 +39,11 @@ public class PersistentVolume {
     logger.info("command result " + result.stdout().trim());
 
     Path parentDir =
-        Files.createDirectories(
-            Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/" + pvMap.get("domainUID")));
+        pvMap.get("domainUID") != null
+            ? Files.createDirectories(
+                Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/" + pvMap.get("domainUID")))
+            : Files.createDirectories(Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/"));
+
     // generate input yaml
     TestUtils.createInputFile(pvMap, parentDir + "/" + pvMap.get("baseName") + "-pv-inputs.yaml");
 
@@ -53,9 +56,7 @@ public class PersistentVolume {
             + "/"
             + pvMap.get("baseName")
             + "-pv-inputs.yaml -e -o "
-            + BaseTest.getUserProjectsDir()
-            + "/pv-pvcs/"
-            + pvMap.get("domainUID");
+            + parentDir;
     logger.info("Executing cmd " + cmdPvPvc);
 
     result = ExecCommand.exec(cmdPvPvc);
