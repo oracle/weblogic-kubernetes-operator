@@ -21,8 +21,8 @@
 #   WL_HOME           = WebLogic Install Home - defaults to /u01/oracle/wlserver
 #
 #   NODEMGR_LOG_HOME  = Directory that will contain contain both
-#                          ${DOMAIN_UID}/${SERVER_NAME}/nodemanager.log
-#                          ${DOMAIN_UID}/${SERVER_NAME}/nodemanager.out
+#                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.log
+#                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
 #
@@ -83,6 +83,22 @@ function createFolder {
 
 ###############################################################################
 #
+# Determine WebLogic server log and out files locations
+#
+# -Dweblogic.Stdout system property is used to tell node manager to send server .out 
+#  file to the configured location
+#
+server_out_in_pod_log=${SERVER_OUT_IN_POD_LOG:-true}
+
+# server .out file goes to the path specified in LOG_HOME
+serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"
+
+export SERVER_OUT_FILE=${serverOutFile}
+
+createFolder ${LOG_HOME}
+
+###############################################################################
+#
 # Init/create nodemanager home and nodemanager log env vars and directory
 #
 
@@ -90,14 +106,18 @@ export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 
 createFolder ${NODEMGR_HOME} 
 
-NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}}}/${DOMAIN_UID}/${SERVER_NAME}
+NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
 
 createFolder ${NODEMGR_LOG_HOME}
 
-nodemgr_log_file=${NODEMGR_LOG_HOME}/nodemanager.log
-nodemgr_out_file=${NODEMGR_LOG_HOME}/nodemanager.out
+#nodemgr_log_file=${NODEMGR_LOG_HOME}/nodemanager.log
+#nodemgr_out_file=${NODEMGR_LOG_HOME}/nodemanager.out
+
+nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
+nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
 
 checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file
+
 
 
 ###############################################################################
@@ -206,7 +226,7 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.Stdout=${serverOutFile} ${JAVA_OPTIONS}
 
 EOF
  
