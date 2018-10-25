@@ -7,6 +7,9 @@ package oracle.kubernetes.weblogic.domain.v2;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.weblogic.domain.v1.Domain.DEFAULT_REPLICA_LIMIT;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -20,7 +23,6 @@ import static org.junit.Assert.assertThat;
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.models.V1EnvVar;
 import java.io.IOException;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
@@ -43,7 +45,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Before
   public void setUp() {
-    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
+    configureDomain(domain);
   }
 
   @Override
@@ -60,7 +62,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenImageConfiguredOnDomainAndServer_userServerSetting() {
+  public void whenImageConfiguredOnDomainAndServer_useServerSetting() {
     configureDomain(domain).withDefaultImage("domain-image");
     configureServer("server1").withImage("server-image");
 
@@ -77,7 +79,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenClusterNotConfigured_useDefaultReplicaCount() {
-    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(DEFAULT_REPLICA_LIMIT));
   }
 
   @Test
@@ -95,6 +97,45 @@ public class DomainV2Test extends DomainTestBase {
 
     assertThat(
         domain.getServer("server1", "cluster1").getImagePullSecret().getName(), equalTo("server"));
+  }
+
+  @Test
+  public void whenStartupPolicyUnspecified_adminServerStartsUp() {
+    assertThat(domain.getAdminServerSpec().shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenStartupPolicyUnspecified_nonClusteredServerStartsUp() {
+    assertThat(domain.getServer("server1", null).shouldStart(0), is(true));
+  }
+
+  @Test
+  public void whenStartupPolicyUnspecified_clusteredServerStartsUpIfLimitNotReached() {
+    configureCluster("cluster1").withReplicas(3);
+
+    assertThat(domain.getServer("server1", null).shouldStart(1), is(true));
+  }
+
+  @Test
+  public void whenStartupPolicyUnspecified_clusteredServerDoesNotStartUpIfLimitReached() {
+    configureCluster("cluster1").withReplicas(3);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(false));
+  }
+
+  @Test
+  public void whenStartupPolicyNever_nonClusteredServerDoesNotStartUp() {
+    configureDomain(domain).withDefaultServerStartPolicy(START_NEVER);
+
+    assertThat(domain.getServer("server1", null).shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenStartupPolicyAlways_clusteredServerStartsUpEvenIfLimitReached() {
+    configureDomain(domain).withDefaultServerStartPolicy(START_ALWAYS);
+    configureCluster("cluster1").withReplicas(3);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
   }
 
   @Test
@@ -305,7 +346,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenServerStartPolicyNever_dontStartServer() {
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureServer("server1").withServerStartPolicy(START_NEVER);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
   }
@@ -323,8 +364,8 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenClusteredServerStartPolicyUndefined_dontStartServer() {
-    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  public void whenUnconfiguredClusterHasDefaultNumberOfReplicas_dontStartServer() {
+    assertThat(domain.getServer("server1", "cls1").shouldStart(DEFAULT_REPLICA_LIMIT), is(false));
   }
 
   @Test
@@ -423,6 +464,21 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
+    assertThat(serverSpec.shouldStart(1), is(true));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec serverSpec = domain.getServer("server0", "cluster0");
+
+    assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
+    assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
+    assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
+    assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
+    assertThat(serverSpec.shouldStart(1), is(true));
   }
 
   @Test
@@ -465,7 +521,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
+  public void whenDomain2ReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     String pv = toJson(domain.getRequiredPersistentVolume());
@@ -478,6 +534,14 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Retain")));
     assertThat(pv, hasJsonPath("$.spec.nfs.server", equalTo("thatServer")));
     assertThat(pv, hasJsonPath("$.spec.nfs.path", equalTo("/local/path")));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_serverReadsDomainDefaultOfNever() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", null);
+
+    assertThat(serverSpec.shouldStart(0), is(false));
   }
 
   @Test
