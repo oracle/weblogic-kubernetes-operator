@@ -60,7 +60,7 @@ public class DomainIntrospectorJobTest {
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";
-  static final String LOG_HOME = "/shared/logs";
+  static final String LOG_HOME = "/shared/logs/" + UID;
   static final int FAILURE_THRESHOLD = 1;
 
   static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
@@ -70,16 +70,6 @@ public class DomainIntrospectorJobTest {
 
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
       "/weblogic-operator/scripts/introspectDomain.sh";
-
-  private static final int READINESS_INITIAL_DELAY = 1;
-  private static final int READINESS_TIMEOUT = 2;
-  private static final int READINESS_PERIOD = 3;
-  private static final int LIVENESS_INITIAL_DELAY = 4;
-  private static final int LIVENESS_PERIOD = 6;
-  private static final int LIVENESS_TIMEOUT = 5;
-  private static final int CONFIGURED_DELAY = 21;
-  private static final int CONFIGURED_TIMEOUT = 27;
-  private static final int CONFIGURED_PERIOD = 35;
 
   private static final String introspectResult =
       ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
@@ -235,7 +225,8 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("DOMAIN_HOME", getDomainHome()),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
             hasEnvVar("LOG_HOME", LOG_HOME),
-            hasEnvVar("INTROSPECT_HOME", getDomainHome())));
+            hasEnvVar("INTROSPECT_HOME", getDomainHome()),
+            hasEnvVar("SERVER_OUT_IN_POD_LOG", "true")));
   }
 
   V1Container getCreatedJobSpecContainer() {
@@ -399,6 +390,7 @@ public class DomainIntrospectorJobTest {
     addEnvVar(envVarList, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(envVarList, "LOG_HOME", LOG_HOME);
     addEnvVar(envVarList, "INTROSPECT_HOME", getDomainHome());
+    addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", "true");
 
     return envVarList;
   }
