@@ -28,10 +28,11 @@ Full test use cases
 * keep the first domain and operator running
 * create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
 * destroy domain domain2
-* create another domain domain3 in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* create another domain domain3 with dynamic cluster using WDT in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* verify cluster scaling by doing scale up for domain3 using WLDF scaling 
 * destroy domain domain3
 * create another operator operator2 which manages test2 namespace and verify domain1 is not affected
-* create another domain domain4 in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* create another domain domain4 with Configured cluster using WDT in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
 * verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
 * cycle domain1 down and back up, plus verify no impact on domain4
 * create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage

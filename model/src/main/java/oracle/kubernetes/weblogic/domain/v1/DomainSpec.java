@@ -5,6 +5,7 @@
 package oracle.kubernetes.weblogic.domain.v1;
 
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -18,10 +19,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.StartupControlConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import oracle.kubernetes.weblogic.domain.v2.AdminServer;
 import oracle.kubernetes.weblogic.domain.v2.BaseConfiguration;
@@ -206,18 +208,18 @@ public class DomainSpec extends BaseConfiguration {
     return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
   }
 
-  EffectiveConfigurationFactory getEffectiveConfigurationFactory(String apiVersion) {
-    return useVersion2(apiVersion)
+  EffectiveConfigurationFactory getEffectiveConfigurationFactory(String resourceVersionLabel) {
+    return useVersion2(resourceVersionLabel)
         ? new V2EffectiveConfigurationFactory()
         : new V1EffectiveConfigurationFactory();
   }
 
-  private boolean useVersion2(String apiVersion) {
-    return isVersion2Specified(apiVersion) || hasV2Configuration() || hasV2Fields();
+  private boolean useVersion2(String resourceVersionLabel) {
+    return isVersion2Specified(resourceVersionLabel) || hasV2Configuration() || hasV2Fields();
   }
 
-  private boolean isVersion2Specified(String apiVersion) {
-    return KubernetesConstants.API_VERSION_ORACLE_V2.equals(apiVersion);
+  private boolean isVersion2Specified(String resourceVersionLabel) {
+    return VersionConstants.DOMAIN_V2.equals(resourceVersionLabel);
   }
 
   private boolean hasV2Configuration() {
@@ -426,7 +428,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return exported channels
    */
-  public List<String> getExportT3Channels() {
+  List<String> getExportT3Channels() {
     return exportT3Channels;
   }
 
@@ -438,7 +440,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param exportT3Channels exported channels
    */
-  public void setExportT3Channels(List<String> exportT3Channels) {
+  void setExportT3Channels(List<String> exportT3Channels) {
     this.exportT3Channels = exportT3Channels;
   }
 
@@ -717,6 +719,12 @@ public class DomainSpec extends BaseConfiguration {
   private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
     return Optional.ofNullable(storage.getPersistentVolumeClaimName())
         .orElse(String.format(PVC_NAME_PATTERN, domainUID));
+  }
+
+  @Nullable
+  @Override
+  protected String getServerStartPolicy() {
+    return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
   }
 
   @SuppressWarnings("deprecation")
