@@ -75,6 +75,8 @@ fi
 #
 function initAndValidateOutputDir {
   domainOutputDir="${outputDir}"
+  # Create a directory for this domain's output files
+  mkdir -p ${domainOutputDir}
 
   validateOutputDir \
     ${domainOutputDir} \
@@ -202,10 +204,6 @@ function initialize {
 
   if [ -z "${outputDir}" ]; then
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
-  else
-    if ! [ -d ${outputDir} ]; then
-      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
-    fi
   fi
 
   createJobInput="${scriptDir}/create-domain-job-template.yaml"
@@ -272,9 +270,6 @@ function initialize {
 # Function to generate the yaml files for creating a domain
 #
 function createYamlFiles {
-
-  # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
