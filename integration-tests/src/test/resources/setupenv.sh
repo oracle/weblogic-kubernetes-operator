@@ -134,7 +134,6 @@ if [ "$WERCKER" = "true" ]; then
     --docker-username=$DOCKER_USERNAME \
     --docker-password=$DOCKER_PASSWORD \
     --docker-email=$DOCKER_EMAIL 
-    -n default 
 
     echo "Checking Secret"
     SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -149,7 +148,6 @@ if [ "$WERCKER" = "true" ]; then
     --docker-username=$REPO_USERNAME \
     --docker-password=$REPO_PASSWORD \
     --docker-email=$REPO_EMAIL 
-    -n default 
 
     echo "Checking Secret"
     SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
