@@ -10,6 +10,7 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import javax.annotation.Nonnull;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
@@ -25,13 +26,16 @@ public class DomainV2Configurator extends DomainConfigurator {
     return new DomainV2Configurator(domain);
   }
 
-  public DomainV2Configurator(Domain domain) {
+  public DomainV2Configurator() {}
+
+  public DomainV2Configurator(@Nonnull Domain domain) {
     super(domain);
-    if (domain != null && domain.getMetadata() != null) setApiVersion(domain);
+    setApiVersion(domain);
   }
 
   private void setApiVersion(Domain domain) {
     domain.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V2);
+    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
   }
 
   @Override
