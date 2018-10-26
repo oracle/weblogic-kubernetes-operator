@@ -206,6 +206,12 @@ public class DomainV1Configurator extends DomainConfigurator {
     }
 
     @Override
+    public AdminServerConfigurator withNodePort(int nodePort) {
+      super.withNodePort(nodePort);
+      return this;
+    }
+
+    @Override
     public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
       getExportT3Channels().addAll(Arrays.asList(names));
       return this;
