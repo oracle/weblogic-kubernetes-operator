@@ -600,7 +600,7 @@ public class TestUtils {
             + dockerEmail
             + " -n "
             + namespace;
-    
+
     String commandToLog =
         "kubectl create secret docker-registry "
             + secretName
