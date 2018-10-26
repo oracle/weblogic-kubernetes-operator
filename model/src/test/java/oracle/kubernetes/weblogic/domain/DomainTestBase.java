@@ -317,14 +317,6 @@ public abstract class DomainTestBase {
     assertThat(spec.getNodePort(), nullValue());
   }
 
-  @Test // reverse order of overrides, capture server, need tests for cascading settings
-  public void whenServerConfiguredWithNodePort_returnNodePort() {
-    configureServer(SERVER1).withNodePort(31);
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getNodePort(), equalTo(31));
-  }
-
   @Test
   public void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
     configureServer(SERVER1).withDesiredState("STAND-BY");

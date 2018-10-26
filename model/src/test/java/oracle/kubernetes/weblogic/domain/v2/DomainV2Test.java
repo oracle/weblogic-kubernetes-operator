@@ -250,6 +250,13 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenAdminServerConfiguredWithNodePort_returnNodePort() {
+    configureAdminServer().withNodePort(31);
+
+    assertThat(domain.getAdminServerSpec().getNodePort(), equalTo(31));
+  }
+
+  @Test
   public void whenExportT3ChannelsDefinedWithLabels_returnChannelNames() {
     AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
     configurator
@@ -447,6 +454,7 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getAdminServerSpec();
 
+    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
   }
 
@@ -456,7 +464,6 @@ public class DomainV2Test extends DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server1", "cluster1");
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(

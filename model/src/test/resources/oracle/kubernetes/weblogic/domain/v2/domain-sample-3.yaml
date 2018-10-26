@@ -19,8 +19,11 @@ spec:
   asPort: 8001
   # The WebLogic Domain Name
 
+  # the T3 endpoints to export. Each entry is an endpoint name,
+  # optionally with labels and annotations to be added to the generated external channel service.
+  # An endpoint without any labels or endpoints must have the empty value: a pair of braces.
   exportedNetworkAccessPoints:
-    channelA:
+    channelA: {}
     channelB:
       labels:
         age: 23
