@@ -5,6 +5,7 @@
 package oracle.kubernetes.weblogic.domain;
 
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -21,8 +22,12 @@ public abstract class DomainConfigurator {
 
   private Domain domain;
 
+  public DomainConfigurator() {}
+
   protected DomainConfigurator(Domain domain) {
     this.domain = domain;
+    if (domain.getSpec() == null) domain.setSpec(new DomainSpec());
+    if (domain.getMetadata() == null) domain.setMetadata(new V1ObjectMeta());
   }
 
   public abstract DomainConfigurator createFor(Domain domain);

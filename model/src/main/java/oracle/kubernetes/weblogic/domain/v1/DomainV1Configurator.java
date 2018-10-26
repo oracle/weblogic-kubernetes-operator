@@ -27,12 +27,15 @@ public class DomainV1Configurator extends DomainConfigurator {
     return new DomainV1Configurator(domain);
   }
 
+  /** Constructs a version 1 domain configurator to use as an examplar */
+  public DomainV1Configurator() {}
+
   /**
    * Constructs a version 1 domain configurator
    *
    * @param domain the domain to be configured
    */
-  public DomainV1Configurator(Domain domain) {
+  public DomainV1Configurator(@Nonnull Domain domain) {
     super(domain);
   }
 
