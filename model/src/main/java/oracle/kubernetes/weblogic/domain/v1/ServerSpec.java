@@ -29,18 +29,23 @@ import oracle.kubernetes.operator.KubernetesConstants;
 public abstract class ServerSpec {
 
   private static final String ADMIN_MODE_FLAG = "-Dweblogic.management.startupMode=ADMIN";
+  protected DomainSpec domainSpec;
 
-  public String getImage() {
-    return Optional.ofNullable(getConfiguredImage()).orElse(DEFAULT_IMAGE);
+  public ServerSpec(DomainSpec domainSpec) {
+    this.domainSpec = domainSpec;
   }
 
-  protected abstract String getConfiguredImage();
+  public String getImage() {
+    return Optional.ofNullable(domainSpec.getImage()).orElse(DEFAULT_IMAGE);
+  }
 
   public String getImagePullPolicy() {
     return Optional.ofNullable(getConfiguredImagePullPolicy()).orElse(getInferredPullPolicy());
   }
 
-  protected abstract String getConfiguredImagePullPolicy();
+  protected String getConfiguredImagePullPolicy() {
+    return domainSpec.getImagePullPolicy();
+  }
 
   private String getInferredPullPolicy() {
     return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
@@ -55,7 +60,18 @@ public abstract class ServerSpec {
    *
    * @return an object containing the name of a secret. May be null.
    */
-  public abstract V1LocalObjectReference getImagePullSecret();
+  public V1LocalObjectReference getImagePullSecret() {
+    return domainSpec.getImagePullSecret();
+  }
+
+  /**
+   * The secrets used to authenticate to a docker repository when pulling an image.
+   *
+   * @return a list of objects containing the name of secrets. May be empty.
+   */
+  public List<V1LocalObjectReference> getImagePullSecrets() {
+    return domainSpec.getImagePullSecrets();
+  }
 
   /**
    * Returns the environment variables to be defined for this server.

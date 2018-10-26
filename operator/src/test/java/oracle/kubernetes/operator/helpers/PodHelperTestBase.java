@@ -19,6 +19,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMa
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -252,13 +253,13 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreatedWithoutPullSecret_doNotAddToPod() {
-    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), nullValue());
+    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), empty());
   }
 
   @Test
   public void whenPodCreatedWithPullSecret_addToPod() {
     V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
-    configureDomain().withDefaultImagePullSecret(imagePullSecret);
+    configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
   }
