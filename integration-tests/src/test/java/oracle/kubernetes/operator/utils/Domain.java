@@ -801,11 +801,15 @@ public class Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
-    String imageNamePrefix = "store/oracle/";
-    if (System.getenv("REPO_PREFIX") != null) {
-      imageNamePrefix = System.getenv("REPO_PREFIX");
+    String imageName = "store/oracle/weblogic";
+    if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
+      imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
     }
-    domainMap.put("image", imageNamePrefix + "weblogic" + ":12.2.1.3");
+    String imageTag = "19.1.0.0";
+    if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
+      imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
+    }
+    domainMap.put("image", imageName + ":" + imageTag);
 
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
