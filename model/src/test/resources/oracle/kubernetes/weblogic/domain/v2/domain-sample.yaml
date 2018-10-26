@@ -47,6 +47,8 @@ spec:
         path: /local/path
 
   adminServer:
+    # The Admin Server's NodePort (optional)
+    nodePort: 7001
     env:
     - name: var1
       value: value1
@@ -55,8 +57,6 @@ spec:
   managedServers:
     # the name of the server to apply these rules to
   - serverName: server1
-    # The Admin Server's NodePort
-    nodePort: 7001
     # an (optional) list of environment variable to be set on the server
     env:
     - name: JAVA_OPTIONS

@@ -79,13 +79,22 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
       implements AdminServerConfigurator {
+    private AdminServer adminServer;
+
     AdminServerConfiguratorImpl(AdminServer adminServer) {
       super(adminServer);
+      this.adminServer = adminServer;
     }
 
     @Override
     public AdminServerConfigurator withPort(int port) {
       getDomainSpec().setAsPort(port);
+      return this;
+    }
+
+    @Override
+    public AdminServerConfigurator withNodePort(int nodePort) {
+      adminServer.setNodePort(nodePort);
       return this;
     }
 
@@ -145,8 +154,7 @@ public class DomainV2Configurator extends DomainConfigurator {
 
     @Override
     public ServerConfigurator withNodePort(int nodePort) {
-      server.setNodePort(nodePort);
-      return this;
+      throw new ConfigurationNotSupportedException("managedServer", "nodePort");
     }
 
     @Override
