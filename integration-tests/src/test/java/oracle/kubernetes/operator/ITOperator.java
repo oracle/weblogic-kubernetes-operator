@@ -37,6 +37,7 @@ public class ITOperator extends BaseTest {
   private static String domain5YamlFile = "domain5.yaml";
   private static String domain6YamlFile = "domain6.yaml";
   private static String domain7YamlFile = "domain7.yaml";
+  private static String domain8YamlFile = "domain8.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -92,7 +93,7 @@ public class ITOperator extends BaseTest {
 
     logTestBegin("test1CreateFirstOperatorAndDomain");
     testCreateOperatorManagingDefaultAndTest1NS();
-    testCreateDomainInDefaultNS();
+    domain1 = testAllUseCasesForADomain(operator1, domain1YamlFile);
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
 
@@ -272,19 +273,36 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
 
+  @Test
+  public void testBCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    logTestBegin("testBCreateDomainWithDefaultValuesInSampleInputs");
+    logger.info("Creating Domain domain8 & verifing the domain creation");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1YamlFile);
+    }
+
+    // create domain8
+    testAllUseCasesForADomain(operator1, domain8YamlFile);
+    logger.info("SUCCESS - testBCreateDomainWithDefaultValuesInSampleInputs");
+  }
+
   private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     operator1 = TestUtils.createOperator(op1YamlFile);
   }
 
-  private void testCreateDomainInDefaultNS() throws Exception {
-    logger.info("Creating Domain domain1 & verifing the domain creation");
+  private Domain testAllUseCasesForADomain(Operator operator, String domainYamlFile)
+      throws Exception {
+    logger.info("Creating Domain & verifing the domain creation");
     // create domain1
-    domain1 = testDomainCreation(domain1YamlFile);
-    testDomainLifecyle(operator1, domain1);
-    testClusterScaling(operator1, domain1);
-    testOperatorLifecycle(operator1, domain1);
+    Domain domain = testDomainCreation(domainYamlFile);
+    testDomainLifecyle(operator, domain);
+    testClusterScaling(operator, domain);
+    testOperatorLifecycle(operator, domain);
+    return domain;
   }
 
   private Domain testDomainCreation(String domainYamlFile) throws Exception {
