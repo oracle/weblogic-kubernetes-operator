@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import oracle.kubernetes.operator.BaseTest;
@@ -324,8 +325,9 @@ public class Operator {
     }
 
     if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      operatorMap.put(
-          "imagePullSecrets", "{ name: " + System.getenv("IMAGE_PULL_SECRET_OPERATOR") + " }");
+      Map<String, String> m = new HashMap<>();
+      m.put("name", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+      operatorMap.put("imagePullSecrets", m);
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_OPERATOR"),
