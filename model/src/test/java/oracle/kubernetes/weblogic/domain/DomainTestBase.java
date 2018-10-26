@@ -175,7 +175,7 @@ public abstract class DomainTestBase {
   @Test
   public void whenDefaultImagePullSecretSpecified_allServersHaveIt() {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
-    configureDomain(domain).withDefaultImagePullSecret(secretReference);
+    configureDomain(domain).withDefaultImagePullSecrets(secretReference);
 
     assertThat(domain.getAdminServerSpec().getImagePullSecret(), equalTo(secretReference));
     assertThat(

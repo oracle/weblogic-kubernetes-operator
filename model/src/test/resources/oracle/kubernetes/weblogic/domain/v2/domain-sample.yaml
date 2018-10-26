@@ -31,8 +31,9 @@ spec:
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: IfNotPresent
   # Identify which Secret contains the credentials for pulling the image
-  imagePullSecret:
-    name: pull-secret
+  imagePullSecrets:
+  - name: pull-secret1
+  - name: pull-secret2
   env:
   - name: var1
     value: value0
@@ -46,7 +47,6 @@ spec:
         path: /local/path
 
   adminServer:
-    image: "store/oracle/weblogic:latest"
     env:
     - name: var1
       value: value1

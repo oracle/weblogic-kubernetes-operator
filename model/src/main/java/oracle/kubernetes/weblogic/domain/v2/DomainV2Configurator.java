@@ -9,7 +9,6 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
-import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -159,24 +158,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withImage(String imageName) {
-      server.setImage(imageName);
-      return this;
-    }
-
-    @Override
-    public ServerConfigurator withImagePullPolicy(String policy) {
-      server.setImagePullPolicy(policy);
-      return this;
-    }
-
-    @Override
-    public ServerConfigurator withImagePullSecret(String secretName) {
-      server.setImagePullSecret(new V1LocalObjectReference().name(secretName));
-      return this;
-    }
-
-    @Override
     public ServerConfigurator withServerStartState(String state) {
       return withDesiredState(state);
     }
@@ -253,24 +234,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       cluster.addEnvironmentVariable(name, value);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImage(String imageName) {
-      cluster.setImage(imageName);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImagePullPolicy(String policy) {
-      cluster.setImagePullPolicy(policy);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImagePullSecret(String secretName) {
-      cluster.setImagePullSecret(new V1LocalObjectReference().name(secretName));
       return this;
     }
 
