@@ -4,14 +4,13 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: %DOMAIN_UID%-weblogic-domain-pvc
+  name: %BASE_NAME%-pvc
   namespace: %NAMESPACE%
   labels:
     weblogic.resourceVersion: domain-v1
-    weblogic.domainUID: %DOMAIN_UID%
-    weblogic.domainName: %DOMAIN_NAME%
+    %DOMAIN_UID_LABEL_PREFIX%weblogic.domainUID: %DOMAIN_UID%
 spec:
-  storageClassName: %DOMAIN_UID%-weblogic-domain-storage-class
+  storageClassName: %BASE_NAME%-storage-class
   accessModes:
     - ReadWriteMany
   resources:
