@@ -6,11 +6,10 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static java.util.Collections.emptyList;
 
-import com.google.common.base.Strings;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1Probe;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,36 +27,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @since 2.0
  */
 public abstract class BaseConfiguration {
-  /**
-   * The WebLogic Docker image.
-   *
-   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
-   */
-  @SerializedName("image")
-  @Expose
-  private String image;
-
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   */
-  @SerializedName("imagePullPolicy")
-  @Expose
-  private String imagePullPolicy;
-
-  /**
-   * Reference to the secret used to authenticate a request for an image pull.
-   *
-   * <p>More info:
-   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
-   */
-  @SerializedName("imagePullSecret")
-  @Expose
-  private V1LocalObjectReference imagePullSecret;
 
   /**
    * Environment variables to pass while starting a server.
@@ -67,11 +36,13 @@ public abstract class BaseConfiguration {
   @SerializedName("env")
   @Expose
   @Valid
+  @JsonPropertyDescription("A list of environment variables to add to a server")
   private List<V1EnvVar> env = new ArrayList<>();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @SerializedName("serverStartState")
   @Expose
+  @JsonPropertyDescription("The state in which the server is to be started")
   private String serverStartState;
 
   /**
@@ -84,6 +55,9 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("serverStartPolicy")
   @Expose
+  @JsonPropertyDescription(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are NEVER, ALWAYS, or IF_NEEDED.")
   private String serverStartPolicy;
 
   /**
@@ -94,6 +68,7 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("livenessProbe")
   @Expose
+  @JsonPropertyDescription("Settings for the liveness probe associated with a server")
   private V1Probe livenessProbe = new V1Probe();
 
   /**
@@ -104,6 +79,7 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("readinessProbe")
   @Expose
+  @JsonPropertyDescription("Settings for the readiness probe associated with a server")
   private V1Probe readinessProbe = new V1Probe();
 
   /**
@@ -114,9 +90,6 @@ public abstract class BaseConfiguration {
   void fillInFrom(BaseConfiguration other) {
     if (other == null) return;
 
-    if (image == null) image = other.getImage();
-    if (imagePullPolicy == null) imagePullPolicy = other.getImagePullPolicy();
-    if (imagePullSecret == null) imagePullSecret = other.getImagePullSecret();
     if (serverStartState == null) serverStartState = other.getServerStartState();
     if (serverStartPolicy == null) serverStartPolicy = other.getServerStartPolicy();
 
@@ -156,37 +129,6 @@ public abstract class BaseConfiguration {
    */
   protected boolean hasV2Fields() {
     return serverStartState != null || serverStartPolicy != null || !env.isEmpty();
-  }
-
-  @Nullable
-  public String getImage() {
-    return image;
-  }
-
-  public void setImage(@Nullable String image) {
-    this.image = image;
-  }
-
-  @Nullable
-  public String getImagePullPolicy() {
-    return imagePullPolicy;
-  }
-
-  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
-    this.imagePullPolicy = imagePullPolicy;
-  }
-
-  @Nullable
-  public V1LocalObjectReference getImagePullSecret() {
-    return hasImagePullSecret() ? imagePullSecret : null;
-  }
-
-  private boolean hasImagePullSecret() {
-    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
-  }
-
-  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
-    this.imagePullSecret = imagePullSecret;
   }
 
   @Nullable
@@ -243,9 +185,6 @@ public abstract class BaseConfiguration {
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .append("image", image)
-        .append("imagePullPolicy", imagePullPolicy)
-        .append("imagePullSecret", imagePullSecret)
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
         .append("livenessProbe", livenessProbe)
@@ -263,9 +202,6 @@ public abstract class BaseConfiguration {
     BaseConfiguration that = (BaseConfiguration) o;
 
     return new EqualsBuilder()
-        .append(image, that.image)
-        .append(imagePullPolicy, that.imagePullPolicy)
-        .append(imagePullSecret, that.imagePullSecret)
         .append(env, that.env)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
@@ -277,9 +213,6 @@ public abstract class BaseConfiguration {
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .append(image)
-        .append(imagePullPolicy)
-        .append(imagePullSecret)
         .append(env)
         .append(serverStartState)
         .append(serverStartPolicy)
