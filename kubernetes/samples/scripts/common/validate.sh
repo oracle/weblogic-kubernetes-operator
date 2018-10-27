@@ -120,7 +120,6 @@ function validateOutputDir {
       shift
       local in2=${1}
       shift
-      internalValidateInputsFileDoesNotExistOrIsTheSame ${dir} ${in1} ${in2}
       internalValidateGeneratedYamlFilesDoNotExist ${dir} $@
     else
       validationError "${dir} exists but is not a directory."

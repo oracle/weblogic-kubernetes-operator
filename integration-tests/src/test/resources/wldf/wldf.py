@@ -37,8 +37,8 @@ wn1 = wldfResource.getWatchNotification()
 scriptAct = wn1.createScriptAction('ScriptActionScaleUp')
 scriptAct.setEnabled(true)
 scriptAct.setTimeout(0)
-scriptAct.setWorkingDirectory('/shared/domain/base_domain/bin/scripts/')
-scriptAct.setPathToScript('/shared/domain/base_domain/bin/scripts/scalingAction.sh')
+scriptAct.setWorkingDirectory('/shared/domains/domain3/bin/scripts/')
+scriptAct.setPathToScript('/shared/domains/domain3/bin/scripts/scalingAction.sh')
 props = Properties()
 props.setProperty("INTERNAL_OPERATOR_CERT",  operator_cert_data);
 #props.setProperty("KUBERNETES_SERVICE_HOST", k8s_master_host);

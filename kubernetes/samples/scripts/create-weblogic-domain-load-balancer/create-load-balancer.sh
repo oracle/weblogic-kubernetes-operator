@@ -63,7 +63,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
+  lbOutputDir=${outputDir}
 
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in
@@ -88,7 +88,7 @@ function initAndValidateOutputDir {
     esac
   fi
   validateOutputDir \
-    ${domainOutputDir} \
+    ${lbOutputDir} \
     ${valuesInputFile} \
     create-load-balancer-inputs.yaml \
     ${fileList}
@@ -102,20 +102,14 @@ function initialize {
   # Validate the required files exist
   validateErrors=false
 
-  if [ -z "${valuesInputFile}" ]; then
-    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balander-inputs.yaml)."
-  else
-    if [ ! -f ${valuesInputFile} ]; then
-      validationError "Unable to locate the input parameters file ${valuesInputFile}"
-    fi
+  echo valuesInputFile ${valuesInputFile}
+
+  if [ ! -f ${valuesInputFile} ]; then
+    validationError "Unable to locate the input parameters file ${valuesInputFile}"
   fi
 
   if [ -z "${outputDir}" ]; then
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
-  else
-    if ! [ -d ${outputDir} ]; then
-      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
-    fi
   fi
 
   traefikSecurityInput="${scriptDir}/traefik-security-template.yaml"
@@ -158,7 +152,6 @@ function initialize {
   # Parse the commonn inputs file
   parseCommonInputs
   validateInputParamsSpecified \
-    domainName \
     adminServerName \
     domainUID \
     clusterName \
@@ -187,25 +180,29 @@ function initialize {
 function createYamlFiles {
 
   # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
+  mkdir -p ${lbOutputDir}
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-load-balancer-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${lbOutputDir}/create-load-balancer-inputs.yaml"
 
-  traefikSecurityOutput="${domainOutputDir}/traefik-security.yaml"
-  traefikOutput="${domainOutputDir}/traefik.yaml"
-  apacheOutput="${domainOutputDir}/apache.yaml"
-  apacheSecurityOutput="${domainOutputDir}/apache-security.yaml"
-  voyagerSecurityOutput="${domainOutputDir}/voyager-operator-security.yaml"
-  voyagerOperatorOutput="${domainOutputDir}/voyager-operator.yaml"
-  voyagerIngressOutput="${domainOutputDir}/voyager-ingress.yaml"
+  traefikSecurityOutput="${lbOutputDir}/traefik-security.yaml"
+  traefikOutput="${lbOutputDir}/traefik.yaml"
+  apacheOutput="${lbOutputDir}/apache.yaml"
+  apacheSecurityOutput="${lbOutputDir}/apache-security.yaml"
+  voyagerSecurityOutput="${lbOutputDir}/voyager-operator-security.yaml"
+  voyagerOperatorOutput="${lbOutputDir}/voyager-operator.yaml"
+  voyagerIngressOutput="${lbOutputDir}/voyager-ingress.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
+
+  if [ -z ${domainName} ]; then
+    domainName=$domainUID
+  fi
 
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     # Traefik file
@@ -297,14 +294,14 @@ function createYamlFiles {
   fi
 
   # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
+  rm -f ${lbOutputDir}/*.yaml-e
 }
 
 #
 # Deploy Voyager/HAProxy load balancer
 #
 function startupVoyagerLoadBalancer {
-  sh ${scriptDir}/start-voyager-controller.sh -p $domainOutputDir
+  sh ${scriptDir}/start-voyager-controller.sh -p $lbOutputDir
   createVoyagerIngress 
 }
 
@@ -427,29 +424,16 @@ function printSummary {
   # Get the IP address of the kubernetes cluster (into K8S_IP)
   getKubernetesClusterIP
 
-  echo ""
-  echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
-  echo ""
-  if [ "${exposeAdminNodePort}" = true ]; then
-    echo "Administration console access is available at http:${K8S_IP}:${adminNodePort}/console"
-  fi
-  if [ "${exposeAdminT3Channel}" = true ]; then
-    echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
-  fi
   if [ "${loadBalancer}" = "TRAEFIK" ] || [ "${loadBalancer}" = "VOYAGER" ]; then
-    echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
+    echo "The load balancer for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerWebPort}"
     echo "The load balancer dashboard for cluster '${clusterName}' is available at http:${K8S_IP}:${loadBalancerDashboardPort}"
     echo ""
   elif [ "${loadBalancer}" = "APACHE" ]; then
-    echo "The apache load balancer for '${domainUID}' is available at http:${K8S_IP}:${loadBalancerWebPort}/ (add the application path to the URL)"
+    echo "The Apache load balancer for '${domainUID}' is available at http:${K8S_IP}:${loadBalancerWebPort}"
 
   fi
   echo "The following files were generated:"
-  echo "  ${domainOutputDir}/create-load-balander-inputs.yaml"
-  echo "  ${domainPVOutput}"
-  echo "  ${domainPVCOutput}"
-  echo "  ${createJobOutput}"
-  echo "  ${dcrOutput}"
+  echo "  ${lbOutputDir}/create-load-balander-inputs.yaml"
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     echo "  ${traefikSecurityOutput}"
     echo "  ${traefikOutput}"

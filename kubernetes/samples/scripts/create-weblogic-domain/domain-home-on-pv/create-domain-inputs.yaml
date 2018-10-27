@@ -11,8 +11,8 @@ adminPort: 7001
 adminServerName: admin-server
 
 # Name of the WebLogic domain to create
-# By default, the domainName will be the same as the domainUID
-domainName:
+# By default, this is the same as the domainUID
+domainName: domain1
 
 # Unique ID identifying a domain.
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
@@ -84,21 +84,19 @@ namespace: default
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
-# The default value is <domainUID>-weblogic-domain-pvc
-persistentVolumeClaimName: 
+persistentVolumeClaimName: weblogic-sample-domain-pvc
 
-# Mount path of the domain persistent volume. The default is /shared.
+# Mount path of the domain persistent volume. 
 domainPVMountPath: /shared
 
 # Mount path of the directory where the create domain scripts are located inside the pod
-# The default is /u01/weblogic.
 createDomainScriptsMountPath: /u01/weblogic
 
-# Script that creates the domain. The default is create-domain-job.sh.
+# Script that creates the domain. 
 createDomainScriptName: create-domain-job.sh
 
 # Directory to get all the create domain scripts and supporting files, including 
 # the script that is specified by the createDomainScriptName property.
 # The default is the "wlst" subdirectory under the directory where the 
 # create-domain.sh script is located.
-createDomainFilesDir:
+createDomainFilesDir: wlst
