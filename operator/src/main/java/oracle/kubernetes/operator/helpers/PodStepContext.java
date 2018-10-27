@@ -641,7 +641,7 @@ public abstract class PodStepContext {
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
-    addEnvVar(vars, "LOG_HOME", LOG_HOME);
+    addEnvVar(vars, "LOG_HOME", LOG_HOME + "/" + getDomainUID());
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
@@ -649,7 +649,7 @@ public abstract class PodStepContext {
   }
 
   private String getDomainHome() {
-    return "/shared/domain/" + getDomainName();
+    return "/shared/domains/" + getDomainUID();
   }
 
   // Hide the admin account's user name and password.
