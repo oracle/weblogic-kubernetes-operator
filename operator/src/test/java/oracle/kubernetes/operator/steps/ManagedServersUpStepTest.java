@@ -329,6 +329,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void serverStartupInfo_containsWlsServerStartupAndConfig() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1());
     configureServerToStart("wls1").withNodePort(17);
     addWlsServer("wls1");
 
@@ -413,6 +414,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenClusterStartupDefinedForServerNotRunning_addServerStartup() {
+    assumeTrue(DomainConfiguratorFactory.useDomainV1());
     configureServerToStart("ms1").withNodePort(23);
     configureCluster("cluster1");
     addWlsCluster("cluster1", "ms1");
