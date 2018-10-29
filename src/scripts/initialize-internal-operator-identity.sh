@@ -41,7 +41,7 @@ function generateInternalIdentity {
   OP_CSR="${TEMP_DIR}/${OP_PREFIX}.csr"
   OP_CERT_PEM="${TEMP_DIR}/${OP_PREFIX}.cert.pem"
   OP_KEY_PEM="${TEMP_DIR}/${OP_PREFIX}.key.pem"
-  KEYTOOL=/usr/java/jdk1.8.0_141/bin/keytool
+  KEYTOOL=${JAVA_HOME}/bin/keytool
 
   # generate a keypair for the operator's internal service, putting it in a keystore
   $KEYTOOL \
