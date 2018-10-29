@@ -813,14 +813,6 @@ public class Domain {
     clusterType = (String) domainMap.get("clusterType");
     startupControl = (String) domainMap.get("startupControl");
 
-    if (domainMap.get("createDomainFilesDir") != null) {
-      domainMap.put(
-          "createDomainFilesDir",
-          BaseTest.getProjectRoot()
-              + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
-              + domainMap.get("createDomainFilesDir"));
-    }
-
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
