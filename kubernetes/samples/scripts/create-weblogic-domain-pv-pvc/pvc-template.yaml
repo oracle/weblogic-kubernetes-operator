@@ -15,4 +15,4 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
+      storage: %SAMPLE_STORAGE_SIZE%
