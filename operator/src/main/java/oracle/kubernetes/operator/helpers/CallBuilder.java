@@ -1666,7 +1666,19 @@ public class CallBuilder {
         DELETE_INGRESS);
   }
 
-  private static final AsyncRequestStepFactory STEP_FACTORY = AsyncRequestStep::new;
+  static AsyncRequestStepFactory setStepFactory(AsyncRequestStepFactory newFactory) {
+    AsyncRequestStepFactory oldFactory = STEP_FACTORY;
+    STEP_FACTORY = newFactory;
+    return oldFactory;
+  }
+
+  static void resetStepFactory() {
+    STEP_FACTORY = DEFAULT_STEP_FACTORY;
+  }
+
+  private static AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
+
+  private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
 
   private <T> Step createRequestAsync(
       ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
