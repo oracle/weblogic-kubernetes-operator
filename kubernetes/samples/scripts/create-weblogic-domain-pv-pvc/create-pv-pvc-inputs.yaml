@@ -4,13 +4,16 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-pv-pvc-inputs-v1
 
+# The base name of the pv and pvc
+baseName: weblogic-sample
+
 # Unique ID identifying a domain. 
 # If left empty, the generated pv can be shared by multiple domains
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
 domainUID:
 
-# The base name of the pv and pvc
-baseName: weblogic-sample-domain
+# Name of the domain namespace
+namespace: default
 
 # Persistent volume type for the domain's storage.
 # The value must be 'HOST_PATH' or 'NFS'. 
@@ -31,8 +34,4 @@ weblogicDomainStorageReclaimPolicy: Retain
 
 # Total storage allocated to the domain's persistent storage.
 weblogicDomainStorageSize: 10Gi
-
-# Name of the domain namespace
-namespace: default
-
 
