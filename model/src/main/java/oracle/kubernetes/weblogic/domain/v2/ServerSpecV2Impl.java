@@ -4,17 +4,16 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1Probe;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
@@ -32,7 +31,8 @@ public class ServerSpecV2Impl extends ServerSpec {
    *     them
    */
   public ServerSpecV2Impl(
-      Server server, Integer clusterLimit, BaseConfiguration... configurations) {
+      DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
+    super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
     for (BaseConfiguration configuration : configurations) this.server.fillInFrom(configuration);
@@ -40,26 +40,6 @@ public class ServerSpecV2Impl extends ServerSpec {
 
   private Server getBaseConfiguration(Server server) {
     return server != null ? server.getConfiguration() : new Server();
-  }
-
-  @Override
-  public String getImage() {
-    return Optional.ofNullable(getConfiguredImage()).orElse(DEFAULT_IMAGE);
-  }
-
-  @Override
-  protected String getConfiguredImage() {
-    return server.getImage();
-  }
-
-  @Override
-  protected String getConfiguredImagePullPolicy() {
-    return server.getImagePullPolicy();
-  }
-
-  @Override
-  public V1LocalObjectReference getImagePullSecret() {
-    return server.getImagePullSecret();
   }
 
   @Override

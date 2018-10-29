@@ -7,6 +7,8 @@ package oracle.kubernetes.weblogic.domain.v1;
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
@@ -83,14 +85,71 @@ public class DomainSpec extends BaseConfiguration {
   private Integer asPort;
 
   /**
+   * The WebLogic Docker image.
+   *
+   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
+   */
+  @JsonPropertyDescription(
+      "The Weblogic Docker image; required when domainHomeInImage is true; "
+          + "otherwise, defaults to store/oracle/weblogic:12.2.1.3")
+  @SerializedName("image")
+  @Expose
+  private String image;
+
+  /**
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * IfNotPresent.
+   *
+   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+   */
+  @JsonPropertyDescription(
+      "The image pull policy for the WebLogic Docker image. "
+          + ""
+          + "Legal values are Always, Never and IfNotPresent. "
+          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise")
+  @SerializedName("imagePullPolicy")
+  @Expose
+  private String imagePullPolicy;
+
+  /**
+   * The image pull secret for the WebLogic Docker image.
+   *
+   * @deprecated as 2.0, use #imagePullSecrets
+   */
+  @SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
+  @Deprecated
+  @SerializedName("imagePullSecret")
+  @Expose
+  private V1LocalObjectReference imagePullSecret;
+
+  /**
+   * The image pull secrets for the WebLogic Docker image.
+   *
+   * <p>More info:
+   * https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#localobjectreference-v1-core
+   *
+   * @since 2.0
+   */
+  @JsonPropertyDescription("A list of image pull secrets for the WebLogic Docker image.")
+  @SerializedName("imagePullSecrets")
+  @Expose
+  private List<V1LocalObjectReference> imagePullSecrets;
+
+  /**
    * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
    * Services. The internal and external ports must match; therefore, it is required that the
    * channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes
    * cluster's legal NodePort port range.
+   *
+   * @deprecated in 2.0
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @SerializedName("exportT3Channels")
   @Expose
   @Valid
+  @Deprecated
   private List<String> exportT3Channels = new ArrayList<>();
 
   /**
@@ -99,6 +158,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
+  @JsonPropertyDescription("T3 network access points to export")
   private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
   /**
@@ -174,6 +234,10 @@ public class DomainSpec extends BaseConfiguration {
   /** The definition of the storage used for this domain. */
   @SerializedName("storage")
   @Expose
+  @JsonPropertyDescription(
+      "The storage used for this domain. "
+          + "Defaults to a predefined claim for a PVC whose name is "
+          + "the domain UID followed by '-weblogic-domain-pvc'")
   private DomainStorage storage;
 
   /**
@@ -183,6 +247,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("adminServer")
   @Expose
+  @JsonPropertyDescription("Configuration for the admin server")
   private AdminServer adminServer;
 
   /**
@@ -192,6 +257,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("managedServers")
   @Expose
+  @JsonPropertyDescription("Configuration for the managed servers")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -201,6 +267,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("clusters")
   @Expose
+  @JsonPropertyDescription("Configuration for the clusters")
   protected List<Cluster> clusters = new ArrayList<>();
 
   @SuppressWarnings("deprecation")
@@ -418,6 +485,58 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withAsPort(Integer asPort) {
     this.asPort = asPort;
     return this;
+  }
+
+  @Nullable
+  public String getImage() {
+    return image;
+  }
+
+  public void setImage(@Nullable String image) {
+    this.image = image;
+  }
+
+  @Nullable
+  public String getImagePullPolicy() {
+    return imagePullPolicy;
+  }
+
+  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+  }
+
+  @Nullable
+  V1LocalObjectReference getImagePullSecret() {
+    if (isDefined(imagePullSecret)) return imagePullSecret;
+
+    return !hasImagePullSecrets() ? null : getReturnValue(imagePullSecrets.get(0));
+  }
+
+  private boolean hasImagePullSecrets() {
+    return imagePullSecrets != null && imagePullSecrets.size() != 0;
+  }
+
+  @Nullable
+  public List<V1LocalObjectReference> getImagePullSecrets() {
+    if (hasImagePullSecrets()) return imagePullSecrets;
+    else if (isDefined(imagePullSecret)) return Collections.singletonList(imagePullSecret);
+    else return Collections.emptyList();
+  }
+
+  private V1LocalObjectReference getReturnValue(V1LocalObjectReference imagePullSecret) {
+    return isDefined(imagePullSecret) ? imagePullSecret : null;
+  }
+
+  private boolean isDefined(V1LocalObjectReference imagePullSecret) {
+    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
+  }
+
+  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
+    imagePullSecrets = Collections.singletonList(imagePullSecret);
+  }
+
+  public void setImagePullSecrets(@Nullable List<V1LocalObjectReference> imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
   }
 
   /**
@@ -737,6 +856,9 @@ public class DomainSpec extends BaseConfiguration {
         .append("adminSecret", adminSecret)
         .append("asName", asName)
         .append("asPort", asPort)
+        .append("image", image)
+        .append("imagePullPolicy", imagePullPolicy)
+        .append("imagePullSecrets", imagePullSecrets)
         .append("exportT3Channels", exportT3Channels)
         .append("startupControl", startupControl)
         .append("serverStartup", serverStartup)
@@ -757,6 +879,9 @@ public class DomainSpec extends BaseConfiguration {
         .append(domainUID)
         .append(clusterStartup)
         .append(asPort)
+        .append(image)
+        .append(imagePullPolicy)
+        .append(imagePullSecrets)
         .append(domainName)
         .append(exportT3Channels)
         .append(serverStartup)
@@ -780,6 +905,9 @@ public class DomainSpec extends BaseConfiguration {
         .append(domainUID, rhs.domainUID)
         .append(clusterStartup, rhs.clusterStartup)
         .append(asPort, rhs.asPort)
+        .append(image, rhs.image)
+        .append(imagePullPolicy, rhs.imagePullPolicy)
+        .append(imagePullSecrets, rhs.imagePullSecrets)
         .append(domainName, rhs.domainName)
         .append(exportT3Channels, rhs.exportT3Channels)
         .append(serverStartup, rhs.serverStartup)
@@ -890,12 +1018,13 @@ public class DomainSpec extends BaseConfiguration {
   class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public ServerSpec getAdminServerSpec() {
-      return new ServerSpecV2Impl(adminServer, null, DomainSpec.this);
+      return new ServerSpecV2Impl(DomainSpec.this, adminServer, null, DomainSpec.this);
     }
 
     @Override
     public ServerSpec getServerSpec(String serverName, String clusterName) {
       return new ServerSpecV2Impl(
+          DomainSpec.this,
           getServer(serverName),
           getClusterLimit(clusterName),
           getCluster(clusterName),
