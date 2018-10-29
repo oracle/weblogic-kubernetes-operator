@@ -45,6 +45,9 @@ source ${SCRIPTPATH}/traceUtils.sh
 
 trace "Introspecting the domain"
 
+trace "Current environment:"
+env
+
 # set defaults
 
 export WL_HOME=${WL_HOME:-/u01/oracle/wlserver}
