@@ -60,6 +60,12 @@
 #   to the node manager later in the server pods (so that the server pods don't
 #   have to mount the secret containing the username and password).
 #
+# TBD:
+#
+#   It's not clear if this script supports mixed clusters. It seems to assume
+#   a cluster with a dynamic server means the cluster is purely dynamic.
+#
+
 
 import base64
 import sys
@@ -113,7 +119,7 @@ class OfflineWlstEnv(object):
     for the_file in os.listdir(self.INTROSPECT_HOME):
       the_file_path = os.path.join(self.INTROSPECT_HOME, the_file)
       if os.path.isfile(the_file_path):
-        os.unlink(file_path)
+        os.unlink(the_file_path)
 
     # load domain home into WLST
 
@@ -259,6 +265,21 @@ class TopologyGenerator(Generator):
     finally:
       self.close()
 
+  # Work-around bug in off-line WLST where cluster.getDynamicServers() may throw
+  # when there are no 'real' DynamicServers.  Exception looks like:
+  #     at com.sun.proxy.$Proxy46.getDynamicServers(Unknown Source)
+  #     at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+  #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+  #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  #     at java.lang.reflect.Method.invoke(Method.java:498)
+  def getDynamicServersWA(self,cluster):
+    try:
+      ret = cluster.getDynamicServers()
+    except:
+      ret = None
+    return ret
+
+
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
     if adminServerName == None:
@@ -280,7 +301,7 @@ class TopologyGenerator(Generator):
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
-    if cluster.getDynamicServers() is None:
+    if self.getDynamicServersWA(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
       self.validateDynamicCluster(cluster)
@@ -382,7 +403,7 @@ class TopologyGenerator(Generator):
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if cluster.getDynamicServers() is None:
+      if self.getDynamicServersWA(cluster) is None:
         rtn.append(cluster)
     return rtn
 
@@ -422,7 +443,7 @@ class TopologyGenerator(Generator):
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if cluster.getDynamicServers() is not None:
+      if self.getDynamicServersWA(cluster) is not None:
         rtn.append(cluster)
     return rtn
 
