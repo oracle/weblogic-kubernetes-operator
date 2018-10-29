@@ -1,15 +1,15 @@
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: %BASE_NAME%-pv
+  name: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pv
   labels:
     weblogic.resourceVersion: domain-v1
     %DOMAIN_UID_LABEL_PREFIX%weblogic.domainUID: %DOMAIN_UID%
 spec:
-  storageClassName: %BASE_NAME%-storage-class
+  storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class
   capacity:
     storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
   accessModes:
