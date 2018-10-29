@@ -335,8 +335,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenClusteredServerStartPolicyIfNeededAndNeedMoreServers_startServer() {
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+  public void whenClusteredServerStartPolicyInheritedAndNeedMoreServers_startServer() {
     configureCluster("cluster1").withReplicas(5);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
