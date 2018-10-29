@@ -177,7 +177,7 @@ cat <<EOF > ${nm_props_file}
   LogAppend=true
   weblogic.StopScriptEnabled=false
   StateCheckInterval=500
-  CrashRecoveryEnabled=true
+  CrashRecoveryEnabled=false
   weblogic.StartScriptEnabled=false
   LogFormatter=weblogic.nodemanager.server.LogFormatter
   ListenBacklog=50
