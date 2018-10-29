@@ -4,7 +4,7 @@
 {{- define "operator.operatorRoleBinding" }}
 ---
 kind: "RoleBinding"
-apiVersion: "rbac.authorization.k8s.io/v1beta1"
+apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   name: "weblogic-operator-rolebinding"
   namespace: {{ .Release.Namespace | quote }}
@@ -19,5 +19,5 @@ subjects:
 roleRef:
   kind: "Role"
   name: "weblogic-operator-role"
-  apiGroup: ""
+  apiGroup: "rbac.authorization.k8s.io"
 {{- end }}
