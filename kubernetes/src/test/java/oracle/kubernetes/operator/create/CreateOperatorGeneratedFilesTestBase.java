@@ -28,6 +28,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodSpe
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPodTemplateSpec;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newPolicyRule;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newProbe;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRole;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleBinding;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newRoleRef;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newSecret;
@@ -48,6 +49,7 @@ import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Role;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
@@ -708,11 +710,12 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
         yamlEqualTo(getExpectedWeblogicOperatorRole()));
   }
 
-  private V1ClusterRole getExpectedWeblogicOperatorRole() {
-    return newClusterRole()
+  private V1Role getExpectedWeblogicOperatorRole() {
+    return newRole()
         .metadata(
             newObjectMeta()
-                .name(getInputs().getNamespace() + "-weblogic-operator-role")
+                .name("weblogic-operator-role")
+                .namespace(getInputs().getNamespace())
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V1)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .addRulesItem(

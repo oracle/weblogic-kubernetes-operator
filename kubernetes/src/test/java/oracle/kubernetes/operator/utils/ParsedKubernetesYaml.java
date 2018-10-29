@@ -442,13 +442,13 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class RoleHandler extends TypeHandler<V1ClusterRoleBinding> {
+  private static class RoleHandler extends TypeHandler<V1Role> {
     private RoleHandler() {
       super(V1Role.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(V1ClusterRoleBinding instance) {
+    protected V1ObjectMeta getMetadata(V1Role instance) {
       return instance.getMetadata();
     }
   }
