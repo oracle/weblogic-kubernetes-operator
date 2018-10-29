@@ -39,11 +39,13 @@ public class PersistentVolume {
     logger.info("command result " + result.stdout().trim());
 
     Path parentDir =
-        Files.createDirectories(
-            Paths.get(
-                BaseTest.getUserProjectsDir() + "/weblogic-domains/" + pvMap.get("domainUID")));
+        pvMap.get("domainUID") != null
+            ? Files.createDirectories(
+                Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/" + pvMap.get("domainUID")))
+            : Files.createDirectories(Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/"));
+
     // generate input yaml
-    TestUtils.createInputFile(pvMap, parentDir + "/pv-inputs.yaml");
+    TestUtils.createInputFile(pvMap, parentDir + "/" + pvMap.get("baseName") + "-pv-inputs.yaml");
 
     // create PV/PVC
     String cmdPvPvc =
@@ -51,8 +53,10 @@ public class PersistentVolume {
             + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir
-            + "/pv-inputs.yaml -e -o "
-            + BaseTest.getUserProjectsDir();
+            + "/"
+            + pvMap.get("baseName")
+            + "-pv-inputs.yaml -e -o "
+            + parentDir;
     logger.info("Executing cmd " + cmdPvPvc);
 
     result = ExecCommand.exec(cmdPvPvc);

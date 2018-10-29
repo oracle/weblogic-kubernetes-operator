@@ -245,13 +245,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
     configureAdminServer()
-        .withEnvironmentVariable("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
+        .withEnvironmentVariable("item1", "find uid1 at $(DOMAIN_HOME)")
         .withEnvironmentVariable("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)");
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
-            hasEnvVar("item1", "find domain1 at /shared/domain/domain1"),
+            hasEnvVar("item1", "find uid1 at /shared/domains/uid1"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 
