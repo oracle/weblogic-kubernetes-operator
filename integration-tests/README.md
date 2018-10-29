@@ -18,7 +18,7 @@ Java integration tests cover all use cases from run.sh. The below are the use ca
 * create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
 * verify admin external service by accessing admin REST endpoint with nodeport in URL
 * verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
-* verify web app load balancing  
+* verify web app load balancing by accessing the webapp using loadBalancerWebPort
 * verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
 * cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
 * Operator life cycle(destroy and create) should not impact the running domain
@@ -41,6 +41,7 @@ Full test use cases
 * destroy domain1
 * test that create domain fails when its pv is already populated by a shutdown domain
 * create another domain domain7 with APACHE load balancer and access admin console via LB port. 
+* create another domain domain8 with mostly default values from sample domain inputs, mainly exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain startup and cluster scaling using operator rest endpoint works.
 
 
 # Directory Configuration and Structure
