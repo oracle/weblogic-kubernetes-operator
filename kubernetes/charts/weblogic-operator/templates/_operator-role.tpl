@@ -4,7 +4,7 @@
 {{- define "operator.operatorRole" }}
 ---
 kind: "Role"
-apiVersion: "rbac.authorization.k8s.io/v1beta1"
+apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   name: "weblogic-operator-role"
   namespace: {{ .Release.Namespace | quote }}
