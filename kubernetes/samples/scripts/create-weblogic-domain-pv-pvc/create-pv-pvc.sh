@@ -65,14 +65,13 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
 
   validateOutputDir \
-    ${domainOutputDir} \
+    ${outputDir} \
     ${valuesInputFile} \
     create-pv-pvc-inputs.yaml \
-    pv.yaml \
-    pvc.yaml 
+    ${baseName}-pv.yaml \
+    ${baseName}-pvc.yaml 
 }
 
 #
@@ -93,10 +92,6 @@ function initialize {
 
   if [ -z "${outputDir}" ]; then
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
-  else
-    if ! [ -d ${outputDir} ]; then
-      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
-    fi
   fi
 
   domainPVInput="${scriptDir}/pv-template.yaml"
@@ -114,10 +109,9 @@ function initialize {
   # Parse the commonn inputs file
   parseCommonInputs
   validateInputParamsSpecified \
-    domainName \
-    domainUID \
     weblogicDomainStoragePath \
     weblogicDomainStorageSize \
+    baseName \
     namespace \
     version
 
@@ -137,17 +131,17 @@ function initialize {
 function createYamlFiles {
 
   # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
+  mkdir -p ${outputDir}
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-pv-pvc-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${outputDir}/create-pv-pvc-inputs.yaml"
 
-  domainPVOutput="${domainOutputDir}/pv.yaml"
-  domainPVCOutput="${domainOutputDir}/pvc.yaml"
+  domainPVOutput="${outputDir}/${baseName}-pv.yaml"
+  domainPVCOutput="${outputDir}/${baseName}-pvc.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -164,9 +158,16 @@ function createYamlFiles {
     nfsPrefix="${disabledPrefix}"
   fi
 
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
+  if [ -z ${domainUID} ]; then
+    domainUIDLabelPrefix="${disabledPrefix}"
+  else
+    sed -i -e "s:%DOMAIN_UID%:$domainUID:g" ${domainPVOutput}
+    domainUIDLabelPrefix="${enabledPrefix}"
+  fi
+  sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${domainPVOutput}
+
+  sed -i -e "s:%BASE_NAME%:$baseName:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${domainPVOutput}
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVOutput}
@@ -178,12 +179,17 @@ function createYamlFiles {
 
   cp ${domainPVCInput} ${domainPVCOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVCOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVCOutput}
+  sed -i -e "s:%BASE_NAME%:${baseName}:g" ${domainPVCOutput}
+
+  if [ ! -z ${domainUID} ]; then
+    sed -i -e "s:%DOMAIN_UID%:$domainUID:g" ${domainPVCOutput}
+  fi
+  sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${domainPVCOutput}
+
   sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
 
   # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
+  rm -f ${outputDir}/*.yaml-e
 }
 
 #
@@ -191,7 +197,7 @@ function createYamlFiles {
 #
 function createDomainPV {
   # Check if the persistent volume is already available
-  persistentVolumeName="${domainUID}-weblogic-domain-pv"
+  persistentVolumeName=${baseName}-pv
   checkPvExists ${persistentVolumeName}
   if [ "${PV_EXISTS}" = "false" ]; then
     echo Creating the persistent volume ${persistentVolumeName}
@@ -207,7 +213,7 @@ function createDomainPV {
 #
 function createDomainPVC {
   # Check if the persistent volume claim is already available
-  persistentVolumeClaimName="${domainUID}-weblogic-domain-pvc"
+  persistentVolumeClaimName=${baseName}-pvc
   checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
     echo Creating the persistent volume claim ${persistentVolumeClaimName}

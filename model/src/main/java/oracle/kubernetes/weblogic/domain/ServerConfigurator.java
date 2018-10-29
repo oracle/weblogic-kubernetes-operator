@@ -13,12 +13,6 @@ public interface ServerConfigurator {
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
 
-  ServerConfigurator withImage(String imageName);
-
-  ServerConfigurator withImagePullPolicy(String policy);
-
-  ServerConfigurator withImagePullSecret(String secretName);
-
   ServerConfigurator withServerStartState(String state);
 
   ServerConfigurator withServerStartPolicy(String startNever);

@@ -62,7 +62,7 @@ public class Domain {
     createPV();
     createSecret();
     generateInputYaml();
-    callCreateDomainScript();
+    callCreateDomainScript(userProjectsDir + "/weblogic-domains/" + domainUid);
     createLoadBalancer();
   }
 
@@ -420,13 +420,13 @@ public class Domain {
 
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(domainNS);
+    cmd.append(domainUid).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(domainUid + "-weblogic-domain-pvc", domainNS);
+    TestUtils.deletePVC(domainUid + "-pvc", domainNS);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
     boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
@@ -439,14 +439,23 @@ public class Domain {
 
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domain/" + domainMap.get("domainName").toString();
+    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
     logger.info("making sure the domain directory exists");
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
     }
     logger.info("Run the script to create domain");
-    StringBuffer cmd = new StringBuffer("cd ");
+    try {
+      callCreateDomainScript(userProjectsDir + "/weblogic-domains2/" + domainUid);
+    } catch (RuntimeException re) {
+      re.printStackTrace();
+      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+      return;
+    }
+    throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
+
+    /*    StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/weblogic-domain");
     cmd.append(" --name ")
@@ -463,7 +472,7 @@ public class Domain {
     } else {
       throw new RuntimeException(
           "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
-    }
+    } */
   }
 
   public void verifyAdminConsoleViaLB() throws Exception {
@@ -543,8 +552,10 @@ public class Domain {
                     + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     Map<String, Object> pvMap = yaml.load(pv_is);
     pv_is.close();
-    pvMap.put("domainName", domainMap.get("domainName"));
     pvMap.put("domainUID", domainUid);
+
+    // each domain uses its own pv for now
+    domainMap.put("persistentVolumeClaimName", domainUid + "-pvc");
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
       pvMap.put(
@@ -554,6 +565,7 @@ public class Domain {
     if (domainMap.get("weblogicDomainStorageSize") != null) {
       pvMap.put("weblogicDomainStorageSize", domainMap.get("weblogicDomainStorageSize"));
     }
+    pvMap.put("baseName", domainUid);
     pvMap.put("namespace", domainNS);
 
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
@@ -599,13 +611,13 @@ public class Domain {
     TestUtils.createInputFile(domainMap, generatedInputYamlFile);
   }
 
-  private void callCreateDomainScript() throws Exception {
+  private void callCreateDomainScript(String outputDir) throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
     cmd.append(
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
         .append(" -e -v -o ")
-        .append(userProjectsDir);
+        .append(outputDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -764,6 +776,9 @@ public class Domain {
 
     // read input domain yaml to test
     domainMap = TestUtils.loadYaml(inputYaml);
+    if (domainMap.get("domainName") == null) {
+      domainMap.put("domainName", domainMap.get("domainUID"));
+    }
 
     // read sample domain inputs
     Yaml dyaml = new Yaml();
