@@ -49,6 +49,7 @@ import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1PolicyRule;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Role;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Secret;
@@ -193,6 +194,10 @@ public class KubernetesArtifactUtils {
 
   public static V1beta1IngressSpec newIngressSpec() {
     return new V1beta1IngressSpec();
+  }
+
+  public static V1Role newRole() {
+    return (new V1Role()).apiVersion(API_VERSION_RBAC_V1).kind(KIND_ROLE);
   }
 
   public static V1ClusterRole newClusterRole() {
