@@ -16,8 +16,6 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
-import oracle.kubernetes.operator.work.BodyMatcher;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
