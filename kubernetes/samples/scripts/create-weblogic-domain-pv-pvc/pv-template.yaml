@@ -11,12 +11,12 @@ metadata:
 spec:
   storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class
   capacity:
-    storage: %WEBLOGIC_DOMAIN_STORAGE_SIZE%
+    storage: %SAMPLE_STORAGE_SIZE%
   accessModes:
     - ReadWriteMany
   # Valid values are Retain, Delete or Recycle
-  persistentVolumeReclaimPolicy: %WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%
+  persistentVolumeReclaimPolicy: %SAMPLE_STORAGE_RECLAIM_POLICY%
   %HOST_PATH_PREFIX%hostPath:
   %NFS_PREFIX%nfs:
-    %NFS_PREFIX%server: %WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%
-    path: "%WEBLOGIC_DOMAIN_STORAGE_PATH%"
+    %NFS_PREFIX%server: %SAMPLE_STORAGE_NFS_SERVER%
+    path: "%SAMPLE_STORAGE_PATH%"

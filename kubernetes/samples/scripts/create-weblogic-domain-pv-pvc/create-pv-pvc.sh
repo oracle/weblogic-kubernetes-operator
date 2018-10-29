@@ -161,7 +161,7 @@ function createYamlFiles {
   if [ "${weblogicDomainStorageType}" == "NFS" ]; then
     hostPathPrefix="${disabledPrefix}"
     nfsPrefix="${enabledPrefix}"
-    sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%:${weblogicDomainStorageNFSServer}:g" ${pvOutput}
+    sed -i -e "s:%SAMPLE_STORAGE_NFS_SERVER%:${weblogicDomainStorageNFSServer}:g" ${pvOutput}
   else
     hostPathPrefix="${enabledPrefix}"
     nfsPrefix="${disabledPrefix}"
@@ -180,9 +180,9 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${pvOutput}
 
   sed -i -e "s:%BASE_NAME%:$baseName:g" ${pvOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${pvOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${pvOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${pvOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${pvOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvOutput}
   sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${pvOutput}
   sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${pvOutput}
 
@@ -197,7 +197,7 @@ function createYamlFiles {
   sed -i -e "s:%SEPARATOR%:$separator:g" ${pvcOutput}
   sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${pvcOutput}
 
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvcOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvcOutput}
 
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${outputDir}/*.yaml-e
