@@ -126,7 +126,7 @@ spec:
 
 ```
 
-### Generated yaml files with domainUID domain1 
+### Generated yaml files for `domainUID=domain1`
 
 The content of the generated `domain1-weblogic-sample-pvc.yaml`:
 
