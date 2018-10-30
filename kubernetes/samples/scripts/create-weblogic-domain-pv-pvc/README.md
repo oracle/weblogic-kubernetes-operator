@@ -1,17 +1,18 @@
-# Create Sample Persistent Volume and Persistent Volume Claim
+# Sample Persistent Volume and Persistent Volume Claim
 
-The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC). The generated PV and PVC can then be used in a domain custom resource for the domain home or logs.
+The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain custom resource for the domain home or logs.
 
 ## Prerequisites
 
 The following pre-requisites must be handled prior to running the create script:
-* The kubernetes namespace must already be created for the persistent volume claim unless the intention is to use the default namespace.
-* The host directory that will be used as the persistent volume must already exist and have the appropriate file permissions set.
+* Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace.
+* Make sure that the host directory that will be used as the persistent volume must already exist and have the appropriate file permissions set.
 
+## Using sample scripts to create PV and PVC  
 
-## Use the script to create the Kubernetes resources
+Prior to run the `create-pv-pvc.sh` script, make a copy of the `create-pv-pvc-inputs.yaml` file, and uncommented and explicitly configure the inputs property `weblogicDomainStoragePath` in the inputs file.
 
-Run the create script, pointing it at an inputs file and output directory:
+Run the create script, pointing it at your inputs file and an output directory:
 
 ```
   ./create-pv-pvc.sh \
@@ -29,10 +30,21 @@ By default, the script generates two yaml files, namely `weblogic-sample-pv.yaml
 
 As a convenience, the script can optionally create the PV and PVC resources as well using the `-e` option.
 
+The usage of the create script is as follows.
+
+```
+$ sh create-pv-pvc.sh -h
+usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
+  -i Parameter inputs file, must be specified.
+  -o Output directory for the generated yaml files, must be specified.
+  -e Also create the Kubernetes objects using the generated yaml files
+  -h Help
+```
+
 If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory togather into the target directory, maintaining the orignal directory heirachy.
 
 
-## Configuration Parameters 
+## Configuration parameters 
 
 The following parameters in the inputs file can be customized if needed.
 
@@ -49,7 +61,7 @@ The following parameters in the inputs file can be customized if needed.
 
 By default, the domainUID is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources. For the use cases where dedicated PV and PVC are desired for a particular domain, the domainUID can be set, which will cause the generated PV and PVC associated with the domainUID specified. In the per domain PV and PVC case, the names of the generated yaml files and the Kubernetes PV and PVC objects are all decorated with the `domainUID`, and the PV and PVC obects are also labeled with the `domainUID`.
 
-## Common Problems
+## Common problems
 
 This section provides details of common problems that occur while running the script  and how to resolve them.
 
@@ -63,13 +75,9 @@ The simplest case is where the `HOST_PATH` provider is used.  This can be either
 
 The create script will verify that the PV and PVC was created, and will report failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-### YAML files created by the script
+### Generated yaml files with the default inputs
 
-The `create-pv-pvc.sh` script creates two yaml files and put them in the `/path/to/output-directory` directory.
-
-The following are the contents of the yaml files with the default inputs.
-
-Here is the content of the `weblogic-sample-pvc.yaml`.
+The content of the generated `weblogic-sample-pvc.yaml`:
 
 ```
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
@@ -91,7 +99,7 @@ metadata:
       storage: 10Gi 
 ```
 
-Here is the content of the `weblogic-sample-pv.yaml`.
+The content of the generated `weblogic-sample-pv.yaml`:
 ```
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
@@ -118,7 +126,58 @@ spec:
 
 ```
 
-### Verify the PV and PVC resources
+### Generated yaml files with domainUID domain1 
+
+The content of the generated `domain1-weblogic-sample-pvc.yaml`:
+
+```
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: domain1-weblogic-sample-pvc
+  namespace: default
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: domain1
+spec:
+  storageClassName: domain1-weblogic-sample-storage-class
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+The content of the generated `domain1-weblogic-sample-pv.yaml`:
+```
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: domain1-weblogic-sample-pv
+  labels:
+    weblogic.resourceVersion: domain-v1
+    weblogic.domainUID: domain1
+spec:
+  storageClassName: domain1-weblogic-sample-storage-class
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  # Valid values are Retain, Delete or Recycle
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+  # nfs:
+    # server: %SAMPLE_STORAGE_NFS_SERVER%
+    path: "/scratch/k8s_dir"
+```
+
+### Verify the PV and PVC objects
 
 To confirm that the PV and PVC were created, use this command:
 
