@@ -84,7 +84,7 @@ namespace: default
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
-persistentVolumeClaimName: weblogic-sample-domain-pvc
+persistentVolumeClaimName: weblogic-sample-pvc
 
 # Mount path of the domain persistent volume. 
 domainPVMountPath: /shared
