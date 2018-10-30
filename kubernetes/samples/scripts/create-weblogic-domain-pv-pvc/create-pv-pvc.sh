@@ -19,10 +19,10 @@ source ${scriptDir}/../common/utility.sh
 source ${scriptDir}/../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file [-e] [-h]
-  echo "  -o Ouput directory for the generated yaml files, must be specified."
-  echo "  -e Also create the resources in the generated yaml files"
-  echo "  -i Parameter input file, must be specified."
+  echo usage: ${script} -i file -o dir [-e] [-h]
+  echo "  -i Parameter inputs file, must be specified."
+  echo "  -o Output directory for the generated yaml files, must be specified."
+  echo "  -e Also create the Kubernetes objects using the generated yaml files"
   echo "  -h Help"
   exit $1
 }
