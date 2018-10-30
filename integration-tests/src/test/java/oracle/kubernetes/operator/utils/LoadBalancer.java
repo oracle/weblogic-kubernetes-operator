@@ -32,9 +32,7 @@ public class LoadBalancer {
             + " -i "
             + parentDir
             + "/lb-inputs.yaml -e -o "
-            + BaseTest.getUserProjectsDir()
-            + "/loadbalancers/"
-            + lbMap.get("domainUID");
+            + BaseTest.getUserProjectsDir();
     logger.info("Executing cmd " + cmdLb);
 
     ExecResult result = ExecCommand.exec(cmdLb);

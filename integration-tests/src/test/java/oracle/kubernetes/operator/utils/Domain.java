@@ -63,7 +63,7 @@ public class Domain {
     createPV();
     createSecret();
     generateInputYaml();
-    callCreateDomainScript(userProjectsDir + "/weblogic-domains/" + domainUid);
+    callCreateDomainScript(userProjectsDir);
     createLoadBalancer();
   }
 
@@ -450,7 +450,7 @@ public class Domain {
     }
     logger.info("Run the script to create domain");
     try {
-      callCreateDomainScript(userProjectsDir + "/weblogic-domains2/" + domainUid);
+      callCreateDomainScript(userProjectsDir + "2");
     } catch (RuntimeException re) {
       re.printStackTrace();
       logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
