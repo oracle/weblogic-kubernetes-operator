@@ -142,7 +142,7 @@ public class BaseTest {
   }
 
   /**
-   * Access Operator REST endpoint using admin node host and node port
+   * Access Admin REST endpoint using admin node host and node port
    *
    * @throws Exception
    */
@@ -169,10 +169,11 @@ public class BaseTest {
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
           getUsername(),
           getPassword());
+      domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     } else {
-      throw new RuntimeException("FAILURE: exposeAdminT3Channel is not set or false");
+      logger.info("exposeAdminT3Channel is false, can not test t3ChannelPort");
     }
-    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
     logger.info("Done - testAdminT3Channel");
   }
 
