@@ -181,35 +181,39 @@ public class Domain {
   public void verifyAdminServerExternalService(String username, String password) throws Exception {
 
     // logger.info("Inside verifyAdminServerExternalService");
-    String nodePortHost = TestUtils.getHostName();
-    String nodePort = getNodePort();
-    logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
+    if (exposeAdminNodePort) {
+      String nodePortHost = TestUtils.getHostName();
+      String nodePort = getNodePort();
+      logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --silent --show-error --noproxy ")
-        .append(nodePortHost)
-        .append(" http://")
-        .append(nodePortHost)
-        .append(":")
-        .append(nodePort)
-        .append("/management/weblogic/latest/serverRuntime")
-        .append(" --user ")
-        .append(username)
-        .append(":")
-        .append(password)
-        .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
-    logger.info("cmd for curl " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-    String output = result.stdout().trim();
-    logger.info("output " + output);
-    if (!output.equals("200")) {
-      throw new RuntimeException(
-          "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
-              + output);
+      StringBuffer cmd = new StringBuffer();
+      cmd.append("curl --silent --show-error --noproxy ")
+          .append(nodePortHost)
+          .append(" http://")
+          .append(nodePortHost)
+          .append(":")
+          .append(nodePort)
+          .append("/management/weblogic/latest/serverRuntime")
+          .append(" --user ")
+          .append(username)
+          .append(":")
+          .append(password)
+          .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+      logger.info("cmd for curl " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+      String output = result.stdout().trim();
+      logger.info("output " + output);
+      if (!output.equals("200")) {
+        throw new RuntimeException(
+            "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
+                + output);
+      }
+    } else {
+      logger.info("exposeAdminNodePort is false, can not test adminNodePort");
     }
   }
 
@@ -289,8 +293,13 @@ public class Domain {
    * @throws Exception
    */
   public void verifyWebAppLoadBalancing(String webappName) throws Exception {
-
-    callWebAppAndVerifyLoadBalancing(webappName, true);
+    // webapp is deployed with t3channelport, so check if that is true
+    if (exposeAdminT3Channel) {
+      callWebAppAndVerifyLoadBalancing(webappName, true);
+    } else {
+      logger.info(
+          "webapp is not deployed as exposeAdminT3Channel is false, can not verify loadbalancing");
+    }
   }
 
   public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
@@ -803,14 +812,6 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
     startupControl = (String) domainMap.get("startupControl");
-
-    if (domainMap.get("createDomainFilesDir") != null) {
-      domainMap.put(
-          "createDomainFilesDir",
-          BaseTest.getProjectRoot()
-              + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
-              + domainMap.get("createDomainFilesDir"));
-    }
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
