@@ -4,13 +4,13 @@ The sample scripts demonstrate the creation of a Kubernetes persistent volume (P
 
 ## Prerequisites
 
-The following pre-requisites must be handled prior to running the create script:
+The following prerequisites must be handled prior to running the create script:
 * Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace.
-* Make sure that the host directory that will be used as the persistent volume must already exist and have the appropriate file permissions set.
+* Make sure that the host directory that will be used as the persistent volume already exists and has the appropriate file permissions set.
 
 ## Using sample scripts to create PV and PVC  
 
-Prior to run the `create-pv-pvc.sh` script, make a copy of the `create-pv-pvc-inputs.yaml` file, and uncommented and explicitly configure the inputs property `weblogicDomainStoragePath` in the inputs file.
+Prior to running the `create-pv-pvc.sh` script, make a copy of the `create-pv-pvc-inputs.yaml` file, and uncommented and explicitly configure the `weblogicDomainStoragePath` property in the inputs file.
 
 Run the create script, pointing it at your inputs file and an output directory:
 
@@ -41,12 +41,11 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
   -h Help
 ```
 
-If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory togather into the target directory, maintaining the orignal directory heirachy.
-
+If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory together into the target directory, maintaining the original directory hierarchy.
 
 ## Configuration parameters 
 
-The following parameters in the inputs file can be customized if needed.
+The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-inputs.yaml` file.
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
@@ -59,7 +58,7 @@ The following parameters in the inputs file can be customized if needed.
 | `weblogicDomainStorageType` | Type of storage. Legal values are `NFS` and `HOST_PATH`. If using 'NFS', weblogicDomainStorageNFSServer must be specified | `HOST_PATH` |
 | `weblogicDomainStorageNFSServer`| Name of the IP address of the NFS server. This setting only applies if weblogicDomainStorateType is NFS  | no default |
 
-By default, the domainUID is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources. For the use cases where dedicated PV and PVC are desired for a particular domain, the domainUID can be set, which will cause the generated PV and PVC associated with the domainUID specified. In the per domain PV and PVC case, the names of the generated yaml files and the Kubernetes PV and PVC objects are all decorated with the `domainUID`, and the PV and PVC obects are also labeled with the `domainUID`.
+By default, the `domainUID` is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources. For the use cases where dedicated PV and PVC are desired for a particular domain, the `domainUID` can be set, which will cause the generated PV and PVC associated with the specified `domainUID`. In the per domain PV and PVC case, the names of the generated yaml files and the Kubernetes PV and PVC objects are all decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 
 ## Common problems
 
