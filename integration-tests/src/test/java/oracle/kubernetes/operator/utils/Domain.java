@@ -25,6 +25,7 @@ public class Domain {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   private Map<String, Object> domainMap;
+  private Map<String, Object> pvMap;
 
   // attributes from domain properties
   private String domainUid = "";
@@ -420,15 +421,17 @@ public class Domain {
 
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-pv -n ").append(domainNS);
+    String pvBaseName = (String) pvMap.get("baseName");
+    if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
+    cmd.append(pvBaseName).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(domainUid + "-pvc", domainNS);
+    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
-    boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
+    boolean pvReleased = TestUtils.checkPVReleased(pvBaseName, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
       throw new RuntimeException(
           "ERROR: pv for " + domainUid + " still exists after the pvc is deleted, exiting!");
@@ -550,12 +553,14 @@ public class Domain {
             new File(
                 BaseTest.getProjectRoot()
                     + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
-    Map<String, Object> pvMap = yaml.load(pv_is);
+    pvMap = yaml.load(pv_is);
     pv_is.close();
     pvMap.put("domainUID", domainUid);
 
     // each domain uses its own pv for now
-    domainMap.put("persistentVolumeClaimName", domainUid + "-pvc");
+    if (domainUid != null)
+      domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
+    else domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
       pvMap.put(
@@ -565,7 +570,6 @@ public class Domain {
     if (domainMap.get("weblogicDomainStorageSize") != null) {
       pvMap.put("weblogicDomainStorageSize", domainMap.get("weblogicDomainStorageSize"));
     }
-    pvMap.put("baseName", domainUid);
     pvMap.put("namespace", domainNS);
 
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
