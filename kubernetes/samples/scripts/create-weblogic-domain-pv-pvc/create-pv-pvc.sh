@@ -65,21 +65,22 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
+  pvOutputDir="$outputDir/pv-pvcs"
 
   if [ -z ${domainUID} ]; then
-    pvOutput="${outputDir}/${baseName}-pv.yaml"
-    pvcOutput="${outputDir}/${baseName}-pvc.yaml"
+    pvOutput="${pvOutputDir}/${baseName}-pv.yaml"
+    pvcOutput="${pvOutputDir}/${baseName}-pvc.yaml"
     persistentVolumeName=${baseName}-pv
     persistentVolumeClaimName=${baseName}-pvc
   else
-    pvOutput="${outputDir}/${domainUID}-${baseName}-pv.yaml"
-    pvcOutput="${outputDir}/${domainUID}-${baseName}-pvc.yaml"
+    pvOutput="${pvOutputDir}/${domainUID}-${baseName}-pv.yaml"
+    pvcOutput="${pvOutputDir}/${domainUID}-${baseName}-pvc.yaml"
     persistentVolumeName=${domainUID}-${baseName}-pv
     persistentVolumeClaimName=${domainUID}-${baseName}-pvc
   fi
 
   validateOutputDir \
-    ${outputDir} \
+    ${pvOutputDir} \
     ${valuesInputFile} \
     create-pv-pvc-inputs.yaml \
     ${pvOutput} \
@@ -143,14 +144,14 @@ function initialize {
 function createYamlFiles {
 
   # Create a directory for this domain's output files
-  mkdir -p ${outputDir}
+  mkdir -p ${pvOutputDir}
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${outputDir}/create-pv-pvc-inputs.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${pvOutputDir}/create-pv-pvc-inputs.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -200,7 +201,7 @@ function createYamlFiles {
   sed -i -e "s:%SAMPLE_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvcOutput}
 
   # Remove any "...yaml-e" files left over from running sed
-  rm -f ${outputDir}/*.yaml-e
+  rm -f ${pvOutputDir}/*.yaml-e
 }
 
 #
