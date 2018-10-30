@@ -5,7 +5,7 @@ The operator consists of the following two main parts:
 *	The operator itself, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks.
 *	A Kubernetes job which can be used to create a WebLogic domain.
 
-The operator is packaged in a Docker image `container-registry.oracle.com/middleware/weblogic-operator:latest`.  This image can be deployed to a Kubernetes cluster.  It is recommended that the operator be deployed in its own namespace.  Only one operator is permitted in a namespace; however, multiple operators may be deployed in a Kubernetes cluster provided they are each in their own namespace and the list of namespaces they manage do not overlap.
+The operator is packaged in a Docker image `https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/`.  This image can be deployed to a Kubernetes cluster.  It is recommended that the operator be deployed in its own namespace.  Only one operator is permitted in a namespace; however, multiple operators may be deployed in a Kubernetes cluster provided they are each in their own namespace and the list of namespaces they manage do not overlap.
 
 Scripts are provided to deploy the operator to a Kubernetes cluster.  These scripts also provide options to install and configure a load balancer and Elastic Stack integration.
 
