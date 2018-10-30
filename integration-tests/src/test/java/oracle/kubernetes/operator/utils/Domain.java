@@ -422,7 +422,7 @@ public class Domain {
     }
     TestUtils.deletePVC(pvBaseName + "-pvc", domainNS);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
-    boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
+    boolean pvReleased = TestUtils.checkPVReleased(pvBaseName, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
       throw new RuntimeException(
           "ERROR: pv for " + domainUid + " still exists after the pvc is deleted, exiting!");
