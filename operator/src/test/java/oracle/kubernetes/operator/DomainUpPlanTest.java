@@ -119,7 +119,7 @@ public class DomainUpPlanTest {
             "BeforeAdminServiceStep",
             "ForServerStep",
             "WatchPodReadyAdminStep",
-            "ReadStep",
+            //            "ReadConfigStep",
             "ExternalAdminChannelsStep",
             "ManagedServersUpStep",
             "EndProgressingStep"));

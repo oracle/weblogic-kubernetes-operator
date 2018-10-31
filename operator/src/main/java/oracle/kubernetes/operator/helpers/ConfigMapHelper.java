@@ -22,10 +22,12 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
+import org.joda.time.DateTime;
 
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -256,6 +258,10 @@ public class ConfigMapHelper {
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
+
+      info.setScan(WlsRetriever.mockConfig());
+      info.setLastScanTime(new DateTime());
+
       SitConfigMapContext context =
           new SitConfigMapContext(
               this,
