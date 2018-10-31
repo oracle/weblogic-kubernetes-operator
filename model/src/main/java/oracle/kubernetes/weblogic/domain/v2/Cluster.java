@@ -7,6 +7,9 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * An element representing a cluster in the domain configuration.
@@ -43,5 +46,38 @@ public class Cluster extends BaseConfiguration {
 
   public void setReplicas(Integer replicas) {
     this.replicas = replicas;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("clusterName", clusterName)
+        .append("replicas", replicas)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    Cluster cluster = (Cluster) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(clusterName, cluster.clusterName)
+        .append(replicas, cluster.replicas)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(clusterName)
+        .append(replicas)
+        .toHashCode();
   }
 }
