@@ -279,11 +279,6 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNoReplicaCountSpecified_useDefaultValue() {
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
-  }
-
-  @Test
   public void whenNoReplicaCountSpecified_canChangeIt() {
     domain.setReplicaCount("cluster1", 7);
 

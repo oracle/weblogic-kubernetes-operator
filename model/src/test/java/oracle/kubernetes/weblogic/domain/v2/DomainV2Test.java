@@ -7,7 +7,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-import static oracle.kubernetes.weblogic.domain.v1.Domain.DEFAULT_REPLICA_LIMIT;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.contains;
@@ -35,6 +34,7 @@ import org.junit.Test;
 
 public class DomainV2Test extends DomainTestBase {
 
+  private static final int DEFAULT_REPLICA_LIMIT = 0;
   private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_2 = "v2/domain-sample-2.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_3 = "v2/domain-sample-3.yaml";
@@ -55,8 +55,15 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenClusterNotConfigured_useDefaultReplicaCount() {
-    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(DEFAULT_REPLICA_LIMIT));
+  public void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsZero() {
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(0));
+  }
+
+  @Test
+  public void whenClusterNotConfiguredAndDomainHasReplicaCount_useIt() {
+    configureDomain(domain).withDefaultReplicaCount(3);
+
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(3));
   }
 
   @Test
@@ -441,7 +448,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
+  public void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
@@ -455,7 +462,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
+  public void whenDomainReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", "cluster0");
@@ -470,7 +477,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_adminServerOverridesDefaults() throws IOException {
+  public void whenDomainReadFromYaml_adminServerOverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getAdminServerSpec();
 
@@ -479,7 +486,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_server1OverridesDefaults() throws IOException {
+  public void whenDomainReadFromYaml_server1OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", "cluster1");
 
@@ -493,7 +500,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_cluster2OverridesDefaults() throws IOException {
+  public void whenDomainReadFromYaml_cluster2OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", "cluster2");
 
@@ -507,7 +514,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
+  public void whenDomainReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     String pv = toJson(domain.getRequiredPersistentVolume());
@@ -520,6 +527,21 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Retain")));
     assertThat(pv, hasJsonPath("$.spec.nfs.server", equalTo("thatServer")));
     assertThat(pv, hasJsonPath("$.spec.nfs.path", equalTo("/local/path")));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_unknownClusterUseDefaultReplicaCount() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.getReplicaCount("unknown"), equalTo(3));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_unconfiguredClusterUseDefaultReplicaCount()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(3));
   }
 
   @Test
