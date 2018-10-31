@@ -251,4 +251,9 @@ public class DomainV1Test extends DomainTestBase {
     assertThat(probe.getFailureThreshold(), nullValue());
     assertThat(probe.getPeriodSeconds(), nullValue());
   }
+
+  @Test
+  public void whenNoReplicaCountSpecified_useDefaultValue() {
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
+  }
 }

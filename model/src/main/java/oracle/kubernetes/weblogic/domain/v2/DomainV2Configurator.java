@@ -44,11 +44,6 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public void withDefaultReplicaCount(int replicas) {
-    throw new ConfigurationNotSupportedException("domain", "defaultReplicas");
-  }
-
-  @Override
   public void withDefaultReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period) {
     ((BaseConfiguration) getDomainSpec()).setReadinessProbe(initialDelay, timeout, period);
@@ -101,29 +96,19 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
       for (String name : names) {
-        getDomainSpec().addExportedNetworkAccessPoint(name);
+        adminServer.addExportedNetworkAccessPoint(name);
       }
       return this;
     }
 
     @Override
     public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
-      return getDomainSpec().addExportedNetworkAccessPoint(channelName);
+      return adminServer.addExportedNetworkAccessPoint(channelName);
     }
   }
 
   private AdminServer getOrCreateAdminServer(String adminServerName) {
-    AdminServer adminServer = getDomainSpec().getAdminServer();
-    if (adminServer != null) return adminServer;
-
-    return createAdminServer(adminServerName);
-  }
-
-  private AdminServer createAdminServer(String adminServerName) {
-    getDomainSpec().setAsName(adminServerName);
-    AdminServer adminServer = new AdminServer();
-    getDomainSpec().setAdminServer(adminServer);
-    return adminServer;
+    return getDomainSpec().getOrCreateAdminServer(adminServerName);
   }
 
   @Override
