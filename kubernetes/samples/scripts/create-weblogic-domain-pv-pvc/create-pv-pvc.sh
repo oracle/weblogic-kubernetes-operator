@@ -19,10 +19,10 @@ source ${scriptDir}/../common/utility.sh
 source ${scriptDir}/../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file [-e] [-h]
-  echo "  -o Ouput directory for the generated yaml files, must be specified."
-  echo "  -e Also create the resources in the generated yaml files"
-  echo "  -i Parameter input file, must be specified."
+  echo usage: ${script} -i file -o dir [-e] [-h]
+  echo "  -i Parameter inputs file, must be specified."
+  echo "  -o Output directory for the generated yaml files, must be specified."
+  echo "  -e Also create the Kubernetes objects using the generated yaml files"
   echo "  -h Help"
   exit $1
 }
@@ -65,14 +65,25 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
+
+  if [ -z ${domainUID} ]; then
+    pvOutput="${outputDir}/${baseName}-pv.yaml"
+    pvcOutput="${outputDir}/${baseName}-pvc.yaml"
+    persistentVolumeName=${baseName}-pv
+    persistentVolumeClaimName=${baseName}-pvc
+  else
+    pvOutput="${outputDir}/${domainUID}-${baseName}-pv.yaml"
+    pvcOutput="${outputDir}/${domainUID}-${baseName}-pvc.yaml"
+    persistentVolumeName=${domainUID}-${baseName}-pv
+    persistentVolumeClaimName=${domainUID}-${baseName}-pvc
+  fi
 
   validateOutputDir \
-    ${domainOutputDir} \
+    ${outputDir} \
     ${valuesInputFile} \
     create-pv-pvc-inputs.yaml \
-    pv.yaml \
-    pvc.yaml 
+    ${pvOutput} \
+    ${pvcOutput}
 }
 
 #
@@ -93,10 +104,6 @@ function initialize {
 
   if [ -z "${outputDir}" ]; then
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
-  else
-    if ! [ -d ${outputDir} ]; then
-      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
-    fi
   fi
 
   domainPVInput="${scriptDir}/pv-template.yaml"
@@ -114,10 +121,9 @@ function initialize {
   # Parse the commonn inputs file
   parseCommonInputs
   validateInputParamsSpecified \
-    domainName \
-    domainUID \
     weblogicDomainStoragePath \
     weblogicDomainStorageSize \
+    baseName \
     namespace \
     version
 
@@ -137,53 +143,64 @@ function initialize {
 function createYamlFiles {
 
   # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
+  mkdir -p ${outputDir}
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
   # inputs file some place else and let this script create the output directory
   # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-pv-pvc-inputs.yaml"
-
-  domainPVOutput="${domainOutputDir}/pv.yaml"
-  domainPVCOutput="${domainOutputDir}/pvc.yaml"
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${outputDir}/create-pv-pvc-inputs.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  echo Generating ${domainPVOutput}
+  echo Generating ${pvOutput}
 
-  cp ${domainPVInput} ${domainPVOutput}
+  cp ${domainPVInput} ${pvOutput}
   if [ "${weblogicDomainStorageType}" == "NFS" ]; then
     hostPathPrefix="${disabledPrefix}"
     nfsPrefix="${enabledPrefix}"
-    sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_NFS_SERVER%:${weblogicDomainStorageNFSServer}:g" ${domainPVOutput}
+    sed -i -e "s:%SAMPLE_STORAGE_NFS_SERVER%:${weblogicDomainStorageNFSServer}:g" ${pvOutput}
   else
     hostPathPrefix="${enabledPrefix}"
     nfsPrefix="${disabledPrefix}"
   fi
 
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${domainPVOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${domainPVOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVOutput}
-  sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${domainPVOutput}
-  sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${domainPVOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${pvOutput}
+  if [ -z ${domainUID} ]; then
+    domainUIDLabelPrefix="${disabledPrefix}"
+    separator=""
+  else
+    domainUIDLabelPrefix="${enabledPrefix}"
+    separator="-"
+  fi
+  sed -i -e "s:%DOMAIN_UID%:$domainUID:g" ${pvOutput}
+  sed -i -e "s:%SEPARATOR%:$separator:g" ${pvOutput}
+  sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${pvOutput}
+
+  sed -i -e "s:%BASE_NAME%:$baseName:g" ${pvOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_PATH%:${weblogicDomainStoragePath}:g" ${pvOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_RECLAIM_POLICY%:${weblogicDomainStorageReclaimPolicy}:g" ${pvOutput}
+  sed -i -e "s:%SAMPLE_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvOutput}
+  sed -i -e "s:%HOST_PATH_PREFIX%:${hostPathPrefix}:g" ${pvOutput}
+  sed -i -e "s:%NFS_PREFIX%:${nfsPrefix}:g" ${pvOutput}
 
   # Generate the yaml to create the persistent volume claim
-  echo Generating ${domainPVCOutput}
+  echo Generating ${pvcOutput}
 
-  cp ${domainPVCInput} ${domainPVCOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${domainPVCOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${domainPVCOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPVCOutput}
-  sed -i -e "s:%WEBLOGIC_DOMAIN_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${domainPVCOutput}
+  cp ${domainPVCInput} ${pvcOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${pvcOutput}
+  sed -i -e "s:%BASE_NAME%:${baseName}:g" ${pvcOutput}
+
+  sed -i -e "s:%DOMAIN_UID%:$domainUID:g" ${pvcOutput}
+  sed -i -e "s:%SEPARATOR%:$separator:g" ${pvcOutput}
+  sed -i -e "s:%DOMAIN_UID_LABEL_PREFIX%:${domainUIDLabelPrefix}:g" ${pvcOutput}
+
+  sed -i -e "s:%SAMPLE_STORAGE_SIZE%:${weblogicDomainStorageSize}:g" ${pvcOutput}
 
   # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
+  rm -f ${outputDir}/*.yaml-e
 }
 
 #
@@ -191,11 +208,10 @@ function createYamlFiles {
 #
 function createDomainPV {
   # Check if the persistent volume is already available
-  persistentVolumeName="${domainUID}-weblogic-domain-pv"
   checkPvExists ${persistentVolumeName}
   if [ "${PV_EXISTS}" = "false" ]; then
     echo Creating the persistent volume ${persistentVolumeName}
-    kubectl create -f ${domainPVOutput}
+    kubectl create -f ${pvOutput}
     checkPvState ${persistentVolumeName} Available
   fi
 }
@@ -207,11 +223,10 @@ function createDomainPV {
 #
 function createDomainPVC {
   # Check if the persistent volume claim is already available
-  persistentVolumeClaimName="${domainUID}-weblogic-domain-pvc"
   checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
     echo Creating the persistent volume claim ${persistentVolumeClaimName}
-    kubectl create -f ${domainPVCOutput}
+    kubectl create -f ${pvcOutput}
     checkPvState ${persistentVolumeName} Bound
   fi
 }
@@ -221,8 +236,8 @@ function createDomainPVC {
 #
 function printSummary {
   echo "The following files were generated:"
-  echo "  ${domainPVOutput}"
-  echo "  ${domainPVCOutput}"
+  echo "  ${pvOutput}"
+  echo "  ${pvcOutput}"
 }
 
 #

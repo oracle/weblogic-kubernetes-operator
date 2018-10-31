@@ -15,6 +15,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_JOB;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_NAMESPACE;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_PERSISTENT_VOLUME;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_PERSISTENT_VOLUME_CLAIM;
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_ROLE;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_ROLE_BINDING;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SECRET;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE;
@@ -23,19 +24,20 @@ import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
 import com.appscode.voyager.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.models.V1Role;
+import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1beta1APIService;
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
-import io.kubernetes.client.models.V1beta1RoleBinding;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,6 +73,7 @@ public class ParsedKubernetesYaml {
     kindToHandler.put(KIND_NAMESPACE, new NamespaceHandler());
     kindToHandler.put(KIND_PERSISTENT_VOLUME, new PersistentVolumeHandler());
     kindToHandler.put(KIND_PERSISTENT_VOLUME_CLAIM, new PersistentVolumeClaimHandler());
+    kindToHandler.put(KIND_ROLE, new RoleHandler());
     kindToHandler.put(KIND_ROLE_BINDING, new RoleBindingHandler());
     kindToHandler.put(KIND_SECRET, new SecretHandler());
     kindToHandler.put(KIND_SERVICE, new ServiceHandler());
@@ -132,12 +135,12 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<V1ConfigMap>) getHandler(KIND_CONFIG_MAP);
   }
 
-  TypeHandler<V1beta1ClusterRole> getClusterRoles() {
-    return (TypeHandler<V1beta1ClusterRole>) getHandler(KIND_CLUSTER_ROLE);
+  TypeHandler<V1ClusterRole> getClusterRoles() {
+    return (TypeHandler<V1ClusterRole>) getHandler(KIND_CLUSTER_ROLE);
   }
 
-  TypeHandler<V1beta1ClusterRoleBinding> getClusterRoleBindings() {
-    return (TypeHandler<V1beta1ClusterRoleBinding>) getHandler(KIND_CLUSTER_ROLE_BINDING);
+  TypeHandler<V1ClusterRoleBinding> getClusterRoleBindings() {
+    return (TypeHandler<V1ClusterRoleBinding>) getHandler(KIND_CLUSTER_ROLE_BINDING);
   }
 
   TypeHandler<ExtensionsV1beta1Deployment> getDeployments() {
@@ -168,8 +171,12 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<V1PersistentVolumeClaim>) getHandler(KIND_PERSISTENT_VOLUME_CLAIM);
   }
 
-  TypeHandler<V1beta1RoleBinding> getRoleBindings() {
-    return (TypeHandler<V1beta1RoleBinding>) getHandler(KIND_ROLE_BINDING);
+  TypeHandler<V1Role> getRoles() {
+    return (TypeHandler<V1Role>) getHandler(KIND_ROLE);
+  }
+
+  TypeHandler<V1RoleBinding> getRoleBindings() {
+    return (TypeHandler<V1RoleBinding>) getHandler(KIND_ROLE_BINDING);
   }
 
   TypeHandler<V1Secret> getSecrets() {
@@ -336,24 +343,24 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class ClusterRoleHandler extends TypeHandler<V1beta1ClusterRole> {
+  private static class ClusterRoleHandler extends TypeHandler<V1ClusterRole> {
     private ClusterRoleHandler() {
-      super(V1beta1ClusterRole.class);
+      super(V1ClusterRole.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(V1beta1ClusterRole instance) {
+    protected V1ObjectMeta getMetadata(V1ClusterRole instance) {
       return instance.getMetadata();
     }
   }
 
-  private static class ClusterRoleBindingHandler extends TypeHandler<V1beta1ClusterRoleBinding> {
+  private static class ClusterRoleBindingHandler extends TypeHandler<V1ClusterRoleBinding> {
     private ClusterRoleBindingHandler() {
-      super(V1beta1ClusterRoleBinding.class);
+      super(V1ClusterRoleBinding.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(V1beta1ClusterRoleBinding instance) {
+    protected V1ObjectMeta getMetadata(V1ClusterRoleBinding instance) {
       return instance.getMetadata();
     }
   }
@@ -435,13 +442,24 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class RoleBindingHandler extends TypeHandler<V1beta1RoleBinding> {
-    private RoleBindingHandler() {
-      super(V1beta1RoleBinding.class);
+  private static class RoleHandler extends TypeHandler<V1Role> {
+    private RoleHandler() {
+      super(V1Role.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(V1beta1RoleBinding instance) {
+    protected V1ObjectMeta getMetadata(V1Role instance) {
+      return instance.getMetadata();
+    }
+  }
+
+  private static class RoleBindingHandler extends TypeHandler<V1RoleBinding> {
+    private RoleBindingHandler() {
+      super(V1RoleBinding.class);
+    }
+
+    @Override
+    protected V1ObjectMeta getMetadata(V1RoleBinding instance) {
       return instance.getMetadata();
     }
   }
