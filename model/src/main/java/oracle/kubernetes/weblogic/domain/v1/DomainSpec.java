@@ -15,7 +15,6 @@ import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -153,15 +152,6 @@ public class DomainSpec extends BaseConfiguration {
   private List<String> exportT3Channels = new ArrayList<>();
 
   /**
-   * List of T3 network access points to export, along with label and annotations to apply to
-   * corresponding channel services.
-   *
-   * @since 2.0
-   */
-  @JsonPropertyDescription("T3 network access points to export")
-  private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
-
-  /**
    * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
    * and AUTO.
    *
@@ -269,6 +259,19 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   @JsonPropertyDescription("Configuration for the clusters")
   protected List<Cluster> clusters = new ArrayList<>();
+
+  public AdminServer getOrCreateAdminServer(String adminServerName) {
+    if (adminServer != null) return adminServer;
+
+    return createAdminServer(adminServerName);
+  }
+
+  private AdminServer createAdminServer(String adminServerName) {
+    setAsName(adminServerName);
+    AdminServer adminServer = new AdminServer();
+    setAdminServer(adminServer);
+    return adminServer;
+  }
 
   @SuppressWarnings("deprecation")
   String getEffectiveStartupControl() {
@@ -579,28 +582,6 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Map of T3 network access points to export, with associated labels/annotations.
-   *
-   * @return exported channels
-   */
-  public Map<String, ExportedNetworkAccessPoint> getExportedNetworkAccessPoints() {
-    return exportedNetworkAccessPoints;
-  }
-
-  /**
-   * Configures an exported T3 network access point.
-   *
-   * @param name the name of the NAP
-   */
-  public ExportedNetworkAccessPoint addExportedNetworkAccessPoint(String name) {
-    if (exportedNetworkAccessPoints == null) exportedNetworkAccessPoints = new HashMap<>();
-
-    ExportedNetworkAccessPoint exportedNetworkAccessPoint = new ExportedNetworkAccessPoint();
-    exportedNetworkAccessPoints.put(name, exportedNetworkAccessPoint);
-    return exportedNetworkAccessPoint;
-  }
-
-  /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *
    * @return true or false
@@ -849,45 +830,62 @@ public class DomainSpec extends BaseConfiguration {
   @SuppressWarnings("deprecation")
   @Override
   public String toString() {
-    return new ToStringBuilder(this)
-        .appendSuper(super.toString())
-        .append("domainUID", domainUID)
-        .append("domainName", domainName)
-        .append("adminSecret", adminSecret)
-        .append("asName", asName)
-        .append("asPort", asPort)
-        .append("image", image)
-        .append("imagePullPolicy", imagePullPolicy)
-        .append("imagePullSecrets", imagePullSecrets)
-        .append("exportT3Channels", exportT3Channels)
-        .append("startupControl", startupControl)
-        .append("serverStartup", serverStartup)
-        .append("clusterStartup", clusterStartup)
-        .append("replicas", replicas)
-        .append("storage", storage)
-        .toString();
+    ToStringBuilder builder =
+        new ToStringBuilder(this)
+            .appendSuper(super.toString())
+            .append("domainUID", domainUID)
+            .append("domainName", domainName)
+            .append("adminSecret", adminSecret)
+            .append("asName", asName)
+            .append("asPort", asPort)
+            .append("image", image)
+            .append("imagePullPolicy", imagePullPolicy)
+            .append("storage", storage);
+
+    if (hasV2Configuration())
+      builder
+          .append("imagePullSecrets", imagePullSecrets)
+          .append("adminServer", adminServer)
+          .append("managedServers", managedServers)
+          .append("clusters", clusters);
+    else
+      builder
+          .append("imagePullSecret", imagePullSecrets)
+          .append("startupControl", startupControl)
+          .append("serverStartup", serverStartup)
+          .append("clusterStartup", clusterStartup)
+          .append("replicas", replicas)
+          .append("exportT3Channels", exportT3Channels);
+
+    return builder.toString();
   }
 
   @SuppressWarnings("deprecation")
   @Override
   public int hashCode() {
-    return new HashCodeBuilder()
-        .appendSuper(super.hashCode())
-        .append(asName)
-        .append(replicas)
-        .append(startupControl)
-        .append(domainUID)
-        .append(clusterStartup)
-        .append(asPort)
-        .append(image)
-        .append(imagePullPolicy)
-        .append(imagePullSecrets)
-        .append(domainName)
-        .append(exportT3Channels)
-        .append(serverStartup)
-        .append(adminSecret)
-        .append(storage)
-        .toHashCode();
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .appendSuper(super.hashCode())
+            .append(domainUID)
+            .append(domainName)
+            .append(adminSecret)
+            .append(asName)
+            .append(asPort)
+            .append(image)
+            .append(imagePullPolicy)
+            .append(storage);
+
+    if (hasV2Configuration())
+      builder.append(imagePullSecrets).append(adminServer).append(managedServers).append(clusters);
+    else
+      builder
+          .append(replicas)
+          .append(startupControl)
+          .append(clusterStartup)
+          .append(exportT3Channels)
+          .append(serverStartup);
+
+    return builder.toHashCode();
   }
 
   @SuppressWarnings("deprecation")
@@ -897,23 +895,33 @@ public class DomainSpec extends BaseConfiguration {
     if (!(other instanceof DomainSpec)) return false;
 
     DomainSpec rhs = ((DomainSpec) other);
-    return new EqualsBuilder()
-        .appendSuper(super.equals(other))
-        .append(asName, rhs.asName)
-        .append(replicas, rhs.replicas)
-        .append(startupControl, rhs.startupControl)
-        .append(domainUID, rhs.domainUID)
-        .append(clusterStartup, rhs.clusterStartup)
-        .append(asPort, rhs.asPort)
-        .append(image, rhs.image)
-        .append(imagePullPolicy, rhs.imagePullPolicy)
-        .append(imagePullSecrets, rhs.imagePullSecrets)
-        .append(domainName, rhs.domainName)
-        .append(exportT3Channels, rhs.exportT3Channels)
-        .append(serverStartup, rhs.serverStartup)
-        .append(adminSecret, rhs.adminSecret)
-        .append(storage, rhs.storage)
-        .isEquals();
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .appendSuper(super.equals(other))
+            .append(domainUID, rhs.domainUID)
+            .append(domainName, rhs.domainName)
+            .append(adminSecret, rhs.adminSecret)
+            .append(asName, rhs.asName)
+            .append(asPort, rhs.asPort)
+            .append(image, rhs.image)
+            .append(storage, rhs.storage)
+            .append(imagePullPolicy, rhs.imagePullPolicy);
+
+    if (hasV2Configuration())
+      builder
+          .append(imagePullSecrets, rhs.imagePullSecrets)
+          .append(adminServer, rhs.adminServer)
+          .append(managedServers, rhs.managedServers)
+          .append(clusters, rhs.clusters);
+    else
+      builder
+          .append(replicas, rhs.replicas)
+          .append(startupControl, rhs.startupControl)
+          .append(clusterStartup, rhs.clusterStartup)
+          .append(exportT3Channels, rhs.exportT3Channels)
+          .append(serverStartup, rhs.serverStartup);
+
+    return builder.isEquals();
   }
 
   private Server getServer(String serverName) {
@@ -941,7 +949,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public AdminServer getAdminServer() {
-    return adminServer;
+    return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
 
   public void setAdminServer(AdminServer adminServer) {
@@ -1052,19 +1060,23 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public List<String> getExportedNetworkAccessPointNames() {
-      return new ArrayList<>(exportedNetworkAccessPoints.keySet());
+      return getAdminServer().getExportedNetworkAccessPointNames();
     }
 
     @Override
-    public Map<String, String> getChannelServiceLabels(String channelName) {
-      ExportedNetworkAccessPoint accessPoint = exportedNetworkAccessPoints.get(channelName);
+    public Map<String, String> getChannelServiceLabels(String napName) {
+      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
 
       return accessPoint == null ? Collections.emptyMap() : accessPoint.getLabels();
     }
 
+    private ExportedNetworkAccessPoint getExportedNetworkAccessPoint(String napName) {
+      return getAdminServer().getExportedNetworkAccessPoint(napName);
+    }
+
     @Override
-    public Map<String, String> getChannelServiceAnnotations(String channel) {
-      ExportedNetworkAccessPoint accessPoint = exportedNetworkAccessPoints.get(channel);
+    public Map<String, String> getChannelServiceAnnotations(String napName) {
+      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
 
       return accessPoint == null ? Collections.emptyMap() : accessPoint.getAnnotations();
     }
