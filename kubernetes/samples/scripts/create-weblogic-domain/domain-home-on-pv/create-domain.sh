@@ -435,6 +435,8 @@ function create_domain_configmap {
   fi
 
   kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+
+  rm -rf $externalFilesTmpDir
 }
 
 #
