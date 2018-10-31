@@ -4,7 +4,7 @@
 {{- define "operator.operatorRoleBindingNamespace" }}
 ---
 kind: "RoleBinding"
-apiVersion: "rbac.authorization.k8s.io/v1beta1"
+apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   name: "weblogic-operator-rolebinding-namespace"
   namespace: {{ .domainNamespace | quote }}
@@ -19,5 +19,5 @@ subjects:
 roleRef:
   kind: "ClusterRole"
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
-  apiGroup: ""
+  apiGroup: "rbac.authorization.k8s.io"
 {{- end }}

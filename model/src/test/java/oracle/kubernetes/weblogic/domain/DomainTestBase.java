@@ -175,7 +175,7 @@ public abstract class DomainTestBase {
   @Test
   public void whenDefaultImagePullSecretSpecified_allServersHaveIt() {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
-    configureDomain(domain).withDefaultImagePullSecret(secretReference);
+    configureDomain(domain).withDefaultImagePullSecrets(secretReference);
 
     assertThat(domain.getAdminServerSpec().getImagePullSecret(), equalTo(secretReference));
     assertThat(
@@ -315,14 +315,6 @@ public abstract class DomainTestBase {
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getNodePort(), nullValue());
-  }
-
-  @Test // reverse order of overrides, capture server, need tests for cascading settings
-  public void whenServerConfiguredWithNodePort_returnNodePort() {
-    configureServer(SERVER1).withNodePort(31);
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getNodePort(), equalTo(31));
   }
 
   @Test

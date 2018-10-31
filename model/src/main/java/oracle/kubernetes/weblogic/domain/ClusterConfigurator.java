@@ -13,12 +13,6 @@ public interface ClusterConfigurator {
 
   ClusterConfigurator withEnvironmentVariable(String name, String value);
 
-  ClusterConfigurator withImage(String imageName);
-
-  ClusterConfigurator withImagePullPolicy(String policy);
-
-  ClusterConfigurator withImagePullSecret(String cluster);
-
   ClusterConfigurator withServerStartState(String cluster);
 
   ClusterConfigurator withServerStartupPolicy(String policy);

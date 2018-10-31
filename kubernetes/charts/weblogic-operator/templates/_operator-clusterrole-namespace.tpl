@@ -4,7 +4,7 @@
 {{- define "operator.operatorClusterRoleNamespace" }}
 ---
 kind: "ClusterRole"
-apiVersion: "rbac.authorization.k8s.io/v1beta1"
+apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
   labels:
@@ -12,14 +12,11 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["storage.k8s.io"]
-  resources: ["storageclasses"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [""]
   resources: ["services", "configmaps", "pods", "podtemplates", "events", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources: ["pods/logs"]
   verbs: ["get", "list"]
@@ -35,4 +32,7 @@ rules:
 - apiGroups: ["extensions"]
   resources: ["podsecuritypolicies", "networkpolicies"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
 {{- end }}
