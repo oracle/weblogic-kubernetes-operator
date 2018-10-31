@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -417,6 +418,26 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
+  }
+
+  @Test
+  public void whenDomainsAreConfiguredAlike_objectsAreEqual() {
+    Domain domain1 = createDomain();
+
+    configureDomain(domain).configureCluster("cls1");
+    configureDomain(domain1).configureCluster("cls1");
+
+    assertThat(domain, equalTo(domain1));
+  }
+
+  @Test
+  public void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
+    Domain domain1 = createDomain();
+
+    configureDomain(domain).configureCluster("cls1").withReplicas(2);
+    configureDomain(domain1).configureCluster("cls1").withReplicas(3);
+
+    assertThat(domain, not(equalTo(domain1)));
   }
 
   @Test
