@@ -203,11 +203,8 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
-   *
-   * @deprecated as of 2.0 defaults to Domain.DEFAULT_REPLICA_LIMIT
+   * configured in a cluster specification.
    */
-  @Deprecated
   @SerializedName("replicas")
   @Expose
   private Integer replicas;
@@ -762,7 +759,9 @@ public class DomainSpec extends BaseConfiguration {
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
   public Integer getReplicas() {
-    return replicas != null ? replicas : Domain.DEFAULT_REPLICA_LIMIT;
+    return replicas != null
+        ? replicas
+        : getEffectiveConfigurationFactory("weblogic.oracle/v1").getDefaultReplicaLimit();
   }
 
   /**
@@ -941,7 +940,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private int getReplicaCountFor(Cluster cluster) {
-    return hasReplicaCount(cluster) ? cluster.getReplicas() : Domain.DEFAULT_REPLICA_LIMIT;
+    return hasReplicaCount(cluster)
+        ? cluster.getReplicas()
+        : Optional.ofNullable(replicas).orElse(0);
   }
 
   private boolean hasReplicaCount(Cluster cluster) {
@@ -1007,6 +1008,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public Map<String, String> getChannelServiceAnnotations(String channel) {
       return Collections.emptyMap();
+    }
+
+    @Override
+    public Integer getDefaultReplicaLimit() {
+      return 2;
     }
 
     @SuppressWarnings("deprecation")
@@ -1079,6 +1085,11 @@ public class DomainSpec extends BaseConfiguration {
       ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
 
       return accessPoint == null ? Collections.emptyMap() : accessPoint.getAnnotations();
+    }
+
+    @Override
+    public Integer getDefaultReplicaLimit() {
+      return 0;
     }
 
     private Cluster getOrCreateCluster(String clusterName) {
