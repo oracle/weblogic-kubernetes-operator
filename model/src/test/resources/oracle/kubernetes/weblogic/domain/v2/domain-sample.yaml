@@ -26,6 +26,8 @@ spec:
   # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
   domainUID: test-domain
 
+  replicas: 2
+
   # The Operator currently does not support other images
   image: "store/oracle/weblogic:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest
