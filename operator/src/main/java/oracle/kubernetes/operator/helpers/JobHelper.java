@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.work.Step;
 
 public class JobHelper {
 
+  static final String START_TIME = "WlsRetriever-startTime";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private JobHelper() {}
@@ -99,6 +100,8 @@ public class JobHelper {
     @Override
     public NextAction apply(Packet packet) {
       JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+
+      packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
 
       return doNext(context.createNewJob(getNext()), packet);
     }

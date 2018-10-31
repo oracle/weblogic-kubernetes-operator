@@ -279,7 +279,7 @@ public class WlsRetriever {
           // WebLogic configuration updates, but it does not update the DomainSpec.
           wlsDomainConfig.validate(dom, suggestedConfigUpdates);
 
-          info.setScan(wlsDomainConfig);
+          // info.setScan(wlsDomainConfig);
           info.setLastScanTime(new DateTime());
 
           LOGGER.info(
