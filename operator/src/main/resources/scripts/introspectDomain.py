@@ -364,14 +364,12 @@ class TopologyGenerator(Generator):
     self.writeln("name: " + self.name(self.env.getDomain()))
     self.writeln("adminServerName: " + self.quote(self.env.getDomain().getAdminServerName()))
     self.addConfiguredClusters()
-    self.addDynamicClusters()
     self.addNonClusteredServers()
     self.undent()
 
   def addConfiguredClusters(self):
     clusters = self.getConfiguredClusters()
     if len(clusters) == 0:
-      self.writeln("configuredlusters: {}")
       return
     self.writeln("configuredClusters:")
     self.indent()
@@ -387,10 +385,9 @@ class TopologyGenerator(Generator):
     return rtn
 
   def addConfiguredCluster(self, cluster):
-    self.writeln(self.name(cluster) + ":")
-    self.indent()
+    self.writeln("- name: " + self.name(cluster))
     servers = self.getClusteredServers(cluster)
-    self.writeln("port: " + str(servers[0].getListenPort()))
+    self.indent();
     self.writeln("servers:")
     self.indent()
     for server in servers:
@@ -406,12 +403,15 @@ class TopologyGenerator(Generator):
     return rtn
 
   def addClusteredServer(self, cluster, server):
-    self.writeln(self.name(server) + ": {}")
+    name=self.name(server)
+    self.writeln("- name: " + name)
+    self.writeln("  listenPort: " + str(server.getListenPort()))
+    self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
+    self.addNetworkAccessPoints(server)
 
   def addDynamicClusters(self):
     clusters = self.getDynamicClusters()
     if len(clusters) == 0:
-      self.writeln("dynamicClusters: {}")
       return
     self.writeln("dynamicClusters:")
     self.indent()
@@ -455,10 +455,29 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addNonClusteredServer(self, server):
-    self.writeln(self.name(server) + ":")
+    name=self.name(server)
+    self.writeln("- name: " + name)
+    self.writeln("  listenPort: " + str(server.getListenPort()))
+    self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
+    self.addNetworkAccessPoints(server)
+
+  def addNetworkAccessPoints(self, server):
+    naps = server.getNetworkAccessPoints()
+    if len(naps) == 0:
+      return
+    self.writeln("  networkAccessPoints:")
     self.indent()
-    self.writeln("port: " + str(server.getListenPort()))
+    for nap in naps:
+      self.addNetworkAccessPoint(nap)
     self.undent()
+
+  def addNetworkAccessPoint(self, nap):
+    name=self.name(nap)
+    self.writeln("  - name: " + name)
+    self.writeln("    protocol: " + self.quote(nap.getProtocol()))
+    self.writeln("    listenPort: " + str(nap.getListenPort()))
+    self.writeln("    publicPort: " + str(nap.getPublicPort()))
+
 
 class BootPropertiesGenerator(Generator):
 
