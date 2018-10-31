@@ -21,7 +21,7 @@ public class LoadBalancer {
     this.lbMap = lbMap;
     Path parentDir =
         Files.createDirectories(
-            Paths.get(BaseTest.getUserProjectsDir() + "/loadbalancers/" + lbMap.get("domainUID")));
+            Paths.get(BaseTest.getUserProjectsDir() + "/load-balancers/" + lbMap.get("domainUID")));
     // generate input yaml
     TestUtils.createInputFile(lbMap, parentDir + "/lb-inputs.yaml");
 
