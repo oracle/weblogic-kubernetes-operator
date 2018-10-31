@@ -56,7 +56,7 @@ public class PersistentVolume {
             + "/"
             + pvMap.get("baseName")
             + "-pv-inputs.yaml -e -o "
-            + parentDir;
+            + BaseTest.getUserProjectsDir();
     logger.info("Executing cmd " + cmdPvPvc);
 
     result = ExecCommand.exec(cmdPvPvc);
