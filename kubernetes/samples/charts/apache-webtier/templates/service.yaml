@@ -18,7 +18,7 @@ spec:
     - port: 80
       nodePort: {{ .Values.httpNodePort }}
       name: http
-    - port: 443
+    - port: {{ .Values.sslPort }}
       nodePort: {{ .Values.httpsNodePort }}
       name: https
 
