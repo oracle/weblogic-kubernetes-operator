@@ -154,7 +154,7 @@ public abstract class BaseConfiguration {
   }
 
   private void addEnvVar(V1EnvVar var) {
-    if (env == null) env = new ArrayList<>();
+    if (env == null) setEnv(new ArrayList<>());
     env.add(var);
   }
 
@@ -187,8 +187,12 @@ public abstract class BaseConfiguration {
     return new ToStringBuilder(this)
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
-        .append("livenessProbe", livenessProbe)
-        .append("readinessProbe", readinessProbe)
+        .append("livenessProbe.initialDelaySeconds", livenessProbe.getInitialDelaySeconds())
+        .append("livenessProbe.timeoutSeconds", livenessProbe.getTimeoutSeconds())
+        .append("livenessProbe.periodSeconds", livenessProbe.getPeriodSeconds())
+        .append("readinessProbeProbe.initialDelaySeconds", readinessProbe.getInitialDelaySeconds())
+        .append("readinessProbe.timeoutSeconds", readinessProbe.getTimeoutSeconds())
+        .append("readinessProbe.periodSeconds", readinessProbe.getPeriodSeconds())
         .append("env", env)
         .toString();
   }
