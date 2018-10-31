@@ -48,16 +48,19 @@ public abstract class DomainTestBase {
   private static final String AS_NAME = "admin";
   protected static final String CLUSTER_NAME = "cluster1";
   protected static final String SERVER1 = "ms1";
-  protected final Domain domain =
-      new Domain()
-          .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(
-              new DomainSpec()
-                  .withAdminSecret(SECRET)
-                  .withAsName(AS_NAME)
-                  .withAsPort(AS_PORT)
-                  .withDomainName(DOMAIN_NAME)
-                  .withDomainUID(DOMAIN_UID));
+  protected final Domain domain = createDomain();
+
+  protected static Domain createDomain() {
+    return new Domain()
+        .withMetadata(new V1ObjectMeta().namespace(NS))
+        .withSpec(
+            new DomainSpec()
+                .withAdminSecret(SECRET)
+                .withAsName(AS_NAME)
+                .withAsPort(AS_PORT)
+                .withDomainName(DOMAIN_NAME)
+                .withDomainUID(DOMAIN_UID));
+  }
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
