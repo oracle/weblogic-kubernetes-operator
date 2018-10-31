@@ -63,7 +63,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  lbOutputDir=${outputDir}
+  lbOutputDir=${outputDir}/load-balancers/${domainUID}
 
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in

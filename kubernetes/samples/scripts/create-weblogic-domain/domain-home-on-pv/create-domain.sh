@@ -74,7 +74,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}"
+  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
@@ -435,6 +435,8 @@ function create_domain_configmap {
   fi
 
   kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+
+  rm -rf $externalFilesTmpDir
 }
 
 #
