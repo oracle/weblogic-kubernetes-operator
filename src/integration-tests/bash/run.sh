@@ -874,6 +874,10 @@ function dom_define {
     eval export DOM_${DOM_KEY}_STARTUP_CONTROL="$5"
     eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$6"
     eval export DOM_${DOM_KEY}_WL_CLUSTER_TYPE="$7"
+    if [ "$CONFIGURED_CLUSTER_ONLY" = "true" ] && [ "$7" = "DYNAMIC" ]; then
+      trace "Warning: Forcing domain uid '$4' to be CONFIGURED instead of DYNAMIC, as CONFIGURED_CLUSTER_ONLY=true"
+      eval export DOM_${DOM_KEY}_WL_CLUSTER_TYPE="CONFIGURED"
+    fi
     eval export DOM_${DOM_KEY}_MS_BASE_NAME="$8"
     eval export DOM_${DOM_KEY}_ADMIN_PORT="$9"
     eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="${10}"
@@ -1191,7 +1195,7 @@ function create_domain_pv_pvc_load_balancer {
 
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
     else
       cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml $inputs
@@ -1237,7 +1241,7 @@ function create_domain_pv_pvc_load_balancer {
        fail Job failed.  Could not create k8s cluster NFS directory.   
     fi
 
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       # Customize the create domain inputs
       sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
       if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
@@ -2069,11 +2073,7 @@ function test_mvn_integration_local {
     [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    if [ ! "$QUICKTEST2" = "true" ]; then
-      mvn -P integration-tests clean install 2>&1 | opt_tee $RESULT_DIR/mvn.out
-    else
-      mvn clean install -Dmaven.test.skip=true 2>&1 | opt_tee $RESULT_DIR/mvn.out
-    fi
+    mvn clean install -Dmaven.test.skip=true 2>&1 | opt_tee $RESULT_DIR/mvn.out
 
     local mend=`date +%s`
     local msecs=$((mend-mstart))
@@ -2708,7 +2708,7 @@ function shutdown_domain {
 
     local replicas=`get_cluster_replicas $DOM_KEY`
 
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       trace "calling helm delete ${DOM_KEY} --purge"
       helm delete ${DOM_KEY} --purge
     else
@@ -2729,7 +2729,7 @@ function startup_domain {
     local TMP_DIR="`dom_get $1 TMP_DIR`"
     local NAMESPACE="`dom_get $1 NAMESPACE`"
 
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       local inputs=$TMP_DIR/create-weblogic-domain-inputs.yaml
       local outfile="$TMP_DIR/startup-weblogic-domain.out"
       cd $PROJECT_ROOT/kubernetes/charts
@@ -3010,7 +3010,7 @@ function test_cluster_scale {
 
     trace "test cluster scale-up from 2 to 3"
     local domainCR="$TMP_DIR/domain-custom-resource.yaml"
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       kubectl get domain $DOM_KEY -n $NAMESPACE -o yaml > $domainCR
     fi
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 3/"  $domainCR
@@ -3020,7 +3020,7 @@ function test_cluster_scale {
     verify_webapp_load_balancing $DOM_KEY 3
 
     trace "test cluster scale-down from 3 to 2"
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       kubectl get domain $DOM_KEY -n $NAMESPACE -o yaml > $domainCR
     fi
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 2/"  $domainCR
@@ -3058,6 +3058,7 @@ function test_suite_init {
                    VERBOSE \
                    DEBUG_OUT \
                    QUICKTEST \
+                   QUICKTEST2 \
                    NODEPORT_HOST \
                    JVM_ARGS \
                    BRANCH_NAME \
@@ -3068,7 +3069,8 @@ function test_suite_init {
                    WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
                    JENKINS \
-                   USE_HELM \
+                   USE_HELM_FOR_DOMAIN \
+                   CONFIGURED_CLUSTER_ONLY \
                    LEASE_ID;
     do
       trace "Customizable env var before: $varname=${!varname}"
@@ -3079,9 +3081,6 @@ function test_suite_init {
     export NODEPORT_HOST=${K8S_NODEPORT_HOST:-`hostname | awk -F. '{print $1}'`}
     export JVM_ARGS="${JVM_ARGS:-'-Dweblogic.StdoutDebugEnabled=false'}"
     export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
-
-    #TBDTEB Remove QUICKTEST2 - temporarily there to aid in introspector testing.
-    [ "`hostname -a`" = "slc16okc" ] && export QUICKTEST2="${QUICKTEST2:-true}"
 
     if [ -z "$BRANCH_NAME" ]; then
       export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
@@ -3102,17 +3101,9 @@ function test_suite_init {
       export DEBUG_OUT="false"
     fi
 
-    # Test installation using helm charts if helm is available
-    #
+    USE_HELM_FOR_DOMAIN="${USE_HELM_FOR_DOMAIN:-false}"
     if [ -x "$(command -v helm)" ]; then
-      trace 'helm is installed, assume user wants to use helm if USE_HELM is not set'
-      if [ ! "$QUICKTEST2" = "true" ]; then
-        USE_HELM="${USE_HELM:-true}"
-      else
-        USE_HELM="${USE_HELM:-false}"
-      fi
-    else
-      trace 'helm is not installed and USE_HELM="$USE_HELM", if USE_HELM is true future steps may try install helm'
+      trace 'helm is not installed, future steps may try install helm'
     fi
 
     # The following customizable exports are currently only customized by WERCKER
@@ -3143,7 +3134,8 @@ function test_suite_init {
                    WEBLOGIC_IMAGE_PULL_SECRET_NAME \
                    WERCKER \
                    JENKINS \
-                   USE_HELM \
+                   USE_HELM_FOR_DOMAIN \
+                   CONFIGURED_CLUSTER_ONLY \
                    LEASE_ID;
     do
       trace "Customizable env var after: $varname=${!varname}"
@@ -3291,15 +3283,11 @@ function test_suite {
     op_define  oper2   weblogic-operator-2  test2              32001
 
     #          DOM_KEY  OP_KEY  NAMESPACE DOMAIN_UID STARTUP_CONTROL WL_CLUSTER_NAME WL_CLUSTER_TYPE  MS_BASE_NAME   ADMIN_PORT ADMIN_WLST_PORT ADMIN_NODE_PORT MS_PORT LOAD_BALANCER_WEB_PORT LOAD_BALANCER_DASHBOARD_PORT
-    if [ "$QUICKTEST2" = "true" ] || [ "$WERCKER" = "true" ]; then
-      dom_define domain1  oper1   default   domain1    AUTO            cluster-1       CONFIGURED       managed-server 7001       30012           30701           8001    30305                  30315
-    else
-      dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
-    fi
+    dom_define domain1  oper1   default   domain1    AUTO            cluster-1       DYNAMIC          managed-server 7001       30012           30701           8001    30305                  30315
 
     # TODO: we need to figure out how to support invalid characters in the helm use cases
     # for now, invalid characters are only tested in the none helm cases
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
       dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
     else
