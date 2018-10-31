@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,17 +20,19 @@ import oracle.kubernetes.weblogic.domain.v1.WlsDomain;
 public class WlsDomainConfig implements WlsDomain {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  // Name of this WLS domain (This is NOT the domain UID in the weblogic domain kubernetes CRD)
+  private String name;
+
+  private String adminServerName;
+
   // Contains all configured WLS clusters in the WLS domain
-  private Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
+  private List<WlsClusterConfig> configuredClusters = new ArrayList<>();
   // Contains all statically configured WLS servers in the WLS domain
-  private Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
+  private List<WlsServerConfig> servers = new ArrayList<>();
   // Contains all configured server templates in the WLS domain
   private Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
   // Contains all configured machines in the WLS domain
   private Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
-
-  // Name of this WLS domain (This is NOT the domain UID in the weblogic domain kubernetes CRD)
-  private final String name;
 
   /**
    * Create a new WlsDomainConfig object using the json result from the WLS REST call
@@ -41,6 +44,8 @@ public class WlsDomainConfig implements WlsDomain {
     ParsedJson parsedResult = parseJson(jsonResult);
     return WlsDomainConfig.create(parsedResult);
   }
+
+  public WlsDomainConfig() {}
 
   /**
    * Constructor when no JSON response is available
@@ -66,14 +71,15 @@ public class WlsDomainConfig implements WlsDomain {
       Map<String, WlsServerConfig> wlsServerConfigs,
       Map<String, WlsServerConfig> wlsServerTemplates,
       Map<String, WlsMachineConfig> wlsMachineConfigs) {
-    this.wlsClusterConfigs = wlsClusterConfigs;
-    this.wlsServerConfigs = wlsServerConfigs;
+    this.configuredClusters = new ArrayList<>(wlsClusterConfigs.values());
+    this.servers =
+        wlsServerConfigs != null ? new ArrayList<>(wlsServerConfigs.values()) : new ArrayList<>();
     this.wlsServerTemplates = wlsServerTemplates;
     this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
     // set domainConfig for each WlsClusterConfig
     if (wlsClusterConfigs != null) {
-      for (WlsClusterConfig wlsClusterConfig : wlsClusterConfigs.values()) {
+      for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
         wlsClusterConfig.setWlsDomainConfig(this);
       }
     }
@@ -89,13 +95,38 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
+   * Return the name of the WLS domain
+   *
+   * @return Name of the WLS domain
+   */
+  public String getAdminServerName() {
+    return this.adminServerName;
+  }
+
+  public void setAdminServerName(String adminServerName) {
+    this.adminServerName = adminServerName;
+  }
+
+  /**
    * Returns all cluster configurations found in the WLS domain
    *
    * @return A Map of WlsClusterConfig, keyed by name, containing server configurations for all
    *     clusters found in the WLS domain
    */
   public synchronized Map<String, WlsClusterConfig> getClusterConfigs() {
-    return wlsClusterConfigs;
+    Map<String, WlsClusterConfig> clusterConfigs = new HashMap<>();
+    for (WlsClusterConfig clusterConfig : configuredClusters) {
+      clusterConfigs.put(clusterConfig.getClusterName(), clusterConfig);
+    }
+    return clusterConfigs;
+  }
+
+  public List<WlsClusterConfig> getConfiguredClusters() {
+    return this.configuredClusters;
+  }
+
+  public void setConfiguredClusters(List<WlsClusterConfig> configuredClusters) {
+    this.configuredClusters = configuredClusters;
   }
 
   /**
@@ -106,7 +137,19 @@ public class WlsDomainConfig implements WlsDomain {
    * @return A Map of WlsServerConfig, keyed by name, for each server configured the WLS domain
    */
   public synchronized Map<String, WlsServerConfig> getServerConfigs() {
-    return wlsServerConfigs;
+    Map<String, WlsServerConfig> serverConfigs = new HashMap<>();
+    for (WlsServerConfig serverConfig : servers) {
+      serverConfigs.put(serverConfig.getName(), serverConfig);
+    }
+    return serverConfigs;
+  }
+
+  public List<WlsServerConfig> getServers() {
+    return this.servers;
+  }
+
+  public void setServers(List<WlsServerConfig> servers) {
+    this.servers = servers;
   }
 
   /**
@@ -129,10 +172,15 @@ public class WlsDomainConfig implements WlsDomain {
   public synchronized WlsClusterConfig getClusterConfig(String clusterName) {
     WlsClusterConfig result = null;
     if (clusterName != null) {
-      result = wlsClusterConfigs.get(clusterName);
+      for (WlsClusterConfig clusterConfig : configuredClusters) {
+        if (clusterConfig.getClusterName().equals(clusterName)) {
+          result = clusterConfig;
+          break;
+        }
+      }
     }
     if (result == null) {
-      // create an empty WlsClusterConfig, but do not add to wlsClusterConfigs
+      // create an empty WlsClusterConfig, but do not add to configuredClusters
       result = new WlsClusterConfig(clusterName);
     }
     return result;
@@ -148,8 +196,13 @@ public class WlsDomainConfig implements WlsDomain {
    */
   public synchronized WlsServerConfig getServerConfig(String serverName) {
     WlsServerConfig result = null;
-    if (serverName != null && wlsServerConfigs != null) {
-      result = wlsServerConfigs.get(serverName);
+    if (serverName != null && servers != null) {
+      for (WlsServerConfig serverConfig : servers) {
+        if (serverConfig.getName().equals(serverName)) {
+          result = serverConfig;
+          break;
+        }
+      }
     }
     return result;
   }
@@ -328,7 +381,7 @@ public class WlsDomainConfig implements WlsDomain {
       }
     }
 
-    for (WlsClusterConfig clusterConfig : wlsClusterConfigs.values()) {
+    for (WlsClusterConfig clusterConfig : configuredClusters) {
       String clusterName = clusterConfig.getClusterName();
       if (clusterConfig.getMaxClusterSize() == 0) {
         LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
@@ -344,14 +397,14 @@ public class WlsDomainConfig implements WlsDomain {
   @Override
   @Nonnull
   public String[] getClusterNames() {
-    return wlsClusterConfigs.keySet().toArray(new String[0]);
+    return getClusterConfigs().keySet().toArray(new String[0]);
   }
 
   @Override
   public int getReplicaLimit(String clusterName) {
-    if (!wlsClusterConfigs.containsKey(clusterName)) return 0;
+    if (!getClusterConfigs().containsKey(clusterName)) return 0;
 
-    return wlsClusterConfigs.get(clusterName).getMaxClusterSize();
+    return getClusterConfigs().get(clusterName).getMaxClusterSize();
   }
 
   /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects */
@@ -366,17 +419,20 @@ public class WlsDomainConfig implements WlsDomain {
   @Override
   public String toString() {
     return "WlsDomainConfig{"
-        + "wlsClusterConfigs="
-        + wlsClusterConfigs
-        + ", wlsServerConfigs="
-        + wlsServerConfigs
+        + "name='"
+        + name
+        + '\''
+        + ", adminServerName='"
+        + adminServerName
+        + '\''
+        + ", configuredClusters="
+        + configuredClusters
+        + ", servers="
+        + servers
         + ", wlsServerTemplates="
         + wlsServerTemplates
         + ", wlsMachineConfigs="
         + wlsMachineConfigs
-        + ", name='"
-        + name
-        + '\''
         + '}';
   }
 }
