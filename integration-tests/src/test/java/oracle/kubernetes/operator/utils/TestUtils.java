@@ -177,9 +177,9 @@ public class TestUtils {
     ExecCommand.exec(cmd.toString());
   }
 
-  public static boolean checkPVReleased(String domainUid, String namespace) throws Exception {
+  public static boolean checkPVReleased(String pvBaseName, String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(namespace);
+    cmd.append(pvBaseName).append("-pv -n ").append(namespace);
 
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {

@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -34,6 +35,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
+  @JsonPropertyDescription("The API version for the Domain. Must be 'weblogic.oracle/v1'")
   private String apiVersion;
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -42,6 +44,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
+  @JsonPropertyDescription("The type of resourced. Should be 'Domain'")
   private String kind;
   /**
    * Standard object's metadata. More info:
@@ -50,12 +53,16 @@ public class Domain {
   @SerializedName("metadata")
   @Expose
   @Valid
+  @JsonPropertyDescription("The domain meta-data. Must include the name and namespace.")
   private V1ObjectMeta metadata;
+
   /** DomainSpec is a description of a domain. */
   @SerializedName("spec")
   @Expose
   @Valid
+  @JsonPropertyDescription("The actual specification of the domain. Required.")
   private DomainSpec spec;
+
   /**
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.

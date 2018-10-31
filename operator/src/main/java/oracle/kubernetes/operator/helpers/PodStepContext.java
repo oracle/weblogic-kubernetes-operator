@@ -14,7 +14,6 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
-import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
@@ -588,10 +587,14 @@ public abstract class PodStepContext {
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
                             .defaultMode(ALL_READ_AND_EXECUTE)));
 
+    /**/
+    podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
+    /*/
     V1LocalObjectReference imagePullSecret = getServerSpec().getImagePullSecret();
     if (imagePullSecret != null) {
       podSpec.addImagePullSecretsItem(imagePullSecret);
     }
+    /**/
     if (getClaimName() != null) {
       podSpec.addVolumesItem(
           new V1Volume()
@@ -641,7 +644,7 @@ public abstract class PodStepContext {
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
-    addEnvVar(vars, "LOG_HOME", LOG_HOME);
+    addEnvVar(vars, "LOG_HOME", LOG_HOME + "/" + getDomainUID());
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
@@ -649,7 +652,7 @@ public abstract class PodStepContext {
   }
 
   private String getDomainHome() {
-    return "/shared/domain/" + getDomainName();
+    return "/shared/domains/" + getDomainUID();
   }
 
   // Hide the admin account's user name and password.

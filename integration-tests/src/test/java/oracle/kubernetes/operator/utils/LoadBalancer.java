@@ -21,8 +21,7 @@ public class LoadBalancer {
     this.lbMap = lbMap;
     Path parentDir =
         Files.createDirectories(
-            Paths.get(
-                BaseTest.getUserProjectsDir() + "/weblogic-domains/" + lbMap.get("domainUID")));
+            Paths.get(BaseTest.getUserProjectsDir() + "/loadbalancers/" + lbMap.get("domainUID")));
     // generate input yaml
     TestUtils.createInputFile(lbMap, parentDir + "/lb-inputs.yaml");
 
@@ -33,7 +32,9 @@ public class LoadBalancer {
             + " -i "
             + parentDir
             + "/lb-inputs.yaml -e -o "
-            + BaseTest.getUserProjectsDir();
+            + BaseTest.getUserProjectsDir()
+            + "/loadbalancers/"
+            + lbMap.get("domainUID");
     logger.info("Executing cmd " + cmdLb);
 
     ExecResult result = ExecCommand.exec(cmdLb);
