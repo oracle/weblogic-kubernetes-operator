@@ -9,6 +9,9 @@ import com.google.gson.annotations.SerializedName;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ExportedNetworkAccessPoint {
 
@@ -36,5 +39,32 @@ public class ExportedNetworkAccessPoint {
 
   public Map<String, String> getAnnotations() {
     return Collections.unmodifiableMap(annotations);
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .append("labels", labels)
+        .append("annotations", annotations)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ExportedNetworkAccessPoint that = (ExportedNetworkAccessPoint) o;
+
+    return new EqualsBuilder()
+        .append(labels, that.labels)
+        .append(annotations, that.annotations)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(labels).append(annotations).toHashCode();
   }
 }
