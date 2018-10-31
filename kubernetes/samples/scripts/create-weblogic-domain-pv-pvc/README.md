@@ -20,7 +20,7 @@ Run the create script, pointing it at your inputs file and an output directory:
   -o /path/to/output-directory
 ```
 
-By default, the script generates two yaml files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory` directory. These two yaml files can be used to create the Kubernetes resources using the `kubectl create -f` command.
+The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the given `/path/to/output-directory` directory. By default, the script generates two yaml files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory` directory/pv-pvcs`. These two yaml files can be used to create the Kubernetes resources using the `kubectl create -f` command.
 
 ```
   kubectl create -f weblogic-sample-pv.yaml
