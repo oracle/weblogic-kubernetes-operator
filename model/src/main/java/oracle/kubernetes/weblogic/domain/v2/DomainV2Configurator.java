@@ -44,11 +44,6 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public void withDefaultReplicaCount(int replicas) {
-    throw new ConfigurationNotSupportedException("domain", "defaultReplicas");
-  }
-
-  @Override
   public void withDefaultReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period) {
     ((BaseConfiguration) getDomainSpec()).setReadinessProbe(initialDelay, timeout, period);
