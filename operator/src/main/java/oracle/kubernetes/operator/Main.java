@@ -67,7 +67,6 @@ import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
 import oracle.kubernetes.operator.steps.ListPersistentVolumeClaimStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.Engine;
@@ -714,7 +713,7 @@ public class Main {
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(ServiceHelper.createForServerStep(null));
     resources.add(new WatchPodReadyAdminStep(podWatchers, null));
-    resources.add(WlsRetriever.readConfigStep(null));
+    //    resources.add(WlsRetriever.readConfigStep(null));
     resources.add(new ExternalAdminChannelsStep(next));
     return resources.toArray(new Step[0]);
   }

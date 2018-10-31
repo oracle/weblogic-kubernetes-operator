@@ -4,21 +4,18 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.http.HttpClient;
@@ -31,8 +28,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
-import oracle.kubernetes.weblogic.domain.v1.SubsystemHealth;
 import org.joda.time.DateTime;
 
 /**
@@ -100,11 +95,6 @@ public class WlsRetriever {
   private static final int SCALE = 100;
   private static final int MAX = 10000;
 
-  enum RequestType {
-    CONFIG,
-    HEALTH
-  }
-
   /**
    * Creates asynchronous {@link Step} to read configuration from an admin server
    *
@@ -112,30 +102,19 @@ public class WlsRetriever {
    * @return asynchronous step
    */
   public static Step readConfigStep(Step next) {
-    return new ReadStep(RequestType.CONFIG, next);
+    return new ReadConfigStep(next);
   }
 
-  /**
-   * Creates asynchronous {@link Step} to read health from a server instance.
-   *
-   * @param next Next processing step
-   * @return asynchronous step
-   */
-  public static Step readHealthStep(Step next) {
-    return new ReadStep(RequestType.HEALTH, next);
-  }
+  private static final class ReadConfigStep extends Step {
 
-  private static final class ReadStep extends Step {
-    private final RequestType requestType;
-
-    public ReadStep(RequestType requestType, Step next) {
+    public ReadConfigStep(Step next) {
       super(next);
-      this.requestType = requestType;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       try {
+        LOGGER.warning("xyz- WlsRetriever$ReadConfigStep.apply() called!!!!");
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
@@ -146,11 +125,7 @@ public class WlsRetriever {
         String namespace = meta.getNamespace();
 
         String serverName;
-        if (RequestType.CONFIG.equals(requestType)) {
-          serverName = spec.getAsName();
-        } else {
-          serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-        }
+        serverName = spec.getAsName();
 
         ServerKubernetesObjects sko = info.getServers().get(serverName);
         String adminSecretName =
@@ -160,7 +135,7 @@ public class WlsRetriever {
             HttpClient.createAuthenticatedClientForServer(
                 namespace,
                 adminSecretName,
-                new WithHttpClientStep(requestType, sko.getService().get(), getNext()));
+                new WithHttpClientStep(sko.getService().get(), getNext()));
         packet.remove(RETRY_COUNT);
         return doNext(getClient, packet);
       } catch (Throwable t) {
@@ -238,12 +213,10 @@ public class WlsRetriever {
   }
 
   static final class WithHttpClientStep extends Step {
-    private final RequestType requestType;
     private final V1Service service;
 
-    public WithHttpClientStep(RequestType requestType, V1Service service, Step next) {
+    public WithHttpClientStep(V1Service service, Step next) {
       super(next);
-      this.requestType = requestType;
       if (service == null) {
         throw new IllegalArgumentException("service cannot be null");
       }
@@ -260,114 +233,47 @@ public class WlsRetriever {
 
         String serviceURL = HttpClient.getServiceURL(service);
 
-        if (RequestType.CONFIG.equals(requestType)) {
-          WlsDomainConfig wlsDomainConfig = null;
-          String jsonResult =
-              httpClient
-                  .executePostUrlOnServiceClusterIP(
-                      WlsDomainConfig.getRetrieveServersSearchUrl(),
-                      serviceURL,
-                      WlsDomainConfig.getRetrieveServersSearchPayload(),
-                      true)
-                  .getResponse();
+        WlsDomainConfig wlsDomainConfig = null;
+        String jsonResult =
+            httpClient
+                .executePostUrlOnServiceClusterIP(
+                    WlsDomainConfig.getRetrieveServersSearchUrl(),
+                    serviceURL,
+                    WlsDomainConfig.getRetrieveServersSearchPayload(),
+                    true)
+                .getResponse();
 
-          wlsDomainConfig = WlsDomainConfig.create(jsonResult);
+        wlsDomainConfig = WlsDomainConfig.create(jsonResult);
 
-          List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
+        List<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
-          // This logs warning messages as well as returning a list of suggested
-          // WebLogic configuration updates, but it does not update the DomainSpec.
-          wlsDomainConfig.validate(dom, suggestedConfigUpdates);
+        // This logs warning messages as well as returning a list of suggested
+        // WebLogic configuration updates, but it does not update the DomainSpec.
+        wlsDomainConfig.validate(dom, suggestedConfigUpdates);
 
-          info.setScan(wlsDomainConfig);
-          info.setLastScanTime(new DateTime());
+        info.setScan(wlsDomainConfig);
+        info.setLastScanTime(new DateTime());
 
-          LOGGER.info(
-              MessageKeys.WLS_CONFIGURATION_READ,
-              (System.currentTimeMillis() - ((Long) packet.get(START_TIME))),
-              wlsDomainConfig);
+        LOGGER.info(
+            MessageKeys.WLS_CONFIGURATION_READ,
+            (System.currentTimeMillis() - ((Long) packet.get(START_TIME))),
+            wlsDomainConfig);
 
-          // If there are suggested WebLogic configuration update, perform them as the
-          // next Step, then read the updated WebLogic configuration again after the
-          // update(s) are performed.
-          if (!suggestedConfigUpdates.isEmpty()) {
-            Step nextStep =
-                new WithHttpClientStep(
-                    requestType,
-                    service,
-                    getNext()); // read WebLogic config again after config updates
-            for (ConfigUpdate suggestedConfigUpdate : suggestedConfigUpdates) {
-              nextStep = suggestedConfigUpdate.createStep(nextStep);
-            }
-            return doNext(nextStep, packet);
+        // If there are suggested WebLogic configuration update, perform them as the
+        // next Step, then read the updated WebLogic configuration again after the
+        // update(s) are performed.
+        if (!suggestedConfigUpdates.isEmpty()) {
+          Step nextStep =
+              new WithHttpClientStep(
+                  service, getNext()); // read WebLogic config again after config updates
+          for (ConfigUpdate suggestedConfigUpdate : suggestedConfigUpdates) {
+            nextStep = suggestedConfigUpdate.createStep(nextStep);
           }
-
-        } else { // RequestType.HEALTH
-          String jsonResult =
-              httpClient
-                  .executePostUrlOnServiceClusterIP(
-                      getRetrieveHealthSearchUrl(),
-                      serviceURL,
-                      getRetrieveHealthSearchPayload(),
-                      true)
-                  .getResponse();
-
-          ObjectMapper mapper = new ObjectMapper();
-          JsonNode root = mapper.readTree(jsonResult);
-
-          JsonNode state = null;
-          JsonNode subsystemName = null;
-          JsonNode symptoms = null;
-          JsonNode overallHealthState = root.path("overallHealthState");
-          if (overallHealthState != null) {
-            state = overallHealthState.path("state");
-            subsystemName = overallHealthState.path("subsystemName");
-            symptoms = overallHealthState.path("symptoms");
-          }
-          JsonNode activationTime = root.path("activationTime");
-
-          List<String> sym = new ArrayList<>();
-          if (symptoms != null) {
-            Iterator<JsonNode> it = symptoms.elements();
-            while (it.hasNext()) {
-              sym.add(it.next().asText());
-            }
-          }
-
-          String subName = null;
-          if (subsystemName != null) {
-            String s = subsystemName.asText();
-            if (s != null && !"null".equals(s)) {
-              subName = s;
-            }
-          }
-
-          ServerHealth health =
-              new ServerHealth()
-                  .withOverallHealth(state != null ? state.asText() : null)
-                  .withActivationTime(
-                      activationTime != null ? new DateTime(activationTime.asLong()) : null);
-          if (subName != null) {
-            health
-                .getSubsystems()
-                .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
-          }
-
-          @SuppressWarnings("unchecked")
-          ConcurrentMap<String, ServerHealth> serverHealthMap =
-              (ConcurrentMap<String, ServerHealth>)
-                  packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
-          serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
+          return doNext(nextStep, packet);
         }
 
         return doNext(packet);
       } catch (Throwable t) {
-        // do not retry for health check
-        if (RequestType.HEALTH.equals(requestType)) {
-          LOGGER.fine(
-              MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
-          return doNext(packet);
-        }
         // exponential back-off
         Integer retryCount = (Integer) packet.get(RETRY_COUNT);
         if (retryCount == null) {
@@ -381,16 +287,6 @@ public class WlsRetriever {
         return doRetry(packet, waitTime, TimeUnit.MILLISECONDS);
       }
     }
-  }
-
-  public static String getRetrieveHealthSearchUrl() {
-    return "/management/weblogic/latest/serverRuntime/search";
-  }
-
-  // overallHealthState, healthState
-
-  public static String getRetrieveHealthSearchPayload() {
-    return "{ fields: [ 'overallHealthState', 'activationTime' ], links: [] }";
   }
 
   /**
@@ -548,5 +444,63 @@ public class WlsRetriever {
     }
 
     return HttpClient.getServiceURL(asServiceName, namespace);
+  }
+
+  public static WlsDomainConfig mockConfig() {
+    String domainName = "base_domain";
+    Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
+    Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
+    Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
+    Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
+
+    List<NetworkAccessPoint> adminNetworkAccessPoints = new ArrayList<>();
+    adminNetworkAccessPoints.add(new NetworkAccessPoint("T3Channel", "t3", 30012, 30012));
+
+    WlsServerConfig ms1 =
+        new WlsServerConfig(
+            "managed-server1",
+            8001,
+            "domain1-managed-server1",
+            7002,
+            false,
+            null,
+            new ArrayList<NetworkAccessPoint>());
+
+    WlsServerConfig ms2 =
+        new WlsServerConfig(
+            "managed-server2",
+            8001,
+            "domain1-managed-server2",
+            7002,
+            false,
+            null,
+            new ArrayList<NetworkAccessPoint>());
+
+    WlsServerConfig admin =
+        new WlsServerConfig(
+            "admin-server",
+            7001,
+            "domain1-admin-server",
+            7002,
+            false,
+            null,
+            adminNetworkAccessPoints);
+
+    wlsServerConfigs.put(ms1.getName(), ms1);
+    wlsServerConfigs.put(ms2.getName(), ms2);
+    wlsServerConfigs.put(admin.getName(), admin);
+
+    WlsClusterConfig cluster1 = new WlsClusterConfig("cluster-1");
+    cluster1.addServerConfig(ms1);
+    cluster1.addServerConfig(ms2);
+
+    wlsClusterConfigs.put(cluster1.getClusterName(), cluster1);
+
+    WlsDomainConfig wlsDomainConfig =
+        new WlsDomainConfig(
+            domainName, wlsClusterConfigs, wlsServerConfigs, wlsServerTemplates, wlsMachineConfigs);
+
+    LOGGER.warning("xyz- WlsRetriever returning mock WlsDomainConfig: " + wlsDomainConfig);
+    return wlsDomainConfig;
   }
 }
