@@ -39,3 +39,6 @@ httpNodePort: 30305
 
 # NodePort to expose for https access
 httpsNodePort: 30443
+
+# SSL listen port 
+sslPort: 443
