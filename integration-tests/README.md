@@ -96,7 +96,7 @@ Defaults for RESULT_ROOT & PV_ROOT:
 A module "integration-tests" is added in Maven weblogic-kubernetes-operator project.
 
 Below configuration files are used from src/integration-tests/resources:
-
+```
 OperatorIT.properties
 operator1.yaml
 operator2.yaml
@@ -108,7 +108,7 @@ domain5.yaml
 domain6.yaml
 domain7.yaml
 domain8.yaml
-
+```
 
 src/integration-tests/resources/OperatorIT.properties - This file is used for configuring common attributes for all integration tests
 ```
