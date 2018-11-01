@@ -83,6 +83,14 @@ public class DomainV1Test extends DomainTestBase {
     assertThat(domain.getServer(CLUSTER_NAME, SERVER1).shouldStart(0), is(true));
   }
 
+  @Test // reverse order of overrides, capture server, need tests for cascading settings
+  public void whenServerConfiguredWithNodePort_returnNodePort() {
+    configureServer(SERVER1).withNodePort(31);
+    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getNodePort(), equalTo(31));
+  }
+
   @Test
   public void whenStartAutoAndNamedClusterHasRoomByDefault_shouldStartReturnsTrue() {
     configureDomain(domain).withStartupControl(AUTO_STARTUPCONTROL).withDefaultReplicaCount(3);

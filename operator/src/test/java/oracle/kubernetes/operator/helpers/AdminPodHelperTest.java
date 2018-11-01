@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -245,13 +244,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
     configureAdminServer()
-        .withEnvironmentVariable("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
+        .withEnvironmentVariable("item1", "find uid1 at $(DOMAIN_HOME)")
         .withEnvironmentVariable("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)");
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
-            hasEnvVar("item1", "find domain1 at /shared/domain/domain1"),
+            hasEnvVar("item1", "find uid1 at /shared/domains/uid1"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 

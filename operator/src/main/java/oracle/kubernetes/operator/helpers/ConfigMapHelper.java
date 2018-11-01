@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -22,11 +24,13 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
 
 public class ConfigMapHelper {
@@ -259,18 +263,30 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
 
-      info.setScan(WlsRetriever.mockConfig());
-      info.setLastScanTime(new DateTime());
+      String topologyYaml = data.get("topology.yaml");
+      if (topologyYaml != null) {
+        LOGGER.fine("topology.yaml: " + topologyYaml);
+        DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
+        WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+        info.setScan(wlsDomainConfig);
+        info.setLastScanTime(new DateTime());
+        LOGGER.info(
+            MessageKeys.WLS_CONFIGURATION_READ,
+            (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
+            wlsDomainConfig);
+        SitConfigMapContext context =
+            new SitConfigMapContext(
+                this,
+                domain.getDomainUID(),
+                getOperatorNamespace(),
+                domain.getMetadata().getNamespace(),
+                data);
 
-      SitConfigMapContext context =
-          new SitConfigMapContext(
-              this,
-              domain.getDomainUID(),
-              getOperatorNamespace(),
-              domain.getMetadata().getNamespace(),
-              data);
+        return doNext(context.verifyConfigMap(getNext()), packet);
+      }
 
-      return doNext(context.verifyConfigMap(getNext()), packet);
+      // TODO: How do we handle no topology?
+      return doNext(getNext(), packet);
     }
 
     private static String getOperatorNamespace() {
@@ -488,5 +504,44 @@ public class ConfigMapHelper {
     int lastSlash = line.lastIndexOf('/');
     String fname = line.substring(lastSlash + 1, line.length());
     return fname;
+  }
+
+  static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+
+    try {
+      DomainTopology domainTopology = mapper.readValue(topologyYaml, DomainTopology.class);
+
+      LOGGER.fine(
+          ReflectionToStringBuilder.toString(domainTopology, ToStringStyle.MULTI_LINE_STYLE));
+
+      return domainTopology;
+
+    } catch (Exception e) {
+      LOGGER.warning("Failed to parse WebLogic Domain topology", e);
+    }
+
+    return null;
+  }
+
+  public static class DomainTopology {
+    private boolean domainValid;
+    private WlsDomainConfig domain;
+
+    public boolean getDomainValid() {
+      return this.domainValid;
+    }
+
+    public void setDomainValid(boolean domainValid) {
+      this.domainValid = domainValid;
+    }
+
+    public WlsDomainConfig getDomain() {
+      return this.domain;
+    }
+
+    public void setDomain(WlsDomainConfig domain) {
+      this.domain = domain;
+    }
   }
 }
