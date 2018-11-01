@@ -132,7 +132,7 @@
 #
 #   IMAGE_PULL_POLICY_OPERATOR   Default 'Never'.
 #   IMAGE_PULL_SECRET_OPERATOR   Default ''.
-#   WEBLOGIC_IMAGE_PULL_SECRET_NAME   Default ''.
+#   IMAGE_PULL_SECRET_NAME_WEBLOGIC   Default ''.
 #
 # -------------------------------------
 # Directory configuration and structure
@@ -646,10 +646,10 @@ function create_image_pull_secret_wercker {
 
     trace "Creating Docker Secret"
     kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server='index.docker.io/v1/' \
-    --docker-username='$DOCKER_USERNAME' \
-    --docker-password='$DOCKER_PASSWORD' \
-    --docker-email='$DOCKER_EMAIL' \
+    --docker-server='$REPO_SERVER' \
+    --docker-username='$REPO_USERNAME' \
+    --docker-password='$REPO_PASSWORD' \
+    --docker-email='$REPO_EMAIL' \
     -n $namespace 2>&1 | sed 's/^/+' 2>&1
 
     trace "Checking Secret"
@@ -776,6 +776,7 @@ function deploy_operator {
     done
     echo "imagPullPolicy: ${IMAGE_PULL_POLICY_OPERATOR}" >> $inputs
     echo "image: ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" >> $inputs
+    echo "imagePullSecrets: { name: ${IMAGE_PULL_SECRET_OPERATOR} }" >> $inputs
     echo "externalRestEnabled: true" >> $inputs
 
     trace 'customize the inputs yaml file to set the java logging level to $LOGLEVEL_OPERATOR'
@@ -1064,8 +1065,9 @@ function create_domain_home_on_pv_non_helm {
     sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputsDomain
     sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputsDomain
     sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputsDomain
-    if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
-      sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputsDomain
+    sed -i -e "s/^image:.*/image: $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC/" $inputsDomain    
+    if [ -n "${IMAGE_PULL_SECRET_NAME_WEBLOGIC}" ]; then
+      sed -i -e "s|#imagePullSecretName:.*|imagePullSecretName: ${IMAGE_PULL_SECRET_NAME_WEBLOGIC}|g" $inputsDomain
     fi
     sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputsDomain
     sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputsDomain
@@ -1243,79 +1245,23 @@ function create_domain_pv_pvc_load_balancer {
        fail Job failed.  Could not create k8s cluster NFS directory.   
     fi
 
-    if [ "$USE_HELM" = "true" ]; then
-      # Customize the create domain inputs
-      sed -i -e "s/^exposeAdminT3Channel:.*/exposeAdminT3Channel: true/" $inputs
-      if [ "$DOMAIN_UID" == "domain5" ] && [ "$JENKINS" = "true" ] ; then
-        sed -i -e "s/^weblogicDomainStorageType:.*/weblogicDomainStorageType: NFS/" $inputs
-        sed -i -e "s/^#weblogicDomainStorageNFSServer:.*/weblogicDomainStorageNFSServer: $NODEPORT_HOST/" $inputs
-      fi
-      sed -i -e "s;^#weblogicDomainStoragePath:.*;weblogicDomainStoragePath: $PV_ROOT/acceptance_test_pv/$DOMAIN_STORAGE_DIR;" $inputs
+    # create sample domain, including a pv and pvc, domain home on pv, and load balancer
 
-      # Customize more configuration 
-      sed -i -e "s/^clusterName:.*/clusterName: $WL_CLUSTER_NAME/" $inputs
-      sed -i -e "s/^clusterType:.*/clusterType: $WL_CLUSTER_TYPE/" $inputs
-      sed -i -e "s/^namespace:.*/namespace: $NAMESPACE/" $inputs
+    domainOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains/${DOMAIN_UID}
+    trace "Run the sample scripts to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
 
-      sed -i -e "s/^t3ChannelPort:.*/t3ChannelPort: $ADMIN_WLST_PORT/" $inputs
-      sed -i -e "s/^adminNodePort:.*/adminNodePort: $ADMIN_NODE_PORT/" $inputs
-      sed -i -e "s/^exposeAdminNodePort:.*/exposeAdminNodePort: true/" $inputs
-      sed -i -e "s/^t3PublicAddress:.*/t3PublicAddress: $NODEPORT_HOST/" $inputs
-      sed -i -e "s/^adminPort:.*/adminPort: $ADMIN_PORT/" $inputs
-      sed -i -e "s/^managedServerPort:.*/managedServerPort: $MS_PORT/" $inputs
-      sed -i -e "s/^managedServerNameBase:.*/managedServerNameBase: $MS_BASE_NAME/" $inputs
-      sed -i -e "s/^weblogicCredentialsSecretName:.*/weblogicCredentialsSecretName: $WEBLOGIC_CREDENTIALS_SECRET_NAME/" $inputs
-      if [ -n "${WEBLOGIC_IMAGE_PULL_SECRET_NAME}" ]; then
-        sed -i -e "s|#weblogicImagePullSecretName:.*|weblogicImagePullSecretName: ${WEBLOGIC_IMAGE_PULL_SECRET_NAME}|g" $inputs
-      fi
-      sed -i -e "s/^loadBalancer:.*/loadBalancer: $LB_TYPE/" $inputs
-      sed -i -e "s/^loadBalancerWebPort:.*/loadBalancerWebPort: $LOAD_BALANCER_WEB_PORT/" $inputs
-      sed -i -e "s/^loadBalancerDashboardPort:.*/loadBalancerDashboardPort: $LOAD_BALANCER_DASHBOARD_PORT/" $inputs
-      if [ "$LB_TYPE" == "APACHE" ] ; then
-        local load_balancer_app_prepath="/weblogic"
-        sed -i -e "s|loadBalancerVolumePath:.*|loadBalancerVolumePath: ${LOAD_BALANCER_VOLUME_PATH}|g" $inputs
-        sed -i -e "s|loadBalancerAppPrepath:.*|loadBalancerAppPrepath: ${load_balancer_app_prepath}|g" $inputs
-        sed -i -e "s|loadBalancerExposeAdminPort:.*|loadBalancerExposeAdminPort: ${LOAD_BALANCER_EXPOSE_ADMIN_PORT}|g" $inputs
-      fi
-      sed -i -e "s/^javaOptions:.*/javaOptions: $WLS_JAVA_OPTIONS/" $inputs
-      sed -i -e "s/^startupControl:.*/startupControl: $STARTUP_CONTROL/"  $inputs
+    # Create sample  domain pv and pvc
+    trace "Create and start domain pv and pvc"
+    create_pv_pvc_non_helm $@
 
-      # we will test cluster scale up and down in domain1 and domain4 
-      if [ "$DOMAIN_UID" == "domain1" ] || [ "$DOMAIN_UID" == "domain4" ] ; then
-        sed -i -e "s/^configuredManagedServerCount:.*/configuredManagedServerCount: 3/" $inputs
-      fi
+    # Create  sample domain home on pv 
 
-      # we will test pv reclaim policy in domain6. We choose to do this way to void adding too many parameters in dom_define
-      if [ "$DOMAIN_UID" == "domain6" ] ; then
-        sed -i -e "s/^weblogicDomainStorageReclaimPolicy:.*/weblogicDomainStorageReclaimPolicy: Recycle/" $inputs
-      fi
+    trace "Create the domain home, and start domain resources"
+    create_domain_home_on_pv_non_helm $@
 
-      local outfile="${tmp_dir}/create-domain.sh.out"
-      trace "Run helm install to create the domain, see \"$outfile\" for tracing."
-      cd $PROJECT_ROOT/kubernetes/charts
-      helm install weblogic-domain --name $DOMAIN_UID -f $inputs --namespace ${NAMESPACE} 2>&1 | opt_tee ${outfile}
-      trace "helm install output:"
-      cat $outfile
-    else
-      # create sample domain, including a pv and pvc, domain home on pv, and load balancer
-
-      domainOutPutDir=${USER_PROJECTS_DIR}/weblogic-domains/${DOMAIN_UID}
-      trace "Run the sample scripts to create the domain into output dir $domainOutPutDir, see \"$outfile\" for tracing."
-
-      # Create sample  domain pv and pvc
-      trace "Create and start domain pv and pvc"
-      create_pv_pvc_non_helm $@
-
-      # Create  sample domain home on pv 
-
-      trace "Create the domain home, and start domain resources"
-      create_domain_home_on_pv_non_helm $@
-
-      # Setup sample load balancer
-      trace "Create and start domain load balancer"
-      create_load_balancer_non_helm $@
-
-    fi
+    # Setup sample load balancer
+    trace "Create and start domain load balancer"
+    create_load_balancer_non_helm $@
 
     if [ "$?" = "0" ]; then
        cat ${outfile} | sed 's/^/+/g'
@@ -3067,7 +3013,9 @@ function test_suite_init {
                    IMAGE_NAME_OPERATOR \
                    IMAGE_PULL_POLICY_OPERATOR \
                    IMAGE_PULL_SECRET_OPERATOR \
-                   WEBLOGIC_IMAGE_PULL_SECRET_NAME \
+                   IMAGE_TAG_WEBLOGIC \
+                   IMAGE_NAME_WEBLOGIC \
+                   IMAGE_PULL_SECRET_NAME_WEBLOGIC \
                    WERCKER \
                    JENKINS \
                    USE_HELM \
@@ -3115,7 +3063,9 @@ function test_suite_init {
     export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
     export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Never}
     export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR}
-    export WEBLOGIC_IMAGE_PULL_SECRET_NAME=${WEBLOGIC_IMAGE_PULL_SECRET_NAME}
+    export IMAGE_TAG_WEBLOGIC=${IMAGE_TAG_WEBLOGIC:-19.1.0.0}
+    export IMAGE_NAME_WEBLOGIC=${IMAGE_NAME_WEBLOGIC:-wlsldi-v2.docker.oraclecorp.com/weblogic}
+    export IMAGE_PULL_SECRET_NAME_WEBLOGIC=${IMAGE_PULL_SECRET_NAME_WEBLOGIC}
     export LOGLEVEL_OPERATOR=${LOGLEVEL_OPERATOR:-INFO}
 
     # Show custom env vars after defaults were substituted as needed.
@@ -3134,7 +3084,9 @@ function test_suite_init {
                    IMAGE_NAME_OPERATOR \
                    IMAGE_PULL_POLICY_OPERATOR \
                    IMAGE_PULL_SECRET_OPERATOR \
-                   WEBLOGIC_IMAGE_PULL_SECRET_NAME \
+                   IMAGE_TAG_WEBLOGIC \
+                   IMAGE_NAME_WEBLOGIC \
+                   IMAGE_PULL_SECRET_NAME_WEBLOGIC \
                    WERCKER \
                    JENKINS \
                    USE_HELM \
