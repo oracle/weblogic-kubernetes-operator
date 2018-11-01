@@ -1,14 +1,13 @@
-# WebLogic sample domain home on a persistent volume
+# WebLogic Sample Domain Home on a Persistent Volume
 
-The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim((PVC). The scripts generate the domain custom resource yaml file, which can then be used to start the Kubernetes artifacts of the corresponding domain. For samples of creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
+The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts generate the domain custom resource yaml file, which can then be used to start the Kubernetes artifacts of the corresponding domain. For samples of creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 
 ## Prerequisites
 
-The following pre-requisites must be handled prior to running the create domain script:
+The following prerequisites must be handled prior to running the create domain script:
 * Create a Kubernetes namespace for the domain custom resource unless the intention is to use the default namespace.
-* Make sure that the host directory that will be used as the persistent volume already exists and has the appropriate file permissions set.
 * Create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain resource. 
-* Create the Kubernetes secrets 'username' and 'password' of the admin account in the same namespace as the domain custom resource
+* Create the Kubernetes secrets 'username' and 'password' of the admin account in the same namespace as the domain custom resource.
 
 ## Using the script to create a domain
 
@@ -18,6 +17,7 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
   ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /path/to/output-directory
+```
 
 The script will perform the following steps:
 
