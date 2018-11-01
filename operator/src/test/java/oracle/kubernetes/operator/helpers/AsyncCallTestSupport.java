@@ -2,22 +2,22 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.work;
+package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
 import java.net.HttpURLConnection;
 import java.util.Collections;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
-import oracle.kubernetes.operator.helpers.AsyncRequestStepFactory;
-import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 
 /**
  * Support for writing unit tests that use CallBuilder to send requests that expect asynchronous
@@ -43,7 +43,6 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 @SuppressWarnings("unused")
 public class AsyncCallTestSupport extends FiberTestSupport {
 
-  private static final RequestStepFactoryRouter ROUTER = new RequestStepFactoryRouter();
   private CallTestSupport callTestSupport = new CallTestSupport();
 
   /**
@@ -51,42 +50,26 @@ public class AsyncCallTestSupport extends FiberTestSupport {
    *
    * @return a memento which can be used to restore the production factory
    */
-  public Memento installRequestStepFactory() throws NoSuchFieldException {
-    ROUTER.setRequestStepFactory(new RequestStepFactory());
-    return StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", ROUTER);
+  public Memento installRequestStepFactory() {
+    return new StepFactoryMemento(new RequestStepFactory());
   }
 
-  // CallBuilder.STEP_FACTORY is final, meaning that the JDK may choose to cache it at some point,
-  // and miss its being set, thus using the wrong test factory. To avoid this, we install a constant
-  // instance of this class and then set its own non-final field with the actual test step factory.
-  private static class RequestStepFactoryRouter implements AsyncRequestStepFactory {
-    private transient AsyncRequestStepFactory requestStepFactory;
+  private static class StepFactoryMemento implements Memento {
+    private AsyncRequestStepFactory oldFactory;
 
-    void setRequestStepFactory(AsyncRequestStepFactory factory) {
-      this.requestStepFactory = factory;
+    StepFactoryMemento(AsyncRequestStepFactory newFactory) {
+      oldFactory = CallBuilder.setStepFactory(newFactory);
     }
 
     @Override
-    public <T> Step createRequestAsync(
-        ResponseStep<T> next,
-        RequestParams requestParams,
-        CallFactory<T> factory,
-        ClientPool helper,
-        int timeoutSeconds,
-        int maxRetryCount,
-        String fieldSelector,
-        String labelSelector,
-        String resourceVersion) {
-      return requestStepFactory.createRequestAsync(
-          next,
-          requestParams,
-          factory,
-          helper,
-          timeoutSeconds,
-          maxRetryCount,
-          fieldSelector,
-          labelSelector,
-          resourceVersion);
+    public void revert() {
+      CallBuilder.resetStepFactory();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getOriginalValue() {
+      return (T) oldFactory;
     }
   }
 

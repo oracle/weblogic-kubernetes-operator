@@ -83,7 +83,9 @@ spec:
       value: "-Xms64m -Xmx256m "
   # The number of managed servers to start from clusters not listed by clusterStartup
   # replicas: 1
-
+  storage:
+    predefined:
+      claim: %DOMAIN_PVC_NAME%
   # Uncomment to export the T3Channel as a service
   %EXPOSE_T3_CHANNEL_PREFIX%exportT3Channels:
   %EXPOSE_T3_CHANNEL_PREFIX%- T3Channel

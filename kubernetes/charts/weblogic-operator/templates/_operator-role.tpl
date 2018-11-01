@@ -1,16 +1,18 @@
 # Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-{{- define "operator.operatorClusterRoleNonResource" }}
+{{- define "operator.operatorRole" }}
 ---
-kind: "ClusterRole"
+kind: "Role"
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  name: {{ list .Release.Namespace "weblogic-operator-clusterrole-nonresource" | join "-" | quote }}
+  name: "weblogic-operator-role"
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
-- nonResourceURLs: ["/version/*"]
-  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["secrets", "configmaps", "events"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 {{- end }}

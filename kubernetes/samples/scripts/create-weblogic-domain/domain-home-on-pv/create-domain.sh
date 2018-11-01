@@ -27,7 +27,7 @@ function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -o Ouput directory for the generated yaml files, must be specified."
   echo "  -i Parameter input file, must be specified."
-  echo "  -e Also create the resources in the generated yaml files"
+  echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
   exit $1
@@ -75,6 +75,8 @@ fi
 #
 function initAndValidateOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
+  # Create a directory for this domain's output files
+  mkdir -p ${domainOutputDir}
 
   validateOutputDir \
     ${domainOutputDir} \
@@ -202,10 +204,6 @@ function initialize {
 
   if [ -z "${outputDir}" ]; then
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
-  else
-    if ! [ -d ${outputDir} ]; then
-      validationError "Unable to locate the directory ${outputDir}. \nThis is the name of the directory to store the generated yaml files in."
-    fi
   fi
 
   createJobInput="${scriptDir}/create-domain-job-template.yaml"
@@ -275,9 +273,6 @@ function initialize {
 #
 function createYamlFiles {
 
-  # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
-
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
   # file there, and create the domain from it, or the user can put the
@@ -320,7 +315,7 @@ function createYamlFiles {
 
   # Use the default value if not defined.
   if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=${domainUID}-weblogic-domain-pvc
+    persistentVolumeClaimName=weblogic-sample-domain-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
@@ -404,6 +399,7 @@ function createYamlFiles {
   sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
   sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
@@ -414,6 +410,8 @@ function create_domain_configmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
+  elif [[ ! ${createDomainFilesDir} == /* ]]; then
+    createDomainFilesDir=${scriptDir}/${createDomainFilesDir}
   fi
 
   # customize the files with domain information
@@ -424,6 +422,7 @@ function create_domain_configmap {
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
+  sed -i -e "s/^domainName:.*/domainName: $domainName/" ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
    sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
@@ -440,6 +439,8 @@ function create_domain_configmap {
   fi
 
   kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+
+  rm -rf $externalFilesTmpDir
 }
 
 #
@@ -532,6 +533,10 @@ function printSummary {
 #
 function createDomainResource {
   kubectl apply -f ${dcrOutput}
+  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
+  if [ "${DCR_AVAIL}" != "1" ]; then
+    fail "The domain custom resource ${domainUID} was not found"
+  fi
 }
 
 #
