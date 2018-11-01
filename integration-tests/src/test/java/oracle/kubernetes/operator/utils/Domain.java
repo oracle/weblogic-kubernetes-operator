@@ -647,7 +647,6 @@ public class Domain {
     Map<String, Object> lbMap = yaml.load(lbIs);
     lbIs.close();
 
-    lbMap.put("domainName", domainMap.get("domainName"));
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
 
@@ -780,9 +779,7 @@ public class Domain {
 
     // read input domain yaml to test
     domainMap = TestUtils.loadYaml(inputYaml);
-    if (domainMap.get("domainName") == null) {
-      domainMap.put("domainName", domainMap.get("domainUID"));
-    }
+    domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
     Yaml dyaml = new Yaml();
