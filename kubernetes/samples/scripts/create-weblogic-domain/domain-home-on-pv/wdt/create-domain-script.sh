@@ -44,7 +44,7 @@
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
-#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.12/$WDT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/$WDT_INSTALL_ZIP_FILE
 #
 #   https_proxy    Proxy for downloading WDT_INSTALL_ZIP_URL.
 #                  default: "http://www-proxy-hqdc.us.oracle.com:80"
@@ -78,7 +78,7 @@ WDT_DIR=${WDT_DIR:-/shared/wdt}
 DOMAIN_DIR=${DOMAIN_DIR:-/shared/domains}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.12/$WDT_INSTALL_ZIP_FILE"}
+WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/$WDT_INSTALL_ZIP_FILE"}
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
@@ -152,6 +152,7 @@ function run_wdt {
   local model_orig="$WDT_MODEL_FILE"
   local oracle_home="$ORACLE_HOME"
   local domain_dir="$DOMAIN_DIR"
+  local domain_home_dir="$DOMAIN_HOME_DIR"
   local wdt_bin_dir="$WDT_DIR/weblogic-deploy/bin"
   local wdt_createDomain_script="$wdt_bin_dir/createDomain.sh"
 
@@ -186,12 +187,21 @@ function run_wdt {
 
   echo @@ "Info:  WDT createDomain.sh output will be in $out_file and $wdt_log_dir"
 
-  $wdt_createDomain_script \
-     -oracle_home $oracle_home \
-     -domain_type WLS \
-     -domain_parent $domain_dir \
-     -model_file $model_final \
-     -variable_file $inputs_final > $out_file 2>&1
+  if [ -z "$domain_home_dir}" ]; then
+    $wdt_createDomain_script \
+       -oracle_home $oracle_home \
+       -domain_type WLS \
+       -domain_parent $domain_dir \
+       -model_file $model_final \
+       -variable_file $inputs_final > $out_file 2>&1
+  else
+    $wdt_createDomain_script \
+       -oracle_home $oracle_home \
+       -domain_type WLS \
+       -domain_home $domain_home_dir \
+       -model_file $model_final \
+       -variable_file $inputs_final > $out_file 2>&1
+  fi
 
   local wdt_res=$?
 

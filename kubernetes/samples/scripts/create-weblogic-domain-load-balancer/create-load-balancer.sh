@@ -200,9 +200,7 @@ function createYamlFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  if [ -z ${domainName} ]; then
-    domainName=$domainUID
-  fi
+  domainName=$domainUID
 
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     # Traefik file
