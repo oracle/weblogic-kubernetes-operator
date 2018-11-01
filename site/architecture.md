@@ -5,7 +5,7 @@ The operator consists of the following two main parts:
 *	The operator itself, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks.
 *	A Kubernetes job which can be used to create a WebLogic domain.
 
-The operator is packaged in a [Docker image](`https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/`) which you can access using the following `docker pull` command:  
+The operator is packaged in a [Docker image](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/) which you can access using the following `docker pull` command:  
 
 ```
 
