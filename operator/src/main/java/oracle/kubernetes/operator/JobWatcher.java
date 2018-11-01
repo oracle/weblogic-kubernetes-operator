@@ -176,9 +176,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
             OnReady ready =
                 (V1Job job) -> {
                   if (didResume.compareAndSet(false, true)) {
-                    System.out.println(
-                        "============== JobWatcher.WaitForJobReadyStep job status: "
-                            + job.getStatus());
+                    LOGGER.fine("Job status: " + job.getStatus());
                     packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
                     fiber.resume(packet);
                   }

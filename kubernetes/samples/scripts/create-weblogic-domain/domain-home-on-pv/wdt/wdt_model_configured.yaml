@@ -12,7 +12,7 @@ topology:
         '@@PROP:adminServerName@@':
             ListenAddress: '@@PROP:domainUID@@-@@PROP:adminServerName@@'
             Log:
-                FileName: '/shared/logs/@@PROP:adminServerName@@.log'
+                FileName: '/shared/logs/@@PROP:domainUID@@/@@PROP:adminServerName@@.log'
             NetworkAccessPoint:
                 T3Channel:
                     ListenAddress: '@@PROP:domainUID@@-@@PROP:adminServerName@@'
@@ -29,7 +29,7 @@ topology:
                 Cluster: '@@PROP:clusterName@@'
                 UserPreferredServer: '@@PROP:managedServerNameBase@@1'
             Log:
-                FileName: '/shared/logs/@@PROP:managedServerNameBase@@1.log'
+                FileName: '/shared/logs/@@PROP:domainUID@@/@@PROP:managedServerNameBase@@1.log'
         '@@PROP:managedServerNameBase@@2':
             Cluster: '@@PROP:clusterName@@'
             ListenAddress: '@@PROP:domainUID@@-@@PROP:managedServerNameBase@@2'
@@ -51,7 +51,7 @@ topology:
                 Cluster: '@@PROP:clusterName@@'
                 UserPreferredServer: '@@PROP:managedServerNameBase@@3'
             Log:
-                FileName: '/shared/logs/@@PROP:managedServerNameBase@@3.log'
+                FileName: '/shared/logs/@@PROP:domainUID@@/@@PROP:managedServerNameBase@@3.log'
     MigratableTarget:
         '@@PROP:managedServerNameBase@@1 (migratable)':
             Cluster: '@@PROP:clusterName@@'

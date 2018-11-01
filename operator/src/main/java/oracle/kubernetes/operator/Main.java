@@ -713,7 +713,6 @@ public class Main {
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(ServiceHelper.createForServerStep(null));
     resources.add(new WatchPodReadyAdminStep(podWatchers, null));
-    //    resources.add(WlsRetriever.readConfigStep(null));
     resources.add(new ExternalAdminChannelsStep(next));
     return resources.toArray(new Step[0]);
   }

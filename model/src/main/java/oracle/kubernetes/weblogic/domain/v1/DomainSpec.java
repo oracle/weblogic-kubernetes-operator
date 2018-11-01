@@ -7,13 +7,14 @@ package oracle.kubernetes.weblogic.domain.v1;
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -95,24 +96,73 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   private String includeServerOutInPodLog;
 
+  /*
+   * The WebLogic Docker image.
+   *
+   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
+   */
+  @JsonPropertyDescription(
+      "The Weblogic Docker image; required when domainHomeInImage is true; "
+          + "otherwise, defaults to store/oracle/weblogic:12.2.1.3")
+  @SerializedName("image")
+  @Expose
+  private String image;
+
+  /**
+   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
+   * IfNotPresent.
+   *
+   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
+   *
+   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+   */
+  @JsonPropertyDescription(
+      "The image pull policy for the WebLogic Docker image. "
+          + ""
+          + "Legal values are Always, Never and IfNotPresent. "
+          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise")
+  @SerializedName("imagePullPolicy")
+  @Expose
+  private String imagePullPolicy;
+
+  /**
+   * The image pull secret for the WebLogic Docker image.
+   *
+   * @deprecated as 2.0, use #imagePullSecrets
+   */
+  @SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
+  @Deprecated
+  @SerializedName("imagePullSecret")
+  @Expose
+  private V1LocalObjectReference imagePullSecret;
+
+  /**
+   * The image pull secrets for the WebLogic Docker image.
+   *
+   * <p>More info:
+   * https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#localobjectreference-v1-core
+   *
+   * @since 2.0
+   */
+  @JsonPropertyDescription("A list of image pull secrets for the WebLogic Docker image.")
+  @SerializedName("imagePullSecrets")
+  @Expose
+  private List<V1LocalObjectReference> imagePullSecrets;
+
   /**
    * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
    * Services. The internal and external ports must match; therefore, it is required that the
    * channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes
    * cluster's legal NodePort port range.
+   *
+   * @deprecated in 2.0
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @SerializedName("exportT3Channels")
   @Expose
   @Valid
+  @Deprecated
   private List<String> exportT3Channels = new ArrayList<>();
-
-  /**
-   * List of T3 network access points to export, along with label and annotations to apply to
-   * corresponding channel services.
-   *
-   * @since 2.0
-   */
-  private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
   /**
    * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
@@ -187,6 +237,10 @@ public class DomainSpec extends BaseConfiguration {
   /** The definition of the storage used for this domain. */
   @SerializedName("storage")
   @Expose
+  @JsonPropertyDescription(
+      "The storage used for this domain. "
+          + "Defaults to a predefined claim for a PVC whose name is "
+          + "the domain UID followed by '-weblogic-domain-pvc'")
   private DomainStorage storage;
 
   /**
@@ -196,6 +250,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("adminServer")
   @Expose
+  @JsonPropertyDescription("Configuration for the admin server")
   private AdminServer adminServer;
 
   /**
@@ -205,6 +260,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("managedServers")
   @Expose
+  @JsonPropertyDescription("Configuration for the managed servers")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -214,7 +270,21 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("clusters")
   @Expose
+  @JsonPropertyDescription("Configuration for the clusters")
   protected List<Cluster> clusters = new ArrayList<>();
+
+  public AdminServer getOrCreateAdminServer(String adminServerName) {
+    if (adminServer != null) return adminServer;
+
+    return createAdminServer(adminServerName);
+  }
+
+  private AdminServer createAdminServer(String adminServerName) {
+    setAsName(adminServerName);
+    AdminServer adminServer = new AdminServer();
+    setAdminServer(adminServer);
+    return adminServer;
+  }
 
   @SuppressWarnings("deprecation")
   String getEffectiveStartupControl() {
@@ -433,6 +503,58 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  @Nullable
+  public String getImage() {
+    return image;
+  }
+
+  public void setImage(@Nullable String image) {
+    this.image = image;
+  }
+
+  @Nullable
+  public String getImagePullPolicy() {
+    return imagePullPolicy;
+  }
+
+  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+  }
+
+  @Nullable
+  V1LocalObjectReference getImagePullSecret() {
+    if (isDefined(imagePullSecret)) return imagePullSecret;
+
+    return !hasImagePullSecrets() ? null : getReturnValue(imagePullSecrets.get(0));
+  }
+
+  private boolean hasImagePullSecrets() {
+    return imagePullSecrets != null && imagePullSecrets.size() != 0;
+  }
+
+  @Nullable
+  public List<V1LocalObjectReference> getImagePullSecrets() {
+    if (hasImagePullSecrets()) return imagePullSecrets;
+    else if (isDefined(imagePullSecret)) return Collections.singletonList(imagePullSecret);
+    else return Collections.emptyList();
+  }
+
+  private V1LocalObjectReference getReturnValue(V1LocalObjectReference imagePullSecret) {
+    return isDefined(imagePullSecret) ? imagePullSecret : null;
+  }
+
+  private boolean isDefined(V1LocalObjectReference imagePullSecret) {
+    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
+  }
+
+  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
+    imagePullSecrets = Collections.singletonList(imagePullSecret);
+  }
+
+  public void setImagePullSecrets(@Nullable List<V1LocalObjectReference> imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
+  }
+
   /**
    * Log Home
    *
@@ -540,28 +662,6 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withExportT3Channels(List<String> exportT3Channels) {
     this.exportT3Channels = exportT3Channels;
     return this;
-  }
-
-  /**
-   * Map of T3 network access points to export, with associated labels/annotations.
-   *
-   * @return exported channels
-   */
-  public Map<String, ExportedNetworkAccessPoint> getExportedNetworkAccessPoints() {
-    return exportedNetworkAccessPoints;
-  }
-
-  /**
-   * Configures an exported T3 network access point.
-   *
-   * @param name the name of the NAP
-   */
-  public ExportedNetworkAccessPoint addExportedNetworkAccessPoint(String name) {
-    if (exportedNetworkAccessPoints == null) exportedNetworkAccessPoints = new HashMap<>();
-
-    ExportedNetworkAccessPoint exportedNetworkAccessPoint = new ExportedNetworkAccessPoint();
-    exportedNetworkAccessPoints.put(name, exportedNetworkAccessPoint);
-    return exportedNetworkAccessPoint;
   }
 
   /**
@@ -813,41 +913,68 @@ public class DomainSpec extends BaseConfiguration {
   @SuppressWarnings("deprecation")
   @Override
   public String toString() {
-    return new ToStringBuilder(this)
-        .appendSuper(super.toString())
-        .append("domainUID", domainUID)
-        .append("domainName", domainName)
-        .append("adminSecret", adminSecret)
-        .append("asName", asName)
-        .append("asPort", asPort)
-        .append("logHome", logHome)
-        .append("includeServerOutInPodLog", includeServerOutInPodLog)
-        .append("exportT3Channels", exportT3Channels)
-        .append("startupControl", startupControl)
-        .append("serverStartup", serverStartup)
-        .append("clusterStartup", clusterStartup)
-        .append("replicas", replicas)
-        .append("storage", storage)
-        .toString();
+    ToStringBuilder builder =
+        new ToStringBuilder(this)
+            .appendSuper(super.toString())
+            .append("domainUID", domainUID)
+            .append("domainName", domainName)
+            .append("adminSecret", adminSecret)
+            .append("asName", asName)
+            .append("asPort", asPort)
+            .append("image", image)
+            .append("imagePullPolicy", imagePullPolicy)
+            .append("storage", storage);
+
+    if (hasV2Configuration())
+      builder
+          .append("imagePullSecrets", imagePullSecrets)
+          .append("adminServer", adminServer)
+          .append("managedServers", managedServers)
+          .append("includeServerOutInPodLog", includeServerOutInPodLog)
+          .append("clusters", clusters);
+    else
+      builder
+          .append("imagePullSecret", imagePullSecrets)
+          .append("startupControl", startupControl)
+          .append("serverStartup", serverStartup)
+          .append("clusterStartup", clusterStartup)
+          .append("replicas", replicas)
+          .append("exportT3Channels", exportT3Channels);
+
+    return builder.toString();
   }
 
   @SuppressWarnings("deprecation")
   @Override
   public int hashCode() {
-    return new HashCodeBuilder()
-        .appendSuper(super.hashCode())
-        .append(asName)
-        .append(replicas)
-        .append(startupControl)
-        .append(domainUID)
-        .append(clusterStartup)
-        .append(asPort)
-        .append(domainName)
-        .append(exportT3Channels)
-        .append(serverStartup)
-        .append(adminSecret)
-        .append(storage)
-        .toHashCode();
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .appendSuper(super.hashCode())
+            .append(domainUID)
+            .append(domainName)
+            .append(adminSecret)
+            .append(asName)
+            .append(asPort)
+            .append(image)
+            .append(imagePullPolicy)
+            .append(storage);
+
+    if (hasV2Configuration())
+      builder
+          .append(imagePullSecrets)
+          .append(adminServer)
+          .append(managedServers)
+          .append(clusters)
+          .append(includeServerOutInPodLog);
+    else
+      builder
+          .append(replicas)
+          .append(startupControl)
+          .append(clusterStartup)
+          .append(exportT3Channels)
+          .append(serverStartup);
+
+    return builder.toHashCode();
   }
 
   @SuppressWarnings("deprecation")
@@ -857,22 +984,34 @@ public class DomainSpec extends BaseConfiguration {
     if (!(other instanceof DomainSpec)) return false;
 
     DomainSpec rhs = ((DomainSpec) other);
-    return new EqualsBuilder()
-        .appendSuper(super.equals(other))
-        .append(asName, rhs.asName)
-        .append(replicas, rhs.replicas)
-        .append(startupControl, rhs.startupControl)
-        .append(domainUID, rhs.domainUID)
-        .append(clusterStartup, rhs.clusterStartup)
-        .append(asPort, rhs.asPort)
-        .append(domainName, rhs.domainName)
-        .append(exportT3Channels, rhs.exportT3Channels)
-        .append(serverStartup, rhs.serverStartup)
-        .append(adminSecret, rhs.adminSecret)
-        .append(storage, rhs.storage)
-        .append(logHome, rhs.logHome)
-        .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-        .isEquals();
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .appendSuper(super.equals(other))
+            .append(domainUID, rhs.domainUID)
+            .append(domainName, rhs.domainName)
+            .append(adminSecret, rhs.adminSecret)
+            .append(asName, rhs.asName)
+            .append(asPort, rhs.asPort)
+            .append(image, rhs.image)
+            .append(storage, rhs.storage)
+            .append(imagePullPolicy, rhs.imagePullPolicy);
+
+    if (hasV2Configuration())
+      builder
+          .append(imagePullSecrets, rhs.imagePullSecrets)
+          .append(adminServer, rhs.adminServer)
+          .append(managedServers, rhs.managedServers)
+          .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
+          .append(clusters, rhs.clusters);
+    else
+      builder
+          .append(replicas, rhs.replicas)
+          .append(startupControl, rhs.startupControl)
+          .append(clusterStartup, rhs.clusterStartup)
+          .append(exportT3Channels, rhs.exportT3Channels)
+          .append(serverStartup, rhs.serverStartup);
+
+    return builder.isEquals();
   }
 
   private Server getServer(String serverName) {
@@ -900,7 +1039,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public AdminServer getAdminServer() {
-    return adminServer;
+    return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
 
   public void setAdminServer(AdminServer adminServer) {
@@ -977,12 +1116,13 @@ public class DomainSpec extends BaseConfiguration {
   class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public ServerSpec getAdminServerSpec() {
-      return new ServerSpecV2Impl(adminServer, null, DomainSpec.this);
+      return new ServerSpecV2Impl(DomainSpec.this, adminServer, null, DomainSpec.this);
     }
 
     @Override
     public ServerSpec getServerSpec(String serverName, String clusterName) {
       return new ServerSpecV2Impl(
+          DomainSpec.this,
           getServer(serverName),
           getClusterLimit(clusterName),
           getCluster(clusterName),
@@ -1010,19 +1150,23 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public List<String> getExportedNetworkAccessPointNames() {
-      return new ArrayList<>(exportedNetworkAccessPoints.keySet());
+      return getAdminServer().getExportedNetworkAccessPointNames();
     }
 
     @Override
-    public Map<String, String> getChannelServiceLabels(String channelName) {
-      ExportedNetworkAccessPoint accessPoint = exportedNetworkAccessPoints.get(channelName);
+    public Map<String, String> getChannelServiceLabels(String napName) {
+      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
 
       return accessPoint == null ? Collections.emptyMap() : accessPoint.getLabels();
     }
 
+    private ExportedNetworkAccessPoint getExportedNetworkAccessPoint(String napName) {
+      return getAdminServer().getExportedNetworkAccessPoint(napName);
+    }
+
     @Override
-    public Map<String, String> getChannelServiceAnnotations(String channel) {
-      ExportedNetworkAccessPoint accessPoint = exportedNetworkAccessPoints.get(channel);
+    public Map<String, String> getChannelServiceAnnotations(String napName) {
+      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
 
       return accessPoint == null ? Collections.emptyMap() : accessPoint.getAnnotations();
     }

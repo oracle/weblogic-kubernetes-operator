@@ -27,9 +27,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
-import oracle.kubernetes.operator.work.BodyMatcher;
-import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
@@ -95,15 +92,18 @@ public class DomainIntrospectorJobTest {
           + "  name: \"base_domain\"\n"
           + "  adminServerName: \"admin-server\"\n"
           + "  configuredClusters:\n"
-          + "    \"mycluster\":\n"
-          + "      port: 8001\n"
+          + "    - name: \"mycluster\"\n"
           + "      servers:\n"
-          + "        \"managed-server1\": {}\n"
-          + "        \"managed-server2\": {}\n"
-          + "  dynamicClusters: {}\n"
+          + "        - name: \"managed-server1\"\n"
+          + "          listenPort: 8001\n"
+          + "          listenAddress: \"domain1-managed-server1\"\n"
+          + "        - name: \"managed-server2\"\n"
+          + "          listenPort: 8001\n"
+          + "          listenAddress: \"domain1-managed-server2\"\n"
           + "  servers:\n"
-          + "    \"admin-server\":\n"
-          + "      port: 7001\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n"
           + "\n"
           + ">>> EOF";
 
@@ -342,13 +342,11 @@ public class DomainIntrospectorJobTest {
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
-
-    V1LocalObjectReference imagePullSecret =
-        domainPresenceInfo.getDomain().getSpec().getImagePullSecret();
-    if (imagePullSecret != null) {
-      podSpec.addImagePullSecretsItem(imagePullSecret);
-    }
-
+    /**
+     * V1LocalObjectReference imagePullSecret =
+     * domainPresenceInfo.getDomain().getSpec().getImagePullSecret(); if (imagePullSecret != null) {
+     * podSpec.addImagePullSecretsItem(imagePullSecret); }
+     */
     if (!getClaims().isEmpty()) {
       podSpec.addVolumesItem(
           new V1Volume()
