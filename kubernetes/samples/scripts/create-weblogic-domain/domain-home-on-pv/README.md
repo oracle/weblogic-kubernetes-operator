@@ -21,19 +21,19 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`
-* Create Kubernetes domain custom resource YAML file domain-custom-resource.yaml in the directory that is created above. This yaml file can be used to create the Kubernetes resource using `kubectl create -f` or `kubectl apply -f`.
-* Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts to create the domain on the shared storage. 
-* Wait for the job to finish and then optionally create a Kubernetes domain custom resource for the new domain.
+* Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
+* Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage. 
+* Wait for the job to finish, and then create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. This yaml file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
 
-As a convenience, the script can optionally create the PV and PVC resources as well using the `-e` option.
+As a convenience, the script can optionally, using the `-e` option, create the domain custom resource object, which in turn results in the creation of the corresponding WebLogic server pods and services as well.
 
 The usage of the create script is as follows.
 
 ```
 $ sh create-domain.sh -h
 usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
-  -i Parameter input file, must be specified.
+  -i Parameter inputs file, must be specified.
   -o Output directory for the generated yaml files, must be specified.
   -e Also create the resources in the generated yaml files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
@@ -55,7 +55,7 @@ The default domain created by the script has the following characteristics:
 The domain creation inputs can be customized by editing create-domain-inputs.yaml
 
 ### Configuration parameters 
-The following parameters can be provided in the input file.
+The following parameters can be provided in the inputs file.
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
@@ -64,7 +64,11 @@ The following parameters can be provided in the input file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
-| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well the name of the Kubernetes domain custom resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | domain1 |
+| `createDomainFilesDir` | Directory to get all the create domain scripts and supporting files, including the script that is specified by the createDomainScriptName property. | wlst |
+| `createDomainScriptsMountPath` | Mount path of the directory where the create domain scripts are located inside the pod. | `/u01/weblogic` |
+| `createDomainScriptName` | Script that creates the domain. | `create-domain-job.sh` |
+| `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
+| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain custom resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | domain1 |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
@@ -78,19 +82,14 @@ The following parameters can be provided in the input file.
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
-| `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
-| `createDomainScriptsMountPath` | Mount path of the directory where the create domain scripts are located inside the pod. | `/u01/weblogic` |
-| `createDomainScriptName` | Script that creates the domain. | `create-domain-job.sh` |
-| `createDomainFilesDir` | Directory to get all the create domain scripts and supporting files, including the script that is specified by the createDomainScriptName property. | wlst |
 
-Note that the sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. The sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource yaml file would need to be modified as well.
-
+The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource yaml file could also be modified to cover mor euse cases.
 
 ## Verify the results 
 
-The create script will verify that the PV and PVC was created, and will report failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
+The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-Note that the example results below uses the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` the example `kubectl` commands with the real namespace. 
+Note that the example results below uses the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes namespace. 
 
 ### Generated yaml files with the default inputs
 
@@ -324,4 +323,12 @@ domain1-managed-server1                     ClusterIP   None             <none> 
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 
+## Deleting the Generated Domain Home
+
+Sometimes in production, but mostlikely in testing phases, you would like to remove the domain home that is generated using `create-domain.sh` script.
+
+```
+$ kubectl create -f delete-domain-job.yaml
+
+```
 
