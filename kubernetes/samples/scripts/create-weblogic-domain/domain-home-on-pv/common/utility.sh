@@ -50,14 +50,14 @@ function checkDomainSecret {
 
 function prepareDomainHomeDir { 
   # Do not proceed if the domain already exists
-  domainFolder=${DOMAIN_HOME_DIR}
+  local domainFolder=${DOMAIN_HOME_DIR}
   if [ -d ${domainFolder} ]; then
     fail "The create domain job will not overwrite an existing domain. The domain folder ${domainFolder} already exists"
   fi
 
   # Create the base folders
-  echo "DOMAIN_ROOT_DIR is ${DOMAIN_ROOT_DIR}"
-  createFolder ${DOMAIN_ROOT_DIR}/domain
+  createFolder ${DOMAIN_ROOT_DIR}/domains
+  createFolder ${DOMAIN_LOGS_DIR}
   createFolder ${DOMAIN_ROOT_DIR}/applications
   createFolder ${DOMAIN_ROOT_DIR}/stores
 }

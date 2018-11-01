@@ -9,14 +9,12 @@ import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCON
 import static oracle.kubernetes.operator.StartupControlConstants.SPECIFIED_STARTUPCONTROL;
 
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 /** The effective configuration for a server configured by the version 1 domain model. */
 public class ServerSpecV1Impl extends ServerSpec {
-  private DomainSpec domainSpec;
   private final String clusterName;
 
   @SuppressWarnings("deprecation")
@@ -31,24 +29,10 @@ public class ServerSpecV1Impl extends ServerSpec {
       String clusterName,
       ServerStartup serverStartup,
       ClusterStartup clusterStartup) {
-    this.domainSpec = domainSpec;
+    super(domainSpec);
     this.clusterName = clusterName;
     this.serverStartup = serverStartup;
     this.clusterStartup = clusterStartup;
-  }
-
-  protected String getConfiguredImage() {
-    return domainSpec.getImage();
-  }
-
-  @Override
-  protected String getConfiguredImagePullPolicy() {
-    return domainSpec.getImagePullPolicy();
-  }
-
-  @Override
-  public V1LocalObjectReference getImagePullSecret() {
-    return domainSpec.getImagePullSecret();
   }
 
   @Override

@@ -4,8 +4,8 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
 import java.nio.file.Path;
 import oracle.kubernetes.operator.helpers.LegalNames;
 
@@ -28,11 +28,11 @@ public class ParsedTraefikSecurityYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
-  public V1beta1ClusterRole getTraefikClusterRole() {
+  public V1ClusterRole getTraefikClusterRole() {
     return getClusterRoles().find(getTraefikScope());
   }
 
-  public V1beta1ClusterRoleBinding getTraefikDashboardClusterRoleBinding() {
+  public V1ClusterRoleBinding getTraefikDashboardClusterRoleBinding() {
     return getClusterRoleBindings().find(getTraefikScope());
   }
 

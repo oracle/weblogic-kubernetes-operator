@@ -2,7 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.work;
+package oracle.kubernetes.operator.helpers;
 
 /** An interface to permit inexact comparisons of body objects sent with async calls. */
 public interface BodyMatcher {

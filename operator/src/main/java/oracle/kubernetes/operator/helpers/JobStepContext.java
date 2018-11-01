@@ -198,11 +198,11 @@ public abstract class JobStepContext implements StepContextConstants {
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
-    V1LocalObjectReference imagePullSecret = info.getDomain().getSpec().getImagePullSecret();
-    if (imagePullSecret != null) {
-      podSpec.addImagePullSecretsItem(imagePullSecret);
-    }
-
+    // TODO: where do we get image pull secret for job pod?
+    /**
+     * V1LocalObjectReference imagePullSecret = info.getDomain().getSpec().getImagePullSecret(); if
+     * (imagePullSecret != null) { podSpec.addImagePullSecretsItem(imagePullSecret); }
+     */
     if (!getClaims().isEmpty()) {
       podSpec.addVolumesItem(
           new V1Volume()

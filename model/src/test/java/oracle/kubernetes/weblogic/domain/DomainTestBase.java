@@ -48,16 +48,19 @@ public abstract class DomainTestBase {
   private static final String AS_NAME = "admin";
   protected static final String CLUSTER_NAME = "cluster1";
   protected static final String SERVER1 = "ms1";
-  protected final Domain domain =
-      new Domain()
-          .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(
-              new DomainSpec()
-                  .withAdminSecret(SECRET)
-                  .withAsName(AS_NAME)
-                  .withAsPort(AS_PORT)
-                  .withDomainName(DOMAIN_NAME)
-                  .withDomainUID(DOMAIN_UID));
+  protected final Domain domain = createDomain();
+
+  protected static Domain createDomain() {
+    return new Domain()
+        .withMetadata(new V1ObjectMeta().namespace(NS))
+        .withSpec(
+            new DomainSpec()
+                .withAdminSecret(SECRET)
+                .withAsName(AS_NAME)
+                .withAsPort(AS_PORT)
+                .withDomainName(DOMAIN_NAME)
+                .withDomainUID(DOMAIN_UID));
+  }
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
@@ -175,7 +178,7 @@ public abstract class DomainTestBase {
   @Test
   public void whenDefaultImagePullSecretSpecified_allServersHaveIt() {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
-    configureDomain(domain).withDefaultImagePullSecret(secretReference);
+    configureDomain(domain).withDefaultImagePullSecrets(secretReference);
 
     assertThat(domain.getAdminServerSpec().getImagePullSecret(), equalTo(secretReference));
     assertThat(
@@ -315,14 +318,6 @@ public abstract class DomainTestBase {
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getNodePort(), nullValue());
-  }
-
-  @Test // reverse order of overrides, capture server, need tests for cascading settings
-  public void whenServerConfiguredWithNodePort_returnNodePort() {
-    configureServer(SERVER1).withNodePort(31);
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getNodePort(), equalTo(31));
   }
 
   @Test

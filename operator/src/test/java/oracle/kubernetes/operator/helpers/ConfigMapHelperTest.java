@@ -16,6 +16,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CM_REPLACED;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -38,9 +39,9 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
-import oracle.kubernetes.operator.work.BodyMatcher;
-import oracle.kubernetes.operator.work.CallTestSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
@@ -348,5 +349,79 @@ public class ConfigMapHelperTest {
     public boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
       return actual.getData().keySet().containsAll(expected.getData().keySet());
     }
+  }
+
+  private static final String DOMAIN_TOPOLOGY =
+      "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "  - name: \"cluster-1\"\n"
+          + "    servers:\n"
+          + "      - name: \"managed-server1\"\n"
+          + "        listenPort: 7003\n"
+          + "        listenAddress: \"domain1-managed-server1\"\n"
+          + "        sslListenPort: 7103\n"
+          + "        sslPortEnabled: true\n"
+          + "        machineName: \"machine-managed-server1\"\n"
+          + "      - name: \"managed-server2\"\n"
+          + "        listenPort: 7004\n"
+          + "        listenAddress: \"domain1-managed-server2\"\n"
+          + "        sslListenPort: 7104\n"
+          + "        sslPortEnabled: false\n"
+          + "        networkAccessPoints:\n"
+          + "          - name: \"nap2\"\n"
+          + "            protocol: \"t3\"\n"
+          + "            listenPort: 7105\n"
+          + "            publicPort: 7105\n"
+          + "  servers:\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n"
+          + "    - name: \"server1\"\n"
+          + "      listenPort: 9003\n"
+          + "      listenAddress: \"domain1-managed-server1\"\n"
+          + "      sslListenPort: 8003\n"
+          + "      sslPortEnabled: true\n"
+          + "      machineName: \"machine-managed-server1\"\n"
+          + "    - name: \"server2\"\n"
+          + "      listenPort: 9004\n"
+          + "      listenAddress: \"domain1-managed-server2\"\n"
+          + "      sslListenPort: 8004\n"
+          + "      sslPortEnabled: false\n"
+          + "      networkAccessPoints:\n"
+          + "        - name: \"nap2\"\n"
+          + "          protocol: \"t3\"\n"
+          + "          listenPort: 8005\n"
+          + "          publicPort: 8005\n";
+
+  @Test
+  public void parseDomainTopologyYaml() {
+    ConfigMapHelper.DomainTopology domainTopology =
+        ConfigMapHelper.parseDomainTopologyYaml(DOMAIN_TOPOLOGY);
+
+    assertNotNull(domainTopology);
+    assertTrue(domainTopology.getDomainValid());
+
+    WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+    assertNotNull(wlsDomainConfig);
+
+    assertEquals("base_domain", wlsDomainConfig.getName());
+    assertEquals("admin-server", wlsDomainConfig.getAdminServerName());
+
+    Map<String, WlsClusterConfig> wlsClusterConfigs = wlsDomainConfig.getClusterConfigs();
+    assertEquals(1, wlsClusterConfigs.size());
+
+    WlsClusterConfig wlsClusterConfig = wlsClusterConfigs.get("cluster-1");
+    assertNotNull(wlsClusterConfig);
+
+    List<WlsServerConfig> wlsServerConfigs = wlsClusterConfig.getServers();
+    assertEquals(2, wlsServerConfigs.size());
+
+    Map<String, WlsServerConfig> serverConfigMap = wlsDomainConfig.getServerConfigs();
+    assertEquals(3, serverConfigMap.size());
+
+    assertTrue(serverConfigMap.containsKey("admin-server"));
   }
 }
