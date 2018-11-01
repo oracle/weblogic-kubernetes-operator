@@ -46,11 +46,6 @@ public class DomainV1Configurator extends DomainConfigurator {
   }
 
   @Override
-  public void withDefaultReplicaCount(int replicas) {
-    getDomainSpec().setReplicas(replicas);
-  }
-
-  @Override
   public DomainConfigurator withPredefinedClaim(String claimName) {
     getDomainSpec().setStorage(DomainStorage.createPredefinedClaim(claimName));
     return this;
