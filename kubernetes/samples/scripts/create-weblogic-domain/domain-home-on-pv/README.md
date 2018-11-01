@@ -1,6 +1,8 @@
 # WebLogic Sample Domain Home on a Persistent Volume
 
-The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts generate the domain custom resource yaml file, which can then be used to start the Kubernetes artifacts of the corresponding domain. For samples of creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
+The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain custom resource yaml file, which can then be used to start the Kubernetes artifacts of the corresponding domain. 
+
+For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 
 ## Prerequisites
 
@@ -23,7 +25,8 @@ The script will perform the following steps:
 
 * Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage. 
-* Wait for the job to finish, and then create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. This yaml file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Run the job and Wait for the job to finish.
+* Create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. This yaml file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
 
 As a convenience, the script can optionally, using the `-e` option, create the domain custom resource object, which in turn results in the creation of the corresponding WebLogic server pods and services as well.
@@ -46,7 +49,8 @@ If you copy the sample scripts to a different location, make sure that you copy 
 The default domain created by the script has the following characteristics:
 
 * An Administration Server named `admin-server` listening on port `7001`.
-* A dynamic cluster named `cluster-1` of size 2
+* A dynamic cluster named `cluster-1` of size 2.
+* Two managed servers, named `managed-server1` and `managed-server2`, listening on port `8001`.
 * Log files that are located in `/shared/logs/<domainUID>`.
 * No applications deployed.
 * No data sources or JMS resources.
@@ -192,6 +196,8 @@ kubectl describe domain DOMAINUID -n NAMESPACE
 
 Replace `DOMAINUID` with the `domainUID` and `NAMESPACE` with the actual namespace. 
 
+Here is an example of the output of this command:
+
 ```
 $ kubectl describe domain domain1
 Name:         domain1
@@ -261,7 +267,7 @@ Status:
       Activation Time:  2018-10-31T13:07:14.472Z
       Overall Health:   ok
       Subsystems:
-    Node Name:     slc16ffk
+    Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
@@ -269,7 +275,7 @@ Status:
       Activation Time:  2018-10-31T13:01:05.100Z
       Overall Health:   ok
       Subsystems:
-    Node Name:     slc16ffk
+    Node Name:     xxxxxxxx
     Server Name:   managed-server1
     State:         RUNNING
     Cluster Name:  cluster-1
@@ -277,7 +283,7 @@ Status:
       Activation Time:  2018-10-31T13:01:05.190Z
       Overall Health:   ok
       Subsystems:
-    Node Name:    slc16ffk
+    Node Name:    xxxxxxxx
     Server Name:  managed-server2
     State:        RUNNING
   Start Time:     2018-10-31T12:59:15.244Z
