@@ -325,7 +325,7 @@ domain1-managed-server2                     ClusterIP   None             <none> 
 
 ## Deleting the Generated Domain Home
 
-Sometimes in production, but mostlikely in testing phases, you would like to remove the domain home that is generated using `create-domain.sh` script.
+Sometimes in production, but most likely in testing environments, you would like to remove the domain home that is generated using `create-domain.sh` script. This can be achieved by running the generated delete domain job script in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory.
 
 ```
 $ kubectl create -f delete-domain-job.yaml
