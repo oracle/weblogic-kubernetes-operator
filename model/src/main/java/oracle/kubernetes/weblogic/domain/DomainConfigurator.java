@@ -5,6 +5,8 @@
 package oracle.kubernetes.weblogic.domain;
 
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1ObjectMeta;
+import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
@@ -20,8 +22,12 @@ public abstract class DomainConfigurator {
 
   private Domain domain;
 
+  public DomainConfigurator() {}
+
   protected DomainConfigurator(Domain domain) {
     this.domain = domain;
+    if (domain.getSpec() == null) domain.setSpec(new DomainSpec());
+    if (domain.getMetadata() == null) domain.setMetadata(new V1ObjectMeta());
   }
 
   public abstract DomainConfigurator createFor(Domain domain);
@@ -70,6 +76,18 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withDefaultImagePullSecret(V1LocalObjectReference secretReference) {
     getDomainSpec().setImagePullSecret(secretReference);
+    return this;
+  }
+
+  /**
+   * Sets the image pull secrets for the domain
+   *
+   * @param secretReferences a list of objects referring to secrets
+   * @return this object
+   */
+  public DomainConfigurator withDefaultImagePullSecrets(
+      V1LocalObjectReference... secretReferences) {
+    getDomainSpec().setImagePullSecrets(Arrays.asList(secretReferences));
     return this;
   }
 

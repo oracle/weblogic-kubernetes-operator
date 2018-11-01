@@ -25,6 +25,7 @@ public class Domain {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   private Map<String, Object> domainMap;
+  private Map<String, Object> pvMap;
 
   // attributes from domain properties
   private String domainUid = "";
@@ -62,7 +63,7 @@ public class Domain {
     createPV();
     createSecret();
     generateInputYaml();
-    callCreateDomainScript();
+    callCreateDomainScript(userProjectsDir);
     createLoadBalancer();
   }
 
@@ -181,35 +182,39 @@ public class Domain {
   public void verifyAdminServerExternalService(String username, String password) throws Exception {
 
     // logger.info("Inside verifyAdminServerExternalService");
-    String nodePortHost = TestUtils.getHostName();
-    String nodePort = getNodePort();
-    logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
+    if (exposeAdminNodePort) {
+      String nodePortHost = TestUtils.getHostName();
+      String nodePort = getNodePort();
+      logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --silent --show-error --noproxy ")
-        .append(nodePortHost)
-        .append(" http://")
-        .append(nodePortHost)
-        .append(":")
-        .append(nodePort)
-        .append("/management/weblogic/latest/serverRuntime")
-        .append(" --user ")
-        .append(username)
-        .append(":")
-        .append(password)
-        .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
-    logger.info("cmd for curl " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-    String output = result.stdout().trim();
-    logger.info("output " + output);
-    if (!output.equals("200")) {
-      throw new RuntimeException(
-          "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
-              + output);
+      StringBuffer cmd = new StringBuffer();
+      cmd.append("curl --silent --show-error --noproxy ")
+          .append(nodePortHost)
+          .append(" http://")
+          .append(nodePortHost)
+          .append(":")
+          .append(nodePort)
+          .append("/management/weblogic/latest/serverRuntime")
+          .append(" --user ")
+          .append(username)
+          .append(":")
+          .append(password)
+          .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+      logger.info("cmd for curl " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+      String output = result.stdout().trim();
+      logger.info("output " + output);
+      if (!output.equals("200")) {
+        throw new RuntimeException(
+            "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
+                + output);
+      }
+    } else {
+      logger.info("exposeAdminNodePort is false, can not test adminNodePort");
     }
   }
 
@@ -289,8 +294,13 @@ public class Domain {
    * @throws Exception
    */
   public void verifyWebAppLoadBalancing(String webappName) throws Exception {
-
-    callWebAppAndVerifyLoadBalancing(webappName, true);
+    // webapp is deployed with t3channelport, so check if that is true
+    if (exposeAdminT3Channel) {
+      callWebAppAndVerifyLoadBalancing(webappName, true);
+    } else {
+      logger.info(
+          "webapp is not deployed as exposeAdminT3Channel is false, can not verify loadbalancing");
+    }
   }
 
   public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
@@ -411,15 +421,17 @@ public class Domain {
 
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(domainNS);
+    String pvBaseName = (String) pvMap.get("baseName");
+    if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
+    cmd.append(pvBaseName).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(domainUid + "-weblogic-domain-pvc", domainNS);
+    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
-    boolean pvReleased = TestUtils.checkPVReleased(domainUid, domainNS);
+    boolean pvReleased = TestUtils.checkPVReleased(pvBaseName, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
       throw new RuntimeException(
           "ERROR: pv for " + domainUid + " still exists after the pvc is deleted, exiting!");
@@ -430,14 +442,23 @@ public class Domain {
 
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domain/" + domainMap.get("domainName").toString();
+    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
     logger.info("making sure the domain directory exists");
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
     }
     logger.info("Run the script to create domain");
-    StringBuffer cmd = new StringBuffer("cd ");
+    try {
+      callCreateDomainScript(userProjectsDir + "2");
+    } catch (RuntimeException re) {
+      re.printStackTrace();
+      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+      return;
+    }
+    throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
+
+    /*    StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/weblogic-domain");
     cmd.append(" --name ")
@@ -454,7 +475,7 @@ public class Domain {
     } else {
       throw new RuntimeException(
           "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
-    }
+    } */
   }
 
   public void verifyAdminConsoleViaLB() throws Exception {
@@ -532,10 +553,14 @@ public class Domain {
             new File(
                 BaseTest.getProjectRoot()
                     + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
-    Map<String, Object> pvMap = yaml.load(pv_is);
+    pvMap = yaml.load(pv_is);
     pv_is.close();
-    pvMap.put("domainName", domainMap.get("domainName"));
     pvMap.put("domainUID", domainUid);
+
+    // each domain uses its own pv for now
+    if (domainUid != null)
+      domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
+    else domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
       pvMap.put(
@@ -590,13 +615,13 @@ public class Domain {
     TestUtils.createInputFile(domainMap, generatedInputYamlFile);
   }
 
-  private void callCreateDomainScript() throws Exception {
+  private void callCreateDomainScript(String outputDir) throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
     cmd.append(
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
         .append(generatedInputYamlFile)
         .append(" -e -v -o ")
-        .append(userProjectsDir);
+        .append(outputDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -755,6 +780,9 @@ public class Domain {
 
     // read input domain yaml to test
     domainMap = TestUtils.loadYaml(inputYaml);
+    if (domainMap.get("domainName") == null) {
+      domainMap.put("domainName", domainMap.get("domainUID"));
+    }
 
     // read sample domain inputs
     Yaml dyaml = new Yaml();
@@ -788,14 +816,6 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
     startupControl = (String) domainMap.get("startupControl");
-
-    if (domainMap.get("createDomainFilesDir") != null) {
-      domainMap.put(
-          "createDomainFilesDir",
-          BaseTest.getProjectRoot()
-              + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
-              + domainMap.get("createDomainFilesDir"));
-    }
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());

@@ -19,14 +19,18 @@ spec:
   asPort: 8001
   # The WebLogic Domain Name
 
-  exportedNetworkAccessPoints:
-    channelA:
-    channelB:
-      labels:
-        age: 23
-        color: red
-      annotations:
-        time: midnight
+  adminServer:
+  # the T3 endpoints to export. Each entry is an endpoint name,
+  # optionally with labels and annotations to be added to the generated external channel service.
+  # An endpoint without any labels or endpoints must have the empty value: a pair of braces.
+    exportedNetworkAccessPoints:
+      channelA: {}
+      channelB:
+        labels:
+          age: 23
+          color: red
+        annotations:
+          time: midnight
 
   domainName: base_domain
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must

@@ -27,12 +27,15 @@ public class DomainV1Configurator extends DomainConfigurator {
     return new DomainV1Configurator(domain);
   }
 
+  /** Constructs a version 1 domain configurator to use as an examplar */
+  public DomainV1Configurator() {}
+
   /**
    * Constructs a version 1 domain configurator
    *
    * @param domain the domain to be configured
    */
-  public DomainV1Configurator(Domain domain) {
+  public DomainV1Configurator(@Nonnull Domain domain) {
     super(domain);
   }
 
@@ -166,21 +169,6 @@ public class DomainV1Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withImage(String imageName) {
-      throw new ConfigurationNotSupportedException("server", "image");
-    }
-
-    @Override
-    public ServerConfigurator withImagePullPolicy(String policy) {
-      throw new ConfigurationNotSupportedException("server", "imagePullPolicy");
-    }
-
-    @Override
-    public ServerConfigurator withImagePullSecret(String secretName) {
-      throw new ConfigurationNotSupportedException("server", "imagePullSecret");
-    }
-
-    @Override
     public ServerConfigurator withServerStartState(String state) {
       return withDesiredState(state);
     }
@@ -214,6 +202,12 @@ public class DomainV1Configurator extends DomainConfigurator {
     @Override
     public AdminServerConfigurator withPort(int port) {
       getDomainSpec().setAsPort(port);
+      return this;
+    }
+
+    @Override
+    public AdminServerConfigurator withNodePort(int nodePort) {
+      super.withNodePort(nodePort);
       return this;
     }
 
@@ -258,21 +252,6 @@ public class DomainV1Configurator extends DomainConfigurator {
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       clusterStartup.withEnvironmentVariable(name, value);
       return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImage(String imageName) {
-      throw new ConfigurationNotSupportedException("cluster", "image");
-    }
-
-    @Override
-    public ClusterConfigurator withImagePullPolicy(String policy) {
-      throw new ConfigurationNotSupportedException("cluster", "imagePullPolicy");
-    }
-
-    @Override
-    public ClusterConfigurator withImagePullSecret(String secretName) {
-      throw new ConfigurationNotSupportedException("cluster", "imagePullSecret");
     }
 
     @Override

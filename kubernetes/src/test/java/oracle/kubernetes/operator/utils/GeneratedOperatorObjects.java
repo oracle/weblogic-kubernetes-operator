@@ -5,14 +5,15 @@
 package oracle.kubernetes.operator.utils;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Role;
+import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
-import io.kubernetes.client.models.V1beta1RoleBinding;
 
 /**
  * Generates the operator yaml files for a set of valid operator input params. Creates and managed
@@ -30,7 +31,7 @@ public class GeneratedOperatorObjects {
     this.securityYaml = securityYaml;
   }
 
-  public V1beta1ClusterRole getWeblogicOperatorClusterRole() {
+  public V1ClusterRole getWeblogicOperatorClusterRole() {
     return securityYaml.getWeblogicOperatorClusterRole();
   }
 
@@ -70,31 +71,39 @@ public class GeneratedOperatorObjects {
     return securityYaml.getOperatorServiceAccount();
   }
 
-  public V1beta1ClusterRole getWeblogicOperatorClusterRoleNonResource() {
+  public V1ClusterRole getWeblogicOperatorClusterRoleNonResource() {
     return securityYaml.getWeblogicOperatorClusterRoleNonResource();
   }
 
-  public V1beta1ClusterRoleBinding getOperatorRoleBinding() {
+  public V1ClusterRoleBinding getOperatorRoleBinding() {
     return securityYaml.getOperatorRoleBinding();
   }
 
-  public V1beta1ClusterRoleBinding getOperatorRoleBindingNonResource() {
+  public V1ClusterRoleBinding getOperatorRoleBindingNonResource() {
     return securityYaml.getOperatorRoleBindingNonResource();
   }
 
-  public V1beta1ClusterRoleBinding getOperatorRoleBindingDiscovery() {
+  public V1ClusterRoleBinding getOperatorRoleBindingDiscovery() {
     return securityYaml.getOperatorRoleBindingDiscovery();
   }
 
-  public V1beta1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() {
+  public V1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() {
     return securityYaml.getOperatorRoleBindingAuthDelegator();
   }
 
-  public V1beta1ClusterRole getWeblogicOperatorNamespaceRole() {
+  public V1ClusterRole getWeblogicOperatorNamespaceRole() {
     return securityYaml.getWeblogicOperatorNamespaceRole();
   }
 
-  public V1beta1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
+  public V1RoleBinding getWeblogicOperatorRoleBinding(String namespace) {
     return securityYaml.getWeblogicOperatorRoleBinding(namespace);
+  }
+
+  public V1Role getWeblogicOperatorRole() {
+    return securityYaml.getWeblogicOperatorRole();
+  }
+
+  public V1RoleBinding getWeblogicOperatorRoleBinding() {
+    return securityYaml.getWeblogicOperatorRoleBinding();
   }
 }

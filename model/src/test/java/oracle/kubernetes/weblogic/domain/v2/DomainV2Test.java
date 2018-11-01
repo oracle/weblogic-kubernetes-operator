@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -54,49 +55,8 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenImageConfiguredOnDomainAndAdminServer_userServerSetting() {
-    configureDomain(domain).withDefaultImage("domain-image");
-    configureAdminServer().withImage("server-image");
-
-    assertThat(domain.getAdminServerSpec().getImage(), equalTo("server-image"));
-  }
-
-  @Test
-  public void whenImageConfiguredOnDomainAndServer_useServerSetting() {
-    configureDomain(domain).withDefaultImage("domain-image");
-    configureServer("server1").withImage("server-image");
-
-    assertThat(domain.getServer("server1", "cluster1").getImage(), equalTo("server-image"));
-  }
-
-  @Test
-  public void whenImageConfiguredOnDomainAndCluster_useClusterSetting() {
-    configureDomain(domain).withDefaultImage("domain-image");
-    configureCluster("cluster1").withImage("cluster-image");
-
-    assertThat(domain.getServer("ms1", "cluster1").getImage(), equalTo("cluster-image"));
-  }
-
-  @Test
   public void whenClusterNotConfigured_useDefaultReplicaCount() {
     assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(DEFAULT_REPLICA_LIMIT));
-  }
-
-  @Test
-  public void whenImagePullPolicyConfiguredOnClusterAndServer_useServerSetting() {
-    configureCluster("cluster1").withImagePullPolicy("always");
-    configureServer("server1").withImagePullPolicy("never");
-
-    assertThat(domain.getServer("server1", "cluster1").getImagePullPolicy(), equalTo("never"));
-  }
-
-  @Test
-  public void whenImagePullSecretConfiguredOnClusterAndServer_useServerSetting() {
-    configureCluster("cluster1").withImagePullSecret("cluster");
-    configureServer("server1").withImagePullSecret("server");
-
-    assertThat(
-        domain.getServer("server1", "cluster1").getImagePullSecret().getName(), equalTo("server"));
   }
 
   @Test
@@ -291,6 +251,13 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenAdminServerConfiguredWithNodePort_returnNodePort() {
+    configureAdminServer().withNodePort(31);
+
+    assertThat(domain.getAdminServerSpec().getNodePort(), equalTo(31));
+  }
+
+  @Test
   public void whenExportT3ChannelsDefinedWithLabels_returnChannelNames() {
     AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
     configurator
@@ -369,8 +336,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenClusteredServerStartPolicyIfNeededAndNeedMoreServers_startServer() {
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+  public void whenClusteredServerStartPolicyInheritedAndNeedMoreServers_startServer() {
     configureCluster("cluster1").withReplicas(5);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
@@ -455,13 +421,34 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainsAreConfiguredAlike_objectsAreEqual() {
+    Domain domain1 = createDomain();
+
+    configureDomain(domain).configureCluster("cls1");
+    configureDomain(domain1).configureCluster("cls1");
+
+    assertThat(domain, equalTo(domain1));
+  }
+
+  @Test
+  public void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
+    Domain domain1 = createDomain();
+
+    configureDomain(domain).configureCluster("cls1").withReplicas(2);
+    configureDomain(domain1).configureCluster("cls1").withReplicas(3);
+
+    assertThat(domain, not(equalTo(domain1)));
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
-    assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
+    assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
+    assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
@@ -475,7 +462,8 @@ public class DomainV2Test extends DomainTestBase {
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
-    assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
+    assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
+    assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
@@ -486,8 +474,7 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getAdminServerSpec();
 
-    assertThat(serverSpec.getImage(), equalTo("store/oracle/weblogic:latest"));
-    assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
+    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
   }
 
@@ -497,7 +484,6 @@ public class DomainV2Test extends DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server1", "cluster1");
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(
