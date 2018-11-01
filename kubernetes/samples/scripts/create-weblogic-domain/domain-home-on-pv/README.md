@@ -1,6 +1,6 @@
 # WebLogic Sample Domain Home on a Persistent Volume
 
-The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain custom resource yaml file, which can then be used to start the Kubernetes artifacts of the corresponding domain. 
+The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain custom resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. 
 
 For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 
@@ -26,7 +26,7 @@ The script will perform the following steps:
 * Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage. 
 * Run the job and Wait for the job to finish.
-* Create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. This yaml file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command. 
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
 
 As a convenience, the script can optionally, using the `-e` option, create the domain custom resource object, which in turn results in the creation of the corresponding WebLogic server pods and services as well.
@@ -37,8 +37,8 @@ The usage of the create script is as follows.
 $ sh create-domain.sh -h
 usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
-  -o Output directory for the generated yaml files, must be specified.
-  -e Also create the resources in the generated yaml files, optional.
+  -o Output directory for the generated YAML files, must be specified.
+  -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -h Help
 
@@ -56,7 +56,7 @@ The default domain created by the script has the following characteristics:
 * No data sources or JMS resources.
 * A T3 channel.
 
-The domain creation inputs can be customized by editing create-domain-inputs.yaml
+The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
 
 ### Configuration parameters 
 The following parameters can be provided in the inputs file.
@@ -87,7 +87,9 @@ The following parameters can be provided in the inputs file.
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
 
-The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource yaml file could also be modified to cover mor euse cases.
+Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
+
+The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
 ## Verify the results 
 
@@ -95,7 +97,7 @@ The create script will verify that the domain was created, and will report failu
 
 Note that the example results below uses the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes namespace. 
 
-### Generated yaml files with the default inputs
+### Generated YAML files with the default inputs
 
 The content of the generated `domain-custom-resource.yaml`:
 
