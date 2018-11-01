@@ -5,6 +5,7 @@ The sample scripts demonstrate the creation of a Kubernetes persistent volume (P
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create script:
+* Make sure the WebLogic Operator is running.
 * Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace.
 * Make sure that the host directory that will be used as the persistent volume already exists and has the appropriate file permissions set.
 

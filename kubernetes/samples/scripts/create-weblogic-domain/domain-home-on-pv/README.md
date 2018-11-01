@@ -7,6 +7,7 @@ For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../..
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
+* Make sure the WebLogic Operator is running.
 * Create a Kubernetes namespace for the domain custom resource unless the intention is to use the default namespace.
 * Create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain resource. 
 * Create the Kubernetes secrets 'username' and 'password' of the admin account in the same namespace as the domain custom resource.
