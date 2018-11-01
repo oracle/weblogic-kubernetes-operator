@@ -25,7 +25,8 @@
 #   WDT logs:              WDT_DIR/weblogic-deploy/logs/...
 #   WDT stdout:            WDT_DIR/createDomain.sh.out
 #
-#   WebLogic domain home:  DOMAIN_DIR/<domain name from model>/...
+#   WebLogic domain home:  DOMAIN_HOME_DIR
+#                          default: /shared/domains/<domainUID>
 #
 # Input environment variables:
 #
@@ -59,10 +60,7 @@
 #                  of WDT log files.
 #                  default:  /shared/wdt
 #
-#   DOMAIN_DIR     Target location for generated domain. When wdt completes,
-#                  this will contain a directory named after the domain
-#                  defined in the WDT_MODEL_FILE.
-#                  default:  /shared/domains
+#   DOMAIN_HOME_DIR  Target location for generated domain. 
 #
 
 # Initialize globals
@@ -74,8 +72,6 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-
-DOMAIN_DIR=${DOMAIN_DIR:-/shared/domains}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/$WDT_INSTALL_ZIP_FILE"}
@@ -141,7 +137,7 @@ function run_wdt {
   #
   # Run WDT using WDT_VAR_FILE, WDT_MODEL_FILE, and ORACLE_HOME.  
   # Output:
-  # - result domain will be in DOMAIN_DIR
+  # - result domain will be in DOMAIN_HOME_DIR
   # - logging output is in $WDT_DIR/createDomain.sh.out and $WDT_DIR/weblogic-deploy/logs
   # - WDT_VAR_FILE & WDT_MODEL_FILE will be copied to WDT_DIR.
   #
@@ -151,10 +147,17 @@ function run_wdt {
   local inputs_orig="$WDT_VAR_FILE"
   local model_orig="$WDT_MODEL_FILE"
   local oracle_home="$ORACLE_HOME"
-  local domain_dir="$DOMAIN_DIR"
-  local domain_home_dir="$DOMAIN_HOME_DIR"
   local wdt_bin_dir="$WDT_DIR/weblogic-deploy/bin"
   local wdt_createDomain_script="$wdt_bin_dir/createDomain.sh"
+
+  local domain_home_dir="$DOMAIN_HOME_DIR"
+  if [ -z "$domain_home_dir}" ]; then
+    local domain_dir="/shared/domains"
+    local domain_uid=`egrep 'domainUID' $inputs_orig | awk '{print $2}'`
+    local domain_home_dir=$domain_dir/$domain_uid
+  fi 
+
+  echo domain_home_dir = $domain_home_dir
 
   # Output files and directories.
 
@@ -165,7 +168,7 @@ function run_wdt {
 
   echo @@ "Info:  About to run WDT createDomain.sh"
 
-  for directory in wdt_bin_dir SCRIPTPATH WDT_DIR oracle_home DOMAIN_DIR; do
+  for directory in wdt_bin_dir SCRIPTPATH WDT_DIR oracle_home; do
     if [ ! -d "${!directory}" ]; then
        echo @@ "Error:  Could not find ${directory} directory ${!directory}."    
        return 1
@@ -187,21 +190,12 @@ function run_wdt {
 
   echo @@ "Info:  WDT createDomain.sh output will be in $out_file and $wdt_log_dir"
 
-  if [ -z "$domain_home_dir}" ]; then
-    $wdt_createDomain_script \
-       -oracle_home $oracle_home \
-       -domain_type WLS \
-       -domain_parent $domain_dir \
-       -model_file $model_final \
-       -variable_file $inputs_final > $out_file 2>&1
-  else
-    $wdt_createDomain_script \
-       -oracle_home $oracle_home \
-       -domain_type WLS \
-       -domain_home $domain_home_dir \
-       -model_file $model_final \
-       -variable_file $inputs_final > $out_file 2>&1
-  fi
+  $wdt_createDomain_script \
+     -oracle_home $oracle_home \
+     -domain_type WLS \
+     -domain_home $domain_home_dir \
+     -model_file $model_final \
+     -variable_file $inputs_final > $out_file 2>&1
 
   local wdt_res=$?
 
