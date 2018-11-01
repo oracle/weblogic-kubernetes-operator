@@ -457,25 +457,6 @@ public class Domain {
       return;
     }
     throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
-
-    /*    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-domain");
-    cmd.append(" --name ")
-        .append(domainMap.get("domainUID"))
-        .append(" --values ")
-        .append(generatedInputYamlFile)
-        .append(" --namespace ")
-        .append(domainNS)
-        .append(" --wait");
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 1) {
-      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
-    } else {
-      throw new RuntimeException(
-          "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
-    } */
   }
 
   public void verifyAdminConsoleViaLB() throws Exception {
