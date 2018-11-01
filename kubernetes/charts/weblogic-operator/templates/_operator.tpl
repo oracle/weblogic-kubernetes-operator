@@ -9,6 +9,8 @@
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}
 {{- include "operator.clusterRoleBindingNonResource" . }}
+{{- include "operator.operatorRole" . }}
+{{- include "operator.operatorRoleBinding" . }}
 {{- include "operator.operatorConfigMap" . }}
 {{- include "operator.operatorSecrets" . }}
 {{- include "operator.operatorDeployment" . }}

@@ -2,7 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.work;
+package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.Workarounds.INTORSTRING_BAD_EQUALS;
 
@@ -24,8 +24,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.utils.YamlUtils;
 
 /**

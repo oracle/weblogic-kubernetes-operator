@@ -16,9 +16,9 @@ public class OperatorChartIT extends OperatorChartITBase {
   private static final InstallArgs NO_VALUES_INSTALL_ARGS = newInstallArgs(Collections.emptyMap());
 
   @Test
-  public void whenChartsGenerated_haveOneRoleBinding() throws Exception {
+  public void whenChartsGenerated_haveTwoRoleBindings() throws Exception {
     ProcessedChart chart = getChart(NO_VALUES_INSTALL_ARGS);
 
-    assertThat(chart.getDocuments("RoleBinding"), hasSize(1));
+    assertThat(chart.getDocuments("RoleBinding"), hasSize(2));
   }
 }

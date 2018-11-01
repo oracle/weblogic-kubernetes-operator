@@ -9,8 +9,8 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
-import io.kubernetes.client.models.V1LocalObjectReference;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
@@ -26,13 +26,16 @@ public class DomainV2Configurator extends DomainConfigurator {
     return new DomainV2Configurator(domain);
   }
 
-  public DomainV2Configurator(Domain domain) {
+  public DomainV2Configurator() {}
+
+  public DomainV2Configurator(@Nonnull Domain domain) {
     super(domain);
-    if (domain != null && domain.getMetadata() != null) setApiVersion(domain);
+    setApiVersion(domain);
   }
 
   private void setApiVersion(Domain domain) {
     domain.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V2);
+    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
   }
 
   @Override
@@ -76,8 +79,11 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
       implements AdminServerConfigurator {
+    private AdminServer adminServer;
+
     AdminServerConfiguratorImpl(AdminServer adminServer) {
       super(adminServer);
+      this.adminServer = adminServer;
     }
 
     @Override
@@ -87,31 +93,27 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
+    public AdminServerConfigurator withNodePort(int nodePort) {
+      adminServer.setNodePort(nodePort);
+      return this;
+    }
+
+    @Override
     public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
       for (String name : names) {
-        getDomainSpec().addExportedNetworkAccessPoint(name);
+        adminServer.addExportedNetworkAccessPoint(name);
       }
       return this;
     }
 
     @Override
     public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
-      return getDomainSpec().addExportedNetworkAccessPoint(channelName);
+      return adminServer.addExportedNetworkAccessPoint(channelName);
     }
   }
 
   private AdminServer getOrCreateAdminServer(String adminServerName) {
-    AdminServer adminServer = getDomainSpec().getAdminServer();
-    if (adminServer != null) return adminServer;
-
-    return createAdminServer(adminServerName);
-  }
-
-  private AdminServer createAdminServer(String adminServerName) {
-    getDomainSpec().setAsName(adminServerName);
-    AdminServer adminServer = new AdminServer();
-    getDomainSpec().setAdminServer(adminServer);
-    return adminServer;
+    return getDomainSpec().getOrCreateAdminServer(adminServerName);
   }
 
   @Override
@@ -142,8 +144,7 @@ public class DomainV2Configurator extends DomainConfigurator {
 
     @Override
     public ServerConfigurator withNodePort(int nodePort) {
-      server.setNodePort(nodePort);
-      return this;
+      throw new ConfigurationNotSupportedException("managedServer", "nodePort");
     }
 
     @Override
@@ -155,24 +156,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withEnvironmentVariable(String name, String value) {
       server.addEnvironmentVariable(name, value);
-      return this;
-    }
-
-    @Override
-    public ServerConfigurator withImage(String imageName) {
-      server.setImage(imageName);
-      return this;
-    }
-
-    @Override
-    public ServerConfigurator withImagePullPolicy(String policy) {
-      server.setImagePullPolicy(policy);
-      return this;
-    }
-
-    @Override
-    public ServerConfigurator withImagePullSecret(String secretName) {
-      server.setImagePullSecret(new V1LocalObjectReference().name(secretName));
       return this;
     }
 
@@ -253,24 +236,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       cluster.addEnvironmentVariable(name, value);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImage(String imageName) {
-      cluster.setImage(imageName);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImagePullPolicy(String policy) {
-      cluster.setImagePullPolicy(policy);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withImagePullSecret(String secretName) {
-      cluster.setImagePullSecret(new V1LocalObjectReference().name(secretName));
       return this;
     }
 

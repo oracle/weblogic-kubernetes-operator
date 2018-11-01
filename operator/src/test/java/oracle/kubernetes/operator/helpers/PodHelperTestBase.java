@@ -19,6 +19,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMa
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -61,9 +62,6 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
-import oracle.kubernetes.operator.work.BodyMatcher;
-import oracle.kubernetes.operator.work.CallTestSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -102,8 +100,8 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
-  private static final String DOMAIN_HOME = "/shared/domain/domain1";
-  private static final String LOG_HOME = "/shared/logs/" + UID;
+  private static final String DOMAIN_HOME = "/shared/domains/uid1";
+  private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
@@ -254,13 +252,13 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreatedWithoutPullSecret_doNotAddToPod() {
-    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), nullValue());
+    assertThat(getCreatedPod().getSpec().getImagePullSecrets(), empty());
   }
 
   @Test
   public void whenPodCreatedWithPullSecret_addToPod() {
     V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
-    configureDomain().withDefaultImagePullSecret(imagePullSecret);
+    configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
   }
@@ -350,8 +348,8 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
-            hasEnvVar("LOG_HOME", LOG_HOME),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG),
+            hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
@@ -366,7 +364,8 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
-    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME)));
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -599,8 +598,8 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
-        .addEnvItem(envItem("LOG_HOME", LOG_HOME))
         .addEnvItem(envItem("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG))
+        .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
