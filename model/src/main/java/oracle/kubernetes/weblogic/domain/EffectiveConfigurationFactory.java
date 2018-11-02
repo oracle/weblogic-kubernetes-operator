@@ -29,4 +29,6 @@ public interface EffectiveConfigurationFactory {
   Map<String, String> getChannelServiceLabels(String channel);
 
   Map<String, String> getChannelServiceAnnotations(String channel);
+
+  Integer getDefaultReplicaLimit();
 }

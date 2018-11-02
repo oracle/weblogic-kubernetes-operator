@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 adminServerName: admin-server
-domainName: base_domain
 domainUID: domain5
 clusterName: cluster-1
 clusterType: DYNAMIC

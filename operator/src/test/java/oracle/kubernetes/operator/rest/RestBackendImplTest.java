@@ -40,6 +40,7 @@ import org.junit.Test;
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {
 
+  private static final int REPLICA_LIMIT = 4;
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace1";
   private static final String UID = "uid1";
@@ -136,7 +137,7 @@ public class RestBackendImplTest {
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName);
+    return configureDomain().configureCluster(clusterName);
   }
 
   @Test
@@ -157,12 +158,15 @@ public class RestBackendImplTest {
 
   @Test
   public void whenNoPerClusterReplicaSettingAndDefaultMatchesRequest_doNothing() {
-    if (DomainConfiguratorFactory.useDomainV1())
-      configurator.withDefaultReplicaCount(Domain.DEFAULT_REPLICA_LIMIT);
+    configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
 
-    restBackend.scaleCluster(UID, "cluster1", Domain.DEFAULT_REPLICA_LIMIT);
+    restBackend.scaleCluster(UID, "cluster1", REPLICA_LIMIT);
 
     assertThat(getUpdatedDomain(), nullValue());
+  }
+
+  private DomainConfigurator configureDomain() {
+    return configurator;
   }
 
   private static class SecurityControl {
