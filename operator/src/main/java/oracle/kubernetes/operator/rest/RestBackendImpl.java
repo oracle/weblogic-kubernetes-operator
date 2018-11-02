@@ -29,7 +29,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
-import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -38,7 +37,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.v1.Domain;
 import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to
@@ -206,19 +204,10 @@ public class RestBackendImpl implements RestBackend {
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
-    Domain domain = findDomain(domainUID);
-    String namespace = getNamespace(domainUID);
-    String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
-    String adminSecretName = getAdminServiceSecretName(domain);
-    Map<String, WlsClusterConfig> wlsClusterConfigs =
-        getWLSConfiguredClusters(domainUID); // namespace, adminServerServiceName, adminSecretName);
+    Map<String, WlsClusterConfig> wlsClusterConfigs = getWLSConfiguredClusters(domainUID);
     Set<String> result = wlsClusterConfigs.keySet();
     LOGGER.exiting(result);
     return result;
-  }
-
-  private static String getAdminServerServiceName(DomainSpec domainSpec) {
-    return LegalNames.toServerServiceName(domainSpec.getDomainUID(), domainSpec.getAsName());
   }
 
   /** {@inheritDoc} */
@@ -248,7 +237,7 @@ public class RestBackendImpl implements RestBackend {
 
     String namespace = getNamespace(domainUID, domains);
 
-    verifyWLSConfiguredClusterCapacity(namespace, domain, cluster, managedServerCount);
+    verifyWLSConfiguredClusterCapacity(domain, cluster, managedServerCount);
 
     updateReplicasForDomain(namespace, domain, cluster, managedServerCount);
     LOGGER.exiting();
@@ -278,15 +267,10 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void verifyWLSConfiguredClusterCapacity(
-      String namespace, Domain domain, String cluster, int requestedSize) {
+      Domain domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
-    //    String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
-    //    String adminSecretName = getAdminServiceSecretName(domain);
-    WlsClusterConfig wlsClusterConfig =
-        getWlsClusterConfig(
-            domain.getDomainUID(),
-            cluster); // namespace, cluster, adminServerServiceName, adminSecretName);
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUID(), cluster);
 
     // Verify the current configured cluster size
     int MaxClusterSize = wlsClusterConfig.getMaxClusterSize();
@@ -301,37 +285,16 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  private static String getAdminServiceSecretName(Domain domain) {
-    return domain.getSpec().getAdminSecret() == null
-        ? null
-        : domain.getSpec().getAdminSecret().getName();
-  }
-
   private WlsClusterConfig getWlsClusterConfig(String domainUID, String cluster) {
-    //      String namespace, String cluster, String adminServerServiceName, String adminSecretName)
-    // {
-    //    WlsRetriever wlsConfigRetriever =
-    //        WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
-    //    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
     DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(domainUID);
-    WlsDomainConfig wlsDomainConfig =
-        domainPresenceInfo.getScan(); // wlsConfigRetriever.readConfig();
+    WlsDomainConfig wlsDomainConfig = domainPresenceInfo.getScan();
     return wlsDomainConfig.getClusterConfig(cluster);
   }
 
   private Map<String, WlsClusterConfig> getWLSConfiguredClusters(String domainUID) {
-    //      String namespace, String adminServerServiceName, String adminSecretName) {
-    //    WlsRetriever wlsConfigRetriever =
-    //        WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
     DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(domainUID);
-    WlsDomainConfig wlsDomainConfig =
-        domainPresenceInfo.getScan(); // wlsConfigRetriever.readConfig();
+    WlsDomainConfig wlsDomainConfig = domainPresenceInfo.getScan();
     return wlsDomainConfig.getClusterConfigs();
-  }
-
-  private Domain findDomain(String domainUID) {
-    List<Domain> domains = getDomainsList();
-    return findDomain(domainUID, domains);
   }
 
   private Domain findDomain(String domainUID, List<Domain> domains) {

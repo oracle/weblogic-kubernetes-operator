@@ -68,7 +68,6 @@ public class RestBackendImplTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    //    mementos.add(WlsRetrievalExecutor.install(configSupport));
     mementos.add(testSupport.installSynchronousCallDispatcher());
 
     expectSecurityCalls();
@@ -183,44 +182,6 @@ public class RestBackendImplTest {
     }
   }
 
-  //  abstract static class WlsRetrievalExecutor implements ScheduledExecutorService {
-  //    private WlsDomainConfigSupport configSupport;
-  //
-  //    static Memento install(WlsDomainConfigSupport configSupport) {
-  //      return new MapMemento<>(
-  //          ContainerResolver.getInstance().getContainer().getComponents(),
-  //          "test",
-  //          Component.createFor(ScheduledExecutorService.class, newExecutor(configSupport)));
-  //    }
-  //
-  //    private static WlsRetrievalExecutor newExecutor(WlsDomainConfigSupport response) {
-  //      return createStrictStub(WlsRetrievalExecutor.class, response);
-  //    }
-  //
-  //    WlsRetrievalExecutor(WlsDomainConfigSupport configSupport) {
-  //      this.configSupport = configSupport;
-  //    }
-  //
-  //    @SuppressWarnings("unchecked")
-  //    @Override
-  //    public @Nonnull <T> Future<T> submit(@Nonnull Callable<T> task) {
-  //      return (Future<T>) createStrictStub(WlsDomainConfigFuture.class, configSupport);
-  //    }
-  //  }
-  //
-  //  abstract static class WlsDomainConfigFuture implements Future<WlsDomainConfig> {
-  //    private WlsDomainConfigSupport configSupport;
-  //
-  //    WlsDomainConfigFuture(WlsDomainConfigSupport configSupport) {
-  //      this.configSupport = configSupport;
-  //    }
-  //
-  //    @Override
-  //    public WlsDomainConfig get(long timeout, @Nonnull TimeUnit unit) {
-  //      return configSupport.createDomainConfig();
-  //    }
-  //  }
-  //
   void resetDomainPresenceInfoManager() {
     Map<String, DomainPresenceInfo> domainPresenceInfos =
         DomainPresenceInfoManager.getDomainPresenceInfos();
@@ -239,30 +200,5 @@ public class RestBackendImplTest {
   void setupDomainPresenceInfoManager() {
     DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.getOrCreate(NS, UID);
     domainPresenceInfo.setScan(configSupport.createDomainConfig());
-  }
-
-  static class MapMemento<K, V> implements Memento {
-    private final Map<K, V> map;
-    private final K key;
-    private final V originalValue;
-
-    MapMemento(Map<K, V> map, K key, V value) {
-      this.map = map;
-      this.key = key;
-      this.originalValue = map.get(key);
-      map.put(key, value);
-    }
-
-    @Override
-    public void revert() {
-      if (originalValue == null) map.remove(key);
-      else map.put(key, originalValue);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getOriginalValue() {
-      return (T) originalValue;
-    }
   }
 }
