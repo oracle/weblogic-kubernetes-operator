@@ -2,13 +2,12 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.wlsconfig;
+package oracle.kubernetes.operator.steps;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.logging.MessageKeys.WLS_CONFIGURATION_READ_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
@@ -20,9 +19,7 @@ import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.http.HttpClient;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever.RequestType;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever.WithHttpClientStep;
-import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.steps.ReadHealthStep.ReadHealthWithHttpClientStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -30,10 +27,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class WlsRetrieverTest {
-
+public class ReadHealthStepTest {
   // The log messages to be checked during this test
-  private static final String[] LOG_KEYS = {WLS_CONFIGURATION_READ_FAILED, WLS_HEALTH_READ_FAILED};
+  private static final String[] LOG_KEYS = {WLS_HEALTH_READ_FAILED};
 
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
@@ -54,40 +50,14 @@ public class WlsRetrieverTest {
   }
 
   @Test
-  public void withHttpClientStep_Config_logIfFailed() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-    Packet packet = Stub.createStub(PacketStub.class);
-
-    WithHttpClientStep withHttpClientStep =
-        new WithHttpClientStep(RequestType.CONFIG, service, next);
-    withHttpClientStep.apply(packet);
-
-    assertThat(logRecords, containsWarning(WLS_CONFIGURATION_READ_FAILED));
-  }
-
-  @Test
-  public void withHttpClientStep_Config_nologIfFailedOnRetry() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-    Packet packet = Stub.createStub(PacketStub.class).withRetryCount(1);
-
-    WithHttpClientStep withHttpClientStep =
-        new WithHttpClientStep(RequestType.CONFIG, service, next);
-    withHttpClientStep.apply(packet);
-
-    assert (logRecords.isEmpty());
-  }
-
-  @Test
   public void withHttpClientStep_Health_logIfFailed() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
     final String SERVER_NAME = "admin-server";
     Packet packet = Stub.createStub(PacketStub.class).withServerName(SERVER_NAME);
 
-    WithHttpClientStep withHttpClientStep =
-        new WithHttpClientStep(RequestType.HEALTH, service, next);
+    ReadHealthWithHttpClientStep withHttpClientStep =
+        new ReadHealthWithHttpClientStep(service, next);
     withHttpClientStep.apply(packet);
 
     assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
@@ -96,7 +66,7 @@ public class WlsRetrieverTest {
   @Test(expected = IllegalArgumentException.class)
   public void WithHttpClientStep_const_throws_with_null_service() {
     Step next = new MockStep(null);
-    new WithHttpClientStep(RequestType.HEALTH, null, next);
+    new ReadHealthWithHttpClientStep(null, next);
   }
 
   abstract static class PacketStub extends Packet {
@@ -104,29 +74,15 @@ public class WlsRetrieverTest {
     Integer retryCount;
     String serverName;
 
-    PacketStub withRetryCount(int retryCount) {
-      this.retryCount = retryCount;
-      return this;
-    }
-
     PacketStub withServerName(String serverName) {
       this.serverName = serverName;
-      return this;
-    }
-
-    PacketStub addSpi(Class clazz, Object spiObject) {
-      Component component = Component.createFor(spiObject);
-      this.getComponents().put(clazz.getName(), component);
       return this;
     }
 
     @Override
     public Object get(Object key) {
       if (HttpClient.KEY.equals(key)) {
-        throw WlsRetrieverTest
-            .CLASSCAST_EXCEPTION; // to go to catch clause in WithHttpClientStep.apply() method
-      } else if (WlsRetriever.RETRY_COUNT.equals(key)) {
-        return retryCount;
+        throw CLASSCAST_EXCEPTION; // to go to catch clause in WithHttpClientStep.apply() method
       } else if (ProcessingConstants.SERVER_NAME.equals(key)) {
         return serverName;
       }
