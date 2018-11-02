@@ -404,7 +404,7 @@ public class WlsClusterConfig {
      */
     @Override
     public Step createStep(Step next) {
-      return new WlsRetriever.UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
+      return new UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
     }
   }
 }
