@@ -39,12 +39,9 @@ public abstract class DomainConfigurator {
    */
   public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
 
-  /**
-   * Sets the default number of replicas to be run in a cluster.
-   *
-   * @param replicas a non-negative number
-   */
-  public abstract void withDefaultReplicaCount(int replicas);
+  public void withDefaultReplicaCount(int replicas) {
+    getDomainSpec().setReplicas(replicas);
+  }
 
   /**
    * Sets the default image for the domain.
