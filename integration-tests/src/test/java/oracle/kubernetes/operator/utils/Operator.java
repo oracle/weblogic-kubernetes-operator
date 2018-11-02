@@ -198,7 +198,7 @@ public class Operator {
         .append(generatedInputYamlFile)
         .append(" --namespace ")
         .append(operatorNS)
-        .append(" --wait");
+        .append(" --wait --timeout 60");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
