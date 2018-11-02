@@ -2,14 +2,12 @@
 
 The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain custom resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. 
 
-For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
-
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic Operator is running.
 * Create a Kubernetes namespace for the domain custom resource unless the intention is to use the default namespace.
-* Create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain resource. 
+* Create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain resource. For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md). 
 * Create the Kubernetes secrets 'username' and 'password' of the admin account in the same namespace as the domain custom resource.
 
 ## Using the script to create a domain
