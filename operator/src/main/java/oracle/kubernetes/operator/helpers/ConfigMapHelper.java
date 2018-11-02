@@ -262,7 +262,6 @@ public class ConfigMapHelper {
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
-
       String topologyYaml = data.get("topology.yaml");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
