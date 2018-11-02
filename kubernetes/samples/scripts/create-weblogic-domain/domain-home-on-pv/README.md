@@ -1,14 +1,14 @@
 # WebLogic Sample Domain Home on a Persistent Volume
 
-The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain custom resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. 
+The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain custom resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally the scripts already start up the domain custom resource, and WebLogic server pods and services.
 
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic Operator is running.
 * Create a Kubernetes namespace for the domain custom resource unless the intention is to use the default namespace.
-* Create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain resource. For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md). 
-* Create the Kubernetes secrets 'username' and 'password' of the admin account in the same namespace as the domain custom resource.
+* Create in the same Kubernetes namespace the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain resource. For samples for creating a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md). 
+* Create the Kubernetes secrets 'username' and 'password' of the admin account in the same Kubernetes namespace as the domain custom resource.
 
 ## Using the script to create a domain
 
@@ -24,7 +24,7 @@ The script will perform the following steps:
 
 * Create a directory for the generated Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage. 
-* Run the job and Wait for the job to finish.
+* Run the job and wait for the job to finish.
 * Create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command. 
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
 
