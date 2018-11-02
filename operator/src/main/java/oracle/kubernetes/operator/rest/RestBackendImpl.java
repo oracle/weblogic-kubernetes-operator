@@ -286,15 +286,26 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private WlsClusterConfig getWlsClusterConfig(String domainUID, String cluster) {
-    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(domainUID);
-    WlsDomainConfig wlsDomainConfig = domainPresenceInfo.getScan();
-    return wlsDomainConfig.getClusterConfig(cluster);
+    return getWlsDomainConfig(domainUID).getClusterConfig(cluster);
   }
 
   private Map<String, WlsClusterConfig> getWLSConfiguredClusters(String domainUID) {
+    return getWlsDomainConfig(domainUID).getClusterConfigs();
+  }
+
+  /**
+   * Find the WlsDomainConfig corresponding to the given domain UID.
+   *
+   * @param domainUID The domain UID
+   * @return The WlsDomainConfig containing the WebLogic configuration corresponding to the given
+   *     domain UID. This method returns an empty configuration object if no configuration is found.
+   */
+  WlsDomainConfig getWlsDomainConfig(String domainUID) {
     DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(domainUID);
-    WlsDomainConfig wlsDomainConfig = domainPresenceInfo.getScan();
-    return wlsDomainConfig.getClusterConfigs();
+    if (domainPresenceInfo != null && domainPresenceInfo.getScan() != null) {
+      return domainPresenceInfo.getScan();
+    }
+    return new WlsDomainConfig(null);
   }
 
   private Domain findDomain(String domainUID, List<Domain> domains) {

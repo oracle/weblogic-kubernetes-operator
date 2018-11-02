@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.rest;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -27,6 +28,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -163,6 +165,31 @@ public class RestBackendImplTest {
     restBackend.scaleCluster(UID, "cluster1", REPLICA_LIMIT);
 
     assertThat(getUpdatedDomain(), nullValue());
+  }
+
+  @Test
+  public void verify_getWlsDomainConfig_returnsWlsDomainConfig() {
+    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
+
+    assertThat(wlsDomainConfig.getName(), equalTo(DOMAIN));
+  }
+
+  @Test
+  public void verify_getWlsDomainConfig_doesNotReturnNull_whenNoSuchDomainUID() {
+    WlsDomainConfig wlsDomainConfig =
+        ((RestBackendImpl) restBackend).getWlsDomainConfig("NoSuchDomainUID");
+
+    assertThat(wlsDomainConfig, notNullValue());
+  }
+
+  @Test
+  public void verify_getWlsDomainConfig_doesNotReturnNull_whenScanIsNull() {
+    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(UID);
+    domainPresenceInfo.setScan(null);
+
+    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
+
+    assertThat(wlsDomainConfig, notNullValue());
   }
 
   private DomainConfigurator configureDomain() {
