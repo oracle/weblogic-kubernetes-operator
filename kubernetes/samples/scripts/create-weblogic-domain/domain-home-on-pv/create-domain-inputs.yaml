@@ -10,10 +10,6 @@ adminPort: 7001
 # Name of the Admin Server
 adminServerName: admin-server
 
-# Name of the WebLogic domain to create
-# By default, this is the same as the domainUID
-domainName: domain1
-
 # Unique ID identifying a domain.
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
 domainUID: domain1
@@ -48,16 +44,16 @@ image: store/oracle/weblogic:12.2.1.3
 # Legal values are "IfNotPresent", "Always", or "Never"
 imagePullPolicy: IfNotPresent
 
+# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
+# The presence of the secret will be validated when this parameter is enabled.
+#imagePullSecretName:
+
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
 # Name of the Kubernetes secret for the Admin Server's username and password
 # The name must be lowercase
 weblogicCredentialsSecretName: domain1-weblogic-credentials
-
-# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
-# The presence of the secret will be validated when this parameter is enabled.
-#imagePullSecretName:
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012

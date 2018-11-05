@@ -622,11 +622,10 @@ public class Domain {
 
   private void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
-
     lbMap.put("name", "traefik-hostrouting-" + domainUid);
+    lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
     lbMap.put("host", domainUid + ".org");
-    lbMap.put("domainUID", domainUid);
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
 
@@ -744,9 +743,7 @@ public class Domain {
 
     // read input domain yaml to test
     domainMap = TestUtils.loadYaml(inputYaml);
-    if (domainMap.get("domainName") == null) {
-      domainMap.put("domainName", domainMap.get("domainUID"));
-    }
+    domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
     Yaml dyaml = new Yaml();
@@ -784,15 +781,26 @@ public class Domain {
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
+
+    String imageName = "store/oracle/weblogic";
+    if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
+      imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
+    }
+    String imageTag = "19.1.0.0";
+    if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
+      imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
+    }
+    domainMap.put("image", imageName + ":" + imageTag);
+
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-          "index.docker.io/v1/",
-          System.getenv("DOCKER_USERNAME"),
-          System.getenv("DOCKER_PASSWORD"),
-          System.getenv("DOCKER_EMAIL"),
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
           domainNS);
     }
     // remove null values if any attributes
