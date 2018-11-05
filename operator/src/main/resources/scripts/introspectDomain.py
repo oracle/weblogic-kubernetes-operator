@@ -627,13 +627,13 @@ class SitConfigGenerator(Generator):
   def customizeServerTemplate(self, template):
     name=template.getName()
     server_name_prefix=template.getCluster().getDynamicServers().getServerNamePrefix()
-    listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "\${id}") 
+    listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "${id}") 
     self.writeln("<d:server-template>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     #TBD test dynamic cluster mgd server
     self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-    self.customizeLog(server_name_prefix + "\${id}.log")
+    self.customizeLog(server_name_prefix + "${id}")
     self.undent()
     self.writeln("</d:server-template>")
 
