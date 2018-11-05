@@ -136,7 +136,7 @@ else:
   set('DynamicClusterSize', ${CONFIGURED_MANAGED_SERVER_COUNT})
   set('MaxDynamicClusterSize', ${CONFIGURED_MANAGED_SERVER_COUNT})
   set('CalculatedListenPorts', false)
-  set('Id', 1)
+  #set('Id', 1)
 
   print('Done setting attributes for Dynamic Cluster: %s' % '${CLUSTER_NAME}');
 
