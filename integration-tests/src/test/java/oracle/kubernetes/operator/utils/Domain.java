@@ -44,9 +44,8 @@ public class Domain {
   private String startupControl;
   private String weblogicDomainStorageReclaimPolicy;
   private String weblogicDomainStorageSize;
-  private String loadBalancer;
-  private int loadBalancerWebPort;
-  private int loadBalancerDashboardPort;
+  private String loadBalancer = "TRAEFIK";
+  private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
 
@@ -314,7 +313,7 @@ public class Domain {
           .append(loadBalancerWebPort)
           .append("/");
 
-      if (domainMap.get("loadBalancer") != null && domainMap.get("loadBalancer").equals("APACHE")) {
+      if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
       testAppUrl.append(webappName).append("/");
@@ -449,6 +448,9 @@ public class Domain {
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
     }
     logger.info("Run the script to create domain");
+
+    // create domain using diff output dir but pv is same, it fails as the domain was already
+    // created on the pv dir
     try {
       callCreateDomainScript(userProjectsDir + "2");
     } catch (RuntimeException re) {
@@ -457,25 +459,6 @@ public class Domain {
       return;
     }
     throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
-
-    /*    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-domain");
-    cmd.append(" --name ")
-        .append(domainMap.get("domainUID"))
-        .append(" --values ")
-        .append(generatedInputYamlFile)
-        .append(" --namespace ")
-        .append(domainNS)
-        .append(" --wait");
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 1) {
-      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
-    } else {
-      throw new RuntimeException(
-          "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
-    } */
   }
 
   public void verifyAdminConsoleViaLB() throws Exception {
@@ -638,39 +621,20 @@ public class Domain {
   }
 
   private void createLoadBalancer() throws Exception {
-    Yaml yaml = new Yaml();
-    InputStream lbIs =
-        new FileInputStream(
-            new File(
-                BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml"));
-    Map<String, Object> lbMap = yaml.load(lbIs);
-    lbIs.close();
+    Map<String, Object> lbMap = new HashMap<String, Object>();
 
-    lbMap.put("domainName", domainMap.get("domainName"));
-    lbMap.put("domainUID", domainUid);
+    lbMap.put("name", "traefik-hostrouting-" + domainUid);
     lbMap.put("namespace", domainNS);
-
-    if (domainMap.get("loadBalancer") != null) {
-      lbMap.put("loadBalancer", domainMap.get("loadBalancer"));
-    }
-    if (domainMap.get("loadBalancerWebPort") != null) {
-      lbMap.put("loadBalancerWebPort", domainMap.get("loadBalancerWebPort"));
-    }
-    if (domainMap.get("loadBalancerDashboardPort") != null) {
-      lbMap.put("loadBalancerDashboardPort", domainMap.get("loadBalancerDashboardPort"));
-    }
-    if (domainMap.get("loadBalancerVolumePath") != null) {
-      lbMap.put("loadBalancerVolumePath", domainMap.get("loadBalancerVolumePath"));
-    }
+    lbMap.put("host", domainUid + ".org");
+    lbMap.put("domainUID", domainUid);
+    lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
+    lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
-    loadBalancerWebPort = ((Integer) lbMap.get("loadBalancerWebPort")).intValue();
-    loadBalancerDashboardPort = ((Integer) lbMap.get("loadBalancerDashboardPort")).intValue();
 
     if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
-      lbMap.put("loadBalancerAppPrepath", "/weblogic");
-      lbMap.put("loadBalancerExposeAdminPort", new Boolean(true));
+      /* lbMap.put("loadBalancerAppPrepath", "/weblogic");
+      lbMap.put("loadBalancerExposeAdminPort", new Boolean(true)); */
     }
     lbMap.values().removeIf(Objects::isNull);
     new LoadBalancer(lbMap);
