@@ -2,7 +2,7 @@
 
 The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain custom resource as a persistent storage for the WebLogic domain home or log files.
 
-A PV/PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
+A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ The following prerequisites must be handled prior to running the create script:
 
 ## Using the scripts to create a PV and PVC  
 
-Prior to running the `create-pv-pvc.sh` script, make a copy of the `create-pv-pvc-inputs.yaml` file, and uncommented and explicitly configure the `weblogicDomainStoragePath` property in the inputs file.
+Prior to running the `create-pv-pvc.sh` script, make a copy of the `create-pv-pvc-inputs.yaml` file, and uncomment and explicitly configure the `weblogicDomainStoragePath` property in the inputs file.
 
 Run the create script, pointing it at your inputs file and an output directory:
 
@@ -22,7 +22,7 @@ Run the create script, pointing it at your inputs file and an output directory:
   -o /path/to/output-directory
 ```
 
-The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the given `/path/to/output-directory` directory. By default, the script generates two yaml files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory` directory/pv-pvcs`. These two yaml files can be used to create the Kubernetes resources using the `kubectl create -f` command.
+The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the given `/path/to/output-directory` directory. By default, the script generates two YAML files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory` `directory/pv-pvcs`. These two YAML files can be used to create the Kubernetes resources using the `kubectl create -f` command.
 
 ```
   kubectl create -f weblogic-sample-pv.yaml
@@ -30,9 +30,9 @@ The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the giv
 
 ```
 
-As a convenience, the script can optionally create the PV and PVC resources as well using the `-e` option.
+As a convenience, the script can optionally create the PV and PVC resources using the `-e` option.
 
-The usage of the create script is as follows.
+The usage of the create script is as follows:
 
 ```
 $ sh create-pv-pvc.sh -h
@@ -45,42 +45,42 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 
 If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory together into the target directory, maintaining the original directory hierarchy.
 
-## Configuration parameters 
+## Configuration parameters
 
 The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-inputs.yaml` file.
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| `domainUID` | ID of the domain resource that the generated PV and PVC will be dedicated to. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
+| `domainUID` | ID of the domain resource to which the generated PV and PVC will be dedicated. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
 | `namespace` | Kubernetes namespace to create the PVC. | `default` |
-| `baseName` | Base name of the PV and PVC. The generated PV and PVC will be <baseName>-pv and <baseName>-pvc respectively | `weblogic-sample` |
+| `baseName` | Base name of the PV and PVC. The generated PV and PVC will be `<baseName>-pv` and `<baseName>-pvc` respectively. | `weblogic-sample` |
 | `weblogicDomainStoragePath` | Physical path of the storage for the PV. | no default |
-| `weblogicDomainStorageReclaimPolicy` | Kubernetes PVC policy for the persistent storage. The valid values are: 'Retain', 'Delete', and 'Recycle' | `Retain` |
+| `weblogicDomainStorageReclaimPolicy` | Kubernetes PVC policy for the persistent storage. The valid values are: `Retain`, `Delete`, and `Recycle`. | `Retain` |
 | `weblogicDomainStorageSize` | Total storage allocated for the PVC. | `10Gi` |
-| `weblogicDomainStorageType` | Type of storage. Legal values are `NFS` and `HOST_PATH`. If using 'NFS', weblogicDomainStorageNFSServer must be specified | `HOST_PATH` |
-| `weblogicDomainStorageNFSServer`| Name of the IP address of the NFS server. This setting only applies if weblogicDomainStorateType is NFS  | no default |
+| `weblogicDomainStorageType` | Type of storage. Legal values are `NFS` and `HOST_PATH`. If using `NFS`, `weblogicDomainStorageNFSServer` must be specified. | `HOST_PATH` |
+| `weblogicDomainStorageNFSServer`| Name of the IP address of the NFS server. This setting only applies if `weblogicDomainStorateType` is `NFS`.  | no default |
 
-## Shared vs dedicated PVC
+## Shared versus dedicated PVC
 
-By default, the `domainUID` is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources in the same Kubernetes namespaces. 
+By default, the `domainUID` is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources in the same Kubernetes namespaces.
 
-For the use cases where dedicated PV and PVC are desired for a particular domain, the `domainUID` can be set, which will cause the generated PV and PVC associated with the specified `domainUID`. In the per domain PV and PVC case, the names of the generated yaml files and the Kubernetes PV and PVC objects are all decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
+For the use cases where a dedicated PV and PVC is desired for a particular domain, the `domainUID` can be set, which will cause the generated PV and PVC to be associated with the specified `domainUID`. In the per domain PV and PVC case, the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 
 ## Common problems
 
-This section provides details of common problems that occur while running the script  and how to resolve them.
+This section provides details of common problems that might occur while running the script and how to resolve them.
 
 ### Persistent volume provider not configured correctly
 
-Possibly the most common problem experienced during testing was incorrect configuration of the persistent volume provider.  The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many.  If this is not the case, the PV/PVC creation will fail.
+Possibly the most common problem experienced during testing was the incorrect configuration of the persistent volume provider.  The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many.  If this is not the case, the PV/PVC creation will fail.
 
 The simplest case is where the `HOST_PATH` provider is used.  This can be either with one Kubernetes node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount).  In this case, the path used for the persistent volume must have its permission bits set to 777.
 
-## Verify the results 
+## Verify the results
 
-The create script will verify that the PV and PVC was created, and will report failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
+The create script will verify that the PV and PVC were created, and will report a failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-### Generated yaml files with the default inputs
+### Generated YAML files with the default inputs
 
 The content of the generated `weblogic-sample-pvc.yaml`:
 
@@ -101,7 +101,7 @@ metadata:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi 
+      storage: 10Gi
 ```
 
 The content of the generated `weblogic-sample-pv.yaml`:
@@ -115,8 +115,8 @@ metadata:
   name: weblogic-sample-pv
   labels:
     weblogic.resourceVersion: domain-v1
-    # weblogic.domainUID: 
-spec: 
+    # weblogic.domainUID:
+spec:
   storageClassName: weblogic-sample-storage-class
   capacity:
     storage: 10Gi
@@ -131,7 +131,7 @@ spec:
 
 ```
 
-### Generated yaml files for dedicated PV and PVC
+### Generated YAML files for dedicated PV and PVC
 
 The content of the generated `domain1-weblogic-sample-pvc.yaml` when `domainUID` is set to `domain1`:
 
@@ -214,7 +214,7 @@ Events:            <none>
 ```
 
 ```
-$ kubectl describe pvc weblogic-sample-pvc 
+$ kubectl describe pvc weblogic-sample-pvc
 Name:          weblogic-sample-pvc
 Namespace:     default
 StorageClass:  weblogic-sample-storage-class
@@ -229,4 +229,3 @@ Access Modes:  RWX
 Events:        <none>
 
 ```
-
