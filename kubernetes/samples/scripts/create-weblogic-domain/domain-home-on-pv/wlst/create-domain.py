@@ -24,6 +24,7 @@ number_of_ms                 = int(getEnvVar("CONFIGURED_MANAGED_SERVER_COUNT"))
 cluster_type                 = getEnvVar("CLUSTER_TYPE")
 managed_server_name_base     = getEnvVar("MANAGED_SERVER_NAME_BASE")
 managed_server_name_base_svc = getEnvVar("MANAGED_SERVER_NAME_BASE_SVC")
+domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
 
