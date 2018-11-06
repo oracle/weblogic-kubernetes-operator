@@ -398,7 +398,7 @@ public class DomainIntrospectorJobTest {
   }
 
   protected String getDomainHome() {
-    return "/shared/domain/" + DOMAIN_NAME;
+    return "/shared/domains/" + DOMAIN_NAME;
   }
 
   protected V1SecretVolumeSource getSecretsVolume() {

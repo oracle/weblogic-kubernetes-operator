@@ -122,6 +122,14 @@ public class WlsClusterConfig {
     this.name = name;
   }
 
+  public WlsDynamicServersConfig getDynamicServersConfig() {
+    return this.dynamicServersConfig;
+  }
+
+  public void setDynamicServersConfig(WlsDynamicServersConfig dynamicServersConfig) {
+    this.dynamicServersConfig = dynamicServersConfig;
+  }
+
   /**
    * Associate this cluster to the WlsDomainConfig object for the WLS domain that this cluster
    * belongs to

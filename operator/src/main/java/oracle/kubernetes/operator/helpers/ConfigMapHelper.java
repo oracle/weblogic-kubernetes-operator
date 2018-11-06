@@ -267,6 +267,7 @@ public class ConfigMapHelper {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+        wlsDomainConfig.processDynamicClusters();
         info.setScan(wlsDomainConfig);
         info.setLastScanTime(new DateTime());
         LOGGER.info(

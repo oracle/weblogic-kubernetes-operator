@@ -16,6 +16,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CM_REPLACED;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import com.meterware.simplestub.Memento;
@@ -41,6 +42,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -396,6 +398,71 @@ public class ConfigMapHelperTest {
           + "          listenPort: 8005\n"
           + "          publicPort: 8005\n";
 
+  private static final String DYNAMIC_SERVER_TOPOLOGY =
+      "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "  - name: \"cluster-1\"\n"
+          + "    dynamicServersConfig:\n"
+          + "        name: \"cluster-1\"\n"
+          + "        serverTemplateName: \"cluster-1-template\"\n"
+          + "        calculatedListenPorts: false\n"
+          + "        serverNamePrefix: \"managed-server\"\n"
+          + "        dynamicClusterSize: 4\n"
+          + "        maxDynamicClusterSize: 8\n"
+          + "  serverTemplates:\n"
+          + "    - name: \"cluster-1-template\"\n"
+          + "      listenPort: 8001\n"
+          + "      clusterName: \"cluster-1\"\n"
+          + "      listenAddress: \"domain1-managed-server${id}\"\n"
+          + "  servers:\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n";
+
+  private static final String MIXED_CLUSTER_TOPOLOGY =
+      "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "  - name: \"cluster-1\"\n"
+          + "    dynamicServersConfig:\n"
+          + "        name: \"cluster-1\"\n"
+          + "        serverTemplateName: \"cluster-1-template\"\n"
+          + "        calculatedListenPorts: false\n"
+          + "        serverNamePrefix: \"managed-server\"\n"
+          + "        dynamicClusterSize: 3\n"
+          + "        maxDynamicClusterSize: 8\n"
+          + "    servers:\n"
+          + "      - name: \"ms1\"\n"
+          + "        listenPort: 7003\n"
+          + "        listenAddress: \"domain1-managed-server1\"\n"
+          + "        sslListenPort: 7103\n"
+          + "        sslPortEnabled: true\n"
+          + "        machineName: \"machine-managed-server1\"\n"
+          + "      - name: \"ms2\"\n"
+          + "        listenPort: 7004\n"
+          + "        listenAddress: \"domain1-managed-server2\"\n"
+          + "        sslListenPort: 7104\n"
+          + "        sslPortEnabled: false\n"
+          + "        networkAccessPoints:\n"
+          + "          - name: \"nap2\"\n"
+          + "            protocol: \"t3\"\n"
+          + "            listenPort: 7105\n"
+          + "            publicPort: 7105\n"
+          + "  serverTemplates:\n"
+          + "    - name: \"cluster-1-template\"\n"
+          + "      listenPort: 8001\n"
+          + "      clusterName: \"cluster-1\"\n"
+          + "      listenAddress: \"domain1-managed-server${id}\"\n"
+          + "  servers:\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n";
+
   @Test
   public void parseDomainTopologyYaml() {
     ConfigMapHelper.DomainTopology domainTopology =
@@ -423,5 +490,77 @@ public class ConfigMapHelperTest {
     assertEquals(3, serverConfigMap.size());
 
     assertTrue(serverConfigMap.containsKey("admin-server"));
+  }
+
+  @Test
+  public void parseDynamicServerTopologyYaml() {
+    ConfigMapHelper.DomainTopology domainTopology =
+        ConfigMapHelper.parseDomainTopologyYaml(DYNAMIC_SERVER_TOPOLOGY);
+
+    assertNotNull(domainTopology);
+    assertTrue(domainTopology.getDomainValid());
+
+    WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+    assertNotNull(wlsDomainConfig);
+
+    assertEquals("base_domain", wlsDomainConfig.getName());
+    assertEquals("admin-server", wlsDomainConfig.getAdminServerName());
+
+    wlsDomainConfig.processDynamicClusters();
+
+    Map<String, WlsClusterConfig> wlsClusterConfigs = wlsDomainConfig.getClusterConfigs();
+    assertEquals(1, wlsClusterConfigs.size());
+
+    WlsClusterConfig wlsClusterConfig = wlsClusterConfigs.get("cluster-1");
+    assertNotNull(wlsClusterConfig);
+
+    WlsDynamicServersConfig wlsDynamicServersConfig = wlsClusterConfig.getDynamicServersConfig();
+    assertNotNull(wlsDynamicServersConfig);
+    assertEquals("cluster-1", wlsDynamicServersConfig.getName());
+    assertEquals("cluster-1-template", wlsDynamicServersConfig.getServerTemplateName());
+    assertFalse(
+        "Expected calculatedListenPorts false", wlsDynamicServersConfig.getCalculatedListenPorts());
+    assertEquals("managed-server", wlsDynamicServersConfig.getServerNamePrefix());
+    assertEquals(4, wlsDynamicServersConfig.getDynamicClusterSize().intValue());
+    assertEquals(8, wlsDynamicServersConfig.getMaxDynamicClusterSize().intValue());
+
+    List<WlsServerConfig> serverTemplates = wlsDomainConfig.getServerTemplates();
+    assertEquals(1, serverTemplates.size());
+    assertEquals("cluster-1-template", serverTemplates.get(0).getName());
+    assertEquals("cluster-1", serverTemplates.get(0).getClusterName());
+
+    Map<String, WlsServerConfig> serverConfigMap = wlsDomainConfig.getServerConfigs();
+    assertEquals(1, serverConfigMap.size());
+
+    assertTrue(serverConfigMap.containsKey("admin-server"));
+  }
+
+  @Test
+  public void parseMixedClusterTopologyYaml() {
+    ConfigMapHelper.DomainTopology domainTopology =
+        ConfigMapHelper.parseDomainTopologyYaml(MIXED_CLUSTER_TOPOLOGY);
+
+    assertNotNull(domainTopology);
+    assertTrue(domainTopology.getDomainValid());
+
+    WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+    assertNotNull(wlsDomainConfig);
+
+    assertEquals("base_domain", wlsDomainConfig.getName());
+    assertEquals("admin-server", wlsDomainConfig.getAdminServerName());
+
+    wlsDomainConfig.processDynamicClusters();
+
+    Map<String, WlsClusterConfig> wlsClusterConfigs = wlsDomainConfig.getClusterConfigs();
+    assertEquals(1, wlsClusterConfigs.size());
+
+    WlsClusterConfig wlsClusterConfig = wlsClusterConfigs.get("cluster-1");
+    assertNotNull(wlsClusterConfig);
+
+    assertTrue(wlsClusterConfig.hasDynamicServers());
+    assertTrue(wlsClusterConfig.hasStaticServers());
+    assertEquals(2, wlsClusterConfig.getClusterSize());
+    assertEquals(3, wlsClusterConfig.getDynamicClusterSize());
+    assertEquals(5, wlsClusterConfig.getServerConfigs().size());
   }
 }
