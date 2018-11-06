@@ -151,7 +151,7 @@ function run_wdt {
   local wdt_createDomain_script="$wdt_bin_dir/createDomain.sh"
 
   local domain_home_dir="$DOMAIN_HOME_DIR"
-  if [ -z "$domain_home_dir}" ]; then
+  if [ -z "${domain_home_dir}" ]; then
     local domain_dir="/shared/domains"
     local domain_uid=`egrep 'domainUID' $inputs_orig | awk '{print $2}'`
     local domain_home_dir=$domain_dir/$domain_uid
