@@ -13,6 +13,7 @@ public class WlsServerConfig {
   String name;
   Integer listenPort;
   String listenAddress;
+  String clusterName;
   Integer sslListenPort;
   boolean sslPortEnabled;
   String machineName;
@@ -83,6 +84,14 @@ public class WlsServerConfig {
    */
   public List<NetworkAccessPoint> getNetworkAccessPoints() {
     return networkAccessPoints;
+  }
+
+  public String getClusterName() {
+    return this.clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
   }
 
   /**

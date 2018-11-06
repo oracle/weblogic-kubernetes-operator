@@ -385,11 +385,12 @@ class TopologyGenerator(Generator):
     self.writeln("name: " + self.name(self.env.getDomain()))
     self.writeln("adminServerName: " + self.quote(self.env.getDomain().getAdminServerName()))
     self.addConfiguredClusters()
+    self.addServerTemplates()
     self.addNonClusteredServers()
     self.undent()
 
   def addConfiguredClusters(self):
-    clusters = self.getConfiguredClusters()
+    clusters = self.env.getDomain().getClusters()
     if len(clusters) == 0:
       return
     self.writeln("configuredClusters:")
@@ -407,14 +408,32 @@ class TopologyGenerator(Generator):
 
   def addConfiguredCluster(self, cluster):
     self.writeln("- name: " + self.name(cluster))
+    dynamicServers = self.getDynamicServersWA(cluster)
+    if dynamicServers is not None:
+      self.indent();
+      self.writeln("dynamicServersConfig:")
+      self.indent()
+      self.addDynamicServer(dynamicServers)
+      self.undent()
+      self.undent()
     servers = self.getClusteredServers(cluster)
-    self.indent();
-    self.writeln("servers:")
-    self.indent()
-    for server in servers:
-      self.addClusteredServer(cluster, server)
-    self.undent()
-    self.undent()
+    if len(servers) != 0:
+      self.indent();
+      self.writeln("servers:")
+      self.indent()
+      for server in servers:
+        self.addClusteredServer(cluster, server)
+      self.undent()
+      self.undent()
+
+  def addDynamicServer(self, dynamicServer):
+    name=self.name(dynamicServer)
+    self.writeln("name: " + name)
+    self.writeln("serverTemplateName: " + self.quote(dynamicServer.getServerTemplate().getName()))
+    self.writeln("calculatedListenPorts: " + str(dynamicServer.isCalculatedListenPorts()))
+    self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
+    self.writeln("dynamicClusterSize: " + str(dynamicServer.getDynamicClusterSize()))
+    self.writeln("maxDynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
 
   def getClusteredServers(self, cluster):
     rtn = []
@@ -429,6 +448,23 @@ class TopologyGenerator(Generator):
     self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
     self.addNetworkAccessPoints(server)
+
+  def addServerTemplates(self):
+    serverTemplates = self.env.getDomain().getServerTemplates()
+    if len(serverTemplates) == 0:
+      return
+    self.writeln("serverTemplates:")
+    self.indent()
+    for serverTemplate in serverTemplates:
+      self.addServerTemplate(serverTemplate)
+    self.undent()
+
+  def addServerTemplate(self, serverTemplate):
+    name=self.name(serverTemplate)
+    self.writeln("- name: " + name)
+    self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
+    self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
+    self.writeln("  listenAddress: " + self.quote(serverTemplate.getListenAddress()))
 
   def addDynamicClusters(self):
     clusters = self.getDynamicClusters()
@@ -627,13 +663,13 @@ class SitConfigGenerator(Generator):
   def customizeServerTemplate(self, template):
     name=template.getName()
     server_name_prefix=template.getCluster().getDynamicServers().getServerNamePrefix()
-    listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "\${id}") 
+    listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "${id}")
     self.writeln("<d:server-template>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     #TBD test dynamic cluster mgd server
     self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-    self.customizeLog(server_name_prefix + "\${id}.log")
+    self.customizeLog(server_name_prefix + "${id}.log")
     self.undent()
     self.writeln("</d:server-template>")
 

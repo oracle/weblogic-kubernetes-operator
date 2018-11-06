@@ -225,7 +225,11 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   String getImageName() {
-    return KubernetesConstants.DEFAULT_IMAGE;
+    String imageName = getDomain().getSpec().getImage();
+    if (imageName == null) {
+      imageName = KubernetesConstants.DEFAULT_IMAGE;
+    }
+    return imageName;
   }
 
   String getImagePullPolicy() {
@@ -239,7 +243,7 @@ public abstract class JobStepContext implements StepContextConstants {
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
 
   protected String getDomainHome() {
-    return "/shared/domain/" + getDomainName();
+    return "/shared/domains/" + getDomainName();
   }
 
   static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
