@@ -449,7 +449,7 @@ public class Domain {
     }
     logger.info("Run the script to create domain");
 
-    // create domain using diff output dir but pv is same, it fails as the domain was already
+    // create domain using different output dir but pv is same, it fails as the domain was already
     // created on the pv dir
     try {
       callCreateDomainScript(userProjectsDir + "2");
@@ -713,6 +713,7 @@ public class Domain {
       managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
     }
 
+    // number of times to call webapp
     for (int i = 0; i < 20; i++) {
       ExecResult result = ExecCommand.exec(curlCmd.toString());
       if (result.exitValue() != 0) {
