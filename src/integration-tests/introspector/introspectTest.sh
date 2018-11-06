@@ -88,7 +88,6 @@ export PVCOMMENT=${PVCOMMENT:-""}
 # Set env vars for an existing domain and/or a to-be-created domain:
 #
 
-#export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic:12.2.1.3}
 export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic:19.1.0.0}
 export WEBLOGIC_IMAGE_PULL_POLICY=${WEBLOGIC_IMAGE_PULL_POLICY:-IfNotPresent}
 
