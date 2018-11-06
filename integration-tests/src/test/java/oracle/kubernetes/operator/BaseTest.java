@@ -292,21 +292,21 @@ public class BaseTest {
         adminPodName, domainNS, ((Integer) domainMap.get("t3ChannelPort")).intValue());
 
     String clusterName = domainMap.get("clusterName").toString();
-    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    logger.info("replica count before scaleup " + replicaCnt);
+    int replicaCntBeforeScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    logger.info("replica count before scaleup " + replicaCntBeforeScaleup);
 
     logger.info("Scale domain " + domainUid + " by calling the webapp");
 
     int replicas = 3;
     callWebAppAndVerifyScaling(domain, replicas);
 
-    replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    if (replicaCnt != replicas) {
+    int replicaCntAfterScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    if (replicaCntAfterScaleup <= replicaCntBeforeScaleup) {
       throw new RuntimeException(
-          "FAILURE: Cluster replica doesn't match with scaled up size "
-              + replicaCnt
+          "FAILURE: Cluster replica count has not increased after scaling up, replicaCntBeforeScaleup/replicaCntAfterScaleup "
+              + replicaCntBeforeScaleup
               + "/"
-              + replicas);
+              + replicaCntAfterScaleup);
     }
 
     logger.info("Done - testWLDFScaling");
