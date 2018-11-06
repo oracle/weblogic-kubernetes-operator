@@ -88,7 +88,8 @@ export PVCOMMENT=${PVCOMMENT:-""}
 # Set env vars for an existing domain and/or a to-be-created domain:
 #
 
-export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic:12.2.1.3}
+#export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic:12.2.1.3}
+export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic:19.1.0.0}
 export WEBLOGIC_IMAGE_PULL_POLICY=${WEBLOGIC_IMAGE_PULL_POLICY:-IfNotPresent}
 
 export DOMAIN_UID=${DOMAIN_UID:-domain1}
@@ -96,7 +97,7 @@ export NAMESPACE=${NAMESPACE:-default}
 
 export LOG_HOME=${LOG_HOME:-/shared/logs}
 export SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG:-true}
-export DOMAIN_HOME=${DOMAIN_HOME:-/shared/domain/base_domain}
+export DOMAIN_HOME=${DOMAIN_HOME:-/shared/domains/${DOMAIN_UID}}
 
 [ -z ${WEBLOGIC_CREDENTIALS_SECRET_NAME} ] && \
   export WEBLOGIC_CREDENTIALS_SECRET_NAME="${DOMAIN_UID}-weblogic-credentials"
@@ -133,7 +134,7 @@ if [ "$CREATE_DOMAIN" = "true" ]; then
   export CLUSTER_NAME="${CLUSTER_NAME:-mycluster}"
   export MANAGED_SERVER_PORT=${MANAGED_SERVER_PORT:-8001}
   export CONFIGURED_MANAGED_SERVER_COUNT=${CONFIGURED_MANAGED_SERVER_COUNT:-2}
-  export CLUSTER_TYPE="${CLUSTER_TYPE:-CONFIGURED}"
+  export CLUSTER_TYPE="${CLUSTER_TYPE:-DYNAMIC}"
   export T3_CHANNEL_PORT=${T3_CHANNEL_PORT:-30012}
   export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-${publicdns}}
   export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}

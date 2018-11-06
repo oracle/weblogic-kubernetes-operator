@@ -243,7 +243,7 @@ public abstract class JobStepContext implements StepContextConstants {
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
 
   protected String getDomainHome() {
-    return "/shared/domains/" + getDomainName();
+    return "/shared/domains/" + getDomainUID();
   }
 
   static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
