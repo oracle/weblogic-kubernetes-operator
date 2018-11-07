@@ -109,9 +109,9 @@ public class ServerSpecV2Impl extends ServerSpec {
 
     if (o == null || getClass() != o.getClass()) return false;
 
-    ServerSpecV2Impl that = (ServerSpecV2Impl) o;
+    if (!(o instanceof ServerSpecV2Impl)) return false;
 
-    EqualsBuilder builder = new EqualsBuilder();
+    ServerSpecV2Impl that = (ServerSpecV2Impl) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
