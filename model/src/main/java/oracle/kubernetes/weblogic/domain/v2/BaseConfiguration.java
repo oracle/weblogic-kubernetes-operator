@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static java.util.Collections.emptyList;
 
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -36,13 +36,13 @@ public abstract class BaseConfiguration {
   @SerializedName("env")
   @Expose
   @Valid
-  @JsonPropertyDescription("A list of environment variables to add to a server")
+  @Description("A list of environment variables to add to a server")
   private List<V1EnvVar> env = new ArrayList<>();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @SerializedName("serverStartState")
   @Expose
-  @JsonPropertyDescription("The state in which the server is to be started")
+  @Description("The state in which the server is to be started")
   private String serverStartState;
 
   /**
@@ -55,7 +55,7 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("serverStartPolicy")
   @Expose
-  @JsonPropertyDescription(
+  @Description(
       "The strategy for deciding whether to start a server. "
           + "Legal values are NEVER, ALWAYS, or IF_NEEDED.")
   private String serverStartPolicy;
@@ -68,7 +68,7 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("livenessProbe")
   @Expose
-  @JsonPropertyDescription("Settings for the liveness probe associated with a server")
+  @Description("Settings for the liveness probe associated with a server")
   private V1Probe livenessProbe = new V1Probe();
 
   /**
@@ -79,7 +79,7 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("readinessProbe")
   @Expose
-  @JsonPropertyDescription("Settings for the readiness probe associated with a server")
+  @Description("Settings for the readiness probe associated with a server")
   private V1Probe readinessProbe = new V1Probe();
 
   /**
