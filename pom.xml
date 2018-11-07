@@ -1,307 +1,327 @@
 <!-- Copyright 2017, 2018, Oracle Corporation. All Rights Reserved. -->
 <!-- This is unreleased proprietary source code of Oracle Corporation -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-	<groupId>oracle.kubernetes</groupId>
-	<artifactId>operator-parent</artifactId>
-	<version>2.0-SNAPSHOT</version>
+  <groupId>oracle.kubernetes</groupId>
+  <artifactId>operator-parent</artifactId>
+  <version>2.0-SNAPSHOT</version>
 
-	<modules>
-		<module>model</module>
-		<module>operator</module>
-		<module>swagger</module>
-		<module>integration-tests</module>
-		<module>kubernetes</module>
-	</modules>
+  <modules>
+    <module>model</module>
+    <module>operator</module>
+    <module>swagger</module>
+    <module>integration-tests</module>
+    <module>kubernetes</module>
+    <module>json-schema-maven-plugin</module>
+    <module>json-schema</module>
+  </modules>
 
-	<scm>
-		<connection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git</connection>
-		<developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git</developerConnection>
-		<url>https://github.com/oracle/weblogic-kubernetes-operator</url>
-		<tag>HEAD</tag>
-	</scm>
+  <scm>
+    <connection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git</connection>
+    <developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git
+    </developerConnection>
+    <url>https://github.com/oracle/weblogic-kubernetes-operator</url>
+    <tag>HEAD</tag>
+  </scm>
 
-	<description>Oracle Weblogic Server Kubernetes Operator</description>
-	<name>weblogic-kubernetes-operator</name>
-	<packaging>pom</packaging>
+  <description>Oracle Weblogic Server Kubernetes Operator</description>
+  <name>weblogic-kubernetes-operator</name>
+  <packaging>pom</packaging>
 
-	<url>https://oracle.github.io/weblogic-kubernetes-operator</url>
-	<inceptionYear>2017</inceptionYear>
-	<licenses>
-		<license>
-			<name>The Universal Permissive License (UPL), Version 1.0</name>
-			<url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
-		</license>
-	</licenses>
+  <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
+  <inceptionYear>2017</inceptionYear>
+  <licenses>
+    <license>
+      <name>The Universal Permissive License (UPL), Version 1.0</name>
+      <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
+    </license>
+  </licenses>
 
-	<repositories>
-		<repository>
-			<id>oss-sonatype</id>
-			<name>oss-sonatype</name>
-			<url>https://oss.sonatype.org/content/repositories/releases/</url>
-			<!-- For if we need to work with kubernetes-client/java snapshot releases
-				<snapshots> <enabled>true</enabled> </snapshots> -->
-		</repository>
-	</repositories>
+  <repositories>
+    <repository>
+      <id>oss-sonatype</id>
+      <name>oss-sonatype</name>
+      <url>https://oss.sonatype.org/content/repositories/releases/</url>
+      <!-- For if we need to work with kubernetes-client/java snapshot releases
+        <snapshots> <enabled>true</enabled> </snapshots> -->
+    </repository>
+  </repositories>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>2.5.3</version>
-			</plugin>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+      </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.0.1</version>
-				<configuration>
-					<aggregate>true</aggregate>
-					<show>public</show>
-					<author>false</author>
-					<!-- later Copyright 2018, {currentYear} -->
-					<bottom><![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
-					<doctitle>Oracle WebLogic Server Kubernetes Operator v${project.version} API</doctitle>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>com.coveo</groupId>
-				<artifactId>fmt-maven-plugin</artifactId>
-				<version>2.4.0</version>
-				<executions>
-					<execution>
-						<phase>test</phase>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.0.1</version>
+        <configuration>
+          <aggregate>true</aggregate>
+          <show>public</show>
+          <author>false</author>
+          <!-- later Copyright 2018, {currentYear} -->
+          <bottom>
+            <![CDATA[<p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
+          <doctitle>Oracle WebLogic Server Kubernetes Operator v${project.version} API</doctitle>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.coveo</groupId>
+        <artifactId>fmt-maven-plugin</artifactId>
+        <version>2.4.0</version>
+        <executions>
+          <execution>
+            <phase>test</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 
-		</plugins>
-	</build>
+    </plugins>
+  </build>
 
-	<profiles>
+  <profiles>
 
-		<profile>
-			<id>sign-artifacts</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
+    <profile>
+      <id>sign-artifacts</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
-		<profile>
-			<id>integration-tests</id>
-			<properties>
-				<src-integration-test>${project.basedir}/src/integration-test/java</src-integration-test>
-			</properties>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>build-helper-maven-plugin</artifactId>
-						<version>3.0.0</version>
-						<executions>
-							<execution>
-								<id>add-test-source</id>
-								<phase>generate-test-resources</phase>
-								<goals>
-									<goal>add-test-source</goal>
-								</goals>
-								<configuration>
-									<sources>
-										<source>${src-integration-test}</source>
-									</sources>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
+    <profile>
+      <id>integration-tests</id>
+      <properties>
+        <src-integration-test>${project.basedir}/src/integration-test/java</src-integration-test>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>add-test-source</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>${src-integration-test}</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
 
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-failsafe-plugin</artifactId>
-						<version>2.20.1</version>
-						<configuration> <!-- run tests in parallel -->
-							<encoding>UTF-8</encoding>
-							<argLine>${failsafeArgLine}</argLine>
-							<failIfNoTests>false</failIfNoTests>
-							<systemPropertyVariables>
-								<!-- Add any system properties here -->
-								<!--<project.build.directory>${project.build.directory}</project.build.directory> -->
-								<!--<weblogic.operator.root.directory>${basedir}/..</weblogic.operator.root.directory> -->
-								<!--<TAGS>${env.TAGS}</TAGS> -->
-								<maxThreads>3</maxThreads>
-							</systemPropertyVariables>
-						</configuration>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>2.20.1</version>
+            <configuration> <!-- run tests in parallel -->
+              <encoding>UTF-8</encoding>
+              <argLine>${failsafeArgLine}</argLine>
+              <failIfNoTests>false</failIfNoTests>
+              <systemPropertyVariables>
+                <!-- Add any system properties here -->
+                <!--<project.build.directory>${project.build.directory}</project.build.directory> -->
+                <!--<weblogic.operator.root.directory>${basedir}/..</weblogic.operator.root.directory> -->
+                <!--<TAGS>${env.TAGS}</TAGS> -->
+                <maxThreads>3</maxThreads>
+              </systemPropertyVariables>
+            </configuration>
 
-						<executions>
-							<execution>
-								<id>acceptance-test</id>
-								<goals>
-									<goal>integration-test</goal>
-									<goal>verify</goal>
-								</goals>
-								<phase>integration-test</phase>
-								<configuration>
-									<!-- do not run unit or integration tests -->
-									<excludes>
-										<exclude>**/*Test.java</exclude>
-										<exclude>**/*IT.java</exclude>
-									</excludes>
-									<!-- just run acceptance tests -->
-									<includes>
-										<include>**/*AT.java</include>
-									</includes>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
+            <executions>
+              <execution>
+                <id>acceptance-test</id>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <phase>integration-test</phase>
+                <configuration>
+                  <!-- do not run unit or integration tests -->
+                  <excludes>
+                    <exclude>**/*Test.java</exclude>
+                    <exclude>**/*IT.java</exclude>
+                  </excludes>
+                  <!-- just run acceptance tests -->
+                  <includes>
+                    <include>**/*AT.java</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
-		<profile>
-			<id>build-sonar</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.jacoco</groupId>
-						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>${jacoco.version}</version>
-						<executions>
+    <profile>
+      <id>build-sonar</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
 
-							<execution>
-								<id>pre-unit-test</id>
-								<goals>
-									<goal>prepare-agent</goal>
-								</goals>
-								<configuration>
-									<destFile>${sonar.jacoco.reportPath}</destFile>
-									<propertyName>surefireArgLine</propertyName>
-								</configuration>
-							</execution>
+              <execution>
+                <id>pre-unit-test</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+                <configuration>
+                  <destFile>${sonar.jacoco.reportPath}</destFile>
+                  <propertyName>surefireArgLine</propertyName>
+                </configuration>
+              </execution>
 
-							<execution>
-								<id>post-unit-test</id>
-								<phase>test</phase>
-								<goals>
-									<goal>report</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${jacoco.outputDir}</outputDirectory>
-									<dataFile>${sonar.jacoco.reportPath}</dataFile>
-								</configuration>
-							</execution>
+              <execution>
+                <id>post-unit-test</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${jacoco.outputDir}</outputDirectory>
+                  <dataFile>${sonar.jacoco.reportPath}</dataFile>
+                </configuration>
+              </execution>
 
-							<execution>
-								<id>pre-integration-test</id>
-								<phase>pre-integration-test</phase>
-								<goals>
-									<goal>prepare-agent-integration</goal>
-								</goals>
-								<configuration>
-									<destFile>${sonar.jacoco.itReportPath}</destFile>
-									<propertyName>failsafeArgLine</propertyName>
-								</configuration>
-							</execution>
-							<execution>
-								<id>post-integration-test</id>
-								<phase>post-integration-test</phase>
-								<goals>
-									<goal>report-integration</goal>
-								</goals>
-								<configuration>
-									<dataFile>${sonar.jacoco.itReportPath}</dataFile>
-									<outputDirectory>$jacoco.itOutputDir}</outputDirectory>
-								</configuration>
-							</execution>
+              <execution>
+                <id>pre-integration-test</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>prepare-agent-integration</goal>
+                </goals>
+                <configuration>
+                  <destFile>${sonar.jacoco.itReportPath}</destFile>
+                  <propertyName>failsafeArgLine</propertyName>
+                </configuration>
+              </execution>
+              <execution>
+                <id>post-integration-test</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>report-integration</goal>
+                </goals>
+                <configuration>
+                  <dataFile>${sonar.jacoco.itReportPath}</dataFile>
+                  <outputDirectory>$jacoco.itOutputDir}</outputDirectory>
+                </configuration>
+              </execution>
 
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
-		<profile>
-			<id>default</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<properties>
-				<surefireArgLine></surefireArgLine>
-				<failsafeArgLine></failsafeArgLine>
-			</properties>
-		</profile>
-	</profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <surefireArgLine></surefireArgLine>
+        <failsafeArgLine></failsafeArgLine>
+      </properties>
+    </profile>
+  </profiles>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
-          <groupId>io.kubernetes</groupId>
-          <artifactId>client-java</artifactId>
-          <version>3.0.0</version>
+        <groupId>io.kubernetes</groupId>
+        <artifactId>client-java</artifactId>
+        <version>3.0.0</version>
       </dependency>
       <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-          <version>1.7.25</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.25</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-junit</artifactId>
+        <version>2.0.0.0</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.12</version>
+      </dependency>
+      <dependency>
+        <groupId>com.meterware.simplestub</groupId>
+        <artifactId>simplestub</artifactId>
+        <version>1.2.9</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
-	<dependencies>
-		<dependency>
-			<groupId>com.jayway.jsonpath</groupId>
-			<artifactId>json-path-assert</artifactId>
-			<version>2.4.0</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>com.jayway.jsonpath</groupId>
+      <artifactId>json-path-assert</artifactId>
+      <version>2.4.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
-	<properties>
-		<java.version>1.8</java.version>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<swagger-core-version>1.5.15</swagger-core-version>
-		<gson-version>2.6.2</gson-version>
-		<jodatime-version>2.9.3</jodatime-version>
-		<maven-plugin-version>1.0.0</maven-plugin-version>
-		<junit-version>4.12</junit-version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<jersey-version>2.26</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
-		<jackson-version>2.9.6</jackson-version>
-		<root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
-		<src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
-		<domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
-		<skip.unit.tests>false</skip.unit.tests>
-		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-		<jacoco.version>0.7.9</jacoco.version>
-		<sonar.jacoco.reportPath>${project.build.directory}/jacoco.exec</sonar.jacoco.reportPath>
-		<sonar.jacoco.itReportPath>${project.build.directory}/jacoco-it.exec</sonar.jacoco.itReportPath>
-		<jacoco.outputDir>${project.build.directory}/jacoco</jacoco.outputDir>
-		<jacoco.itOutputDir>${project.build.directory}/jacoco-it</jacoco.itOutputDir>
-		<jacoco.destFile>${project.build.directory}/jacoco.exec</jacoco.destFile>
-		<sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
-		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-		<jacoco.skip>false</jacoco.skip>
-	</properties>
+  <properties>
+    <java.version>1.8</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <swagger-core-version>1.5.15</swagger-core-version>
+    <jodatime-version>2.9.3</jodatime-version>
+    <maven-plugin-version>1.0.0</maven-plugin-version>
+    <junit-version>4.12</junit-version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jersey-version>2.26
+    </jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
+    <jackson-version>2.9.6</jackson-version>
+    <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
+    <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
+    <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
+    <skip.unit.tests>false</skip.unit.tests>
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+    <jacoco.version>0.7.9</jacoco.version>
+    <sonar.jacoco.reportPath>${project.build.directory}/jacoco.exec</sonar.jacoco.reportPath>
+    <sonar.jacoco.itReportPath>${project.build.directory}/jacoco-it.exec</sonar.jacoco.itReportPath>
+    <jacoco.outputDir>${project.build.directory}/jacoco</jacoco.outputDir>
+    <jacoco.itOutputDir>${project.build.directory}/jacoco-it</jacoco.itOutputDir>
+    <jacoco.destFile>${project.build.directory}/jacoco.exec</jacoco.destFile>
+    <sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <jacoco.skip>false</jacoco.skip>
+  </properties>
 
 </project>
