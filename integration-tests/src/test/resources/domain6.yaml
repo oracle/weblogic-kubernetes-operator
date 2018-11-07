@@ -16,5 +16,3 @@ exposeAdminNodePort: true
 adminNodePort: 30706
 namespace: default
 weblogicDomainStorageReclaimPolicy: Recycle
-loadBalancerWebPort: 30310
-loadBalancerDashboardPort: 30320

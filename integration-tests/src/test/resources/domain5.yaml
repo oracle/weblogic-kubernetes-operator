@@ -16,5 +16,3 @@ exposeAdminNodePort: true
 adminNodePort: 30705
 namespace: default
 startupControl: ADMIN
-loadBalancerWebPort: 30309
-loadBalancerDashboardPort: 30319
