@@ -102,7 +102,7 @@ public class HealthCheckHelperTest {
   private static final List<Operation> READ_UPDATE_OPERATIONS =
       Arrays.asList(get, list, watch, update, patch);
 
-  private static final String POD_LOGS = "pods/logs";
+  private static final String POD_LOGS = "pods/log";
   private static final String DOMAINS = "domains//weblogic.oracle";
   private static final String NAMESPACES = "namespaces";
   private static final HealthCheckHelper.KubernetesVersion MINIMAL_KUBERNETES_VERSION =
