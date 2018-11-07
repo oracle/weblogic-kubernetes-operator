@@ -1,0 +1,10 @@
+serviceType: NodePort
+service:
+  nodePorts:
+    http: "30305"
+    https: "30443"
+dashboard:
+  enabled: true
+  domain: traefik.example.com
+rbac:
+  enabled: true

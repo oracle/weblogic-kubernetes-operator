@@ -224,7 +224,7 @@ rules:
   resources: ["services", "configmaps", "pods", "podtemplates", "events", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
-  resources: ["pods/logs"]
+  resources: ["pods/log"]
   verbs: ["get", "list"]
 - apiGroups: [""]
   resources: ["pods/exec"]
