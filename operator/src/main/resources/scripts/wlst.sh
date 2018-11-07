@@ -46,9 +46,9 @@ ${wlst_sh} -skipWLSModuleScanning ${wlst_script}
 res="$?"
 
 if [ $res -eq 0 ]; then
-  trace "Error: WLST script '${wlst_script}' failed with exit code '$res'." 
-else
   trace "Info: WLST script '${wlst_script}' completed."
+else
+  trace "Error: WLST script '${wlst_script}' failed with exit code '$res'." 
 fi
 
 exit $res
