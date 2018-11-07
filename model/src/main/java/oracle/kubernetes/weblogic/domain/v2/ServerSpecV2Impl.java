@@ -96,10 +96,11 @@ public class ServerSpecV2Impl extends ServerSpec {
 
   @Override
   public String toString() {
-    ToStringBuilder builder = new ToStringBuilder(this);
-    builder.appendSuper(super.toString()).append("server", server);
-    if (clusterLimit != null) builder.append("clusterLimit", clusterLimit);
-    return builder.toString();
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("server", server)
+        .append("clusterLimit", clusterLimit)
+        .toString();
   }
 
   @Override
@@ -112,16 +113,19 @@ public class ServerSpecV2Impl extends ServerSpec {
 
     EqualsBuilder builder = new EqualsBuilder();
 
-    builder.appendSuper(super.equals(o)).append(server, that.server);
-    if (clusterLimit != null) builder.append(clusterLimit, that.clusterLimit);
-    return builder.isEquals();
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(server, that.server)
+        .append(clusterLimit, that.clusterLimit)
+        .isEquals();
   }
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder(17, 37);
-    builder.appendSuper(super.hashCode()).append(server);
-    if (clusterLimit != null) builder.append(clusterLimit);
-    return builder.toHashCode();
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(server)
+        .append(clusterLimit)
+        .toHashCode();
   }
 }
