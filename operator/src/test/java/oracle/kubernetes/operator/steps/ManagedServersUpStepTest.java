@@ -434,7 +434,7 @@ public class ManagedServersUpStepTest {
     addWlsCluster("cluster1", "ms1");
 
     if (!DomainConfiguratorFactory.useDomainV1())
-      configureCluster("cluster1").withServerStartupPolicy(START_IF_NEEDED);
+      configureCluster("cluster1").withServerStartPolicy(START_IF_NEEDED);
 
     invokeStep();
 
@@ -462,7 +462,7 @@ public class ManagedServersUpStepTest {
     addWlsCluster("cluster1", "ms1");
 
     if (!DomainConfiguratorFactory.useDomainV1())
-      configureCluster("cluster1").withServerStartupPolicy(START_IF_NEEDED);
+      configureCluster("cluster1").withServerStartPolicy(START_IF_NEEDED);
 
     invokeStep();
 
