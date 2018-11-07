@@ -341,7 +341,7 @@ deleteWithLabels
 #   arg3 - keywords in deletable artificats
 
 echo @@ Starting genericDelete
-genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier"
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier"
 SUCCESS="$?"
 
 if [ "${DELETE_FILES:-true}" = "true" ]; then

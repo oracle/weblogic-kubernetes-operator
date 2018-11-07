@@ -14,6 +14,4 @@ t3ChannelPort: 30041
 exposeAdminNodePort: true
 adminNodePort: 30703
 namespace: test1
-loadBalancerWebPort: 30307
-loadBalancerDashboardPort: 30317
 createDomainFilesDir: wdt
