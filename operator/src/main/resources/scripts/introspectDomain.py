@@ -464,7 +464,9 @@ class TopologyGenerator(Generator):
     self.writeln("- name: " + name)
     self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
-    self.writeln("  listenAddress: " + self.quote(serverTemplate.getListenAddress()))
+    listenAddress=serverTemplate.getListenAddress()
+    if listenAddress is not None:
+      self.writeln("  listenAddress: " + self.quote(listenAddress))
 
   def addDynamicClusters(self):
     clusters = self.getDynamicClusters()
