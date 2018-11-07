@@ -164,8 +164,9 @@ integration-test-java:
       export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-19.1.0.0}"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
 
-      $WERCKER_SOURCE_DIR/integration-tests/src/test/resources/setupenv.sh
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh
+      # If cleanup fails, it releases the lease, and the step needs to fail.
+      # $WERCKER_SOURCE_DIR/integration-tests/src/test/resources/setupenv.sh
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh || exit 1
 
       echo "Integration test suite running for test image: $IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
       echo "WebLogic version is: $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
