@@ -28,6 +28,7 @@ public interface KubernetesConstants {
   String CONTAINER_NAME = "weblogic-server";
 
   String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-cm";
+  String DOMAIN_DEBUG_CONFIG_MAP_NAME = "weblogic-domain-debug-cm";
   String API_VERSION_ORACLE_V2 = "weblogic.oracle/v2";
   String INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX = "-weblogic-domain-introspect-cm";
 }
