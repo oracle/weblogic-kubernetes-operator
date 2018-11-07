@@ -4,15 +4,11 @@
 
 package oracle.kubernetes.json.mojo;
 
+import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.json.SchemaGenerator.DEFAULT_KUBERNETES_VERSION;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.PROCESS_CLASSES;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.objectweb.asm.Opcodes.ASM5;
 
 import com.meterware.simplestub.Memento;
@@ -28,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.junit.After;
@@ -75,9 +72,14 @@ public class JsonSchemaMojoTest {
     setMojoParameter("compileClasspathElements", EMPTY_CLASSPATH);
     setMojoParameter("rootClass", TEST_ROOT_CLASS);
     setMojoParameter("targetDir", TARGET_DIR);
+    silenceMojoLog();
 
     mementos.add(StaticStubSupport.install(JsonSchemaMojo.class, "main", main));
     mementos.add(StaticStubSupport.install(JsonSchemaMojo.class, "fileSystem", fileSystem));
+  }
+
+  private void silenceMojoLog() {
+    mojo.setLog(createNiceStub(Log.class));
   }
 
   private void setMojoParameter(String fieldName, Object value) throws Exception {

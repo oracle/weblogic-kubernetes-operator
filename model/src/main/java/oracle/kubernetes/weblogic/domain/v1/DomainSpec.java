@@ -27,11 +27,12 @@ import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import oracle.kubernetes.weblogic.domain.v2.AdminServer;
+import oracle.kubernetes.weblogic.domain.v2.AdminServerSpecV2Impl;
 import oracle.kubernetes.weblogic.domain.v2.BaseConfiguration;
 import oracle.kubernetes.weblogic.domain.v2.Cluster;
 import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
+import oracle.kubernetes.weblogic.domain.v2.ManagedServerSpecV2Impl;
 import oracle.kubernetes.weblogic.domain.v2.Server;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -1032,12 +1033,12 @@ public class DomainSpec extends BaseConfiguration {
   class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public ServerSpec getAdminServerSpec() {
-      return new ServerSpecV2Impl(DomainSpec.this, adminServer, null, DomainSpec.this);
+      return new AdminServerSpecV2Impl(DomainSpec.this, adminServer);
     }
 
     @Override
     public ServerSpec getServerSpec(String serverName, String clusterName) {
-      return new ServerSpecV2Impl(
+      return new ManagedServerSpecV2Impl(
           DomainSpec.this,
           getServer(serverName),
           getClusterLimit(clusterName),

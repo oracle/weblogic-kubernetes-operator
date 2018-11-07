@@ -17,7 +17,7 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
-public class ServerSpecV2Impl extends ServerSpec {
+public abstract class ServerSpecV2Impl extends ServerSpec {
   private final Server server;
   private Integer clusterLimit;
 
@@ -30,7 +30,7 @@ public class ServerSpecV2Impl extends ServerSpec {
    * @param configurations the additional configurations to search for values if the server lacks
    *     them
    */
-  public ServerSpecV2Impl(
+  ServerSpecV2Impl(
       DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
     super(spec);
     this.server = getBaseConfiguration(server);
@@ -73,6 +73,10 @@ public class ServerSpecV2Impl extends ServerSpec {
       default:
         return clusterLimit == null;
     }
+  }
+
+  boolean isStartAdminServerOnly() {
+    return domainSpec.isStartAdminServerOnly();
   }
 
   private String getEffectiveServerStartPolicy() {

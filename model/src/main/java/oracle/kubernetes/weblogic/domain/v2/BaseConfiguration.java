@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Probe;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -91,11 +92,24 @@ public abstract class BaseConfiguration {
     if (other == null) return;
 
     if (serverStartState == null) serverStartState = other.getServerStartState();
-    if (serverStartPolicy == null) serverStartPolicy = other.getServerStartPolicy();
+    if (overrideStartPolicyFrom(other)) serverStartPolicy = other.getServerStartPolicy();
 
     for (V1EnvVar var : getV1EnvVars(other)) addIfMissing(var);
     copyValues(livenessProbe, other.livenessProbe);
     copyValues(readinessProbe, other.readinessProbe);
+  }
+
+  private boolean overrideStartPolicyFrom(BaseConfiguration other) {
+    if (other.isStartAdminServerOnly()) return false;
+    return serverStartPolicy == null || other.isStartNever();
+  }
+
+  public boolean isStartAdminServerOnly() {
+    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_ADMIN_ONLY);
+  }
+
+  private boolean isStartNever() {
+    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
   }
 
   private List<V1EnvVar> getV1EnvVars(BaseConfiguration configuration) {
