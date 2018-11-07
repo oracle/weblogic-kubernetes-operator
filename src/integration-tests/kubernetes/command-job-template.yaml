@@ -11,7 +11,7 @@ spec:
       activeDeadlineSeconds: 60
       containers:
         - name: domain-job
-          image: store/oracle/weblogic:19.1.0.0
+          image: store/oracle/weblogic:12.2.1.3
           imagePullPolicy: IfNotPresent
           volumeMounts:
           - mountPath: /scratch
