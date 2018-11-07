@@ -712,6 +712,7 @@ public class Domain {
                 + " of "
                 + maxIterations);
         if (i == (maxIterations - 1)) {
+          logger.info("calling webapp 20 times: " + curlCmd);
           throw new RuntimeException(
               "FAILURE: testwebapp did not return 200 status code, got " + responseCode);
         }
