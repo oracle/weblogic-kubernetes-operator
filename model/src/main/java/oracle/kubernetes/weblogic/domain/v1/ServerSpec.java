@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Represents the effective configuration for a server, as seen by the operator runtime. */
 @SuppressWarnings("WeakerAccess")
@@ -183,5 +186,28 @@ public abstract class ServerSpec {
 
   public V1SecurityContext getContainerSecurityContext() {
     return null;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this).append("domainSpec", domainSpec).toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    if (!(o instanceof ServerSpec)) return false;
+
+    ServerSpec that = (ServerSpec) o;
+
+    return new EqualsBuilder().append(domainSpec, that.domainSpec).isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(domainSpec).toHashCode();
   }
 }
