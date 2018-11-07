@@ -15,6 +15,9 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
 public class ServerSpecV2Impl extends ServerSpec {
@@ -89,5 +92,36 @@ public class ServerSpecV2Impl extends ServerSpec {
   @Override
   public V1Probe getReadinessProbe() {
     return server.getReadinessProbe();
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder = new ToStringBuilder(this);
+    builder.appendSuper(super.toString()).append("server", server);
+    if (clusterLimit != null) builder.append("clusterLimit", clusterLimit);
+    return builder.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    ServerSpecV2Impl that = (ServerSpecV2Impl) o;
+
+    EqualsBuilder builder = new EqualsBuilder();
+
+    builder.appendSuper(super.equals(o)).append(server, that.server);
+    if (clusterLimit != null) builder.append(clusterLimit, that.clusterLimit);
+    return builder.isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder = new HashCodeBuilder(17, 37);
+    builder.appendSuper(super.hashCode()).append(server);
+    if (clusterLimit != null) builder.append(clusterLimit);
+    return builder.toHashCode();
   }
 }
