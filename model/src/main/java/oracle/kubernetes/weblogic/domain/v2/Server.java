@@ -45,6 +45,8 @@ public class Server extends BaseConfiguration {
 
     if (o == null || getClass() != o.getClass()) return false;
 
+    if (!(o instanceof Server)) return false;
+
     Server that = (Server) o;
 
     return new EqualsBuilder()
