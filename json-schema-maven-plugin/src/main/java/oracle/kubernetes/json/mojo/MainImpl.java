@@ -28,7 +28,7 @@ public class MainImpl implements Main {
 
   @Override
   public void defineClasspath(URL... classpathElements) {
-    classLoader = new URLClassLoader(classpathElements);
+    classLoader = new URLClassLoader(classpathElements, getClass().getClassLoader());
   }
 
   @Override

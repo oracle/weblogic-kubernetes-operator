@@ -52,8 +52,12 @@ public class JsonSchemaMojo extends AbstractMojo {
     URL classUrl = main.getResource(toClassFileName(rootClass));
     if (classUrl == null) throw new MojoExecutionException("Class " + rootClass + " not found");
 
-    if (updateNeeded(new File(classUrl.getPath()), getSchemaFile()))
+    if (updateNeeded(new File(classUrl.getPath()), getSchemaFile())) {
+      getLog().info("Changes detected -- generating schema for " + rootClass + ".");
       main.generateSchema(rootClass, getSchemaFile());
+    } else {
+      getLog().info("Schema up-to-date. Skipping generation.");
+    }
   }
 
   private boolean updateNeeded(File inputFile, File outputFile) {

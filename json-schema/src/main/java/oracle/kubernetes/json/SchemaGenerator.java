@@ -173,10 +173,15 @@ public class SchemaGenerator {
     SubSchemaGenerator sub = new SubSchemaGenerator(field);
 
     sub.generateTypeIn(result, field.getType());
-    Description description = field.getAnnotation(Description.class);
-    if (description != null) result.put("description", description.value());
+    String description = getDescription(field);
+    if (description != null) result.put("description", description);
 
     return result;
+  }
+
+  private String getDescription(Field field) {
+    Description description = field.getAnnotation(Description.class);
+    return description != null ? description.value() : null;
   }
 
   private class SubSchemaGenerator {

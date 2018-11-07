@@ -112,7 +112,7 @@ public class SchemaGeneratorTest {
   private Double annotatedDouble;
 
   @Test
-  public void doNotGenerateSchemaForStatics() throws NoSuchFieldException {
+  public void doNotGenerateSchemaForStatics() {
     Object schema = generator.generate(SimpleObject.class);
 
     assertThat(schema, hasNoJsonPath("$.properties.staticInt"));
