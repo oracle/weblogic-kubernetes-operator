@@ -240,7 +240,7 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withServerStartupPolicy(String policy) {
+    public ClusterConfigurator withServerStartPolicy(String policy) {
       cluster.setServerStartPolicy(policy);
       return this;
     }

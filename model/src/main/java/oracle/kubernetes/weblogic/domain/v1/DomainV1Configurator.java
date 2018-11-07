@@ -255,7 +255,7 @@ public class DomainV1Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withServerStartupPolicy(String policy) {
+    public ClusterConfigurator withServerStartPolicy(String policy) {
       throw new ConfigurationNotSupportedException("cluster", "serverStartupPolicy");
     }
 
