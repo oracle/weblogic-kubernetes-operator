@@ -75,10 +75,32 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>jsonschema-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <rootClass>oracle.kubernetes.weblogic.domain.v1.Domain</rootClass>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>json-schema</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>io.kubernetes</groupId>
       <artifactId>client-java</artifactId>
@@ -97,13 +119,11 @@
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-junit</artifactId>
-      <version>2.0.0.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
       <scope>test</scope>
     </dependency>
     <dependency>
