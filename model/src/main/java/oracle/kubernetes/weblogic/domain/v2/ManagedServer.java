@@ -44,6 +44,8 @@ public class ManagedServer extends Server {
 
     if (o == null || getClass() != o.getClass()) return false;
 
+    if (!(o instanceof ManagedServer)) return false;
+
     ManagedServer that = (ManagedServer) o;
 
     return new EqualsBuilder()
