@@ -14,5 +14,4 @@ t3ChannelPort: 30031
 exposeAdminNodePort: true
 adminNodePort: 30702
 namespace: default
-loadBalancerWebPort: 30306
-loadBalancerDashboardPort: 30316
+

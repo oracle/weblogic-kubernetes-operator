@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import oracle.kubernetes.json.Description;
 import oracle.kubernetes.weblogic.domain.v1.ExportedNetworkAccessPoint;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -24,7 +24,7 @@ public class AdminServer extends Server {
    *
    * @since 2.0
    */
-  @JsonPropertyDescription("T3 network access points to export")
+  @Description("T3 network access points to export")
   private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
   /**

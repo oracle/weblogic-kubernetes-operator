@@ -15,9 +15,12 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
-public class ServerSpecV2Impl extends ServerSpec {
+public abstract class ServerSpecV2Impl extends ServerSpec {
   private final Server server;
   private Integer clusterLimit;
 
@@ -30,7 +33,7 @@ public class ServerSpecV2Impl extends ServerSpec {
    * @param configurations the additional configurations to search for values if the server lacks
    *     them
    */
-  public ServerSpecV2Impl(
+  ServerSpecV2Impl(
       DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
     super(spec);
     this.server = getBaseConfiguration(server);
@@ -75,6 +78,10 @@ public class ServerSpecV2Impl extends ServerSpec {
     }
   }
 
+  boolean isStartAdminServerOnly() {
+    return domainSpec.isStartAdminServerOnly();
+  }
+
   private String getEffectiveServerStartPolicy() {
     return Optional.ofNullable(server.getServerStartPolicy()).orElse("undefined");
   }
@@ -89,5 +96,40 @@ public class ServerSpecV2Impl extends ServerSpec {
   @Override
   public V1Probe getReadinessProbe() {
     return server.getReadinessProbe();
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("server", server)
+        .append("clusterLimit", clusterLimit)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    if (!(o instanceof ServerSpecV2Impl)) return false;
+
+    ServerSpecV2Impl that = (ServerSpecV2Impl) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(server, that.server)
+        .append(clusterLimit, that.clusterLimit)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(server)
+        .append(clusterLimit)
+        .toHashCode();
   }
 }
