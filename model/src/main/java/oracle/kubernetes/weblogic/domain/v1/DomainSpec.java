@@ -879,6 +879,7 @@ public class DomainSpec extends BaseConfiguration {
       builder.append(imagePullSecrets).append(adminServer).append(managedServers).append(clusters);
     else
       builder
+          .append(imagePullSecret)
           .append(replicas)
           .append(startupControl)
           .append(clusterStartup)
@@ -915,6 +916,7 @@ public class DomainSpec extends BaseConfiguration {
           .append(clusters, rhs.clusters);
     else
       builder
+          .append(imagePullSecret, rhs.imagePullSecret)
           .append(replicas, rhs.replicas)
           .append(startupControl, rhs.startupControl)
           .append(clusterStartup, rhs.clusterStartup)
