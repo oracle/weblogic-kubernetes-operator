@@ -11,7 +11,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEP
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
@@ -23,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.v2.ProbeTuning;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -142,13 +142,13 @@ public abstract class ServerSpec {
   }
 
   @Nonnull
-  public V1Probe getLivenessProbe() {
-    return new V1Probe();
+  public ProbeTuning getLivenessProbe() {
+    return new ProbeTuning();
   }
 
   @Nonnull
-  public V1Probe getReadinessProbe() {
-    return new V1Probe();
+  public ProbeTuning getReadinessProbe() {
+    return new ProbeTuning();
   }
 
   @Nonnull

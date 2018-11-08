@@ -17,10 +17,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import io.kubernetes.client.models.V1Probe;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
+import oracle.kubernetes.weblogic.domain.v2.ProbeTuning;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -235,20 +235,20 @@ public class DomainV1Test extends DomainTestBase {
   @Test
   public void livenessProbeSettings_returnsNullValues() {
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-    V1Probe probe = spec.getLivenessProbe();
+    ProbeTuning probe = spec.getLivenessProbe();
 
     assertThat(probe.getInitialDelaySeconds(), nullValue());
-    assertThat(probe.getFailureThreshold(), nullValue());
+    assertThat(probe.getTimeoutSeconds(), nullValue());
     assertThat(probe.getPeriodSeconds(), nullValue());
   }
 
   @Test
   public void readinessProbeSettings_returnsNullValues() {
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-    V1Probe probe = spec.getReadinessProbe();
+    ProbeTuning probe = spec.getReadinessProbe();
 
     assertThat(probe.getInitialDelaySeconds(), nullValue());
-    assertThat(probe.getFailureThreshold(), nullValue());
+    assertThat(probe.getTimeoutSeconds(), nullValue());
     assertThat(probe.getPeriodSeconds(), nullValue());
   }
 
