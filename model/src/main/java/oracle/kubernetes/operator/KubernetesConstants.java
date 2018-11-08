@@ -18,7 +18,7 @@ public interface KubernetesConstants {
   String CLASS_INGRESS_VALUE = "traefik";
 
   String DOMAIN_GROUP = "weblogic.oracle";
-  String DOMAIN_VERSION = "v1";
+  String DOMAIN_VERSION = "v2";
   String DOMAIN_PLURAL = "domains";
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
