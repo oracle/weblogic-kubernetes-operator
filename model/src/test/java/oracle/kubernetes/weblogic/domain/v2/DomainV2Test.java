@@ -358,6 +358,46 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainStartPolicyNever_ignoreServerSettings() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenClusterStartPolicyNever_ignoreServerSettings() {
+    configureCluster("cluster1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenDomainStartPolicyAdminOnly_dontStartManagedServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenDomainStartPolicyAdminOnlyAndAdminServerNever_dontStartAdminServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getAdminServerSpec().shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenDomainStartPolicyAdminOnlyAndAdminServerIfNeeded_startAdminServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+
+    assertThat(domain.getAdminServerSpec().shouldStart(0), is(true));
+  }
+
+  @Test
   public void whenEnvironmentConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain)
         .withEnvironmentVariable("name1", "domain")

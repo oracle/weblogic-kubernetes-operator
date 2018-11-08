@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.v1;
 
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -13,7 +12,9 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 import javax.validation.Valid;
+import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -26,7 +27,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Domain {
 
   /** The default number of replicas for a cluster. */
-  public static final int DEFAULT_REPLICA_LIMIT = 2;
+  static final int DEFAULT_REPLICA_LIMIT = 2;
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -35,7 +36,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @JsonPropertyDescription("The API version for the Domain. Must be 'weblogic.oracle/v1'")
+  @Description("The API version for the Domain. Must be 'weblogic.oracle/v1'")
   private String apiVersion;
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -44,7 +45,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @JsonPropertyDescription("The type of resourced. Should be 'Domain'")
+  @Description("The type of resourced. Should be 'Domain'")
   private String kind;
   /**
    * Standard object's metadata. More info:
@@ -53,15 +54,17 @@ public class Domain {
   @SerializedName("metadata")
   @Expose
   @Valid
-  @JsonPropertyDescription("The domain meta-data. Must include the name and namespace.")
-  private V1ObjectMeta metadata;
+  @Description("The domain meta-data. Must include the name and namespace.")
+  @Nonnull
+  private V1ObjectMeta metadata = new V1ObjectMeta();
 
   /** DomainSpec is a description of a domain. */
   @SerializedName("spec")
   @Expose
   @Valid
-  @JsonPropertyDescription("The actual specification of the domain. Required.")
-  private DomainSpec spec;
+  @Description("The actual specification of the domain. Required.")
+  @Nonnull
+  private DomainSpec spec = new DomainSpec();
 
   /**
    * DomainStatus represents information about the status of a domain. Status may trail the actual
@@ -148,7 +151,7 @@ public class Domain {
    *
    * @return Metadata
    */
-  public V1ObjectMeta getMetadata() {
+  public @Nonnull V1ObjectMeta getMetadata() {
     return metadata;
   }
 
@@ -158,7 +161,7 @@ public class Domain {
    *
    * @param metadata Metadata
    */
-  public void setMetadata(V1ObjectMeta metadata) {
+  public void setMetadata(@Nonnull V1ObjectMeta metadata) {
     this.metadata = metadata;
   }
 
@@ -183,7 +186,6 @@ public class Domain {
   }
 
   private String getResourceVersion() {
-    if (metadata == null) return VersionConstants.DEFAULT_DOMAIN_VERSION;
     Map<String, String> labels = metadata.getLabels();
     if (labels == null) return VersionConstants.DEFAULT_DOMAIN_VERSION;
     return labels.get(LabelConstants.RESOURCE_VERSION_LABEL);
@@ -223,7 +225,7 @@ public class Domain {
    *
    * @return Specification
    */
-  public DomainSpec getSpec() {
+  public @Nonnull DomainSpec getSpec() {
     return spec;
   }
 
@@ -232,7 +234,7 @@ public class Domain {
    *
    * @param spec Specification
    */
-  public void setSpec(DomainSpec spec) {
+  public void setSpec(@Nonnull DomainSpec spec) {
     this.spec = spec;
   }
 

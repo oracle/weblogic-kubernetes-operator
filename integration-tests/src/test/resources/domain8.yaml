@@ -3,5 +3,3 @@
 
 domainUID: domain8
 configuredManagedServerCount: 4
-loadBalancerWebPort: 30312
-loadBalancerDashboardPort: 30322
