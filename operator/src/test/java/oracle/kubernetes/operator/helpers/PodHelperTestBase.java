@@ -271,7 +271,7 @@ public abstract class PodHelperTestBase {
             writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
             readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
             readOnlyVolumeMount(
-                "weblogic-domain-debug-cm-volume", "/weblogic-operator/debug-scripts"),
+                "weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
   }
 

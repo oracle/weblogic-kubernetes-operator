@@ -596,7 +596,7 @@ public abstract class PodStepContext implements StepContextConstants {
                             .defaultMode(ALL_READ_AND_EXECUTE)))
             .addVolumesItem(
                 new V1Volume()
-                    .name(DEBUG_SCRIPTS_VOLUME)
+                    .name(DEBUG_CM_VOLUME)
                     .configMap(
                         new V1ConfigMapVolumeSource()
                             .name(
@@ -646,7 +646,7 @@ public abstract class PodStepContext implements StepContextConstants {
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(
-                readOnlyVolumeMount(DEBUG_SCRIPTS_VOLUME, DEBUG_SCRIPTS_MOUNTS_PATH))
+                readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
