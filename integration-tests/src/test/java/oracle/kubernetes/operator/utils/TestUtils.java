@@ -125,7 +125,7 @@ public class TestUtils {
         .append(domainUid)
         .append(" -n ")
         .append(domainNS)
-        .append(" -o jsonpath='{.spec.clusterStartup[?(@.clusterName == \"")
+        .append(" -o jsonpath='{.spec.clusters[?(@.clusterName == \"")
         .append(clusterName)
         .append("\")].replicas }'");
     logger.fine("getClusterReplicas cmd =" + cmd);
