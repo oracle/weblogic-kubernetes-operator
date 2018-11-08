@@ -645,8 +645,7 @@ public abstract class PodStepContext implements StepContextConstants {
             .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
-            .addVolumeMountsItem(
-                readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
