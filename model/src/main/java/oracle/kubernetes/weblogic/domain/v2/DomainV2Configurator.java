@@ -13,11 +13,8 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
-import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ExportedNetworkAccessPoint;
 
 public class DomainV2Configurator extends DomainConfigurator {
 
@@ -59,11 +56,6 @@ public class DomainV2Configurator extends DomainConfigurator {
   public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
     ((BaseConfiguration) getDomainSpec()).setServerStartPolicy(startPolicy);
     return this;
-  }
-
-  @Override
-  public DomainConfigurator withStartupControl(String startupControl) {
-    throw new ConfigurationNotSupportedException("domain", "startupControl");
   }
 
   @Override
@@ -138,11 +130,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withNodePort(int nodePort) {
-      throw new ConfigurationNotSupportedException("managedServer", "nodePort");
-    }
-
-    @Override
     public ServerConfigurator withDesiredState(String desiredState) {
       server.setServerStartState(desiredState);
       return this;
@@ -202,11 +189,6 @@ public class DomainV2Configurator extends DomainConfigurator {
   @Override
   public void setShuttingDown(boolean shuttingDown) {
     configureAdminServer("").withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
-  }
-
-  @Override
-  public boolean useDomainV1() {
-    return false;
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {

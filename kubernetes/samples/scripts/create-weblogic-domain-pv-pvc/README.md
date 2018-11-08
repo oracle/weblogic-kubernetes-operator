@@ -94,7 +94,7 @@ metadata:
   name: weblogic-sample-pvc
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v1
+    weblogic.resourceVersion: domain-v2
 
   storageClassName: weblogic-sample-storage-class
   accessModes:
@@ -114,7 +114,7 @@ kind: PersistentVolume
 metadata:
   name: weblogic-sample-pv
   labels:
-    weblogic.resourceVersion: domain-v1
+    weblogic.resourceVersion: domain-v2
     # weblogic.domainUID:
 spec:
   storageClassName: weblogic-sample-storage-class
@@ -145,7 +145,7 @@ metadata:
   name: domain1-weblogic-sample-pvc
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v1
+    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   storageClassName: domain1-weblogic-sample-storage-class
@@ -166,7 +166,7 @@ kind: PersistentVolume
 metadata:
   name: domain1-weblogic-sample-pv
   labels:
-    weblogic.resourceVersion: domain-v1
+    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   storageClassName: domain1-weblogic-sample-storage-class
@@ -196,7 +196,7 @@ Replace `NAMESPACE` with the namespace that the PVC was created in.  The output 
 ```
 $ kubectl describe pv weblogic-sample-pv
 Name:            weblogic-sample-pv
-Labels:          weblogic.resourceVersion=domain-v1
+Labels:          weblogic.resourceVersion=domain-v2
 Annotations:     pv.kubernetes.io/bound-by-controller=yes
 StorageClass:    weblogic-sample-storage-class
 Status:          Bound
@@ -220,7 +220,7 @@ Namespace:     default
 StorageClass:  weblogic-sample-storage-class
 Status:        Bound
 Volume:        weblogic-sample-pv
-Labels:        weblogic.resourceVersion=domain-v1
+Labels:        weblogic.resourceVersion=domain-v2
 Annotations:   pv.kubernetes.io/bind-completed=yes
                pv.kubernetes.io/bound-by-controller=yes
 Finalizers:    []

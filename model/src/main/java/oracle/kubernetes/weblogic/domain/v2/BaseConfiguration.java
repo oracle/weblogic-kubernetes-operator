@@ -136,15 +136,6 @@ public abstract class BaseConfiguration {
     if (toProbe.getPeriodSeconds() == null) toProbe.setPeriodSeconds(fromProbe.getPeriodSeconds());
   }
 
-  /**
-   * Returns true if any version 2 configuration fields are specified.
-   *
-   * @return whether there is version 2 configuration field in this instance
-   */
-  protected boolean hasV2Fields() {
-    return serverStartState != null || serverStartPolicy != null || !env.isEmpty();
-  }
-
   @Nullable
   String getServerStartState() {
     return serverStartState;
