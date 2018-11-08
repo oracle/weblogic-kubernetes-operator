@@ -35,7 +35,7 @@ The command deploys Apache HTTP Server on the Kubernetes cluster in the default 
 To uninstall/delete the `my-release`:
 
 ```console
-$ helm delete my-release
+$ helm delete --purge my-release
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -55,7 +55,9 @@ The following table lists the configurable parameters of the Apache webtier char
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
 | `httpNodePort`                     | NodePort to expose for http access                            | `30305`               |
 | `httpsNodePort`                    | NodePort to expose for https access                           | `30443`               |
-| `sslPort`                          | SSL listen port                                               | `443`                 |
+| `virtualHostName`                  | The VirtualHostName of the Apache HTTP server                 | ``                    |
+| `customCert`                       | The customer supplied certificate                             | ``                    |
+| `customKey`                        | The customer supplied private key                             | ``                    |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 

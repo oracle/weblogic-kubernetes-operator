@@ -40,5 +40,14 @@ httpNodePort: 30305
 # NodePort to expose for https access
 httpsNodePort: 30443
 
-# SSL listen port 
-sslPort: 443
+# The VirtualHostName of the Apache HTTP server. It is used to enable custom SSL configuration.
+# If it is set, the Apache HTTP Server is configured to listen to port 4433 for SSL traffic.
+virtualHostName:
+
+# The customer supplied certificate to use for Apache webtier SSL configuration.
+# The value must be a string containing a base64 encoded certificate.
+customCert:
+
+# The customer supplied private key to use for Apache webtier SSL configuration.
+# The value must be a string containing a base64 encoded key.
+customKey:
