@@ -2,9 +2,8 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.v1;
+package oracle.kubernetes.weblogic.domain.v2;
 
-import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
 import com.google.common.base.Strings;
@@ -23,16 +22,8 @@ import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
-import oracle.kubernetes.weblogic.domain.v2.AdminServer;
-import oracle.kubernetes.weblogic.domain.v2.AdminServerSpecV2Impl;
-import oracle.kubernetes.weblogic.domain.v2.BaseConfiguration;
-import oracle.kubernetes.weblogic.domain.v2.Cluster;
-import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
-import oracle.kubernetes.weblogic.domain.v2.ManagedServerSpecV2Impl;
-import oracle.kubernetes.weblogic.domain.v2.Server;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -179,30 +170,6 @@ public class DomainSpec extends BaseConfiguration {
   private String startupControl;
 
   /**
-   * List of server startup details for selected servers.
-   *
-   * @deprecated as of 2.0 use #managedServers field instead
-   */
-  @SuppressWarnings({"deprecation", "DeprecatedIsStillUsed"})
-  @Deprecated
-  @SerializedName("serverStartup")
-  @Expose
-  @Valid
-  private List<ServerStartup> serverStartup = new ArrayList<>();
-
-  /**
-   * List of server startup details for selected clusters.
-   *
-   * @deprecated as of 2.0 use #clusters field instead
-   */
-  @SuppressWarnings({"deprecation", "DeprecatedIsStillUsed"})
-  @Deprecated
-  @SerializedName("clusterStartup")
-  @Expose
-  @Valid
-  private List<ClusterStartup> clusterStartup = new ArrayList<>();
-
-  /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
    */
@@ -271,62 +238,12 @@ public class DomainSpec extends BaseConfiguration {
     return adminServer;
   }
 
-  @SuppressWarnings("deprecation")
-  String getEffectiveStartupControl() {
-    return Optional.ofNullable(getStartupControl()).orElse(AUTO_STARTUPCONTROL).toUpperCase();
-  }
-
   EffectiveConfigurationFactory getEffectiveConfigurationFactory(String resourceVersionLabel) {
-    return useVersion2(resourceVersionLabel)
-        ? new V2EffectiveConfigurationFactory()
-        : new V1EffectiveConfigurationFactory();
-  }
-
-  private boolean useVersion2(String resourceVersionLabel) {
-    return isVersion2Specified(resourceVersionLabel) || hasV2Configuration() || hasV2Fields();
+    return new V2EffectiveConfigurationFactory();
   }
 
   private boolean isVersion2Specified(String resourceVersionLabel) {
     return VersionConstants.DOMAIN_V2.equals(resourceVersionLabel);
-  }
-
-  private boolean hasV2Configuration() {
-    return adminServer != null || !managedServers.isEmpty() || !clusters.isEmpty();
-  }
-
-  @SuppressWarnings("deprecation")
-  int getReplicaCount(ClusterStartup clusterStartup) {
-    return hasReplicaCount(clusterStartup) ? clusterStartup.getReplicas() : getReplicas();
-  }
-
-  @SuppressWarnings("deprecation")
-  private boolean hasReplicaCount(ClusterStartup clusterStartup) {
-    return clusterStartup != null && clusterStartup.getReplicas() != null;
-  }
-
-  @SuppressWarnings("deprecation")
-  private ClusterStartup getClusterStartup(String clusterName) {
-    if (getClusterStartup() == null || clusterName == null) return null;
-
-    for (ClusterStartup cs : getClusterStartup()) {
-      if (clusterName.equals(cs.getClusterName())) {
-        return cs;
-      }
-    }
-
-    return null;
-  }
-
-  @SuppressWarnings("deprecation")
-  private ClusterStartup getOrCreateClusterStartup(String clusterName) {
-    ClusterStartup clusterStartup = getClusterStartup(clusterName);
-    if (clusterStartup != null) {
-      return clusterStartup;
-    }
-
-    ClusterStartup newClusterStartup = new ClusterStartup().withClusterName(clusterName);
-    getClusterStartup().add(newClusterStartup);
-    return newClusterStartup;
   }
 
   /**
@@ -671,85 +588,6 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * List of server startup details for selected servers.
-   *
-   * @deprecated use {@link Domain#getServer(String, String)} to get the effective settings for a
-   *     specific server.
-   * @return server startup
-   */
-  @SuppressWarnings({"WeakerAccess", "DeprecatedIsStillUsed"})
-  @Deprecated
-  // public access is needed for yaml processing
-  public List<ServerStartup> getServerStartup() {
-    return serverStartup;
-  }
-
-  /**
-   * List of server startup details for selected servers.
-   *
-   * @deprecated use {@link
-   *     oracle.kubernetes.weblogic.domain.DomainConfigurator#configureServer(String)} to configure
-   *     a server.
-   * @param serverStartup server startup
-   */
-  @Deprecated
-  public void setServerStartup(List<ServerStartup> serverStartup) {
-    this.serverStartup = serverStartup;
-  }
-
-  /**
-   * Add server startup details for one servers.
-   *
-   * @param serverStartupItem a single item to add
-   */
-  @SuppressWarnings("deprecation")
-  void addServerStartupItem(ServerStartup serverStartupItem) {
-    if (serverStartup == null) serverStartup = new ArrayList<>();
-    serverStartup.add(serverStartupItem);
-  }
-
-  /**
-   * List of startup details for selected clusters
-   *
-   * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective replica count
-   *     for a cluster, or {@link Domain#getServer(String, String)} to get any other settings
-   *     controlled by a cluster configuration.
-   * @return cluster startup
-   */
-  @SuppressWarnings({"WeakerAccess", "DeprecatedIsStillUsed"})
-  @Deprecated
-  // public access is needed for yaml processing
-  public List<ClusterStartup> getClusterStartup() {
-    return clusterStartup;
-  }
-
-  /**
-   * List of server startup details for selected clusters.
-   *
-   * @deprecated use {@link
-   *     oracle.kubernetes.weblogic.domain.DomainConfigurator#configureCluster(String)} to configure
-   *     a cluster.
-   * @param clusterStartup cluster startup
-   */
-  @SuppressWarnings("WeakerAccess")
-  @Deprecated
-  // public access is needed for yaml processing
-  public void setClusterStartup(List<ClusterStartup> clusterStartup) {
-    this.clusterStartup = clusterStartup;
-  }
-
-  /**
-   * Add startup details for a cluster
-   *
-   * @param clusterStartupItem cluster startup
-   */
-  @SuppressWarnings("deprecation")
-  void addClusterStartupItem(ClusterStartup clusterStartupItem) {
-    if (clusterStartup == null) clusterStartup = new ArrayList<>();
-    clusterStartup.add(clusterStartupItem);
-  }
-
-  /**
    * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
    * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
    * Ignored if startupControl is not AUTO.
@@ -760,9 +598,7 @@ public class DomainSpec extends BaseConfiguration {
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
   public Integer getReplicas() {
-    return replicas != null
-        ? replicas
-        : getEffectiveConfigurationFactory("weblogic.oracle/v1").getDefaultReplicaLimit();
+    return replicas != null ? replicas : 0;
   }
 
   /**
@@ -842,20 +678,11 @@ public class DomainSpec extends BaseConfiguration {
             .append("imagePullPolicy", imagePullPolicy)
             .append("storage", storage);
 
-    if (hasV2Configuration())
-      builder
-          .append("imagePullSecrets", imagePullSecrets)
-          .append("adminServer", adminServer)
-          .append("managedServers", managedServers)
-          .append("clusters", clusters);
-    else
-      builder
-          .append("imagePullSecret", imagePullSecrets)
-          .append("startupControl", startupControl)
-          .append("serverStartup", serverStartup)
-          .append("clusterStartup", clusterStartup)
-          .append("replicas", replicas)
-          .append("exportT3Channels", exportT3Channels);
+    builder
+        .append("imagePullSecrets", imagePullSecrets)
+        .append("adminServer", adminServer)
+        .append("managedServers", managedServers)
+        .append("clusters", clusters);
 
     return builder.toString();
   }
@@ -875,16 +702,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(imagePullPolicy)
             .append(storage);
 
-    if (hasV2Configuration())
-      builder.append(imagePullSecrets).append(adminServer).append(managedServers).append(clusters);
-    else
-      builder
-          .append(imagePullSecret)
-          .append(replicas)
-          .append(startupControl)
-          .append(clusterStartup)
-          .append(exportT3Channels)
-          .append(serverStartup);
+    builder.append(imagePullSecrets).append(adminServer).append(managedServers).append(clusters);
 
     return builder.toHashCode();
   }
@@ -908,20 +726,11 @@ public class DomainSpec extends BaseConfiguration {
             .append(storage, rhs.storage)
             .append(imagePullPolicy, rhs.imagePullPolicy);
 
-    if (hasV2Configuration())
-      builder
-          .append(imagePullSecrets, rhs.imagePullSecrets)
-          .append(adminServer, rhs.adminServer)
-          .append(managedServers, rhs.managedServers)
-          .append(clusters, rhs.clusters);
-    else
-      builder
-          .append(imagePullSecret, rhs.imagePullSecret)
-          .append(replicas, rhs.replicas)
-          .append(startupControl, rhs.startupControl)
-          .append(clusterStartup, rhs.clusterStartup)
-          .append(exportT3Channels, rhs.exportT3Channels)
-          .append(serverStartup, rhs.serverStartup);
+    builder
+        .append(imagePullSecrets, rhs.imagePullSecrets)
+        .append(adminServer, rhs.adminServer)
+        .append(managedServers, rhs.managedServers)
+        .append(clusters, rhs.clusters);
 
     return builder.isEquals();
   }
@@ -966,70 +775,6 @@ public class DomainSpec extends BaseConfiguration {
 
   public List<Cluster> getClusters() {
     return clusters;
-  }
-
-  private class V1EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
-    @Override
-    public ServerSpec getAdminServerSpec() {
-      return new ServerSpecV1Impl(DomainSpec.this, null, getServerStartup(getAsName()), null);
-    }
-
-    @Override
-    public ServerSpec getServerSpec(String serverName, String clusterName) {
-      return new ServerSpecV1Impl(
-          DomainSpec.this,
-          clusterName,
-          getServerStartup(serverName),
-          getClusterStartup(clusterName));
-    }
-
-    @Override
-    public int getReplicaCount(String clusterName) {
-      return DomainSpec.this.getReplicaCount(getClusterStartup(clusterName));
-    }
-
-    @Override
-    public void setReplicaCount(String clusterName, int replicaCount) {
-      getOrCreateClusterStartup(clusterName).setReplicas(replicaCount);
-    }
-
-    @Override
-    public boolean isShuttingDown() {
-      return StartupControlConstants.NONE_STARTUPCONTROL.equals(getEffectiveStartupControl());
-    }
-
-    @Override
-    public List<String> getExportedNetworkAccessPointNames() {
-      return Optional.ofNullable(exportT3Channels).orElse(Collections.emptyList());
-    }
-
-    @Override
-    public Map<String, String> getChannelServiceLabels(String channel) {
-      return Collections.emptyMap();
-    }
-
-    @Override
-    public Map<String, String> getChannelServiceAnnotations(String channel) {
-      return Collections.emptyMap();
-    }
-
-    @Override
-    public Integer getDefaultReplicaLimit() {
-      return 2;
-    }
-
-    @SuppressWarnings("deprecation")
-    private ServerStartup getServerStartup(String name) {
-      if (DomainSpec.this.getServerStartup() == null) return null;
-
-      for (ServerStartup ss : DomainSpec.this.getServerStartup()) {
-        if (ss.getServerName().equals(name)) {
-          return ss;
-        }
-      }
-
-      return null;
-    }
   }
 
   class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {

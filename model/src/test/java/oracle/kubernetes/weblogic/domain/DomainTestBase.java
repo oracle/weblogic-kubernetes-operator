@@ -27,9 +27,9 @@ import io.kubernetes.client.models.V1SecretReference;
 import java.io.IOException;
 import java.net.URL;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.junit.Test;
 
 public abstract class DomainTestBase {
@@ -42,7 +42,7 @@ public abstract class DomainTestBase {
   private static final String NS = "test-namespace";
   private static final String DOMAIN_NAME = "test";
   private static final String DOMAIN_UID = "uid1";
-  private static final String DOMAIN_V1_SAMPLE_YAML = "v1/domain-sample.yaml";
+  private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
   private static final String AS_NAME = "admin";
@@ -201,7 +201,7 @@ public abstract class DomainTestBase {
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
 
-  protected ServerConfigurator configureAdminServer() {
+  protected AdminServerConfigurator configureAdminServer() {
     return configureDomain(domain).configureAdminServer(AS_NAME).withPort(AS_PORT);
   }
 
@@ -376,7 +376,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
@@ -389,20 +389,19 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", null);
 
     assertThat(
         serverSpec.getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-server")))
             .and(hasItem(envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "))));
-    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   public void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(
@@ -413,16 +412,8 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_Cluster1UsesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
-
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(1));
-    assertThat(domain.getServer("server3", "cluster1").getEnvironmentVariables(), empty());
-  }
-
-  @Test
   public void whenDomainReadFromYaml_Cluster2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     assertThat(domain.getReplicaCount("cluster2"), equalTo(5));
     assertThat(

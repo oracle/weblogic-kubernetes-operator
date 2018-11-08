@@ -86,7 +86,7 @@
               <goal>generate</goal>
             </goals>
             <configuration>
-              <rootClass>oracle.kubernetes.weblogic.domain.v1.Domain</rootClass>
+              <rootClass>oracle.kubernetes.weblogic.domain.v2.Domain</rootClass>
             </configuration>
           </execution>
         </executions>
@@ -163,7 +163,7 @@
             <version>0.5.1</version>
             <configuration>
               <sourceDirectory>${basedir}/src/main/resources/schema</sourceDirectory>
-              <targetPackage>oracle.kubernetes.operator.domain.model.v1</targetPackage>
+              <targetPackage>oracle.kubernetes.operator.domain.model.v2</targetPackage>
               <targetVersion>1.8</targetVersion>
               <annotationStyle>gson</annotationStyle>
               <includeJsr303Annotations>true</includeJsr303Annotations>

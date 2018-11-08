@@ -112,7 +112,7 @@ metadata:
   name: domain1
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v1
+    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
     weblogic.domainName: base_domain
 spec:
@@ -205,7 +205,7 @@ Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainName=base_domain
               weblogic.domainUID=domain1
-              weblogic.resourceVersion=domain-v1
+              weblogic.resourceVersion=domain-v2
 Annotations:  <none>
 API Version:  weblogic.oracle/v1
 Kind:         Domain
