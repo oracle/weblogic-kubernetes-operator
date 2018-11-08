@@ -9,7 +9,6 @@ import static java.util.Collections.emptyList;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Probe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +41,7 @@ class ServerPod {
   @SerializedName("livenessProbe")
   @Expose
   @Description("Settings for the liveness probe associated with a server")
-  private V1Probe livenessProbe = new V1Probe();
+  private ProbeTuning livenessProbeTuning = new ProbeTuning();
 
   /**
    * Defines the settings for the readiness probe. Any that are not specified will default to the
@@ -53,14 +52,25 @@ class ServerPod {
   @SerializedName("readinessProbe")
   @Expose
   @Description("Settings for the readiness probe associated with a server")
-  private V1Probe readinessProbe = new V1Probe();
+  private ProbeTuning readinessProbeTuning = new ProbeTuning();
 
-  V1Probe getReadinessProbe() {
-    return this.readinessProbe;
+  ProbeTuning getReadinessProbeTuning() {
+    return this.readinessProbeTuning;
   }
 
-  void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    this.readinessProbe
+  void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period) {
+    this.readinessProbeTuning
+        .initialDelaySeconds(initialDelay)
+        .timeoutSeconds(timeout)
+        .periodSeconds(period);
+  }
+
+  ProbeTuning getLivenessProbeTuning() {
+    return this.livenessProbeTuning;
+  }
+
+  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
+    this.livenessProbeTuning
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
@@ -72,8 +82,8 @@ class ServerPod {
 
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
-    copyValues(livenessProbe, serverPod1.livenessProbe);
-    copyValues(readinessProbe, serverPod1.readinessProbe);
+    copyValues(livenessProbeTuning, serverPod1.livenessProbeTuning);
+    copyValues(readinessProbeTuning, serverPod1.readinessProbeTuning);
   }
 
   private List<V1EnvVar> getV1EnvVars() {
@@ -92,12 +102,11 @@ class ServerPod {
     return false;
   }
 
-  private static void copyValues(V1Probe toProbe, V1Probe fromProbe) {
+  private static void copyValues(ProbeTuning toProbe, ProbeTuning fromProbe) {
     if (toProbe.getInitialDelaySeconds() == null)
-      toProbe.setInitialDelaySeconds(fromProbe.getInitialDelaySeconds());
-    if (toProbe.getTimeoutSeconds() == null)
-      toProbe.setTimeoutSeconds(fromProbe.getTimeoutSeconds());
-    if (toProbe.getPeriodSeconds() == null) toProbe.setPeriodSeconds(fromProbe.getPeriodSeconds());
+      toProbe.initialDelaySeconds(fromProbe.getInitialDelaySeconds());
+    if (toProbe.getTimeoutSeconds() == null) toProbe.timeoutSeconds(fromProbe.getTimeoutSeconds());
+    if (toProbe.getPeriodSeconds() == null) toProbe.periodSeconds(fromProbe.getPeriodSeconds());
   }
 
   List<V1EnvVar> getEnv() {
@@ -113,27 +122,12 @@ class ServerPod {
     this.env = env;
   }
 
-  V1Probe getLivenessProbe() {
-    return this.livenessProbe;
-  }
-
-  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    this.livenessProbe
-        .initialDelaySeconds(initialDelay)
-        .timeoutSeconds(timeout)
-        .periodSeconds(period);
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("env", env)
-        .append("livenessProbe.initialDelaySeconds", livenessProbe.getInitialDelaySeconds())
-        .append("livenessProbe.timeoutSeconds", livenessProbe.getTimeoutSeconds())
-        .append("livenessProbe.periodSeconds", livenessProbe.getPeriodSeconds())
-        .append("readinessProbeProbe.initialDelaySeconds", readinessProbe.getInitialDelaySeconds())
-        .append("readinessProbe.timeoutSeconds", readinessProbe.getTimeoutSeconds())
-        .append("readinessProbe.periodSeconds", readinessProbe.getPeriodSeconds())
+        .append("livenessProbe", livenessProbeTuning)
+        .append("readinessProbe", readinessProbeTuning)
         .toString();
   }
 
@@ -147,8 +141,8 @@ class ServerPod {
 
     return new EqualsBuilder()
         .append(env, that.env)
-        .append(livenessProbe, that.livenessProbe)
-        .append(readinessProbe, that.readinessProbe)
+        .append(livenessProbeTuning, that.livenessProbeTuning)
+        .append(readinessProbeTuning, that.readinessProbeTuning)
         .isEquals();
   }
 
@@ -156,8 +150,8 @@ class ServerPod {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .append(env)
-        .append(livenessProbe)
-        .append(readinessProbe)
+        .append(livenessProbeTuning)
+        .append(readinessProbeTuning)
         .toHashCode();
   }
 }
