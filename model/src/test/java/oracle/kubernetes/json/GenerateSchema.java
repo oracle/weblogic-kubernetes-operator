@@ -25,7 +25,8 @@ public class GenerateSchema {
 
     JsonNode jsonSchema = jsonSchemaGenerator.generateJsonSchema(Domain.class);
 
-    String jsonSchemaAsString = objectMapper.writeValueAsString(jsonSchema);
+    String jsonSchemaAsString =
+        objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema);
     System.out.println(jsonSchemaAsString);
   }
 }
