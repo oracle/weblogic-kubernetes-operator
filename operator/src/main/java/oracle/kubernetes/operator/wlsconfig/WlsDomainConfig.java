@@ -30,7 +30,7 @@ public class WlsDomainConfig implements WlsDomain {
   // Contains all statically configured WLS servers in the WLS domain
   private List<WlsServerConfig> servers = new ArrayList<>();
   // Contains all configured server templates in the WLS domain
-  private Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
+  private List<WlsServerConfig> serverTemplates = new ArrayList<>();
   // Contains all configured machines in the WLS domain
   private Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
 
@@ -62,7 +62,7 @@ public class WlsDomainConfig implements WlsDomain {
    * @param name Name of this WLS domain
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
-   * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
+   * @param serverTemplates A Map containing server templates configued in this WLS domain
    * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   public WlsDomainConfig(
@@ -74,7 +74,8 @@ public class WlsDomainConfig implements WlsDomain {
     this.configuredClusters = new ArrayList<>(wlsClusterConfigs.values());
     this.servers =
         wlsServerConfigs != null ? new ArrayList<>(wlsServerConfigs.values()) : new ArrayList<>();
-    this.wlsServerTemplates = wlsServerTemplates;
+    this.serverTemplates =
+        wlsServerTemplates != null ? new ArrayList<>(wlsServerTemplates.values()) : null;
     this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
     // set domainConfig for each WlsClusterConfig
@@ -150,6 +151,14 @@ public class WlsDomainConfig implements WlsDomain {
 
   public void setServers(List<WlsServerConfig> servers) {
     this.servers = servers;
+  }
+
+  public List<WlsServerConfig> getServerTemplates() {
+    return this.serverTemplates;
+  }
+
+  public void setServerTemplates(List<WlsServerConfig> serverTemplates) {
+    this.serverTemplates = serverTemplates;
   }
 
   /**
@@ -429,10 +438,40 @@ public class WlsDomainConfig implements WlsDomain {
         + configuredClusters
         + ", servers="
         + servers
-        + ", wlsServerTemplates="
-        + wlsServerTemplates
+        + ", serverTemplates="
+        + serverTemplates
         + ", wlsMachineConfigs="
         + wlsMachineConfigs
         + '}';
+  }
+
+  public void processDynamicClusters() {
+    for (WlsClusterConfig wlsClusterConfig : configuredClusters) {
+      wlsClusterConfig.setWlsDomainConfig(this);
+      if (wlsClusterConfig.hasDynamicServers()) {
+        WlsDynamicServersConfig wlsDynamicServersConfig =
+            wlsClusterConfig.getDynamicServersConfig();
+        String serverTemplateName =
+            wlsClusterConfig.getDynamicServersConfig().getServerTemplateName();
+        WlsServerConfig serverTemplate = getServerTemplate(serverTemplateName);
+        String clusterName = wlsClusterConfig.getClusterName();
+        if (serverTemplate != null) {
+          wlsDynamicServersConfig.generateDynamicServerConfigs(
+              serverTemplate, clusterName, getName());
+        } else {
+          LOGGER.warning(
+              MessageKeys.WLS_SERVER_TEMPLATE_NOT_FOUND, serverTemplateName, clusterName);
+        }
+      }
+    }
+  }
+
+  WlsServerConfig getServerTemplate(String serverTemplateName) {
+    for (WlsServerConfig serverTemplate : serverTemplates) {
+      if (serverTemplate.getName().equals(serverTemplateName)) {
+        return serverTemplate;
+      }
+    }
+    return null;
   }
 }

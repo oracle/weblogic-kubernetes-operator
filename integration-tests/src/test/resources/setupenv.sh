@@ -64,9 +64,6 @@ function setup_wercker {
 function pull_tag_images {
 
     echo "Pull and tag the images we need"
-    docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
-    docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
-
     docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
     docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
 

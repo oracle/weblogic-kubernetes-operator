@@ -225,6 +225,7 @@ function initialize {
 
   # Parse the commonn inputs file
   parseCommonInputs
+
   validateInputParamsSpecified \
     adminServerName \
     domainUID \
@@ -287,10 +288,11 @@ function createYamlFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  # For backward compatability, default to "store/oracle/weblogic:12.2.1.3" if not defined in
+  # Operator 2.0 requires using 19.1.0.0 or later in Domain CR.
+  # So use "store/oracle/weblogic:19.1.0.0" if not defined in
   # create-domain-inputs.yaml
   if [ -z "${image}" ]; then
-    image="store/oracle/weblogic:12.2.1.3"
+    image="store/oracle/weblogic:19.1.0.0"
   fi
   
   domainName=${domainUID}
