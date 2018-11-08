@@ -7,7 +7,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Probe;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -118,16 +117,16 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
   }
 
-  V1Probe getLivenessProbe() {
-    return serverPod.getLivenessProbe();
+  ProbeTuning getLivenessProbe() {
+    return serverPod.getLivenessProbeTuning();
   }
 
   void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    serverPod.setReadinessProbe(initialDelay, timeout, period);
+    serverPod.setReadinessProbeTuning(initialDelay, timeout, period);
   }
 
-  V1Probe getReadinessProbe() {
-    return serverPod.getReadinessProbe();
+  ProbeTuning getReadinessProbe() {
+    return serverPod.getReadinessProbeTuning();
   }
 
   @Override
