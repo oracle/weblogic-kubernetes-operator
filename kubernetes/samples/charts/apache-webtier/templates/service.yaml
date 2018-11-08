@@ -18,7 +18,11 @@ spec:
     - port: 80
       nodePort: {{ .Values.httpNodePort }}
       name: http
-    - port: {{ .Values.sslPort }}
+{{- if .Values.virtualHostName }}
+    - port: 4433
+{{- else }}
+    - port: 443
+{{- end }}
       nodePort: {{ .Values.httpsNodePort }}
       name: https
 
