@@ -257,7 +257,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test9CreateDomainOnExistingDir");
   }
 
-  @Test
+  // @Test
   public void testACreateDomainApacheLB() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
