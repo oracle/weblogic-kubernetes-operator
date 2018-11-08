@@ -16,7 +16,7 @@ STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
 
 # if the livenessProbeSuccessOverride file is available, treat failures as success
 #
-RETVAL=$(test -f /weblogic-operator/debug-scripts/livenessProbeSuccessOverride ; echo $?)
+RETVAL=$(test -f /weblogic-operator/debug/livenessProbeSuccessOverride ; echo $?)
 
 if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
   echo "Error: WebLogic NodeManager process not found."
