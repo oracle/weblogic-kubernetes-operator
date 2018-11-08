@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.weblogic.domain.v2.api;
 
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiCallback;
 import io.kubernetes.client.ApiClient;
@@ -23,10 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.sound.midi.Patch;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainList;
 
 public class WeblogicApi {
   private ApiClient apiClient;
@@ -69,8 +69,10 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains"
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains"
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -282,8 +284,10 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains"
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains"
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -685,9 +689,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1420,8 +1426,10 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains"
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains"
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1811,9 +1819,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1995,9 +2005,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}/scale"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}/scale"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2179,9 +2191,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}/status"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}/status"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2367,9 +2381,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2564,9 +2580,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}/scale"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}/scale"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2732,9 +2750,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}/status"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}/status"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2902,9 +2922,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -3082,9 +3104,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}/scale"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}/scale"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -3266,9 +3290,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/namespaces/{namespace}/domains/{name}/status"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/namespaces/{namespace}/domains/{name}/status"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -3907,9 +3933,11 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/watch/namespaces/{namespace}/domains/{name}"
-            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/watch/namespaces/{namespace}/domains/{name}"
+                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -4360,8 +4388,10 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/watch/namespaces/{namespace}/domains"
-            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        "/apis/weblogic.oracle/"
+            + DOMAIN_VERSION
+            + "/watch/namespaces/{namespace}/domains"
+                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();

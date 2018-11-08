@@ -24,7 +24,7 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
 
 public class WatchBuilder {
