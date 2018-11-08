@@ -36,9 +36,11 @@ spec:
   imagePullSecrets:
   - name: pull-secret1
   - name: pull-secret2
-  env:
-  - name: var1
-    value: value0
+
+  serverPod:
+    env:
+    - name: var1
+      value: value0
 
   # Configured storage using nfs style
   storage:
@@ -51,20 +53,23 @@ spec:
   adminServer:
     # The Admin Server's NodePort (optional)
     nodePort: 7001
-    env:
-    - name: var1
-      value: value1
+    serverPod:
+      env:
+      - name: var1
+        value: value1
 
   # list of configurations per named server.
   managedServers:
     # the name of the server to apply these rules to
   - serverName: server1
     # an (optional) list of environment variable to be set on the server
-    env:
-    - name: JAVA_OPTIONS
-      value: "-server"
-    - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+    serverPod:
+      env:
+      - name: JAVA_OPTIONS
+        value: "-server"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
+        
   - serverName: server2
     serverStartState: ADMIN
 
@@ -75,8 +80,9 @@ spec:
   - clusterName: cluster2
     desiredState: "RUNNING"
     replicas: 5
-    env:
-    - name: JAVA_OPTIONS
-      value: "-verbose"
-    - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+    serverPod:
+      env:
+      - name: JAVA_OPTIONS
+        value: "-verbose"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
