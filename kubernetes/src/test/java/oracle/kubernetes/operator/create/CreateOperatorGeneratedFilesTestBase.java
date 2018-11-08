@@ -218,6 +218,10 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .mountPath("/operator/config"))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
+                                                .name("weblogic-operator-debug-cm-volume")
+                                                .mountPath("/operator/debug-config"))
+                                        .addVolumeMountsItem(
+                                            newVolumeMount()
                                                 .name("weblogic-operator-secrets-volume")
                                                 .mountPath("/operator/secrets")
                                                 .readOnly(true))
@@ -236,6 +240,13 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                         .configMap(
                                             newConfigMapVolumeSource()
                                                 .name("weblogic-operator-cm")))
+                                .addVolumesItem(
+                                    newVolume()
+                                        .name("weblogic-operator-debug-cm-volume")
+                                        .configMap(
+                                            newConfigMapVolumeSource()
+                                                .optional(Boolean.TRUE)
+                                                .name("weblogic-operator-debug-cm")))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-operator-secrets-volume")
