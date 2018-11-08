@@ -599,7 +599,8 @@ public abstract class PodStepContext implements StepContextConstants {
                     .name(DEBUG_SCRIPTS_VOLUME)
                     .configMap(
                         new V1ConfigMapVolumeSource()
-                            .name(KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_NAME)
+                            .name(
+                                getDomainUID() + KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX)
                             .defaultMode(ALL_READ_AND_EXECUTE)
                             .optional(Boolean.TRUE)));
 
