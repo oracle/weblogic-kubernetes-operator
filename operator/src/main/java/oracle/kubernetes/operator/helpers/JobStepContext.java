@@ -225,7 +225,11 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   String getImageName() {
-    return KubernetesConstants.DEFAULT_IMAGE;
+    String imageName = getDomain().getSpec().getImage();
+    if (imageName == null) {
+      imageName = KubernetesConstants.DEFAULT_IMAGE;
+    }
+    return imageName;
   }
 
   String getImagePullPolicy() {

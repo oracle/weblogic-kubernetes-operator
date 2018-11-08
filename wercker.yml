@@ -155,7 +155,6 @@ integration-test-java:
       export RESULT_ROOT="$WERCKER_OUTPUT_DIR/k8s_dir"
       mkdir -m 777 -p $RESULT_ROOT
       export PROJECT_ROOT="${WERCKER_SOURCE_DIR}"
-      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh
 
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
@@ -164,6 +163,10 @@ integration-test-java:
       export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-$REPO_PREFIX/weblogic}"
       export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-19.1.0.0}"
       export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
+
+      # If cleanup fails, it releases the lease, and the step needs to fail.
+      # $WERCKER_SOURCE_DIR/integration-tests/src/test/resources/setupenv.sh
+      $WERCKER_SOURCE_DIR/src/integration-tests/bash/cleanup.sh || exit 1
 
       echo "Integration test suite running for test image: $IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
       echo "WebLogic version is: $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
