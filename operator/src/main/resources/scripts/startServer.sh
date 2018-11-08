@@ -12,7 +12,7 @@
 # if the livenessProbeSuccessOverride file is available, do not exit from startServer.sh
 
 function exitOrLoop {
-    if [ -f /weblogic-operator/debug-scripts/livenessProbeSuccessOverride ]
+    if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
     then
         while true ; do sleep 60 ; done
     else
