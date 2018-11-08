@@ -536,6 +536,7 @@ public class ConfigMapHelper {
     }
 
     public WlsDomainConfig getDomain() {
+      this.domain.processDynamicClusters();
       return this.domain;
     }
 

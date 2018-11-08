@@ -29,7 +29,7 @@ spec:
   replicas: 2
 
   # The Operator currently does not support other images
-  image: "store/oracle/weblogic:12.2.1.3"
+  image: "store/oracle/weblogic:19.1.0.0"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: IfNotPresent
   # Identify which Secret contains the credentials for pulling the image
