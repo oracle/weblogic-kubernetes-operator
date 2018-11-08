@@ -36,7 +36,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version for the Domain. Must be 'weblogic.oracle/v1'")
+  @Description("The API version for the Domain. Must be 'weblogic.oracle/v2'")
   private String apiVersion;
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
