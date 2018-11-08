@@ -6,6 +6,9 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Server extends BaseConfiguration {
   /** The node port associated with this server. The introspector will override this value. */
@@ -26,5 +29,34 @@ public class Server extends BaseConfiguration {
 
   public Integer getNodePort() {
     return nodePort;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("nodePort", nodePort)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    if (!(o instanceof Server)) return false;
+
+    Server that = (Server) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(nodePort, that.nodePort)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).appendSuper(super.hashCode()).append(nodePort).toHashCode();
   }
 }
