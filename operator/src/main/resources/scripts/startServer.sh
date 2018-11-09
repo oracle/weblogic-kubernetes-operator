@@ -17,6 +17,7 @@ function exitOrLoop {
         while true ; do sleep 60 ; done
     else
         exit 1
+    fi
 }
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
