@@ -100,7 +100,6 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
-  private static final String DOMAIN_HOME = "/shared/domains/uid1";
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
@@ -339,7 +338,7 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(),
         allOf(
             hasEnvVar("DOMAIN_NAME", DOMAIN_NAME),
-            hasEnvVar("DOMAIN_HOME", DOMAIN_HOME),
+            hasEnvVar("DOMAIN_HOME", "/shared/domains/" + UID),
             hasEnvVar("ADMIN_NAME", ADMIN_SERVER),
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
@@ -557,6 +556,7 @@ public abstract class PodHelperTestBase {
         .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
+        .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/shared/domains/" + UID)
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
@@ -582,7 +582,7 @@ public abstract class PodHelperTestBase {
                 .readOnly(true))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
-        .addEnvItem(envItem("DOMAIN_HOME", DOMAIN_HOME))
+        .addEnvItem(envItem("DOMAIN_HOME", "/shared/domains/" + UID))
         .addEnvItem(envItem("ADMIN_NAME", ADMIN_SERVER))
         .addEnvItem(envItem("ADMIN_PORT", Integer.toString(ADMIN_PORT)))
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
