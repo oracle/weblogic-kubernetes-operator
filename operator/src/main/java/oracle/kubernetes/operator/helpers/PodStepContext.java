@@ -593,7 +593,16 @@ public abstract class PodStepContext implements StepContextConstants {
                     .configMap(
                         new V1ConfigMapVolumeSource()
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-                            .defaultMode(ALL_READ_AND_EXECUTE)));
+                            .defaultMode(ALL_READ_AND_EXECUTE)))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(DEBUG_CM_VOLUME)
+                    .configMap(
+                        new V1ConfigMapVolumeSource()
+                            .name(
+                                getDomainUID() + KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX)
+                            .defaultMode(ALL_READ_AND_EXECUTE)
+                            .optional(Boolean.TRUE)));
 
     if (isEnableDomainIntrospectorJob()) {
       podSpec.addVolumesItem(
@@ -636,6 +645,7 @@ public abstract class PodStepContext implements StepContextConstants {
             .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
