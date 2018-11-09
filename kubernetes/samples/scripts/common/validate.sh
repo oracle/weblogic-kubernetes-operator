@@ -229,9 +229,9 @@ function validateKubectlAvailable {
 # Function to validate the server start policy value
 #
 function validateServerStartPolicy {
-  validateInputParamsSpecified startPolicy
-  if [ ! -z "${startPolicy}" ]; then
-    case ${startPolicy} in
+  validateInputParamsSpecified serverStartPolicy
+  if [ ! -z "${serverStartPolicy}" ]; then
+    case ${serverStartPolicy} in
       "NEVER")
       ;;
       "ALWAYS")
@@ -241,7 +241,7 @@ function validateServerStartPolicy {
       "ADMIN_ONLY")
       ;;
       *)
-        validationError "Invalid value for serverStartPolicy: ${startPolicy}. Valid values are 'NEVER', 'ALWAYS', 'IF_NEEDED', and 'ADMIN_ONLY'."
+        validationError "Invalid value for serverStartPolicy: ${serverStartPolicy}. Valid values are 'NEVER', 'ALWAYS', 'IF_NEEDED', and 'ADMIN_ONLY'."
       ;;
     esac
   fi
