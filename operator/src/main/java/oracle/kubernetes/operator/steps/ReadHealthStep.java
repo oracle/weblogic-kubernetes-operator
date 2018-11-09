@@ -22,10 +22,10 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
-import oracle.kubernetes.weblogic.domain.v1.SubsystemHealth;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
+import oracle.kubernetes.weblogic.domain.v2.SubsystemHealth;
 import org.joda.time.DateTime;
 
 public class ReadHealthStep extends Step {

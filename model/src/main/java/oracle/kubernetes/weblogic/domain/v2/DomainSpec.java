@@ -444,7 +444,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-
   /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *

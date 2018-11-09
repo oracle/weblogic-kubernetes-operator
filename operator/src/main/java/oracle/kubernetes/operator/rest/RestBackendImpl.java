@@ -37,7 +37,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to

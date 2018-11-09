@@ -659,7 +659,7 @@ public abstract class PodStepContext implements StepContextConstants {
     }
 
     if (isEnableDomainIntrospectorJob()) {
-      container.addVolumeMountsItem(
+      v1Container.addVolumeMountsItem(
           // volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() +
           // "/optconfig"));
           volumeMount(
