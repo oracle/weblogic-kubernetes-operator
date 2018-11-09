@@ -13,9 +13,9 @@ import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -187,7 +187,7 @@ public class DomainSpec extends BaseConfiguration {
   @SerializedName("managedServers")
   @Expose
   @Description("Configuration for the managed servers")
-  private List<ManagedServer> managedServers = new ArrayList<>();
+  private Map<String, ManagedServer> managedServers = new HashMap<>();
 
   /**
    * The configured clusters.
@@ -197,7 +197,7 @@ public class DomainSpec extends BaseConfiguration {
   @SerializedName("clusters")
   @Expose
   @Description("Configuration for the clusters")
-  protected List<Cluster> clusters = new ArrayList<>();
+  protected Map<String, Cluster> clusters = new HashMap<>();
 
   public AdminServer getOrCreateAdminServer(String adminServerName) {
     if (adminServer != null) return adminServer;
@@ -628,19 +628,11 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private Server getServer(String serverName) {
-    for (ManagedServer managedServer : managedServers) {
-      if (Objects.equals(serverName, managedServer.getServerName())) return managedServer;
-    }
-
-    return null;
+    return managedServers.get(serverName);
   }
 
   private Cluster getCluster(String clusterName) {
-    for (Cluster cluster : clusters) {
-      if (Objects.equals(clusterName, cluster.getClusterName())) return cluster;
-    }
-
-    return null;
+    return clusters.get(clusterName);
   }
 
   private int getReplicaCountFor(Cluster cluster) {
@@ -661,11 +653,11 @@ public class DomainSpec extends BaseConfiguration {
     this.adminServer = adminServer;
   }
 
-  public List<ManagedServer> getManagedServers() {
+  public Map<String, ManagedServer> getManagedServers() {
     return managedServers;
   }
 
-  public List<Cluster> getClusters() {
+  public Map<String, Cluster> getClusters() {
     return clusters;
   }
 
@@ -741,7 +733,7 @@ public class DomainSpec extends BaseConfiguration {
 
     private Cluster createClusterWithName(String clusterName) {
       Cluster cluster = new Cluster().withClusterName(clusterName);
-      clusters.add(cluster);
+      clusters.put(clusterName, cluster);
       return cluster;
     }
   }
