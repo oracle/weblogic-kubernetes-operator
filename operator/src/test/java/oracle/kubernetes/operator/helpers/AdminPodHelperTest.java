@@ -254,6 +254,80 @@ public class AdminPodHelperTest extends PodHelperTestBase {
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 
+  @Test
+  public void whenDomainHasAdditionalVolumes_createAdminPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  public void whenServerHasAdditionalVolumes_createAdminPodWithThem() {
+    configureAdminServer()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenServerHasAdditionalVolumeMounts_createAdminPodWithThem() {
+    configureAdminServer()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  public void whenPodHasDuplicateVolumes_createAdminPodWithCombination() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/domain-path1")
+        .withAdditionalVolume("volume2", "/domain-path2")
+        .configureAdminServer((ADMIN_SERVER))
+        .withAdditionalVolume("volume2", "/server-path");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/domain-path1"), hasVolume("volume2", "/server-path")));
+  }
+
+  @Test
+  public void whenPodHasDuplicateVolumeMounts_createAdminPodWithCombination() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/domain-path1")
+        .withAdditionalVolumeMount("volume2", "/domain-path2")
+        .configureAdminServer((ADMIN_SERVER))
+        .withAdditionalVolumeMount("volume2", "/server-path");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
+  }
+
   @Override
   protected void onAdminExpectListPersistentVolume() {
     expectListPersistentVolume().returning(createPersistentVolumeList());

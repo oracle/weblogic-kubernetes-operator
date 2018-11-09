@@ -6,9 +6,10 @@ package oracle.kubernetes.operator;
 
 public interface VersionConstants {
   String OPERATOR_V1 = "operator-v1";
+  String OPERATOR_V2 = "operator-v2";
   String DOMAIN_V1 = "domain-v1";
   String DOMAIN_V2 = "domain-v2";
-  String DEFAULT_DOMAIN_VERSION = DOMAIN_V1;
+  String DEFAULT_DOMAIN_VERSION = DOMAIN_V2;
   String VOYAGER_LOAD_BALANCER_V1 = "voyager-load-balancer-v1";
   String APACHE_LOAD_BALANCER_V1 = "apache-load-balancer-v1";
   String TRAEFIK_LOAD_BALANCER_V1 = "traefik-load-balancer-v1";
