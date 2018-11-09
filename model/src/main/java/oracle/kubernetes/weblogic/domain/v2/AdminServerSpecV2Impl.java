@@ -8,6 +8,6 @@ import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
 
 public class AdminServerSpecV2Impl extends ServerSpecV2Impl {
   public AdminServerSpecV2Impl(DomainSpec spec, AdminServer server) {
-    super(spec, server, null, server);
+    super(spec, server, null, spec);
   }
 }
