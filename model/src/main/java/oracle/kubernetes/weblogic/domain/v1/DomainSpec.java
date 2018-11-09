@@ -1035,7 +1035,7 @@ public class DomainSpec extends BaseConfiguration {
   class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public ServerSpec getAdminServerSpec() {
-      return new AdminServerSpecV2Impl(DomainSpec.this, adminServer, DomainSpec.this);
+      return new AdminServerSpecV2Impl(DomainSpec.this, adminServer);
     }
 
     @Override
