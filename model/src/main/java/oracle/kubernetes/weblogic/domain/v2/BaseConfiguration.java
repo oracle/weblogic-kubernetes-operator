@@ -76,15 +76,6 @@ public abstract class BaseConfiguration {
     return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
   }
 
-  /**
-   * Returns true if any version 2 configuration fields are specified.
-   *
-   * @return whether there is version 2 configuration field in this instance
-   */
-  protected boolean hasV2Fields() {
-    return serverStartState != null || serverStartPolicy != null || serverPod.hasV2Fields();
-  }
-
   @Nullable
   String getServerStartState() {
     return serverStartState;

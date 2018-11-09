@@ -80,7 +80,7 @@ The following parameters can be provided in the inputs file.
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
-| `startupControl` | Determines which WebLogic Servers will be started up. Legal values are `NONE`, `ALL`, `ADMIN`, `SPECIFIED`, or `AUTO`. | `AUTO` |
+| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `ALWAYS`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
@@ -106,15 +106,11 @@ The content of the generated `domain-custom-resource.yaml`:
 #
 # This is an example of how to define a Domain Custom Resource.
 #
-apiVersion: "weblogic.oracle/v1"
+apiVersion: "weblogic.oracle/v2"
 kind: Domain
 metadata:
   name: domain1
   namespace: default
-  labels:
-    weblogic.resourceVersion: domain-v1
-    weblogic.domainUID: domain1
-    weblogic.domainName: base_domain
 spec:
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
   # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
@@ -128,8 +124,8 @@ spec:
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
-  imagePullSecret:
-    name:
+  imagePullSecrets:
+  - name:
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   adminSecret:
@@ -137,53 +133,45 @@ spec:
   # The name of the Admin Server
   # The Admin Server's ListenPort
   asPort: 7001
-  # startupControl legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
+  # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "ALL" will start up all defined servers
-  # - "ADMIN" will start up only the AdminServer (no managed servers will be started)
-  # - "SPECIFIED" will start the AdminServer and then will look at the "serverStartup" and
-  #   "clusterStartup" entries below to work out which servers to start
-  # - "AUTO" will start the servers as with "SPECIFIED", but then also start servers from
-  #   other clusters up to the replicas count
-  startupControl: "AUTO"
-  # serverStartup is used to list the desired behavior for starting servers.  The Operator will
-  # use this field only if startupControl is set to "SPECIFIED" or "AUTO".  You may provide a list of
-  # entries, each entry should contain the keys should below:
-  serverStartup:
+  # - "ALWAYS" will start up all defined servers
+  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+  # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: "IF_NEEDED"
+  # adminServer is used to configure the desired behavior for starting the administration server.
+  adminServer:
   # desiredState legal values are "RUNNING" or "ADMIN"
   # "RUNNING" means the listed server will be started up to "RUNNING" mode
   # "ADMIN" means the listed server will be start up to "ADMIN" mode
-  - desiredState: "RUNNING"
-    # the name of the server to apply these rules to
-    serverName: "admin-server"
+    desiredState: "RUNNING"
     # The Admin Server's NodePort
     nodePort: 30701
+    # export the T3Channel as a service
+    exportedNetworkAccessPoints:
+      T3Channel: {}
     # an (optional) list of environment variable to be set on the server
     env:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
-  # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
-  # of a cluster instead of an individual server.  If you use this entry, then the rules will be
-  # applied to ALL servers that are members of the named clusters.
-  clusterStartup:
-  - desiredState: "RUNNING"
-    clusterName: "cluster-1"
-    replicas: 2
-    env:
-    - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
-    - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
-  # The number of managed servers to start from clusters not listed by clusterStartup
+  # clusters is used to configure the desired behavior for starting member servers of a cluster.  
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
+  clusters:
+    cluster-1:
+      desiredState: "RUNNING"
+      replicas: 2
+      env:
+      - name: JAVA_OPTIONS
+        value: "-Dweblogic.StdoutDebugEnabled=false"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
+  # The number of managed servers to start from clusters not listed in clusters
   # replicas: 1
   storage:
     predefined:
       claim: domain1-weblogic-sample-pvc
-  # Uncomment to export the T3Channel as a service
-  exportT3Channels:
-  - T3Channel
 
 ```
 
@@ -205,7 +193,7 @@ Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainName=base_domain
               weblogic.domainUID=domain1
-              weblogic.resourceVersion=domain-v1
+              weblogic.resourceVersion=domain-v2
 Annotations:  <none>
 API Version:  weblogic.oracle/v1
 Kind:         Domain
