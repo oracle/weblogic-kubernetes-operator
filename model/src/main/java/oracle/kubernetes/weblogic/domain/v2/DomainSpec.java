@@ -144,32 +144,6 @@ public class DomainSpec extends BaseConfiguration {
   private List<String> exportT3Channels = new ArrayList<>();
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated as of 2.0, use BaseConfiguration#serverStartPolicy
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  @SerializedName("startupControl")
-  @Expose
-  private String startupControl;
-
-  /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
    */
@@ -507,90 +481,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @return startup control
-   * @deprecated as of 2.0, use BaseConfiguration#setServerStartPolicy
-   */
-  @SuppressWarnings({"deprecation", "DeprecatedIsStillUsed"})
-  @Deprecated
-  public String getStartupControl() {
-    return startupControl;
-  }
-
-  /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated as of 2.0, using BaseConfiguration#setServerStartPolicy
-   * @param startupControl startup control
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  public void setStartupControl(String startupControl) {
-    this.startupControl = startupControl;
-  }
-
-  /**
-   * Controls which managed servers will be started. Legal values are NONE, ADMIN, ALL, SPECIFIED
-   * and AUTO.
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @deprecated as of 2.0, using BaseConfiguration#withServerStartPolicy
-   * @param startupControl startup control
-   * @return this
-   */
-  @SuppressWarnings("deprecation")
-  public DomainSpec withStartupControl(String startupControl) {
-    this.startupControl = startupControl;
-    return this;
-  }
-
-  /**
    * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
    * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
-   * Ignored if startupControl is not AUTO.
    *
    * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective setting.
    * @return replicas

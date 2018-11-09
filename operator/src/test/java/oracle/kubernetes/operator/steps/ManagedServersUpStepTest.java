@@ -152,7 +152,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartupControlUndefined_startServers() {
+  public void whenStartPolicyUndefined_startServers() {
     invokeStepWithConfiguredServer();
 
     assertServersToBeStarted();
@@ -461,7 +461,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartupControlAll_addNonManagedServers() {
+  public void withStartPolicyAlways_addNonManagedServers() {
     startAllServers();
     addWlsServer("ms1");
 

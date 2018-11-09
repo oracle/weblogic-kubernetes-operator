@@ -57,7 +57,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenStartupControlNull_runAdminStepOnly() {
+  public void whenStartPolicyNull_runAdminStepOnly() {
     testSupport.runSteps(getDomainPresenceStep());
 
     assertThat(adminStep.wasRun(), is(true));
