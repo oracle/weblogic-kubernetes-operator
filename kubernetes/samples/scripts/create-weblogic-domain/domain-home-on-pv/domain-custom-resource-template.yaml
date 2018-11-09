@@ -45,6 +45,9 @@ spec:
     serverStartState: "RUNNING"
     # The Admin Server's NodePort
     %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
+    # Uncomment to export the T3Channel as a service
+    %EXPOSE_T3_CHANNEL_PREFIX%exportedNetworkAccessPoints:
+    %EXPOSE_T3_CHANNEL_PREFIX%  T3Channel: {}
     # an (optional) list of environment variable to be set on the server
     env:
     - name: JAVA_OPTIONS
@@ -67,6 +70,3 @@ spec:
   storage:
     predefined:
       claim: %DOMAIN_PVC_NAME%
-  # Uncomment to export the T3Channel as a service
-  %EXPOSE_T3_CHANNEL_PREFIX%exportT3Channels:
-  %EXPOSE_T3_CHANNEL_PREFIX%- T3Channel
