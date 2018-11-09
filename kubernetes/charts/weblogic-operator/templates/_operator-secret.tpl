@@ -12,7 +12,7 @@ data:
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.resourceVersion: "operator-v2"
   name: "weblogic-operator-secrets"
   namespace:  {{ .Release.Namespace | quote }}
 type: "Opaque"

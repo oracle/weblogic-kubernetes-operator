@@ -14,8 +14,6 @@ import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
