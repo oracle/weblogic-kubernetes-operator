@@ -42,4 +42,19 @@ spec:
 
   clusters:
     cluster1:
+      serverPod:
+        readinessProbe:
+          initialDelaySeconds: 10
+          timeoutSeconds: 15
+          periodSeconds: 20
+        livenessProbe:
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+          periodSeconds: 20
+
+  managedServers:
+    server2:
+      serverPod:
+        livenessProbe:
+          periodSeconds: 18
 
