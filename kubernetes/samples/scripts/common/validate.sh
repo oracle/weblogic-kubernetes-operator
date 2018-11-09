@@ -226,24 +226,22 @@ function validateKubectlAvailable {
   fi
 }
 
-# Function to validate the server startup control value
+# Function to validate the server start policy value
 #
-function validateStartupControl {
-  validateInputParamsSpecified startupControl
-  if [ ! -z "${startupControl}" ]; then
-    case ${startupControl} in
-      "NONE")
+function validateServerStartPolicy {
+  validateInputParamsSpecified startPolicy
+  if [ ! -z "${startPolicy}" ]; then
+    case ${startPolicy} in
+      "NEVER")
       ;;
-      "ALL")
+      "ALWAYS")
       ;;
-      "ADMIN")
+      "IF_NEEDED")
       ;;
-      "SPECIFIED")
-      ;;
-      "AUTO")
+      "ADMIN_ONLY")
       ;;
       *)
-        validationError "Invalid value for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
+        validationError "Invalid value for serverStartPolicy: ${startPolicy}. Valid values are 'NEVER', 'ALWAYS', 'IF_NEEDED', and 'ADMIN_ONLY'."
       ;;
     esac
   fi
