@@ -294,6 +294,5 @@ public class DomainV2Configurator extends DomainConfigurator {
       cluster.addAdditionalVolumeMount(name, path);
       return this;
     }
-
   }
 }

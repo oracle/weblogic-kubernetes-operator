@@ -258,22 +258,18 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenDomainHasAdditionalVolumes_createAdminPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-path1")
-        .withAdditionalVolume("volume2", "/source-path2")
-        .configureAdminServer((ADMIN_SERVER));
+        .withAdditionalVolume("volume2", "/source-path2");
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(
-            hasVolume("volume1", "/source-path1"),
-            hasVolume("volume2", "/source-path2")));
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
   }
 
   @Test
   public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
     getConfigurator()
         .withAdditionalVolumeMount("volume1", "/destination-path1")
-        .withAdditionalVolumeMount("volume2", "/destination-path2")
-        .configureAdminServer((ADMIN_SERVER));
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
@@ -289,9 +285,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(
-            hasVolume("volume1", "/source-path1"),
-            hasVolume("volume2", "/source-path2")));
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
   }
 
   @Test
@@ -317,9 +311,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(
-            hasVolume("volume1", "/domain-path1"),
-            hasVolume("volume2", "/server-path")));
+        allOf(hasVolume("volume1", "/domain-path1"), hasVolume("volume2", "/server-path")));
   }
 
   @Test
@@ -333,8 +325,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
-            hasVolumeMount("volume1", "/domain-path1"),
-            hasVolumeMount("volume2", "/server-path")));
+            hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
   }
 
   @Override
