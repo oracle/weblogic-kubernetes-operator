@@ -9,6 +9,8 @@ import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCON
 import static oracle.kubernetes.operator.StartupControlConstants.SPECIFIED_STARTUPCONTROL;
 
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +76,16 @@ public class ServerSpecV1Impl extends ServerSpec {
       default:
         return false;
     }
+  }
+
+  @Override
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<V1Volume> getAdditionalVolumes() {
+    return Collections.emptyList();
   }
 
   private int getReplicaCount() {

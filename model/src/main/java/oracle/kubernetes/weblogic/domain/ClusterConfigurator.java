@@ -22,4 +22,8 @@ public interface ClusterConfigurator {
 
   ClusterConfigurator withLivenessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
+
+  ClusterConfigurator withAdditionalVolume(String name, String path);
+
+  ClusterConfigurator withAdditionalVolumeMount(String name, String path);
 }

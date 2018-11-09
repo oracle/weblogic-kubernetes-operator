@@ -212,6 +212,10 @@ public abstract class DomainConfigurator {
     return domain.getAsName();
   }
 
+  public abstract DomainConfigurator withAdditionalVolume(String name, String path);
+
+  public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
+
   /**
    * Adds a default server configuration to the domain, if not already present.
    *
