@@ -131,16 +131,19 @@ public abstract class ServerSpec {
    */
   public abstract boolean shouldStart(int currentReplicas);
 
-  @Nonnull
-  public List<V1VolumeMount> getAdditionalVolumeMounts() {
-    return Collections.emptyList();
-  }
+  /**
+   * Returns the volume mounts to be defined for this server.
+   *
+   * @return a list of environment volume mounts
+   */
+  public abstract List<V1VolumeMount> getAdditionalVolumeMounts();
 
-  @Nonnull
-  public List<V1Volume> getAdditionalVolumes() {
-    return Collections.emptyList();
-  }
-
+  /**
+   * Returns the volumes to be defined for this server.
+   *
+   * @return a list of volumes
+   */
+  public abstract List<V1Volume> getAdditionalVolumes();
   @Nonnull
   public ProbeTuning getLivenessProbe() {
     return new ProbeTuning();
