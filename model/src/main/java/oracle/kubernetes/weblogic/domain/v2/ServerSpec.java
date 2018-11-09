@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.v2.ProbeTuning;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
