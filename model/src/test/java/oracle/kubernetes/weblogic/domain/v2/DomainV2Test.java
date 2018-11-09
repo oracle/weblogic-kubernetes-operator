@@ -666,8 +666,7 @@ public class DomainV2Test extends DomainTestBase {
         .withAdditionalVolume("name3", "/cluster-tmp1")
         .withAdditionalVolume("name4", "/cluster-tmp2")
         .withAdditionalVolume("name5", "/cluster-tmp3");
-    configureServer("server1")
-        .withAdditionalVolume("name6", "/server-tmp1");
+    configureServer("server1").withAdditionalVolume("name6", "/server-tmp1");
 
     assertThat(
         domain.getServer("server1", "cluster1").getAdditionalVolumes(),
@@ -689,8 +688,7 @@ public class DomainV2Test extends DomainTestBase {
         .withAdditionalVolumeMount("name3", "/cluster-test1")
         .withAdditionalVolumeMount("name4", "/cluster-test2")
         .withAdditionalVolumeMount("name5", "/cluster-test3");
-    configureServer("server1")
-        .withAdditionalVolumeMount("name6", "/server-test1");
+    configureServer("server1").withAdditionalVolumeMount("name6", "/server-test1");
 
     assertThat(
         domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
@@ -712,8 +710,7 @@ public class DomainV2Test extends DomainTestBase {
     configureCluster("cluster1")
         .withAdditionalVolume("name2", "/cluster-tmp1")
         .withAdditionalVolume("name3", "/cluster-tmp2");
-    configureServer("server1")
-        .withAdditionalVolume("name3", "/server-tmp1");
+    configureServer("server1").withAdditionalVolume("name3", "/server-tmp1");
 
     assertThat(
         domain.getServer("server1", "cluster1").getAdditionalVolumes(),
@@ -732,8 +729,7 @@ public class DomainV2Test extends DomainTestBase {
     configureCluster("cluster1")
         .withAdditionalVolumeMount("name2", "/cluster-test1")
         .withAdditionalVolumeMount("name3", "/cluster-test2");
-    configureServer("server1")
-        .withAdditionalVolumeMount("name3", "/server-test1");
+    configureServer("server1").withAdditionalVolumeMount("name3", "/server-test1");
 
     assertThat(
         domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),

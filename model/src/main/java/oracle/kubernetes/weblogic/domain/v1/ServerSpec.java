@@ -144,6 +144,7 @@ public abstract class ServerSpec {
    * @return a list of volumes
    */
   public abstract List<V1Volume> getAdditionalVolumes();
+
   @Nonnull
   public ProbeTuning getLivenessProbe() {
     return new ProbeTuning();

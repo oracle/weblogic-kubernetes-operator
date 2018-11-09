@@ -611,25 +611,26 @@ public abstract class PodStepContext {
   }
 
   private V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container v1Container = new V1Container()
-        .name(KubernetesConstants.CONTAINER_NAME)
-        .image(getImageName())
-        .imagePullPolicy(getImagePullPolicy())
-        .command(getContainerCommand())
-        .env(getEnvironmentVariables(tuningParameters))
-        .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
-        .lifecycle(createLifecycle())
-        .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
-        .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
-        .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+    V1Container v1Container =
+        new V1Container()
+            .name(KubernetesConstants.CONTAINER_NAME)
+            .image(getImageName())
+            .imagePullPolicy(getImagePullPolicy())
+            .command(getContainerCommand())
+            .env(getEnvironmentVariables(tuningParameters))
+            .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
+            .lifecycle(createLifecycle())
+            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+            .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
+            .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
 
-    return  v1Container;
+    return v1Container;
   }
 
   private String getImageName() {
@@ -645,6 +646,7 @@ public abstract class PodStepContext {
   }
 
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
+
   abstract List<V1Volume> getAdditionalVolumes();
 
   abstract List<V1VolumeMount> getAdditionalVolumeMounts();
