@@ -41,5 +41,5 @@ spec:
         path: /other/path
 
   clusters:
-    - name: cluster1
+    cluster1:
 
