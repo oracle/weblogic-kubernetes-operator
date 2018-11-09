@@ -58,15 +58,6 @@ public abstract class ServerSpec {
   }
 
   /**
-   * The secret used to authenticate to a docker repository when pulling an image.
-   *
-   * @return an object containing the name of a secret. May be null.
-   */
-  public V1LocalObjectReference getImagePullSecret() {
-    return domainSpec.getImagePullSecret();
-  }
-
-  /**
    * The secrets used to authenticate to a docker repository when pulling an image.
    *
    * @return a list of objects containing the name of secrets. May be empty.

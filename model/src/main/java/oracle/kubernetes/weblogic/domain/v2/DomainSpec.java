@@ -6,12 +6,10 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
-import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -105,17 +103,6 @@ public class DomainSpec extends BaseConfiguration {
   private String imagePullPolicy;
 
   /**
-   * The image pull secret for the WebLogic Docker image.
-   *
-   * @deprecated as 2.0, use #imagePullSecrets
-   */
-  @SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
-  @Deprecated
-  @SerializedName("imagePullSecret")
-  @Expose
-  private V1LocalObjectReference imagePullSecret;
-
-  /**
    * The image pull secrets for the WebLogic Docker image.
    *
    * <p>More info:
@@ -127,21 +114,6 @@ public class DomainSpec extends BaseConfiguration {
   @SerializedName("imagePullSecrets")
   @Expose
   private List<V1LocalObjectReference> imagePullSecrets;
-
-  /**
-   * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
-   * Services. The internal and external ports must match; therefore, it is required that the
-   * channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes
-   * cluster's legal NodePort port range.
-   *
-   * @deprecated in 2.0
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @SerializedName("exportT3Channels")
-  @Expose
-  @Valid
-  @Deprecated
-  private List<String> exportT3Channels = new ArrayList<>();
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
@@ -397,13 +369,6 @@ public class DomainSpec extends BaseConfiguration {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  @Nullable
-  V1LocalObjectReference getImagePullSecret() {
-    if (isDefined(imagePullSecret)) return imagePullSecret;
-
-    return !hasImagePullSecrets() ? null : getReturnValue(imagePullSecrets.get(0));
-  }
-
   private boolean hasImagePullSecrets() {
     return imagePullSecrets != null && imagePullSecrets.size() != 0;
   }
@@ -411,16 +376,7 @@ public class DomainSpec extends BaseConfiguration {
   @Nullable
   public List<V1LocalObjectReference> getImagePullSecrets() {
     if (hasImagePullSecrets()) return imagePullSecrets;
-    else if (isDefined(imagePullSecret)) return Collections.singletonList(imagePullSecret);
     else return Collections.emptyList();
-  }
-
-  private V1LocalObjectReference getReturnValue(V1LocalObjectReference imagePullSecret) {
-    return isDefined(imagePullSecret) ? imagePullSecret : null;
-  }
-
-  private boolean isDefined(V1LocalObjectReference imagePullSecret) {
-    return imagePullSecret != null && !Strings.isNullOrEmpty(imagePullSecret.getName());
   }
 
   public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
@@ -429,45 +385,6 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setImagePullSecrets(@Nullable List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
-  }
-
-  /**
-   * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
-   * Services. The internal and external ports must match; therefore, it is required that the
-   * channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes
-   * cluster's legal NodePort port range.
-   *
-   * @return exported channels
-   */
-  List<String> getExportT3Channels() {
-    return exportT3Channels;
-  }
-
-  /**
-   * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
-   * Services. The internal and external ports must match; therefore, it is required that the
-   * channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes
-   * cluster's legal NodePort port range.
-   *
-   * @param exportT3Channels exported channels
-   */
-  void setExportT3Channels(List<String> exportT3Channels) {
-    this.exportT3Channels = exportT3Channels;
-  }
-
-  /**
-   * List of specific T3 channels to export. Named T3 Channels will be exposed using NodePort
-   * Services. The internal and external ports must match; therefore, it is required that the
-   * channel's port in the WebLogic configuration be a legal and unique value in the Kubernetes
-   * cluster's legal NodePort port range.
-   *
-   * @param exportT3Channels exported channels
-   * @return this
-   */
-  @SuppressWarnings("UnusedReturnValue")
-  public DomainSpec withExportT3Channels(List<String> exportT3Channels) {
-    this.exportT3Channels = exportT3Channels;
-    return this;
   }
 
   /**
@@ -555,7 +472,6 @@ public class DomainSpec extends BaseConfiguration {
     return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -568,18 +484,16 @@ public class DomainSpec extends BaseConfiguration {
             .append("asPort", asPort)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
-            .append("storage", storage);
-
-    builder
-        .append("imagePullSecrets", imagePullSecrets)
-        .append("adminServer", adminServer)
-        .append("managedServers", managedServers)
-        .append("clusters", clusters);
+            .append("storage", storage)
+            .append("imagePullSecrets", imagePullSecrets)
+            .append("adminServer", adminServer)
+            .append("managedServers", managedServers)
+            .append("clusters", clusters)
+            .append("replicas", replicas);
 
     return builder.toString();
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public int hashCode() {
     HashCodeBuilder builder =
@@ -592,14 +506,16 @@ public class DomainSpec extends BaseConfiguration {
             .append(asPort)
             .append(image)
             .append(imagePullPolicy)
-            .append(storage);
-
-    builder.append(imagePullSecrets).append(adminServer).append(managedServers).append(clusters);
+            .append(storage)
+            .append(imagePullSecrets)
+            .append(adminServer)
+            .append(managedServers)
+            .append(clusters)
+            .append(replicas);
 
     return builder.toHashCode();
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public boolean equals(Object other) {
     if (other == this) return true;
@@ -616,13 +532,12 @@ public class DomainSpec extends BaseConfiguration {
             .append(asPort, rhs.asPort)
             .append(image, rhs.image)
             .append(storage, rhs.storage)
-            .append(imagePullPolicy, rhs.imagePullPolicy);
-
-    builder
-        .append(imagePullSecrets, rhs.imagePullSecrets)
-        .append(adminServer, rhs.adminServer)
-        .append(managedServers, rhs.managedServers)
-        .append(clusters, rhs.clusters);
+            .append(imagePullPolicy, rhs.imagePullPolicy)
+            .append(imagePullSecrets, rhs.imagePullSecrets)
+            .append(adminServer, rhs.adminServer)
+            .append(managedServers, rhs.managedServers)
+            .append(clusters, rhs.clusters)
+            .append(replicas, rhs.replicas);
 
     return builder.isEquals();
   }
