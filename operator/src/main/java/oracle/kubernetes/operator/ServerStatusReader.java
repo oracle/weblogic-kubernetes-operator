@@ -30,7 +30,7 @@ import oracle.kubernetes.operator.steps.ReadHealthStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
+import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
 
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod */
 public class ServerStatusReader {

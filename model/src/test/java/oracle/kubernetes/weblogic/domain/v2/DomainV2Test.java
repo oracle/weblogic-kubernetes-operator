@@ -22,12 +22,13 @@ import static org.junit.Assert.assertThat;
 
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.io.IOException;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
@@ -652,5 +653,95 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
     assertThat(domain.getChannelServiceAnnotations("channelB"), hasEntry("time", "midnight"));
+  }
+
+  @Test
+  public void whenVolumesConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolume("name1", "/domain-tmp1")
+        .withAdditionalVolume("name2", "/domain-tmp2");
+    configureCluster("cluster1")
+        .withAdditionalVolume("name3", "/cluster-tmp1")
+        .withAdditionalVolume("name4", "/cluster-tmp2")
+        .withAdditionalVolume("name5", "/cluster-tmp3");
+    configureServer("server1").withAdditionalVolume("name6", "/server-tmp1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumes(),
+        containsInAnyOrder(
+            volume("name1", "/domain-tmp1"),
+            volume("name2", "/domain-tmp2"),
+            volume("name3", "/cluster-tmp1"),
+            volume("name4", "/cluster-tmp2"),
+            volume("name5", "/cluster-tmp3"),
+            volume("name6", "/server-tmp1")));
+  }
+
+  @Test
+  public void whenVolumeMountsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("name1", "/domain-test1")
+        .withAdditionalVolumeMount("name2", "/domain-test2");
+    configureCluster("cluster1")
+        .withAdditionalVolumeMount("name3", "/cluster-test1")
+        .withAdditionalVolumeMount("name4", "/cluster-test2")
+        .withAdditionalVolumeMount("name5", "/cluster-test3");
+    configureServer("server1").withAdditionalVolumeMount("name6", "/server-test1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
+        containsInAnyOrder(
+            volumeMount("name1", "/domain-test1"),
+            volumeMount("name2", "/domain-test2"),
+            volumeMount("name3", "/cluster-test1"),
+            volumeMount("name4", "/cluster-test2"),
+            volumeMount("name5", "/cluster-test3"),
+            volumeMount("name6", "/server-test1")));
+  }
+
+  @Test
+  public void whenDuplicateVolumesConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolume("name1", "/domain-tmp1")
+        .withAdditionalVolume("name2", "/domain-tmp2")
+        .withAdditionalVolume("name3", "/domain-tmp3");
+    configureCluster("cluster1")
+        .withAdditionalVolume("name2", "/cluster-tmp1")
+        .withAdditionalVolume("name3", "/cluster-tmp2");
+    configureServer("server1").withAdditionalVolume("name3", "/server-tmp1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumes(),
+        containsInAnyOrder(
+            volume("name1", "/domain-tmp1"),
+            volume("name2", "/cluster-tmp1"),
+            volume("name3", "/server-tmp1")));
+  }
+
+  @Test
+  public void whenDuplicateVolumeMountsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("name1", "/domain-test1")
+        .withAdditionalVolumeMount("name2", "/domain-test2")
+        .withAdditionalVolumeMount("name3", "/domain-test3");
+    configureCluster("cluster1")
+        .withAdditionalVolumeMount("name2", "/cluster-test1")
+        .withAdditionalVolumeMount("name3", "/cluster-test2");
+    configureServer("server1").withAdditionalVolumeMount("name3", "/server-test1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
+        containsInAnyOrder(
+            volumeMount("name1", "/domain-test1"),
+            volumeMount("name2", "/cluster-test1"),
+            volumeMount("name3", "/server-test1")));
+  }
+
+  private V1Volume volume(String name, String path) {
+    return new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path));
+  }
+
+  private V1VolumeMount volumeMount(String name, String path) {
+    return new V1VolumeMount().name(name).mountPath(path);
   }
 }

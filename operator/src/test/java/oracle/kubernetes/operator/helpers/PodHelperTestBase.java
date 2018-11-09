@@ -35,6 +35,7 @@ import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -68,8 +69,8 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -371,6 +372,14 @@ public abstract class PodHelperTestBase {
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
+  }
+
+  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
+    return hasItem(new V1VolumeMount().name(name).mountPath(path));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
+    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
   }
 
   @Test
