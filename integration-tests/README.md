@@ -39,7 +39,7 @@ Full test use cases
 * create another domain domain4 with Configured cluster using WDT in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
 * verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
 * cycle domain1 down and back up, plus verify no impact on domain4
-* create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
+* create domain5 in the default namespace with serverStartPolicy="ADMIN_ONLY", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
 * create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
 * test managed server 1 pod auto-restart in domain1
 * destroy domain1

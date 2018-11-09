@@ -19,8 +19,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
@@ -57,7 +57,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenStartupControlNull_runAdminStepOnly() {
+  public void whenStartPolicyNull_runAdminStepOnly() {
     testSupport.runSteps(getDomainPresenceStep());
 
     assertThat(adminStep.wasRun(), is(true));

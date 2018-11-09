@@ -26,8 +26,8 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -312,7 +312,7 @@ public class WatchBuilder {
     public Call apply(ApiClient client, CallParams callParams) {
       try {
         return new WeblogicApi(client)
-            .listWebLogicOracleV1NamespacedDomainCall(
+            .listWebLogicOracleV2NamespacedDomainCall(
                 namespace,
                 callParams.getPretty(),
                 START_LIST,

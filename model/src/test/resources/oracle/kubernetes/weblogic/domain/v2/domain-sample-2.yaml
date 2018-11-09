@@ -2,13 +2,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
-apiVersion: "weblogic.oracle/v1"
+apiVersion: "weblogic.oracle/v2"
 kind: Domain
 metadata:
   name: domain2
   namespace: domain_ns
-  labels:
-    weblogic.resourceVersion: domain-v2
 spec:
   # Identify which Secret contains the WebLogic Admin credentials
   adminSecret:
@@ -43,7 +41,7 @@ spec:
         path: /other/path
 
   clusters:
-    - clusterName: cluster1
+    cluster1:
       serverPod:
         readinessProbe:
           initialDelaySeconds: 10
@@ -55,9 +53,8 @@ spec:
           periodSeconds: 20
 
   managedServers:
-    - serverName: server2
+    server2:
       serverPod:
         livenessProbe:
           periodSeconds: 18
-
 
