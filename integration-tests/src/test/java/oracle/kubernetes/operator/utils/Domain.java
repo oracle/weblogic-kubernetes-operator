@@ -312,29 +312,24 @@ public class Domain {
           .append(":")
           .append(loadBalancerWebPort)
           .append("/");
-
       if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
-      testAppUrl.append(webappName).append("/");
-
-      // curl cmd to call webapp
+      testAppUrl.append(webappName).append("/"); // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
-      curlCmd.append(TestUtils.getHostName()).append(" ").append(testAppUrl.toString());
-
-      // curl cmd to get response code
+      curlCmd
+          .append(TestUtils.getHostName())
+          .append(" ")
+          .append(testAppUrl.toString()); // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
-      curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
-
-      // call webapp iteratively till its deployed/ready
-      callWebAppAndWaitTillReady(curlCmdResCode.toString());
-
-      if (verifyLoadBalance) {
-        // execute curl and look for the managed server name in response
-        callWebAppAndCheckForServerNameInResponse(curlCmd.toString());
-      }
+      curlCmdResCode.append(
+          " --write-out %{http_code} -o /dev/null"); // call webapp iteratively till its
+      // deployed/ready
+      callWebAppAndWaitTillReady(
+          curlCmdResCode
+              .toString()); // execute curl and look for the managed server name in response
+      callWebAppAndCheckForServerNameInResponse(curlCmd.toString(), verifyLoadBalance);
       // logger.info("curlCmd "+curlCmd);
-
     }
   }
 
@@ -706,13 +701,14 @@ public class Domain {
     }
   }
 
-  private void callWebAppAndCheckForServerNameInResponse(String curlCmd) throws Exception {
+  private void callWebAppAndCheckForServerNameInResponse(
+      String curlCmd, boolean verifyLoadBalancing) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
     for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
       managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
     }
-
+    logger.info("Calling webapp 20 times " + curlCmd);
     // number of times to call webapp
     for (int i = 0; i < 20; i++) {
       ExecResult result = ExecCommand.exec(curlCmd.toString());
@@ -720,20 +716,25 @@ public class Domain {
         throw new RuntimeException(
             "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
       }
-      String response = result.stdout().trim();
-      // logger.info("response "+ response);
-      for (String key : managedServers.keySet()) {
-        if (response.contains(key)) {
-          managedServers.put(key, new Boolean(true));
-          break;
+      if (verifyLoadBalancing) {
+        String response = result.stdout().trim();
+        // logger.info("response "+ response);
+        for (String key : managedServers.keySet()) {
+          if (response.contains(key)) {
+            managedServers.put(key, new Boolean(true));
+            break;
+          }
         }
       }
     }
     logger.info("ManagedServers " + managedServers);
     // error if any managedserver value is false
-    for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
-      if (!entry.getValue().booleanValue()) {
-        throw new RuntimeException("FAILURE: Load balancer can not reach server " + entry.getKey());
+    if (verifyLoadBalancing) {
+      for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
+        if (!entry.getValue().booleanValue()) {
+          throw new RuntimeException(
+              "FAILURE: Load balancer can not reach server " + entry.getKey());
+        }
       }
     }
   }
