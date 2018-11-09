@@ -20,4 +20,8 @@ public interface ServerConfigurator {
 
   ServerConfigurator withReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
+
+  ServerConfigurator withAdditionalVolume(String name, String path);
+
+  ServerConfigurator withAdditionalVolumeMount(String name, String path);
 }

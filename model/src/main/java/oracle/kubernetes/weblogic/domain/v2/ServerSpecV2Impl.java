@@ -9,6 +9,8 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -45,6 +47,16 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   @Override
   public List<V1EnvVar> getEnvironmentVariables() {
     return withStateAdjustments(server.getEnv());
+  }
+
+  @Override
+  public List<V1Volume> getAdditionalVolumes() {
+    return server.getAdditionalVolumes();
+  }
+
+  @Override
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return server.getAdditionalVolumeMounts();
   }
 
   @Override
