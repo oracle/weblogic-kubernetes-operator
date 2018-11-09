@@ -35,6 +35,7 @@ import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -353,6 +354,14 @@ public abstract class PodHelperTestBase {
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
+  }
+
+  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
+    return hasItem(new V1VolumeMount().name(name).mountPath(path));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
+    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
   }
 
   @Test
