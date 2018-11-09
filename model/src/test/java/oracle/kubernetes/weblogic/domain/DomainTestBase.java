@@ -96,7 +96,7 @@ public abstract class DomainTestBase {
   private void verifyStandardFields(ServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(spec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
-    assertThat(spec.getImagePullSecret(), nullValue());
+    assertThat(spec.getImagePullSecrets(), empty());
   }
 
   @Test
@@ -180,9 +180,9 @@ public abstract class DomainTestBase {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
     configureDomain(domain).withDefaultImagePullSecrets(secretReference);
 
-    assertThat(domain.getAdminServerSpec().getImagePullSecret(), equalTo(secretReference));
+    assertThat(domain.getAdminServerSpec().getImagePullSecrets(), hasItem(secretReference));
     assertThat(
-        domain.getServer("aServer", "aCluster").getImagePullSecret(), equalTo(secretReference));
+        domain.getServer("aServer", "aCluster").getImagePullSecrets(), hasItem(secretReference));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -381,7 +381,7 @@ public abstract class DomainTestBase {
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
-    assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
+    assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret"));
     assertThat(serverSpec.getEnvironmentVariables(), empty());
     assertThat(serverSpec.getNodePort(), nullValue());
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
