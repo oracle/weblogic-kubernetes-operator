@@ -71,4 +71,4 @@ The following table lists the configurable parameters of this chart and their de
 | `voyager.webPort`                     | Web port to access the Voyager load balancer.                                                                                         | 30305 |
 | `voyager.statsPort`                     | Port to access the Voyager/HAProxy stats page.                                                                                            | 30315 |
 
-**Note:** The input values "domainUID" and "clusterName" will be used to generate the k8s serviceName of WLS cluster with the format "<domainUID>-cluster-<clusterName>". 
+**Note:** The input values "domainUID" and "clusterName" will be used to generate the k8s serviceName of WLS cluster with the format "domainUID-cluster-clusterName". 
