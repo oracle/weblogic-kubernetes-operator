@@ -482,7 +482,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
-   * configured under clusterStartup. Provided so that administrators can scale the Domain resource.
+   * configured in clusters. Provided so that administrators can scale the Domain resource.
    *
    * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective setting.
    * @return replicas
@@ -495,7 +495,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
+   * configured in clusters.
    *
    * @param replicas replicas
    */
@@ -506,7 +506,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
-   * configured in clusterStartup.
+   * configured in clusters.
    *
    * @param replicas replicas
    * @return this

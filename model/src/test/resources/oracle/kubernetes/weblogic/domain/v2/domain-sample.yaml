@@ -65,9 +65,7 @@ spec:
     server2:
       serverStartState: ADMIN
 
-  # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
-  # of a cluster instead of an individual server.  If you use this entry, then the rules will be
-  # applied to ALL servers that are members of the named clusters.
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
     cluster2:
       desiredState: "RUNNING"
