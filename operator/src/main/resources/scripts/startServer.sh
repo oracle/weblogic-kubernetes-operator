@@ -9,9 +9,20 @@
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
 
+# if the livenessProbeSuccessOverride file is available, do not exit from startServer.sh
+
+function exitOrLoop {
+    if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
+    then
+        while true ; do sleep 60 ; done
+    else
+        exit 1
+    fi
+}
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
+[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exitOrLoop
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
@@ -24,7 +35,7 @@ function createFolder {
   mkdir -m 750 -p $1
   if [ ! -d $1 ]; then
     trace "Unable to create folder $1"
-    exit 1
+    exitOrLoop
   fi
 }
 
@@ -37,8 +48,8 @@ function copyIfChanged() {
   [ ! -f "${1?}" ] && echo "File '$1' not found." && exit 1
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
-    cp $1 $2 || exit 1
-    chmod 750 $2 || exit 1
+    cp $1 $2 || exitOrLoop
+    chmod 750 $2 || exitOrLoop
   else
     trace "Skipping copy of '$1' to '$2' -- these files already match."
   fi
@@ -58,7 +69,7 @@ checkEnv \
   ADMIN_NAME \
   ADMIN_PORT \
   SERVER_OUT_IN_POD_LOG \
-  AS_SERVICE_NAME || exit 1
+  AS_SERVICE_NAME || exitOrLoop
 
 trace "LOG_HOME=${LOG_HOME}"
 trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
@@ -72,7 +83,7 @@ trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 
 if [ ! -f /weblogic-operator/introspector/boot.properties ]; then
   trace "Error:  Missing introspector file '${bootpfile}'.  Introspector failed to run."
-  exit 1
+  exitOrLoop
 fi
 
 #
@@ -106,7 +117,7 @@ done
 for local_fname in ${DOMAIN_HOME}/optconfig/*.xml ; do
   if [ ! -f "/weblogic-operator/introspector/`basename $local_fname`" ]; then
     trace "Deleting '$local_fname' since it has no corresponding /weblogic-operator/introspector file."
-    rm -f $local_fname || exit 1
+    rm -f $local_fname || exitOrLoop
   fi
 done
 
@@ -117,7 +128,7 @@ done
 trace "Start node manager"
 # call script to start node manager in same shell 
 # $SERVER_OUT_FILE will be set in startNodeManager.sh
-. ${SCRIPTPATH}/startNodeManager.sh || exit 1
+. ${SCRIPTPATH}/startNodeManager.sh || exitOrLoop
 
 #
 # Start WL Server
@@ -134,7 +145,7 @@ ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
 
 if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
   trace "Showing the server out file from ${SERVER_OUT_FILE}"
-  tail -F -n +0 ${SERVER_OUT_FILE} || exit 1
+  tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
 else
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do sleep 60; done
