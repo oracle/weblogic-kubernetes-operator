@@ -208,7 +208,7 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
   
   if [ -f "$wl_state_file" ]; then
     trace "Removing stale file '$wl_state_file'."
-    rm -f ${wlStateFile} || exit 1
+    rm -f ${wl_state_file} || exit 1
   fi
 
 cat <<EOF > ${wl_props_file}
