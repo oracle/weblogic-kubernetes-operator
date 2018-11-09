@@ -24,7 +24,8 @@ type: TRAEFIK
 # WLS domain as backend to the load balancer
 wlsDomain:
   namespace: default
-  svcName: domain1-cluster-cluster-1
+  domainUID: domain1
+  clusterName: cluster1
   svcPort: 8001
 
 # Traefik specific values
@@ -40,7 +41,8 @@ type: VOYAGER
 # WLS domain as backend to the load balancer
 wlsDomain:
   namespace: default
-  svcName: domain1-cluster-cluster-1
+  domainUID: domain1
+  clusterName: cluster1  
   svcPort: 8001
 
 # Voyager specific values
@@ -62,8 +64,11 @@ The following table lists the configurable parameters of this chart and their de
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | `type`                     | Type of Ingress controller. Legal values are "TRAEFIK" or "VOYAGER"                                                                                             | TRAEFIK |
 | `wlsDomain.namespace`                     | Namespace of the WLS domain cluster.                                                                                            | default |
-| `wlsDomain.svcName`                     | Service name of the WLS domain cluster.                                                                                            | domain1-cluster-cluster-1 |
+| `wlsDomain.domainUID`                     | DomainUID of the WLS domain.                                                                                            | domain1 |
+| `wlsDomain.clusterName`                     | Cluster name in the WLS domain.                                                                                            | cluster-1 |
 | `wlsDomain.svcPort`                     | Service port of the WLS domain cluster.                                                                                            | 8001 |
 | `traefik.hostname`                     | Hostname to route to the WLS domain cluster.                                                                                            | doamin1.org |
 | `voyager.webPort`                     | Web port to access the Voyager load balancer.                                                                                         | 30305 |
 | `voyager.statsPort`                     | Port to access the Voyager/HAProxy stats page.                                                                                            | 30315 |
+
+**Note:** The input values "domainUID" and "clusterName" will be used to generate the k8s serviceName of WLS cluster with the format "domainUID-cluster-clusterName". 
