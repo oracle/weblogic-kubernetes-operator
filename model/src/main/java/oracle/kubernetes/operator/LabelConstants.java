@@ -9,6 +9,7 @@ public interface LabelConstants {
   String RESOURCE_VERSION_LABEL = "weblogic.resourceVersion";
   String DOMAINUID_LABEL = "weblogic.domainUID";
   String DOMAINNAME_LABEL = "weblogic.domainName";
+  String DOMAINHOME_LABEL = "weblogic.domainHome";
   String SERVERNAME_LABEL = "weblogic.serverName";
   String CHANNELNAME_LABEL = "weblogic.channelName";
   String CLUSTERNAME_LABEL = "weblogic.clusterName";
