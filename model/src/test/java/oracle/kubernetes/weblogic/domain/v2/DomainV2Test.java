@@ -29,8 +29,6 @@ import java.io.IOException;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;

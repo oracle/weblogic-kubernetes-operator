@@ -8,9 +8,9 @@ import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.DomainStorage;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.DomainStorage;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -174,28 +174,6 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
 
   /**
-   * Defines the startup control mechanism for a version 1 domain. Must be one of:
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @param startupControl the new value
-   * @return this object
-   */
-  public abstract DomainConfigurator withStartupControl(String startupControl);
-
-  /**
    * Add an environment variable to the domain
    *
    * @param name variable name
@@ -233,11 +211,4 @@ public abstract class DomainConfigurator {
   public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
 
   public abstract void setShuttingDown(boolean start);
-
-  /**
-   * Returns true if this configurator supports use of the startup control flag.
-   *
-   * @return true or false
-   */
-  public abstract boolean useDomainV1();
 }

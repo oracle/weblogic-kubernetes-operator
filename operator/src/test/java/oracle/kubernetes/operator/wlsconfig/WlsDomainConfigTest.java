@@ -28,8 +28,8 @@ import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -346,21 +346,15 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyUpdateDomainSpecNoWarningIfClusterStatupReplicasOK() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
-    configureDefaultReplicas(1);
     configureCluster("DockerCluster2").withReplicas(2);
 
     wlsDomainConfig.validate(domain);
     assertTrue(logRecords.isEmpty());
   }
 
-  private void configureDefaultReplicas(int replicas) {
-    if (DomainConfiguratorFactory.useDomainV1()) configurator.withDefaultReplicaCount(replicas);
-  }
-
   @Test
   public void verifyUpdateDomainSpecNoWarningIfClusterStatupOnDynamicCluster() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
-    configureDefaultReplicas(10);
     configureCluster("DockerCluster").withReplicas(10);
 
     wlsDomainConfig.validate(domain);

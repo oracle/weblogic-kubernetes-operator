@@ -2,7 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.v1;
+package oracle.kubernetes.weblogic.domain.v2;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -36,7 +36,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version for the Domain. Must be 'weblogic.oracle/v1'")
+  @Description("The API version for the Domain. Must be 'weblogic.oracle/v2'")
   private String apiVersion;
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -214,10 +214,6 @@ public class Domain {
 
   public void setReplicaCount(String clusterName, int replicaLimit) {
     getEffectiveConfigurationFactory().setReplicaCount(clusterName, replicaLimit);
-  }
-
-  String getEffectiveStartupControl() {
-    return spec.getEffectiveStartupControl();
   }
 
   /**

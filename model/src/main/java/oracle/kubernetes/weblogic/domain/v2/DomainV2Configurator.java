@@ -13,11 +13,8 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
-import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ExportedNetworkAccessPoint;
 
 public class DomainV2Configurator extends DomainConfigurator {
 
@@ -59,11 +56,6 @@ public class DomainV2Configurator extends DomainConfigurator {
   public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
     ((BaseConfiguration) getDomainSpec()).setServerStartPolicy(startPolicy);
     return this;
-  }
-
-  @Override
-  public DomainConfigurator withStartupControl(String startupControl) {
-    throw new ConfigurationNotSupportedException("domain", "startupControl");
   }
 
   @Override
@@ -129,8 +121,10 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   private Server getOrCreateManagedServer(@Nonnull String serverName) {
-    for (ManagedServer server : getDomainSpec().getManagedServers()) {
-      if (serverName.equals(server.getServerName())) return server;
+    ManagedServer server = getDomainSpec().getManagedServers().get(serverName);
+    if (server != null) {
+      server.setServerName(serverName);
+      return server;
     }
 
     return createManagedServer(serverName);
@@ -138,7 +132,7 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   private Server createManagedServer(String serverName) {
     ManagedServer server = new ManagedServer().withServerName(serverName);
-    getDomainSpec().getManagedServers().add(server);
+    getDomainSpec().getManagedServers().put(serverName, server);
     return server;
   }
 
@@ -147,11 +141,6 @@ public class DomainV2Configurator extends DomainConfigurator {
 
     ServerConfiguratorImpl(Server server) {
       this.server = server;
-    }
-
-    @Override
-    public ServerConfigurator withNodePort(int nodePort) {
-      throw new ConfigurationNotSupportedException("managedServer", "nodePort");
     }
 
     @Override
@@ -210,8 +199,10 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   private Cluster getOrCreateCluster(@Nonnull String clusterName) {
-    for (Cluster cluster : getDomainSpec().getClusters()) {
-      if (clusterName.equals(cluster.getClusterName())) return cluster;
+    Cluster cluster = getDomainSpec().getClusters().get(clusterName);
+    if (cluster != null) {
+      cluster.setClusterName(clusterName);
+      return cluster;
     }
 
     return createCluster(clusterName);
@@ -219,18 +210,13 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   private Cluster createCluster(@Nonnull String clusterName) {
     Cluster cluster = new Cluster().withClusterName(clusterName);
-    getDomainSpec().getClusters().add(cluster);
+    getDomainSpec().getClusters().put(clusterName, cluster);
     return cluster;
   }
 
   @Override
   public void setShuttingDown(boolean shuttingDown) {
     configureAdminServer("").withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
-  }
-
-  @Override
-  public boolean useDomainV1() {
-    return false;
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
