@@ -15,4 +15,4 @@ t3ChannelPort: 30061
 exposeAdminNodePort: true
 adminNodePort: 30705
 namespace: default
-startPolicy: ADMIN_ONLY
+serverStartPolicy: ADMIN_ONLY
