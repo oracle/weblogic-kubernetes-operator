@@ -43,5 +43,21 @@ spec:
         path: /other/path
 
   clusters:
-    - name: cluster1
+    - clusterName: cluster1
+      serverPod:
+        readinessProbe:
+          initialDelaySeconds: 10
+          timeoutSeconds: 15
+          periodSeconds: 20
+        livenessProbe:
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+          periodSeconds: 20
+
+  managedServers:
+    - serverName: server2
+      serverPod:
+        livenessProbe:
+          periodSeconds: 18
+
 

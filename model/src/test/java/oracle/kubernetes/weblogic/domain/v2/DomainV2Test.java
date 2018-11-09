@@ -606,6 +606,26 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_serverConfiguresReadinessProbe() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+
+    assertThat(serverSpec.getReadinessProbe().getInitialDelaySeconds(), equalTo(10));
+    assertThat(serverSpec.getReadinessProbe().getTimeoutSeconds(), equalTo(15));
+    assertThat(serverSpec.getReadinessProbe().getPeriodSeconds(), equalTo(20));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_serverConfiguresLivenessProbe() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+
+    assertThat(serverSpec.getLivenessProbe().getInitialDelaySeconds(), equalTo(20));
+    assertThat(serverSpec.getLivenessProbe().getTimeoutSeconds(), equalTo(5));
+    assertThat(serverSpec.getLivenessProbe().getPeriodSeconds(), equalTo(18));
+  }
+
+  @Test
   public void whenDomain3ReadFromYaml_PredefinedStorageDefinesClaimName() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
