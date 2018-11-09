@@ -64,6 +64,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withAdditionalVolume(String name, String path) {
+    ((BaseConfiguration) getDomainSpec()).addAdditionalVolume(name, path);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
+    ((BaseConfiguration) getDomainSpec()).addAdditionalVolumeMount(name, path);
+    return this;
+  }
+
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
       implements AdminServerConfigurator {
     private AdminServer adminServer;
@@ -167,6 +179,18 @@ public class DomainV2Configurator extends DomainConfigurator {
       server.setReadinessProbe(initialDelay, timeout, period);
       return this;
     }
+
+    @Override
+    public ServerConfigurator withAdditionalVolume(String name, String path) {
+      server.addAdditionalVolume(name, path);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withAdditionalVolumeMount(String name, String path) {
+      server.addAdditionalVolumeMount(name, path);
+      return this;
+    }
   }
 
   @Override
@@ -242,6 +266,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     public ClusterConfigurator withLivenessProbeSettings(
         Integer initialDelay, Integer timeout, Integer period) {
       cluster.setLivenessProbe(initialDelay, timeout, period);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAdditionalVolume(String name, String path) {
+      cluster.addAdditionalVolume(name, path);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
+      cluster.addAdditionalVolumeMount(name, path);
       return this;
     }
   }
