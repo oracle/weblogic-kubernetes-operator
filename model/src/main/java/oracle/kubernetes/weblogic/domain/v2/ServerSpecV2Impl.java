@@ -9,7 +9,6 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Probe;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -88,13 +87,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
 
   @Nonnull
   @Override
-  public V1Probe getLivenessProbe() {
+  public ProbeTuning getLivenessProbe() {
     return server.getLivenessProbe();
   }
 
   @Nonnull
   @Override
-  public V1Probe getReadinessProbe() {
+  public ProbeTuning getReadinessProbe() {
     return server.getReadinessProbe();
   }
 
