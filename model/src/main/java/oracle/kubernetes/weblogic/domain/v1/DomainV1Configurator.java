@@ -93,6 +93,16 @@ public class DomainV1Configurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withAdditionalVolume(String name, String path) {
+    throw new ConfigurationNotSupportedException("domain", "volumes");
+  }
+
+  @Override
+  public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
+    throw new ConfigurationNotSupportedException("domain", "volumeMounts");
+  }
+
+  @Override
   public ServerConfigurator configureServer(@Nonnull String serverName) {
     return new ServerStartupConfigurator(getOrCreateServerStartup(serverName));
   }
@@ -184,6 +194,16 @@ public class DomainV1Configurator extends DomainConfigurator {
         Integer initialDelay, Integer timeout, Integer period) {
       throw new ConfigurationNotSupportedException("server", "readinessProbe");
     }
+
+    @Override
+    public ServerConfigurator withAdditionalVolume(String name, String path) {
+      throw new ConfigurationNotSupportedException("server", "volumes");
+    }
+
+    @Override
+    public ServerConfigurator withAdditionalVolumeMount(String name, String path) {
+      throw new ConfigurationNotSupportedException("server", "volumeMounts");
+    }
   }
 
   class AdminServerStartupConfigurator extends ServerStartupConfigurator
@@ -269,6 +289,16 @@ public class DomainV1Configurator extends DomainConfigurator {
     public ClusterConfigurator withLivenessProbeSettings(
         Integer initialDelay, Integer timeout, Integer period) {
       throw new ConfigurationNotSupportedException("cluster", "livenessProbe");
+    }
+
+    @Override
+    public ClusterConfigurator withAdditionalVolume(String name, String path) {
+      throw new ConfigurationNotSupportedException("cluster", "volumes");
+    }
+
+    @Override
+    public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
+      throw new ConfigurationNotSupportedException("cluster", "volumeMounts");
     }
 
     @Override

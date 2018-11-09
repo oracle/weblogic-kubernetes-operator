@@ -9,6 +9,8 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +112,16 @@ public class PodHelper {
       overrideContainerWeblogicEnvVars(vars);
       doSubstitution(vars);
       return vars;
+    }
+
+    @Override
+    protected List<V1Volume> getAdditionalVolumes() {
+      return getServerSpec().getAdditionalVolumes();
+    }
+
+    @Override
+    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
+      return getServerSpec().getAdditionalVolumeMounts();
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
@@ -280,6 +292,16 @@ public class PodHelper {
       overrideContainerWeblogicEnvVars(vars);
       doSubstitution(vars);
       return vars;
+    }
+
+    @Override
+    protected List<V1Volume> getAdditionalVolumes() {
+      return getServerSpec().getAdditionalVolumes();
+    }
+
+    @Override
+    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
+      return getServerSpec().getAdditionalVolumeMounts();
     }
   }
 
