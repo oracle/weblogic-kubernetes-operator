@@ -59,7 +59,7 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
   SERVICE_NAME=localhost
 else
   # TBD check if USER_MEM_ARGS and JAVA_OPTIONS are actually required
-  checkEnv SERVER_NAME ADMIN_NAME AS_SERVICE_NAME SERVICE_NAME USER_MEM_ARGS JAVA_OPTIONS || exit 1
+  checkEnv SERVER_NAME ADMIN_NAME AS_SERVICE_NAME SERVICE_NAME USER_MEM_ARGS || exit 1
 fi
 
 [ ! -d "${JAVA_HOME}" ]                     && trace "Error: JAVA_HOME directory not found '${JAVA_HOME}'."           && exit 1 
