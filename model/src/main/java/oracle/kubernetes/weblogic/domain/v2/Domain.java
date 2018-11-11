@@ -310,6 +310,19 @@ public class Domain {
     return spec.getDomainName();
   }
 
+  /**
+   * Returns the domain home
+   *
+   * <p>Defaults to either /shared/domain/ or /shared/domains/domainUID
+   *
+   * @return domain home
+   */
+  public String getDomainHome() {
+    if (spec.getDomainHome() != null) return spec.getDomainHome();
+    if (spec.isDomainHomeInImage()) return "/shared/domain";
+    return "/shared/domains/" + getDomainUID();
+  }
+
   public boolean isShuttingDown() {
     return getEffectiveConfigurationFactory().isShuttingDown();
   }

@@ -46,6 +46,19 @@ public class DomainSpec extends BaseConfiguration {
   private String domainName;
 
   /**
+   * Domain home
+   *
+   * @since 2.0
+   */
+  @Description(
+      "The folder for the Weblogic Domain. (Not required)"
+          + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
+          + "Defaults to /shared/domains/domain if domainHomeInImage is true")
+  @SerializedName("domainHome")
+  @Expose
+  private String domainHome;
+
+  /**
    * Reference to secret containing domain administrator username and password. Secret must contain
    * keys names 'username' and 'password' (Required)
    */
@@ -250,6 +263,26 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  /**
+   * Domain home
+   *
+   * @since 2.0
+   * @return domain home
+   */
+  public String getDomainHome() {
+    return domainHome;
+  }
+
+  /**
+   * Domain home
+   *
+   * @since 2.0
+   * @param domainHome domain home
+   */
+  public void setDomainHome(String domainHome) {
+    this.domainHome = domainHome;
+  }
+
   /*
    * Fluent api for setting the image.
    *
@@ -395,6 +428,11 @@ public class DomainSpec extends BaseConfiguration {
    */
   public boolean isDomainHomeInImage() {
     return domainHomeInImage;
+  }
+
+  /** @param domainHomeInImage */
+  public void setDomainHomeInImage(boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
   }
 
   /**

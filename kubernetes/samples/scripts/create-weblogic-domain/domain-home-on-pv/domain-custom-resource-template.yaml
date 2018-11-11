@@ -16,6 +16,8 @@ spec:
   domainUID: %DOMAIN_UID%
   # The WebLogic Domain Name
   domainName: %DOMAIN_NAME%
+  # The WebLogic Domain Home
+  domainHome: %DOMAIN_HOME%
   # The Operator currently does not support other images
   image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest

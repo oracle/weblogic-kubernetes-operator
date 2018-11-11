@@ -64,7 +64,7 @@ spec:
             - name: DOMAIN_ROOT_DIR
               value: "%DOMAIN_ROOT_DIR%"
             - name: DOMAIN_HOME_DIR
-              value: "%DOMAIN_ROOT_DIR%/domains/%DOMAIN_UID%"
+              value: "%DOMAIN_HOME%"
             - name: DOMAIN_LOGS_DIR
               value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
       volumes:
