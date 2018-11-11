@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 public interface VersionConstants {
   String OPERATOR_V1 = "operator-v1";
   String OPERATOR_V2 = "operator-v2";
+  String DEFAULT_OPERATOR_VERSION = OPERATOR_V2;
   String DOMAIN_V1 = "domain-v1";
   String DOMAIN_V2 = "domain-v2";
   String DEFAULT_DOMAIN_VERSION = DOMAIN_V2;
