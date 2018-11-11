@@ -737,6 +737,27 @@ public class DomainV2Test extends DomainTestBase {
             volumeMount("name3", "/server-test1")));
   }
 
+  @Test
+  public void domainHomeTest_standardHome2() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domains/uid1"));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome3() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domain"));
+  }
+
+  @Test
+  public void domainHomeTest_customHome1() {
+    configureDomain(domain).withDomainHome("/custom/domain/home");
+
+    assertThat(domain.getDomainHome(), equalTo("/custom/domain/home"));
+  }
+
   private V1Volume volume(String name, String path) {
     return new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path));
   }

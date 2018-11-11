@@ -33,6 +33,26 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator createFor(Domain domain);
 
   /**
+   * Sets the home for the domain.
+   *
+   * @param home the home of the domain
+   * @return this object
+   */
+  public DomainConfigurator withDomainHome(String domainHome) {
+    getDomainSpec().setDomainHome(domainHome);
+    return this;
+  }
+
+  /**
+   * @param homeInImage
+   * @return
+   */
+  public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
+    getDomainSpec().setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  /**
    * Defines a name for the domain's admin server.
    *
    * @param adminServerName the name of the admin server
