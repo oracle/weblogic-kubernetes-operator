@@ -324,7 +324,8 @@ public abstract class PodStepContext {
   // Therefore, we'll just compare specific fields
   private static boolean isCurrentPodValid(V1Pod build, V1Pod current) {
 
-    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
+    if (!VersionHelper.matchesResourceVersion(
+        current.getMetadata(), VersionConstants.DEFAULT_DOMAIN_VERSION)) {
       return false;
     }
 
@@ -562,7 +563,8 @@ public abstract class PodStepContext {
         new V1ObjectMeta()
             .name(getPodName())
             .namespace(getNamespace())
-            .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+            .putLabelsItem(
+                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
             .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
             .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
             .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
