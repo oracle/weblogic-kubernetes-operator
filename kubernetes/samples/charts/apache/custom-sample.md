@@ -1,22 +1,36 @@
 # Apache Load Balancer custom sample
-## Configure Apache Webtier as Load Balancer for WLS Domains
-In this section we will demonstrate how to use Apache webtier to handle traffic to backend WLS domains.
+In this sample, we will configure Apache webtier as a load balancer for multiple WebLogic domains using custom configuration. We will demonstrate how to use Apache webtier to handle traffic to the multiple backend WebLogic domains.
 
-### 1. Create namespace
-In this sample, both Apache and WebLogic Server domain instances are located in the namespace `apache-sample`.
+## 1. Create namespace
+In this sample, both Apache webtier and WebLogic domain instances are located in the namespace `apache-sample`.
 ```
 $ kubectl create namespace apache-sample
 ```
 
-### 2. Install WLS Domains
-Now we need to prepare some backends for Apache to do load balancing.
+## 2. Create WebLogic Domains
+Now we need to prepare some backends for Apache webtier to do load balancing. Please refer the sample https://github.com/oracle/weblogic-kubernetes-operator/tree/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv to create two WebLogic domains under the namespace `apache-sample`.
 
-Create two WebLogic Server domains: 
-- One domain with name 'domain1' under namespace 'apache-sample'.
-- One domain with name 'domain2' under namespace 'apache-sample'.
-- Each domain has a webapp installed with url context 'testwebapp'.
+The first domain uses the following custom configuration parameters:
+- namespace: apache-sample
+- domainUID: domain1
+- clusterName: cluster-1
+- adminServerName: admin-server
+- adminPort: 7001
+- adminNodePort: 30701
+- managedServerPort: 8001
 
-### 3. Provide custom Apache Plugin Configuration
+The second domain uses the following custom configuration parameters:
+- namespace: apache-sample
+- domainUID: domain2
+- clusterName: cluster-1
+- adminServerName: admin-server
+- adminPort: 7011
+- adminNodePort: 30702
+- managedServerPort: 8021
+
+After the domains are successfully created, deploy the sample web application testwebapp.war on each domain cluster through the admin console.
+
+## 3. Provide custom Apache Plugin Configuration
 In this sample we will provide custom Apache plugin configuration to fine tune the behavior of Apache.
 - Create a custom Apache plugin configuration file named `custom_mod_wl_apache.conf`. The file content is similar as below.
 ```
@@ -57,14 +71,10 @@ PathTrim /weblogic2
 ```
 - Place the `custom_mod_wl_apache.conf` file in a local directory `<host-config-dir>` on the host machine.
 
-### 4. Pull Apache Webtier Docker Image
-Run the following commands to pull Apache webtier docker image from repositry manually.
-```
-$ docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
-$ docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
-```
+## 4. Build Apache Webtier Docker Image
+Please refer the sample https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache to build Apache webtier docker image.
 
-### 5. Install Apache Webtier with Helm Chart
+## 5. Install Apache Webtier with Helm Chart
 Apache webtier helm chart is located at https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/charts/apache-webtier.
 Install Apache webtier helm chart to apache-sample namespace with specified docker volume path:
 ```
@@ -72,7 +82,7 @@ $ cd kubernetes/samples/charts
 $ helm install --name my-release --set volumePath=<host-config-dir> --namespace apache-sample apache-webtier
 ```
 
-### 6. Run the sample application
+## 6. Run the sample application
 Now you can send requests to different WLS domains with the unique entry point of Apache with different path. Alternatively, you can access the URLs in a web browser.
 ```
 $ curl --silent http://${HOSTNAME}:30305/weblogic1/testwebapp/
@@ -80,7 +90,7 @@ $ curl --silent http://${HOSTNAME}:30305/weblogic2/testwebapp/
 ```
 You can also access SSL URL `https://${HOSTNAME}:30443/weblogic1/testwebapp/` and `https://${HOSTNAME}:30443/weblogic2/testwebapp/` in your web browser.
 
-## Uninstall Apache Webtier
+## 7. Uninstall Apache Webtier
 ```
 $ helm delete --purge my-release
 ```
