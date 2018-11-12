@@ -422,7 +422,8 @@ public abstract class PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         allOf(
-            hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1),
+            hasEntry(
+                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION),
             hasEntry(LabelConstants.DOMAINUID_LABEL, UID),
             hasEntry(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME),
             hasEntry(LabelConstants.SERVERNAME_LABEL, getServerName()),
@@ -553,7 +554,7 @@ public abstract class PodHelperTestBase {
 
   V1ObjectMeta createPodMetadata() {
     return new V1ObjectMeta()
-        .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+        .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
         .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/shared/domains/" + UID)
