@@ -58,6 +58,12 @@ The following table lists the configurable parameters of the Apache webtier char
 | `virtualHostName`                  | The VirtualHostName of the Apache HTTP server                 | ``                    |
 | `customCert`                       | The customer supplied certificate                             | ``                    |
 | `customKey`                        | The customer supplied private key                             | ``                    |
+| `domainUID`                        | Unique ID identifying a domain                                | `domain1`             |
+| `clusterName`                      | Cluster name                                                  | `cluster-1`           |
+| `adminServerName`                  | Name of the admin server                                      | `admin-server`        |
+| `adminPort`                        | Port number for admin server                                  | `7001`                |
+| `managedServerPort`                | Port number for each managed server                           | `8001`                |
+| `location`                         | Prepath for all application deployed on WebLogic cluster      | `/weblogic`           |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 

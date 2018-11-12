@@ -1,23 +1,21 @@
 # Apache Load Balancer default sample
-## Configure Apache Webtier as Load Balancer for WLS Domains
-In this section we will demonstrate how to use Apache webtier to handle traffic to backend WLS domains.
+In this sample, we will configure Apache webtier as a load balancer for WebLogic domain using the default configuration. We will demonstrate how to use Apache webtier to handle traffic to the backend WebLogic domain.
 
-### 1. Install WebLogic Server Domain
-Now we need to prepare some backends for Apache to do load balancing.
+## 1. Create WebLogic Domain
+Now we need to prepare backend for Apache webtier to do load balancing. Please refer the sample https://github.com/oracle/weblogic-kubernetes-operator/tree/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv to create a WebLogic domain. Keep the default values for the following configuration parameters:
+- namespace: default
+- domainUID: domain1
+- clusterName: cluster-1
+- adminServerName: admin-server
+- adminPort: 7001
+- managedServerPort: 8001
 
-Create a WebLogic Server domain:
-- Under default namespace.
-- Domain name is 'domain1'.
-- Deploy a webapp  with url context 'testwebapp'.
+After the domain is successfully created, deploy the sample web application testwebapp.war on the domain cluster through the admin console.
 
-### 2. Pull Apache Webtier Docker Image
-Run the following commands to pull Apache webtier docker image from repositry manually.
-```
-$ docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
-$ docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
-```
+## 2. Build Apache Webtier Docker Image
+Please refer the sample https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache to build Apache webtier docker image.
 
-### 3. Install Apache Webtier with Helm Chart
+## 3. Install Apache Webtier with Helm Chart
 Apache webtier helm chart is located at https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/charts/apache-webtier.
 Install Apache webtier helm chart to default namespace with default settings:
 ```
@@ -25,14 +23,14 @@ $ cd kubernetes/samples/charts
 $ helm install --name my-release apache-webtier
 ```
 
-### 4. Run the sample application
+## 4. Run the sample application
 Now you can send requests to different WLS domains with the unique entry point of Apache with different path. Alternatively, you can access the URLs in a web browser.
 ```
 $ curl --silent http://${HOSTNAME}:30305/weblogic/testwebapp/
 ```
 You can also access SSL URL `https://${HOSTNAME}:30443/weblogic/testwebapp/` in your web browser.
 
-## Uninstall Apache Webtier
+## 5. Uninstall Apache Webtier
 ```
 $ helm delete --purge my-release
 ```

@@ -57,13 +57,13 @@ spec:
 {{- end }}
 {{- if not (.Values.volumePath) }}
           - name: WEBLOGIC_CLUSTER
-            value: "domain1-cluster-cluster-1:8001"
+            value: "{{ .Values.domainUID | replace "_" "-" | lower }}-cluster-{{ .Values.clusterName | replace "_" "-" | lower }}:{{ .Values.managedServerPort }}"
           - name: LOCATION
-            value: "/weblogic"
+            value: {{ .Values.location | quote }}
           - name: WEBLOGIC_HOST
-            value: "domain1-admin-server"
+            value: "{{ .Values.domainUID | replace "_" "-" | lower }}-{{ .Values.adminServerName | replace "_" "-" | lower }}"
           - name: WEBLOGIC_PORT
-            value: "7001"
+            value: {{ .Values.adminPort | quote }}
 {{- end }}
 {{- if .Values.virtualHostName }}
           - name: VIRTUAL_HOST_NAME

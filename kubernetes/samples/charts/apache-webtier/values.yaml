@@ -51,3 +51,27 @@ customCert:
 # The customer supplied private key to use for Apache webtier SSL configuration.
 # The value must be a string containing a base64 encoded key.
 customKey:
+
+# Unique ID identifying a domain.
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+domainUID: "domain1"
+
+# Cluster name
+clusterName: "cluster-1"
+
+# Name of the admin server
+adminServerName: "admin-server"
+
+# Port number for admin server
+adminPort: 7001
+
+# Port number for each managed server
+managedServerPort: 8001
+
+# Prepath for all application deployed on WebLogic cluster.
+# For example, if it is set to '/weblogic', all applications deployed on the cluster can be accessed via 
+# http://myhost:myport/weblogic/application_end_url
+# where 'myhost' is the IP of the machine that runs the Apache web tier, and 
+#       'myport' is the port that the Apache web tier is publicly exposed to.
+location: "/weblogic"
+
