@@ -17,6 +17,8 @@ public interface KubernetesConstants {
   String CLASS_INGRESS = "kubernetes.io/ingress.class";
   String CLASS_INGRESS_VALUE = "traefik";
 
+  String CRD_NAME = "domains.weblogic.oracle";
+  String DOMAIN = "Domain";
   String DOMAIN_GROUP = "weblogic.oracle";
   String DOMAIN_VERSION = "v2";
   String DOMAIN_PLURAL = "domains";

@@ -21,7 +21,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.NETWORK_ACCESS_POIN
 import static oracle.kubernetes.operator.ProcessingConstants.NODE_PORT;
 import static oracle.kubernetes.operator.ProcessingConstants.PORT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -236,7 +236,8 @@ public class ServiceHelperTest {
     V1Service service =
         new V1Service()
             .spec(createClusterServiceSpec())
-            .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+            .metadata(
+                new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
     initializeClusterServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
@@ -250,7 +251,8 @@ public class ServiceHelperTest {
     V1Service service =
         new V1Service()
             .spec(createUntypedClusterServiceSpec())
-            .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+            .metadata(
+                new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
     initializeClusterServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
@@ -362,7 +364,7 @@ public class ServiceHelperTest {
             new V1ObjectMeta()
                 .name(getClusterServiceName())
                 .namespace(NS)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(CLUSTERNAME_LABEL, TEST_CLUSTER)
@@ -390,13 +392,13 @@ public class ServiceHelperTest {
   private V1Service createClusterServiceWithBadSpecType() {
     return new V1Service()
         .spec(new V1ServiceSpec().type("BadType"))
-        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
   }
 
   private V1Service createClusterServiceWithBadPort() {
     return new V1Service()
         .spec(createSpecWithBadPort())
-        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
   }
 
   private V1ServiceSpec createSpecWithBadPort() {
@@ -469,7 +471,8 @@ public class ServiceHelperTest {
     V1Service service =
         new V1Service()
             .spec(createServerServiceSpec())
-            .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+            .metadata(
+                new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
     initializeServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
@@ -563,7 +566,7 @@ public class ServiceHelperTest {
                 .name(getServerServiceName())
                 .namespace(NS)
                 .putAnnotationsItem(UNREADY_ENDPOINTS_ANNOTATION, "true")
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V2)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
@@ -674,7 +677,7 @@ public class ServiceHelperTest {
             new V1ObjectMeta()
                 .name(getExternalChannelServiceName())
                 .namespace(NS)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V2)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
