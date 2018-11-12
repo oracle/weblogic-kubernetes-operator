@@ -346,41 +346,92 @@ public class CallBuilder {
 
   /* Custom Resource Definitions */
 
-  private SynchronousCallFactory<V1beta1CustomResourceDefinition> READ_CRD =
-      (client, requestParams) ->
-          new ApiextensionsV1beta1Api(client)
-              .readCustomResourceDefinition(requestParams.name, pretty, exact, export);
-
-  /**
-   * Read custom resource definition
-   *
-   * @param name Name
-   * @return CustomResourceDefinition
-   * @throws ApiException API Exception
-   */
-  public V1beta1CustomResourceDefinition readCustomResourceDefinition(String name)
+  private com.squareup.okhttp.Call readCustomResourceDefinitionAsync(
+      ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
-    RequestParams requestParams = new RequestParams("readCRD", null, name, null);
-    return executeSynchronousCall(requestParams, READ_CRD);
+    return new ApiextensionsV1beta1Api(client)
+        .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
   }
 
-  private SynchronousCallFactory<V1beta1CustomResourceDefinition> CREATE_CRD =
-      (client, requestParams) ->
-          new ApiextensionsV1beta1Api(client)
-              .createCustomResourceDefinition(
-                  (V1beta1CustomResourceDefinition) requestParams.body, pretty);
+  private final CallFactory<V1beta1CustomResourceDefinition> READ_CRD =
+      (requestParams, usage, cont, callback) ->
+          wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
 
   /**
-   * Create custom resource definition
+   * Asynchronous step for reading CRD
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readCustomResourceDefinitionAsync(
+      String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readCRD", null, name, null), READ_CRD);
+  }
+
+  private com.squareup.okhttp.Call createCustomResourceDefinitionAsync(
+      ApiClient client,
+      V1beta1CustomResourceDefinition body,
+      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .createCustomResourceDefinitionAsync(body, pretty, callback);
+  }
+
+  private final CallFactory<V1beta1CustomResourceDefinition> CREATE_CRD =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createCustomResourceDefinitionAsync(
+                  usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
+
+  /**
+   * Asynchronous step for creating CRD
    *
    * @param body Body
-   * @return Created custom resource definition
-   * @throws ApiException API Exception
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
    */
-  public V1beta1CustomResourceDefinition createCustomResourceDefinition(
-      V1beta1CustomResourceDefinition body) throws ApiException {
-    RequestParams requestParams = new RequestParams("createCRD", null, null, body);
-    return executeSynchronousCall(requestParams, CREATE_CRD);
+  public Step createCustomResourceDefinitionAsync(
+      V1beta1CustomResourceDefinition body,
+      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("createCRD", null, null, body), CREATE_CRD);
+  }
+
+  private com.squareup.okhttp.Call replaceCustomResourceDefinitionAsync(
+      ApiClient client,
+      String name,
+      V1beta1CustomResourceDefinition body,
+      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, callback);
+  }
+
+  private final CallFactory<V1beta1CustomResourceDefinition> REPLACE_CRD =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceCustomResourceDefinitionAsync(
+                  usage,
+                  requestParams.name,
+                  (V1beta1CustomResourceDefinition) requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for replacing CRD
+   *
+   * @param name Name
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceCustomResourceDefinitionAsync(
+      String name,
+      V1beta1CustomResourceDefinition body,
+      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("replaceCRD", null, name, body), REPLACE_CRD);
   }
 
   /* Config Maps */
