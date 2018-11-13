@@ -15,11 +15,15 @@ public interface ClusterConfigurator {
 
   ClusterConfigurator withServerStartState(String cluster);
 
-  ClusterConfigurator withServerStartupPolicy(String policy);
+  ClusterConfigurator withServerStartPolicy(String policy);
 
   ClusterConfigurator withReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
 
   ClusterConfigurator withLivenessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
+
+  ClusterConfigurator withAdditionalVolume(String name, String path);
+
+  ClusterConfigurator withAdditionalVolumeMount(String name, String path);
 }

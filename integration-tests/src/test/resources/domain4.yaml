@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 adminServerName: admin-server
-domainName: domain4
 domainUID: domain4
 clusterName: cluster-1
 clusterType: CONFIGURED
@@ -16,6 +15,4 @@ t3ChannelPort: 30051
 exposeAdminNodePort: true
 adminNodePort: 30704
 namespace: test2
-loadBalancerWebPort: 30308
-loadBalancerDashboardPort: 30318
 createDomainFilesDir: wdt

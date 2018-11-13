@@ -63,7 +63,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  lbOutputDir=${outputDir}
+  lbOutputDir=${outputDir}/load-balancers/${domainUID}
 
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in
@@ -200,9 +200,7 @@ function createYamlFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  if [ -z ${domainName} ]; then
-    domainName=$domainUID
-  fi
+  domainName=$domainUID
 
   if [ "${loadBalancer}" = "TRAEFIK" ]; then
     # Traefik file

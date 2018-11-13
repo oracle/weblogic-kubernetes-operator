@@ -25,8 +25,8 @@ source ${scriptDir}/../../common/validate.sh
 
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
+  echo "  -i Parameter inputs file, must be specified."
   echo "  -o Ouput directory for the generated yaml files, must be specified."
-  echo "  -i Parameter input file, must be specified."
   echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
@@ -74,7 +74,7 @@ fi
 # for the generated yaml files for this domain.
 #
 function initAndValidateOutputDir {
-  domainOutputDir="${outputDir}"
+  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
@@ -260,7 +260,7 @@ function initialize {
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
   initAndValidateOutputDir
-  validateStartupControl
+  validateServerStartPolicy
   validateClusterType
   failIfValidationErrors
 }
@@ -291,10 +291,7 @@ function createYamlFiles {
     image="store/oracle/weblogic:12.2.1.3"
   fi
   
-  # Use the default value if not defined.
-  if [ -z "${domainName}" ]; then
-    domainName=${domainUID}
-  fi
+  domainName=${domainUID}
 
   # Use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
@@ -331,6 +328,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${createJobOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${createJobOutput}
@@ -360,6 +358,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
 
@@ -383,6 +382,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
@@ -394,7 +394,7 @@ function createYamlFiles {
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
+  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
@@ -418,7 +418,11 @@ function create_domain_configmap {
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
-  sed -i -e "s/^domainName:.*/domainName: $domainName/" ${externalFilesTmpDir}/create-domain-inputs.yaml
+ 
+  # Set the domainName in the inputs file that is contained in the configmap.
+  # this inputs file can be used by the scripts, such as WDT, that creates the WebLogic
+  # domain in the job.
+  echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
    sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
@@ -434,7 +438,9 @@ function create_domain_configmap {
     fail "The configmap ${cmName} was not created"
   fi
 
-  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v2 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+
+  rm -rf $externalFilesTmpDir
 }
 
 #

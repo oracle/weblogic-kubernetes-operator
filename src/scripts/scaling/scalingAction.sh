@@ -127,14 +127,14 @@ if [ $? -ne 0 ]
 fi
 echo "DOMAIN: $DOMAIN" >> scalingAction.log
 
-# Verify if cluster is defined in ClusterStartup
+# Verify if cluster is defined in clusters
 cat > cmds.py << INPUT
 import sys, json
 outer_loop_must_break = False
 for i in json.load(sys.stdin)["items"]:
-  j = i["spec"]["clusterStartup"]
+  j = i["spec"]["clusters"]
   for index, cStartups in enumerate(j):
-    if j[index]["clusterName"] == "$wls_cluster_name":
+    if j[index] == "$wls_cluster_name":
       outer_loop_must_break = True
       print True
       break
@@ -144,22 +144,22 @@ INPUT
 in_cluster_startup=`echo ${DOMAIN} | python cmds.py`
 
 # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
-# depending on whether the specified cluster is defined in ClusterStartup
+# depending on whether the specified cluster is defined in clusters
 # or not.
 if [ $in_cluster_startup == "True" ]
 then
-  echo "$wls_cluster_name defined in ClusterStartup" >> scalingAction.log
+  echo "$wls_cluster_name defined in clusters" >> scalingAction.log
 cat > cmds.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
-  j = i["spec"]["clusterStartup"]
+  j = i["spec"]["clusters"]
   for index, cStartups in enumerate(j):
-    if j[index]["clusterName"] == "$wls_cluster_name":
+    if j[index] == "$wls_cluster_name":
         print(j[index]["replicas"])
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds.py`
 else
-  echo "$wls_cluster_name NOT defined in ClusterStartup" >> scalingAction.log
+  echo "$wls_cluster_name NOT defined in clusters" >> scalingAction.log
 cat > cmds.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:

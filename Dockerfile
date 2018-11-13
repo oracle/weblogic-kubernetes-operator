@@ -10,7 +10,8 @@
 # From the Docker store
 # -------------------------
 FROM store/oracle/serverjre:8
-RUN yum -y install openssl && yum clean all
+#RUN yum -y install openssl && yum clean all
+COPY openssl /bin
 
 # Maintainer
 # ----------

@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
 /**
  * The interface for the class used by the domain model to return effective configurations to the
@@ -29,4 +29,6 @@ public interface EffectiveConfigurationFactory {
   Map<String, String> getChannelServiceLabels(String channel);
 
   Map<String, String> getChannelServiceAnnotations(String channel);
+
+  Integer getDefaultReplicaLimit();
 }

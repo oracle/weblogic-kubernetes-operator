@@ -67,6 +67,9 @@ function pull_tag_images {
     docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
     docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
 
+    docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
+    docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
+
     docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
     docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
@@ -134,7 +137,6 @@ if [ "$WERCKER" = "true" ]; then
     --docker-username=$DOCKER_USERNAME \
     --docker-password=$DOCKER_PASSWORD \
     --docker-email=$DOCKER_EMAIL 
-    -n default 
 
     echo "Checking Secret"
     SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -149,7 +151,6 @@ if [ "$WERCKER" = "true" ]; then
     --docker-username=$REPO_USERNAME \
     --docker-password=$REPO_PASSWORD \
     --docker-email=$REPO_EMAIL 
-    -n default 
 
     echo "Checking Secret"
     SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"

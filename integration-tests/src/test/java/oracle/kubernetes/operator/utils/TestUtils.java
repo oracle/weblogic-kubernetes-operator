@@ -125,9 +125,9 @@ public class TestUtils {
         .append(domainUid)
         .append(" -n ")
         .append(domainNS)
-        .append(" -o jsonpath='{.spec.clusterStartup[?(@.clusterName == \"")
+        .append(" -o jsonpath='{.spec.clusters.")
         .append(clusterName)
-        .append("\")].replicas }'");
+        .append(".replicas }'");
     logger.fine("getClusterReplicas cmd =" + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     int replicas = 0;
@@ -600,7 +600,22 @@ public class TestUtils {
             + dockerEmail
             + " -n "
             + namespace;
-    logger.info("Running command " + command);
+
+    String commandToLog =
+        "kubectl create secret docker-registry "
+            + secretName
+            + " --docker-server="
+            + dockerServer
+            + " --docker-username="
+            + "********"
+            + " --docker-password=\""
+            + "********"
+            + "\" --docker-email="
+            + "********"
+            + " -n "
+            + namespace;
+
+    logger.info("Running command " + commandToLog);
     ExecResult result = ExecCommand.exec(command);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());

@@ -27,9 +27,9 @@ import io.kubernetes.client.models.V1SecretReference;
 import java.io.IOException;
 import java.net.URL;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.junit.Test;
 
 public abstract class DomainTestBase {
@@ -42,22 +42,25 @@ public abstract class DomainTestBase {
   private static final String NS = "test-namespace";
   private static final String DOMAIN_NAME = "test";
   private static final String DOMAIN_UID = "uid1";
-  private static final String DOMAIN_V1_SAMPLE_YAML = "v1/domain-sample.yaml";
+  private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
   private static final String AS_NAME = "admin";
   protected static final String CLUSTER_NAME = "cluster1";
   protected static final String SERVER1 = "ms1";
-  protected final Domain domain =
-      new Domain()
-          .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(
-              new DomainSpec()
-                  .withAdminSecret(SECRET)
-                  .withAsName(AS_NAME)
-                  .withAsPort(AS_PORT)
-                  .withDomainName(DOMAIN_NAME)
-                  .withDomainUID(DOMAIN_UID));
+  protected final Domain domain = createDomain();
+
+  protected static Domain createDomain() {
+    return new Domain()
+        .withMetadata(new V1ObjectMeta().namespace(NS))
+        .withSpec(
+            new DomainSpec()
+                .withAdminSecret(SECRET)
+                .withAsName(AS_NAME)
+                .withAsPort(AS_PORT)
+                .withDomainName(DOMAIN_NAME)
+                .withDomainUID(DOMAIN_UID));
+  }
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
@@ -93,7 +96,7 @@ public abstract class DomainTestBase {
   private void verifyStandardFields(ServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(spec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
-    assertThat(spec.getImagePullSecret(), nullValue());
+    assertThat(spec.getImagePullSecrets(), empty());
   }
 
   @Test
@@ -177,9 +180,9 @@ public abstract class DomainTestBase {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
     configureDomain(domain).withDefaultImagePullSecrets(secretReference);
 
-    assertThat(domain.getAdminServerSpec().getImagePullSecret(), equalTo(secretReference));
+    assertThat(domain.getAdminServerSpec().getImagePullSecrets(), hasItem(secretReference));
     assertThat(
-        domain.getServer("aServer", "aCluster").getImagePullSecret(), equalTo(secretReference));
+        domain.getServer("aServer", "aCluster").getImagePullSecrets(), hasItem(secretReference));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -198,7 +201,7 @@ public abstract class DomainTestBase {
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
 
-  protected ServerConfigurator configureAdminServer() {
+  protected AdminServerConfigurator configureAdminServer() {
     return configureDomain(domain).configureAdminServer(AS_NAME).withPort(AS_PORT);
   }
 
@@ -273,11 +276,6 @@ public abstract class DomainTestBase {
 
   protected ClusterConfigurator configureCluster(String clusterName) {
     return configureDomain(domain).configureCluster(clusterName);
-  }
-
-  @Test
-  public void whenNoReplicaCountSpecified_useDefaultValue() {
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(Domain.DEFAULT_REPLICA_LIMIT));
   }
 
   @Test
@@ -378,12 +376,12 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
-    assertThat(serverSpec.getImagePullSecret().getName(), equalTo("pull-secret"));
+    assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret"));
     assertThat(serverSpec.getEnvironmentVariables(), empty());
     assertThat(serverSpec.getNodePort(), nullValue());
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
@@ -391,20 +389,19 @@ public abstract class DomainTestBase {
 
   @Test
   public void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", null);
 
     assertThat(
         serverSpec.getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-server")))
             .and(hasItem(envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "))));
-    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   public void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(
@@ -415,16 +412,8 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_Cluster1UsesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
-
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(1));
-    assertThat(domain.getServer("server3", "cluster1").getEnvironmentVariables(), empty());
-  }
-
-  @Test
   public void whenDomainReadFromYaml_Cluster2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V1_SAMPLE_YAML);
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     assertThat(domain.getReplicaCount("cluster2"), equalTo(5));
     assertThat(
