@@ -9,7 +9,7 @@ metadata:
   name: "weblogic-operator-role"
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]

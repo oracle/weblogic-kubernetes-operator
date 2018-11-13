@@ -7,6 +7,8 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -74,15 +76,6 @@ public abstract class BaseConfiguration {
     return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
   }
 
-  /**
-   * Returns true if any version 2 configuration fields are specified.
-   *
-   * @return whether there is version 2 configuration field in this instance
-   */
-  protected boolean hasV2Fields() {
-    return serverStartState != null || serverStartPolicy != null || serverPod.hasV2Fields();
-  }
-
   @Nullable
   String getServerStartState() {
     return serverStartState;
@@ -127,6 +120,22 @@ public abstract class BaseConfiguration {
 
   ProbeTuning getReadinessProbe() {
     return serverPod.getReadinessProbeTuning();
+  }
+
+  public List<V1Volume> getAdditionalVolumes() {
+    return serverPod.getAdditionalVolumes();
+  }
+
+  void addAdditionalVolume(String name, String path) {
+    serverPod.addAdditionalVolume(name, path);
+  }
+
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return serverPod.getAdditionalVolumeMounts();
+  }
+
+  void addAdditionalVolumeMount(String name, String path) {
+    serverPod.addAdditionalVolumeMount(name, path);
   }
 
   @Override

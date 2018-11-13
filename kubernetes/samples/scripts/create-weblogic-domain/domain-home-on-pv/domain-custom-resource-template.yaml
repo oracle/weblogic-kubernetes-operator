@@ -3,33 +3,28 @@
 #
 # This is an example of how to define a Domain Custom Resource.
 #
-apiVersion: "weblogic.oracle/v1"
+apiVersion: "weblogic.oracle/v2"
 kind: Domain
 metadata:
   name: %DOMAIN_UID%
   namespace: %NAMESPACE%
-  labels:
-    weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: %DOMAIN_UID%
-    weblogic.domainName: %DOMAIN_NAME%
 spec:
-  # The domainUID must be unique across the entire Kubernetes Cluster.
-  # Each WebLogic Domain must have its own unique domainUID.
-  # This does not have to be the same as the Domain Name.
-  # It is allowed to have multiple Domains with the same Domain Name,
-  # but they MUST have different domainUID's.
-  # The domainUID is also used to identify the Persistent Volume
-  # that belongs to/with this Domain.
+  # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
+  # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
+  # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
+  # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
   domainUID: %DOMAIN_UID%
   # The WebLogic Domain Name
   domainName: %DOMAIN_NAME%
+  # The WebLogic Domain Home
+  domainHome: %DOMAIN_HOME%
   # The Operator currently does not support other images
   image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
   # Identify which Secret contains the credentials for pulling an image
-  imagePullSecret:
-    name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
+  imagePullSecrets:
+  - name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   adminSecret: 
@@ -38,44 +33,42 @@ spec:
   asName: "%ADMIN_SERVER_NAME%"
   # The Admin Server's ListenPort
   asPort: %ADMIN_PORT%
-  # domain home is in weblogic image or not
-  domainHomeInImage: false
-
-  # serverStartPolicy legal values are "NEVER" "ALWAYS" or "IF_NEEDED"
-  # This determines which WebLogic Servers the Operator will start up
-  # when it discovers this Domain
-  # For non-clustered servers
-  #    operator will start it if the policy is not NEVER.
-  # For clustered servers
-  #     operator will start it the policy is ALWAYS or IF_NEEDED
-  # "NEVER"
-  #   None of the Servers in the Domain will be started (domain/cluster)
-  # "ALWAYS"
-  #   All the servers in cluster will be started irrespective of replica counts
-  # "IF_NEEDED"
-  #   All the servers upto replica count will be started
-
-  serverStartPolicy: IF_NEEDED
+  # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # - "ALWAYS" will start up all defined servers
+  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+  # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: "%SERVER_START_POLICY%"
+  # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-   env:
-   - name: JAVA_OPTIONS
-     value: "%JAVA_OPTIONS%"
-   - name: USER_MEM_ARGS
-     value: "-Xms64m -Xmx256m "
-   # Uncomment to export the T3Channel as a service
-   %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
-   %EXPOSE_T3_CHANNEL_PREFIX%exportedNetworkAccessPoints:
-   %EXPOSE_T3_CHANNEL_PREFIX%  T3Channel: {}
-
+  # serverStartState legal values are "RUNNING" or "ADMIN"
+  # "RUNNING" means the listed server will be started up to "RUNNING" mode
+  # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    serverStartState: "RUNNING"
+    # The Admin Server's NodePort
+    %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
+    # Uncomment to export the T3Channel as a service
+    %EXPOSE_T3_CHANNEL_PREFIX%exportedNetworkAccessPoints:
+    %EXPOSE_T3_CHANNEL_PREFIX%  T3Channel: {}
+    # an (optional) list of environment variable to be set on the server
+    env:
+    - name: JAVA_OPTIONS
+      value: "%JAVA_OPTIONS%"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+  # clusters is used to configure the desired behavior for starting member servers of a cluster.  
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-   - clusterName: "%CLUSTER_NAME%"
-   # The number of managed servers to start from clusters
-   # default ( if not provided ) is 0
-     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
-     env:
-     - name: JAVA_OPTIONS
-       value: "%JAVA_OPTIONS%"
-     - name: USER_MEM_ARGS
-       value: "-Xms64m -Xmx256m "
-  
-
+    %CLUSTER_NAME%:
+      serverStartState: "RUNNING"
+      replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
+      env:
+      - name: JAVA_OPTIONS
+        value: "%JAVA_OPTIONS%"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
+  # The number of managed servers to start for unlisted clusters
+  # replicas: 1
+  storage:
+    predefined:
+      claim: %DOMAIN_PVC_NAME%
