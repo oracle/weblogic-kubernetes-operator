@@ -55,7 +55,7 @@ $ curl --silent http://${HOSTNAME}:30305/domain2/
 #### Install a TLS-enabled Ingress
 This sample is to demostrate accessing the two WLS domains via https endpoint and the WLS domains are protected by different TLS certificates. 
 
-To make this sample work, you need to enable TLS endpoint in the Traefik opeartor. If you use the values.yaml in the same folder as this REAME, the TLS endpoint is enabled.
+To make this sample work, you need to enable TLS endpoint in the Traefik operator. If you use the values.yaml in the same folder as this REAME, the TLS endpoint is already enabled.
 
 First you need to create two secrets with TLS certificates, one with the common name "domain1.org", the other with the common name "domain2.org". We use `openssl` to generate self-signed certificates for demostration purpose. Note that TLS secret need to be in the same namespace as the WLS domain.
 ```
