@@ -31,7 +31,7 @@ spec:
      paths:
       - path:
         backend:
-          serviceName: 'domain1-cluster-cluster-1'
+          serviceName: 'domain2-cluster-cluster-1'
           servicePort: 8001
   tls:
    - secretName: domain2-tls-cert
