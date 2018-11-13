@@ -40,7 +40,7 @@ public class AuthorizationProxy {
   public enum Resource {
     CONFIGMAPS("configmaps", ""),
     PODS("pods", ""),
-    LOGS("pods", "logs", ""),
+    LOGS("pods", "log", ""),
     EXEC("pods", "exec", ""),
     PODTEMPLATES("podtemplates", ""),
     EVENTS("events", ""),

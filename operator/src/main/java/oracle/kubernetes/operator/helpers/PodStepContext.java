@@ -48,8 +48,8 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -602,23 +602,35 @@ public abstract class PodStepContext {
               .persistentVolumeClaim(
                   new V1PersistentVolumeClaimVolumeSource().claimName(getClaimName())));
     }
+
+    for (V1Volume additionalVolume : getAdditionalVolumes()) {
+      podSpec.addVolumesItem(additionalVolume);
+    }
+
     return podSpec;
   }
 
   private V1Container createContainer(TuningParameters tuningParameters) {
-    return new V1Container()
-        .name(KubernetesConstants.CONTAINER_NAME)
-        .image(getImageName())
-        .imagePullPolicy(getImagePullPolicy())
-        .command(getContainerCommand())
-        .env(getEnvironmentVariables(tuningParameters))
-        .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
-        .lifecycle(createLifecycle())
-        .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
-        .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
-        .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+    V1Container v1Container =
+        new V1Container()
+            .name(KubernetesConstants.CONTAINER_NAME)
+            .image(getImageName())
+            .imagePullPolicy(getImagePullPolicy())
+            .command(getContainerCommand())
+            .env(getEnvironmentVariables(tuningParameters))
+            .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
+            .lifecycle(createLifecycle())
+            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+            .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
+            .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+
+    for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
+      v1Container.addVolumeMountsItem(additionalVolumeMount);
+    }
+
+    return v1Container;
   }
 
   private String getImageName() {
@@ -634,6 +646,10 @@ public abstract class PodStepContext {
   }
 
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
+
+  abstract List<V1Volume> getAdditionalVolumes();
+
+  abstract List<V1VolumeMount> getAdditionalVolumeMounts();
 
   void overrideContainerWeblogicEnvVars(List<V1EnvVar> vars) {
     // Override the domain name, domain directory, admin server name and admin server port.
@@ -652,7 +668,7 @@ public abstract class PodStepContext {
   }
 
   private String getDomainHome() {
-    return "/shared/domains/" + getDomainUID();
+    return getDomain().getDomainHome();
   }
 
   // Hide the admin account's user name and password.

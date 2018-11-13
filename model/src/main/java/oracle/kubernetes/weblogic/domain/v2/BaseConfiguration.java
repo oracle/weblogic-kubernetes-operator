@@ -4,18 +4,15 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import static java.util.Collections.emptyList;
-
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Probe;
-import java.util.ArrayList;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import javax.annotation.Nullable;
-import javax.validation.Valid;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -28,21 +25,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public abstract class BaseConfiguration {
 
-  /**
-   * Environment variables to pass while starting a server.
-   *
-   * @since 2.0
-   */
-  @SerializedName("env")
-  @Expose
-  @Valid
-  @JsonPropertyDescription("A list of environment variables to add to a server")
-  private List<V1EnvVar> env = new ArrayList<>();
+  @Description("Configuration affecting the server pod")
+  private ServerPod serverPod = new ServerPod();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @SerializedName("serverStartState")
   @Expose
-  @JsonPropertyDescription("The state in which the server is to be started")
+  @Description("The state in which the server is to be started")
   private String serverStartState;
 
   /**
@@ -55,32 +44,10 @@ public abstract class BaseConfiguration {
    */
   @SerializedName("serverStartPolicy")
   @Expose
-  @JsonPropertyDescription(
+  @Description(
       "The strategy for deciding whether to start a server. "
           + "Legal values are NEVER, ALWAYS, or IF_NEEDED.")
   private String serverStartPolicy;
-
-  /**
-   * Defines the settings for the liveness probe. Any that are not specified will default to the
-   * runtime liveness probe tuning settings.
-   *
-   * @since 2.0
-   */
-  @SerializedName("livenessProbe")
-  @Expose
-  @JsonPropertyDescription("Settings for the liveness probe associated with a server")
-  private V1Probe livenessProbe = new V1Probe();
-
-  /**
-   * Defines the settings for the readiness probe. Any that are not specified will default to the
-   * runtime readiness probe tuning settings.
-   *
-   * @since 2.0
-   */
-  @SerializedName("readinessProbe")
-  @Expose
-  @JsonPropertyDescription("Settings for the readiness probe associated with a server")
-  private V1Probe readinessProbe = new V1Probe();
 
   /**
    * Fills in any undefined settings in this configuration from another configuration.
@@ -91,44 +58,22 @@ public abstract class BaseConfiguration {
     if (other == null) return;
 
     if (serverStartState == null) serverStartState = other.getServerStartState();
-    if (serverStartPolicy == null) serverStartPolicy = other.getServerStartPolicy();
+    if (overrideStartPolicyFrom(other)) serverStartPolicy = other.getServerStartPolicy();
 
-    for (V1EnvVar var : getV1EnvVars(other)) addIfMissing(var);
-    copyValues(livenessProbe, other.livenessProbe);
-    copyValues(readinessProbe, other.readinessProbe);
+    serverPod.fillInFrom(other.serverPod);
   }
 
-  private List<V1EnvVar> getV1EnvVars(BaseConfiguration configuration) {
-    return Optional.ofNullable(configuration.getEnv()).orElse(emptyList());
+  private boolean overrideStartPolicyFrom(BaseConfiguration other) {
+    if (other.isStartAdminServerOnly()) return false;
+    return serverStartPolicy == null || other.isStartNever();
   }
 
-  private void addIfMissing(V1EnvVar var) {
-    if (!hasEnvVar(var.getName())) addEnvVar(var);
+  public boolean isStartAdminServerOnly() {
+    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_ADMIN_ONLY);
   }
 
-  private boolean hasEnvVar(String name) {
-    if (env == null) return false;
-    for (V1EnvVar var : env) {
-      if (var.getName().equals(name)) return true;
-    }
-    return false;
-  }
-
-  private void copyValues(V1Probe toProbe, V1Probe fromProbe) {
-    if (toProbe.getInitialDelaySeconds() == null)
-      toProbe.setInitialDelaySeconds(fromProbe.getInitialDelaySeconds());
-    if (toProbe.getTimeoutSeconds() == null)
-      toProbe.setTimeoutSeconds(fromProbe.getTimeoutSeconds());
-    if (toProbe.getPeriodSeconds() == null) toProbe.setPeriodSeconds(fromProbe.getPeriodSeconds());
-  }
-
-  /**
-   * Returns true if any version 2 configuration fields are specified.
-   *
-   * @return whether there is version 2 configuration field in this instance
-   */
-  protected boolean hasV2Fields() {
-    return serverStartState != null || serverStartPolicy != null || !env.isEmpty();
+  private boolean isStartNever() {
+    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
   }
 
   @Nullable
@@ -142,20 +87,15 @@ public abstract class BaseConfiguration {
 
   @Nullable
   public List<V1EnvVar> getEnv() {
-    return env;
+    return serverPod.getEnv();
   }
 
   public void setEnv(@Nullable List<V1EnvVar> env) {
-    this.env = env;
+    serverPod.setEnv(env);
   }
 
   void addEnvironmentVariable(String name, String value) {
-    addEnvVar(new V1EnvVar().name(name).value(value));
-  }
-
-  private void addEnvVar(V1EnvVar var) {
-    if (env == null) env = new ArrayList<>();
-    env.add(var);
+    serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
   void setServerStartPolicy(String serverStartPolicy) {
@@ -167,19 +107,35 @@ public abstract class BaseConfiguration {
   }
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    livenessProbe.initialDelaySeconds(initialDelay).timeoutSeconds(timeout).periodSeconds(period);
+    serverPod.setLivenessProbe(initialDelay, timeout, period);
   }
 
-  V1Probe getLivenessProbe() {
-    return livenessProbe;
+  ProbeTuning getLivenessProbe() {
+    return serverPod.getLivenessProbeTuning();
   }
 
   void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    readinessProbe.initialDelaySeconds(initialDelay).timeoutSeconds(timeout).periodSeconds(period);
+    serverPod.setReadinessProbeTuning(initialDelay, timeout, period);
   }
 
-  V1Probe getReadinessProbe() {
-    return readinessProbe;
+  ProbeTuning getReadinessProbe() {
+    return serverPod.getReadinessProbeTuning();
+  }
+
+  public List<V1Volume> getAdditionalVolumes() {
+    return serverPod.getAdditionalVolumes();
+  }
+
+  void addAdditionalVolume(String name, String path) {
+    serverPod.addAdditionalVolume(name, path);
+  }
+
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return serverPod.getAdditionalVolumeMounts();
+  }
+
+  void addAdditionalVolumeMount(String name, String path) {
+    serverPod.addAdditionalVolumeMount(name, path);
   }
 
   @Override
@@ -187,9 +143,7 @@ public abstract class BaseConfiguration {
     return new ToStringBuilder(this)
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
-        .append("livenessProbe", livenessProbe)
-        .append("readinessProbe", readinessProbe)
-        .append("env", env)
+        .append("serverPod", serverPod)
         .toString();
   }
 
@@ -202,22 +156,18 @@ public abstract class BaseConfiguration {
     BaseConfiguration that = (BaseConfiguration) o;
 
     return new EqualsBuilder()
-        .append(env, that.env)
+        .append(serverPod, that.serverPod)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
-        .append(livenessProbe, that.livenessProbe)
-        .append(readinessProbe, that.readinessProbe)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .append(env)
+        .append(serverPod)
         .append(serverStartState)
         .append(serverStartPolicy)
-        .append(livenessProbe)
-        .append(readinessProbe)
         .toHashCode();
   }
 }

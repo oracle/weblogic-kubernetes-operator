@@ -34,8 +34,8 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private static final String NAME = "name";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
-      String.format("/apis/weblogic.oracle/v1/namespaces/%s/domains", NAMESPACE);
+      String.format("/apis/weblogic.oracle/v2/namespaces/%s/domains", NAMESPACE);
   private static final String CRD_RESOURCE =
       "/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions";
   private static final String PV_RESOURCE = "/api/v1/persistentvolumes";

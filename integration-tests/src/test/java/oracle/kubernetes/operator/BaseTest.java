@@ -292,21 +292,21 @@ public class BaseTest {
         adminPodName, domainNS, ((Integer) domainMap.get("t3ChannelPort")).intValue());
 
     String clusterName = domainMap.get("clusterName").toString();
-    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    logger.info("replica count before scaleup " + replicaCnt);
+    int replicaCntBeforeScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    logger.info("replica count before scaleup " + replicaCntBeforeScaleup);
 
     logger.info("Scale domain " + domainUid + " by calling the webapp");
 
     int replicas = 3;
     callWebAppAndVerifyScaling(domain, replicas);
 
-    replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    if (replicaCnt != replicas) {
+    int replicaCntAfterScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    if (replicaCntAfterScaleup <= replicaCntBeforeScaleup) {
       throw new RuntimeException(
-          "FAILURE: Cluster replica doesn't match with scaled up size "
-              + replicaCnt
+          "FAILURE: Cluster replica count has not increased after scaling up, replicaCntBeforeScaleup/replicaCntAfterScaleup "
+              + replicaCntBeforeScaleup
               + "/"
-              + replicas);
+              + replicaCntAfterScaleup);
     }
 
     logger.info("Done - testWLDFScaling");
@@ -408,23 +408,28 @@ public class BaseTest {
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
-    String domainNS = (String) domainMap.get("namespace");
+    String domainNS = domainMap.get("namespace").toString();
+    String domainUid = domain.getDomainUid();
+    String clusterName = domainMap.get("clusterName").toString();
 
     // call opensessionapp
     domain.callWebAppAndVerifyLoadBalancing("opensessionapp", false);
     logger.info("Sleeping for 30 seconds for scaleup");
     Thread.sleep(30 * 1000);
 
+    int replicaCntAfterScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String managedServerNameBase = (String) domainMap.get("managedServerNameBase");
-    String podName = domain.getDomainUid() + "-" + managedServerNameBase + replicas;
+    for (int i = replicas; i <= replicaCntAfterScaleup; i++) {
+      String podName = domain.getDomainUid() + "-" + managedServerNameBase + i;
 
-    logger.info("Checking if managed pod(" + podName + ") is Running");
-    TestUtils.checkPodCreated(podName, domainNS);
+      logger.info("Checking if managed pod(" + podName + ") is Running");
+      TestUtils.checkPodCreated(podName, domainNS);
 
-    logger.info("Checking if managed server (" + podName + ") is Running");
-    TestUtils.checkPodReady(podName, domainNS);
+      logger.info("Checking if managed server (" + podName + ") is Running");
+      TestUtils.checkPodReady(podName, domainNS);
 
-    logger.info("Checking if managed service(" + podName + ") is created");
-    TestUtils.checkServiceCreated(podName, domainNS);
+      logger.info("Checking if managed service(" + podName + ") is created");
+      TestUtils.checkServiceCreated(podName, domainNS);
+    }
   }
 }

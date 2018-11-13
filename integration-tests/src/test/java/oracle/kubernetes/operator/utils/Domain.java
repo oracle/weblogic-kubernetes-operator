@@ -41,12 +41,11 @@ public class Domain {
   private int t3ChannelPort;
   private String clusterName;
   private String clusterType;
-  private String startupControl;
+  private String serverStartPolicy;
   private String weblogicDomainStorageReclaimPolicy;
   private String weblogicDomainStorageSize;
-  private String loadBalancer;
-  private int loadBalancerWebPort;
-  private int loadBalancerDashboardPort;
+  private String loadBalancer = "TRAEFIK";
+  private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
 
@@ -63,7 +62,7 @@ public class Domain {
     createPV();
     createSecret();
     generateInputYaml();
-    callCreateDomainScript(userProjectsDir + "/weblogic-domains/" + domainUid);
+    callCreateDomainScript(userProjectsDir);
     createLoadBalancer();
   }
 
@@ -98,9 +97,9 @@ public class Domain {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
-    if (domainMap.get("startupControl") == null
-        || (domainMap.get("startupControl") != null
-            && !domainMap.get("startupControl").toString().trim().equals("ADMIN"))) {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -135,9 +134,9 @@ public class Domain {
       TestUtils.checkServiceCreated(
           domainUid + "-" + adminServerName + "-extchannel-t3channel", domainNS);
     }
-    if (domainMap.get("startupControl") == null
-        || (domainMap.get("startupControl") != null
-            && !domainMap.get("startupControl").toString().trim().equals("ADMIN"))) {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
       // check managed server services
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -161,9 +160,9 @@ public class Domain {
     // check admin pod
     logger.info("Checking if admin server is Running");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
-    if (domainMap.get("startupControl") == null
-        || (domainMap.get("startupControl") != null
-            && !domainMap.get("startupControl").toString().trim().equals("ADMIN"))) {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
 
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
@@ -313,29 +312,24 @@ public class Domain {
           .append(":")
           .append(loadBalancerWebPort)
           .append("/");
-
-      if (domainMap.get("loadBalancer") != null && domainMap.get("loadBalancer").equals("APACHE")) {
+      if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
-      testAppUrl.append(webappName).append("/");
-
-      // curl cmd to call webapp
+      testAppUrl.append(webappName).append("/"); // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
-      curlCmd.append(TestUtils.getHostName()).append(" ").append(testAppUrl.toString());
-
-      // curl cmd to get response code
+      curlCmd
+          .append(TestUtils.getHostName())
+          .append(" ")
+          .append(testAppUrl.toString()); // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
-      curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
-
-      // call webapp iteratively till its deployed/ready
-      callWebAppAndWaitTillReady(curlCmdResCode.toString());
-
-      if (verifyLoadBalance) {
-        // execute curl and look for the managed server name in response
-        callWebAppAndCheckForServerNameInResponse(curlCmd.toString());
-      }
+      curlCmdResCode.append(
+          " --write-out %{http_code} -o /dev/null"); // call webapp iteratively till its
+      // deployed/ready
+      callWebAppAndWaitTillReady(
+          curlCmdResCode
+              .toString()); // execute curl and look for the managed server name in response
+      callWebAppAndCheckForServerNameInResponse(curlCmd.toString(), verifyLoadBalance);
       // logger.info("curlCmd "+curlCmd);
-
     }
   }
 
@@ -449,33 +443,17 @@ public class Domain {
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
     }
     logger.info("Run the script to create domain");
+
+    // create domain using different output dir but pv is same, it fails as the domain was already
+    // created on the pv dir
     try {
-      callCreateDomainScript(userProjectsDir + "/weblogic-domains2/" + domainUid);
+      callCreateDomainScript(userProjectsDir + "2");
     } catch (RuntimeException re) {
       re.printStackTrace();
       logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
       return;
     }
     throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
-
-    /*    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-domain");
-    cmd.append(" --name ")
-        .append(domainMap.get("domainUID"))
-        .append(" --values ")
-        .append(generatedInputYamlFile)
-        .append(" --namespace ")
-        .append(domainNS)
-        .append(" --wait");
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 1) {
-      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
-    } else {
-      throw new RuntimeException(
-          "FAIL: unexpected result, create domain job exit code: " + result.exitValue());
-    } */
   }
 
   public void verifyAdminConsoleViaLB() throws Exception {
@@ -638,39 +616,19 @@ public class Domain {
   }
 
   private void createLoadBalancer() throws Exception {
-    Yaml yaml = new Yaml();
-    InputStream lbIs =
-        new FileInputStream(
-            new File(
-                BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain-load-balancer/create-load-balancer-inputs.yaml"));
-    Map<String, Object> lbMap = yaml.load(lbIs);
-    lbIs.close();
-
-    lbMap.put("domainName", domainMap.get("domainName"));
+    Map<String, Object> lbMap = new HashMap<String, Object>();
+    lbMap.put("name", "traefik-hostrouting-" + domainUid);
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
-
-    if (domainMap.get("loadBalancer") != null) {
-      lbMap.put("loadBalancer", domainMap.get("loadBalancer"));
-    }
-    if (domainMap.get("loadBalancerWebPort") != null) {
-      lbMap.put("loadBalancerWebPort", domainMap.get("loadBalancerWebPort"));
-    }
-    if (domainMap.get("loadBalancerDashboardPort") != null) {
-      lbMap.put("loadBalancerDashboardPort", domainMap.get("loadBalancerDashboardPort"));
-    }
-    if (domainMap.get("loadBalancerVolumePath") != null) {
-      lbMap.put("loadBalancerVolumePath", domainMap.get("loadBalancerVolumePath"));
-    }
+    lbMap.put("host", domainUid + ".org");
+    lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
+    lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
-    loadBalancerWebPort = ((Integer) lbMap.get("loadBalancerWebPort")).intValue();
-    loadBalancerDashboardPort = ((Integer) lbMap.get("loadBalancerDashboardPort")).intValue();
 
     if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
-      lbMap.put("loadBalancerAppPrepath", "/weblogic");
-      lbMap.put("loadBalancerExposeAdminPort", new Boolean(true));
+      /* lbMap.put("loadBalancerAppPrepath", "/weblogic");
+      lbMap.put("loadBalancerExposeAdminPort", new Boolean(true)); */
     }
     lbMap.values().removeIf(Objects::isNull);
     new LoadBalancer(lbMap);
@@ -743,33 +701,40 @@ public class Domain {
     }
   }
 
-  private void callWebAppAndCheckForServerNameInResponse(String curlCmd) throws Exception {
+  private void callWebAppAndCheckForServerNameInResponse(
+      String curlCmd, boolean verifyLoadBalancing) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
     for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
       managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
     }
-
+    logger.info("Calling webapp 20 times " + curlCmd);
+    // number of times to call webapp
     for (int i = 0; i < 20; i++) {
       ExecResult result = ExecCommand.exec(curlCmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
       }
-      String response = result.stdout().trim();
-      // logger.info("response "+ response);
-      for (String key : managedServers.keySet()) {
-        if (response.contains(key)) {
-          managedServers.put(key, new Boolean(true));
-          break;
+      if (verifyLoadBalancing) {
+        String response = result.stdout().trim();
+        // logger.info("response "+ response);
+        for (String key : managedServers.keySet()) {
+          if (response.contains(key)) {
+            managedServers.put(key, new Boolean(true));
+            break;
+          }
         }
       }
     }
     logger.info("ManagedServers " + managedServers);
     // error if any managedserver value is false
-    for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
-      if (!entry.getValue().booleanValue()) {
-        throw new RuntimeException("FAILURE: Load balancer can not reach server " + entry.getKey());
+    if (verifyLoadBalancing) {
+      for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
+        if (!entry.getValue().booleanValue()) {
+          throw new RuntimeException(
+              "FAILURE: Load balancer can not reach server " + entry.getKey());
+        }
       }
     }
   }
@@ -780,9 +745,7 @@ public class Domain {
 
     // read input domain yaml to test
     domainMap = TestUtils.loadYaml(inputYaml);
-    if (domainMap.get("domainName") == null) {
-      domainMap.put("domainName", domainMap.get("domainUID"));
-    }
+    domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
     Yaml dyaml = new Yaml();
@@ -815,20 +778,31 @@ public class Domain {
     t3ChannelPort = ((Integer) domainMap.get("t3ChannelPort")).intValue();
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
-    startupControl = (String) domainMap.get("startupControl");
+    serverStartPolicy = (String) domainMap.get("serverStartPolicy");
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
+
+    String imageName = "store/oracle/weblogic";
+    if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
+      imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
+    }
+    String imageTag = "19.1.0.0";
+    if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
+      imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
+    }
+    domainMap.put("image", imageName + ":" + imageTag);
+
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-          "index.docker.io/v1/",
-          System.getenv("DOCKER_USERNAME"),
-          System.getenv("DOCKER_PASSWORD"),
-          System.getenv("DOCKER_EMAIL"),
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
           domainNS);
     }
     // remove null values if any attributes

@@ -21,9 +21,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
-import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v2.ServerStatus;
 
 /**
  * After the {@link PodHelper} identifies servers that are presently running, but that are using an

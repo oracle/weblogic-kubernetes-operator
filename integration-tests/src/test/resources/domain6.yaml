@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 adminServerName: admin-server
-domainName: base_domain
 domainUID: domain6
 clusterName: cluster-1
 clusterType: DYNAMIC
@@ -17,5 +16,3 @@ exposeAdminNodePort: true
 adminNodePort: 30706
 namespace: default
 weblogicDomainStorageReclaimPolicy: Recycle
-loadBalancerWebPort: 30310
-loadBalancerDashboardPort: 30320
