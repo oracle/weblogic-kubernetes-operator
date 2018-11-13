@@ -3130,7 +3130,6 @@ function test_suite_init {
     # Handle '--show-all' deprecation for 'kubectl get jobs' and 'kubectl get pods'.
     # --show-all yields a deprecation warning in stderr in 1.10 in later, since
     # it isn't needed in 1.10 and later.
-    # TBD It's not clear if we should check the Client version or the Server version.
  
     k8s_minor=`kubectl version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
     k8s_major=`kubectl version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
