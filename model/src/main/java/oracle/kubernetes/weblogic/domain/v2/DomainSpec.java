@@ -155,6 +155,16 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
+   * The additional WebLogic Configuration secrets.
+   *
+   * @since 2.0
+   */
+  @Description("A list of names of the secrets for the WebLogic configurations.")
+  @SerializedName("weblogicConfigurationOverridesSecretNames")
+  @Expose
+  private List<String> weblogicConfigurationOverridesSecretNames;
+
+  /**
    * The configuration for the admin server.
    *
    * @since 2.0
@@ -490,6 +500,23 @@ public class DomainSpec extends BaseConfiguration {
     return storage;
   }
 
+  private boolean hasWeblogicConfigurationOverridesSecretNames() {
+    return weblogicConfigurationOverridesSecretNames != null
+        && weblogicConfigurationOverridesSecretNames.size() != 0;
+  }
+
+  @Nullable
+  public List<String> getWeblogicConfigurationOverridesSecretNames() {
+    if (hasWeblogicConfigurationOverridesSecretNames())
+      return weblogicConfigurationOverridesSecretNames;
+    else return Collections.emptyList();
+  }
+
+  public void setWeblogicConfigurationOverridesSecretNames(
+      @Nullable List<String> overridesSecretNames) {
+    this.weblogicConfigurationOverridesSecretNames = overridesSecretNames;
+  }
+
   /**
    * Returns the name of the persistent volume claim for the logs and PV-based domain.
    *
@@ -527,7 +554,10 @@ public class DomainSpec extends BaseConfiguration {
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
-            .append("replicas", replicas);
+            .append("replicas", replicas)
+            .append(
+                "weblogicConfigurationOverridesSecretNames",
+                weblogicConfigurationOverridesSecretNames);
 
     return builder.toString();
   }
@@ -549,7 +579,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
-            .append(replicas);
+            .append(replicas)
+            .append(weblogicConfigurationOverridesSecretNames);
 
     return builder.toHashCode();
   }
@@ -575,7 +606,10 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
-            .append(replicas, rhs.replicas);
+            .append(replicas, rhs.replicas)
+            .append(
+                weblogicConfigurationOverridesSecretNames,
+                rhs.weblogicConfigurationOverridesSecretNames);
 
     return builder.isEquals();
   }
