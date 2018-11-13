@@ -52,8 +52,8 @@ Now you can send requests to different WLS domains with the unique entry point o
 $ curl --silent http://${HOSTNAME}:30305/domain1/
 $ curl --silent http://${HOSTNAME}:30305/domain2/
 ```
-#### TLS-enabled Ingress samples
-This sample is to demostrate accessing the two WLS domains via https endpoint, each domain with different TLS certificate.
+#### Install a TLS-enabled Ingress
+This sample is to demostrate accessing the two WLS domains via https endpoint and the WLS domains are protected by different TLS certificates.
 
 First you need to create two secrets with TLS certificates, one with the common name "domain1.org", the other with the common name "domain2.org". We use `openssl` to generate self-signed certificates for demostration purpose.
 ```
