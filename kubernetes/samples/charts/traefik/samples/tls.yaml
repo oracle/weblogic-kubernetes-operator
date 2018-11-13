@@ -1,10 +1,11 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-tls-1
+  name: traefik-tls
   namespace: default
   annotations:
     kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   rules:
   - host: domain1.org 
@@ -15,7 +16,9 @@ spec:
           serviceName: 'domain1-cluster-cluster-1'
           servicePort: 8001
   tls:
-   - secretName: domain1-tls-cert
+  - hosts:
+    - domain1.org
+    secretName: domain1-tls-cert
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -24,6 +27,7 @@ metadata:
   namespace: test1
   annotations:
     kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   rules:
   - host: domain2.org
@@ -34,4 +38,6 @@ spec:
           serviceName: 'domain2-cluster-cluster-1'
           servicePort: 8001
   tls:
-   - secretName: domain2-tls-cert
+  - hosts:
+    - domain2.org
+    secretName: domain2-tls-cert
