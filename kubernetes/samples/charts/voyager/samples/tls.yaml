@@ -1,43 +1,45 @@
-apiVersion: extensions/v1beta1
+apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-tls
+  name: voyager-ssl-1
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
 spec:
+  tls:
+  - secretName: domain1-tls-cert
+    hosts:
+    - domain1.org
   rules:
   - host: domain1.org 
     http:
+      nodePort: '30305'
       paths:
-      - path:
-        backend:
-          serviceName: 'domain1-cluster-cluster-1'
-          servicePort: 8001
-  tls:
-  - hosts:
-    - domain1.org
-    secretName: domain1-tls-cert
+      - backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: '8001'
 ---
-apiVersion: extensions/v1beta1
+apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-tls-2
+  name: voyager-ssl-2
   namespace: test1
   annotations:
-    kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
 spec:
+  tls:
+  - secretName: domain2-tls-cert
+    hosts:
+    - domain2.org
   rules:
   - host: domain2.org
     http:
-     paths:
-      - path:
-        backend:
-          serviceName: 'domain2-cluster-cluster-1'
-          servicePort: 8001
-  tls:
-  - hosts:
-    - domain2.org
-    secretName: domain2-tls-cert
+      nodePort: '30307'
+      paths:
+      - backend:
+          serviceName: domain2-cluster-cluster-1
+          servicePort: '8001'
