@@ -7,7 +7,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-import static oracle.kubernetes.weblogic.domain.v1.Domain.DEFAULT_REPLICA_LIMIT;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.contains;
@@ -16,24 +15,27 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.io.IOException;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 
 public class DomainV2Test extends DomainTestBase {
 
+  private static final int DEFAULT_REPLICA_LIMIT = 0;
   private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_2 = "v2/domain-sample-2.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_3 = "v2/domain-sample-3.yaml";
@@ -54,8 +56,15 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenClusterNotConfigured_useDefaultReplicaCount() {
-    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(DEFAULT_REPLICA_LIMIT));
+  public void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsZero() {
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(0));
+  }
+
+  @Test
+  public void whenClusterNotConfiguredAndDomainHasReplicaCount_useIt() {
+    configureDomain(domain).withDefaultReplicaCount(3);
+
+    assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(3));
   }
 
   @Test
@@ -350,6 +359,46 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainStartPolicyNever_ignoreServerSettings() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenClusterStartPolicyNever_ignoreServerSettings() {
+    configureCluster("cluster1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenDomainStartPolicyAdminOnly_dontStartManagedServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+
+    assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenDomainStartPolicyAdminOnlyAndAdminServerNever_dontStartAdminServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getAdminServerSpec().shouldStart(0), is(false));
+  }
+
+  @Test
+  public void whenDomainStartPolicyAdminOnlyAndAdminServerIfNeeded_startAdminServer() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+
+    assertThat(domain.getAdminServerSpec().shouldStart(0), is(true));
+  }
+
+  @Test
   public void whenEnvironmentConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain)
         .withEnvironmentVariable("name1", "domain")
@@ -420,7 +469,27 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
+  public void whenDomainsAreConfiguredAlike_objectsAreEqual() {
+    Domain domain1 = createDomain();
+
+    configureDomain(domain).configureCluster("cls1");
+    configureDomain(domain1).configureCluster("cls1");
+
+    assertThat(domain, equalTo(domain1));
+  }
+
+  @Test
+  public void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
+    Domain domain1 = createDomain();
+
+    configureDomain(domain).configureCluster("cls1").withReplicas(2);
+    configureDomain(domain1).configureCluster("cls1").withReplicas(3);
+
+    assertThat(domain, not(equalTo(domain1)));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
@@ -434,7 +503,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
+  public void whenDomainReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", "cluster0");
@@ -449,7 +518,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_adminServerOverridesDefaults() throws IOException {
+  public void whenDomainReadFromYaml_adminServerOverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getAdminServerSpec();
 
@@ -458,7 +527,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_server1OverridesDefaults() throws IOException {
+  public void whenDomainReadFromYaml_server1OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", "cluster1");
 
@@ -472,7 +541,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_cluster2OverridesDefaults() throws IOException {
+  public void whenDomainReadFromYaml_cluster2OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", "cluster2");
 
@@ -486,7 +555,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomain2ReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
+  public void whenDomainReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     String pv = toJson(domain.getRequiredPersistentVolume());
@@ -499,6 +568,21 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Retain")));
     assertThat(pv, hasJsonPath("$.spec.nfs.server", equalTo("thatServer")));
     assertThat(pv, hasJsonPath("$.spec.nfs.path", equalTo("/local/path")));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_unknownClusterUseDefaultReplicaCount() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.getReplicaCount("unknown"), equalTo(3));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_unconfiguredClusterUseDefaultReplicaCount()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.getReplicaCount("cluster1"), equalTo(3));
   }
 
   @Test
@@ -520,6 +604,26 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
     assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Delete")));
     assertThat(pv, hasJsonPath("$.spec.hostPath.path", equalTo("/other/path")));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_serverConfiguresReadinessProbe() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+
+    assertThat(serverSpec.getReadinessProbe().getInitialDelaySeconds(), equalTo(10));
+    assertThat(serverSpec.getReadinessProbe().getTimeoutSeconds(), equalTo(15));
+    assertThat(serverSpec.getReadinessProbe().getPeriodSeconds(), equalTo(20));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_serverConfiguresLivenessProbe() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+
+    assertThat(serverSpec.getLivenessProbe().getInitialDelaySeconds(), equalTo(20));
+    assertThat(serverSpec.getLivenessProbe().getTimeoutSeconds(), equalTo(5));
+    assertThat(serverSpec.getLivenessProbe().getPeriodSeconds(), equalTo(18));
   }
 
   @Test
@@ -549,5 +653,116 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
     assertThat(domain.getChannelServiceAnnotations("channelB"), hasEntry("time", "midnight"));
+  }
+
+  @Test
+  public void whenVolumesConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolume("name1", "/domain-tmp1")
+        .withAdditionalVolume("name2", "/domain-tmp2");
+    configureCluster("cluster1")
+        .withAdditionalVolume("name3", "/cluster-tmp1")
+        .withAdditionalVolume("name4", "/cluster-tmp2")
+        .withAdditionalVolume("name5", "/cluster-tmp3");
+    configureServer("server1").withAdditionalVolume("name6", "/server-tmp1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumes(),
+        containsInAnyOrder(
+            volume("name1", "/domain-tmp1"),
+            volume("name2", "/domain-tmp2"),
+            volume("name3", "/cluster-tmp1"),
+            volume("name4", "/cluster-tmp2"),
+            volume("name5", "/cluster-tmp3"),
+            volume("name6", "/server-tmp1")));
+  }
+
+  @Test
+  public void whenVolumeMountsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("name1", "/domain-test1")
+        .withAdditionalVolumeMount("name2", "/domain-test2");
+    configureCluster("cluster1")
+        .withAdditionalVolumeMount("name3", "/cluster-test1")
+        .withAdditionalVolumeMount("name4", "/cluster-test2")
+        .withAdditionalVolumeMount("name5", "/cluster-test3");
+    configureServer("server1").withAdditionalVolumeMount("name6", "/server-test1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
+        containsInAnyOrder(
+            volumeMount("name1", "/domain-test1"),
+            volumeMount("name2", "/domain-test2"),
+            volumeMount("name3", "/cluster-test1"),
+            volumeMount("name4", "/cluster-test2"),
+            volumeMount("name5", "/cluster-test3"),
+            volumeMount("name6", "/server-test1")));
+  }
+
+  @Test
+  public void whenDuplicateVolumesConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolume("name1", "/domain-tmp1")
+        .withAdditionalVolume("name2", "/domain-tmp2")
+        .withAdditionalVolume("name3", "/domain-tmp3");
+    configureCluster("cluster1")
+        .withAdditionalVolume("name2", "/cluster-tmp1")
+        .withAdditionalVolume("name3", "/cluster-tmp2");
+    configureServer("server1").withAdditionalVolume("name3", "/server-tmp1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumes(),
+        containsInAnyOrder(
+            volume("name1", "/domain-tmp1"),
+            volume("name2", "/cluster-tmp1"),
+            volume("name3", "/server-tmp1")));
+  }
+
+  @Test
+  public void whenDuplicateVolumeMountsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("name1", "/domain-test1")
+        .withAdditionalVolumeMount("name2", "/domain-test2")
+        .withAdditionalVolumeMount("name3", "/domain-test3");
+    configureCluster("cluster1")
+        .withAdditionalVolumeMount("name2", "/cluster-test1")
+        .withAdditionalVolumeMount("name3", "/cluster-test2");
+    configureServer("server1").withAdditionalVolumeMount("name3", "/server-test1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
+        containsInAnyOrder(
+            volumeMount("name1", "/domain-test1"),
+            volumeMount("name2", "/cluster-test1"),
+            volumeMount("name3", "/server-test1")));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome2() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domains/uid1"));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome3() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domain"));
+  }
+
+  @Test
+  public void domainHomeTest_customHome1() {
+    configureDomain(domain).withDomainHome("/custom/domain/home");
+
+    assertThat(domain.getDomainHome(), equalTo("/custom/domain/home"));
+  }
+
+  private V1Volume volume(String name, String path) {
+    return new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path));
+  }
+
+  private V1VolumeMount volumeMount(String name, String path) {
+    return new V1VolumeMount().name(name).mountPath(path);
   }
 }

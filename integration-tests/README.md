@@ -1,6 +1,6 @@
 # Integration Tests for Oracle WebLogic Server Kubernetes Operator
 
-This documentation describes the functional use cases that are covered in integration testing for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile. All the use cases covered in run.sh are covered in Java integration tests. 
+This documentation describes the functional use cases that are covered in integration testing for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile. 
 
 # Environments
 
@@ -10,9 +10,13 @@ The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" O
 * Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - integration-test-java is the pipeline name
 * Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development Process
 
+Wercker runs only Quick test use cases, Jenkins run both Quick and Full test use cases.
+
 # Use Cases
 
-Java integration tests cover all use cases from run.sh. The below are the use cases:
+Java integration tests cover the below use cases:
+
+Quick test use cases. 
 
 1. create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
 2. create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
@@ -35,7 +39,7 @@ Full test use cases
 * create another domain domain4 with Configured cluster using WDT in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
 * verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
 * cycle domain1 down and back up, plus verify no impact on domain4
-* create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
+* create domain5 in the default namespace with serverStartPolicy="ADMIN_ONLY", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
 * create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
 * test managed server 1 pod auto-restart in domain1
 * destroy domain1
@@ -52,7 +56,7 @@ A new module "integration-tests" is added to the Maven project weblogic-kubernet
 
 weblogic-kubernetes-operator/integration-tests - location of module pom.xml  
 weblogic-kubernetes-operator/integration-tests/src/test/java - integration test(JUnit) classes and utility classes  
-weblogic-kubernetes-operator/integration-tests/src/test/resources - properties files(see Configuration Files section) and other scripts
+weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, yaml files(see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
 
@@ -91,7 +95,20 @@ Defaults for RESULT_ROOT & PV_ROOT:
 
 A module "integration-tests" is added in Maven weblogic-kubernetes-operator project.
 
-Below configuration files are used:
+Below configuration files are used from src/integration-tests/resources:
+```
+OperatorIT.properties
+operator1.yaml
+operator2.yaml
+domain1.yaml
+domain2.yaml
+domain3.yaml
+domain4.yaml
+domain5.yaml
+domain6.yaml
+domain7.yaml
+domain8.yaml
+```
 
 src/integration-tests/resources/OperatorIT.properties - This file is used for configuring common attributes for all integration tests
 ```
@@ -102,66 +119,65 @@ maxIterationsPod=50
 waitTimePod=5  
 ```
 
-src/integration-tests/resources/ITFirstOperator.properties - customized properties for Operator. Any property can be provided here from create-weblogic-operator-inputs.yaml, for all the properties that are not defined here default values in create-weblogic-operator-inputs.yaml are used while generating the operator inputs yaml file.
+src/integration-tests/resources/operator1.yaml - input/customized properties for the Operator, any property can be provided here from kubernetes/charts/weblogic-operator/values.yaml. weblogic-operator-values.yaml is generated using the properties defined in this file.
 
 ```
-serviceAccount= weblogic-operator
-namespace= weblogic-operator1
-targetNamespaces= default
-#if SELF_SIGNED_CERT, externalSans value is set to the local host name if not provided here
-externalRestOption= SELF_SIGNED_CERT
-elkIntegrationEnabled= false
+releaseName: op1
+serviceAccount: weblogic-operator
+namespace: weblogic-operator1
+domainNamespaces: [ "default", "test1" ]
+externalRestEnabled: true
+javaLoggingLevel: FINE
 ```
 
-src/integration-tests/resources/ITFirstDomain.properties - customized properties for WebLogic Domain. Any property can be provided here from create-weblogic-domain-inputs.yaml. For all the properties that are not defined here, the default values in create-weblogic-domain-inputs.yaml are used while generating the domain inputs yaml file.
+src/integration-tests/resources/domain1.yaml - input/customized properties for PV/Load Balancer/WebLogic Domain. Any property can be provided here from kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml and kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml. For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
 
 ```
-adminServerName= admin-server
-domainName= base_domain
-domainUID= domain1
-startupControl= AUTO
-clusterName= cluster-1
-configuredManagedServerCount= 4
-initialManagedServerReplicas= 2
-managedServerNameBase= managed-server
+adminServerName: admin-server
+domainName: base_domain
+domainUID: domain1
+clusterName: cluster-1
+configuredManagedServerCount: 4
+initialManagedServerReplicas: 2
+managedServerNameBase: managed-server
 #weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
-#weblogicDomainStoragePath= /scratch/external-domain-home/pv001/
-secretName= domain1-weblogic-credentials
-exposeAdminT3Channel= true
-exposeAdminNodePort= true
-namespace= default
-javaOptions= -Dweblogic.StdoutDebugEnabled=false
+#weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
+exposeAdminT3Channel: true
+exposeAdminNodePort: true
+namespace: default
 
 ```
-Certain properties like weblogicDomainStoragePath, weblogicOperatorImage, externalSans are populated at run time.
+
+Certain properties like weblogicDomainStoragePath, image, externalOperatorCert are populated at run time.
 
 
 # How does it work
 
-When the tests are run manually with mvn command on hosted Linux, WebLogic image and server jre images are pulled from a local repository. Operator image is built with the git branch from where the mvn command is executed.
+When the tests are run manually with mvn command on hosted Linux, WebLogic image and server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
 All the tests that start with IT*.java are run. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
 
 Integration test classes:
 
-When the integration test class ITFirstDomain is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
+When the integration test class ITOperator is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
 
-staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest. It also creates the operator and domain objects which are used later in the test methods.
+staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest. 
 
 staticUnPrepare() - releases the cluster lease on wercker env.
 
-test methods - testAdminServerExternalService, testAdminT3Channel, testDomainLifecyle, testClusterScaling, testOperatorLifecycle
+test methods - test1CreateFirstOperatorAndDomain, test2CreateAnotherDomainInDefaultNS, test3CreateDomainInTest1NS, etc
 
 Utility classes:
 
 Operator - contains methods to create/destroy operator, verify operator created, scale using rest api, etc
 Domain - contains methods to create/destroy domain, verify domain created,deploy webapp, load balancing, etc
 PersistentVolume - to create PV
+LoadBalancer - to create load balancer
 Secret - to create secret
 
 # How to run the Java integration tests
 
-Maven and latest Git should be in PATH
-export JAVA_HOME
+* Maven and latest Git should be in PATH
+* export JAVA_HOME
 
 Command to run the tests:
 ```
@@ -195,85 +211,54 @@ WERCKER=true:
 
 Successful run will have the output like below:
 ```
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 970.765 s - in oracle.kubernetes.operator.ITSingleDomain
-[INFO]
-[INFO] Results:
-[INFO]
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
-[INFO]
-[INFO]
-[INFO] --- maven-failsafe-plugin:2.20.1:verify (integration-tests) @ operator-integration-tests ---
-[INFO]
-[INFO] --- maven-failsafe-plugin:2.20.1:integration-test (acceptance-test) @ operator-integration-tests ---
-[INFO]
-[INFO] --- maven-failsafe-plugin:2.20.1:verify (acceptance-test) @ operator-integration-tests ---
-[INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
-[INFO]
-[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  0.472 s]
-[INFO] operator-model ..................................... SUCCESS [  9.696 s]
-[INFO] operator-swagger ................................... SUCCESS [  2.300 s]
-[INFO] operator-runtime ................................... SUCCESS [ 52.737 s]
-[INFO] operator-integration-tests ......................... SUCCESS [16:33 min]
+[INFO] 
+[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  0.305 s]
+[INFO] operator-model ..................................... SUCCESS [ 10.274 s]
+[INFO] operator-swagger ................................... SUCCESS [  0.436 s]
+[INFO] operator-runtime ................................... SUCCESS [ 21.567 s]
+[INFO] operator-integration-tests ......................... SUCCESS [  01:08 h]
+[INFO] installation-tests ................................. SUCCESS [ 34.097 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 17:39 min
-[INFO] Finished at: 2018-05-16T14:25:30-07:00
-[INFO] Final Memory: 54M/871M
-[INFO] ------------------------------------------------------------------------
-bash-4.2$
+[INFO] Total time: 01:09 h
+[INFO] Finished at: 2018-10-31T12:38:18-07:00
+[INFO] Final Memory: 60M/1236M
 
 ```
 Failed run will have the output
 ```
-[ERROR] Tests run: 5, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 1,271.204 s <<< FAILURE! - in oracle.kubernetes.operator.ITSingleDomain
-[ERROR] testAdminT3Channel(oracle.kubernetes.operator.ITSingleDomain)  Time elapsed: 145.59 s  <<< ERROR!
-java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, got 404
-    at oracle.kubernetes.operator.ITSingleDomain.testAdminT3Channel(ITSingleDomain.java:84)
 
-[ERROR] testDomainLifecyle(oracle.kubernetes.operator.ITSingleDomain)  Time elapsed: 378.096 s  <<< ERROR!
-java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, got 404
-    at oracle.kubernetes.operator.ITSingleDomain.testDomainLifecyle(ITSingleDomain.java:103)
-
-[ERROR] testClusterScaling(oracle.kubernetes.operator.ITSingleDomain)  Time elapsed: 223.707 s  <<< ERROR!
-java.lang.RuntimeException: FAILURE: testwebapp did not return 200 status code, got 404
-    at oracle.kubernetes.operator.ITSingleDomain.testClusterScaling(ITSingleDomain.java:144)
-
-[INFO]
+[INFO] 
 [INFO] Results:
-[INFO]
-[ERROR] Errors:
-[ERROR]   ITSingleDomain.testAdminT3Channel:84 » Runtime FAILURE: testwebapp did not ret...
-[ERROR]   ITSingleDomain.testClusterScaling:144 » Runtime FAILURE: testwebapp did not re...
-[ERROR]   ITSingleDomain.testDomainLifecyle:103 » Runtime FAILURE: testwebapp did not re...
-[INFO]
-[ERROR] Tests run: 5, Failures: 0, Errors: 3, Skipped: 0
-[INFO]
-[INFO]
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   ITOperator.testBCreateDomainWithDefaultValuesInSampleInputs:287->testAllUseCasesForADomain:303->BaseTest.testClusterScaling:241 ? Runtime
+[INFO] 
+[ERROR] Tests run: 11, Failures: 0, Errors: 1, Skipped: 0
+[INFO] 
+[INFO] 
 [INFO] --- maven-failsafe-plugin:2.20.1:verify (integration-tests) @ operator-integration-tests ---
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
-[INFO]
-[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  0.756 s]
-[INFO] operator-model ..................................... SUCCESS [ 12.394 s]
-[INFO] operator-swagger ................................... SUCCESS [  2.014 s]
-[INFO] operator-runtime ................................... SUCCESS [ 53.771 s]
-[INFO] operator-integration-tests ......................... FAILURE [21:35 min]
+[INFO] 
+[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  1.669 s]
+[INFO] operator-model ..................................... SUCCESS [ 22.159 s]
+[INFO] operator-swagger ................................... SUCCESS [  1.426 s]
+[INFO] operator-runtime ................................... SUCCESS [ 54.559 s]
+[INFO] operator-integration-tests ......................... FAILURE [  01:03 h]
+[INFO] installation-tests ................................. SKIPPED
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD FAILURE
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 22:44 min
-[INFO] Finished at: 2018-05-17T06:42:35-07:00
-[INFO] Final Memory: 55M/933M
+[INFO] Total time: 01:04 h
+[INFO] Finished at: 2018-10-31T15:19:46-07:00
+[INFO] Final Memory: 48M/1275M
 [INFO] ------------------------------------------------------------------------
-[ERROR] Failed to execute goal org.apache.maven.plugins:maven-failsafe-plugin:2.20.1:verify (integration-tests) on project operator-integration-tests: There are test failures.
-[ERROR]
-[ERROR] Please refer to /scratch/vmukkara/mychanges/weblogic-kubernetes-operator/integration-tests/target/failsafe-reports for the individual test results.
-[ERROR] Please refer to dump files (if any exist) [date]-jvmRun[N].dump, [date].dumpstream and [date]-jvmRun[N].dumpstream
 
 ```
-JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITSingleDomain.xml". This file shows how much time each test case took to run and the failed test results if any.
+JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
 
 # How to run a single test
 

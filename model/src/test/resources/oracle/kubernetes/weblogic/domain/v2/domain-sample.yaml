@@ -2,13 +2,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
-apiVersion: "weblogic.oracle/v1"
+apiVersion: "weblogic.oracle/v2"
 kind: Domain
 metadata:
   name: domain1
   namespace: domain_ns
-  labels:
-    weblogic.resourceVersion: domain-v2
 spec:
   # Identify which Secret contains the WebLogic Admin credentials
   adminSecret:
@@ -26,6 +24,8 @@ spec:
   # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
   domainUID: test-domain
 
+  replicas: 2
+
   # The Operator currently does not support other images
   image: "store/oracle/weblogic:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest
@@ -34,9 +34,11 @@ spec:
   imagePullSecrets:
   - name: pull-secret1
   - name: pull-secret2
-  env:
-  - name: var1
-    value: value0
+
+  serverPod:
+    env:
+    - name: var1
+      value: value0
 
   # Configured storage using nfs style
   storage:
@@ -49,32 +51,32 @@ spec:
   adminServer:
     # The Admin Server's NodePort (optional)
     nodePort: 7001
-    env:
-    - name: var1
-      value: value1
+    serverPod:
+      env:
+      - name: var1
+        value: value1
 
   # list of configurations per named server.
   managedServers:
-    # the name of the server to apply these rules to
-  - serverName: server1
-    # an (optional) list of environment variable to be set on the server
-    env:
-    - name: JAVA_OPTIONS
-      value: "-server"
-    - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
-  - serverName: server2
-    serverStartState: ADMIN
-
-  # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
-  # of a cluster instead of an individual server.  If you use this entry, then the rules will be
-  # applied to ALL servers that are members of the named clusters.
+    server1:
+      # an (optional) list of environment variable to be set on the server
+      serverPod:
+        env:
+        - name: JAVA_OPTIONS
+          value: "-server"
+        - name: USER_MEM_ARGS
+          value: "-Xms64m -Xmx256m "
+    server2:
+      serverStartState: ADMIN
+        
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-  - clusterName: cluster2
-    desiredState: "RUNNING"
-    replicas: 5
-    env:
-    - name: JAVA_OPTIONS
-      value: "-verbose"
-    - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+    cluster2:
+      desiredState: "RUNNING"
+      replicas: 5
+      serverPod:
+        env:
+        - name: JAVA_OPTIONS
+          value: "-verbose"
+        - name: USER_MEM_ARGS
+          value: "-Xms64m -Xmx256m "

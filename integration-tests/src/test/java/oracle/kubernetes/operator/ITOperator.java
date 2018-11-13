@@ -184,11 +184,11 @@ public class ITOperator extends BaseTest {
   }
 
   @Test
-  public void test6CreateDomainWithStartupControlAdmin() throws Exception {
+  public void test6CreateDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test6CreateDomainWithStartupControlAdmin");
+    logTestBegin("test6CreateDomainWithStartPolicyAdminOnly");
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
@@ -196,7 +196,7 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain domain5 & verifing the domain creation");
     // create domain5
     TestUtils.createDomain(domain5YamlFile);
-    logger.info("SUCCESS - test6CreateDomainWithStartupControlAdmin");
+    logger.info("SUCCESS - test6CreateDomainWithStartPolicyAdminOnly");
   }
 
   @Test
@@ -257,7 +257,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test9CreateDomainOnExistingDir");
   }
 
-  @Test
+  // @Test
   public void testACreateDomainApacheLB() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));

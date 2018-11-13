@@ -8,7 +8,7 @@ apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
@@ -18,7 +18,7 @@ rules:
   resources: ["secrets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["pods/logs"]
+  resources: ["pods/log"]
   verbs: ["get", "list"]
 - apiGroups: [""]
   resources: ["pods/exec"]

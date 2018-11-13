@@ -4,8 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain;
 
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainV1Configurator;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 
 public class DomainConfiguratorFactory {
@@ -14,14 +13,6 @@ public class DomainConfiguratorFactory {
 
   public static DomainConfigurator forDomain(Domain domain) {
     return exemplar.createFor(domain);
-  }
-
-  public static boolean useDomainV1() {
-    return exemplar.useDomainV1();
-  }
-
-  public static void selectV1DomainModel() {
-    exemplar = new DomainV1Configurator();
   }
 
   public static void selectV2DomainModel() {

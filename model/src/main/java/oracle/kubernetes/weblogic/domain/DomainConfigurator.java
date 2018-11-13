@@ -8,9 +8,9 @@ import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.DomainStorage;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.DomainStorage;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -33,18 +33,35 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator createFor(Domain domain);
 
   /**
+   * Sets the home for the domain.
+   *
+   * @param home the home of the domain
+   * @return this object
+   */
+  public DomainConfigurator withDomainHome(String domainHome) {
+    getDomainSpec().setDomainHome(domainHome);
+    return this;
+  }
+
+  /**
+   * @param homeInImage
+   * @return
+   */
+  public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
+    getDomainSpec().setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  /**
    * Defines a name for the domain's admin server.
    *
    * @param adminServerName the name of the admin server
    */
   public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
 
-  /**
-   * Sets the default number of replicas to be run in a cluster.
-   *
-   * @param replicas a non-negative number
-   */
-  public abstract void withDefaultReplicaCount(int replicas);
+  public void withDefaultReplicaCount(int replicas) {
+    getDomainSpec().setReplicas(replicas);
+  }
 
   /**
    * Sets the default image for the domain.
@@ -177,28 +194,6 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
 
   /**
-   * Defines the startup control mechanism for a version 1 domain. Must be one of:
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @param startupControl the new value
-   * @return this object
-   */
-  public abstract DomainConfigurator withStartupControl(String startupControl);
-
-  /**
    * Add an environment variable to the domain
    *
    * @param name variable name
@@ -214,6 +209,10 @@ public abstract class DomainConfigurator {
   protected String getAsName() {
     return domain.getAsName();
   }
+
+  public abstract DomainConfigurator withAdditionalVolume(String name, String path);
+
+  public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
 
   /**
    * Adds a default server configuration to the domain, if not already present.
@@ -232,11 +231,4 @@ public abstract class DomainConfigurator {
   public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
 
   public abstract void setShuttingDown(boolean start);
-
-  /**
-   * Returns true if this configurator supports use of the startup control flag.
-   *
-   * @return true or false
-   */
-  public abstract boolean useDomainV1();
 }
