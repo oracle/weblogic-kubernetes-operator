@@ -36,9 +36,6 @@ spec:
           value: "false"
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
-        # TBDTEB Remove this env var
-        - name: "ENABLE_DOMAIN_INTROSPECTOR_JOB"
-          value: "true"
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}

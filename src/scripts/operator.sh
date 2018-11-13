@@ -26,11 +26,6 @@ else
   DEBUG=""
 fi
 
-if [[ ! -z "$ENABLE_DOMAIN_INTROSPECTOR_JOB" ]]; then
-  DEBUG="$DEBUG -DenableDomainIntrospectorJob=true"
-  echo "DEBUG=$DEBUG"
-fi
-
 # start logstash
 
 # set up a logging.properties file that has a FileHandler in it, and have it
