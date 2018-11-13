@@ -106,6 +106,8 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
+  private static final String SIT_CONFIG_MAP_VOLUME_SUFFIX =
+      "-weblogic-domain-introspect-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
 
   final TerminalStep terminalStep = new TerminalStep();
@@ -270,6 +272,8 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
+            writableVolumeMount(
+                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));

@@ -85,8 +85,6 @@ import org.joda.time.DateTime;
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
 
-  private static final String ENABLE_DOMAIN_INTROSPECTOR_JOB_ENV = "ENABLE_DOMAIN_INTROSPECTOR_JOB";
-
   private static ThreadFactory getThreadFactory() {
     return ThreadFactorySingleton.getInstance();
   }
@@ -95,17 +93,7 @@ public class Main {
 
   private static final TuningParameters tuningAndConfig;
 
-  private static final boolean enableDomainInstrospectorJob;
-
   static {
-    String strEnableDomainIntrospectorJob = System.getenv(ENABLE_DOMAIN_INTROSPECTOR_JOB_ENV);
-    enableDomainInstrospectorJob =
-        strEnableDomainIntrospectorJob != null
-            ? Boolean.parseBoolean(strEnableDomainIntrospectorJob)
-            : false;
-
-    LOGGER.info("strEnableDomainIntrospectorJob: " + strEnableDomainIntrospectorJob);
-    LOGGER.info("enableDomainInstrospectorJob: " + enableDomainInstrospectorJob);
     try {
       TuningParameters.initializeInstance(getThreadFactory(), "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
@@ -703,13 +691,7 @@ public class Main {
   private static Step[] bringAdminServerUpSteps(Step next) {
     ArrayList<Step> resources = new ArrayList<>();
     resources.add(new ListPersistentVolumeClaimStep(null));
-
-    if (enableDomainInstrospectorJob) {
-      resources.add(JobHelper.createDomainIntrospectorJobStep(PodHelper.createAdminPodStep(null)));
-    } else {
-      resources.add(PodHelper.createAdminPodStep(null));
-    }
-
+    resources.add(JobHelper.createDomainIntrospectorJobStep(PodHelper.createAdminPodStep(null)));
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(ServiceHelper.createForServerStep(null));
     resources.add(new WatchPodReadyAdminStep(podWatchers, null));
