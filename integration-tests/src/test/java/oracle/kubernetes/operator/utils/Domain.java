@@ -601,7 +601,7 @@ public class Domain {
         .append(" -e -v -o ")
         .append(outputDir);
     logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString(), true);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "
