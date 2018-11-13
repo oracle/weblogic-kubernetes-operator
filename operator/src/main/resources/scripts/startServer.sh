@@ -31,7 +31,6 @@ trace "Starting WebLogic Server '${SERVER_NAME}'."
 #
 
 function createFolder {
-  # TBD was 777
   mkdir -m 750 -p $1
   if [ ! -d $1 ]; then
     trace "Unable to create folder $1"
@@ -41,7 +40,6 @@ function createFolder {
 
 #
 # Define helper fn to copy a file only if src & tgt differ
-# TBD test this function stand-alone
 #
 
 function copyIfChanged() {

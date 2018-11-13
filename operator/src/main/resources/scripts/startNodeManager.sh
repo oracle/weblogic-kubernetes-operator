@@ -58,7 +58,6 @@ checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID WL_HOME || exit 1
 if [ "${SERVER_NAME}" = "introspector" ]; then
   SERVICE_NAME=localhost
 else
-  # TBD check if USER_MEM_ARGS and JAVA_OPTIONS are actually required
   checkEnv SERVER_NAME ADMIN_NAME AS_SERVICE_NAME SERVICE_NAME USER_MEM_ARGS || exit 1
 fi
 
@@ -73,7 +72,6 @@ fi
 # Arg $1 - path of folder to create
 #
 function createFolder {
-  # TBD was 777
   mkdir -m 750 -p "$1"
   if [ ! -d "$1" ]; then
     trace "Unable to create folder '$1'."
