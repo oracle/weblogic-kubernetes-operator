@@ -159,7 +159,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("A list of names of the secrets for the WebLogic configurations.")
+  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
   @SerializedName("weblogicConfigurationOverridesSecretNames")
   @Expose
   private List<String> weblogicConfigurationOverridesSecretNames;
