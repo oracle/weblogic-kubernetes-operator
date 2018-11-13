@@ -208,10 +208,6 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_LEVEL")
                                                 .value(getInputs().getJavaLoggingLevel()))
-                                        .addEnvItem(
-                                            newEnvVar()
-                                                .name("ENABLE_DOMAIN_INTROSPECTOR_JOB")
-                                                .value("true"))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
                                                 .name("weblogic-operator-cm-volume")

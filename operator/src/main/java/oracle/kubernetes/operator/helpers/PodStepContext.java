@@ -602,17 +602,16 @@ public abstract class PodStepContext implements StepContextConstants {
                             .name(
                                 getDomainUID() + KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX)
                             .defaultMode(ALL_READ_AND_EXECUTE)
-                            .optional(Boolean.TRUE)));
-
-    if (isEnableDomainIntrospectorJob()) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(getSitConfigMapVolumeName(getDomainUID()))
-              .configMap(
-                  new V1ConfigMapVolumeSource()
-                      .name(ConfigMapHelper.SitConfigMapContext.getConfigMapName(getDomainUID()))
-                      .defaultMode(ALL_READ_AND_EXECUTE)));
-    }
+                            .optional(Boolean.TRUE)))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(getSitConfigMapVolumeName(getDomainUID()))
+                    .configMap(
+                        new V1ConfigMapVolumeSource()
+                            .name(
+                                ConfigMapHelper.SitConfigMapContext.getConfigMapName(
+                                    getDomainUID()))
+                            .defaultMode(ALL_READ_AND_EXECUTE)));
 
     /**/
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
@@ -658,25 +657,10 @@ public abstract class PodStepContext implements StepContextConstants {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
 
-    if (isEnableDomainIntrospectorJob()) {
-      v1Container.addVolumeMountsItem(
-          // volumeMount(getSitConfigMapVolumeName(getDomainUID()), getDomainHome() +
-          // "/optconfig"));
-          volumeMount(
-              getSitConfigMapVolumeName(getDomainUID()), "/weblogic-operator/introspector"));
-    }
+    v1Container.addVolumeMountsItem(
+        volumeMount(getSitConfigMapVolumeName(getDomainUID()), "/weblogic-operator/introspector"));
 
     return v1Container;
-  }
-
-  private boolean isEnableDomainIntrospectorJob() {
-    String strEnableDomainIntrospectorJob = System.getenv("ENABLE_DOMAIN_INTROSPECTOR_JOB");
-    boolean enableDomainInstrospectorJob =
-        strEnableDomainIntrospectorJob != null
-            ? Boolean.parseBoolean(strEnableDomainIntrospectorJob)
-            : false;
-
-    return enableDomainInstrospectorJob;
   }
 
   private static String getSitConfigMapVolumeName(String domainUID) {

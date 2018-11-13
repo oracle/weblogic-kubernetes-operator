@@ -46,22 +46,10 @@ public class DeleteDomainStep extends Step {
     resources.add(deletePods());
     resources.add(deletePersistentVolumes());
     resources.add(deletePersistentVolumeClaims());
-    if (isEnableDomainIntrospectorJob()) {
-      resources.add(
-          ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(
-              this.domainUID, this.namespace, getNext()));
-    }
+    resources.add(
+        ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(
+            this.domainUID, this.namespace, getNext()));
     return resources.toArray(new Step[0]);
-  }
-
-  private boolean isEnableDomainIntrospectorJob() {
-    String strEnableDomainIntrospectorJob = System.getenv("ENABLE_DOMAIN_INTROSPECTOR_JOB");
-    boolean enableDomainInstrospectorJob =
-        strEnableDomainIntrospectorJob != null
-            ? Boolean.parseBoolean(strEnableDomainIntrospectorJob)
-            : false;
-
-    return enableDomainInstrospectorJob;
   }
 
   private Step deleteIngresses() {
