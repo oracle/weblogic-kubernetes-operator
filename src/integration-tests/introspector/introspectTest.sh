@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #############################################################################
@@ -28,7 +28,7 @@
 #   The 'meat' of the test mainly works via a series of yaml and python
 #   template files in combination with a set of environment variables.  
 #
-#   The environmentvariables, such as PV_ROOT, DOMAIN_UID, NAMESPACE,
+#   The environment variables, such as PV_ROOT, DOMAIN_UID, NAMESPACE,
 #   IMAGE_NAME, etc, all have defaults, or can be passed in.  See the 'export'
 #   calls in the implementation below for the complete list.
 #
