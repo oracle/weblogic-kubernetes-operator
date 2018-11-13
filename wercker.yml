@@ -99,7 +99,7 @@ integration-test-java:
 
       # install kubectl
       # export K8S_CLIENT_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"   #latest version
-      export K8S_CLIENT_VERSION="v1.10.5"
+      export K8S_CLIENT_VERSION=${K8S_CLIENT_VERSION:-v1.10.5}"
       curl -LO https://storage.googleapis.com/kubernetes-release/release/${K8S_CLIENT_VERSION}/bin/linux/amd64/kubectl
       chmod +x ./kubectl
       mv ./kubectl /usr/local/bin/kubectl
@@ -118,12 +118,14 @@ integration-test-java:
       kubectl version
       
       echo @@ "Helm installation starts"
-      curl -LO http://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
+      export HELM_VERSION=${HELM_VERSION:-v2.11.0}
+      curl -LO http://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz
       mkdir /tmp/helm
-      tar xzf helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
+      tar xzf helm-${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm
       chmod +x /tmp/helm/linux-amd64/helm
       mv /tmp/helm/linux-amd64/helm /usr/local/bin/
       rm -rf /tmp/helm
+      helm init --upgrade
       helm version
       echo @@ "Helm is installed."
 
