@@ -41,7 +41,7 @@ public class Domain {
   private int t3ChannelPort;
   private String clusterName;
   private String clusterType;
-  private String startupControl;
+  private String serverStartPolicy;
   private String weblogicDomainStorageReclaimPolicy;
   private String weblogicDomainStorageSize;
   private String loadBalancer = "TRAEFIK";
@@ -97,9 +97,9 @@ public class Domain {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
-    if (domainMap.get("startupControl") == null
-        || (domainMap.get("startupControl") != null
-            && !domainMap.get("startupControl").toString().trim().equals("ADMIN"))) {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -134,9 +134,9 @@ public class Domain {
       TestUtils.checkServiceCreated(
           domainUid + "-" + adminServerName + "-extchannel-t3channel", domainNS);
     }
-    if (domainMap.get("startupControl") == null
-        || (domainMap.get("startupControl") != null
-            && !domainMap.get("startupControl").toString().trim().equals("ADMIN"))) {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
       // check managed server services
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -160,9 +160,9 @@ public class Domain {
     // check admin pod
     logger.info("Checking if admin server is Running");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
-    if (domainMap.get("startupControl") == null
-        || (domainMap.get("startupControl") != null
-            && !domainMap.get("startupControl").toString().trim().equals("ADMIN"))) {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
 
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
@@ -697,6 +697,9 @@ public class Domain {
           Thread.sleep(waitTime * 1000);
         } catch (InterruptedException ignore) {
         }
+      } else {
+        logger.info("testwebapp returned 200 response code, iteration " + i);
+        break;
       }
     }
   }
@@ -715,6 +718,8 @@ public class Domain {
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+      } else {
+        logger.info("webapp invoked successfully");
       }
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
@@ -778,11 +783,13 @@ public class Domain {
     t3ChannelPort = ((Integer) domainMap.get("t3ChannelPort")).intValue();
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
-    startupControl = (String) domainMap.get("startupControl");
+    serverStartPolicy = (String) domainMap.get("serverStartPolicy");
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
+
+    domainMap.put("domainHome", "/shared/domains/" + domainUid);
 
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
