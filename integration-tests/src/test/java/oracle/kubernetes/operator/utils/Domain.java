@@ -799,7 +799,7 @@ public class Domain {
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_SERVER"),
           System.getenv("REPO_USERNAME"),
           System.getenv("REPO_PASSWORD"),
           System.getenv("REPO_EMAIL"),
