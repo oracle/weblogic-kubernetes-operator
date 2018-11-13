@@ -14,13 +14,17 @@ adminServerName: admin-server
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
 domainUID: domain1
 
+# Home of the WebLogic domain
+# By default, this is set to /shared/domains/domainUID
+domainHome: /shared/domains/domain1
+
 # Type of WebLogic Cluster
 # Legal values are "CONFIGURED" or "DYNAMIC" 
 clusterType: DYNAMIC
 
 # Determines which WebLogic Servers the Operator will start up
-# Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
-startupControl: AUTO
+# Legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+serverStartPolicy: IF_NEEDED
 
 # Cluster name
 clusterName: cluster-1

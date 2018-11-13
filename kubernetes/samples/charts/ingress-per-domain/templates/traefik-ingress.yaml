@@ -17,6 +17,6 @@ spec:
       paths:
       - path:
         backend:
-          serviceName: '{{ .Values.wlsDomain.svcName }}'
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower | replace "_" "-" }}'
           servicePort: {{ .Values.wlsDomain.svcPort }}
 {{- end }}

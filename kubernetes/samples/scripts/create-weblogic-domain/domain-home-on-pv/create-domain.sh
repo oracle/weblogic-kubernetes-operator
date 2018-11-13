@@ -260,7 +260,7 @@ function initialize {
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
   initAndValidateOutputDir
-  validateStartupControl
+  validateServerStartPolicy
   validateClusterType
   failIfValidationErrors
 }
@@ -328,6 +328,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${createJobOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${createJobOutput}
@@ -357,6 +358,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
 
@@ -380,6 +382,7 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
@@ -391,7 +394,7 @@ function createYamlFiles {
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%STARTUP_CONTROL%:${startupControl}:g" ${dcrOutput}
+  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
@@ -435,7 +438,7 @@ function create_domain_configmap {
     fail "The configmap ${cmName} was not created"
   fi
 
-  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v1 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+  kubectl label configmap ${cmName} -n $namespace weblogic.resourceVersion=domain-v2 weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 
   rm -rf $externalFilesTmpDir
 }
