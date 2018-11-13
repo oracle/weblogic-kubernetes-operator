@@ -34,7 +34,7 @@ Create two WLS domains:
 - Each domain has a webapp installed with url context 'testwebapp'.
 
 ### 2. Install Ingress
-#### Install Host-routing Ingress
+#### Host-routing Ingress samples
 ```
 $ kubectl create -f samples/host-routing.yaml
 ```
@@ -43,7 +43,7 @@ Now you can send requests to different WLS domains with the unique entry point o
 $ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
 $ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
-#### Install Path-routing Ingress
+#### Path-routing Ingress samples
 ```
 $ kubectl create -f samples/path-routing.yaml
 ```
@@ -51,6 +51,28 @@ Now you can send request to different WLS domains with the unique entry point of
 ```
 $ curl --silent http://${HOSTNAME}:30305/domain1/
 $ curl --silent http://${HOSTNAME}:30305/domain2/
+```
+#### TLS-enabled Ingress samples
+This sample is to demostrate accessing the two WLS domains via https endpoint, each domain with different TLS certificate.
+
+First you need to create two secrets with TLS certificates, one with the common name "domain1.org", the other with the common name "domain2.org". We use `openssl` to generate self-signed certificates for demostration purpose.
+```
+# create a TLS secret for domain1
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
+$ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+
+# create a TLS secret for domain2
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
+$ kubectl create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+```
+Then deploy the TLS Ingress.
+```
+$ kubectl create -f samples/tls.yaml
+```
+Now you can access the two WLS domains with different hostname via https endpoint.
+```
+$ curl -k -H 'host: domain1.org' https://${HOSTNAME}:30443/testwebapp/
+$ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30443/testwebapp/
 ```
 
 ## Uninstall Traefik Operator
