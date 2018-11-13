@@ -155,7 +155,7 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
-   * The additional WebLogic Configuration secrets.
+   * The list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
    *
    * @since 2.0
    */
