@@ -162,10 +162,10 @@ integration-test-java:
       export IMAGE_NAME_OPERATOR="${REPO_REPOSITORY}"
       export IMAGE_TAG_OPERATOR="${WERCKER_GIT_BRANCH//[_\/]/-}"
       export IMAGE_PULL_POLICY_OPERATOR="Always"
-      export IMAGE_PULL_SECRET_OPERATOR="ocir-registry"
+      export IMAGE_PULL_SECRET_OPERATOR="ocir-operator"
       export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-$REPO_PREFIX/weblogic}"
       export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-19.1.0.0}"
-      export IMAGE_PULL_SECRET_WEBLOGIC="docker-store"
+      export IMAGE_PULL_SECRET_WEBLOGIC="ocir-weblogic"
 
       echo "Integration test suite running for test image: $IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
       echo "WebLogic version is: $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
