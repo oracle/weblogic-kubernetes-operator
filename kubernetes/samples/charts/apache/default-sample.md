@@ -24,11 +24,14 @@ $ helm install --name my-release apache-webtier
 ```
 
 ## 4. Run the sample application
-Now you can send requests to different WLS domains with the unique entry point of Apache with different path. Alternatively, you can access the URLs in a web browser.
+Now you can send request to WebLogic domain with the unique entry point of Apache. Alternatively, you can access the URL in a web browser.
 ```
 $ curl --silent http://${HOSTNAME}:30305/weblogic/testwebapp/
 ```
-You can also access SSL URL `https://${HOSTNAME}:30443/weblogic/testwebapp/` in your web browser.
+You can also use SSL URL to send request to WebLogic domain. Access the SSL URL via the curl command or a web browser.
+```
+$ curl -k --silent https://${HOSTNAME}:30443/weblogic/testwebapp/
+```
 
 ## 5. Uninstall Apache Webtier
 ```
