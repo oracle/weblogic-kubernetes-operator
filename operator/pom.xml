@@ -116,6 +116,19 @@
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-schema</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>${project.groupId}</includeGroupIds>
+                            <includeArtifactIds>operator-model</includeArtifactIds>
+                            <includes>**/*.json</includes>
+                            <outputDirectory>${project.reporting.outputDirectory}</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -340,5 +353,22 @@
         </dependency>
 
     </dependencies>
+
+    <reporting>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <reportSets>
+            <reportSet>
+                <id>site</id>
+              <reports>
+                <report>scm</report>
+              </reports>
+            </reportSet>
+          </reportSets>
+        </plugin>
+      </plugins>
+    </reporting>
 
 </project>

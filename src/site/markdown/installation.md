@@ -135,7 +135,7 @@ The operator provides some optional features that can be enabled in the configur
 
 ### Load balancing with an Ingress controller or a web server
 
-You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to [Load balancing with Voyager/HAProxy](site/voyager.md), [Load balancing with Traefik](site/traefik.md), and [Load balancing with the Apache HTTP Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
+You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to [Load balancing with Voyager/HAProxy](voyager.html), [Load balancing with Traefik](site/traefik.html), and [Load balancing with the Apache HTTP Server](site/apache.html) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
 Note these limitations:
 
@@ -266,7 +266,7 @@ The spec section provides details for the container that the operator will execu
 
 This section defines the external service that provides access to the operator to clients outside the Kubernetes cluster.  The service exposes one port for HTTPS access to the operator’s REST server.  It also includes a commented-out definition for the debug port.
 
-[comment]: # (Debugging the operator is described in the [developer guide] developer.md )
+[comment]: # (Debugging the operator is described in the [developer guide] developer.html )
 
 ```
 ---

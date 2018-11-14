@@ -24,7 +24,7 @@ After you have access to the Docker image of the Apache HTTP Server, you can fol
 
 ## Use the Apache load balancer with a WebLogic domain created with the WebLogic Operator
 
-For how to create a domain with the WebLogic Operator, please refer to [Creating a domain using the WebLogic Operator](creating-domain.md).
+For how to create a domain with the WebLogic Operator, please refer to [Creating a domain using the WebLogic Operator](creating-domain.html).
 
 You need to configure the Apache HTTP Server as your load balancer for a WebLogic domain by setting the `loadBalancer` option to `APACHE` in the `create-weblogic-domain-inputs.yaml` (as shown below) when running the `create-weblogic-domain.sh` script to create a domain.
 

@@ -32,7 +32,7 @@ release of the operator, including any critical hot fixes.  No general pull requ
 
 Active work will be performed on the ```develop``` branch.  This branch is also protected.  Please submit pull
 requests to this branch unless you are collaborating on a feature and have another target branch.  
-Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README] (README.md).
+Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README] (README.html).
 
 Longer running feature work will be performed on specific branches, such as ```feature/dynamic-clusters```.  Since we want 
 to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we
@@ -97,7 +97,7 @@ To create them, first, make a copy of the inputs file (`create-weblogic-operator
 
 Next, choose and create a directory that generated operator-related files will be stored in, for example, `/path/to/weblogic-operator-output-directory`.
 
-Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (See the [installation](installation.md) page for details about this script and the inputs):
+Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (See the [installation](installation.html) page for details about this script and the inputs):
 
 ```
 ./create-weblogic-operator.sh -g \

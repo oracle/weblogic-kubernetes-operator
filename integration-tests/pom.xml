@@ -25,6 +25,11 @@
 			<url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
 		</license>
 	</licenses>
+
+	<properties>
+   <maven.site.skip>true</maven.site.skip>
+  </properties>
+
 	<dependencies>
 		<!-- test dependencies -->
 		<dependency>
@@ -61,11 +66,11 @@
 			<artifactId>guava</artifactId>
 			<version>25.1-jre</version>
 		</dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.21</version>            
-        </dependency>
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>1.21</version>
+		</dependency>
 	</dependencies>
 
 

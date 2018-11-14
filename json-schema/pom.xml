@@ -11,6 +11,10 @@
 
   <artifactId>json-schema</artifactId>
 
+  <properties>
+    <maven.site.skip>true</maven.site.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.kubernetes</groupId>

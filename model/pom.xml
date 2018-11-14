@@ -26,6 +26,10 @@
     </license>
   </licenses>
 
+  <properties>
+    <maven.site.skip>true</maven.site.skip>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
