@@ -14,6 +14,9 @@ http://maven.apache.org/DECORATION/1.3.0 ">
             <item name="Creating a Domain" href="creating-domain.html"/>
         </menu>
         <menu ref="reports"/>
+        <menu name="Resources">
+            <item name="Domain Resource" href="domain-resource.html"/>
+        </menu>
 
         <footer>Copyright &amp;copy; 2017-2018, Oracle Corporation. All Rights Reserved.</footer>
     </body>
