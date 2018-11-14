@@ -165,13 +165,20 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the WebLogic configuration overrides configmap name for the domain
+   *
+   * @param configMapName Name of the config map that contains the config overrides
+   * @return this object
+   */
+  public abstract DomainConfigurator withConfigOverrides(String configMapName);
+
+  /**
    * Sets the WebLogic configuration overrides secret names for the domain
    *
    * @param secretNames a list of secret names
    * @return this object
    */
-  public abstract DomainConfigurator withWeblogicConfigurationOverridesSecretNames(
-      String... secretNames);
+  public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the
