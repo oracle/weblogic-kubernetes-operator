@@ -170,8 +170,7 @@ public abstract class DomainConfigurator {
    * @param secretNames a list of secret names
    * @return this object
    */
-  public abstract DomainConfigurator withWeblogicConfigurationOverridesSecretNames(
-      String... secretNames);
+  public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the
