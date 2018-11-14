@@ -118,7 +118,7 @@ port=`echo ${STATUS} | python cmds.py`
 echo "port: $port" >> scalingAction.log
 
 # Reteive Custom Resource Domain 
-DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/v1/namespaces/$wls_domain_namespace/domains/$domain_uid`
+DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/v2/namespaces/$wls_domain_namespace/domains/$domain_uid`
 if [ $? -ne 0 ]
   then
     echo "Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
@@ -133,11 +133,10 @@ import sys, json
 outer_loop_must_break = False
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusters"]
-  for index, cStartups in enumerate(j):
-    if j[index] == "$wls_cluster_name":
-      outer_loop_must_break = True
-      print True
-      break
+  if "$wls_cluster_name" in j:
+    outer_loop_must_break = True
+    print True
+    break
 if outer_loop_must_break == False:
   print False
 INPUT
@@ -149,13 +148,13 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds.py`
 if [ $in_cluster_startup == "True" ]
 then
   echo "$wls_cluster_name defined in clusters" >> scalingAction.log
+
 cat > cmds.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusters"]
-  for index, cStartups in enumerate(j):
-    if j[index] == "$wls_cluster_name":
-        print(j[index]["replicas"])
+  if "$wls_cluster_name" in j:
+    print j["$wls_cluster_name"]["replicas"]
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds.py`
 else
