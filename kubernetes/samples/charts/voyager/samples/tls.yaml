@@ -1,0 +1,45 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: voyager-ssl-1
+  namespace: default
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  tls:
+  - secretName: domain1-tls-cert
+    hosts:
+    - domain1.org
+  rules:
+  - host: domain1.org 
+    http:
+      nodePort: '30305'
+      paths:
+      - backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: '8001'
+---
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: voyager-ssl-2
+  namespace: test1
+  annotations:
+    ingress.appscode.com/type: 'NodePort'
+    ingress.appscode.com/stats: 'true'
+    ingress.appscode.com/affinity: 'cookie'
+spec:
+  tls:
+  - secretName: domain2-tls-cert
+    hosts:
+    - domain2.org
+  rules:
+  - host: domain2.org
+    http:
+      nodePort: '30307'
+      paths:
+      - backend:
+          serviceName: domain2-cluster-cluster-1
+          servicePort: '8001'
