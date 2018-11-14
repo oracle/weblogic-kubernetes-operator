@@ -56,11 +56,16 @@
 			<artifactId>jersey-hk2</artifactId>
 			<version>${jersey-version}</version>
 		</dependency>
-                <dependency>
-                        <groupId>org.yaml</groupId>
-                        <artifactId>snakeyaml</artifactId>
-                        <version>1.21</version>            
-                </dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>25.1-jre</version>
+		</dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.21</version>            
+        </dependency>
 	</dependencies>
 
 

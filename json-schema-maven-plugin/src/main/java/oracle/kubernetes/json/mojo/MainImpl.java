@@ -15,15 +15,20 @@ import org.apache.maven.plugin.MojoExecutionException;
 public class MainImpl implements Main {
   private SchemaGenerator generator = new SchemaGenerator();
   private ClassLoader classLoader;
-  private String rootClassName;
 
   @Override
-  public void setKubernetesVersion(String version) throws MojoExecutionException {
-    try {
-      generator.useKubernetesVersion(version);
-    } catch (IOException e) {
-      throw new MojoExecutionException("Unable to set Kubernetes version", e);
-    }
+  public void setIncludeDeprecated(boolean includeDeprecated) {
+    generator.setIncludeDeprecated(includeDeprecated);
+  }
+
+  @Override
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    generator.setIncludeAdditionalProperties(includeAdditionalProperties);
+  }
+
+  @Override
+  public void setSupportObjectReferences(boolean supportObjectReferences) {
+    generator.setSupportObjectReferences(supportObjectReferences);
   }
 
   @Override
@@ -36,6 +41,12 @@ public class MainImpl implements Main {
     return classLoader.getResource(name);
   }
 
+  @Override
+  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) throws IOException {
+    generator.addExternalSchema(schemaURL, cacheUrl);
+  }
+
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void generateSchema(String className, File outputFile) throws MojoExecutionException {
     outputFile.getParentFile().mkdirs();
