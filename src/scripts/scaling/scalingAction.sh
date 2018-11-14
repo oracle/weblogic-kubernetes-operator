@@ -133,11 +133,10 @@ import sys, json
 outer_loop_must_break = False
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusters"]
-  for index, cStartups in enumerate(j):
-    if j[index] == "$wls_cluster_name":
-      outer_loop_must_break = True
-      print True
-      break
+  if "$wls_cluster_name" in j:
+    outer_loop_must_break = True
+    print True
+    break
 if outer_loop_must_break == False:
   print False
 INPUT
@@ -149,13 +148,13 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds.py`
 if [ $in_cluster_startup == "True" ]
 then
   echo "$wls_cluster_name defined in clusters" >> scalingAction.log
+
 cat > cmds.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusters"]
-  for index, cStartups in enumerate(j):
-    if j[index] == "$wls_cluster_name":
-        print(j[index]["replicas"])
+  if "$wls_cluster_name" in j:
+    print j["$wls_cluster_name"]["replicas"]
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds.py`
 else
