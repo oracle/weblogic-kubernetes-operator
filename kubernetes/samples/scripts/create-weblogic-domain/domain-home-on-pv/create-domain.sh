@@ -288,13 +288,6 @@ function createYamlFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  # Operator 2.0 requires using 19.1.0.0 or later in Domain CR.
-  # So use "store/oracle/weblogic:19.1.0.0" if not defined in
-  # create-domain-inputs.yaml
-  if [ -z "${image}" ]; then
-    image="store/oracle/weblogic:19.1.0.0"
-  fi
-  
   domainName=${domainUID}
 
   # Use the default value if not defined.

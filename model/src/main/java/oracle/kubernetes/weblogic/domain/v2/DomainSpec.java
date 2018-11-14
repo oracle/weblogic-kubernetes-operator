@@ -90,11 +90,11 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * The WebLogic Docker image.
    *
-   * <p>Defaults to store/oracle/weblogic:19.1.0.0
+   * <p>Defaults to store/oracle/weblogic:12.2.1.3
    */
   @Description(
       "The Weblogic Docker image; required when domainHomeInImage is true; "
-          + "otherwise, defaults to store/oracle/weblogic:19.1.0.0")
+          + "otherwise, defaults to store/oracle/weblogic:12.2.1.3")
   @SerializedName("image")
   @Expose
   private String image;
