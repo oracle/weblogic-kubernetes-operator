@@ -19,7 +19,6 @@ def getEnvVar(var):
     sys.exit(1)
   return val
 
-admin_username = 'TBDRemoveNotUsed'
 domain_uid = getEnvVar('DOMAIN_UID')
 server_name = getEnvVar('SERVER_NAME')
 domain_name = getEnvVar('DOMAIN_NAME')
