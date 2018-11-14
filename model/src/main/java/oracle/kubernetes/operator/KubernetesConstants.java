@@ -6,7 +6,7 @@ package oracle.kubernetes.operator;
 
 /** Kubernetes constants. */
 public interface KubernetesConstants {
-  String DEFAULT_IMAGE = "store/oracle/weblogic:19.1.0.0";
+  String DEFAULT_IMAGE = "store/oracle/weblogic:12.2.1.3";
   String ALWAYS_IMAGEPULLPOLICY = "Always";
   String IFNOTPRESENT_IMAGEPULLPOLICY = "IfNotPresent";
   String NEVER_IMAGEPULLPOLICY = "Never";
