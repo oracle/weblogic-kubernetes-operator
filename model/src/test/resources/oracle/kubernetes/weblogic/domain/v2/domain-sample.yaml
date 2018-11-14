@@ -48,8 +48,11 @@ spec:
         server: thatServer
         path: /local/path
 
+  # configured wls configuration overrides configmap name
+  configOverrides: overrides-config-map
+
   # configured wls configuration overrides secret names
-  weblogicConfigurationOverridesSecretNames: [overrides-secret-1, overrides-secret-2]
+  configOverrideSecrets: [overrides-secret-1, overrides-secret-2]
 
   adminServer:
     # The Admin Server's NodePort (optional)
