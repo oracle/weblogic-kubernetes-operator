@@ -89,8 +89,8 @@ public abstract class ServerSpec {
    *
    * @return a list of secret names. May be empty.
    */
-  public List<String> getWeblogicConfigurationOverridesSecretNames() {
-    return domainSpec.getWeblogicConfigurationOverridesSecretNames();
+  public List<String> getConfigOverrideSecrets() {
+    return domainSpec.getConfigOverrideSecrets();
   }
 
   @SuppressWarnings("SameParameterValue")
