@@ -11,7 +11,8 @@ type: TRAEFIK
 # WLS domain as backend to the load balancer
 wlsDomain:
   namespace: default
-  svcName: domain1-cluster-cluster-1
+  domainUID: domain1
+  clusterName: cluster-1
   svcPort: 8001
 
 # Traefik specific values
