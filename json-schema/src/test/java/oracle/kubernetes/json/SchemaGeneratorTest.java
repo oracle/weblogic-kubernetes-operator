@@ -17,11 +17,24 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Test;
 
 public class SchemaGeneratorTest {
 
+  private static final String K8S_SCHEMA_URL =
+      "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json";
+  private static final String K8S_CACHE_FILE = "caches/kubernetes-1.9.0.json";
   private SchemaGenerator generator = new SchemaGenerator();
+
+  private URL schemaUrl;
+  private URL cacheUrl;
+
+  @Before
+  public void setUp() throws Exception {
+    schemaUrl = new URL(K8S_SCHEMA_URL);
+    cacheUrl = getClass().getResource(K8S_CACHE_FILE);
+  }
 
   @Test
   public void generateSchemaForBoolean() throws NoSuchFieldException {
@@ -124,6 +137,8 @@ public class SchemaGeneratorTest {
   public void generateSchemaForSimpleObject() {
     Object schema = generator.generate(SimpleObject.class);
 
+    assertThat(
+        schema, hasJsonPath("$.$schema", equalTo("http://json-schema.org/draft-04/schema#")));
     assertThat(schema, hasJsonPath("$.type", equalTo("object")));
     assertThat(schema, hasJsonPath("$.additionalProperties", equalTo("false")));
     assertThat(schema, hasJsonPath("$.properties.aBoolean.type", equalTo("boolean")));
@@ -137,6 +152,15 @@ public class SchemaGeneratorTest {
     Object schema = generateForField(getClass().getDeclaredField("simpleObject"));
 
     assertThat(schema, hasJsonPath("$.simpleObject.$ref", equalTo("#/definitions/SimpleObject")));
+  }
+
+  @Test
+  public void whenAdditionalPropertiesDisabled_doNotGenerateTheProperty() {
+    generator.setIncludeAdditionalProperties(false);
+
+    Object schema = generator.generate(SimpleObject.class);
+
+    assertThat(schema, hasNoJsonPath("$.additionalProperties"));
   }
 
   @SuppressWarnings("unused")
@@ -182,6 +206,23 @@ public class SchemaGeneratorTest {
   }
 
   @Test
+  public void whenSupportObjectReferencesDisabled_includeNestedClasses() {
+    generator.setSupportObjectReferences(false);
+    Object schema = generator.generate(ReferencingObject.class);
+
+    assertThat(schema, hasJsonPath("$.properties.simple.type", equalTo("object")));
+    assertThat(
+        schema, hasJsonPath("$.properties.simple.properties.aBoolean.type", equalTo("boolean")));
+    assertThat(
+        schema, hasJsonPath("$.properties.simple.properties.aString.type", equalTo("string")));
+    assertThat(schema, hasJsonPath("$.properties.derived.type", equalTo("object")));
+    assertThat(
+        schema, hasJsonPath("$.properties.derived.properties.aString.type", equalTo("string")));
+    assertThat(
+        schema, hasJsonPath("$.properties.derived.properties.anInt.type", equalTo("number")));
+  }
+
+  @Test
   public void generateDefinitionsForTransitiveReferences() {
     Object schema = generator.generate(TransitiveObject.class);
 
@@ -224,7 +265,7 @@ public class SchemaGeneratorTest {
   @Test
   public void whenObjectDefinedInExternalSchema_useFullReference() throws IOException {
     URL schemaUrl = getClass().getResource("k8smini.json");
-    generator.addExternalSchema(schemaUrl);
+    generator.addExternalSchema(schemaUrl, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
 
     assertThat(schema, hasJsonPath("$.properties.env.type", equalTo("array")));
@@ -239,8 +280,7 @@ public class SchemaGeneratorTest {
 
   @Test
   public void whenObjectDefinedInCachedKubernetesSchema_useFullReference() throws IOException {
-    URL schemaUrl = generator.getKubernetesSchemaUrl(SchemaGenerator.DEFAULT_KUBERNETES_VERSION);
-    generator.useKubernetesVersion(SchemaGenerator.DEFAULT_KUBERNETES_VERSION);
+    generator.addExternalSchema(schemaUrl, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
 
     assertThat(schema, hasJsonPath("$.properties.env.type", equalTo("array")));
@@ -255,7 +295,7 @@ public class SchemaGeneratorTest {
 
   @Test
   public void whenObjectDefinedInCachedKubernetesSchema_doNotAddToDefinitions() throws IOException {
-    generator.useKubernetesVersion(SchemaGenerator.DEFAULT_KUBERNETES_VERSION);
+    generator.addExternalSchema(schemaUrl, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
 
     assertThat(schema, hasNoJsonPath("$.definitions.V1EnvVar"));
