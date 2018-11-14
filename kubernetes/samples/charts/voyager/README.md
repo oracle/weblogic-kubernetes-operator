@@ -49,7 +49,7 @@ Create two WLS domains:
 - Each domain has a web application installed with the URL context `testwebapp`.
 
 ### 2. Install the Voyager Ingress
-#### Install host-routing Ingress
+#### Install a host-routing Ingress
 ```
 $ kubectl create -f samples/host-routing.yaml
 ```
@@ -60,7 +60,7 @@ $ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAME}:30315` in your web browser.
 
-#### Install path-routing Ingress
+#### Install a path-routing Ingress
 ```
 $ kubectl create -f samples/path-routing.yaml
 ```
@@ -70,6 +70,29 @@ $ curl http://${HOSTNAME}:30307/domain1/
 $ curl http://${HOSTNAME}:30307/domain2/
 ```
 To see the Voyager path-routing stats web page, access URL `http://${HOSTNAME}:30317` in your web browser.
+
+#### Install a TLS-enabled Ingress
+This sample is to demostrate accessing the two WLS domains via https endpoint and the WLS domains are protected by different TLS certificates.
+
+First you need to create two secrets with TLS certificates, one with the common name "domain1.org", the other with the common name "domain2.org". We use `openssl` to generate self-signed certificates for demostration purpose. Note that TLS secret need to be in the same namespace as the WLS domain.
+```
+# create a TLS secret for domain1
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
+$ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+
+# create a TLS secret for domain2
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
+$ kubectl -n test1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+```
+Then deploy the TLS Ingress.
+```
+$ kubectl create -f samples/tls.yaml
+```
+Now you can access the two WLS domains with different hostname via https endpoint.
+```
+$ curl -k -H 'host: domain1.org' https://${HOSTNAME}:30305/testwebapp/
+$ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
+```
 
 ## Uninstall the Voyager Operator
 After removing all the Voyager Ingress resources, uninstall the Voyager operator:

@@ -52,6 +52,30 @@ Now you can send requests to different WLS domains with the unique entry point o
 $ curl --silent http://${HOSTNAME}:30305/domain1/
 $ curl --silent http://${HOSTNAME}:30305/domain2/
 ```
+#### Install a TLS-enabled Ingress
+This sample is to demostrate accessing the two WLS domains via https endpoint and the WLS domains are protected by different TLS certificates. 
+
+To make this sample work, you need to enable TLS endpoint in the Traefik operator. If you use the values.yaml in the same folder as this REAME, the TLS endpoint is already enabled.
+
+First you need to create two secrets with TLS certificates, one with the common name "domain1.org", the other with the common name "domain2.org". We use `openssl` to generate self-signed certificates for demostration purpose. Note that TLS secret need to be in the same namespace as the WLS domain.
+```
+# create a TLS secret for domain1
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
+$ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+
+# create a TLS secret for domain2
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
+$ kubectl -n test1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+```
+Then deploy the TLS Ingress.
+```
+$ kubectl create -f samples/tls.yaml
+```
+Now you can access the two WLS domains with different hostname via https endpoint.
+```
+$ curl -k -H 'host: domain1.org' https://${HOSTNAME}:30443/testwebapp/
+$ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30443/testwebapp/
+```
 
 ## Uninstall the Traefik operator
 After removing all the Ingress resources, uninstall the Traefik operator:
