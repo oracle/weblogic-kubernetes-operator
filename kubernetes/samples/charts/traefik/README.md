@@ -63,7 +63,7 @@ $ kubectl create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls
 
 # create a TLS secret for domain2
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls2.key -out /tmp/tls2.crt -subj "/CN=domain2.org"
-$ kubectl create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
+$ kubectl -n test1 create secret tls domain2-tls-cert --key /tmp/tls2.key --cert /tmp/tls2.crt
 ```
 Then deploy the TLS Ingress.
 ```
