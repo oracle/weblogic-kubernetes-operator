@@ -697,6 +697,9 @@ public class Domain {
           Thread.sleep(waitTime * 1000);
         } catch (InterruptedException ignore) {
         }
+      } else {
+        logger.info("testwebapp returned 200 response code, iteration " + i);
+        break;
       }
     }
   }
@@ -715,6 +718,8 @@ public class Domain {
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+      } else {
+        logger.info("webapp invoked successfully");
       }
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
@@ -783,6 +788,8 @@ public class Domain {
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
+
+    domainMap.put("domainHome", "/shared/domains/" + domainUid);
 
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
