@@ -46,10 +46,16 @@ virtualHostName:
 
 # The customer supplied certificate to use for Apache webtier SSL configuration.
 # The value must be a string containing a base64 encoded certificate.
+# If 'virtualHostName' is set, the custom certificate and private key are not provided,
+# the default built-in auto-generated sample certificate and private key in the apache image will be used.
+# This parameter is ignored if 'virtualHostName' is not set.
 customCert:
 
 # The customer supplied private key to use for Apache webtier SSL configuration.
 # The value must be a string containing a base64 encoded key.
+# If 'virtualHostName' is set, the custom certificate and private key are not provided,
+# the default built-in auto-generated sample certificate and private key in the apache image will be used.
+# This parameter is ignored if 'virtualHostName' is not set.
 customKey:
 
 # Unique ID identifying a domain.
