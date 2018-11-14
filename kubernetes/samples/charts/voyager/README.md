@@ -49,7 +49,7 @@ Create two WLS domains:
 - Each domain has a web application installed with the URL context `testwebapp`.
 
 ### 2. Install the Voyager Ingress
-#### Install host-routing Ingress
+#### Install a host-routing Ingress
 ```
 $ kubectl create -f samples/host-routing.yaml
 ```
@@ -60,7 +60,7 @@ $ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAME}:30315` in your web browser.
 
-#### Install path-routing Ingress
+#### Install a path-routing Ingress
 ```
 $ kubectl create -f samples/path-routing.yaml
 ```
