@@ -47,6 +47,19 @@ public class DomainSpec extends BaseConfiguration {
   private String domainName;
 
   /**
+   * Domain home
+   *
+   * @since 2.0
+   */
+  @Description(
+      "The folder for the Weblogic Domain. (Not required)"
+          + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
+          + "Defaults to /shared/domains/domain if domainHomeInImage is true")
+  @SerializedName("domainHome")
+  @Expose
+  private String domainHome;
+
+  /**
    * Reference to secret containing domain administrator username and password. Secret must contain
    * keys names 'username' and 'password' (Required)
    */
@@ -156,6 +169,16 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
+   * The list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
+   *
+   * @since 2.0
+   */
+  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
+  @SerializedName("weblogicConfigurationOverridesSecretNames")
+  @Expose
+  private List<String> weblogicConfigurationOverridesSecretNames;
+
+  /**
    * The configuration for the admin server.
    *
    * @since 2.0
@@ -262,6 +285,26 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withDomainName(String domainName) {
     this.domainName = domainName;
     return this;
+  }
+
+  /**
+   * Domain home
+   *
+   * @since 2.0
+   * @return domain home
+   */
+  public String getDomainHome() {
+    return domainHome;
+  }
+
+  /**
+   * Domain home
+   *
+   * @since 2.0
+   * @param domainHome domain home
+   */
+  public void setDomainHome(String domainHome) {
+    this.domainHome = domainHome;
   }
 
   /*
@@ -454,6 +497,11 @@ public class DomainSpec extends BaseConfiguration {
     return domainHomeInImage;
   }
 
+  /** @param domainHomeInImage */
+  public void setDomainHomeInImage(boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
+  }
+
   /**
    * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
    * configured in clusters. Provided so that administrators can scale the Domain resource.
@@ -509,6 +557,23 @@ public class DomainSpec extends BaseConfiguration {
     return storage;
   }
 
+  private boolean hasWeblogicConfigurationOverridesSecretNames() {
+    return weblogicConfigurationOverridesSecretNames != null
+        && weblogicConfigurationOverridesSecretNames.size() != 0;
+  }
+
+  @Nullable
+  public List<String> getWeblogicConfigurationOverridesSecretNames() {
+    if (hasWeblogicConfigurationOverridesSecretNames())
+      return weblogicConfigurationOverridesSecretNames;
+    else return Collections.emptyList();
+  }
+
+  public void setWeblogicConfigurationOverridesSecretNames(
+      @Nullable List<String> overridesSecretNames) {
+    this.weblogicConfigurationOverridesSecretNames = overridesSecretNames;
+  }
+
   /**
    * Returns the name of the persistent volume claim for the logs and PV-based domain.
    *
@@ -548,7 +613,10 @@ public class DomainSpec extends BaseConfiguration {
             .append("clusters", clusters)
             .append("replicas", replicas)
             .append("logHome", logHome)
-            .append("includeServerOutInPodLog", includeServerOutInPodLog);
+            .append("includeServerOutInPodLog", includeServerOutInPodLog)
+            .append(
+                "weblogicConfigurationOverridesSecretNames",
+                weblogicConfigurationOverridesSecretNames);
 
     return builder.toString();
   }
@@ -572,7 +640,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters)
             .append(replicas)
             .append(logHome)
-            .append(includeServerOutInPodLog);
+            .append(includeServerOutInPodLog)
+            .append(weblogicConfigurationOverridesSecretNames);
 
     return builder.toHashCode();
   }
@@ -600,7 +669,10 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
-            .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog);
+            .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
+            .append(
+                weblogicConfigurationOverridesSecretNames,
+                rhs.weblogicConfigurationOverridesSecretNames);
 
     return builder.isEquals();
   }

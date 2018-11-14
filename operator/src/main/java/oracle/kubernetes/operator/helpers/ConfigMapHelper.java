@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -82,6 +82,15 @@ public class ConfigMapHelper {
           .kind("ConfigMap")
           .metadata(createMetadata(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME))
           .data(data);
+    }
+
+    private V1ObjectMeta createMetadata() {
+      return new V1ObjectMeta()
+          .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+          .namespace(this.domainNamespace)
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
+          .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace)
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
     private synchronized Map<String, String> loadScriptsFromClasspath() {
@@ -190,7 +199,7 @@ public class ConfigMapHelper {
       return new V1ObjectMeta()
           .name(configMapName)
           .namespace(this.domainNamespace)
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DOMAIN_V1)
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace)
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
@@ -211,7 +220,7 @@ public class ConfigMapHelper {
     abstract ResponseStep<V1ConfigMap> createCreateResponseStep(Step next);
 
     protected boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DOMAIN_V1)
+      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
           && COMPARATOR.containsAll(existingMap, this.model);
     }
 

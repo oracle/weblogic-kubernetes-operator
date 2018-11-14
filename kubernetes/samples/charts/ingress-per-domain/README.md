@@ -31,7 +31,7 @@ wlsDomain:
 # Traefik specific values
 traefik:
   # hostname used by host-routing
-  hostname: doamin1.org
+  hostname: domain1.org
 ```
 
 Sample `values.yaml` for the Voyager Ingress:
