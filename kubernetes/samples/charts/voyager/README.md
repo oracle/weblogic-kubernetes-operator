@@ -1,9 +1,9 @@
 # Install and configure Voyager
 
 ## A step-by-step guide to install the Voyager operator
-AppsCode has provided a Helm chart to install Voyager. See the official installation document at `https://appscode.com/products/voyager/7.4.0/setup/install/`.
+AppsCode has provided a Helm chart to install Voyager. See the official installation document at https://appscode.com/products/voyager/7.4.0/setup/install/.
 
-As a demonstration, the following are the detailed steps to install the Voyager operator by using a Helm chart in a Linux OS.
+As a demonstration, the following are the detailed steps to install the Voyager operator by using a Helm chart on a Linux OS.
 
 ### 1. Install Onessl
 Onessl is a utility provided by AppsCode. We'll use it to get a CA certificate for the Kubernetes cluster.
@@ -31,7 +31,7 @@ $ helm install appscode/voyager --name voyager-operator --version 7.4.0 \
   --set apiserver.ca="$(onessl get kube-ca)" \
   --set apiserver.enableValidatingWebhook=true
 ```
-## Optionally download the Voyager Helm chart
+## Optionally, download the Voyager Helm chart
 If you want, you can download the Voyager Helm chart and untar it into a local folder:
 ```
 $ helm fetch appscode/voyager --untar --version 7.4.0
@@ -53,7 +53,7 @@ Create two WLS domains:
 ```
 $ kubectl create -f samples/host-routing.yaml
 ```
-Now you can send requests to different WLS domains with the unique entry point of Voyager.
+Now you can send requests to different WLS domains with the unique entry point of Voyager with different hostnames.
 ```
 $ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
 $ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
@@ -64,7 +64,7 @@ To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAM
 ```
 $ kubectl create -f samples/path-routing.yaml
 ```
-Now you can send request to different WLS domains with the unique entry point of Voyager.
+Now you can send requests to different WLS domains with the unique entry point of Voyager with different paths.
 ```
 $ curl http://${HOSTNAME}:30307/domain1/
 $ curl http://${HOSTNAME}:30307/domain2/
@@ -101,7 +101,7 @@ helm delete --purge voyager-operator
 ```
 
 ## Install and uninstall the Voyager operator with setup.sh
-Alternatively, you can run the helper script `setup.sh` under the `kubernetes/samples/charts/util` folder to install and uninstall Voyager.
+Alternatively, you can run the helper script `setup.sh`, under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
 
 To install Voyager:
 ```
