@@ -1,7 +1,7 @@
 # Apache Load Balancer custom sample
 In this sample, we will configure Apache webtier as a load balancer for multiple WebLogic domains using custom configuration. We will demonstrate how to use Apache webtier to handle traffic to the multiple backend WebLogic domains.
 
-## 1. Create namespace
+## 1. Create Namespace
 In this sample, both Apache webtier and WebLogic domain instances are located in the namespace `apache-sample`.
 ```
 $ kubectl create namespace apache-sample
@@ -30,10 +30,18 @@ The second domain uses the following custom configuration parameters:
 
 After the domains are successfully created, deploy the sample web application testwebapp.war on each domain cluster through the admin console.
 
-## 3. Provide custom Apache Plugin Configuration
+## 3. Build Apache Webtier Docker Image
+Please refer the sample https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache to build Apache webtier docker image.
+
+## 4. Provide Custom Apache Plugin Configuration
 In this sample we will provide custom Apache plugin configuration to fine tune the behavior of Apache.
 - Create a custom Apache plugin configuration file named `custom_mod_wl_apache.conf`. The file content is similar as below.
 ```
+# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+#
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+
 <IfModule mod_weblogic.c>
 WebLogicHost ${WEBLOGIC_HOST}
 WebLogicPort ${WEBLOGIC_PORT}
@@ -71,26 +79,67 @@ PathTrim /weblogic2
 ```
 - Place the `custom_mod_wl_apache.conf` file in a local directory `<host-config-dir>` on the host machine.
 
-## 4. Build Apache Webtier Docker Image
-Please refer the sample https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache to build Apache webtier docker image.
-
-## 5. Install Apache Webtier with Helm Chart
-Apache webtier helm chart is located at https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/charts/apache-webtier.
-Install Apache webtier helm chart to apache-sample namespace with specified docker volume path:
+## 5. Prepare Your Own Certificate and Private Key
+In production, Oracle strongly recommends that you provide your own certificates. Run following commands to to generate your own certificate and private key using openssl.
 ```
-$ cd kubernetes/samples/charts
-$ helm install --name my-release --set volumePath=<host-config-dir> --namespace apache-sample apache-webtier
+$ cd kubernetes/samples/charts/apache
+$ export VIRTUAL_HOST_NAME=apache-sample-host
+$ export SSL_CERT_FILE=apache-sample.crt
+$ export SSL_CERT_KEY_FILE=apache-sample.key
+$ sh certgen.sh
 ```
 
-## 6. Run the sample application
-Now you can send requests to different WLS domains with the unique entry point of Apache with different path. Alternatively, you can access the URLs in a web browser.
+## 6. Prepare the Input Values for Apache Webtier Helm Chart
+Run following commands to prepare the input value file for Apache webtier helm chart.
+```
+$ base64 -i ${SSL_CERT_FILE} | tr -d '\n'
+$ base64 -i ${SSL_CERT_KEY_FILE} | tr -d '\n'
+$ touch input.yaml
+```
+Edit the input parameters file `input.yaml`, the file content is similar as below.
+```
+# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+#
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# Use this to provide your own Apache webtier configuration as needed; simply define this 
+# path and put your own custom_mod_wl_apache.conf file under this path.
+volumePath: <host-config-dir>
+
+# The VirtualHostName of the Apache HTTP server. It is used to enable custom SSL configuration.
+virtualHostName: apache-sample-host
+
+# The customer supplied certificate to use for Apache webtier SSL configuration.
+# The value must be a string containing a base64 encoded certificate. Run following command to get it.
+# base64 -i ${SSL_CERT_FILE} | tr -d '\n'
+customCert: <cert_data>
+
+# The customer supplied private key to use for Apache webtier SSL configuration.
+# The value must be a string containing a base64 encoded key. Run following command to get it.
+# base64 -i ${SSL_KEY_FILE} | tr -d '\n'
+customKey: <key_data>
+```
+
+## 7. Install Apache Webtier Helm Chart
+Apache webtier helm chart is located at https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/charts/apache-webtier. You need download it to local path. Install Apache webtier helm chart to apache-sample namespace with specified input parameters:
+```
+$ cd ..
+$ helm install --name my-release --values apache/input.yaml --namespace apache-sample apache-webtier
+```
+
+## 8. Run the Sample Application
+Now you can send requests to different WebLogic domains with the unique entry point of Apache with different path. Alternatively, you can access the URLs in a web browser.
 ```
 $ curl --silent http://${HOSTNAME}:30305/weblogic1/testwebapp/
 $ curl --silent http://${HOSTNAME}:30305/weblogic2/testwebapp/
 ```
-You can also access SSL URL `https://${HOSTNAME}:30443/weblogic1/testwebapp/` and `https://${HOSTNAME}:30443/weblogic2/testwebapp/` in your web browser.
+You can also use SSL URLs to send requests to different WebLogic domains. Access the SSL URL via the curl command or a web browser.
+```
+$ curl -k --silent https://${HOSTNAME}:30443/weblogic1/testwebapp/
+$ curl -k --silent https://${HOSTNAME}:30443/weblogic2/testwebapp/
+```
 
-## 7. Uninstall Apache Webtier
+## 9. Uninstall Apache Webtier
 ```
 $ helm delete --purge my-release
 ```
