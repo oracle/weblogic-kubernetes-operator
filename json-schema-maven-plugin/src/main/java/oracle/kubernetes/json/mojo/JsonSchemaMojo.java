@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.json.mojo;
 
-import static oracle.kubernetes.json.SchemaGenerator.DEFAULT_KUBERNETES_VERSION;
-
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -32,21 +33,34 @@ public class JsonSchemaMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")
   private String targetDir;
 
-  @Parameter(defaultValue = DEFAULT_KUBERNETES_VERSION)
-  private String kubernetesVersion;
+  @Parameter private List<ExternalSchema> externalSchemas = Collections.emptyList();
 
   @Parameter(required = true)
   private String rootClass;
 
   @Parameter private boolean includeDeprecated;
 
+  @Parameter private boolean includeAdditionalProperties;
+
+  @SuppressWarnings("FieldCanBeLocal")
+  @Parameter
+  private boolean supportObjectReferences = true;
+
+  @Parameter(defaultValue = "$project.basedir")
+  private String baseDir;
+
+  @Parameter private String outputFile;
+
   private static Main main = new MainImpl();
   private static FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
 
   @Override
   public void execute() throws MojoExecutionException {
-    main.setKubernetesVersion(kubernetesVersion);
     main.defineClasspath(toUrls(compileClasspathElements));
+    main.setIncludeDeprecated(includeDeprecated);
+    main.setIncludeAdditionalProperties(includeAdditionalProperties);
+    main.setSupportObjectReferences(supportObjectReferences);
+    addExternalSchemas();
 
     if (rootClass == null) throw new MojoExecutionException("No root class specified");
     URL classUrl = main.getResource(toClassFileName(rootClass));
@@ -60,6 +74,16 @@ public class JsonSchemaMojo extends AbstractMojo {
     }
   }
 
+  private void addExternalSchemas() throws MojoExecutionException {
+    try {
+      for (ExternalSchema externalSchema : externalSchemas)
+        main.defineSchemaUrlAndContents(
+            externalSchema.getUrl(), externalSchema.getCacheURL(baseDir));
+    } catch (IOException e) {
+      throw new MojoExecutionException("Unable to define external schema: ", e);
+    }
+  }
+
   private boolean updateNeeded(File inputFile, File outputFile) {
     return !fileSystem.exists(outputFile)
         || fileSystem.getLastModified(outputFile) < fileSystem.getLastModified(inputFile);
@@ -68,7 +92,11 @@ public class JsonSchemaMojo extends AbstractMojo {
   private File getSchemaFile() {
     File target = new File(targetDir);
     fileSystem.createDirectory(target);
-    return new File(target, classNameToFile(rootClass) + ".json");
+    return new File(target, getOutputFile());
+  }
+
+  private String getOutputFile() {
+    return Optional.ofNullable(outputFile).orElse(classNameToFile(rootClass) + ".json");
   }
 
   private URL[] toUrls(List<String> paths) {
