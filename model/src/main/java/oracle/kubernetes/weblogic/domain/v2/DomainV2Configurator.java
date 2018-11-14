@@ -79,13 +79,25 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   /**
+   * Sets the WebLogic configuration overrides configmap name for the domain
+   *
+   * @param configMapName Name of the config map that contains the config overrides
+   * @return this object
+   */
+  public DomainConfigurator withConfigOverrides(String configMapName) {
+    getDomainSpec().setConfigOverrides(configMapName);
+    return this;
+  }
+
+  @Override
+  /**
    * Sets the WebLogic configuration overrides secret names for the domain
    *
    * @param secretNames a list of secret names
    * @return this object
    */
-  public DomainConfigurator withWeblogicConfigurationOverridesSecretNames(String... secretNames) {
-    getDomainSpec().setWeblogicConfigurationOverridesSecretNames(Arrays.asList(secretNames));
+  public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
+    getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
     return this;
   }
 
