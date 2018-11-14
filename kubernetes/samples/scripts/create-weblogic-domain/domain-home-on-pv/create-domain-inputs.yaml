@@ -55,10 +55,6 @@ productionModeEnabled: true
 # The name must be lowercase
 weblogicCredentialsSecretName: domain1-weblogic-credentials
 
-# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
-# The presence of the secret will be validated when this parameter is enabled.
-#imagePullSecretName:
-
 # Whether to include server .out to the pod's stdout, default is true
 includeServerOutInPodLog: true
 
