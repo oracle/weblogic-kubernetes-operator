@@ -266,7 +266,8 @@ public class ServiceHelper {
       return new V1ObjectMeta()
           .name(createServiceName())
           .namespace(getNamespace())
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+          .putLabelsItem(
+              LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
@@ -542,7 +543,8 @@ public class ServiceHelper {
     V1ServiceSpec buildSpec = build.getSpec();
     V1ServiceSpec currentSpec = current.getSpec();
 
-    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
+    if (!VersionHelper.matchesResourceVersion(
+        current.getMetadata(), VersionConstants.DEFAULT_DOMAIN_VERSION)) {
       return false;
     }
 

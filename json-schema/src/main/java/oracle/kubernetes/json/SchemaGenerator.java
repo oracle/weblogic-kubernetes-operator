@@ -34,9 +34,10 @@ public class SchemaGenerator {
   private static final List<Class<?>> PRIMITIVE_NUMBERS =
       Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class);
 
-  private static final String K8S_SCHEMA_URL =
+  static final String K8S_SCHEMA_URL =
       "https://github.com/garethr/kubernetes-json-schema/blob/master/v%s/_definitions.json";
   private static final String K8S_SCHEMA_CACHE = "caches/kubernetes-%s.json";
+  private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
   // A map of classes to their $ref values
   private Map<Class<?>, String> references = new HashMap<>();
@@ -46,7 +47,15 @@ public class SchemaGenerator {
 
   // a map of external class names to the external schema that defines them
   private Map<String, String> schemaUrls = new HashMap<>();
+
+  // true if deprecated fields should be included in the schema
   private boolean includeDeprecated;
+
+  // if true generate the additionalProperties field for each object. Defaults to true
+  private boolean includeAdditionalProperties = true;
+
+  // if true, the object fields are implemented as references to definitions
+  private boolean supportObjectReferences = true;
 
   /**
    * Returns a pretty-printed string corresponding to a generated schema
@@ -122,6 +131,26 @@ public class SchemaGenerator {
   }
 
   /**
+   * Specifies whether the "additionalProperties" property will be specified to forbid properties
+   * not in the schema
+   *
+   * @param includeAdditionalProperties true to forbid unknown properties
+   */
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    this.includeAdditionalProperties = includeAdditionalProperties;
+  }
+
+  /**
+   * Specifies whether object fields will be implemented as references to existing definitions. If
+   * false, nested objects will be described inline.
+   *
+   * @param supportObjectReferences true to reference definitions of object
+   */
+  public void setSupportObjectReferences(boolean supportObjectReferences) {
+    this.supportObjectReferences = supportObjectReferences;
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param aClass the class for which the schema should be generated
@@ -130,6 +159,7 @@ public class SchemaGenerator {
   public Object generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
+    result.put("$schema", JSON_SCHEMA_REFERENCE);
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new HashMap<>();
@@ -203,6 +233,14 @@ public class SchemaGenerator {
     }
 
     private void generateObjectFieldIn(Map<String, Object> result, Class<?> type) {
+      if (supportObjectReferences) {
+        generateObjectReferenceIn(result, type);
+      } else {
+        generateObjectTypeIn(result, type);
+      }
+    }
+
+    private void generateObjectReferenceIn(Map<String, Object> result, Class<?> type) {
       addReference(type);
       result.put("$ref", getReferencePath(type));
     }
@@ -284,7 +322,7 @@ public class SchemaGenerator {
     Map<String, Object> properties = new HashMap<>();
     List<String> requiredFields = new ArrayList<>();
     result.put("type", "object");
-    result.put("additionalProperties", "false");
+    if (includeAdditionalProperties) result.put("additionalProperties", "false");
     result.put("properties", properties);
 
     for (Field field : getPropertyFields(type)) {
