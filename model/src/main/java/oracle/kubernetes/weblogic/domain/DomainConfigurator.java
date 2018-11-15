@@ -165,6 +165,14 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the WebLogic configuration overrides secret names for the domain
+   *
+   * @param secretNames a list of secret names
+   * @return this object
+   */
+  public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
+
+  /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the
    * tuning parameters.
    *

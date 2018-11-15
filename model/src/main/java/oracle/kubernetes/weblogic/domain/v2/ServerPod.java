@@ -127,8 +127,8 @@ class ServerPod {
 
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
-    copyValues(livenessProbeTuning, serverPod1.livenessProbeTuning);
-    copyValues(readinessProbeTuning, serverPod1.readinessProbeTuning);
+    livenessProbeTuning.copyValues(serverPod1.livenessProbeTuning);
+    readinessProbeTuning.copyValues(serverPod1.readinessProbeTuning);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
     serverPod1.getPodLabels().forEach((k, v) -> addPodLabelIfMissing(k, v));
@@ -179,13 +179,6 @@ class ServerPod {
 
   private void addPodAnnotationIfMissing(String name, String value) {
     if (!podAnnotations.containsKey(name)) podAnnotations.put(name, value);
-  }
-
-  private static void copyValues(ProbeTuning toProbe, ProbeTuning fromProbe) {
-    if (toProbe.getInitialDelaySeconds() == null)
-      toProbe.initialDelaySeconds(fromProbe.getInitialDelaySeconds());
-    if (toProbe.getTimeoutSeconds() == null) toProbe.timeoutSeconds(fromProbe.getTimeoutSeconds());
-    if (toProbe.getPeriodSeconds() == null) toProbe.periodSeconds(fromProbe.getPeriodSeconds());
   }
 
   List<V1EnvVar> getEnv() {
