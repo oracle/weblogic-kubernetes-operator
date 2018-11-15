@@ -318,7 +318,11 @@ public class Domain {
       testAppUrl.append(webappName).append("/");
       // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent ");
-      curlCmd.append(" -H 'host:").append(domainUid).append(".org' ").append(testAppUrl.toString());
+      curlCmd
+          .append(" -H 'host: ")
+          .append(domainUid)
+          .append(".org' ")
+          .append(testAppUrl.toString());
 
       // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
