@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.apache.commons.codec.binary.Base64;
 
 /** Holds the results of a kubernetes yaml file that has been converted to k8s typed java objects */

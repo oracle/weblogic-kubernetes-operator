@@ -30,12 +30,12 @@ import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainCondition;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.DomainStatus;
-import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
-import oracle.kubernetes.weblogic.domain.v1.ServerStatus;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainCondition;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
+import oracle.kubernetes.weblogic.domain.v2.ServerStatus;
 import org.joda.time.DateTime;
 
 /**

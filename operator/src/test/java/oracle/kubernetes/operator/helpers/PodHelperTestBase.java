@@ -35,6 +35,7 @@ import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1Handler;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -68,8 +69,8 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -99,12 +100,13 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
-  private static final String DOMAIN_HOME = "/shared/domains/uid1";
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final Map<String, String> NODE_SELECTOR =
+      Collections.singletonMap("labelKey", "labelValue");
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -338,7 +340,7 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(),
         allOf(
             hasEnvVar("DOMAIN_NAME", DOMAIN_NAME),
-            hasEnvVar("DOMAIN_HOME", DOMAIN_HOME),
+            hasEnvVar("DOMAIN_HOME", "/shared/domains/" + UID),
             hasEnvVar("ADMIN_NAME", ADMIN_SERVER),
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
@@ -353,6 +355,14 @@ public abstract class PodHelperTestBase {
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
+  }
+
+  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
+    return hasItem(new V1VolumeMount().name(name).mountPath(path));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
+    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
   }
 
   @Test
@@ -414,7 +424,8 @@ public abstract class PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         allOf(
-            hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1),
+            hasEntry(
+                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION),
             hasEntry(LabelConstants.DOMAINUID_LABEL, UID),
             hasEntry(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME),
             hasEntry(LabelConstants.SERVERNAME_LABEL, getServerName()),
@@ -545,9 +556,10 @@ public abstract class PodHelperTestBase {
 
   V1ObjectMeta createPodMetadata() {
     return new V1ObjectMeta()
-        .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+        .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
+        .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/shared/domains/" + UID)
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
@@ -573,7 +585,7 @@ public abstract class PodHelperTestBase {
                 .readOnly(true))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
-        .addEnvItem(envItem("DOMAIN_HOME", DOMAIN_HOME))
+        .addEnvItem(envItem("DOMAIN_HOME", "/shared/domains/" + UID))
         .addEnvItem(envItem("ADMIN_NAME", ADMIN_SERVER))
         .addEnvItem(envItem("ADMIN_PORT", Integer.toString(ADMIN_PORT)))
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
@@ -589,7 +601,14 @@ public abstract class PodHelperTestBase {
   }
 
   V1PodSpec createPodSpec() {
+    V1PodSpec v1PodSpec =
+        new V1PodSpec().containers(Collections.singletonList(createPodSpecContainer()));
+    v1PodSpec.setNodeSelector(createNodeSelector());
     return new V1PodSpec().containers(Collections.singletonList(createPodSpecContainer()));
+  }
+
+  Map<String, String> createNodeSelector() {
+    return NODE_SELECTOR;
   }
 
   abstract List<String> createStartCommand();

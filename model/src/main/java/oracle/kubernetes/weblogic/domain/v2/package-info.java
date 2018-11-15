@@ -3,4 +3,4 @@
 // http://oss.oracle.com/licenses/upl.
 
 /** Model classes that are part of the WebLogic Custom Resource extensions to the Kubernetes API. */
-package oracle.kubernetes.weblogic.domain.v1;
+package oracle.kubernetes.weblogic.domain.v2;

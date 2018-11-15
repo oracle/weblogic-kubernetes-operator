@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 
 public class DomainPresenceInfoManager {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

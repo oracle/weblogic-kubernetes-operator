@@ -7,7 +7,13 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
@@ -74,15 +80,6 @@ public abstract class BaseConfiguration {
     return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
   }
 
-  /**
-   * Returns true if any version 2 configuration fields are specified.
-   *
-   * @return whether there is version 2 configuration field in this instance
-   */
-  protected boolean hasV2Fields() {
-    return serverStartState != null || serverStartPolicy != null || serverPod.hasV2Fields();
-  }
-
   @Nullable
   String getServerStartState() {
     return serverStartState;
@@ -127,6 +124,58 @@ public abstract class BaseConfiguration {
 
   ProbeTuning getReadinessProbe() {
     return serverPod.getReadinessProbeTuning();
+  }
+
+  void addNodeSelector(String labelKey, String labelValue) {
+    serverPod.addNodeSelector(labelKey, labelValue);
+  }
+
+  Map<String, String> getNodeSelector() {
+    return serverPod.getNodeSelector();
+  }
+
+  public V1ResourceRequirements getResources() {
+    return serverPod.getResourceRequirements();
+  }
+
+  void addRequestRequirement(String resource, String quantity) {
+    serverPod.addRequestRequirement(resource, quantity);
+  }
+
+  void addLimitRequirement(String resource, String quantity) {
+    serverPod.addLimitRequirement(resource, quantity);
+  }
+
+  public V1PodSecurityContext getPodSecurityContext() {
+    return serverPod.getPodSecurityContext();
+  }
+
+  public V1SecurityContext getContainerSecurityContext() {
+    return serverPod.getContainerSecurityContext();
+  }
+
+  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    serverPod.setPodSecurityContext(podSecurityContext);
+  }
+
+  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+    serverPod.setContainerSecurityContext(containerSecurityContext);
+  }
+
+  public List<V1Volume> getAdditionalVolumes() {
+    return serverPod.getAdditionalVolumes();
+  }
+
+  void addAdditionalVolume(String name, String path) {
+    serverPod.addAdditionalVolume(name, path);
+  }
+
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return serverPod.getAdditionalVolumeMounts();
+  }
+
+  void addAdditionalVolumeMount(String name, String path) {
+    serverPod.addAdditionalVolumeMount(name, path);
   }
 
   @Override
