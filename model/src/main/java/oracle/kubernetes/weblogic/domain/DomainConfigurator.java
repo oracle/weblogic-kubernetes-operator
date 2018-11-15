@@ -165,6 +165,14 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the WebLogic configuration overrides configmap name for the domain
+   *
+   * @param configMapName Name of the Kubernetes configmap that contains the config overrides
+   * @return this object
+   */
+  public abstract DomainConfigurator withConfigOverrides(String configMapName);
+
+  /**
    * Sets the WebLogic configuration overrides secret names for the domain
    *
    * @param secretNames a list of secret names
