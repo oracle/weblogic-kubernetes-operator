@@ -10,6 +10,8 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,15 +78,6 @@ public abstract class BaseConfiguration {
 
   private boolean isStartNever() {
     return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
-  }
-
-  /**
-   * Returns true if any version 2 configuration fields are specified.
-   *
-   * @return whether there is version 2 configuration field in this instance
-   */
-  protected boolean hasV2Fields() {
-    return serverStartState != null || serverStartPolicy != null || serverPod.hasV2Fields();
   }
 
   @Nullable
@@ -167,6 +160,22 @@ public abstract class BaseConfiguration {
 
   public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     serverPod.setContainerSecurityContext(containerSecurityContext);
+  }
+  
+  public List<V1Volume> getAdditionalVolumes() {
+    return serverPod.getAdditionalVolumes();
+  }
+
+  void addAdditionalVolume(String name, String path) {
+    serverPod.addAdditionalVolume(name, path);
+  }
+
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return serverPod.getAdditionalVolumeMounts();
+  }
+
+  void addAdditionalVolumeMount(String name, String path) {
+    serverPod.addAdditionalVolumeMount(name, path);
   }
 
   @Override

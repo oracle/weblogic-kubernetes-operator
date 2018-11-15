@@ -35,4 +35,8 @@ public interface ClusterConfigurator {
   ClusterConfigurator withContainerSecurityContext(V1SecurityContext containerSecurityContext);
 
   ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext);
+
+  ClusterConfigurator withAdditionalVolume(String name, String path);
+
+  ClusterConfigurator withAdditionalVolumeMount(String name, String path);
 }

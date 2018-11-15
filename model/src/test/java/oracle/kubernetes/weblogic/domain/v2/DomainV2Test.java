@@ -24,17 +24,21 @@ import com.google.gson.GsonBuilder;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Capabilities;
 import io.kubernetes.client.models.V1EnvVar;
+<<<<<<< HEAD
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SELinuxOptions;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Sysctl;
+=======
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
+>>>>>>> 2eee6231654d610cd04c6dec4de65c51d358d62a
 import java.io.IOException;
 import java.util.Map;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
@@ -695,6 +699,9 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
   }
@@ -709,6 +716,9 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
@@ -735,6 +745,9 @@ public class DomainV2Test extends DomainTestBase {
             envVar("JAVA_OPTIONS", "-server"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
   }
 
   @Test
@@ -749,6 +762,9 @@ public class DomainV2Test extends DomainTestBase {
             envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN -verbose"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
   }
 
   @Test
@@ -918,8 +934,119 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+<<<<<<< HEAD
   public void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
+=======
+  public void whenVolumesConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolume("name1", "/domain-tmp1")
+        .withAdditionalVolume("name2", "/domain-tmp2");
+    configureCluster("cluster1")
+        .withAdditionalVolume("name3", "/cluster-tmp1")
+        .withAdditionalVolume("name4", "/cluster-tmp2")
+        .withAdditionalVolume("name5", "/cluster-tmp3");
+    configureServer("server1").withAdditionalVolume("name6", "/server-tmp1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumes(),
+        containsInAnyOrder(
+            volume("name1", "/domain-tmp1"),
+            volume("name2", "/domain-tmp2"),
+            volume("name3", "/cluster-tmp1"),
+            volume("name4", "/cluster-tmp2"),
+            volume("name5", "/cluster-tmp3"),
+            volume("name6", "/server-tmp1")));
+  }
+
+  @Test
+  public void whenVolumeMountsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("name1", "/domain-test1")
+        .withAdditionalVolumeMount("name2", "/domain-test2");
+    configureCluster("cluster1")
+        .withAdditionalVolumeMount("name3", "/cluster-test1")
+        .withAdditionalVolumeMount("name4", "/cluster-test2")
+        .withAdditionalVolumeMount("name5", "/cluster-test3");
+    configureServer("server1").withAdditionalVolumeMount("name6", "/server-test1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
+        containsInAnyOrder(
+            volumeMount("name1", "/domain-test1"),
+            volumeMount("name2", "/domain-test2"),
+            volumeMount("name3", "/cluster-test1"),
+            volumeMount("name4", "/cluster-test2"),
+            volumeMount("name5", "/cluster-test3"),
+            volumeMount("name6", "/server-test1")));
+  }
+
+  @Test
+  public void whenDuplicateVolumesConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolume("name1", "/domain-tmp1")
+        .withAdditionalVolume("name2", "/domain-tmp2")
+        .withAdditionalVolume("name3", "/domain-tmp3");
+    configureCluster("cluster1")
+        .withAdditionalVolume("name2", "/cluster-tmp1")
+        .withAdditionalVolume("name3", "/cluster-tmp2");
+    configureServer("server1").withAdditionalVolume("name3", "/server-tmp1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumes(),
+        containsInAnyOrder(
+            volume("name1", "/domain-tmp1"),
+            volume("name2", "/cluster-tmp1"),
+            volume("name3", "/server-tmp1")));
+  }
+
+  @Test
+  public void whenDuplicateVolumeMountsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withAdditionalVolumeMount("name1", "/domain-test1")
+        .withAdditionalVolumeMount("name2", "/domain-test2")
+        .withAdditionalVolumeMount("name3", "/domain-test3");
+    configureCluster("cluster1")
+        .withAdditionalVolumeMount("name2", "/cluster-test1")
+        .withAdditionalVolumeMount("name3", "/cluster-test2");
+    configureServer("server1").withAdditionalVolumeMount("name3", "/server-test1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getAdditionalVolumeMounts(),
+        containsInAnyOrder(
+            volumeMount("name1", "/domain-test1"),
+            volumeMount("name2", "/cluster-test1"),
+            volumeMount("name3", "/server-test1")));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome2() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domains/uid1"));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome3() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domain"));
+  }
+
+  @Test
+  public void domainHomeTest_customHome1() {
+    configureDomain(domain).withDomainHome("/custom/domain/home");
+
+    assertThat(domain.getDomainHome(), equalTo("/custom/domain/home"));
+  }
+
+  private V1Volume volume(String name, String path) {
+    return new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path));
+  }
+
+  private V1VolumeMount volumeMount(String name, String path) {
+    return new V1VolumeMount().name(name).mountPath(path);
+>>>>>>> 2eee6231654d610cd04c6dec4de65c51d358d62a
   }
 }

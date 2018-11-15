@@ -36,7 +36,7 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -266,7 +266,8 @@ public class ServiceHelper {
       return new V1ObjectMeta()
           .name(createServiceName())
           .namespace(getNamespace())
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+          .putLabelsItem(
+              LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
@@ -542,7 +543,8 @@ public class ServiceHelper {
     V1ServiceSpec buildSpec = build.getSpec();
     V1ServiceSpec currentSpec = current.getSpec();
 
-    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
+    if (!VersionHelper.matchesResourceVersion(
+        current.getMetadata(), VersionConstants.DEFAULT_DOMAIN_VERSION)) {
       return false;
     }
 

@@ -10,8 +10,6 @@ import io.kubernetes.client.models.V1SecurityContext;
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
 public interface ServerConfigurator {
-  ServerConfigurator withNodePort(int nodePort);
-
   ServerConfigurator withDesiredState(String desiredState);
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
@@ -35,4 +33,8 @@ public interface ServerConfigurator {
   ServerConfigurator withContainerSecurityContext(V1SecurityContext containerSecurityContext);
 
   ServerConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext);
+
+  ServerConfigurator withAdditionalVolume(String name, String path);
+
+  ServerConfigurator withAdditionalVolumeMount(String name, String path);
 }
