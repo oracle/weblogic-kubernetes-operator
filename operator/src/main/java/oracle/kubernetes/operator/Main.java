@@ -684,12 +684,15 @@ public class Main {
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
-    return StorageHelper.insertStorageSteps(info, Step.chain(bringAdminServerUpSteps(next)));
+    return StorageHelper.insertStorageSteps(info, Step.chain(bringAdminServerUpSteps(info, next)));
   }
 
-  private static Step[] bringAdminServerUpSteps(Step next) {
+  private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
     ArrayList<Step> resources = new ArrayList<>();
     resources.add(new ListPersistentVolumeClaimStep(null));
+    resources.add(
+        JobHelper.deleteDomainIntrospectorJobStep(
+            info.getDomain().getDomainUID(), info.getNamespace(), null));
     resources.add(JobHelper.createDomainIntrospectorJobStep(PodHelper.createAdminPodStep(null)));
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(ServiceHelper.createForServerStep(null));
