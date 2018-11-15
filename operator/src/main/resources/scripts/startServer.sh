@@ -9,22 +9,28 @@
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
 
-# if the livenessProbeSuccessOverride file is available, do not exit from startServer.sh
-
-function exitOrLoop {
-    if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
-    then
-        while true ; do sleep 60 ; done
-    else
-        exit 1
-    fi
-}
-
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/traceUtils.sh
 [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exitOrLoop
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
+
+#
+# Define helper fn for failure debugging
+#   If the livenessProbeSuccessOverride file is available, do not exit from startServer.sh.
+#   This will cause the pod to stay up instead of restart.
+#   (The liveness probe checks the same file.)
+#
+
+function exitOrLoop {
+  if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
+  then
+    while true ; do sleep 60 ; done
+  else
+    exit 1
+  fi
+}
+
 
 #
 # Define helper fn to create a folder
@@ -108,9 +114,6 @@ done
 # Delete any old situational config files in '${DOMAIN_HOME}/optconfig' 
 # that don't have a corresponding /weblogic-operator/introspector file.
 #
-
-# TBD test that following actually works - for example, have admin server touch file
-#     there and see if the file goes away when the second server boots
 
 for local_fname in ${DOMAIN_HOME}/optconfig/*.xml ; do
   if [ ! -f "/weblogic-operator/introspector/`basename $local_fname`" ]; then
