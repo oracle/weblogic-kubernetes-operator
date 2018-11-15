@@ -5,7 +5,7 @@
 package oracle.kubernetes.json.mojo;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
-import static oracle.kubernetes.json.SchemaGenerator.DEFAULT_KUBERNETES_VERSION;
+import static java.util.Collections.singletonList;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.PROCESS_CLASSES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -16,7 +16,10 @@ import com.meterware.simplestub.StaticStubSupport;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +32,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
@@ -37,6 +39,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.TypePath;
 
+@SuppressWarnings("SameParameterValue")
 public class JsonSchemaMojoTest {
 
   private static final List<String> EMPTY_CLASSPATH = new ArrayList<>();
@@ -45,9 +48,13 @@ public class JsonSchemaMojoTest {
   private static final File SCHEMA_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".json");
   private static final File CLASS_FILE = createFile("/classes", TEST_ROOT_CLASS, ".class");
   private static final String DOT = "\\.";
+  private static final String SPECIFIED_FILE_NAME = "specifiedFile.json";
+  private static final File SPECIFIED_FILE = new File(TARGET_DIR + "/" + SPECIFIED_FILE_NAME);
 
   private JsonSchemaMojo mojo = new JsonSchemaMojo();
   private Map<String, AnnotationInfo> classAnnotations = new HashMap<>();
+
+  // a map of fields to their annotations
   private Map<Field, Map<String, AnnotationInfo>> fieldAnnotations = new HashMap<>();
   private List<Memento> mementos = new ArrayList<>();
   private TestMain main;
@@ -72,6 +79,7 @@ public class JsonSchemaMojoTest {
     setMojoParameter("compileClasspathElements", EMPTY_CLASSPATH);
     setMojoParameter("rootClass", TEST_ROOT_CLASS);
     setMojoParameter("targetDir", TARGET_DIR);
+    setMojoParameter("baseDir", getModuleDir().toString());
     silenceMojoLog();
 
     mementos.add(StaticStubSupport.install(JsonSchemaMojo.class, "main", main));
@@ -86,6 +94,12 @@ public class JsonSchemaMojoTest {
     Field field = mojo.getClass().getDeclaredField(fieldName);
     field.setAccessible(true);
     field.set(mojo, value);
+  }
+
+  private Object getMojoParameter(String fieldName) throws Exception {
+    Field field = mojo.getClass().getDeclaredField(fieldName);
+    field.setAccessible(true);
+    return field.get(mojo);
   }
 
   @After
@@ -124,52 +138,82 @@ public class JsonSchemaMojoTest {
 
   @Test
   public void hasTargetDirField_withAnnotation() throws NoSuchFieldException {
-    Field classPathField = JsonSchemaMojo.class.getDeclaredField("targetDir");
-    assertThat(classPathField.getType(), equalTo(String.class));
+    Field targetDirField = JsonSchemaMojo.class.getDeclaredField("targetDir");
+    assertThat(targetDirField.getType(), equalTo(String.class));
     assertThat(
-        getFieldAnnotation(classPathField, Parameter.class).fields.get("defaultValue"),
+        getFieldAnnotation(targetDirField, Parameter.class).fields.get("defaultValue"),
         equalTo("${project.build.outputDirectory}/schema"));
   }
 
   @Test
-  public void hasKubernetesVersionField_withAnnotation() throws NoSuchFieldException {
-    Field classPathField = JsonSchemaMojo.class.getDeclaredField("kubernetesVersion");
-    assertThat(classPathField.getType(), equalTo(String.class));
-    assertThat(
-        getFieldAnnotation(classPathField, Parameter.class).fields.get("defaultValue"),
-        equalTo(DEFAULT_KUBERNETES_VERSION));
+  public void hasExternalSchemasField_withAnnotation() throws NoSuchFieldException {
+    Field externalSchemasField = JsonSchemaMojo.class.getDeclaredField("externalSchemas");
+    assertThat(externalSchemasField.getType(), equalTo(List.class));
+    assertThat(fieldAnnotations.get(externalSchemasField), hasKey(toDescription(Parameter.class)));
   }
 
   @Test
   public void hasRootClassNameField_withAnnotation() throws NoSuchFieldException {
-    Field classPathField = JsonSchemaMojo.class.getDeclaredField("rootClass");
-    assertThat(classPathField.getType(), equalTo(String.class));
+    Field rootClassField = JsonSchemaMojo.class.getDeclaredField("rootClass");
+    assertThat(rootClassField.getType(), equalTo(String.class));
     assertThat(
-        getFieldAnnotation(classPathField, Parameter.class).fields.get("required"), is(true));
+        getFieldAnnotation(rootClassField, Parameter.class).fields.get("required"), is(true));
   }
 
   @Test
-  @Ignore("need to detect parameter annotation w/o fields")
   public void hasIncludeDeprecatedField_withAnnotation() throws NoSuchFieldException {
-    Field classPathField = JsonSchemaMojo.class.getDeclaredField("includeDeprecated");
-    assertThat(classPathField.getType(), equalTo(boolean.class));
+    Field includeDeprecatedField = JsonSchemaMojo.class.getDeclaredField("includeDeprecated");
+    assertThat(includeDeprecatedField.getType(), equalTo(boolean.class));
     assertThat(
-        getFieldAnnotation(classPathField, Parameter.class).fields.get("required"), is(false));
+        fieldAnnotations.get(includeDeprecatedField), hasKey(toDescription(Parameter.class)));
   }
 
   @Test
-  public void useSpecifiedKubernetesVersion() throws Exception {
-    setMojoParameter("kubernetesVersion", "1.2.3");
+  public void hasIncludeAdditionalPropertiesField_withAnnotation() throws NoSuchFieldException {
+    Field includeAdditionalPropertiesField =
+        JsonSchemaMojo.class.getDeclaredField("includeAdditionalProperties");
+    assertThat(includeAdditionalPropertiesField.getType(), equalTo(boolean.class));
+    assertThat(
+        fieldAnnotations.get(includeAdditionalPropertiesField),
+        hasKey(toDescription(Parameter.class)));
+  }
+
+  @Test
+  public void hasSupportObjectReferencesField_withAnnotation() throws Exception {
+    Field supportObjectReferencesField =
+        JsonSchemaMojo.class.getDeclaredField("supportObjectReferences");
+    assertThat(supportObjectReferencesField.getType(), equalTo(boolean.class));
+    assertThat(
+        fieldAnnotations.get(supportObjectReferencesField), hasKey(toDescription(Parameter.class)));
+    assertThat(getMojoParameter("supportObjectReferences"), is(true));
+  }
+
+  @Test
+  public void hasOutputFileField_withAnnotation() throws Exception {
+    Field field = JsonSchemaMojo.class.getDeclaredField("outputFile");
+    assertThat(field.getType(), equalTo(String.class));
+    assertThat(fieldAnnotations.get(field), hasKey(toDescription(Parameter.class)));
+    assertThat(getMojoParameter("outputFile"), nullValue());
+  }
+
+  @Test
+  public void whenExternalSchemaSpecified_passToGenerator() throws Exception {
+    setMojoParameter(
+        "externalSchemas",
+        singletonList(new ExternalSchema("http://schema.json", "src/cache/schema.json")));
 
     mojo.execute();
 
-    assertThat(main.getVersion(), equalTo("1.2.3"));
+    assertThat(
+        main.getCacheFor(new URL("http://schema.json")),
+        equalTo(toModuleUrl("src/cache/schema.json")));
   }
 
   @Test(expected = MojoExecutionException.class)
-  public void whenUnableToUseKubernetesVersion_haltTheBuild() throws Exception {
-    main.reportBadKubernetesException();
-    setMojoParameter("kubernetesVersion", "1.2.3");
+  public void whenUnableToUseDefineSchema_haltTheBuild() throws Exception {
+    setMojoParameter(
+        "externalSchemas",
+        singletonList(new ExternalSchema("abcd://schema.json", "src/cache/schema.json")));
 
     mojo.execute();
   }
@@ -235,6 +279,41 @@ public class JsonSchemaMojoTest {
     assertThat(main.getOutputFile(), equalTo(SCHEMA_FILE));
   }
 
+  @Test
+  public void whenOutputFileSpecified_generateToIt() throws Exception {
+    setMojoParameter("outputFile", SPECIFIED_FILE_NAME);
+    mojo.execute();
+
+    assertThat(main.getOutputFile(), equalTo(SPECIFIED_FILE));
+  }
+
+  @Test
+  public void whenIncludeDeprecatedSet_setOnMain() throws Exception {
+    setMojoParameter("includeDeprecated", true);
+
+    mojo.execute();
+
+    assertThat(main.isIncludeDeprecated(), is(true));
+  }
+
+  @Test
+  public void whenIncludeAdditionalPropertiesSet_setOnMain() throws Exception {
+    setMojoParameter("includeAdditionalProperties", true);
+
+    mojo.execute();
+
+    assertThat(main.isIncludeAdditionalProperties(), is(true));
+  }
+
+  @Test
+  public void whenSupportObjectReferencesSet_setOnMain() throws Exception {
+    setMojoParameter("supportObjectReferences", true);
+
+    mojo.execute();
+
+    assertThat(main.isSupportObjectReferences(), is(true));
+  }
+
   @SuppressWarnings("SameParameterValue")
   private AnnotationInfo getClassAnnotation(Class<? extends Annotation> annotationClass) {
     return classAnnotations.get(toDescription(annotationClass));
@@ -267,8 +346,7 @@ public class JsonSchemaMojoTest {
     @Override
     public FieldVisitor visitField(int flags, String fieldName, String desc, String s, Object v) {
       try {
-        Field field = getField(fieldName);
-        return new MojoFieldVisitor(getOrCreateAnnotationMap(field));
+        return new MojoFieldVisitor(getField(fieldName));
       } catch (NoSuchFieldException e) {
         return super.visitField(flags, fieldName, desc, s, v);
       }
@@ -298,6 +376,7 @@ public class JsonSchemaMojoTest {
       super(ASM5);
       this.annotations = annotations;
       annotationClassDesc = desc;
+      annotations.put(desc, new AnnotationInfo());
     }
 
     @Override
@@ -337,7 +416,6 @@ public class JsonSchemaMojoTest {
   }
 
   private class FieldAnnotationVisitor extends MojoAnnotationVisitor {
-
     FieldAnnotationVisitor(Map<String, AnnotationInfo> annotationMap, String desc) {
       super(annotationMap, desc);
     }
@@ -346,9 +424,9 @@ public class JsonSchemaMojoTest {
   private class MojoFieldVisitor extends FieldVisitor {
     private final Map<String, AnnotationInfo> annotationMap;
 
-    MojoFieldVisitor(Map<String, AnnotationInfo> annotationMap) {
+    MojoFieldVisitor(Field field) {
       super(ASM5);
-      this.annotationMap = annotationMap;
+      this.annotationMap = getOrCreateAnnotationMap(field);
     }
 
     @Override
@@ -375,5 +453,26 @@ public class JsonSchemaMojoTest {
 
   private class AnnotationInfo {
     private Map<String, Object> fields = new HashMap<>();
+  }
+
+  private URL toModuleUrl(String path) throws URISyntaxException, MalformedURLException {
+    return new File(getModuleDir(), path).toURI().toURL();
+  }
+
+  private File getModuleDir() throws URISyntaxException {
+    return getTargetDir(getClass()).getParentFile();
+  }
+
+  private static File getTargetDir(Class<?> aClass) throws URISyntaxException {
+    File dir = getPackageDir(aClass);
+    while (dir.getParent() != null && !dir.getName().equals("target")) {
+      dir = dir.getParentFile();
+    }
+    return dir;
+  }
+
+  private static File getPackageDir(Class<?> aClass) throws URISyntaxException {
+    URL url = aClass.getResource(aClass.getSimpleName() + ".class");
+    return Paths.get(url.toURI()).toFile().getParentFile();
   }
 }

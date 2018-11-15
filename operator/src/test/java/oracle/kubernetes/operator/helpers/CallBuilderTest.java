@@ -23,7 +23,6 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.VersionInfo;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,8 +46,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
       String.format("/apis/weblogic.oracle/v2/namespaces/%s/domains", NAMESPACE);
-  private static final String CRD_RESOURCE =
-      "/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions";
   private static final String PV_RESOURCE = "/api/v1/persistentvolumes";
   private static final String PVC_RESOURCE =
       String.format("/api/v1/namespaces/%s/persistentvolumeclaims", NAMESPACE);
@@ -164,39 +161,12 @@ public class CallBuilderTest extends HttpUserAgentTest {
     return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
   }
 
-  @Test
-  public void createCustomResourceDefinition_sendsDefinition() throws ApiException {
-    V1beta1CustomResourceDefinition crd = new V1beta1CustomResourceDefinition();
-    defineHttpPostResponse(
-        CRD_RESOURCE,
-        crd,
-        (json) -> requestBody = fromJson(json, V1beta1CustomResourceDefinition.class));
-
-    callBuilder.createCustomResourceDefinition(crd);
-
-    assertThat(requestBody, equalTo(crd));
-  }
-
-  @Test
-  public void readCustomResourceDefinition_returnsDefinition() throws ApiException {
-    V1beta1CustomResourceDefinition crd = new V1beta1CustomResourceDefinition();
-
-    defineHttpGetResponse(CRD_RESOURCE, NAME, crd);
-
-    assertThat(callBuilder.readCustomResourceDefinition(NAME), equalTo(crd));
-  }
-
   private Object fromJson(String json, Class<?> aClass) {
     return new GsonBuilder().create().fromJson(json, aClass);
   }
 
   private V1ObjectMeta createMetadata() {
     return new V1ObjectMeta().namespace(NAMESPACE);
-  }
-
-  /** defines a get request for an individual item identified by name. */
-  private void defineHttpGetResponse(String resourceName, String name, Object response) {
-    defineResource(resourceName + "/" + name, new JsonGetServlet(response));
   }
 
   /** defines a get request for an list of items. */
@@ -213,10 +183,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private void defineHttpPostResponse(
       String resourceName, Object response, Consumer<String> bodyValidation) {
     defineResource(resourceName, new JsonPostServlet(response, bodyValidation));
-  }
-
-  private void defineHttpPutResponse(String resourceName, String name, Object response) {
-    defineHttpPutResponse(resourceName, name, response, null);
   }
 
   private void defineHttpPutResponse(

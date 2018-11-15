@@ -62,7 +62,7 @@ public class IngressHelperTest {
                 .name(LegalNames.toIngressName(UID, TEST_CLUSTER))
                 .namespace(NS)
                 .putAnnotationsItem(CLASS_INGRESS, CLASS_INGRESS_VALUE)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(CLUSTERNAME_LABEL, TEST_CLUSTER)
