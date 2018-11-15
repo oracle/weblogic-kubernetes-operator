@@ -26,8 +26,10 @@ import io.kubernetes.client.models.V1Status;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -397,6 +399,22 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
     assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value1"));
+  }
+
+  @Test
+  public void whenPodHasCustomLabelConflictWithInternal_createAdminPodWithInternal() {
+    getConfigurator()
+        .withPodLabel(LabelConstants.RESOURCE_VERSION_LABEL, "domain-label-value1")
+        .configureAdminServer((ADMIN_SERVER))
+        .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1")
+        .withPodLabel("label1", "server-label-value1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(
+        podLabels,
+        hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
+    assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
+    assertThat(podLabels, hasEntry("label1", "server-label-value1"));
   }
 
   @Override

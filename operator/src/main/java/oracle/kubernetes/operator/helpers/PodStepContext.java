@@ -563,18 +563,24 @@ public abstract class PodStepContext {
   }
 
   protected V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(getPodName())
-            .namespace(getNamespace())
-            .putLabelsItem(
-                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
-            .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
-            .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+    // Add custom labels
     getPodLabels().forEach((k, v) -> metadata.putLabelsItem(k, v));
+
+    // Add internal labels. This will overwrite any custom labels that conflict with internal
+    // labels.
+    metadata
+        .putLabelsItem(
+            LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
+        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+        .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+
+    // Add custom annotations
     getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));
+
+    // Add prometheus annotations. This will overwrite any custom annotations with same name.
     AnnotationHelper.annotateForPrometheus(metadata, getPort());
     return metadata;
   }
