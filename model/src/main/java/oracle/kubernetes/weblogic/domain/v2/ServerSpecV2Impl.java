@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -57,6 +58,16 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   @Override
   public List<V1VolumeMount> getAdditionalVolumeMounts() {
     return server.getAdditionalVolumeMounts();
+  }
+
+  @Override
+  public Map<String, String> getPodLabels() {
+    return server.getPodLabels();
+  }
+
+  @Override
+  public Map<String, String> getPodAnnotations() {
+    return server.getPodAnnotations();
   }
 
   @Override
