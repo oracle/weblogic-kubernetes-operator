@@ -42,7 +42,7 @@ managedServerNameBase: managed-server
 managedServerPort: 8001
 
 # WebLogic Docker image
-image: store/oracle/weblogic:19.1.0.0
+image: store/oracle/weblogic:12.2.1.3
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
@@ -58,10 +58,6 @@ productionModeEnabled: true
 # Name of the Kubernetes secret for the Admin Server's username and password
 # The name must be lowercase
 weblogicCredentialsSecretName: domain1-weblogic-credentials
-
-# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
-# The presence of the secret will be validated when this parameter is enabled.
-#imagePullSecretName:
 
 # Whether to include server .out to the pod's stdout, default is true
 includeServerOutInPodLog: true
