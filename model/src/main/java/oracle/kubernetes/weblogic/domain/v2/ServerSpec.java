@@ -85,7 +85,7 @@ public abstract class ServerSpec {
   }
 
   /**
-   * The config map name used in WebLogic configuration overrides
+   * The Kubernetes configmap name used in WebLogic configuration overrides
    *
    * @return configMapName. May be empty.
    */
