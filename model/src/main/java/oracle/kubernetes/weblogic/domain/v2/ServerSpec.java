@@ -85,6 +85,15 @@ public abstract class ServerSpec {
   }
 
   /**
+   * The Kubernetes configmap name used in WebLogic configuration overrides
+   *
+   * @return configMapName. May be empty.
+   */
+  public String getConfigOverrides() {
+    return domainSpec.getConfigOverrides();
+  }
+
+  /**
    * The secret names used in WebLogic configuration overrides
    *
    * @return a list of secret names. May be empty.
