@@ -10,6 +10,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
@@ -136,6 +137,22 @@ public abstract class BaseConfiguration {
 
   void addAdditionalVolumeMount(String name, String path) {
     serverPod.addAdditionalVolumeMount(name, path);
+  }
+
+  public Map<String, String> getPodLabels() {
+    return serverPod.getPodLabels();
+  }
+
+  void addPodLabels(String name, String value) {
+    serverPod.addPodLabel(name, value);
+  }
+
+  public Map<String, String> getPodAnnotations() {
+    return serverPod.getPodAnnotations();
+  }
+
+  void addPodAnnotations(String name, String value) {
+    serverPod.addPodAnnotations(name, value);
   }
 
   @Override

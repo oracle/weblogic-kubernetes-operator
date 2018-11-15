@@ -145,15 +145,19 @@ public abstract class ServerSpec {
     return new ProbeTuning();
   }
 
-  @Nonnull
-  public Map<String, String> getPodLabels() {
-    return Collections.emptyMap();
-  }
+  /**
+   * Returns the labels applied to the pod.
+   *
+   * @return a map of labels
+   */
+  public abstract Map<String, String> getPodLabels();
 
-  @Nonnull
-  public Map<String, String> getPodAnnotations() {
-    return Collections.emptyMap();
-  }
+  /**
+   * Returns the annotations applied to the pod.
+   *
+   * @return a map of annotations
+   */
+  public abstract Map<String, String> getPodAnnotations();
 
   @Nonnull
   public Map<String, String> getListenAddressServiceLabels() {
