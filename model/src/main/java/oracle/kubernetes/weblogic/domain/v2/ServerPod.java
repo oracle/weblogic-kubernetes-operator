@@ -64,8 +64,8 @@ class ServerPod {
   private ProbeTuning readinessProbeTuning = new ProbeTuning();
 
   /**
-   * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
-   * indicated key-value pairs as labels
+   * <<<<<<< HEAD Defines the key-value pairs for the pod to fit on a node, the node must have each
+   * of the indicated key-value pairs as labels
    *
    * @since 2.0
    */
@@ -112,7 +112,7 @@ class ServerPod {
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   /**
-   * The additional volumes.
+   * ======= >>>>>>> 2eee6231654d610cd04c6dec4de65c51d358d62a The additional volumes.
    *
    * @since 2.0
    */
