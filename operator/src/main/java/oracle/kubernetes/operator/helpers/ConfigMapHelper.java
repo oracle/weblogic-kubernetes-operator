@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -81,7 +81,7 @@ public class ConfigMapHelper {
       return new V1ObjectMeta()
           .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
           .namespace(this.domainNamespace)
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DOMAIN_V1)
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace)
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
@@ -150,7 +150,7 @@ public class ConfigMapHelper {
     }
 
     private boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DOMAIN_V1)
+      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
           && COMPARATOR.containsAll(existingMap, this.model);
     }
 

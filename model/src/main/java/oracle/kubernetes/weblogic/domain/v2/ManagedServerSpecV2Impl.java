@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-
 public class ManagedServerSpecV2Impl extends ServerSpecV2Impl {
   /**
    * Constructs an object to return the effective configuration for a managed server.

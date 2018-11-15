@@ -2,7 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.v1;
+package oracle.kubernetes.weblogic.domain.v2;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.v2.ProbeTuning;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -59,15 +58,6 @@ public abstract class ServerSpec {
   }
 
   /**
-   * The secret used to authenticate to a docker repository when pulling an image.
-   *
-   * @return an object containing the name of a secret. May be null.
-   */
-  public V1LocalObjectReference getImagePullSecret() {
-    return domainSpec.getImagePullSecret();
-  }
-
-  /**
    * The secrets used to authenticate to a docker repository when pulling an image.
    *
    * @return a list of objects containing the name of secrets. May be empty.
@@ -92,6 +82,15 @@ public abstract class ServerSpec {
       var.setValue(prepend(var.getValue(), ADMIN_MODE_FLAG));
       return adjustedEnv;
     }
+  }
+
+  /**
+   * The secret names used in WebLogic configuration overrides
+   *
+   * @return a list of secret names. May be empty.
+   */
+  public List<String> getConfigOverrideSecrets() {
+    return domainSpec.getConfigOverrideSecrets();
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -131,15 +130,19 @@ public abstract class ServerSpec {
    */
   public abstract boolean shouldStart(int currentReplicas);
 
-  @Nonnull
-  public List<V1VolumeMount> getAdditionalVolumeMounts() {
-    return Collections.emptyList();
-  }
+  /**
+   * Returns the volume mounts to be defined for this server.
+   *
+   * @return a list of environment volume mounts
+   */
+  public abstract List<V1VolumeMount> getAdditionalVolumeMounts();
 
-  @Nonnull
-  public List<V1Volume> getAdditionalVolumes() {
-    return Collections.emptyList();
-  }
+  /**
+   * Returns the volumes to be defined for this server.
+   *
+   * @return a list of volumes
+   */
+  public abstract List<V1Volume> getAdditionalVolumes();
 
   @Nonnull
   public ProbeTuning getLivenessProbe() {

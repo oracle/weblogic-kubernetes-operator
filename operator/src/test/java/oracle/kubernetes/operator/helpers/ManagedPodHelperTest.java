@@ -32,7 +32,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -206,6 +206,125 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongEnvFrom_replaceIt() {
     verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).envFrom(Collections.emptyList()));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumes_createManagedPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMounts_createManagedPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  public void whenClusterHasAdditionalVolumes_createManagedPodWithThem() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenClusterHasAdditionalVolumeMounts_createManagedPodWithThem() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  public void whenServerHasAdditionalVolumes_createManagedPodWithThem() {
+    getServerConfigurator(getConfigurator(), SERVER_NAME)
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenServerHasAdditionalVolumeMounts_createManagedPodWithThem() {
+    getServerConfigurator(getConfigurator(), SERVER_NAME)
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  public void whenPodHasDuplicateVolumes_createManagedPodWithCombination() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/domain-path1")
+        .withAdditionalVolume("volume2", "/domain-path2")
+        .withAdditionalVolume("volume3", "/domain-path3")
+        .configureServer(SERVER_NAME)
+        .withAdditionalVolume("volume3", "/server-path");
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolume("volume2", "/cluster-path");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(
+            hasVolume("volume1", "/domain-path1"),
+            hasVolume("volume2", "/cluster-path"),
+            hasVolume("volume3", "/server-path")));
+  }
+
+  @Test
+  public void whenPodHasDuplicateVolumeMounts_createManagedPodWithCombination() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/domain-path1")
+        .withAdditionalVolumeMount("volume2", "/domain-path2")
+        .withAdditionalVolumeMount("volume3", "/domain-path3")
+        .configureServer(SERVER_NAME)
+        .withAdditionalVolumeMount("volume3", "/server-path");
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolumeMount("volume2", "/cluster-path");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/domain-path1"),
+            hasVolumeMount("volume2", "/cluster-path"),
+            hasVolumeMount("volume3", "/server-path")));
   }
 
   @SuppressWarnings("unchecked")
