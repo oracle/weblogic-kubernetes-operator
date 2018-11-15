@@ -109,6 +109,10 @@ public abstract class PodStepContext {
     return new ConflictStep();
   }
 
+  abstract Map<String, String> getPodLabels();
+
+  abstract Map<String, String> getPodAnnotations();
+
   private class ConflictStep extends Step {
 
     @Override
@@ -569,6 +573,8 @@ public abstract class PodStepContext {
             .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
             .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    getPodLabels().forEach((k, v) -> metadata.putLabelsItem(k, v));
+    getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));
     AnnotationHelper.annotateForPrometheus(metadata, getPort());
     return metadata;
   }

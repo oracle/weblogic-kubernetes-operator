@@ -327,6 +327,117 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
             hasVolumeMount("volume3", "/server-path")));
   }
 
+  @Test
+  public void whenDomainHasLabels_createManagedPodWithThem() {
+    getConfigurator()
+        .withPodLabel("label1", "domain-label-value1")
+        .withPodLabel("label2", "domain-label-value2");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "domain-label-value2"));
+  }
+
+  @Test
+  public void whenDomainHasAnnotations_createManagedPodWithThem() {
+    getConfigurator()
+        .withPodAnnotation("annotation1", "domain-annotation-value1")
+        .withPodAnnotation("annotation2", "domain-annotation-value2");
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "domain-annotation-value2"));
+  }
+
+  @Test
+  public void whenClusterHasLabels_createManagedPodWithThem() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPodLabel("label1", "cluster-label-value1")
+        .withPodLabel("label2", "cluster-label-value2");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "cluster-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "cluster-label-value2"));
+  }
+
+  @Test
+  public void whenClusterHasAnnotations_createManagedPodWithThem() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPodAnnotation("annotation1", "cluster-annotation-value1")
+        .withPodAnnotation("annotation2", "cluster-annotation-value2");
+
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    assertThat(podAnnotations, hasEntry("annotation1", "cluster-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "cluster-annotation-value2"));
+  }
+
+  @Test
+  public void whenServerHasLabels_createManagedPodWithThem() {
+    getServerConfigurator(getConfigurator(), SERVER_NAME)
+        .withPodLabel("label1", "server-label-value1")
+        .withPodLabel("label2", "server-label-value2");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "server-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "server-label-value2"));
+  }
+
+  @Test
+  public void whenServerHasAnnotations_createManagedPodWithThem() {
+    getServerConfigurator(getConfigurator(), SERVER_NAME)
+        .withPodAnnotation("annotation1", "server-annotation-value1")
+        .withPodAnnotation("annotation2", "server-annotation-value2");
+
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    assertThat(podAnnotations, hasEntry("annotation1", "server-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value2"));
+  }
+
+  @Test
+  public void whenPodHasDuplicateLabels_createManagedPodWithCombination() {
+    getConfigurator()
+        .withPodLabel("label1", "domain-label-value1")
+        .withPodLabel("label2", "domain-label-value2")
+        .withPodLabel("label3", "domain-label-value3")
+        .configureServer(SERVER_NAME)
+        .withPodLabel("label3", "server-label-value1");
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPodLabel("label2", "cluster-label-value1")
+        .withPodLabel("label3", "cluster-label-value2");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "cluster-label-value1"));
+    assertThat(podLabels, hasEntry("label3", "server-label-value1"));
+  }
+
+  @Test
+  public void whenPodHasDuplicateAnnotations_createManagedPodWithCombination() {
+    getConfigurator()
+        .withPodAnnotation("annotation1", "domain-annotation-value1")
+        .withPodAnnotation("annotation2", "domain-annotation-value2")
+        .withPodAnnotation("annotation3", "domain-annotation-value3")
+        .configureServer(SERVER_NAME)
+        .withPodAnnotation("annotation3", "server-annotation-value1");
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPodAnnotation("annotation2", "cluster-annotation-value1")
+        .withPodAnnotation("annotation3", "cluster-annotation-value2");
+
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "cluster-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation3", "server-annotation-value1"));
+  }
+
   @SuppressWarnings("unchecked")
   private void verifyRollManagedPodWhen(PodMutator mutator) {
     Map<String, StepAndPacket> rolling = new HashMap<>();

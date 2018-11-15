@@ -13,7 +13,9 @@ import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -77,6 +79,26 @@ class ServerPod {
   @Description("Additional volume mounts")
   private List<V1VolumeMount> additionalVolumeMounts = new ArrayList<>();
 
+  /**
+   * The additional volumes.
+   *
+   * @since 2.0
+   */
+  @SerializedName("podLabels")
+  @Expose
+  @Description("Labels applied to pods")
+  private Map<String, String> podLabels = new HashMap<String, String>();
+
+  /**
+   * The additional volume mounts.
+   *
+   * @since 2.0
+   */
+  @SerializedName("podAnnotations")
+  @Expose
+  @Description("Annotations applied to pods")
+  private Map<String, String> podAnnotations = new HashMap<String, String>();
+
   ProbeTuning getReadinessProbeTuning() {
     return this.readinessProbeTuning;
   }
@@ -109,6 +131,8 @@ class ServerPod {
     copyValues(readinessProbeTuning, serverPod1.readinessProbeTuning);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
+    serverPod1.getPodLabels().forEach((k, v) -> addPodLabelIfMissing(k, v));
+    serverPod1.getPodAnnotations().forEach((k, v) -> addPodAnnotationIfMissing(k, v));
   }
 
   private List<V1EnvVar> getV1EnvVars() {
@@ -147,6 +171,14 @@ class ServerPod {
 
   private void addIfMissing(V1VolumeMount var) {
     if (!hasVolumeMountName(var.getName())) addAdditionalVolumeMount(var);
+  }
+
+  private void addPodLabelIfMissing(String name, String value) {
+    if (!podLabels.containsKey(name)) podLabels.put(name, value);
+  }
+
+  private void addPodAnnotationIfMissing(String name, String value) {
+    if (!podAnnotations.containsKey(name)) podAnnotations.put(name, value);
   }
 
   private static void copyValues(ProbeTuning toProbe, ProbeTuning fromProbe) {
@@ -192,6 +224,22 @@ class ServerPod {
 
   public List<V1VolumeMount> getAdditionalVolumeMounts() {
     return additionalVolumeMounts;
+  }
+
+  void addPodLabel(String name, String value) {
+    podLabels.put(name, value);
+  }
+
+  void addPodAnnotations(String name, String value) {
+    podAnnotations.put(name, value);
+  }
+
+  public Map<String, String> getPodLabels() {
+    return podLabels;
+  }
+
+  public Map<String, String> getPodAnnotations() {
+    return podAnnotations;
   }
 
   @Override
