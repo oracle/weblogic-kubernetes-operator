@@ -5,30 +5,28 @@
 package oracle.kubernetes.json.mojo;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.apache.maven.plugin.MojoExecutionException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TestMain implements Main {
-  private String version;
   private URL[] classpath;
-  private IOException badKubernetesVersionException;
   private URL classpathResource;
   private String className;
   private File outputFile;
   private String resourceName;
+  private boolean includeDeprecated;
+  private Map<URL, URL> schemas = new HashMap<>();
+  private boolean includeAdditionalProperties;
+  private boolean supportObjectReferences;
 
   TestMain() throws MalformedURLException {
     classpathResource = new URL("file:abc");
   }
 
-  String getVersion() {
-    return version;
-  }
-
-  void reportBadKubernetesException() {
-    badKubernetesVersionException = new IOException();
+  boolean isIncludeDeprecated() {
+    return includeDeprecated;
   }
 
   URL[] getClasspath() {
@@ -51,9 +49,36 @@ public class TestMain implements Main {
     return outputFile;
   }
 
+  URL getCacheFor(URL schemaUrl) {
+    return schemas.get(schemaUrl);
+  }
+
+  boolean isIncludeAdditionalProperties() {
+    return includeAdditionalProperties;
+  }
+
+  boolean isSupportObjectReferences() {
+    return supportObjectReferences;
+  }
+
   @Override
-  public void setKubernetesVersion(String version) {
-    this.version = version;
+  public void setSupportObjectReferences(boolean supportObjectReferences) {
+    this.supportObjectReferences = supportObjectReferences;
+  }
+
+  @Override
+  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) {
+    schemas.put(schemaURL, cacheUrl);
+  }
+
+  @Override
+  public void setIncludeDeprecated(boolean includeDeprecated) {
+    this.includeDeprecated = includeDeprecated;
+  }
+
+  @Override
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    this.includeAdditionalProperties = includeAdditionalProperties;
   }
 
   @Override
@@ -68,9 +93,8 @@ public class TestMain implements Main {
   }
 
   @Override
-  public void generateSchema(String className, File outputFile) throws MojoExecutionException {
+  public void generateSchema(String className, File outputFile) {
     this.className = className;
     this.outputFile = outputFile;
-    if (badKubernetesVersionException != null) throw new MojoExecutionException("bad version");
   }
 }

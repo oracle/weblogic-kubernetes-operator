@@ -219,12 +219,11 @@ public class Main {
       // that includes k8s objects
       LoggingFactory.setJSON(new JSON());
 
-      // create the Custom Resource Definitions if they are not already there
-      CRDHelper.checkAndCreateCustomResourceDefinition();
-
       version = HealthCheckHelper.performK8sVersionCheck();
 
-      runSteps(new StartNamespacesStep(targetNamespaces), Main::completeBegin);
+      runSteps(
+          CRDHelper.createDomainCRDStep(new StartNamespacesStep(targetNamespaces)),
+          Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }

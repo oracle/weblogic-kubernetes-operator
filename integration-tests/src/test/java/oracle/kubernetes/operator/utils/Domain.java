@@ -601,7 +601,7 @@ public class Domain {
         .append(" -e -v -o ")
         .append(outputDir);
     logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString(), true);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "
@@ -697,6 +697,9 @@ public class Domain {
           Thread.sleep(waitTime * 1000);
         } catch (InterruptedException ignore) {
         }
+      } else {
+        logger.info("testwebapp returned 200 response code, iteration " + i);
+        break;
       }
     }
   }
@@ -715,6 +718,8 @@ public class Domain {
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+      } else {
+        logger.info("webapp invoked successfully");
       }
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
@@ -784,6 +789,8 @@ public class Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
+    domainMap.put("domainHome", "/shared/domains/" + domainUid);
+
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
@@ -799,7 +806,7 @@ public class Domain {
       // create docker registry secrets
       TestUtils.createDockerRegistrySecret(
           System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_SERVER"),
           System.getenv("REPO_USERNAME"),
           System.getenv("REPO_PASSWORD"),
           System.getenv("REPO_EMAIL"),

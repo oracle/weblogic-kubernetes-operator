@@ -9,6 +9,7 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
+import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
@@ -73,6 +74,30 @@ public class DomainV2Configurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
     ((BaseConfiguration) getDomainSpec()).addAdditionalVolumeMount(name, path);
+    return this;
+  }
+
+  @Override
+  /**
+   * Sets the WebLogic configuration overrides configmap name for the domain
+   *
+   * @param configMapName Name of the Kubernetes configmap that contains the config overrides
+   * @return this object
+   */
+  public DomainConfigurator withConfigOverrides(String configMapName) {
+    getDomainSpec().setConfigOverrides(configMapName);
+    return this;
+  }
+
+  @Override
+  /**
+   * Sets the WebLogic configuration overrides secret names for the domain
+   *
+   * @param secretNames a list of secret names
+   * @return this object
+   */
+  public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
+    getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
     return this;
   }
 

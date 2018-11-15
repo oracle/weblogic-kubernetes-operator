@@ -498,6 +498,10 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
+    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
   }
@@ -512,6 +516,10 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
+    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
@@ -538,6 +546,10 @@ public class DomainV2Test extends DomainTestBase {
             envVar("JAVA_OPTIONS", "-server"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
+    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
   }
 
   @Test
@@ -552,6 +564,10 @@ public class DomainV2Test extends DomainTestBase {
             envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN -verbose"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
+    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(
+        serverSpec.getConfigOverrideSecrets(),
+        containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
   }
 
   @Test
@@ -735,6 +751,27 @@ public class DomainV2Test extends DomainTestBase {
             volumeMount("name1", "/domain-test1"),
             volumeMount("name2", "/cluster-test1"),
             volumeMount("name3", "/server-test1")));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome2() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domains/uid1"));
+  }
+
+  @Test
+  public void domainHomeTest_standardHome3() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getDomainHome(), equalTo("/shared/domain"));
+  }
+
+  @Test
+  public void domainHomeTest_customHome1() {
+    configureDomain(domain).withDomainHome("/custom/domain/home");
+
+    assertThat(domain.getDomainHome(), equalTo("/custom/domain/home"));
   }
 
   private V1Volume volume(String name, String path) {
