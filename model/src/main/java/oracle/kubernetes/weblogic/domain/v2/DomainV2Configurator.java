@@ -84,8 +84,8 @@ public class DomainV2Configurator extends DomainConfigurator {
    * @param secretNames a list of secret names
    * @return this object
    */
-  public DomainConfigurator withWeblogicConfigurationOverridesSecretNames(String... secretNames) {
-    getDomainSpec().setWeblogicConfigurationOverridesSecretNames(Arrays.asList(secretNames));
+  public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
+    getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
     return this;
   }
 

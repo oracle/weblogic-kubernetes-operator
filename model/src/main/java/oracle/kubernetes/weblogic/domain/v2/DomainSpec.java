@@ -174,9 +174,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
-  @SerializedName("weblogicConfigurationOverridesSecretNames")
+  @SerializedName("configOverrideSecrets")
   @Expose
-  private List<String> weblogicConfigurationOverridesSecretNames;
+  private List<String> configOverrideSecrets;
 
   /**
    * The configuration for the admin server.
@@ -557,21 +557,18 @@ public class DomainSpec extends BaseConfiguration {
     return storage;
   }
 
-  private boolean hasWeblogicConfigurationOverridesSecretNames() {
-    return weblogicConfigurationOverridesSecretNames != null
-        && weblogicConfigurationOverridesSecretNames.size() != 0;
+  private boolean hasConfigOverrideSecrets() {
+    return configOverrideSecrets != null && configOverrideSecrets.size() != 0;
   }
 
   @Nullable
-  public List<String> getWeblogicConfigurationOverridesSecretNames() {
-    if (hasWeblogicConfigurationOverridesSecretNames())
-      return weblogicConfigurationOverridesSecretNames;
+  public List<String> getConfigOverrideSecrets() {
+    if (hasConfigOverrideSecrets()) return configOverrideSecrets;
     else return Collections.emptyList();
   }
 
-  public void setWeblogicConfigurationOverridesSecretNames(
-      @Nullable List<String> overridesSecretNames) {
-    this.weblogicConfigurationOverridesSecretNames = overridesSecretNames;
+  public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
+    this.configOverrideSecrets = overridesSecretNames;
   }
 
   /**
@@ -614,9 +611,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("replicas", replicas)
             .append("logHome", logHome)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
-            .append(
-                "weblogicConfigurationOverridesSecretNames",
-                weblogicConfigurationOverridesSecretNames);
+            .append("configOverrideSecrets", configOverrideSecrets);
 
     return builder.toString();
   }
@@ -641,7 +636,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(replicas)
             .append(logHome)
             .append(includeServerOutInPodLog)
-            .append(weblogicConfigurationOverridesSecretNames);
+            .append(configOverrideSecrets);
 
     return builder.toHashCode();
   }
@@ -670,9 +665,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-            .append(
-                weblogicConfigurationOverridesSecretNames,
-                rhs.weblogicConfigurationOverridesSecretNames);
+            .append(configOverrideSecrets, rhs.configOverrideSecrets);
 
     return builder.isEquals();
   }
