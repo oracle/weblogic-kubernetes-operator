@@ -159,6 +159,7 @@ public abstract class ServerSpec {
    *
    * @return a map of labels
    */
+  @Nonnull
   public abstract Map<String, String> getPodLabels();
 
   /**
@@ -166,6 +167,7 @@ public abstract class ServerSpec {
    *
    * @return a map of annotations
    */
+  @Nonnull
   public abstract Map<String, String> getPodAnnotations();
 
   @Nonnull

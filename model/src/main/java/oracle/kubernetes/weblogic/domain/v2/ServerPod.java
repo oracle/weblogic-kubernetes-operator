@@ -80,7 +80,7 @@ class ServerPod {
   private List<V1VolumeMount> additionalVolumeMounts = new ArrayList<>();
 
   /**
-   * The additional volumes.
+   * The labels to be attached to pods.
    *
    * @since 2.0
    */
@@ -90,7 +90,7 @@ class ServerPod {
   private Map<String, String> podLabels = new HashMap<String, String>();
 
   /**
-   * The additional volume mounts.
+   * The annotations to be attached to pods.
    *
    * @since 2.0
    */
