@@ -125,7 +125,6 @@ integration-test-java:
       chmod +x /tmp/helm/linux-amd64/helm
       mv /tmp/helm/linux-amd64/helm /usr/local/bin/
       rm -rf /tmp/helm
-      helm init --upgrade
       helm version
       echo @@ "Helm is installed."
 
