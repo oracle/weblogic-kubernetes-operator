@@ -60,11 +60,6 @@
 #   to the node manager later in the server pods (so that the server pods don't
 #   have to mount the secret containing the username and password).
 #
-# TBD:
-#
-#   It's not clear if this script supports mixed clusters. It seems to assume
-#   a cluster with a dynamic server means the cluster is purely dynamic.
-#
 
 
 import base64
@@ -668,7 +663,6 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:server-template>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
-    #TBD test dynamic cluster mgd server
     self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
     self.customizeLog(server_name_prefix + "${id}")
     self.undent()

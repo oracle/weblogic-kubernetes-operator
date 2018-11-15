@@ -47,7 +47,7 @@ spec:
       value: ""
     - name: ADMIN_PASSWORD
       value: ""
-    image: ${WEBLOGIC_IMAGE_NAME}
+    image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     lifecycle:
       preStop:
