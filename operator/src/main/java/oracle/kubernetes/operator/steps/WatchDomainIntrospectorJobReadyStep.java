@@ -5,16 +5,12 @@
 package oracle.kubernetes.operator.steps;
 
 import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.util.Watch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.JobWatcher;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -48,30 +44,5 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
     }
 
     return doNext(packet);
-  }
-
-  private static void dispatchJobWatch(Watch.Response<V1Job> item) {
-    V1Job j = item.object;
-    if (j != null) {
-      V1ObjectMeta metadata = j.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      if (domainUID != null) {
-        switch (item.type) {
-          case "ADDED":
-          case "MODIFIED":
-            break;
-          case "DELETED":
-            LOGGER.info(
-                MessageKeys.JOB_DELETED,
-                domainUID,
-                metadata.getNamespace(),
-                j.getMetadata().getName());
-            break;
-
-          case "ERROR":
-          default:
-        }
-      }
-    }
   }
 }
