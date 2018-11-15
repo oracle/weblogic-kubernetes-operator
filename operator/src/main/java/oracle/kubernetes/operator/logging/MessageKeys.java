@@ -143,4 +143,5 @@ public class MessageKeys {
   public static final String JOB_DELETED = "WLSKO-0137";
   public static final String WAITING_FOR_JOB_READY = "WLSKO-0138";
   public static final String JOB_CREATED = "WLSK0-0139";
+  public static final String JOB_IS_COMPLETE = "WLSKO-0140";
 }

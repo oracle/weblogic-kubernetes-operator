@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -126,7 +126,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   public static boolean isComplete(V1Job job) {
     V1JobStatus status = job.getStatus();
-    LOGGER.info("++++ JobWatcher.isCpmplete status: " + status);
+    LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
