@@ -11,7 +11,7 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.Workarounds.INTORSTRING_BAD_EQUALS;
 
 import io.kubernetes.client.custom.IntOrString;
@@ -122,7 +122,7 @@ public class IngressHelper {
       }
 
       private boolean isCompatible(V1beta1Ingress result) {
-        return VersionHelper.matchesResourceVersion(result.getMetadata(), DOMAIN_V1)
+        return VersionHelper.matchesResourceVersion(result.getMetadata(), DEFAULT_DOMAIN_VERSION)
             && equalObjects(result.getSpec(), createIngressSpec());
       }
 
@@ -150,7 +150,7 @@ public class IngressHelper {
                   .name(getName())
                   .namespace(getNamespace())
                   .putAnnotationsItem(CLASS_INGRESS, CLASS_INGRESS_VALUE)
-                  .putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1)
+                  .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
                   .putLabelsItem(DOMAINUID_LABEL, getUid())
                   .putLabelsItem(DOMAINNAME_LABEL, getDomainName())
                   .putLabelsItem(CLUSTERNAME_LABEL, clusterName)

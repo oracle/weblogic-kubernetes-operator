@@ -33,6 +33,26 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator createFor(Domain domain);
 
   /**
+   * Sets the home for the domain.
+   *
+   * @param home the home of the domain
+   * @return this object
+   */
+  public DomainConfigurator withDomainHome(String domainHome) {
+    getDomainSpec().setDomainHome(domainHome);
+    return this;
+  }
+
+  /**
+   * @param homeInImage
+   * @return
+   */
+  public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
+    getDomainSpec().setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  /**
    * Defines a name for the domain's admin server.
    *
    * @param adminServerName the name of the admin server
@@ -143,6 +163,22 @@ public abstract class DomainConfigurator {
     getDomainSpec().getStorage().setStorageReclaimPolicy(policy);
     return this;
   }
+
+  /**
+   * Sets the WebLogic configuration overrides configmap name for the domain
+   *
+   * @param configMapName Name of the Kubernetes configmap that contains the config overrides
+   * @return this object
+   */
+  public abstract DomainConfigurator withConfigOverrides(String configMapName);
+
+  /**
+   * Sets the WebLogic configuration overrides secret names for the domain
+   *
+   * @param secretNames a list of secret names
+   * @return this object
+   */
+  public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the

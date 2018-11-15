@@ -84,6 +84,24 @@ public abstract class ServerSpec {
     }
   }
 
+  /**
+   * The Kubernetes configmap name used in WebLogic configuration overrides
+   *
+   * @return configMapName. May be empty.
+   */
+  public String getConfigOverrides() {
+    return domainSpec.getConfigOverrides();
+  }
+
+  /**
+   * The secret names used in WebLogic configuration overrides
+   *
+   * @return a list of secret names. May be empty.
+   */
+  public List<String> getConfigOverrideSecrets() {
+    return domainSpec.getConfigOverrideSecrets();
+  }
+
   @SuppressWarnings("SameParameterValue")
   private V1EnvVar getOrCreateVar(List<V1EnvVar> env, String name) {
     for (V1EnvVar var : env) {

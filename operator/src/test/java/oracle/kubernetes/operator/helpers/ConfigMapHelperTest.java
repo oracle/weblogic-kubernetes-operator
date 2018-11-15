@@ -141,7 +141,8 @@ public class ConfigMapHelperTest {
     return new V1ObjectMeta()
         .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
         .namespace(DOMAIN_NS)
-        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+        .putLabelsItem(
+            LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, OPERATOR_NS)
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
