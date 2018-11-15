@@ -199,7 +199,8 @@ else
   #docker rmi -f $(docker images -q -f dangling=true)
   docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
   
-  
+  docker images	
+	
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
 fi
