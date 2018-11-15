@@ -376,12 +376,12 @@ public class DomainV2Configurator extends DomainConfigurator {
       cluster.setPodSecurityContext(podSecurityContext);
       return this;
     }
-    
+
     public ClusterConfigurator withAdditionalVolume(String name, String path) {
       cluster.addAdditionalVolume(name, path);
       return this;
     }
-    
+
     public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
       cluster.addAdditionalVolumeMount(name, path);
       return this;

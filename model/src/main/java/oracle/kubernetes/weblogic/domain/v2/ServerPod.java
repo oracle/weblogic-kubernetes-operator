@@ -10,10 +10,10 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
@@ -340,7 +340,7 @@ class ServerPod {
   public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     this.containerSecurityContext = containerSecurityContext;
   }
-  
+
   void addAdditionalVolume(String name, String path) {
     addAdditionalVolume(
         new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));

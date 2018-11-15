@@ -280,7 +280,7 @@ public abstract class DomainConfigurator {
   /**
    * Add security constraints at container level, if the same constraint is also defined at pod
    * level then container constraint take precedence
-   * 
+   *
    * @param containerSecurityContext the security context object
    * @return this object
    */
@@ -290,7 +290,7 @@ public abstract class DomainConfigurator {
   /**
    * Add security constraints at container level, if the same constraint is also defined at pod
    * level then container constraint take precedence
-   * 
+   *
    * @param podSecurityContext
    * @return this object
    */

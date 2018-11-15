@@ -161,7 +161,7 @@ public abstract class BaseConfiguration {
   public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     serverPod.setContainerSecurityContext(containerSecurityContext);
   }
-  
+
   public List<V1Volume> getAdditionalVolumes() {
     return serverPod.getAdditionalVolumes();
   }
