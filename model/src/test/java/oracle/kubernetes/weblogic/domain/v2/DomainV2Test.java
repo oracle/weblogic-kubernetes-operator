@@ -21,8 +21,15 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import com.google.gson.GsonBuilder;
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.V1Capabilities;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SELinuxOptions;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Sysctl;
 import java.io.IOException;
+import java.util.Map;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
@@ -406,10 +413,10 @@ public class DomainV2Test extends DomainTestBase {
         .withEnvironmentVariable("name2", "cluster")
         .withEnvironmentVariable("name3", "cluster")
         .withEnvironmentVariable("name4", "cluster");
-    configureServer("server1").withEnvironmentVariable("name4", "server");
+    configureServer(SERVER1).withEnvironmentVariable("name4", "server");
 
     assertThat(
-        domain.getServer("server1", "cluster1").getEnvironmentVariables(),
+        domain.getServer(SERVER1, "cluster1").getEnvironmentVariables(),
         containsInAnyOrder(
             envVar("name1", "domain"),
             envVar("name2", "cluster"),
@@ -475,6 +482,197 @@ public class DomainV2Test extends DomainTestBase {
     configureDomain(domain1).configureCluster("cls1");
 
     assertThat(domain, equalTo(domain1));
+  }
+
+  @Test
+  public void whenNodeSelectorConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withNodeSelector("key1", "domain")
+        .withNodeSelector("key2", "domain")
+        .withNodeSelector("key3", "domain");
+    configureCluster(CLUSTER_NAME)
+        .withNodeSelector("key2", "cluser")
+        .withNodeSelector("key3", "cluser");
+    configureServer(SERVER1).withNodeSelector("key3", "server");
+    configureAdminServer().withNodeSelector("key2", "admin").withNodeSelector("key3", "admin");
+
+    ServerSpec serverSpec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key1", "domain"));
+    assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key2", "admin"));
+    assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key3", "admin"));
+
+    assertThat(serverSpec.getNodeSelectors(), hasEntry("key1", "domain"));
+    assertThat(serverSpec.getNodeSelectors(), hasEntry("key2", "cluser"));
+    assertThat(serverSpec.getNodeSelectors(), hasEntry("key3", "server"));
+  }
+
+  @Test
+  public void whenResourceRequirementsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withRequestRequirement("memory", "64Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withLimitRequirement("memory", "128Mi")
+        .withLimitRequirement("cpu", "500m");
+    configureCluster(CLUSTER_NAME)
+        .withRequestRequirement("memory", "128Mi")
+        .withLimitRequirement("memory", "256Mi");
+    configureServer(SERVER1).withLimitRequirement("memory", "512Mi");
+    configureAdminServer()
+        .withRequestRequirement("cpu", "500m")
+        .withLimitRequirement("cpu", "0.8"); // Same as 800 millicores
+
+    ServerSpec serverSpec = domain.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(serverSpec.getResources().getRequests(), hasResourceQuantity("memory", "128Mi"));
+    assertThat(serverSpec.getResources().getRequests(), hasResourceQuantity("cpu", "250m"));
+    assertThat(serverSpec.getResources().getLimits(), hasResourceQuantity("memory", "512Mi"));
+    assertThat(serverSpec.getResources().getLimits(), hasResourceQuantity("cpu", "500m"));
+
+    assertThat(
+        domain.getAdminServerSpec().getResources().getRequests(),
+        hasResourceQuantity("memory", "64Mi"));
+    assertThat(
+        domain.getAdminServerSpec().getResources().getRequests(),
+        hasResourceQuantity("cpu", "500m"));
+    assertThat(
+        domain.getAdminServerSpec().getResources().getLimits(),
+        hasResourceQuantity("memory", "128Mi"));
+    assertThat(
+        domain.getAdminServerSpec().getResources().getLimits(), hasResourceQuantity("cpu", "0.8"));
+  }
+
+  @Test
+  public void whenPodSecurityContextConfiguredOnMultipleLevels_useCombination() {
+    V1Sysctl domainSysctl = new V1Sysctl().name("net.ipv4.route.min_pmtu").value("552");
+    V1Sysctl clusterSysctl = new V1Sysctl().name("kernel.shm_rmid_forced").value("0");
+    configureDomain(domain)
+        .withPodSecurityContext(
+            new V1PodSecurityContext()
+                .runAsGroup(420L)
+                .addSysctlsItem(domainSysctl)
+                .seLinuxOptions(
+                    new V1SELinuxOptions().level("domain").role("admin").user("weblogic"))
+                .runAsNonRoot(true));
+    configureCluster(CLUSTER_NAME)
+        .withPodSecurityContext(
+            new V1PodSecurityContext()
+                .runAsGroup(421L)
+                .addSysctlsItem(clusterSysctl)
+                .seLinuxOptions(
+                    new V1SELinuxOptions()
+                        .level("cluster")
+                        .role("admin")
+                        .type("admin")
+                        .user("weblogic"))
+                .runAsNonRoot(true));
+    configureServer(SERVER1)
+        .withPodSecurityContext(
+            new V1PodSecurityContext()
+                .runAsGroup(422L)
+                .seLinuxOptions(new V1SELinuxOptions().level("server").role("slave")));
+    configureServer(SERVER2);
+    configureAdminServer().withPodSecurityContext(new V1PodSecurityContext().runAsNonRoot(false));
+
+    ServerSpec server1Spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    assertThat(server1Spec.getPodSecurityContext().getRunAsGroup(), is(422L));
+    assertThat(server1Spec.getPodSecurityContext().getSysctls(), contains(clusterSysctl));
+    assertThat(server1Spec.getPodSecurityContext().getSeLinuxOptions().getLevel(), is("server"));
+    assertThat(server1Spec.getPodSecurityContext().getSeLinuxOptions().getRole(), is("slave"));
+    assertThat(server1Spec.getPodSecurityContext().getSeLinuxOptions().getType(), nullValue());
+    assertThat(server1Spec.getPodSecurityContext().getRunAsUser(), nullValue());
+
+    ServerSpec server2Spec = domain.getServer(SERVER2, CLUSTER_NAME);
+    assertThat(server2Spec.getPodSecurityContext().getRunAsGroup(), is(421L));
+    assertThat(server1Spec.getPodSecurityContext().getSysctls(), contains(clusterSysctl));
+    assertThat(server2Spec.getPodSecurityContext().getSeLinuxOptions().getLevel(), is("cluster"));
+    assertThat(server2Spec.getPodSecurityContext().getSeLinuxOptions().getRole(), is("admin"));
+    assertThat(server2Spec.getPodSecurityContext().getSeLinuxOptions().getType(), is("admin"));
+    assertThat(server2Spec.getPodSecurityContext().getRunAsUser(), nullValue());
+
+    ServerSpec adminServerSpec = domain.getAdminServerSpec();
+    assertThat(adminServerSpec.getPodSecurityContext().getRunAsGroup(), is(420L));
+    assertThat(adminServerSpec.getPodSecurityContext().getSysctls(), contains(domainSysctl));
+    assertThat(
+        adminServerSpec.getPodSecurityContext().getSeLinuxOptions().getLevel(), is("domain"));
+    assertThat(adminServerSpec.getPodSecurityContext().getSeLinuxOptions().getRole(), is("admin"));
+    assertThat(adminServerSpec.getPodSecurityContext().getSeLinuxOptions().getType(), nullValue());
+    assertThat(adminServerSpec.getPodSecurityContext().getRunAsUser(), nullValue());
+  }
+
+  @Test
+  public void whenContainerSecurityContextConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withContainerSecurityContext(
+            new V1SecurityContext()
+                .runAsGroup(420L)
+                .allowPrivilegeEscalation(false)
+                .capabilities(new V1Capabilities().addAddItem("CHOWN").addAddItem("SYS_BOOT"))
+                .seLinuxOptions(
+                    new V1SELinuxOptions().level("domain").role("admin").user("weblogic"))
+                .runAsNonRoot(true));
+    configureCluster(CLUSTER_NAME)
+        .withContainerSecurityContext(
+            new V1SecurityContext()
+                .runAsGroup(421L)
+                .capabilities(new V1Capabilities().addAddItem("SYS_TIME"))
+                .seLinuxOptions(
+                    new V1SELinuxOptions()
+                        .level("cluster")
+                        .role("admin")
+                        .type("admin")
+                        .user("weblogic"))
+                .runAsNonRoot(true));
+    configureServer(SERVER1)
+        .withContainerSecurityContext(
+            new V1SecurityContext()
+                .runAsGroup(422L)
+                .seLinuxOptions(new V1SELinuxOptions().level("server").role("slave")));
+    configureServer(SERVER2);
+    configureAdminServer()
+        .withContainerSecurityContext(new V1SecurityContext().runAsNonRoot(false));
+
+    ServerSpec server1Spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    assertThat(server1Spec.getContainerSecurityContext().getRunAsGroup(), is(422L));
+    assertThat(server1Spec.getContainerSecurityContext().isAllowPrivilegeEscalation(), is(false));
+    assertThat(
+        server1Spec.getContainerSecurityContext().getCapabilities().getAdd(), contains("SYS_TIME"));
+    assertThat(
+        server1Spec.getContainerSecurityContext().getSeLinuxOptions().getLevel(), is("server"));
+    assertThat(
+        server1Spec.getContainerSecurityContext().getSeLinuxOptions().getRole(), is("slave"));
+    assertThat(
+        server1Spec.getContainerSecurityContext().getSeLinuxOptions().getType(), nullValue());
+    assertThat(server1Spec.getContainerSecurityContext().getRunAsUser(), nullValue());
+
+    ServerSpec server2Spec = domain.getServer(SERVER2, CLUSTER_NAME);
+    assertThat(server2Spec.getContainerSecurityContext().getRunAsGroup(), is(421L));
+    assertThat(server2Spec.getContainerSecurityContext().isAllowPrivilegeEscalation(), is(false));
+    assertThat(
+        server2Spec.getContainerSecurityContext().getCapabilities().getAdd(), contains("SYS_TIME"));
+    assertThat(
+        server2Spec.getContainerSecurityContext().getSeLinuxOptions().getLevel(), is("cluster"));
+    assertThat(
+        server2Spec.getContainerSecurityContext().getSeLinuxOptions().getRole(), is("admin"));
+    assertThat(
+        server2Spec.getContainerSecurityContext().getSeLinuxOptions().getType(), is("admin"));
+    assertThat(server2Spec.getContainerSecurityContext().getRunAsUser(), nullValue());
+
+    ServerSpec adminServerSpec = domain.getAdminServerSpec();
+    assertThat(adminServerSpec.getContainerSecurityContext().getRunAsGroup(), is(420L));
+    assertThat(
+        adminServerSpec.getContainerSecurityContext().isAllowPrivilegeEscalation(), is(false));
+    assertThat(
+        adminServerSpec.getContainerSecurityContext().getCapabilities().getAdd(),
+        contains("CHOWN", "SYS_BOOT"));
+    assertThat(
+        adminServerSpec.getContainerSecurityContext().getSeLinuxOptions().getLevel(), is("domain"));
+    assertThat(
+        adminServerSpec.getContainerSecurityContext().getSeLinuxOptions().getRole(), is("admin"));
+    assertThat(
+        adminServerSpec.getContainerSecurityContext().getSeLinuxOptions().getType(), nullValue());
+    assertThat(adminServerSpec.getContainerSecurityContext().getRunAsUser(), nullValue());
+    assertThat(adminServerSpec.getContainerSecurityContext().isPrivileged(), nullValue());
   }
 
   @Test
@@ -570,6 +768,55 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainReadFromYaml_AdminAndManagedOverrideDomainNodeSelectors()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec server1Spec = domain.getServer("server1", null);
+    ServerSpec server2Spec = domain.getServer("server2", null);
+    assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os_arch", "x86_64"));
+    assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
+    assertThat(server2Spec.getNodeSelectors(), hasEntry("os_arch", "x86"));
+    assertThat(server2Spec.getNodeSelectors(), hasEntry("os", "linux"));
+    assertThat(server1Spec.getNodeSelectors(), hasEntry("os_arch", "arm64"));
+    assertThat(server1Spec.getNodeSelectors(), hasEntry("os", "linux"));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_AdminAndManagedOverrideResourceRequirements()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec server1Spec = domain.getServer("server1", null);
+    ServerSpec server2Spec = domain.getServer("server2", null);
+
+    assertThat(
+        domain.getAdminServerSpec().getResources().getRequests(),
+        hasResourceQuantity("memory", "64Mi"));
+    assertThat(
+        domain.getAdminServerSpec().getResources().getRequests(),
+        hasResourceQuantity("cpu", "150m"));
+    assertThat(
+        domain.getAdminServerSpec().getResources().getLimits(),
+        hasResourceQuantity("memory", "128Mi"));
+    assertThat(
+        domain.getAdminServerSpec().getResources().getLimits(), hasResourceQuantity("cpu", "200m"));
+
+    assertThat(server1Spec.getResources().getRequests(), hasResourceQuantity("memory", "32Mi"));
+    assertThat(server1Spec.getResources().getRequests(), hasResourceQuantity("cpu", "250m"));
+    assertThat(server1Spec.getResources().getLimits(), hasResourceQuantity("memory", "256Mi"));
+    assertThat(server1Spec.getResources().getLimits(), hasResourceQuantity("cpu", "500m"));
+
+    assertThat(server2Spec.getResources().getRequests(), hasResourceQuantity("memory", "64Mi"));
+    assertThat(server2Spec.getResources().getRequests(), hasResourceQuantity("cpu", "250m"));
+    assertThat(server2Spec.getResources().getLimits(), hasResourceQuantity("memory", "128Mi"));
+    assertThat(server2Spec.getResources().getLimits(), hasResourceQuantity("cpu", "500m"));
+  }
+
+  private Matcher<Map<? extends String, ? extends Quantity>> hasResourceQuantity(
+      String resource, String quantity) {
+    return hasEntry(resource, Quantity.fromString(quantity));
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_unknownClusterUseDefaultReplicaCount() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
@@ -626,6 +873,22 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_clusterHasNodeSelector() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer(SERVER2, "cluster1");
+    assertThat(serverSpec.getNodeSelectors(), hasEntry("os", "linux"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_clusterAndManagedServerHaveDifferentNodeSelectors()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+    assertThat(serverSpec.getNodeSelectors(), hasEntry("os", "linux"));
+    assertThat(serverSpec.getNodeSelectors(), hasEntry("os_type", "oel7"));
+  }
+
+  @Test
   public void whenDomain3ReadFromYaml_PredefinedStorageDefinesClaimName() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
@@ -652,5 +915,11 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
     assertThat(domain.getChannelServiceAnnotations("channelB"), hasEntry("time", "midnight"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
   }
 }

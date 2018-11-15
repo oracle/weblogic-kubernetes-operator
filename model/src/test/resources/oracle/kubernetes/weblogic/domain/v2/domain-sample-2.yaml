@@ -53,11 +53,15 @@ spec:
           initialDelaySeconds: 20
           timeoutSeconds: 5
           periodSeconds: 20
+        nodeSelector:
+          os: linux
 
   managedServers:
     - serverName: server2
       serverPod:
         livenessProbe:
           periodSeconds: 18
+        nodeSelector:
+          os_type: oel7
 
 

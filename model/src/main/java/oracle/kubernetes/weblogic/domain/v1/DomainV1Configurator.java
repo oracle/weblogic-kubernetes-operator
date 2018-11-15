@@ -7,6 +7,8 @@ package oracle.kubernetes.weblogic.domain.v1;
 import static oracle.kubernetes.operator.StartupControlConstants.AUTO_STARTUPCONTROL;
 import static oracle.kubernetes.operator.StartupControlConstants.NONE_STARTUPCONTROL;
 
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecurityContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -125,6 +127,32 @@ public class DomainV1Configurator extends DomainConfigurator {
     return true;
   }
 
+  @Override
+  public DomainConfigurator withNodeSelector(String labelKey, String labelValue) {
+    throw new ConfigurationNotSupportedException("domain", "nodeSelector");
+  }
+
+  @Override
+  public DomainConfigurator withRequestRequirement(String resource, String quantity) {
+    throw new ConfigurationNotSupportedException("domain", "requestRequirement");
+  }
+
+  @Override
+  public DomainConfigurator withLimitRequirement(String resource, String quantity) {
+    throw new ConfigurationNotSupportedException("domain", "requestLimit");
+  }
+
+  @Override
+  public DomainConfigurator withContainerSecurityContext(
+      V1SecurityContext containerSecurityContext) {
+    throw new ConfigurationNotSupportedException("cluster", "containerSecurityContext");
+  }
+
+  @Override
+  public DomainConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    throw new ConfigurationNotSupportedException("cluster", "podSecurityContext");
+  }
+
   @SuppressWarnings("deprecation")
   private ClusterStartup getOrCreateClusterStartup(String clusterName) {
     for (ClusterStartup startup :
@@ -183,6 +211,32 @@ public class DomainV1Configurator extends DomainConfigurator {
     public ServerConfigurator withReadinessProbeSettings(
         Integer initialDelay, Integer timeout, Integer period) {
       throw new ConfigurationNotSupportedException("server", "readinessProbe");
+    }
+
+    @Override
+    public ServerConfigurator withNodeSelector(String labelKey, String labelValue) {
+      throw new ConfigurationNotSupportedException("server", "nodeSelector");
+    }
+
+    @Override
+    public ServerConfigurator withRequestRequirement(String resource, String quantity) {
+      throw new ConfigurationNotSupportedException("server", "requestRequirement");
+    }
+
+    @Override
+    public ServerConfigurator withLimitRequirement(String resource, String quantity) {
+      throw new ConfigurationNotSupportedException("server", "requestLimit");
+    }
+
+    @Override
+    public ServerConfigurator withContainerSecurityContext(
+        V1SecurityContext containerSecurityContext) {
+      throw new ConfigurationNotSupportedException("server", "containerSecurityContext");
+    }
+
+    @Override
+    public ServerConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      throw new ConfigurationNotSupportedException("server", "podSecurityContext");
     }
   }
 
@@ -275,6 +329,32 @@ public class DomainV1Configurator extends DomainConfigurator {
     public ClusterConfigurator withDesiredState(String state) {
       clusterStartup.setDesiredState(state);
       return this;
+    }
+
+    @Override
+    public ClusterConfigurator withNodeSelector(String labelKey, String labelValue) {
+      throw new ConfigurationNotSupportedException("cluster", "nodeSelector");
+    }
+
+    @Override
+    public ClusterConfigurator withRequestRequirement(String resource, String quantity) {
+      throw new ConfigurationNotSupportedException("cluster", "requestRequirement");
+    }
+
+    @Override
+    public ClusterConfigurator withLimitRequirement(String resource, String quantity) {
+      throw new ConfigurationNotSupportedException("cluster", "requestLimit");
+    }
+
+    @Override
+    public ClusterConfigurator withContainerSecurityContext(
+        V1SecurityContext containerSecurityContext) {
+      throw new ConfigurationNotSupportedException("cluster", "containerSecurityContext");
+    }
+
+    @Override
+    public ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      throw new ConfigurationNotSupportedException("cluster", "podSecurityContext");
     }
   }
 }

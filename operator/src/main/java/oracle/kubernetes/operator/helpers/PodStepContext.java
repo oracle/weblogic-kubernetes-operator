@@ -574,7 +574,10 @@ public abstract class PodStepContext {
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
         new V1PodSpec()
-            .addContainersItem(createContainer(tuningParameters))
+            .addContainersItem(
+                createContainer(tuningParameters)
+                    .resources(getServerSpec().getResources())
+                    .securityContext(getServerSpec().getContainerSecurityContext()))
             .addVolumesItem(
                 new V1Volume()
                     .name(SECRETS_VOLUME)
@@ -585,7 +588,9 @@ public abstract class PodStepContext {
                     .configMap(
                         new V1ConfigMapVolumeSource()
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-                            .defaultMode(ALL_READ_AND_EXECUTE)));
+                            .defaultMode(ALL_READ_AND_EXECUTE)))
+            .nodeSelector(getServerSpec().getNodeSelectors())
+            .securityContext(getServerSpec().getPodSecurityContext());
 
     /**/
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());

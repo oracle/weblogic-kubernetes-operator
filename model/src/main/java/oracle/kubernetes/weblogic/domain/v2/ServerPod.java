@@ -8,9 +8,15 @@ import static java.util.Collections.emptyList;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -54,6 +60,54 @@ class ServerPod {
   @Description("Settings for the readiness probe associated with a server")
   private ProbeTuning readinessProbeTuning = new ProbeTuning();
 
+  /**
+   * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
+   * indicated key-value pairs as labels
+   *
+   * @since 2.0
+   */
+  @SerializedName("nodeSelector")
+  @Expose
+  @Description("Mapping of key-value pairs for the pod to fit on a node")
+  private Map<String, String> nodeSelectorMap = new HashMap<String, String>(1);
+
+  /**
+   * Defines the requirements and limits for the pod server
+   *
+   * @since 2.0
+   */
+  @SerializedName("resources")
+  @Expose
+  @Description("Memory and cpu minimum requirements and limits for the server")
+  private V1ResourceRequirements resourceRequirements =
+      new V1ResourceRequirements()
+          .limits(new HashMap<String, Quantity>())
+          .requests(new HashMap<String, Quantity>());
+
+  /**
+   * PodSecurityContext holds pod-level security attributes and common container settings. Some
+   * fields are also present in container.securityContext. Field values of container.securityContext
+   * take precedence over field values of PodSecurityContext.
+   *
+   * @since 2.0
+   */
+  @SerializedName("podSecurityContext")
+  @Expose
+  @Description("")
+  private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+
+  /**
+   * SecurityContext holds security configuration that will be applied to a container. Some fields
+   * are present in both SecurityContext and PodSecurityContext. When both are set, the values in
+   * SecurityContext take precedence
+   *
+   * @since 2.0
+   */
+  @SerializedName("containerSecurityContext")
+  @Expose
+  @Description("SecurityContext holds security configuration that will be applied to a container.")
+  private V1SecurityContext containerSecurityContext = new V1SecurityContext();
+
   ProbeTuning getReadinessProbeTuning() {
     return this.readinessProbeTuning;
   }
@@ -77,13 +131,85 @@ class ServerPod {
   }
 
   boolean hasV2Fields() {
-    return !this.env.isEmpty();
+    return !this.env.isEmpty()
+        || !this.nodeSelectorMap.isEmpty()
+        || !this.resourceRequirements.getRequests().isEmpty()
+        || !this.resourceRequirements.getLimits().isEmpty()
+        || !this.nodeSelectorMap.isEmpty()
+        || !hasAnySecurityContextConfigured()
+        || !hasAnyPodSecurityContextConfigured();
+  }
+
+  private boolean hasAnySecurityContextConfigured() {
+    return podSecurityContext.isRunAsNonRoot() == null
+        || podSecurityContext.getFsGroup() == null
+        || podSecurityContext.getRunAsGroup() == null
+        || podSecurityContext.getRunAsUser() == null
+        || podSecurityContext.getSeLinuxOptions() == null
+        || podSecurityContext.getSupplementalGroups() == null
+        || podSecurityContext.getSysctls() == null;
+  }
+
+  private boolean hasAnyPodSecurityContextConfigured() {
+    return containerSecurityContext.isAllowPrivilegeEscalation() == null
+        || containerSecurityContext.isPrivileged() == null
+        || containerSecurityContext.isReadOnlyRootFilesystem() == null
+        || containerSecurityContext.isRunAsNonRoot() == null
+        || containerSecurityContext.getCapabilities() == null
+        || containerSecurityContext.getRunAsGroup() == null
+        || containerSecurityContext.getRunAsUser() == null
+        || containerSecurityContext.getSeLinuxOptions() == null;
   }
 
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
     copyValues(livenessProbeTuning, serverPod1.livenessProbeTuning);
     copyValues(readinessProbeTuning, serverPod1.readinessProbeTuning);
+    serverPod1.nodeSelectorMap.forEach(nodeSelectorMap::putIfAbsent);
+    copyValues(resourceRequirements, serverPod1.resourceRequirements);
+    copyValues(podSecurityContext, serverPod1.podSecurityContext);
+    copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
+  }
+
+  private void copyValues(
+      V1PodSecurityContext toPodSecurityContext, V1PodSecurityContext fromPodSecurityContext) {
+    if (toPodSecurityContext.isRunAsNonRoot() == null)
+      toPodSecurityContext.runAsNonRoot(fromPodSecurityContext.isRunAsNonRoot());
+    if (toPodSecurityContext.getFsGroup() == null)
+      toPodSecurityContext.fsGroup(fromPodSecurityContext.getFsGroup());
+    if (toPodSecurityContext.getRunAsGroup() == null)
+      toPodSecurityContext.runAsGroup(fromPodSecurityContext.getRunAsGroup());
+    if (toPodSecurityContext.getRunAsUser() == null)
+      toPodSecurityContext.runAsUser(fromPodSecurityContext.getRunAsUser());
+    if (toPodSecurityContext.getSeLinuxOptions() == null)
+      toPodSecurityContext.seLinuxOptions(fromPodSecurityContext.getSeLinuxOptions());
+    if (toPodSecurityContext.getSupplementalGroups() == null)
+      toPodSecurityContext.supplementalGroups(fromPodSecurityContext.getSupplementalGroups());
+    if (toPodSecurityContext.getSysctls() == null)
+      toPodSecurityContext.sysctls(fromPodSecurityContext.getSysctls());
+  }
+
+  private void copyValues(
+      V1SecurityContext toContainerSecurityContext,
+      V1SecurityContext fromContainerSecurityContext) {
+    if (toContainerSecurityContext.isAllowPrivilegeEscalation() == null)
+      toContainerSecurityContext.allowPrivilegeEscalation(
+          fromContainerSecurityContext.isAllowPrivilegeEscalation());
+    if (toContainerSecurityContext.isPrivileged() == null)
+      toContainerSecurityContext.privileged(fromContainerSecurityContext.isPrivileged());
+    if (toContainerSecurityContext.isReadOnlyRootFilesystem() == null)
+      toContainerSecurityContext.readOnlyRootFilesystem(
+          fromContainerSecurityContext.isReadOnlyRootFilesystem());
+    if (toContainerSecurityContext.isRunAsNonRoot() == null)
+      toContainerSecurityContext.runAsNonRoot(fromContainerSecurityContext.isRunAsNonRoot());
+    if (toContainerSecurityContext.getCapabilities() == null)
+      toContainerSecurityContext.capabilities(fromContainerSecurityContext.getCapabilities());
+    if (toContainerSecurityContext.getRunAsGroup() == null)
+      toContainerSecurityContext.runAsGroup(fromContainerSecurityContext.getRunAsGroup());
+    if (toContainerSecurityContext.getRunAsUser() == null)
+      toContainerSecurityContext.runAsUser(fromContainerSecurityContext.getRunAsUser());
+    if (toContainerSecurityContext.getSeLinuxOptions() == null)
+      toContainerSecurityContext.seLinuxOptions(fromContainerSecurityContext.getSeLinuxOptions());
   }
 
   private List<V1EnvVar> getV1EnvVars() {
@@ -100,6 +226,15 @@ class ServerPod {
       if (var.getName().equals(name)) return true;
     }
     return false;
+  }
+
+  private static void copyValues(
+      V1ResourceRequirements toResourceRequirements,
+      V1ResourceRequirements fromResourceRequirements) {
+    fromResourceRequirements
+        .getRequests()
+        .forEach(toResourceRequirements.getRequests()::putIfAbsent);
+    fromResourceRequirements.getLimits().forEach(toResourceRequirements.getLimits()::putIfAbsent);
   }
 
   private static void copyValues(ProbeTuning toProbe, ProbeTuning fromProbe) {
@@ -122,12 +257,60 @@ class ServerPod {
     this.env = env;
   }
 
+  Map<String, String> getNodeSelector() {
+    return nodeSelectorMap;
+  }
+
+  void addNodeSelector(String labelKey, String labelValue) {
+    this.nodeSelectorMap.put(labelKey, labelValue);
+  }
+
+  void setNodeSelector(@Nullable Map<String, String> nodeSelectors) {
+    this.nodeSelectorMap = nodeSelectors;
+  }
+
+  public V1ResourceRequirements getResourceRequirements() {
+    return resourceRequirements;
+  }
+
+  public void setResourceRequirements(V1ResourceRequirements resourceRequirements) {
+    this.resourceRequirements = resourceRequirements;
+  }
+
+  public void addRequestRequirement(String resource, String quantity) {
+    resourceRequirements.putRequestsItem(resource, Quantity.fromString(quantity));
+  }
+
+  public void addLimitRequirement(String resource, String quantity) {
+    resourceRequirements.putLimitsItem(resource, Quantity.fromString(quantity));
+  }
+
+  public V1PodSecurityContext getPodSecurityContext() {
+    return podSecurityContext;
+  }
+
+  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    this.podSecurityContext = podSecurityContext;
+  }
+
+  public V1SecurityContext getContainerSecurityContext() {
+    return containerSecurityContext;
+  }
+
+  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+    this.containerSecurityContext = containerSecurityContext;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("env", env)
         .append("livenessProbe", livenessProbeTuning)
         .append("readinessProbe", readinessProbeTuning)
+        .append("nodeSelector", nodeSelectorMap)
+        .append("resourceRequirements", resourceRequirements)
+        .append("podSecurityContext", podSecurityContext)
+        .append("containerSecurityContext", containerSecurityContext)
         .toString();
   }
 
@@ -143,6 +326,10 @@ class ServerPod {
         .append(env, that.env)
         .append(livenessProbeTuning, that.livenessProbeTuning)
         .append(readinessProbeTuning, that.readinessProbeTuning)
+        .append(nodeSelectorMap, that.nodeSelectorMap)
+        .append(resourceRequirements, that.resourceRequirements)
+        .append(podSecurityContext, that.podSecurityContext)
+        .append(containerSecurityContext, that.containerSecurityContext)
         .isEquals();
   }
 
@@ -152,6 +339,10 @@ class ServerPod {
         .append(env)
         .append(livenessProbeTuning)
         .append(readinessProbeTuning)
+        .append(nodeSelectorMap)
+        .append(resourceRequirements)
+        .append(podSecurityContext)
+        .append(containerSecurityContext)
         .toHashCode();
   }
 }
