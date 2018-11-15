@@ -155,6 +155,16 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
+   * The list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
+   *
+   * @since 2.0
+   */
+  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
+  @SerializedName("configOverrideSecrets")
+  @Expose
+  private List<String> configOverrideSecrets;
+
+  /**
    * The configuration for the admin server.
    *
    * @since 2.0
@@ -490,6 +500,20 @@ public class DomainSpec extends BaseConfiguration {
     return storage;
   }
 
+  private boolean hasConfigOverrideSecrets() {
+    return configOverrideSecrets != null && configOverrideSecrets.size() != 0;
+  }
+
+  @Nullable
+  public List<String> getConfigOverrideSecrets() {
+    if (hasConfigOverrideSecrets()) return configOverrideSecrets;
+    else return Collections.emptyList();
+  }
+
+  public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
+    this.configOverrideSecrets = overridesSecretNames;
+  }
+
   /**
    * Returns the name of the persistent volume claim for the logs and PV-based domain.
    *
@@ -527,7 +551,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
-            .append("replicas", replicas);
+            .append("replicas", replicas)
+            .append("configOverrideSecrets", configOverrideSecrets);
 
     return builder.toString();
   }
@@ -549,7 +574,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
-            .append(replicas);
+            .append(replicas)
+            .append(configOverrideSecrets);
 
     return builder.toHashCode();
   }
@@ -575,7 +601,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
-            .append(replicas, rhs.replicas);
+            .append(replicas, rhs.replicas)
+            .append(configOverrideSecrets, rhs.configOverrideSecrets);
 
     return builder.isEquals();
   }
