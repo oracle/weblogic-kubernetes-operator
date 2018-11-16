@@ -155,6 +155,16 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
+   * The name of the Kubernetes configmap used in the WebLogic Configuration overrides.
+   *
+   * @since 2.0
+   */
+  @Description("The name of the configmap for optional WebLogic configuration overrides.")
+  @SerializedName("configOverrides")
+  @Expose
+  private String configOverrides;
+
+  /**
    * The list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
    *
    * @since 2.0
@@ -500,6 +510,15 @@ public class DomainSpec extends BaseConfiguration {
     return storage;
   }
 
+  @Nullable
+  public String getConfigOverrides() {
+    return configOverrides;
+  }
+
+  public void setConfigOverrides(@Nullable String overridess) {
+    this.configOverrides = overridess;
+  }
+
   private boolean hasConfigOverrideSecrets() {
     return configOverrideSecrets != null && configOverrideSecrets.size() != 0;
   }
@@ -552,6 +571,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("managedServers", managedServers)
             .append("clusters", clusters)
             .append("replicas", replicas)
+            .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets);
 
     return builder.toString();
@@ -575,6 +595,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(managedServers)
             .append(clusters)
             .append(replicas)
+            .append(configOverrides)
             .append(configOverrideSecrets);
 
     return builder.toHashCode();
@@ -602,6 +623,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
+            .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets);
 
     return builder.isEquals();
