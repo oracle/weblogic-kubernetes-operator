@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecurityContext;
+
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
 public interface ClusterConfigurator {
@@ -22,6 +25,16 @@ public interface ClusterConfigurator {
 
   ClusterConfigurator withLivenessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
+
+  ClusterConfigurator withNodeSelector(String labelKey, String labelValue);
+
+  ClusterConfigurator withRequestRequirement(String resource, String quantity);
+
+  ClusterConfigurator withLimitRequirement(String resource, String quantity);
+
+  ClusterConfigurator withContainerSecurityContext(V1SecurityContext containerSecurityContext);
+
+  ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext);
 
   ClusterConfigurator withAdditionalVolume(String name, String path);
 

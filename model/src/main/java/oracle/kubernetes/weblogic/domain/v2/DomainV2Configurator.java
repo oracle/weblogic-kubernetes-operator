@@ -9,6 +9,8 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecurityContext;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -161,6 +163,37 @@ public class DomainV2Configurator extends DomainConfigurator {
     return server;
   }
 
+  @Override
+  public DomainConfigurator withNodeSelector(String labelKey, String labelValue) {
+    ((BaseConfiguration) getDomainSpec()).addNodeSelector(labelKey, labelValue);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRequestRequirement(String resource, String quantity) {
+    ((BaseConfiguration) getDomainSpec()).addRequestRequirement(resource, quantity);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withLimitRequirement(String resource, String quantity) {
+    ((BaseConfiguration) getDomainSpec()).addLimitRequirement(resource, quantity);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withContainerSecurityContext(
+      V1SecurityContext containerSecurityContext) {
+    ((BaseConfiguration) getDomainSpec()).setContainerSecurityContext(containerSecurityContext);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    ((BaseConfiguration) getDomainSpec()).setPodSecurityContext(podSecurityContext);
+    return this;
+  }
+
   class ServerConfiguratorImpl implements ServerConfigurator {
     private Server server;
 
@@ -202,6 +235,37 @@ public class DomainV2Configurator extends DomainConfigurator {
     public ServerConfigurator withReadinessProbeSettings(
         Integer initialDelay, Integer timeout, Integer period) {
       server.setReadinessProbe(initialDelay, timeout, period);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withRequestRequirement(String resource, String quantity) {
+      server.addRequestRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withNodeSelector(String labelKey, String labelValue) {
+      server.addNodeSelector(labelKey, labelValue);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withLimitRequirement(String resource, String quantity) {
+      server.addLimitRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withContainerSecurityContext(
+        V1SecurityContext containerSecurityContext) {
+      server.setContainerSecurityContext(containerSecurityContext);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      server.setPodSecurityContext(podSecurityContext);
       return this;
     }
 
@@ -291,6 +355,37 @@ public class DomainV2Configurator extends DomainConfigurator {
     public ClusterConfigurator withLivenessProbeSettings(
         Integer initialDelay, Integer timeout, Integer period) {
       cluster.setLivenessProbe(initialDelay, timeout, period);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withNodeSelector(String labelKey, String labelValue) {
+      cluster.addNodeSelector(labelKey, labelValue);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withRequestRequirement(String resource, String quantity) {
+      cluster.addRequestRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withLimitRequirement(String resource, String quantity) {
+      cluster.addLimitRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withContainerSecurityContext(
+        V1SecurityContext containerSecurityContext) {
+      cluster.setContainerSecurityContext(containerSecurityContext);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      cluster.setPodSecurityContext(podSecurityContext);
       return this;
     }
 
