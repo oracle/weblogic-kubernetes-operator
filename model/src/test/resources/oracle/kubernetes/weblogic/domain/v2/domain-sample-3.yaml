@@ -29,6 +29,9 @@ spec:
           color: red
         annotations:
           time: midnight
+    serverPod:
+      nodeSelector:
+        os: linux
 
   domainName: base_domain
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
