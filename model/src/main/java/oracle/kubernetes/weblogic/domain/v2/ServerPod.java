@@ -241,6 +241,10 @@ class ServerPod {
         .append("env", env)
         .append("livenessProbe", livenessProbeTuning)
         .append("readinessProbe", readinessProbeTuning)
+        .append("additionalVolumes", additionalVolumes)
+        .append("additionalVolumeMounts", additionalVolumeMounts)
+        .append("podLabels", podLabels)
+        .append("podAnnotations", podAnnotations)
         .toString();
   }
 
@@ -256,6 +260,10 @@ class ServerPod {
         .append(env, that.env)
         .append(livenessProbeTuning, that.livenessProbeTuning)
         .append(readinessProbeTuning, that.readinessProbeTuning)
+        .append(additionalVolumes, that.additionalVolumes)
+        .append(additionalVolumeMounts, that.additionalVolumeMounts)
+        .append(podLabels, that.podLabels)
+        .append(podAnnotations, that.podAnnotations)
         .isEquals();
   }
 
@@ -265,6 +273,10 @@ class ServerPod {
         .append(env)
         .append(livenessProbeTuning)
         .append(readinessProbeTuning)
+        .append(additionalVolumes)
+        .append(additionalVolumeMounts)
+        .append(podLabels)
+        .append(podAnnotations)
         .toHashCode();
   }
 }
