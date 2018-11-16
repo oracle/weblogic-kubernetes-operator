@@ -10,7 +10,7 @@ Now we need to prepare backend for Apache webtier to do load balancing. Please r
 - adminPort: 7001
 - managedServerPort: 8001
 
-After the domain is successfully created, deploy the sample web application testwebapp.war on the domain cluster through the admin console.
+After the domain is successfully created, deploy the sample web application testwebapp.war on the domain cluster through the admin console. The sample web application is located in the kubernetes/samples/charts/application directory.
 
 ## 2. Build Apache Webtier Docker Image
 Please refer the sample https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache to build Apache webtier docker image.

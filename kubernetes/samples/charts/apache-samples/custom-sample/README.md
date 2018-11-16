@@ -28,7 +28,7 @@ The second domain uses the following custom configuration parameters:
 - adminNodePort: 30702
 - managedServerPort: 8021
 
-After the domains are successfully created, deploy the sample web application testwebapp.war on each domain cluster through the admin console.
+After the domains are successfully created, deploy the sample web application testwebapp.war on each domain cluster through the admin console. The sample web application is located in the kubernetes/samples/charts/application directory.
 
 ## 3. Build Apache Webtier Docker Image
 Please refer the sample https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache to build Apache webtier docker image.
@@ -82,7 +82,7 @@ PathTrim /weblogic2
 ## 5. Prepare Your Own Certificate and Private Key
 In production, Oracle strongly recommends that you provide your own certificates. Run following commands to to generate your own certificate and private key using openssl.
 ```
-$ cd kubernetes/samples/charts/apache
+$ cd kubernetes/samples/charts/apache-samples/custom-sample
 $ export VIRTUAL_HOST_NAME=apache-sample-host
 $ export SSL_CERT_FILE=apache-sample.crt
 $ export SSL_CERT_KEY_FILE=apache-sample.key
@@ -121,10 +121,10 @@ customKey: <key_data>
 ```
 
 ## 7. Install Apache Webtier Helm Chart
-Apache webtier helm chart is located at https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/charts/apache-webtier. You need download it to local path. Install Apache webtier helm chart to apache-sample namespace with specified input parameters:
+Apache webtier helm chart is located in kubernetes/samples/charts/apache-webtier directory. Install Apache webtier helm chart to apache-sample namespace with specified input parameters:
 ```
-$ cd ..
-$ helm install --name my-release --values apache/input.yaml --namespace apache-sample apache-webtier
+$ cd kubernetes/samples/charts
+$ helm install --name my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
 ```
 
 ## 8. Run the Sample Application
