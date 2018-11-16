@@ -243,7 +243,7 @@ public abstract class DomainConfigurator {
   public abstract void setShuttingDown(boolean start);
 
   /**
-   * Add a node selector to the Domain
+   * Add a node label to the Domain's node selector
    *
    * @param labelKey the pod label key
    * @param labelValue the pod label value
