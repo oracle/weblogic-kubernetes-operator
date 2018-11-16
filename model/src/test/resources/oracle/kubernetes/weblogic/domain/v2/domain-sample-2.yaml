@@ -32,7 +32,31 @@ spec:
 
   # Specifies the number of replicas for any clusters which do not specify their own count:
   replicas: 3
-
+  
+  serverPod:
+    podSecurityContext:
+      runAsGroup: 420
+      runAsNonRoot: true
+      seLinuxOptions:
+        level: domain
+        role: admin
+        user: weblogic
+      sysctls:
+      - name: net.ipv4.route.min_pmtu
+        value: '552'
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - CHOWN
+        - SYS_BOOT
+      runAsGroup: 420
+      runAsNonRoot: true
+      seLinuxOptions:
+        level: domain
+        role: admin
+        user: weblogic
+  
   # Configured storage using host-path style
   storage:
     generated:
@@ -51,10 +75,46 @@ spec:
           initialDelaySeconds: 20
           timeoutSeconds: 5
           periodSeconds: 20
+        nodeSelector:
+          os: linux
+        podSecurityContext:
+          runAsGroup: 421
+          runAsNonRoot: true
+          seLinuxOptions:
+            level: cluster
+            role: admin
+            type: admin
+            user: weblogic
+          sysctls:
+          - name: kernel.shm_rmid_forced
+            value: '0'
+        containerSecurityContext:
+          capabilities:
+            add:
+            - SYS_TIME
+          runAsGroup: 421
+          runAsNonRoot: true
+          seLinuxOptions:
+            level: cluster
+            role: admin
+            type: admin
+            user: weblogic
 
   managedServers:
     server2:
       serverPod:
         livenessProbe:
           periodSeconds: 18
+        nodeSelector:
+          os_type: oel7
+        podSecurityContext:
+          runAsGroup: 422
+          seLinuxOptions:
+            level: server
+            role: slave
+        containerSecurityContext:
+          runAsGroup: 422
+          seLinuxOptions:
+            level: server
+            role: slave
 
