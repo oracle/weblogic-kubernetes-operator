@@ -39,6 +39,16 @@ spec:
     env:
     - name: var1
       value: value0
+    nodeSelector:
+      os_arch: x86
+      os: linux
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
 
   # Configured storage using nfs style
   storage:
@@ -61,6 +71,13 @@ spec:
       env:
       - name: var1
         value: value1
+      nodeSelector:
+        os_arch: x86_64
+      resources:
+        requests:
+          cpu: "150m"
+        limits:
+          cpu: "200m"
 
   # list of configurations per named server.
   managedServers:
@@ -72,6 +89,13 @@ spec:
           value: "-server"
         - name: USER_MEM_ARGS
           value: "-Xms64m -Xmx256m "
+        nodeSelector:
+          os_arch: arm64
+        resources:
+          requests:
+            memory: "32Mi"
+          limits:
+            memory: "256Mi"
     server2:
       serverStartState: ADMIN
         
