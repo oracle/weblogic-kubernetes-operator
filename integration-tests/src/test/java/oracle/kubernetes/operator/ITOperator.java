@@ -88,7 +88,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS");
   }
 
-  @Test
+  // @Test
   public void test1CreateFirstOperatorAndDomain() throws Exception {
 
     logTestBegin("test1CreateFirstOperatorAndDomain");
@@ -97,7 +97,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
 
-  @Test
+  // @Test
   public void test2CreateAnotherDomainInDefaultNS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -115,7 +115,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test2CreateAnotherDomainInDefaultNS");
   }
 
-  @Test
+  // @Test
   public void test3CreateDomainInTest1NS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -132,7 +132,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
-  @Test
+  // @Test
   public void test4CreateAnotherOperatorManagingTest2NS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -144,7 +144,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test4CreateAnotherOperatorManagingTest2NS");
   }
 
-  @Test
+  // @Test
   public void test5CreateConfiguredDomainInTest2NS() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -183,7 +183,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
   }
 
-  @Test
+  // @Test
   public void test6CreateDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -199,7 +199,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test6CreateDomainWithStartPolicyAdminOnly");
   }
 
-  @Test
+  // @Test
   public void test7CreateDomainPVReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -238,7 +238,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test8WlsLivenessProbe");
   }
 
-  @Test
+  // @Test
   public void test9CreateDomainOnExistingDir() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -273,7 +273,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
 
-  @Test
+  // @Test
   public void testBCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
