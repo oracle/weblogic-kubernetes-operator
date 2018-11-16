@@ -230,7 +230,9 @@ public class TestUtils {
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
-      kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      ExecResult result = kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      logger.info("result exitValue " + result.exitValue());
+      logger.info("result stdout " + result.stdout() + " stderr " + result.stderr());
       Thread.sleep(2 * 1000);
     }
     // one more time so that liveness probe restarts
@@ -241,6 +243,7 @@ public class TestUtils {
     while (true) {
       long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
+      logger.info("initialRestartCnt " + initialRestartCnt + " finalRestartCnt" + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
         logger.info("WLS liveness probe test is successful.");
         break;
@@ -301,6 +304,8 @@ public class TestUtils {
         .append(" ")
         .append(scriptPath);
 
+    ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
+    logger.info("get pods before killing the server " + result.stdout() + "\n " + result.stderr());
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
