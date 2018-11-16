@@ -9,6 +9,7 @@ import static java.util.Collections.emptyList;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.V1Capabilities;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1PodSecurityContext;
@@ -21,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -64,14 +67,15 @@ class ServerPod {
   private ProbeTuning readinessProbeTuning = new ProbeTuning();
 
   /**
-   * <<<<<<< HEAD Defines the key-value pairs for the pod to fit on a node, the node must have each
-   * of the indicated key-value pairs as labels
+   * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
+   * indicated key-value pairs as labels
    *
    * @since 2.0
    */
   @SerializedName("nodeSelector")
   @Expose
-  @Description("Mapping of key-value pairs for the pod to fit on a node")
+  @Description(
+      "Selector which must match a node's labels for the pod to be scheduled on that node.")
   private Map<String, String> nodeSelectorMap = new HashMap<String, String>(1);
 
   /**
@@ -112,7 +116,7 @@ class ServerPod {
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   /**
-   * ======= >>>>>>> 2eee6231654d610cd04c6dec4de65c51d358d62a The additional volumes.
+   * The additional volumes.
    *
    * @since 2.0
    */
@@ -153,37 +157,6 @@ class ServerPod {
         .periodSeconds(period);
   }
 
-  boolean hasV2Fields() {
-    return !this.env.isEmpty()
-        || !this.nodeSelectorMap.isEmpty()
-        || !this.resourceRequirements.getRequests().isEmpty()
-        || !this.resourceRequirements.getLimits().isEmpty()
-        || !this.nodeSelectorMap.isEmpty()
-        || !hasAnySecurityContextConfigured()
-        || !hasAnyPodSecurityContextConfigured();
-  }
-
-  private boolean hasAnySecurityContextConfigured() {
-    return podSecurityContext.isRunAsNonRoot() == null
-        || podSecurityContext.getFsGroup() == null
-        || podSecurityContext.getRunAsGroup() == null
-        || podSecurityContext.getRunAsUser() == null
-        || podSecurityContext.getSeLinuxOptions() == null
-        || podSecurityContext.getSupplementalGroups() == null
-        || podSecurityContext.getSysctls() == null;
-  }
-
-  private boolean hasAnyPodSecurityContextConfigured() {
-    return containerSecurityContext.isAllowPrivilegeEscalation() == null
-        || containerSecurityContext.isPrivileged() == null
-        || containerSecurityContext.isReadOnlyRootFilesystem() == null
-        || containerSecurityContext.isRunAsNonRoot() == null
-        || containerSecurityContext.getCapabilities() == null
-        || containerSecurityContext.getRunAsGroup() == null
-        || containerSecurityContext.getRunAsUser() == null
-        || containerSecurityContext.getSeLinuxOptions() == null;
-  }
-
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
     livenessProbeTuning.copyValues(serverPod1.livenessProbeTuning);
@@ -196,45 +169,55 @@ class ServerPod {
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
   }
 
-  private void copyValues(
-      V1PodSecurityContext toPodSecurityContext, V1PodSecurityContext fromPodSecurityContext) {
-    if (toPodSecurityContext.isRunAsNonRoot() == null)
-      toPodSecurityContext.runAsNonRoot(fromPodSecurityContext.isRunAsNonRoot());
-    if (toPodSecurityContext.getFsGroup() == null)
-      toPodSecurityContext.fsGroup(fromPodSecurityContext.getFsGroup());
-    if (toPodSecurityContext.getRunAsGroup() == null)
-      toPodSecurityContext.runAsGroup(fromPodSecurityContext.getRunAsGroup());
-    if (toPodSecurityContext.getRunAsUser() == null)
-      toPodSecurityContext.runAsUser(fromPodSecurityContext.getRunAsUser());
-    if (toPodSecurityContext.getSeLinuxOptions() == null)
-      toPodSecurityContext.seLinuxOptions(fromPodSecurityContext.getSeLinuxOptions());
-    if (toPodSecurityContext.getSupplementalGroups() == null)
-      toPodSecurityContext.supplementalGroups(fromPodSecurityContext.getSupplementalGroups());
-    if (toPodSecurityContext.getSysctls() == null)
-      toPodSecurityContext.sysctls(fromPodSecurityContext.getSysctls());
+  private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
+    if (to.isRunAsNonRoot() == null) to.runAsNonRoot(from.isRunAsNonRoot());
+    if (to.getFsGroup() == null) to.fsGroup(from.getFsGroup());
+    if (to.getRunAsGroup() == null) to.runAsGroup(from.getRunAsGroup());
+    if (to.getRunAsUser() == null) to.runAsUser(from.getRunAsUser());
+    if (to.getSeLinuxOptions() == null) to.seLinuxOptions(from.getSeLinuxOptions());
+    if (to.getSupplementalGroups() == null) to.supplementalGroups(from.getSupplementalGroups());
+    if (to.getSysctls() == null) to.sysctls(from.getSysctls());
   }
 
-  private void copyValues(
-      V1SecurityContext toContainerSecurityContext,
-      V1SecurityContext fromContainerSecurityContext) {
-    if (toContainerSecurityContext.isAllowPrivilegeEscalation() == null)
-      toContainerSecurityContext.allowPrivilegeEscalation(
-          fromContainerSecurityContext.isAllowPrivilegeEscalation());
-    if (toContainerSecurityContext.isPrivileged() == null)
-      toContainerSecurityContext.privileged(fromContainerSecurityContext.isPrivileged());
-    if (toContainerSecurityContext.isReadOnlyRootFilesystem() == null)
-      toContainerSecurityContext.readOnlyRootFilesystem(
-          fromContainerSecurityContext.isReadOnlyRootFilesystem());
-    if (toContainerSecurityContext.isRunAsNonRoot() == null)
-      toContainerSecurityContext.runAsNonRoot(fromContainerSecurityContext.isRunAsNonRoot());
-    if (toContainerSecurityContext.getCapabilities() == null)
-      toContainerSecurityContext.capabilities(fromContainerSecurityContext.getCapabilities());
-    if (toContainerSecurityContext.getRunAsGroup() == null)
-      toContainerSecurityContext.runAsGroup(fromContainerSecurityContext.getRunAsGroup());
-    if (toContainerSecurityContext.getRunAsUser() == null)
-      toContainerSecurityContext.runAsUser(fromContainerSecurityContext.getRunAsUser());
-    if (toContainerSecurityContext.getSeLinuxOptions() == null)
-      toContainerSecurityContext.seLinuxOptions(fromContainerSecurityContext.getSeLinuxOptions());
+  private void copyValues(V1SecurityContext to, V1SecurityContext from) {
+    if (to.isAllowPrivilegeEscalation() == null)
+      to.allowPrivilegeEscalation(from.isAllowPrivilegeEscalation());
+    if (to.isPrivileged() == null) to.privileged(from.isPrivileged());
+    if (to.isReadOnlyRootFilesystem() == null)
+      to.readOnlyRootFilesystem(from.isReadOnlyRootFilesystem());
+    if (to.isRunAsNonRoot() == null) to.runAsNonRoot(from.isRunAsNonRoot());
+    if (to.getCapabilities() == null) {
+      to.setCapabilities(from.getCapabilities());
+    } else {
+      copyValues(to.getCapabilities(), from.getCapabilities());
+    }
+    if (to.getRunAsGroup() == null) to.runAsGroup(from.getRunAsGroup());
+    if (to.getRunAsUser() == null) to.runAsUser(from.getRunAsUser());
+    if (to.getSeLinuxOptions() == null) to.seLinuxOptions(from.getSeLinuxOptions());
+  }
+
+  private void copyValues(V1Capabilities to, V1Capabilities from) {
+    if (from.getAdd() != null) {
+      List<String> allAddCapabilities = new ArrayList<String>();
+      if (to.getAdd() != null) {
+        allAddCapabilities =
+            Stream.concat(to.getAdd().stream(), from.getAdd().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setAdd(allAddCapabilities);
+    }
+
+    if (from.getDrop() != null) {
+      List<String> allDropCapabilities = new ArrayList<String>();
+      if (to.getDrop() != null) {
+        allDropCapabilities =
+            Stream.concat(to.getDrop().stream(), from.getDrop().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setDrop(allDropCapabilities);
+    }
   }
 
   private List<V1EnvVar> getV1EnvVars() {
@@ -253,13 +236,9 @@ class ServerPod {
     return false;
   }
 
-  private static void copyValues(
-      V1ResourceRequirements toResourceRequirements,
-      V1ResourceRequirements fromResourceRequirements) {
-    fromResourceRequirements
-        .getRequests()
-        .forEach(toResourceRequirements.getRequests()::putIfAbsent);
-    fromResourceRequirements.getLimits().forEach(toResourceRequirements.getLimits()::putIfAbsent);
+  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
+    from.getRequests().forEach(to.getRequests()::putIfAbsent);
+    from.getLimits().forEach(to.getLimits()::putIfAbsent);
   }
 
   private boolean hasVolumeName(String name) {
