@@ -216,7 +216,7 @@ public class Operator {
       // for example a listed domain namespace does not exist.
       // Fetch the pre-install hook's results and return it too.
       String hookResults = getOperatorHelmChartHookResults("pre-install");
-      cause = cause + "\n pre-install-hook returned\n" + hookResults);
+      cause = cause + "\n pre-install-hook returned\n" + hookResults;
     }
     throw new RuntimeException(cause);
   }
