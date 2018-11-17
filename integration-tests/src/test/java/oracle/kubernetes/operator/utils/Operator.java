@@ -202,7 +202,7 @@ public class Operator {
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
-      reportHelmInstallFailure(cmd, result);
+      reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
