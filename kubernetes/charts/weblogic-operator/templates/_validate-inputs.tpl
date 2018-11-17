@@ -34,6 +34,6 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore:= include "utils.endValidation" $scope -}}
-{{- include "operator.operatorVerificationHook" (list $scope "pre-install") }}
 {{- include "operator.operatorVerificationHook" (list $scope "pre-upgrade") }}
+{{- include "operator.operatorVerificationHook" (list $scope "pre-install") }}
 {{- end -}}
