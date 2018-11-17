@@ -273,6 +273,8 @@ public class ParsedKubernetesYaml {
       // convert the map to a yaml string then convert the yaml string to the
       // corresponding k8s class
       String yaml = newYaml().dump(objectAsMap);
+      System.out.println("MOREAUT_DEBUG TypeHandler.add objectAsMap=" + objectAsMap);
+      System.out.println("MOREAUT_DEBUG TypeHandler.add yaml=" + yaml);
       T instance = (T) newYaml().loadAs(yaml, k8sClass);
       instances.add(instance);
     }
