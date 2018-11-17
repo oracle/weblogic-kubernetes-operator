@@ -14,6 +14,8 @@
 {{- include "operator.operatorConfigMap" . }}
 {{- include "operator.operatorSecrets" . }}
 {{- include "operator.operatorDeployment" . }}
+{{- include "operator.operatorVerificationHook" (list $scope "pre-upgrade") }}
+{{- include "operator.operatorVerificationHook" (list $scope "pre-install") }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
 {{- include "operator.domainNamespaces" . }}
