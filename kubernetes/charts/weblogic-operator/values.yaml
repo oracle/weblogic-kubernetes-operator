@@ -97,15 +97,8 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # elasticSearchPort specifies the port number of where elasticsearch is running
 elasticSearchPort: 9200
 
-# hookNamepace specifies the name of the namespace that the jobs for the Operator helm
-# chart's hooks will be created in.
-# The name must be lowercase.
-# If not specified, they're created in the operator's namespace.
-#hookNamespace:
+# tillerNamespace is the name of the namespace that tiller is configured to use.
+tillerNamespace: "kube-system"
 
-# hookServiceAccount specifies the name of the service account for the Operator hel
-# chart's hooks.  This service account must exist in the hookNamespace, and must have
-# permission to read all of the namespaces, all of the config maps tagged with the
-# weblogic.Operator label, and all of the operator namespace's service accounts.
-hookServiceAccount: "default"
-
+# tillerServiceAccount is the name of the service account that tiller is configured to use.
+tillerServiceAccount: "default"

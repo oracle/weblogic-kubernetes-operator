@@ -9,7 +9,7 @@ apiVersion: "batch/v1"
 kind: "Job"
 metadata:
   name: {{ "weblogic-operator-HOOK_TYPE-hook" | replace "HOOK_TYPE" $hookType | quote }}
-  namespace: {{ $scope.hookNamespace | default $scope.Release.Namespace | quote }}
+  namespace: {{ $scope.tillerNamespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
     weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
@@ -25,7 +25,7 @@ spec:
         weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
     spec:
       restartPolicy: Never
-      serviceAccount: {{ $scope.hookServiceAccount | quote }}
+      serviceAccount: {{ $scope.tillerServiceAccount | quote }}
       containers:
       - name: "weblogic-operator"
         command:
