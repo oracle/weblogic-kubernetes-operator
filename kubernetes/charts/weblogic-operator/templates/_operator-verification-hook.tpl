@@ -15,7 +15,7 @@ metadata:
     weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
   annotations:
     "helm.sh/hook": {{ $hookType | quote }}
-    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   backoffLimit: 0
   template:
