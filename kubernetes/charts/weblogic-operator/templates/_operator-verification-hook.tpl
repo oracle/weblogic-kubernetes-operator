@@ -30,8 +30,8 @@ spec:
         command:
         - "/operator/operator-helm-verification-hook.sh"
         - {{ $hookType | quote }}
-        - {{ $scope.Release.Namespace | quote }}
-        - {{ $scope.serviceAccount | quote }}
+        - {{ $scope.hookNamespace | default $scope.Release.Namespace | quote }}
+        - {{ $scope.hookServiceAccount | quote }}
         {{- range $key := $scope.domainNamespaces }}
         - {{ $key | quote }}
         {{- end }}
