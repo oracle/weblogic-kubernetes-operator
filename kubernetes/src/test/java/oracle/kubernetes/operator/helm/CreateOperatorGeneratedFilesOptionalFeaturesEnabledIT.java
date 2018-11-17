@@ -13,13 +13,13 @@ public class CreateOperatorGeneratedFilesOptionalFeaturesEnabledIT
 
   @BeforeClass
   public static void setup() throws Exception {
-try {
-    defineOperatorYamlFactory(new HelmOperatorYamlFactory());
-} catch (Exception e) {
-System.out.println("MOREAUT_DEBUG " + e);
-e.printStackTrace();
-throw e;
-}
+    try {
+      defineOperatorYamlFactory(new HelmOperatorYamlFactory());
+    } catch (Exception e) {
+      System.out.println("MOREAUT_DEBUG " + e);
+      e.printStackTrace();
+      throw e;
+    }
   }
 
   @Test
