@@ -8,3 +8,5 @@ namespace: weblogic-operator1
 domainNamespaces: [ "default", "test1" ]
 externalRestEnabled: true
 javaLoggingLevel: FINE
+hookNamespace: "kube-system"
+hookServiceAccount: "tiller"
