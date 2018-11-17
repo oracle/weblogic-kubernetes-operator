@@ -210,7 +210,7 @@ public class Operator {
 
   private void reportHelmInstallFailure(String cmd, ExecResult result) throws Exception {
     String cause = getExecFailure(cmd, result);
-    if (result.stdout().contains("Error: Job failed: BackoffLimitExceeded")) {
+    if (result.stderr().contains("Error: Job failed: BackoffLimitExceeded")) {
       // The operator helm chart pre-install hook probably failed.
       // This is probably because there is a problem with the values passed in,
       // for example a listed domain namespace does not exist.
@@ -233,9 +233,9 @@ public class Operator {
   private String getExecFailure(String cmd, ExecResult result) throws Exception {
     return "FAILURE: command "
         + cmd
-        + " failed, returned \n"
+        + " failed, stdout:\n"
         + result.stdout()
-        + "\n"
+        + "stderr:\n"
         + result.stderr();
   }
 
