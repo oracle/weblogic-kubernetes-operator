@@ -10,12 +10,21 @@ kind: "Job"
 metadata:
   name: {{ "weblogic-operator-HOOK_TYPE-hook" | replace "HOOK_TYPE" $hookType | quote }}
   namespace: {{ $scope.Release.Namespace | quote }}
+  labels:
+    weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
   annotations:
     "helm.sh/hook": {{ $hookType | quote }}
     "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
 spec:
+  backoffLimit: 0
   template:
+    metadata:
+      labels:
+        weblogic.resourceVersion: "operator-v1"
+        weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
     spec:
+      restartPolicy: Never
       containers:
       - name: "weblogic-operator"
         command:
@@ -28,8 +37,8 @@ spec:
         {{- end }}
         image: {{ $scope.image | quote }}
         imagePullPolicy: {{ $scope.imagePullPolicy | quote }}
-        {{- if $scope.imagePullSecrets }}
-        imagePullSecrets:
-        {{ $scope.imagePullSecrets | toYaml }}
-        {{- end }}
+      {{- if $scope.imagePullSecrets }}
+      imagePullSecrets:
+      {{ $scope.imagePullSecrets | toYaml }}
+      {{- end }}
 {{- end }}
