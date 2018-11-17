@@ -100,8 +100,8 @@ public class ProcessedChart implements YamlReader {
           .forEach(
               (document) -> {
                 if (document != null) documents.add(document);
+                System.out.println("MOREAUT_DEBUG ProcessedChart.getYamlDocuments " + document);
               });
-
       this.documents = documents;
     }
 
