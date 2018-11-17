@@ -33,5 +33,7 @@
 {{-     $ignore := include "utils.verifyInteger" (list $scope "elasticSearchPort") -}}
 {{-   end -}}
 {{- end -}}
+{{- $ignore := include "utils.verifyOptionalString" (list $scope "hookNamespace") -}}
+{{- $ignore := include "utils.verifyOptionalString" (list $scope "hookServiceAccount") -}}
 {{- $ignore:= include "utils.endValidation" $scope -}}
 {{- end -}}

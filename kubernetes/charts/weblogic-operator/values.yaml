@@ -3,7 +3,7 @@
 
 # serviceAccount specifies the name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
-# The name must be lowercase
+# The name must be lowercase.
 serviceAccount: "default"
 
 # domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages
@@ -96,3 +96,16 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 
 # elasticSearchPort specifies the port number of where elasticsearch is running
 elasticSearchPort: 9200
+
+# hookNamepace specifies the name of the namespace that the jobs for the Operator helm
+# chart's hooks will be created in.
+# The name must be lowercase.
+# If not specified, they're created in the operator's namespace.
+#hookNamespace:
+
+# hookServiceAccount specifies the name of the service account for the Operator hel
+# chart's hooks.  This service account must exist in the hookNamespace, and must have
+# permission to read all of the namespaces, all of the config maps tagged with the
+# weblogic.Operator label, and all of the operator namespace's service accounts.
+hookServiceAccount: "default"
+
