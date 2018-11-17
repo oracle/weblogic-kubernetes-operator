@@ -15,7 +15,7 @@ public class CreateOperatorGeneratedFilesOptionalFeaturesEnabledIT
   public static void setup() throws Exception {
 try {
     defineOperatorYamlFactory(new HelmOperatorYamlFactory());
-} catch Exception e {
+} catch (Exception e) {
 System.out.println("MOREAUT_DEBUG " + e);
 e.printStackTrace();
 throw e;
