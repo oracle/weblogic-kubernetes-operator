@@ -9,7 +9,7 @@ apiVersion: "batch/v1"
 kind: "Job"
 metadata:
   name: {{ "weblogic-operator-HOOK_TYPE-hook" | replace "HOOK_TYPE" $hookType | quote }}
-  namespace: {{ $scope.Release.Namespace | quote }}
+  namespace: {{ $scope.hookNamespace | default $scope.Release.Namespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
     weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
@@ -25,13 +25,14 @@ spec:
         weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
     spec:
       restartPolicy: Never
+      serviceAccount: {{ $scope.hookServiceAccount | quote }}
       containers:
       - name: "weblogic-operator"
         command:
         - "/operator/operator-helm-verification-hook.sh"
         - {{ $hookType | quote }}
-        - {{ $scope.hookNamespace | default $scope.Release.Namespace | quote }}
-        - {{ $scope.hookServiceAccount | quote }}
+        - {{ $scope.Release.Namespace | quote }}
+        - {{ $scope.serviceAccount | quote }}
         {{- range $key := $scope.domainNamespaces }}
         - {{ $key | quote }}
         {{- end }}
