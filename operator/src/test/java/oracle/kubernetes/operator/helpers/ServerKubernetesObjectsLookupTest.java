@@ -43,7 +43,9 @@ public class ServerKubernetesObjectsLookupTest {
             Memento serverMap =
                 StaticStubSupport.preserve(ServerKubernetesObjectsManager.class, "serverMap");
             Map<String, ServerKubernetesObjects> map = serverMap.getOriginalValue();
-            System.out.println("   " + map);
+            System.out.println("   internal: " + map);
+            System.out.println(
+                "   returned: " + ServerKubernetesObjectsManager.getServerKubernetesObjects());
           } catch (NoSuchFieldException ignored) {
           }
         }
@@ -58,11 +60,12 @@ public class ServerKubernetesObjectsLookupTest {
     mementos.add(
         StaticStubSupport.install(
             ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
+    ServerKubernetesObjectsManager.clear();
     DomainPresenceMonitor.clear();
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     for (Memento memento : mementos) memento.revert();
   }
 
