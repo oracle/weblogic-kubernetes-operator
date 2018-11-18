@@ -22,11 +22,24 @@ import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 public class ServerKubernetesObjectsLookupTest {
 
   private List<Memento> mementos = new ArrayList<>();
+
+  @Rule
+  public TestWatcher watcher =
+      new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+          super.failed(e, description);
+          System.out.println("Tell Russell\n" + DomainPresenceMonitor.getExplanation());
+        }
+      };
 
   @Before
   public void setUp() throws Exception {
