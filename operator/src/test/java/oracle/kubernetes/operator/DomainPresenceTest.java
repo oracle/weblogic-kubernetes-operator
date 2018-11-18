@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
@@ -46,12 +45,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -340,16 +337,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName(DOMAIN_CONFIG_MAP_NAME)
         .ignoringBody()
         .returning(domainConfigMap);
-  }
-
-  @Test
-  public void afterCancelDomainStatusUpdating_statusUpdaterIsNull() {
-    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate("namespace", "domainUID");
-    info.getStatusUpdater().getAndSet(createStub(ScheduledFuture.class));
-
-    DomainPresenceControl.cancelDomainStatusUpdating(info);
-
-    assertThat(info.getStatusUpdater().get(), nullValue());
   }
 
   private DomainList createEmptyDomainList() {

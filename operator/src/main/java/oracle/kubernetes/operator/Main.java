@@ -80,7 +80,6 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -308,7 +307,7 @@ public class Main {
       String domainUID = entry.getKey();
       DomainPresenceInfo info = entry.getValue();
       if (info != null && info.getDomain() == null) {
-        deleteDomainPresence(info.getNamespace(), domainUID, null);
+        deleteDomainPresence(info, info.getNamespace(), domainUID);
       }
     }
   }
@@ -572,18 +571,20 @@ public class Main {
     DomainPresenceControl.normalizeDomainSpec(spec);
     String domainUID = spec.getDomainUID();
 
-    boolean existingDomain = DomainPresenceInfoManager.lookup(domainUID) != null;
-    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
-    // Has the spec actually changed? We will get watch events for status updates
-    Domain current = info.getDomain();
-    if (existingDomain && current != null) {
-      if (isOlderResourceVersion(current, dom)
-          || (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec()))) {
+    DomainPresenceInfo existing = DomainPresenceInfoManager.lookup(domainUID);
+    if (existing != null) {
+      Domain current = existing.getDomain();
+      // Has the spec actually changed? We will get watch events for status updates
+      if (current != null
+          && (isOutdatedWatchEvent(current.getMetadata(), dom.getMetadata())
+              || (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec())))) {
         // nothing in the spec has changed or we received an outdated watch event
         LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
         return;
       }
     }
+
+    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
     info.setDomain(dom);
 
     if (explicitRestartAdmin) {
@@ -661,11 +662,6 @@ public class Main {
     LOGGER.exiting();
   }
 
-  static boolean isOlderResourceVersion(Domain current, Domain dom) {
-    return Integer.parseInt(dom.getMetadata().getResourceVersion())
-        < Integer.parseInt(current.getMetadata().getResourceVersion());
-  }
-
   static Step.StepAndPacket createDomainUpPlan(DomainPresenceInfo info, String ns) {
     PodWatcher pw = podWatchers.get(ns);
     Step managedServerStrategy =
@@ -706,69 +702,24 @@ public class Main {
     return new ManagedServersUpStep(next);
   }
 
-  private static void deleteDomainPresence(Domain dom) {
-    V1ObjectMeta meta = dom.getMetadata();
-    DomainSpec spec = dom.getSpec();
-    String namespace = meta.getNamespace();
-
-    String domainUID = spec.getDomainUID();
-
-    deleteDomainPresence(namespace, domainUID, meta.getCreationTimestamp());
-  }
-
-  private static DateTime getDomainCreationTimeStamp(DomainPresenceInfo domainPresenceInfo) {
-    if (domainPresenceInfo != null
-        && domainPresenceInfo.getDomain() != null
-        && domainPresenceInfo.getDomain().getMetadata() != null) {
-      return domainPresenceInfo.getDomain().getMetadata().getCreationTimestamp();
-    }
-    return null;
-  }
-
-  /**
-   * Delete DomainPresentInfo from DomainPresenceInfoManager iff there is DomainPresentInfo with the
-   * same domainUID and with a creationTimeStamp that is on or after the provided
-   * deleteDomainDateTime.
-   *
-   * @param domainUID domainUID of the DomainPresenceInfo to be deleted
-   * @param creationDateTime only delete DomainPresenceInfo from DomainPresenceInfoManager if its
-   *     creationTimeStamp is on or after the given creationDateTime
-   * @return The deleted DomainPresenceInfo that met the domainUID and creationDateTime criteria, or
-   *     null otherwise
-   */
-  static DomainPresenceInfo deleteDomainPresenceWithTimeCheck(
-      String domainUID, DateTime creationDateTime) {
-    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-    if (info != null) {
-      DateTime infoDateTime = getDomainCreationTimeStamp(info);
-      if (infoDateTime != null
-          && creationDateTime != null
-          && creationDateTime.isBefore(infoDateTime)) {
-        LOGGER.exiting("Domain to be deleted is too old");
-        return null;
+  static void deleteDomainPresence(Domain dom) {
+    String domainUID = dom.getSpec().getDomainUID();
+    DomainPresenceInfo existing = DomainPresenceInfoManager.lookup(domainUID);
+    if (existing != null) {
+      Domain current = existing.getDomain();
+      if (current != null && isOutdatedWatchEvent(current.getMetadata(), dom.getMetadata())) {
+        return;
       }
-      info = DomainPresenceInfoManager.remove(domainUID);
-      if (info == null) {
-        LOGGER.exiting("Domain already deleted by another Fiber");
-        return null;
-      }
+      existing.setDomain(null);
     }
-    return info;
+    deleteDomainPresence(existing, dom.getMetadata().getNamespace(), domainUID);
   }
 
   private static void deleteDomainPresence(
-      String namespace, String domainUID, DateTime deleteDomainDateTime) {
-    LOGGER.entering();
-
-    DomainPresenceInfo info = deleteDomainPresenceWithTimeCheck(domainUID, deleteDomainDateTime);
-    if (info == null) {
-      return;
-    }
-    DomainPresenceControl.cancelDomainStatusUpdating(info);
-
+      DomainPresenceInfo info, String namespace, String domainUID) {
     FIBER_GATE.startFiber(
         domainUID,
-        new DeleteDomainStep(namespace, domainUID),
+        new DeleteDomainStep(info, namespace, domainUID),
         new Packet(),
         new CompletionCallback() {
           @Override
@@ -781,8 +732,6 @@ public class Main {
             LOGGER.severe(MessageKeys.EXCEPTION, throwable);
           }
         });
-
-    LOGGER.exiting();
   }
 
   /**
@@ -1128,6 +1077,19 @@ public class Main {
       case "ERROR":
       default:
     }
+  }
+
+  /* Recently, we've seen a number of intermittent bugs where K8s reports
+   * outdated watch events.  There seem to be two main cases: 1) a DELETED
+   * event for a resource that was deleted, but has since been recreated, and 2)
+   * a MODIFIED event for an object that has already had subsequent modifications.
+   */
+  static boolean isOutdatedWatchEvent(V1ObjectMeta current, V1ObjectMeta ob) {
+    return ob == null
+        || (current != null
+            && (Integer.parseInt(ob.getResourceVersion())
+                    < Integer.parseInt(current.getResourceVersion())
+                || ob.getCreationTimestamp().isBefore(current.getCreationTimestamp())));
   }
 
   private static String getOperatorNamespace() {
