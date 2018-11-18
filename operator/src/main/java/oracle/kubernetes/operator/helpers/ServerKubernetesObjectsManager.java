@@ -14,6 +14,10 @@ public class ServerKubernetesObjectsManager {
 
   private ServerKubernetesObjectsManager() {}
 
+  static void clear() {
+    serverMap.clear();
+  }
+
   static ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
     return getOrCreate(info, info.getDomain().getSpec().getDomainUID(), serverName);
   }
