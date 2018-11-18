@@ -222,7 +222,12 @@ public class Operator {
   }
 
   private String getOperatorHelmChartHookResults(String hookType) throws Exception {
-    String cmd = "kubectl logs job/" + operatorNS + "-weblogic-operator-" + hookType + "-hook -n kube-system";
+    String cmd =
+        "kubectl logs job/"
+            + operatorNS
+            + "-weblogic-operator-"
+            + hookType
+            + "-hook -n kube-system";
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       return getExecFailure(cmd, result);
