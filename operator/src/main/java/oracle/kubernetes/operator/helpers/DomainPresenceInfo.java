@@ -260,13 +260,18 @@ public class DomainPresenceInfo {
 
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder(
-            String.format(
-                "DomainPresenceInfo{uid=%s, namespace=%s",
-                getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
+    Domain d = getDomain();
+    if (d != null) {
+      sb.append(
+          String.format(
+              "uid=%s, namespace=%s",
+              getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    } else {
+      sb.append(", namespace=").append(namespace);
+    }
     if (!ingresses.isEmpty()) {
-      sb.append(", ingresses ").append(String.join(",", ingresses.keySet()));
+      sb.append(", ingresses=").append(String.join(",", ingresses.keySet()));
     }
     sb.append("}");
 
