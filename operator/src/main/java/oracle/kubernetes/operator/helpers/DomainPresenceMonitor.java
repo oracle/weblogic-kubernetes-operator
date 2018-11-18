@@ -11,12 +11,13 @@ class DomainPresenceMonitor {
   private static String serverNameAsKey;
   private static ServerKubernetesObjects result;
   private static Domain domain;
-  private static String serverName;
+  private static String registeredName;
+  private static String unregisteredName;
 
   static void clear() {
     serverNameAsKey = null;
     domain = null;
-    serverName = null;
+    registeredName = null;
   }
 
   static String getExplanation() {
@@ -24,7 +25,8 @@ class DomainPresenceMonitor {
     if (serverNameAsKey != null)
       format(sb, "putIfAbsent called with %s and returned %s", serverNameAsKey, result);
     if (domain != null) format(sb, "Domain was not null");
-    if (serverName != null) format(sb, "registered with key %s", serverName);
+    if (registeredName != null) format(sb, "registered with key %s", registeredName);
+    if (unregisteredName != null) format(sb, "unregistered with key %s", unregisteredName);
 
     return sb.toString();
   }
@@ -43,6 +45,10 @@ class DomainPresenceMonitor {
   }
 
   static void registered(String registeredName) {
-    DomainPresenceMonitor.serverName = registeredName;
+    DomainPresenceMonitor.registeredName = registeredName;
+  }
+
+  static void unregistered(String unregisteredName) {
+    DomainPresenceMonitor.unregisteredName = unregisteredName;
   }
 }
