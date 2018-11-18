@@ -9,4 +9,4 @@ domainNamespaces: [ "test2" ]
 externalRestEnabled: true
 externalRestHttpsPort: 32001
 javaLoggingLevel: FINE
-#tillerServiceAccount: "tiller"
+tillerServiceAccount: "tiller"
