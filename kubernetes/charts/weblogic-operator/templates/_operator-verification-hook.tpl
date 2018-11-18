@@ -8,7 +8,7 @@
 apiVersion: "batch/v1"
 kind: "Job"
 metadata:
-  name: {{ "weblogic-operator-HOOK_TYPE-hook" | replace "HOOK_TYPE" $hookType | quote }}
+  name: {{ "DOMAIN_NS-weblogic-operator-HOOK_TYPE-hook" | replace "DOMAIN_NS" $scope.Release.Namespace | replace "HOOK_TYPE" $hookType | quote }}
   namespace: {{ $scope.tillerNamespace | quote }}
   labels:
     weblogic.resourceVersion: "operator-v1"
