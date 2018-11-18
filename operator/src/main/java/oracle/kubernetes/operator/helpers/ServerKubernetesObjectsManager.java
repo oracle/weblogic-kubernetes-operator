@@ -35,6 +35,7 @@ public class ServerKubernetesObjectsManager {
   }
 
   static void unregister(String domainUID, String serverName) {
+    DomainPresenceMonitor.unregistered(serverName);
     serverMap.remove(LegalNames.toServerName(domainUID, serverName));
   }
 
