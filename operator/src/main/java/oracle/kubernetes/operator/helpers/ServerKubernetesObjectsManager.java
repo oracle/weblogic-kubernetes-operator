@@ -30,6 +30,7 @@ public class ServerKubernetesObjectsManager {
   }
 
   static void register(String domainUID, String serverName, ServerKubernetesObjects sko) {
+    DomainPresenceMonitor.registered(serverName);
     serverMap.put(LegalNames.toServerName(domainUID, serverName), sko);
   }
 
