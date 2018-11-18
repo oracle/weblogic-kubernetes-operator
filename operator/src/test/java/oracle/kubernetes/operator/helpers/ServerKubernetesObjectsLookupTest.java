@@ -16,6 +16,7 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
@@ -38,6 +39,13 @@ public class ServerKubernetesObjectsLookupTest {
         protected void failed(Throwable e, Description description) {
           super.failed(e, description);
           System.out.println("Tell Russell\n" + DomainPresenceMonitor.getExplanation());
+          try {
+            Memento serverMap =
+                StaticStubSupport.preserve(ServerKubernetesObjectsManager.class, "serverMap");
+            Map<String, ServerKubernetesObjects> map = serverMap.getOriginalValue();
+            System.out.println("   " + map);
+          } catch (NoSuchFieldException ignored) {
+          }
         }
       };
 
@@ -50,6 +58,7 @@ public class ServerKubernetesObjectsLookupTest {
     mementos.add(
         StaticStubSupport.install(
             ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
+    DomainPresenceMonitor.clear();
   }
 
   @After
