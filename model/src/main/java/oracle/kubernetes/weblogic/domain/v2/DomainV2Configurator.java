@@ -103,6 +103,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withPodLabel(String name, String value) {
+    ((BaseConfiguration) getDomainSpec()).addPodLabels(name, value);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withPodAnnotation(String name, String value) {
+    ((BaseConfiguration) getDomainSpec()).addPodAnnotations(name, value);
+    return this;
+  }
+
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
       implements AdminServerConfigurator {
     private AdminServer adminServer;
@@ -280,6 +292,18 @@ public class DomainV2Configurator extends DomainConfigurator {
       server.addAdditionalVolumeMount(name, path);
       return this;
     }
+
+    @Override
+    public ServerConfigurator withPodLabel(String name, String value) {
+      server.addPodLabels(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withPodAnnotation(String name, String value) {
+      server.addPodAnnotations(name, value);
+      return this;
+    }
   }
 
   @Override
@@ -398,6 +422,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
       cluster.addAdditionalVolumeMount(name, path);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPodLabel(String name, String value) {
+      cluster.addPodLabels(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPodAnnotation(String name, String value) {
+      cluster.addPodAnnotations(name, value);
       return this;
     }
   }
