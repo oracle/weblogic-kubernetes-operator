@@ -12,7 +12,6 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static oracle.kubernetes.operator.Workarounds.INTORSTRING_BAD_EQUALS;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -31,7 +30,6 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.yaml.snakeyaml.Yaml;
 
 /** Helper class to add/remove server from Ingress. */
 public class IngressHelper {
@@ -123,21 +121,7 @@ public class IngressHelper {
 
       private boolean isCompatible(V1beta1Ingress result) {
         return VersionHelper.matchesResourceVersion(result.getMetadata(), DEFAULT_DOMAIN_VERSION)
-            && equalObjects(result.getSpec(), createIngressSpec());
-      }
-
-      private boolean equalObjects(V1beta1IngressSpec object1, V1beta1IngressSpec object2) {
-        return INTORSTRING_BAD_EQUALS
-            ? yamlEquals(object1, object2)
-            : Objects.equals(object1, object2);
-      }
-
-      private boolean yamlEquals(Object actual, Object expected) {
-        return Objects.equals(objectToYaml(actual), objectToYaml(expected));
-      }
-
-      private String objectToYaml(Object object) {
-        return new Yaml().dump(object);
+            && Objects.equals(result.getSpec(), createIngressSpec());
       }
     }
 
