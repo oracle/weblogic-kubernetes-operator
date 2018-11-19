@@ -263,6 +263,7 @@ public class BaseTest {
    */
   public void testWLDFScaling(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testWLDFScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();

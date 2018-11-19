@@ -118,6 +118,8 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test3CreateDomainInTest1NS() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
     logTestBegin("test3CreateDomainInTest1NS");
     logger.info("Creating Domain domain3 & verifing the domain creation");
