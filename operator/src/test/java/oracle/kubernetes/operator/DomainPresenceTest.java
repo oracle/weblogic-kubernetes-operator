@@ -57,6 +57,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -89,7 +90,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(installStub(Main.class, "FIBER_GATE", testSupport.createFiberGateStub()));
+    mementos.add(
+        installStub(DomainProcessor.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
     Map<String, AtomicBoolean> isNamespaceStopping = getStoppingVariable();
     isNamespaceStopping.forEach((key, value) -> value.set(true));
@@ -150,7 +152,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private Domain createDomain(String uid, String namespace) {
     return new Domain()
         .withSpec(new DomainSpec().withDomainUID(uid))
-        .withMetadata(new V1ObjectMeta().namespace(namespace));
+        .withMetadata(
+            new V1ObjectMeta()
+                .namespace(namespace)
+                .resourceVersion("1")
+                .creationTimestamp(DateTime.now()));
   }
 
   private void addIngressResource(String uid, String namespace, String clusterName) {
@@ -455,7 +461,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .ignoringBody()
         .returning(new V1Status());
 
-    Main.deleteStrandedResources();
+    DomainProcessor.deleteStrandedResources();
 
     testSupport.verifyAllDefinedResponsesInvoked();
   }
