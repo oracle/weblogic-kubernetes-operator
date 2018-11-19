@@ -89,7 +89,7 @@ public class MainTest {
 
     V1ObjectMeta domain2Meta = createMetadata(CREATION_DATETIME);
 
-    assertFalse(Main.isOutdatedWatchEvent(domainMeta, domain2Meta));
+    assertFalse(DomainProcessor.isOutdatedWatchEvent(domainMeta, domain2Meta));
   }
 
   @Test
@@ -100,7 +100,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.plusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertFalse(Main.isOutdatedWatchEvent(domainMeta, domain2Meta));
+    assertFalse(DomainProcessor.isOutdatedWatchEvent(domainMeta, domain2Meta));
   }
 
   @Test
@@ -111,7 +111,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.minusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertTrue(Main.isOutdatedWatchEvent(domainMeta, domain2Meta));
+    assertTrue(DomainProcessor.isOutdatedWatchEvent(domainMeta, domain2Meta));
   }
 
   Method getTargetNamespaces;

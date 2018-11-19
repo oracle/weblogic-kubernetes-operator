@@ -84,23 +84,6 @@ public class PodHelper {
     }
 
     @Override
-    void updateRestartForNewPod() {
-      getExplicitRestartAdmin().set(false);
-      getExplicitRestartServers().remove(getServerName());
-    }
-
-    @Override
-    void updateRestartForReplacedPod() {
-      getExplicitRestartAdmin().set(false);
-    }
-
-    @Override
-    protected boolean isExplicitRestartThisServer() {
-      return getExplicitRestartAdmin().get()
-          || getExplicitRestartServers().contains(getServerName());
-    }
-
-    @Override
     protected V1PodSpec createSpec(TuningParameters tuningParameters) {
       return super.createSpec(tuningParameters).hostname(getPodName());
     }
@@ -233,14 +216,6 @@ public class PodHelper {
     }
 
     @Override
-    void updateRestartForNewPod() {
-      getExplicitRestartServers().remove(getServerName());
-    }
-
-    @Override
-    void updateRestartForReplacedPod() {}
-
-    @Override
     String getPodCreatedMessageKey() {
       return MessageKeys.MANAGED_POD_CREATED;
     }
@@ -253,12 +228,6 @@ public class PodHelper {
     @Override
     protected String getPodReplacedMessageKey() {
       return MessageKeys.MANAGED_POD_REPLACED;
-    }
-
-    @Override
-    protected boolean isExplicitRestartThisServer() {
-      return getExplicitRestartServers().contains(getServerName())
-          || (getClusterName() != null && getExplicitRestartClusters().contains(getClusterName()));
     }
 
     @Override
