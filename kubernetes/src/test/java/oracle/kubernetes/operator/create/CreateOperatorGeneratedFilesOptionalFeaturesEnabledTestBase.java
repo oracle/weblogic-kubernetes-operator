@@ -66,14 +66,17 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         .addContainersItem(
             newContainer()
                 .name("logstash")
-                .image("logstash:5")
+                .image(getInputs().getLogStashImage())
                 .addArgsItem("-f")
                 .addArgsItem("/logs/logstash.conf")
                 .addEnvItem(
                     newEnvVar()
                         .name("ELASTICSEARCH_HOST")
-                        .value("elasticsearch.default.svc.cluster.local"))
-                .addEnvItem(newEnvVar().name("ELASTICSEARCH_PORT").value("9200"))
+                        .value(getInputs().getElasticSearchHost()))
+                .addEnvItem(
+                    newEnvVar()
+                        .name("ELASTICSEARCH_PORT")
+                        .value(getInputs().getElasticSearchPort()))
                 .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs")))
         .addVolumesItem(
             newVolume().name("log-dir").emptyDir(newEmptyDirVolumeSource().medium("Memory")))
