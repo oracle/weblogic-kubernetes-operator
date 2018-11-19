@@ -206,7 +206,7 @@ public class Operator {
           "kubectl logs job/"
               + operatorNS
               + "-weblogic-operator-pre-install-hook -n "
-              + operatorMap.get("tillerNamspace");
+              + operatorMap.get("tillerNamespace");
       ExecResult r = ExecCommand.exec(c);
       logger.info(
           "MOREAUT_DEBUG c: "
@@ -263,7 +263,7 @@ public class Operator {
             + "-weblogic-operator-"
             + hookType
             + "-hook -n "
-            + operatorMap.get("tillerNamspace");
+            + operatorMap.get("tillerNamespace");
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       return getExecFailure(cmd, result);
