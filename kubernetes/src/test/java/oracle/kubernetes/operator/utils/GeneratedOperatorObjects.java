@@ -8,6 +8,7 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Role;
 import io.kubernetes.client.models.V1RoleBinding;
@@ -61,6 +62,14 @@ public class GeneratedOperatorObjects {
 
   public V1Service getInternalOperatorService() {
     return operatorYaml.getInternalOperatorService();
+  }
+
+  public V1Job getPreInstallHookJob() {
+    return operatorYaml.getPreInstallHookJob();
+  }
+
+  public V1Job getPreUpgradeHookJob() {
+    return operatorYaml.getPreUpgradeHookJob();
   }
 
   public V1Namespace getOperatorNamespace() {
