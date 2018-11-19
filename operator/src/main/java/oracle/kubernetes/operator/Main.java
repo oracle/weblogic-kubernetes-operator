@@ -577,8 +577,9 @@ public class Main {
     // Has the spec actually changed? We will get watch events for status updates
     Domain current = info.getDomain();
     if (existingDomain && current != null) {
-      if (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec())) {
-        // nothing in the spec has changed
+      if (isOlderResourceVersion(current, dom)
+          || (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec()))) {
+        // nothing in the spec has changed or we received an outdated watch event
         LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
         return;
       }
@@ -658,6 +659,11 @@ public class Main {
       scheduleDomainStatusUpdating(info);
     }
     LOGGER.exiting();
+  }
+
+  static boolean isOlderResourceVersion(Domain current, Domain dom) {
+    return Integer.parseInt(dom.getMetadata().getResourceVersion())
+        < Integer.parseInt(current.getMetadata().getResourceVersion());
   }
 
   static Step.StepAndPacket createDomainUpPlan(DomainPresenceInfo info, String ns) {
