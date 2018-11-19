@@ -4,13 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.Workarounds.INTORSTRING_BAD_EQUALS;
-
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1beta1Ingress;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,7 +21,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.operator.utils.YamlUtils;
 
 /**
  * Support for writing unit tests that use CallBuilder to send requests that expect responses.
@@ -163,29 +159,8 @@ public class CallTestSupport {
 
     private boolean matchesBody(Object actualBody, Object expectedBody) {
       return expectedBody instanceof BodyMatcher && ((BodyMatcher) expectedBody).matches(actualBody)
-          || equalBodies(actualBody, expectedBody)
+          || Objects.equals(actualBody, expectedBody)
           || function != null;
-    }
-
-    private static boolean equalBodies(Object actual, Object expected) {
-      return useYamlComparison(actual)
-          ? yamlEquals(actual, expected)
-          : Objects.equals(actual, expected);
-    }
-
-    // This is a hack to get around a bug in the 1.0 K8s client code:
-    //    the IntOrString class does not define equals(), meaning that any classes which depend on
-    //    it require special handling.
-    private static boolean useYamlComparison(Object actual) {
-      return INTORSTRING_BAD_EQUALS && actual instanceof V1beta1Ingress;
-    }
-
-    private static boolean yamlEquals(Object actual, Object expected) {
-      return Objects.equals(objectToYaml(actual), objectToYaml(expected));
-    }
-
-    private static String objectToYaml(Object object) {
-      return YamlUtils.newYaml().dump(object);
     }
 
     private boolean matches(AdditionalParams params) {
