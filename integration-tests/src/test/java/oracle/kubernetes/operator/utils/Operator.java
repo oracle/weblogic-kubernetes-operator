@@ -203,21 +203,6 @@ public class Operator {
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmInstallFailure(cmd.toString(), result);
-    } else {
-      String c = "helm get " + operatorMap.get("releaseName");
-      ExecResult r = ExecCommand.exec(c);
-      logger.info(
-          "MOREAUT_DEBUG c: "
-              + c
-              + "\n"
-              + "exitValue:"
-              + r.exitValue()
-              + "\n"
-              + "stdout:"
-              + r.stdout()
-              + "\n"
-              + "stderr:"
-              + r.stderr());
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
