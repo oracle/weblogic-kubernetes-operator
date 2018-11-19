@@ -203,12 +203,8 @@ public class Operator {
     ExecResult result = ExecCommand.exec(cmd.toString());
     {
       String c =
-          "kubectl logs job/"
-              + operatorNS
-              + "-weblogic-operator-"
-              + hookType
-              + "-hook -n kube-system";
-      ExecResult r = ExecCommand.exec(cmd);
+          "kubectl logs job/" + operatorNS + "-weblogic-operator-pre-install-hook -n kube-system";
+      ExecResult r = ExecCommand.exec(c);
       logger.info(
           "MOREAUT_DEBUG c: "
               + c
