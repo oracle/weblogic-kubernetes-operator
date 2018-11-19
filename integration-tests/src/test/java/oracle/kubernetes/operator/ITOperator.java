@@ -126,7 +126,7 @@ public class ITOperator extends BaseTest {
     }
     // create domain3
     Domain domain3 = testDomainCreation(domain3YamlFile);
-    
+
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
