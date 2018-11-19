@@ -203,7 +203,10 @@ public class Operator {
     ExecResult result = ExecCommand.exec(cmd.toString());
     {
       String c =
-          "kubectl logs job/" + operatorNS + "-weblogic-operator-pre-install-hook -n kube-system";
+          "kubectl logs job/"
+              + operatorNS
+              + "-weblogic-operator-pre-install-hook -n "
+              + operatorMap.get("tillerNamspace");
       ExecResult r = ExecCommand.exec(c);
       logger.info(
           "MOREAUT_DEBUG c: "
@@ -259,7 +262,8 @@ public class Operator {
             + operatorNS
             + "-weblogic-operator-"
             + hookType
-            + "-hook -n kube-system";
+            + "-hook -n "
+            + operatorMap.get("tillerNamspace");
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       return getExecFailure(cmd, result);
