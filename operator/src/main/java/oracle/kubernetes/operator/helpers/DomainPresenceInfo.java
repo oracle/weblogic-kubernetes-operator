@@ -417,8 +417,10 @@ public class DomainPresenceInfo {
     @Override
     public ServerKubernetesObjects putIfAbsent(String key, ServerKubernetesObjects value) {
       ServerKubernetesObjects result = delegate.putIfAbsent(key, value);
+      DomainPresenceMonitor.putIfAbsent(key, result);
       if (result == null) {
         Domain d = domain.get();
+        DomainPresenceMonitor.putIfAbsentDomain(d);
         if (d != null) {
           ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
         }
