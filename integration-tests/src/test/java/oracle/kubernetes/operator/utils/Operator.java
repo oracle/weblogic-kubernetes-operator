@@ -221,7 +221,7 @@ public class Operator {
     if (result.exitValue() != 0) {
       reportHelmInstallFailure(cmd.toString(), result);
     } else {
-      String c = "help get " + operatorMap.get("releaseName");
+      String c = "helm get " + operatorMap.get("releaseName");
       ExecResult r = ExecCommand.exec(c);
       logger.info(
           "MOREAUT_DEBUG c: "
