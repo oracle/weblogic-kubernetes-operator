@@ -10,5 +10,5 @@ externalRestEnabled: true
 javaLoggingLevel: FINE
 #tillerNamespace: "kube-system"
 #tillerServiceAccount: "tiller"
-tillerNamespace: "weblogic-operator"
+tillerNamespace: "weblogic-operator1"
 tillerServiceAccount: "default"
