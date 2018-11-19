@@ -297,9 +297,9 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain & verifing the domain creation");
     // create domain1
     Domain domain = testDomainCreation(domainYamlFile);
-    testDomainLifecyle(operator, domain);
-    testClusterScaling(operator, domain);
-    testOperatorLifecycle(operator, domain);
+    // testDomainLifecyle(operator, domain);
+    // testClusterScaling(operator, domain);
+    // testOperatorLifecycle(operator, domain);
     return domain;
   }
 
