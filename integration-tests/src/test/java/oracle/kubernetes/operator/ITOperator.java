@@ -94,6 +94,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test1CreateFirstOperatorAndDomain");
     testCreateOperatorManagingDefaultAndTest1NS();
     domain1 = testAllUseCasesForADomain(operator1, domain1YamlFile);
+    testWLDFScaling(operator1, domain1);
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
 
@@ -125,8 +126,7 @@ public class ITOperator extends BaseTest {
     }
     // create domain3
     Domain domain3 = testDomainCreation(domain3YamlFile);
-
-    testWLDFScaling(operator1, domain3);
+    
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
