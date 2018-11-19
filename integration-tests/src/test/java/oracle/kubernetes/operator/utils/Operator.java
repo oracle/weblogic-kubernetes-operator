@@ -201,8 +201,44 @@ public class Operator {
         .append(" --wait --timeout 60");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
+    {
+      String c =
+          "kubectl logs job/"
+              + operatorNS
+              + "-weblogic-operator-"
+              + hookType
+              + "-hook -n kube-system";
+      ExecResult r = ExecCommand.exec(cmd);
+      logger.info(
+          "MOREAUT_DEBUG c: "
+              + c
+              + "\n"
+              + "exitValue:"
+              + r.exitValue()
+              + "\n"
+              + "stdout:"
+              + r.stdout()
+              + "\n"
+              + "stderr:"
+              + r.stderr());
+    }
     if (result.exitValue() != 0) {
       reportHelmInstallFailure(cmd.toString(), result);
+    } else {
+      String c = "help get " + operatorMap.get("releaseName");
+      ExecResult r = ExecCommand.exec(c);
+      logger.info(
+          "MOREAUT_DEBUG c: "
+              + c
+              + "\n"
+              + "exitValue:"
+              + r.exitValue()
+              + "\n"
+              + "stdout:"
+              + r.stdout()
+              + "\n"
+              + "stderr:"
+              + r.stderr());
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
