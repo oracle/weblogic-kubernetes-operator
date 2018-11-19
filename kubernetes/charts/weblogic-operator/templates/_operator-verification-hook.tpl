@@ -8,14 +8,14 @@
 apiVersion: "batch/v1"
 kind: "Job"
 metadata:
-  name: {{ "DOMAIN_NS-weblogic-operator-HOOK_TYPE-hook" | replace "DOMAIN_NS" $scope.Release.Namespace | replace "HOOK_TYPE" $hookType | quote }}
+  name: {{ "OPERATOR_RELEASE-weblogic-operator-HOOK_TYPE-hook" | replace "OPERATOR_RELEASE" $scope.Release.Name | replace "HOOK_TYPE" $hookType | quote }}
   namespace: {{ $scope.tillerNamespace | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
   annotations:
     "helm.sh/hook": {{ $hookType | quote }}
-    "helm.sh/hook-delete-policy": "before-hook-creation" #,hook-succeeded"
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
 spec:
   backoffLimit: 0
   template:
