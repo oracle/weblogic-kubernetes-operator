@@ -86,7 +86,7 @@ public class DomainProcessor {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(
                       MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                  makeRightDomainPresence(info, info.getDomain(), false, true);
+                  makeRightDomainPresence(info, info.getDomain(), false, false, true);
                 }
                 break;
 
@@ -157,7 +157,7 @@ public class DomainProcessor {
                         domainUID,
                         metadata.getNamespace(),
                         serverName);
-                    makeRightDomainPresence(info, info.getDomain(), false, true);
+                    makeRightDomainPresence(info, info.getDomain(), false, false, true);
                   }
                 } else {
                   V1Service oldService = sko.getService().getAndSet(null);
@@ -168,7 +168,7 @@ public class DomainProcessor {
                         domainUID,
                         metadata.getNamespace(),
                         serverName);
-                    makeRightDomainPresence(info, info.getDomain(), false, true);
+                    makeRightDomainPresence(info, info.getDomain(), false, false, true);
                   }
                 }
               } else if (clusterName != null) {
@@ -180,7 +180,7 @@ public class DomainProcessor {
                       domainUID,
                       metadata.getNamespace(),
                       clusterName);
-                  makeRightDomainPresence(info, info.getDomain(), false, true);
+                  makeRightDomainPresence(info, info.getDomain(), false, false, true);
                 }
               }
               break;
@@ -218,7 +218,7 @@ public class DomainProcessor {
                 // Ingress was deleted, but sko still contained a non-null entry
                 LOGGER.info(
                     MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-                makeRightDomainPresence(info, info.getDomain(), false, true);
+                makeRightDomainPresence(info, info.getDomain(), false, false, true);
               }
               break;
 
@@ -295,7 +295,7 @@ public class DomainProcessor {
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
-        makeRightDomainPresence(existing, d, false, true);
+        makeRightDomainPresence(existing, d, false, false, true);
         break;
 
       case "DELETED":
@@ -303,7 +303,7 @@ public class DomainProcessor {
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
-        makeRightDomainPresence(existing, d, true, true);
+        makeRightDomainPresence(existing, d, false, true, true);
         break;
 
       case "ERROR":
@@ -426,11 +426,6 @@ public class DomainProcessor {
   }
 
   static void makeRightDomainPresence(
-      DomainPresenceInfo existing, Domain dom, boolean isDeleting, boolean isWillInterrupt) {
-    makeRightDomainPresence(existing, dom, false, isDeleting, isWillInterrupt);
-  }
-
-  private static void makeRightDomainPresence(
       DomainPresenceInfo existing,
       Domain dom,
       boolean explicitRecheck,
