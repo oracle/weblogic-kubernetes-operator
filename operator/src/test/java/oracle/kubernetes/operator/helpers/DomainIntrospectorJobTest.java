@@ -60,6 +60,12 @@ public class DomainIntrospectorJobTest {
   static final String LOG_HOME = "/shared/logs/" + UID;
   static final int FAILURE_THRESHOLD = 1;
 
+  static final String OVERRIDES_CM = "overrides-config-map";
+  static final String OVERRIDE_SECRET_1 = "override-secret-1";
+  static final String OVERRIDE_SECRET_2 = "override-secret-2";
+  static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";
+  static final String OVERRIDES_CM_MOUNT_PATH = "/weblogic-operator/config-overrides";
+
   static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   @SuppressWarnings("OctalInteger")
@@ -150,13 +156,22 @@ public class DomainIntrospectorJobTest {
 
   @SuppressWarnings("deprecation")
   private DomainSpec createDomainSpec() {
-    return new DomainSpec()
-        .withDomainName(DOMAIN_NAME)
-        .withDomainUID(UID)
-        .withAsName(ADMIN_SERVER)
-        .withAsPort(ADMIN_PORT)
-        .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
-        .withImage(LATEST_IMAGE);
+    DomainSpec spec =
+        new DomainSpec()
+            .withDomainName(DOMAIN_NAME)
+            .withDomainUID(UID)
+            .withAsName(ADMIN_SERVER)
+            .withAsPort(ADMIN_PORT)
+            .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+            .withConfigOverrides(OVERRIDES_CM)
+            .withImage(LATEST_IMAGE);
+
+    List<String> overrideSecrets = new ArrayList();
+    overrideSecrets.add(OVERRIDE_SECRET_1);
+    overrideSecrets.add(OVERRIDE_SECRET_2);
+    spec.setConfigOverrideSecrets(overrideSecrets);
+
+    return spec;
   }
 
   String getJobCreatedMessageKey() {
@@ -211,7 +226,10 @@ public class DomainIntrospectorJobTest {
         containsInAnyOrder(
             volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH),
             readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH),
-            readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH)));
+            readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH),
+            readOnlyVolumeMount(OVERRIDES_CM + "-volume", OVERRIDES_CM_MOUNT_PATH),
+            readOnlyVolumeMount(OVERRIDE_SECRET_1 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH),
+            readOnlyVolumeMount(OVERRIDE_SECRET_2 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH)));
   }
 
   @SuppressWarnings("unchecked")
@@ -353,19 +371,43 @@ public class DomainIntrospectorJobTest {
               .name(STORAGE_VOLUME)
               .persistentVolumeClaim(getPersistenVolumeClaimVolumeSource(getClaimName())));
     }
+
+    List<String> configOverrideSecrets = getConfigOverrideSecrets();
+    for (String secretName : configOverrideSecrets) {
+      podSpec.addVolumesItem(
+          new V1Volume()
+              .name(secretName + "-volume")
+              .secret(getOverrideSecretVolumeSource(secretName)));
+    }
+    podSpec.addVolumesItem(
+        new V1Volume()
+            .name(getConfigOverrides())
+            .configMap(getOverridesVolumeSource(getConfigOverrides())));
+
     return podSpec;
   }
 
   private V1Container createContainer(TuningParameters tuningParameters) {
-    return new V1Container()
-        .name(getJobName())
-        .image(getImageName())
-        .imagePullPolicy(getImagePullPolicy())
-        .command(getContainerCommand())
-        .env(getEnvironmentVariables(tuningParameters))
-        .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+    V1Container container =
+        new V1Container()
+            .name(getJobName())
+            .image(getImageName())
+            .imagePullPolicy(getImagePullPolicy())
+            .command(getContainerCommand())
+            .env(getEnvironmentVariables(tuningParameters))
+            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+
+    List<String> configOverrideSecrets = getConfigOverrideSecrets();
+    for (String secretName : configOverrideSecrets) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH));
+    }
+    container.addVolumeMountsItem(
+        readOnlyVolumeMount(OVERRIDES_CM + "-volume", OVERRIDES_CM_MOUNT_PATH));
+
+    return container;
   }
 
   String getImageName() {
@@ -419,6 +461,14 @@ public class DomainIntrospectorJobTest {
     return getClaims().iterator().next().getMetadata().getName();
   }
 
+  private List<String> getConfigOverrideSecrets() {
+    return domainPresenceInfo.getDomain().getConfigOverrideSecrets();
+  }
+
+  private String getConfigOverrides() {
+    return domainPresenceInfo.getDomain().getConfigOverrides();
+  }
+
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
     return volumeMount(volumeName, mountPath).readOnly(true);
   }
@@ -430,6 +480,14 @@ public class DomainIntrospectorJobTest {
   protected V1PersistentVolumeClaimVolumeSource getPersistenVolumeClaimVolumeSource(
       String claimName) {
     return new V1PersistentVolumeClaimVolumeSource().claimName(claimName);
+  }
+
+  protected V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
+    return new V1SecretVolumeSource().secretName(name).defaultMode(420);
+  }
+
+  protected V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 
   V1Job getCreatedJob() {
