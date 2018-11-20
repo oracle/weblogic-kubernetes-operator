@@ -54,6 +54,7 @@ import org.junit.Test;
 public class ConfigMapHelperTest {
   private static final String DOMAIN_NS = "namespace";
   private static final String OPERATOR_NS = "operator";
+  private static final String DOMAIN_UID = "domainUID1";
   static final String[] SCRIPT_NAMES = {
     "livenessProbe.sh",
     "readinessProbe.sh",
@@ -245,7 +246,8 @@ public class ConfigMapHelperTest {
   // @Test
   @Ignore
   public void parseIntrospectorResult() {
-    Map<String, String> result = ConfigMapHelper.parseIntrospectorResult(introspectResult);
+    Map<String, String> result =
+        ConfigMapHelper.parseIntrospectorResult(introspectResult, DOMAIN_UID);
     System.out.println("ConfigMapHelperTest.parseIntrospectorResult: " + result);
     assertEquals(3, result.size());
     assertTrue(result.containsKey("userConfigNodeManager.secure"));
@@ -275,7 +277,7 @@ public class ConfigMapHelperTest {
     assertTrue(line.startsWith(">>>"));
     String fileName = ConfigMapHelper.extractFilename(line);
     System.out.println("ConfigMapHelperTest.readSingleFile fileName: " + fileName);
-    ConfigMapHelper.readFile(reader, fileName, map);
+    ConfigMapHelper.readFile(reader, fileName, map, DOMAIN_UID);
     System.out.println("ConfigMapHelperTest.readSingleFile map: " + map);
     assertEquals(1, map.size());
     assertTrue(map.containsKey("userConfigNodeManager.secure"));

@@ -108,6 +108,8 @@ public abstract class PodHelperTestBase {
   private static final String SIT_CONFIG_MAP_VOLUME_SUFFIX =
       "-weblogic-domain-introspect-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final Map<String, String> NODE_SELECTOR =
+      Collections.singletonMap("labelKey", "labelValue");
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -622,7 +624,14 @@ public abstract class PodHelperTestBase {
   }
 
   V1PodSpec createPodSpec() {
+    V1PodSpec v1PodSpec =
+        new V1PodSpec().containers(Collections.singletonList(createPodSpecContainer()));
+    v1PodSpec.setNodeSelector(createNodeSelector());
     return new V1PodSpec().containers(Collections.singletonList(createPodSpecContainer()));
+  }
+
+  Map<String, String> createNodeSelector() {
+    return NODE_SELECTOR;
   }
 
   abstract List<String> createStartCommand();

@@ -125,7 +125,6 @@ integration-test-java:
       chmod +x /tmp/helm/linux-amd64/helm
       mv /tmp/helm/linux-amd64/helm /usr/local/bin/
       rm -rf /tmp/helm
-      helm init --upgrade
       helm version
       echo @@ "Helm is installed."
 
@@ -194,15 +193,6 @@ integration-test-java:
         
         # clean up
         yum clean all
-        
-        if [ -x "$(command -v helm)" ]; then
-          echo @@ "Deleting installed helm charts"
-          helm list --short | xargs -L1 helm delete --purge
-          echo @@ "Calling helm reset -f"
-          helm reset -f
-        else
-          echo @@ "helm not installed, skipping helm reset"
-        fi
 
         # store the artifacts so we can download them easily
         tar czvf ${WERCKER_REPORT_ARTIFACTS_DIR}/integration-test-data.tar.gz /pipeline/output/*

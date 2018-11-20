@@ -9,9 +9,13 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -105,6 +109,27 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   @Override
   public ProbeTuning getReadinessProbe() {
     return server.getReadinessProbe();
+  }
+
+  @Nonnull
+  @Override
+  public Map<String, String> getNodeSelectors() {
+    return server.getNodeSelector();
+  }
+
+  @Override
+  public V1ResourceRequirements getResources() {
+    return server.getResources();
+  }
+
+  @Override
+  public V1PodSecurityContext getPodSecurityContext() {
+    return server.getPodSecurityContext();
+  }
+
+  @Override
+  public V1SecurityContext getContainerSecurityContext() {
+    return server.getContainerSecurityContext();
   }
 
   @Override

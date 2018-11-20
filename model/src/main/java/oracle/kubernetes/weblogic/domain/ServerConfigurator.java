@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecurityContext;
+
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
 public interface ServerConfigurator {
@@ -20,6 +23,16 @@ public interface ServerConfigurator {
 
   ServerConfigurator withReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
+
+  ServerConfigurator withNodeSelector(String labelKey, String labelValue);
+
+  ServerConfigurator withRequestRequirement(String resource, String quantity);
+
+  ServerConfigurator withLimitRequirement(String resource, String quantity);
+
+  ServerConfigurator withContainerSecurityContext(V1SecurityContext containerSecurityContext);
+
+  ServerConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext);
 
   ServerConfigurator withAdditionalVolume(String name, String path);
 
