@@ -11,6 +11,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+import com.google.code.tempusfugit.concurrency.IntermittentTestRunner;
+import com.google.code.tempusfugit.concurrency.annotations.Intermittent;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -23,15 +25,19 @@ import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.junit.runner.RunWith;
 
+@RunWith(IntermittentTestRunner.class)
 public class ServerKubernetesObjectsLookupTest {
 
   private List<Memento> mementos = new ArrayList<>();
+
+  private String retryLegalName;
+  private ServerKubernetesObjects retryInstance;
 
   @Rule
   public TestWatcher watcher =
@@ -40,15 +46,14 @@ public class ServerKubernetesObjectsLookupTest {
         protected void failed(Throwable e, Description description) {
           super.failed(e, description);
           System.out.println("Tell Russell\n" + DomainPresenceMonitor.getExplanation());
-          try {
-            Memento serverMap =
-                StaticStubSupport.preserve(ServerKubernetesObjectsManager.class, "serverMap");
-            Map<String, ServerKubernetesObjects> map = serverMap.getOriginalValue();
-            System.out.println("   internal: " + map);
-            System.out.println(
-                "   returned: " + ServerKubernetesObjectsManager.getServerKubernetesObjects());
-          } catch (NoSuchFieldException ignored) {
-          }
+          Map<String, ServerKubernetesObjects> returnedMap =
+              ServerKubernetesObjectsManager.getServerKubernetesObjects();
+
+          System.out.printf(
+              "\nObject in map with key %s is %s, which compares %b",
+              retryLegalName,
+              returnedMap.get(retryLegalName),
+              retryInstance == returnedMap.get(retryLegalName));
         }
       };
 
@@ -82,7 +87,7 @@ public class ServerKubernetesObjectsLookupTest {
   }
 
   @Test
-  @Ignore
+  @Intermittent(repetition = 10)
   public void whenK8sHasDomainWithOneServer_canLookupFromServerKubernetesObjectsFactory() {
     Domain domain = createDomain("UID1", "ns1");
     DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
@@ -91,6 +96,8 @@ public class ServerKubernetesObjectsLookupTest {
 
     assertThat(info.getServers(), hasEntry(equalTo("admin"), sameInstance(sko)));
 
+    retryLegalName = LegalNames.toServerName("UID1", "admin");
+    retryInstance = sko;
     assertThat(
         ServerKubernetesObjectsManager.getServerKubernetesObjects(),
         hasEntry(equalTo(LegalNames.toServerName("UID1", "admin")), sameInstance(sko)));
