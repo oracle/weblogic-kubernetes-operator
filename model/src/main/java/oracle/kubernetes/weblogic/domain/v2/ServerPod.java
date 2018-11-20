@@ -135,6 +135,26 @@ class ServerPod {
   @Description("Additional volume mounts")
   private List<V1VolumeMount> additionalVolumeMounts = new ArrayList<>();
 
+  /**
+   * The labels to be attached to pods.
+   *
+   * @since 2.0
+   */
+  @SerializedName("podLabels")
+  @Expose
+  @Description("Labels applied to pods")
+  private Map<String, String> podLabels = new HashMap<String, String>();
+
+  /**
+   * The annotations to be attached to pods.
+   *
+   * @since 2.0
+   */
+  @SerializedName("podAnnotations")
+  @Expose
+  @Description("Annotations applied to pods")
+  private Map<String, String> podAnnotations = new HashMap<String, String>();
+
   ProbeTuning getReadinessProbeTuning() {
     return this.readinessProbeTuning;
   }
@@ -163,6 +183,8 @@ class ServerPod {
     readinessProbeTuning.copyValues(serverPod1.readinessProbeTuning);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
+    serverPod1.getPodLabels().forEach((k, v) -> addPodLabelIfMissing(k, v));
+    serverPod1.getPodAnnotations().forEach((k, v) -> addPodAnnotationIfMissing(k, v));
     serverPod1.nodeSelectorMap.forEach(nodeSelectorMap::putIfAbsent);
     copyValues(resourceRequirements, serverPod1.resourceRequirements);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
@@ -263,6 +285,14 @@ class ServerPod {
     if (!hasVolumeMountName(var.getName())) addAdditionalVolumeMount(var);
   }
 
+  private void addPodLabelIfMissing(String name, String value) {
+    if (!podLabels.containsKey(name)) podLabels.put(name, value);
+  }
+
+  private void addPodAnnotationIfMissing(String name, String value) {
+    if (!podAnnotations.containsKey(name)) podAnnotations.put(name, value);
+  }
+
   List<V1EnvVar> getEnv() {
     return this.env;
   }
@@ -345,12 +375,32 @@ class ServerPod {
     return additionalVolumeMounts;
   }
 
+  void addPodLabel(String name, String value) {
+    podLabels.put(name, value);
+  }
+
+  void addPodAnnotations(String name, String value) {
+    podAnnotations.put(name, value);
+  }
+
+  public Map<String, String> getPodLabels() {
+    return podLabels;
+  }
+
+  public Map<String, String> getPodAnnotations() {
+    return podAnnotations;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("env", env)
         .append("livenessProbe", livenessProbeTuning)
         .append("readinessProbe", readinessProbeTuning)
+        .append("additionalVolumes", additionalVolumes)
+        .append("additionalVolumeMounts", additionalVolumeMounts)
+        .append("podLabels", podLabels)
+        .append("podAnnotations", podAnnotations)
         .append("nodeSelector", nodeSelectorMap)
         .append("resourceRequirements", resourceRequirements)
         .append("podSecurityContext", podSecurityContext)
@@ -370,6 +420,10 @@ class ServerPod {
         .append(env, that.env)
         .append(livenessProbeTuning, that.livenessProbeTuning)
         .append(readinessProbeTuning, that.readinessProbeTuning)
+        .append(additionalVolumes, that.additionalVolumes)
+        .append(additionalVolumeMounts, that.additionalVolumeMounts)
+        .append(podLabels, that.podLabels)
+        .append(podAnnotations, that.podAnnotations)
         .append(nodeSelectorMap, that.nodeSelectorMap)
         .append(resourceRequirements, that.resourceRequirements)
         .append(podSecurityContext, that.podSecurityContext)
@@ -383,6 +437,10 @@ class ServerPod {
         .append(env)
         .append(livenessProbeTuning)
         .append(readinessProbeTuning)
+        .append(additionalVolumes)
+        .append(additionalVolumeMounts)
+        .append(podLabels)
+        .append(podAnnotations)
         .append(nodeSelectorMap)
         .append(resourceRequirements)
         .append(podSecurityContext)

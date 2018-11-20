@@ -9,6 +9,8 @@ public interface StepContextConstants {
   static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";
   static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
+  static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";
+  static final String OVERRIDES_CM_MOUNT_PATH = "/weblogic-operator/config-overrides";
   static final String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
   static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";
