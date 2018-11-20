@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 import com.google.code.tempusfugit.concurrency.IntermittentTestRunner;
 import com.google.code.tempusfugit.concurrency.annotations.Intermittent;
@@ -87,6 +88,7 @@ public class ServerKubernetesObjectsLookupTest {
   }
 
   @Test
+  @Intermittent(repetition = 10)
   public void whenK8sHasDomainWithOneServer_canLookupFromServerKubernetesObjectsFactory() {
     Domain domain = createDomain("UID1", "ns1");
     DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
@@ -97,13 +99,13 @@ public class ServerKubernetesObjectsLookupTest {
 
     retryLegalName = LegalNames.toServerName("UID1", "admin");
     retryInstance = sko;
+    if (Math.random() > 0.6) fail("oops");
     assertThat(
         ServerKubernetesObjectsManager.getServerKubernetesObjects(),
         hasEntry(equalTo(LegalNames.toServerName("UID1", "admin")), sameInstance(sko)));
   }
 
   @Test
-  @Intermittent(repetition = 10)
   public void
       whenK8sHasDomainAndServerIsRemoved_canNoLongerLookupFromServerKubernetesObjectsFactory() {
     Domain domain = createDomain("UID1", "ns1");
