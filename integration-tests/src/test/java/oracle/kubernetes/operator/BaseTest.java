@@ -148,6 +148,7 @@ public class BaseTest {
    */
   public void testAdminServerExternalService(Domain domain) throws Exception {
     logger.info("Inside testAdminServerExternalService");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     logger.info("Done - testAdminServerExternalService");
   }
@@ -159,6 +160,7 @@ public class BaseTest {
    */
   public void testAdminT3Channel(Domain domain) throws Exception {
     logger.info("Inside testAdminT3Channel");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
@@ -203,6 +205,7 @@ public class BaseTest {
    */
   public void testClusterScaling(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testClusterScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
     String domainNS = domainMap.get("namespace").toString();
@@ -263,6 +266,7 @@ public class BaseTest {
    */
   public void testWLDFScaling(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testWLDFScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
