@@ -21,7 +21,7 @@ spec:
   template:
     metadata:
       labels:
-        weblogic.resourceVersion: "operator-v1"
+        weblogic.resourceVersion: "operator-v2"
         weblogic.operatorName: {{ $scope.Release.Namespace | quote }}
     spec:
       restartPolicy: Never
