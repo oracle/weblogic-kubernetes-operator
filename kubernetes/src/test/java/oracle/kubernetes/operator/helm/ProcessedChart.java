@@ -101,6 +101,7 @@ public class ProcessedChart implements YamlReader {
               (document) -> {
                 if (document != null) documents.add(document);
               });
+
       this.documents = documents;
     }
 
