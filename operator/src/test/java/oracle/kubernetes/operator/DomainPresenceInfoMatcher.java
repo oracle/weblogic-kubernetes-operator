@@ -12,7 +12,6 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresenceInfo> {
   private String expectedUID;
   private String expectedNamespace;
-  private String ingressClusterName;
 
   private DomainPresenceInfoMatcher(String expectedUID) {
     this.expectedUID = expectedUID;
@@ -28,22 +27,13 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
     return this;
   }
 
-  @SuppressWarnings("SameParameterValue")
-  DomainPresenceInfoMatcher withIngressForCluster(@Nonnull String ingressClusterName) {
-    this.ingressClusterName = ingressClusterName;
-    return this;
-  }
-
   @Override
   protected boolean matchesSafely(DomainPresenceInfo item, Description mismatchDescription) {
     if (!expectedUID.equals(getDomainUID(item))) {
       return mismatchedUID(mismatchDescription, getDomainUID(item));
     } else if (expectedNamespace != null && !expectedNamespace.equals(getNamespace(item))) {
       return mismatchedNamespace(mismatchDescription, getNamespace(item));
-    } else if (ingressClusterName != null && !hasIngressForCluster(item, ingressClusterName)) {
-      return missingIngress(mismatchDescription, ingressClusterName);
     }
-
     return true;
   }
 
@@ -62,17 +52,6 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
 
   private boolean mismatchedNamespace(Description description, String actualNamespace) {
     description.appendText("DomainPresenceInfo with namespace ").appendValue(actualNamespace);
-    return false;
-  }
-
-  private boolean hasIngressForCluster(DomainPresenceInfo item, String ingressClusterName) {
-    return item.getIngresses().containsKey(ingressClusterName);
-  }
-
-  private boolean missingIngress(Description description, String ingressClusterName) {
-    description
-        .appendText("DomainPresenceInfo with ingress for cluster ")
-        .appendValue(ingressClusterName);
     return false;
   }
 

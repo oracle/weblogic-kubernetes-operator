@@ -25,7 +25,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,8 +50,6 @@ public class WatchBuilderTest extends HttpUserAgentTest {
       "/apis/weblogic.oracle/v2/namespaces/" + NAMESPACE + "/domains";
   private static final String SERVICE_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/services";
   private static final String POD_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/pods";
-  private static final String INGRESS_RESOURCE =
-      "/apis/extensions/v1beta1/namespaces/" + NAMESPACE + "/ingresses";
   private static final String EOL = "\n";
   private static final int INITIAL_RESOURCE_VERSION = 123;
 
@@ -175,30 +172,6 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     WatchI<V1Pod> podWatch = new WatchBuilder().createPodWatch(NAMESPACE);
 
     assertThat(podWatch.hasNext(), is(false));
-  }
-
-  @Test
-  public void whenIngressWatchSpecifiesParameters_verifyAndReturnResponse() throws Exception {
-    V1beta1Ingress ingress =
-        new V1beta1Ingress()
-            .apiVersion(API_VERSION)
-            .kind("Ingress")
-            .metadata(createMetaData("ingress", NAMESPACE));
-    defineHttpResponse(
-        INGRESS_RESOURCE,
-        withResponses(createDeletedResponse(ingress))
-            .andValidations(
-                parameter("pretty").withValue("true"),
-                parameter("timeoutSeconds").withValue("15"),
-                parameter("limit").withValue("500")));
-
-    WatchI<V1beta1Ingress> ingressWatch =
-        new WatchBuilder()
-            .withTimeoutSeconds(15)
-            .withPrettyPrinting()
-            .createIngressWatch(NAMESPACE);
-
-    assertThat(ingressWatch, contains(deleteEvent(ingress)));
   }
 
   private void defineHttpResponse(String resourceName, JsonServletAction... responses) {

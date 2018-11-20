@@ -5,10 +5,8 @@
 package oracle.kubernetes.operator;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
@@ -17,7 +15,6 @@ import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_R
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasValue;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -40,8 +37,6 @@ import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,7 +66,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private static final String NS = "default";
   private static final String UID = "UID1";
   private final DomainList domains = createEmptyDomainList();
-  private final V1beta1IngressList ingresses = createEmptyIngressList();
   private final V1ServiceList services = createEmptyServiceList();
   private final V1EventList events = createEmptyEventList();
   private final V1PodList pods = createEmptyPodList();
@@ -134,18 +128,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.runSteps(Main.readExistingResources("operator", NS));
   }
 
-  @Test
-  public void whenK8sHasOneDomainWithAssociatedIngress_readIt() {
-    addDomainResource(UID, NS);
-    addIngressResource(UID, NS, "cluster1");
-
-    readExistingResources();
-
-    assertThat(
-        Main.getDomainPresenceInfos(),
-        hasValue(domain(UID).withNamespace(NS).withIngressForCluster("cluster1")));
-  }
-
   private void addDomainResource(String uid, String namespace) {
     domains.getItems().add(createDomain(uid, namespace));
   }
@@ -154,21 +136,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return new Domain()
         .withSpec(new DomainSpec().withDomainUID(uid))
         .withMetadata(new V1ObjectMeta().namespace(namespace));
-  }
-
-  private void addIngressResource(String uid, String namespace, String clusterName) {
-    ingresses.getItems().add(createIngress(uid, namespace, clusterName));
-  }
-
-  private V1beta1Ingress createIngress(String uid, String namespace, String clusterName) {
-    return new V1beta1Ingress().metadata(createIngressMetaData(uid, namespace, clusterName));
-  }
-
-  private V1ObjectMeta createIngressMetaData(String uid, String namespace, String clusterName) {
-    return new V1ObjectMeta()
-        .name("TEST-" + clusterName)
-        .namespace(namespace)
-        .labels(createMap(DOMAINUID_LABEL, uid, CLUSTERNAME_LABEL, clusterName));
   }
 
   private Map<String, String> createMap(String key1, String value1, String key2, String value2) {
@@ -310,11 +277,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private void createCannedListDomainResponses() {
     testSupport.createCannedResponse("listDomain").withNamespace(NS).returning(domains);
     testSupport
-        .createCannedResponse("listIngress")
-        .withNamespace(NS)
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
-        .returning(ingresses);
-    testSupport
         .createCannedResponse("listService")
         .withNamespace(NS)
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
@@ -360,10 +322,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return new V1ListMeta().resourceVersion("1");
   }
 
-  private V1beta1IngressList createEmptyIngressList() {
-    return new V1beta1IngressList().metadata(createListMetadata());
-  }
-
   private V1ServiceList createEmptyServiceList() {
     return new V1ServiceList().metadata(createListMetadata());
   }
@@ -395,8 +353,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void whenStrandedResourcesExist_removeThem() {
-    addIngressResource(UID, NS, "cluster1");
-    addIngressResource(UID, NS, "cluster2");
     addServiceResource(UID, NS, "admin");
     addServiceResource(UID, NS, "ms1", "channel1");
     addPersistentVolumeResource(UID, "volume1");
@@ -427,25 +383,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName("ms1")
         .ignoringBody()
         .returning(new V1Status());
-
-    testSupport
-        .createCannedResponse("listIngress")
-        .withNamespace(NS)
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .returning(ingresses);
-    testSupport
-        .createCannedResponse("deleteIngress")
-        .withNamespace(NS)
-        .withName("TEST-cluster1")
-        .ignoringBody()
-        .returning(new V1Status());
-    testSupport
-        .createCannedResponse("deleteIngress")
-        .withNamespace(NS)
-        .withName("TEST-cluster2")
-        .ignoringBody()
-        .returning(new V1Status());
-
     testSupport
         .createCannedResponse("listPersistentVolume")
         .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
