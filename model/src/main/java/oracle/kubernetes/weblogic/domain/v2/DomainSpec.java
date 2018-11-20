@@ -169,7 +169,7 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
-   * The name of the Kubernetes configmap used in the WebLogic Configuration overrides.
+   * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
@@ -179,7 +179,7 @@ public class DomainSpec extends BaseConfiguration {
   private String configOverrides;
 
   /**
-   * The list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
+   * A list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
    *
    * @since 2.0
    */
@@ -576,6 +576,11 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrides = overridess;
   }
 
+  public DomainSpec withConfigOverrides(@Nullable String overridess) {
+    this.configOverrides = overridess;
+    return this;
+  }
+
   private boolean hasConfigOverrideSecrets() {
     return configOverrideSecrets != null && configOverrideSecrets.size() != 0;
   }
@@ -588,6 +593,11 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
     this.configOverrideSecrets = overridesSecretNames;
+  }
+
+  public DomainSpec withConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
+    this.configOverrideSecrets = overridesSecretNames;
+    return this;
   }
 
   /**
