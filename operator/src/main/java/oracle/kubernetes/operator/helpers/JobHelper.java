@@ -212,10 +212,10 @@ public class JobHelper {
       String result = callResponse.getResult();
 
       // Log output to Operator log
-      LOGGER.info("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
+      LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
 
       V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-      if (domainIntrospectorJob != null && JobWatcher.isReady(domainIntrospectorJob)) {
+      if (domainIntrospectorJob != null && JobWatcher.isComplete(domainIntrospectorJob)) {
         if (result != null) {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
         }

@@ -315,19 +315,26 @@ public class Domain {
       if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
-      testAppUrl.append(webappName).append("/"); // curl cmd to call webapp
-      StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy ");
+      testAppUrl.append(webappName).append("/");
+      // curl cmd to call webapp
+      StringBuffer curlCmd = new StringBuffer("curl --silent ");
       curlCmd
-          .append(TestUtils.getHostName())
-          .append(" ")
-          .append(testAppUrl.toString()); // curl cmd to get response code
+          .append(" -H 'host: ")
+          .append(domainUid)
+          .append(".org' ")
+          .append(testAppUrl.toString());
+
+      // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
-      curlCmdResCode.append(
-          " --write-out %{http_code} -o /dev/null"); // call webapp iteratively till its
-      // deployed/ready
-      callWebAppAndWaitTillReady(
-          curlCmdResCode
-              .toString()); // execute curl and look for the managed server name in response
+      curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
+
+      logger.info("Curd cmd with response code " + curlCmdResCode);
+      logger.info("Curd cmd " + curlCmd);
+
+      // call webapp iteratively till its deployed/ready
+      callWebAppAndWaitTillReady(curlCmdResCode.toString());
+
+      // execute curl and look for the managed server name in response
       callWebAppAndCheckForServerNameInResponse(curlCmd.toString(), verifyLoadBalance);
       // logger.info("curlCmd "+curlCmd);
     }

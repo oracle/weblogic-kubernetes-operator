@@ -577,8 +577,9 @@ public class Main {
     // Has the spec actually changed? We will get watch events for status updates
     Domain current = info.getDomain();
     if (existingDomain && current != null) {
-      if (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec())) {
-        // nothing in the spec has changed
+      if (isOlderResourceVersion(current, dom)
+          || (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec()))) {
+        // nothing in the spec has changed or we received an outdated watch event
         LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
         return;
       }
@@ -660,6 +661,11 @@ public class Main {
     LOGGER.exiting();
   }
 
+  static boolean isOlderResourceVersion(Domain current, Domain dom) {
+    return Integer.parseInt(dom.getMetadata().getResourceVersion())
+        < Integer.parseInt(current.getMetadata().getResourceVersion());
+  }
+
   static Step.StepAndPacket createDomainUpPlan(DomainPresenceInfo info, String ns) {
     PodWatcher pw = podWatchers.get(ns);
     Step managedServerStrategy =
@@ -684,12 +690,15 @@ public class Main {
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
-    return StorageHelper.insertStorageSteps(info, Step.chain(bringAdminServerUpSteps(next)));
+    return StorageHelper.insertStorageSteps(info, Step.chain(bringAdminServerUpSteps(info, next)));
   }
 
-  private static Step[] bringAdminServerUpSteps(Step next) {
+  private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
     ArrayList<Step> resources = new ArrayList<>();
     resources.add(new ListPersistentVolumeClaimStep(null));
+    resources.add(
+        JobHelper.deleteDomainIntrospectorJobStep(
+            info.getDomain().getDomainUID(), info.getNamespace(), null));
     resources.add(JobHelper.createDomainIntrospectorJobStep(PodHelper.createAdminPodStep(null)));
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(ServiceHelper.createForServerStep(null));
