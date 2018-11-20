@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
@@ -46,12 +45,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -60,6 +57,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -92,7 +90,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(installStub(Main.class, "FIBER_GATE", testSupport.createFiberGateStub()));
+    mementos.add(
+        installStub(DomainProcessor.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
     Map<String, AtomicBoolean> isNamespaceStopping = getStoppingVariable();
     isNamespaceStopping.forEach((key, value) -> value.set(true));
@@ -153,7 +152,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private Domain createDomain(String uid, String namespace) {
     return new Domain()
         .withSpec(new DomainSpec().withDomainUID(uid))
-        .withMetadata(new V1ObjectMeta().namespace(namespace));
+        .withMetadata(
+            new V1ObjectMeta()
+                .namespace(namespace)
+                .resourceVersion("1")
+                .creationTimestamp(DateTime.now()));
   }
 
   private void addIngressResource(String uid, String namespace, String clusterName) {
@@ -342,16 +345,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .returning(domainConfigMap);
   }
 
-  @Test
-  public void afterCancelDomainStatusUpdating_statusUpdaterIsNull() {
-    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate("namespace", "domainUID");
-    info.getStatusUpdater().getAndSet(createStub(ScheduledFuture.class));
-
-    DomainPresenceControl.cancelDomainStatusUpdating(info);
-
-    assertThat(info.getStatusUpdater().get(), nullValue());
-  }
-
   private DomainList createEmptyDomainList() {
     return new DomainList().withMetadata(createListMetadata());
   }
@@ -474,7 +467,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .ignoringBody()
         .returning(new V1Status());
 
-    Main.deleteStrandedResources();
+    DomainProcessor.deleteStrandedResources();
 
     testSupport.verifyAllDefinedResponsesInvoked();
   }
