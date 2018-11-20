@@ -99,8 +99,6 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
 
-    updateExplicitRestart(info);
-
     for (WlsServerConfig serverConfig : info.getScan().getServerConfigs().values()) {
       factory.addServerIfNeeded(serverConfig, null);
     }
@@ -117,18 +115,6 @@ public class ManagedServersUpStep extends Step {
         NEXT_STEP_FACTORY.createServerStep(
             info, factory.servers, factory.createNextStep(getNext())),
         packet);
-  }
-
-  private void updateExplicitRestart(DomainPresenceInfo info) {
-    for (String clusterName : info.getExplicitRestartClusters()) {
-      WlsClusterConfig cluster = info.getScan().getClusterConfig(clusterName);
-      if (cluster != null) {
-        for (WlsServerConfig server : cluster.getServerConfigs()) {
-          info.getExplicitRestartServers().add(server.getName());
-        }
-      }
-    }
-    info.getExplicitRestartClusters().clear();
   }
 
   private Collection<String> getRunningServers(DomainPresenceInfo info) {

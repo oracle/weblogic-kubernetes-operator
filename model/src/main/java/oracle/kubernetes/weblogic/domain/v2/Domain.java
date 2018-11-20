@@ -387,6 +387,24 @@ public class Domain {
         : spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID(), getNamespace());
   }
 
+  /**
+   * Returns the name of the Kubernetes configmap that contains optional configuration overrides.
+   *
+   * @return name of the configmap
+   */
+  public String getConfigOverrides() {
+    return spec.getConfigOverrides();
+  }
+
+  /**
+   * Returns a list of Kubernetes secret names used in optional configuration overrides.
+   *
+   * @return list of Kubernetes secret names
+   */
+  public List<String> getConfigOverrideSecrets() {
+    return spec.getConfigOverrideSecrets();
+  }
+
   private String getNamespace() {
     return getMetadata().getNamespace();
   }

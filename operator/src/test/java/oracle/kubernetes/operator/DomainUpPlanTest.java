@@ -38,8 +38,7 @@ public class DomainUpPlanTest {
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
 
   private DomainPresenceStep getDomainPresenceStep() {
-    return DomainPresenceStep.createDomainPresenceStep(
-        domainPresenceInfo, adminStep, managedServersStep);
+    return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
   }
 
   @Before
@@ -88,7 +87,7 @@ public class DomainUpPlanTest {
   public void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
 
     assertThat(plan.step, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
   }
@@ -97,7 +96,7 @@ public class DomainUpPlanTest {
   public void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
 
     assertThat(
         plan.step,
@@ -107,7 +106,7 @@ public class DomainUpPlanTest {
 
   @Test
   public void useSequenceBeforeAdminServerStep() {
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
 
     assertThat(
         plan.step,
@@ -134,7 +133,7 @@ public class DomainUpPlanTest {
   public void whenOperatorCreatedStorageConfigured_createBeforeListingClaims() {
     configurator.withNfsStorage("myhost", "/path");
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
 
     assertThat(
         plan.step,
