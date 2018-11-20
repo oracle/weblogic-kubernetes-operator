@@ -232,6 +232,10 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
 
+  public abstract DomainConfigurator withPodLabel(String name, String value);
+
+  public abstract DomainConfigurator withPodAnnotation(String name, String value);
+
   /**
    * Adds a default server configuration to the domain, if not already present.
    *
