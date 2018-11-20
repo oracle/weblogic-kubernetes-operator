@@ -580,6 +580,7 @@ public class DomainProcessor {
     public NextAction apply(Packet packet) {
       PodWatcher pw = Main.podWatchers.get(ns);
       DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
+      info.setDomain(dom);
       packet
           .getComponents()
           .put(
