@@ -11,8 +11,11 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1IngressList;
+import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -23,25 +26,42 @@ import oracle.kubernetes.operator.work.Step;
 public class DeleteDomainStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  private final DomainPresenceInfo info;
   private final String namespace;
   private final String domainUID;
 
-  public DeleteDomainStep(String namespace, String domainUID) {
+  public DeleteDomainStep(DomainPresenceInfo info, String namespace, String domainUID) {
     super(null);
+    this.info = info;
     this.namespace = namespace;
     this.domainUID = domainUID;
   }
 
   @Override
   public NextAction apply(Packet packet) {
+    if (info != null) {
+      cancelDomainStatusUpdating(info);
+    }
+
     return doNext(
         Step.chain(
             deleteIngresses(),
             deleteServices(),
             deletePods(),
             deletePersistentVolumes(),
-            deletePersistentVolumeClaims()),
+            deletePersistentVolumeClaims(),
+            removeDomainPresenceInfo()),
         packet);
+  }
+
+  private Step removeDomainPresenceInfo() {
+    return new Step() {
+      @Override
+      public NextAction apply(Packet packet) {
+        DomainPresenceInfoManager.remove(domainUID);
+        return doNext(packet);
+      }
+    };
   }
 
   private Step deleteIngresses() {
@@ -56,6 +76,13 @@ public class DeleteDomainStep extends Step {
                 return new DeleteIngressListStep(result.getItems(), next);
               }
             });
+  }
+
+  static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
+    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
+    if (statusUpdater != null) {
+      statusUpdater.cancel(true);
+    }
   }
 
   private Step deleteServices() {
