@@ -659,7 +659,7 @@ class SitConfigGenerator(Generator):
         self.writeln("<d:network-access-point>")
         self.indent()
         self.writeln("<d:name f:combine-mode=\"replace\">" + nap_name + "</d:name>")
-        self.writeln("<d:public-address f:combine-mode=\"replace\">" + listen_address + "</d:public-address>")
+        self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
         self.undent()
         self.writeln("</d:network-access-point>")
     self.customizeLog(name)
