@@ -39,4 +39,8 @@ public interface ClusterConfigurator {
   ClusterConfigurator withAdditionalVolume(String name, String path);
 
   ClusterConfigurator withAdditionalVolumeMount(String name, String path);
+
+  ClusterConfigurator withPodLabel(String name, String value);
+
+  ClusterConfigurator withPodAnnotation(String name, String value);
 }

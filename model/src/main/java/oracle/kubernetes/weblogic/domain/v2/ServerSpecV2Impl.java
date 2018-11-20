@@ -64,6 +64,16 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
+  public Map<String, String> getPodLabels() {
+    return server.getPodLabels();
+  }
+
+  @Override
+  public Map<String, String> getPodAnnotations() {
+    return server.getPodAnnotations();
+  }
+
+  @Override
   public String getDesiredState() {
     return Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
   }
