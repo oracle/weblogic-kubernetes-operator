@@ -129,6 +129,14 @@ public abstract class JobStepContext implements StepContextConstants {
     return getDomainHome();
   }
 
+  List<String> getConfigOverrideSecrets() {
+    return getDomain().getConfigOverrideSecrets();
+  }
+
+  String getConfigOverrides() {
+    return getDomain().getConfigOverrides();
+  }
+
   private ResponseStep<V1Job> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
@@ -206,19 +214,42 @@ public abstract class JobStepContext implements StepContextConstants {
               .name(STORAGE_VOLUME)
               .persistentVolumeClaim(getPersistenVolumeClaimVolumeSource(getClaimName())));
     }
+
+    List<String> configOverrideSecrets = getConfigOverrideSecrets();
+    for (String secretName : configOverrideSecrets) {
+      podSpec.addVolumesItem(
+          new V1Volume()
+              .name(secretName + "-volume")
+              .secret(getOverrideSecretVolumeSource(secretName)));
+    }
+    podSpec.addVolumesItem(
+        new V1Volume()
+            .name(getConfigOverrides() + "-volume")
+            .configMap(getOverridesVolumeSource(getConfigOverrides())));
+
     return podSpec;
   }
 
   private V1Container createContainer(TuningParameters tuningParameters) {
-    return new V1Container()
-        .name(getJobName())
-        .image(getImageName())
-        .imagePullPolicy(getImagePullPolicy())
-        .command(getContainerCommand())
-        .env(getEnvironmentVariables(tuningParameters))
-        .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+    V1Container container =
+        new V1Container()
+            .name(getJobName())
+            .image(getImageName())
+            .imagePullPolicy(getImagePullPolicy())
+            .command(getContainerCommand())
+            .env(getEnvironmentVariables(tuningParameters))
+            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
+            .addVolumeMountsItem(
+                readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+
+    List<String> configOverrideSecrets = getConfigOverrideSecrets();
+    for (String secretName : configOverrideSecrets) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH));
+    }
+    return container;
   }
 
   String getImageName() {
@@ -272,5 +303,13 @@ public abstract class JobStepContext implements StepContextConstants {
   protected V1PersistentVolumeClaimVolumeSource getPersistenVolumeClaimVolumeSource(
       String claimName) {
     return new V1PersistentVolumeClaimVolumeSource().claimName(claimName);
+  }
+
+  protected V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
+    return new V1SecretVolumeSource().secretName(name).defaultMode(420);
+  }
+
+  protected V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 }
