@@ -178,6 +178,22 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolumeMount(name, path);
   }
 
+  public Map<String, String> getPodLabels() {
+    return serverPod.getPodLabels();
+  }
+
+  void addPodLabels(String name, String value) {
+    serverPod.addPodLabel(name, value);
+  }
+
+  public Map<String, String> getPodAnnotations() {
+    return serverPod.getPodAnnotations();
+  }
+
+  void addPodAnnotations(String name, String value) {
+    serverPod.addPodAnnotations(name, value);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)

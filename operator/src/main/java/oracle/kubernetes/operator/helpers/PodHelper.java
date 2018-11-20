@@ -107,6 +107,16 @@ public class PodHelper {
       return getServerSpec().getAdditionalVolumeMounts();
     }
 
+    @Override
+    protected Map<String, String> getPodLabels() {
+      return getServerSpec().getPodLabels();
+    }
+
+    @Override
+    protected Map<String, String> getPodAnnotations() {
+      return getServerSpec().getPodAnnotations();
+    }
+
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
       return tuningParameters.get(INTERNAL_OPERATOR_CERT_FILE);
     }
@@ -176,6 +186,16 @@ public class PodHelper {
     @Override
     ServerSpec getServerSpec() {
       return getDomain().getServer(getServerName(), getClusterName());
+    }
+
+    @Override
+    protected Map<String, String> getPodLabels() {
+      return getServerSpec().getPodLabels();
+    }
+
+    @Override
+    protected Map<String, String> getPodAnnotations() {
+      return getServerSpec().getPodAnnotations();
     }
 
     @Override
