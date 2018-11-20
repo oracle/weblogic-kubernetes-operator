@@ -535,6 +535,10 @@ public class Main {
           String domainUID = dom.getSpec().getDomainUID();
           domainUIDs.add(domainUID);
           DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
+          if (isNamespaceStopping(dom.getMetadata().getNamespace()).get()) {
+            // Update domain here if namespace is not yet running
+            info.setDomain(dom);
+          }
           DomainProcessor.makeRightDomainPresence(info, dom, true, false, false);
         }
       }
