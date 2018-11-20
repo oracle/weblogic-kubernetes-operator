@@ -14,8 +14,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,7 +132,6 @@ public class Main {
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, IngressWatcher> ingressWatchers = new ConcurrentHashMap<>();
 
   private static final String operatorNamespace = getOperatorNamespace();
 
@@ -351,19 +348,12 @@ public class Main {
         readExistingPods(ns),
         readExistingEvents(ns),
         readExistingServices(ns),
-        readExistingIngresses(ns),
         readExistingDomains(ns));
   }
 
   private static Step readExistingDomains(String ns) {
     LOGGER.info(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
-  }
-
-  private static Step readExistingIngresses(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(ns, new IngressListStep(ns));
   }
 
   private static Step readExistingServices(String ns) {
@@ -1038,52 +1028,6 @@ public class Main {
     }
   }
 
-  private static IngressWatcher createIngressWatcher(String ns, String initialResourceVersion) {
-    return IngressWatcher.create(
-        getThreadFactory(),
-        ns,
-        initialResourceVersion,
-        Main::dispatchIngressWatch,
-        isNamespaceStopping(ns));
-  }
-
-  private static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
-    V1beta1Ingress i = item.object;
-    if (i != null) {
-      V1ObjectMeta metadata = i.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-      if (domainUID != null) {
-        DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-        if (info != null && clusterName != null) {
-          switch (item.type) {
-            case "ADDED":
-              info.getIngresses().put(clusterName, i);
-              break;
-            case "MODIFIED":
-              V1beta1Ingress skoIngress = info.getIngresses().get(clusterName);
-              if (skoIngress != null) {
-                info.getIngresses().replace(clusterName, skoIngress, i);
-              }
-              break;
-            case "DELETED":
-              V1beta1Ingress oldIngress = info.getIngresses().remove(clusterName);
-              if (oldIngress != null) {
-                // Ingress was deleted, but sko still contained a non-null entry
-                LOGGER.info(
-                    MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-                doCheckAndCreateDomainPresence(info.getDomain(), true);
-              }
-              break;
-
-            case "ERROR":
-            default:
-          }
-        }
-      }
-    }
-  }
-
   private static void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
     V1ConfigMap c = item.object;
     if (c != null) {
@@ -1142,45 +1086,6 @@ public class Main {
     String namespace = getOperatorNamespace();
 
     return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
-  }
-
-  private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
-    private final String ns;
-
-    IngressListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      V1beta1IngressList result = callResponse.getResult();
-      if (result != null) {
-        for (V1beta1Ingress ingress : result.getItems()) {
-          String domainUID = IngressWatcher.getIngressDomainUID(ingress);
-          String clusterName = IngressWatcher.getIngressClusterName(ingress);
-          if (domainUID != null && clusterName != null) {
-            DomainPresenceInfoManager.getOrCreate(ns, domainUID)
-                .getIngresses()
-                .put(clusterName, ingress);
-          }
-        }
-      }
-      if (!ingressWatchers.containsKey(ns)) {
-        ingressWatchers.put(ns, createIngressWatcher(ns, getInitialResourceVersion(result)));
-      }
-      return doNext(packet);
-    }
-
-    private String getInitialResourceVersion(V1beta1IngressList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {
