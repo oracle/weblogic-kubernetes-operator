@@ -44,6 +44,14 @@ public class GeneratedOperatorObjects {
     return operatorYaml.getObjectCount() + securityYaml.getObjectCount();
   }
 
+  public V1Job getOperatorPreUpgradeHookJob() {
+    return operatorYaml.getOperatorPreUpgradeHookJob();
+  }
+
+  public V1Namespace getOperatorNamespace() {
+    return securityYaml.getOperatorNamespace();
+  }
+
   public ExtensionsV1beta1Deployment getOperatorDeployment() {
     return operatorYaml.getOperatorDeployment();
   }
@@ -64,16 +72,8 @@ public class GeneratedOperatorObjects {
     return operatorYaml.getInternalOperatorService();
   }
 
-  public V1Job getPreInstallHookJob() {
-    return operatorYaml.getPreInstallHookJob();
-  }
-
-  public V1Job getPreUpgradeHookJob() {
-    return operatorYaml.getPreUpgradeHookJob();
-  }
-
-  public V1Namespace getOperatorNamespace() {
-    return securityYaml.getOperatorNamespace();
+  public V1Job getOperatorPreInstallHookJob() {
+    return operatorYaml.getOperatorPreInstallHookJob();
   }
 
   public V1ServiceAccount getOperatorServiceAccount() {

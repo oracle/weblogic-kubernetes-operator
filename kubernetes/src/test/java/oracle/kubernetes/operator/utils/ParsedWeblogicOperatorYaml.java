@@ -14,6 +14,8 @@ import java.nio.file.Path;
 /** Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
 
+  private static String OPERATOR_RELEASE = "weblogic-operator";
+
   private OperatorValues inputs;
 
   ParsedWeblogicOperatorYaml(Path yamlPath, OperatorValues inputs) throws Exception {
@@ -24,6 +26,14 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   public ParsedWeblogicOperatorYaml(YamlReader factory, OperatorValues inputs) throws Exception {
     super(factory);
     this.inputs = inputs;
+  }
+
+  public V1Job getOperatorPreInstallHookJob() {
+    return getJobs().find(OPERATOR_RELEASE + "-weblogic-operator-pre-install-hook");
+  }
+
+  public V1Job getOperatorPreUpgradeHookJob() {
+    return getJobs().find(OPERATOR_RELEASE + "-weblogic-operator-pre-upgrade-hook");
   }
 
   public V1ConfigMap getOperatorConfigMap() {
@@ -44,14 +54,6 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
 
   public V1Service getInternalOperatorService() {
     return getServices().find("internal-weblogic-operator-svc");
-  }
-
-  public V1Job getPreInstallHookJob() {
-    return getJobs().find(inputs.getNamespace() + "weblogic-operator-pre-install-hook");
-  }
-
-  public V1Job getPreUpgradeHookJob() {
-    return getJobs().find(inputs.getNamespace() + "weblogic-operator-pre-upgrade-hook");
   }
 
   public int getExpectedObjectCount() {
