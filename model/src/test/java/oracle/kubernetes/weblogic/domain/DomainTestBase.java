@@ -48,6 +48,7 @@ public abstract class DomainTestBase {
   private static final String AS_NAME = "admin";
   protected static final String CLUSTER_NAME = "cluster1";
   protected static final String SERVER1 = "ms1";
+  protected static final String SERVER2 = "ms2";
   protected final Domain domain = createDomain();
 
   protected static Domain createDomain() {

@@ -78,8 +78,6 @@ public class ConfigMapHelper {
 
     private V1ConfigMap createModel(Map<String, String> data) {
       return new V1ConfigMap()
-          .apiVersion("v1")
-          .kind("ConfigMap")
           .metadata(createMetadata(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME))
           .data(data);
     }
@@ -267,7 +265,7 @@ public class ConfigMapHelper {
 
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
-      Map<String, String> data = parseIntrospectorResult(result);
+      Map<String, String> data = parseIntrospectorResult(result, domain.getDomainUID());
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
@@ -469,7 +467,7 @@ public class ConfigMapHelper {
     }
   }
 
-  static Map<String, String> parseIntrospectorResult(String text) {
+  static Map<String, String> parseIntrospectorResult(String text, String domainUID) {
     Map<String, String> map = new HashMap<>();
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
@@ -477,18 +475,19 @@ public class ConfigMapHelper {
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           // Beginning of file, extract file name
           String filename = extractFilename(line);
-          readFile(reader, filename, map);
+          readFile(reader, filename, map, domainUID);
         }
         line = reader.readLine();
       }
     } catch (IOException exc) {
-      // quit
+      LOGGER.warning(MessageKeys.CANNOT_PARSE_INTROSPECTOR_RESULT, domainUID, exc);
     }
 
     return map;
   }
 
-  static void readFile(BufferedReader reader, String fileName, Map<String, String> map) {
+  static void readFile(
+      BufferedReader reader, String fileName, Map<String, String> map, String domainUID) {
     StringBuilder stringBuilder = new StringBuilder();
     try {
       String line = reader.readLine();
@@ -504,7 +503,7 @@ public class ConfigMapHelper {
         line = reader.readLine();
       }
     } catch (IOException ioe) {
-
+      LOGGER.warning(MessageKeys.CANNOT_PARSE_INTROSPECTOR_FILE, fileName, domainUID, ioe);
     }
   }
 
@@ -526,7 +525,7 @@ public class ConfigMapHelper {
       return domainTopology;
 
     } catch (Exception e) {
-      LOGGER.warning("Failed to parse WebLogic Domain topology", e);
+      LOGGER.warning(MessageKeys.CANNOT_PARSE_TOPOLOGY, e);
     }
 
     return null;

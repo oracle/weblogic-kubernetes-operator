@@ -113,7 +113,8 @@ public class TestUtils {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
-      ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      ExecResult result = ExecCommand.exec("hostname");
       return result.stdout().trim();
     }
   }
