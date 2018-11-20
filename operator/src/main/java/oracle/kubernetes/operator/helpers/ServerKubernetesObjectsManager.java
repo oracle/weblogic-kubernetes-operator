@@ -14,6 +14,10 @@ public class ServerKubernetesObjectsManager {
 
   private ServerKubernetesObjectsManager() {}
 
+  static void clear() {
+    serverMap.clear();
+  }
+
   static ServerKubernetesObjects getOrCreate(DomainPresenceInfo info, String serverName) {
     return getOrCreate(info, info.getDomain().getSpec().getDomainUID(), serverName);
   }
@@ -30,10 +34,12 @@ public class ServerKubernetesObjectsManager {
   }
 
   static void register(String domainUID, String serverName, ServerKubernetesObjects sko) {
+    DomainPresenceMonitor.registered(serverName);
     serverMap.put(LegalNames.toServerName(domainUID, serverName), sko);
   }
 
   static void unregister(String domainUID, String serverName) {
+    DomainPresenceMonitor.unregistered(serverName);
     serverMap.remove(LegalNames.toServerName(domainUID, serverName));
   }
 
