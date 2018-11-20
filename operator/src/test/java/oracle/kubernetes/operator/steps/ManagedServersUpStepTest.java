@@ -41,7 +41,6 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
@@ -130,21 +129,6 @@ public class ManagedServersUpStepTest {
     ServerKubernetesObjects sko =
         ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", serverName);
     sko.getPod().set(new V1Pod());
-  }
-
-  @Test
-  public void addExplicitlyStartedClusterMembersToExplicitlyRestartedServers() {
-    addWlsCluster("cluster1", "ms1", "ms2");
-    addWlsCluster("cluster2", "ms3", "ms4");
-    addWlsCluster("cluster3", "ms5", "ms6");
-    domainPresenceInfo.getExplicitRestartClusters().addAll(Arrays.asList("cluster1", "cluster3"));
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getExplicitRestartClusters(), empty());
-    assertThat(
-        domainPresenceInfo.getExplicitRestartServers(),
-        containsInAnyOrder("ms1", "ms2", "ms5", "ms6"));
   }
 
   private void addWlsCluster(String clusterName, String... serverNames) {
@@ -582,19 +566,8 @@ public class ManagedServersUpStepTest {
     return new V1EnvVar().name(name).value(value);
   }
 
-  private WlsClusterConfig getWlsCluster(String clusterName) {
-    return configSupport.getWlsCluster(clusterName);
-  }
-
   private ClusterConfigurator configureCluster(String clusterName) {
     return configurator.configureCluster(clusterName).withReplicas(1);
-  }
-
-  private WlsServerConfig getServerForWlsCluster(String clusterName, String serverName) {
-    for (WlsServerConfig config : getWlsCluster(clusterName).getServerConfigs()) {
-      if (config.getName().equals(serverName)) return config;
-    }
-    return null;
   }
 
   private void assertServersWillNotBeStarted() {
