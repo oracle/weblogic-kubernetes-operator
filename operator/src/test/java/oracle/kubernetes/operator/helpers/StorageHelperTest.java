@@ -62,14 +62,14 @@ public class StorageHelperTest {
 
   @Test
   public void whenStorageNotConfigured_addNoSteps() {
-    assertThat(StorageHelper.insertStorageSteps(info, terminalStep), sameInstance(terminalStep));
+    assertThat(StorageHelper.insertStorageSteps(domain, terminalStep), sameInstance(terminalStep));
   }
 
   @Test
   public void whenExternalStorageConfigured_addNoSteps() {
     configurator.withPredefinedClaim("external");
 
-    assertThat(StorageHelper.insertStorageSteps(info, terminalStep), sameInstance(terminalStep));
+    assertThat(StorageHelper.insertStorageSteps(domain, terminalStep), sameInstance(terminalStep));
   }
 
   @Test
@@ -85,7 +85,7 @@ public class StorageHelperTest {
         .withBody((BodyMatcher) this::isExpectedHostPathPVC)
         .returning(new V1PersistentVolumeClaim());
 
-    testSupport.runSteps(StorageHelper.insertStorageSteps(info, terminalStep));
+    testSupport.runSteps(StorageHelper.insertStorageSteps(domain, terminalStep));
   }
 
   private boolean isExpectedHostPathPV(Object pv) {
