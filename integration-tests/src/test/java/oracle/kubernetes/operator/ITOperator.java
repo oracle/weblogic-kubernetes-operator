@@ -296,7 +296,9 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain & verifing the domain creation");
     // create domain1
     Domain domain = testDomainCreation(domainYamlFile);
-    if (System.getenv("WERCKER") != null && System.getenv("WERCKER").equalsIgnoreCase("true")) {
+    if (System.getenv("QUICKTEST") == null
+        || (System.getenv("QUICKTEST") != null
+            && !System.getenv("QUICKTEST").equalsIgnoreCase("true"))) {
       testDomainLifecyle(operator, domain);
       testOperatorLifecycle(operator, domain);
     }
