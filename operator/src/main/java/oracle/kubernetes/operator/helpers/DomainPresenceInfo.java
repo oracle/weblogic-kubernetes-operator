@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +37,6 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ServerMap();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
 
   private final AtomicBoolean explicitRestartAdmin = new AtomicBoolean(false);
   private final Set<String> explicitRestartServers = new CopyOnWriteArraySet<>();
@@ -194,15 +192,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Map from cluster name to Ingress
-   *
-   * @return Cluster object map
-   */
-  public ConcurrentMap<String, V1beta1Ingress> getIngresses() {
-    return ingresses;
-  }
-
-  /**
    * Control for if domain has outstanding restart admin server pending
    *
    * @return Control for pending admin server restart
@@ -265,9 +254,6 @@ public class DomainPresenceInfo {
             String.format(
                 "DomainPresenceInfo{uid=%s, namespace=%s",
                 getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
-    if (!ingresses.isEmpty()) {
-      sb.append(", ingresses ").append(String.join(",", ingresses.keySet()));
-    }
     sb.append("}");
 
     return sb.toString();

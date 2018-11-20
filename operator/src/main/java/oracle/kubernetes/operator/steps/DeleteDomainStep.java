@@ -10,12 +10,10 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1IngressList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -36,26 +34,11 @@ public class DeleteDomainStep extends Step {
   public NextAction apply(Packet packet) {
     return doNext(
         Step.chain(
-            deleteIngresses(),
             deleteServices(),
             deletePods(),
             deletePersistentVolumes(),
             deletePersistentVolumeClaims()),
         packet);
-  }
-
-  private Step deleteIngresses() {
-    LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, this.domainUID, namespace);
-    return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(
-            namespace,
-            new ActionResponseStep<V1beta1IngressList>() {
-              @Override
-              Step createSuccessStep(V1beta1IngressList result, Step next) {
-                return new DeleteIngressListStep(result.getItems(), next);
-              }
-            });
   }
 
   private Step deleteServices() {
