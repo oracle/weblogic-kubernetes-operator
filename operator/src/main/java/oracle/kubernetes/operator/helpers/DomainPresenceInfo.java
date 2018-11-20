@@ -15,9 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -39,10 +37,6 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ServerMap();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
-
-  private final AtomicBoolean explicitRestartAdmin = new AtomicBoolean(false);
-  private final Set<String> explicitRestartServers = new CopyOnWriteArraySet<>();
-  private final Set<String> explicitRestartClusters = new CopyOnWriteArraySet<>();
 
   private V1PersistentVolumeClaimList claims = null;
 
@@ -203,33 +197,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Control for if domain has outstanding restart admin server pending
-   *
-   * @return Control for pending admin server restart
-   */
-  public AtomicBoolean getExplicitRestartAdmin() {
-    return explicitRestartAdmin;
-  }
-
-  /**
-   * Control list for outstanding server restarts
-   *
-   * @return Control list for outstanding server restarts
-   */
-  public Set<String> getExplicitRestartServers() {
-    return explicitRestartServers;
-  }
-
-  /**
-   * Control list for outstanding cluster restarts
-   *
-   * @return Control list for outstanding cluster restarts
-   */
-  public Set<String> getExplicitRestartClusters() {
-    return explicitRestartClusters;
-  }
-
-  /**
    * Server objects (Pods and Services) for admin server
    *
    * @return Server objects for admin server
@@ -260,13 +227,18 @@ public class DomainPresenceInfo {
 
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder(
-            String.format(
-                "DomainPresenceInfo{uid=%s, namespace=%s",
-                getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
+    Domain d = getDomain();
+    if (d != null) {
+      sb.append(
+          String.format(
+              "uid=%s, namespace=%s",
+              getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    } else {
+      sb.append(", namespace=").append(namespace);
+    }
     if (!ingresses.isEmpty()) {
-      sb.append(", ingresses ").append(String.join(",", ingresses.keySet()));
+      sb.append(", ingresses=").append(String.join(",", ingresses.keySet()));
     }
     sb.append("}");
 
@@ -417,10 +389,8 @@ public class DomainPresenceInfo {
     @Override
     public ServerKubernetesObjects putIfAbsent(String key, ServerKubernetesObjects value) {
       ServerKubernetesObjects result = delegate.putIfAbsent(key, value);
-      DomainPresenceMonitor.putIfAbsent(key, result);
       if (result == null) {
         Domain d = domain.get();
-        DomainPresenceMonitor.putIfAbsentDomain(d);
         if (d != null) {
           ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
         }
