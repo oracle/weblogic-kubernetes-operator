@@ -187,7 +187,6 @@ public class BaseTest {
    */
   public void testDomainLifecyle(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testDomainLifecyle");
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     domain.destroy();
     domain.create();
     operator.verifyExternalRESTService();
@@ -324,7 +323,6 @@ public class BaseTest {
    */
   public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testOperatorLifecycle");
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     operator.destroy();
     operator.create();
     operator.verifyExternalRESTService();
