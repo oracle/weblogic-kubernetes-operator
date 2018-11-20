@@ -40,6 +40,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
@@ -493,6 +494,22 @@ public class ConfigMapHelperTest {
     assertEquals(3, serverConfigMap.size());
 
     assertTrue(serverConfigMap.containsKey("admin-server"));
+    assertTrue(serverConfigMap.containsKey("server1"));
+    assertTrue(serverConfigMap.containsKey("server2"));
+
+    WlsServerConfig server2Config = serverConfigMap.get("server2");
+    assertEquals("domain1-managed-server2", server2Config.getListenAddress());
+    assertEquals(9004, server2Config.getListenPort().intValue());
+    assertEquals(8004, server2Config.getSslListenPort().intValue());
+    assertFalse(server2Config.isSslPortEnabled());
+    List<NetworkAccessPoint> server2ConfigNAPs = server2Config.getNetworkAccessPoints();
+    assertEquals(1, server2ConfigNAPs.size());
+
+    NetworkAccessPoint server2ConfigNAP = server2ConfigNAPs.get(0);
+    assertEquals("nap2", server2ConfigNAP.getName());
+    assertEquals("t3", server2ConfigNAP.getProtocol());
+    assertEquals(8005, server2ConfigNAP.getListenPort().intValue());
+    assertEquals(8005, server2ConfigNAP.getPublicPort().intValue());
   }
 
   @Test
