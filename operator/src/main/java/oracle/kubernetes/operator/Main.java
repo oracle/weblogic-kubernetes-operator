@@ -536,7 +536,7 @@ public class Main {
           domainUIDs.add(domainUID);
           DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
           info.setDomain(dom);
-          DomainProcessor.makeRightDomainPresence(info, dom, false, false);
+          DomainProcessor.makeRightDomainPresence(info, dom, false, true);
         }
       }
 
