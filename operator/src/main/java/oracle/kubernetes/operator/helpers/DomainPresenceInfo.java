@@ -186,33 +186,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Control for if domain has outstanding restart admin server pending
-   *
-   * @return Control for pending admin server restart
-   */
-  public AtomicBoolean getExplicitRestartAdmin() {
-    return explicitRestartAdmin;
-  }
-
-  /**
-   * Control list for outstanding server restarts
-   *
-   * @return Control list for outstanding server restarts
-   */
-  public Set<String> getExplicitRestartServers() {
-    return explicitRestartServers;
-  }
-
-  /**
-   * Control list for outstanding cluster restarts
-   *
-   * @return Control list for outstanding cluster restarts
-   */
-  public Set<String> getExplicitRestartClusters() {
-    return explicitRestartClusters;
-  }
-
-  /**
    * Server objects (Pods and Services) for admin server
    *
    * @return Server objects for admin server
@@ -243,11 +216,6 @@ public class DomainPresenceInfo {
 
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder(
-            String.format(
-                "DomainPresenceInfo{uid=%s, namespace=%s",
-                getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
     StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
     Domain d = getDomain();
     if (d != null) {
@@ -258,7 +226,6 @@ public class DomainPresenceInfo {
     } else {
       sb.append(", namespace=").append(namespace);
     }
-    
     sb.append("}");
 
     return sb.toString();
