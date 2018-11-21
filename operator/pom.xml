@@ -338,7 +338,6 @@
             <artifactId>simplestub</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 </project>
