@@ -85,7 +85,7 @@ public class DomainProcessor {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(
                       MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                  makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
+                  makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
                 }
                 break;
 
@@ -156,7 +156,7 @@ public class DomainProcessor {
                         domainUID,
                         metadata.getNamespace(),
                         serverName);
-                    makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
+                    makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
                   }
                 } else {
                   V1Service oldService = sko.getService().getAndSet(null);
@@ -167,7 +167,7 @@ public class DomainProcessor {
                         domainUID,
                         metadata.getNamespace(),
                         serverName);
-                    makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
+                    makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
                   }
                 }
               } else if (clusterName != null) {
@@ -179,7 +179,7 @@ public class DomainProcessor {
                       domainUID,
                       metadata.getNamespace(),
                       clusterName);
-                  makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
+                  makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
                 }
               }
               break;
@@ -217,7 +217,7 @@ public class DomainProcessor {
                 // Ingress was deleted, but sko still contained a non-null entry
                 LOGGER.info(
                     MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-                makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
+                makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
               }
               break;
 
