@@ -460,7 +460,7 @@ public class DomainProcessor {
           return;
         }
         // Has the spec actually changed? We will get watch events for status updates
-        if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
+        if (!isDeleting && !explicitRecheck && spec != null && spec.equals(current.getSpec())) {
           // nothing in the spec has changed, but status likely did; update current
           existing.setDomain(dom);
           LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
