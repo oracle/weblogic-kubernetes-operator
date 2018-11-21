@@ -595,7 +595,7 @@ public class DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(info, Main.getVersion(), pw));
+              Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
       packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
       scheduleDomainStatusUpdating(info);
       return doNext(packet);
@@ -619,7 +619,7 @@ public class DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(info, Main.getVersion(), pw));
+              Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
       packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
       return doNext(packet);
     }
