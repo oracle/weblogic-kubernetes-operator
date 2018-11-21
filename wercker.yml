@@ -178,7 +178,12 @@ integration-test-java:
     goals: clean verify
     version: 3.5.2
     profiles: java-integration-tests
-
+    
+  - script:
+    name: copy pv dir 
+    code: |
+      cp /scratch/acceptance_test_pv /pipeline/output/
+      
   after-steps:
   - script:
     name: cleanup and store
