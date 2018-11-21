@@ -45,12 +45,12 @@ public class DeleteDomainStep extends Step {
 
     return doNext(
         Step.chain(
+            removeDomainPresenceInfo(),
             deleteIngresses(),
             deleteServices(),
             deletePods(),
             deletePersistentVolumes(),
-            deletePersistentVolumeClaims(),
-            removeDomainPresenceInfo()),
+            deletePersistentVolumeClaims()),
         packet);
   }
 
