@@ -5,7 +5,7 @@
 # -----------------------
 # Run:
 #      $ docker build -t weblogic-kubernetes-operator:latest .
-# 
+#
 # Pull base image
 # From the Docker store
 # -------------------------
