@@ -4,6 +4,7 @@ import io.kubernetes.client.models.*;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -70,8 +71,13 @@ public abstract class JobStepContext implements StepContextConstants {
     return info.getClaims().getItems();
   }
 
+  private String getDiscoveredClaim() {
+    return getClaims().isEmpty() ? null : getClaims().iterator().next().getMetadata().getName();
+  }
+
   private String getClaimName() {
-    return getClaims().iterator().next().getMetadata().getName();
+    return Optional.ofNullable(info.getDomain().getPersistentVolumeClaimName())
+        .orElse(getDiscoveredClaim());
   }
 
   // ----------------------- step methods ------------------------------
@@ -208,7 +214,7 @@ public abstract class JobStepContext implements StepContextConstants {
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
-    if (!getClaims().isEmpty()) {
+    if (getClaimName() != null) {
       podSpec.addVolumesItem(
           new V1Volume()
               .name(STORAGE_VOLUME)
@@ -222,10 +228,12 @@ public abstract class JobStepContext implements StepContextConstants {
               .name(secretName + "-volume")
               .secret(getOverrideSecretVolumeSource(secretName)));
     }
-    podSpec.addVolumesItem(
-        new V1Volume()
-            .name(getConfigOverrides() + "-volume")
-            .configMap(getOverridesVolumeSource(getConfigOverrides())));
+    if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
+      podSpec.addVolumesItem(
+          new V1Volume()
+              .name(getConfigOverrides() + "-volume")
+              .configMap(getOverridesVolumeSource(getConfigOverrides())));
+    }
 
     return podSpec;
   }
@@ -239,10 +247,13 @@ public abstract class JobStepContext implements StepContextConstants {
             .command(getContainerCommand())
             .env(getEnvironmentVariables(tuningParameters))
             .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-            .addVolumeMountsItem(
-                readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+
+    if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
+    }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
