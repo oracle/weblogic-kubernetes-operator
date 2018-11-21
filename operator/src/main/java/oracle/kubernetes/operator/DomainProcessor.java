@@ -299,7 +299,7 @@ public class DomainProcessor {
         if (existing != null && added) {
           existing.setDeleting(false);
         }
-        makeRightDomainPresence(existing, domainUID, d, false, false, true);
+        makeRightDomainPresence(existing, domainUID, d, added, false, true);
         break;
 
       case "DELETED":
@@ -310,7 +310,7 @@ public class DomainProcessor {
         if (existing != null) {
           existing.setDeleting(true);
         }
-        makeRightDomainPresence(existing, domainUID, d, false, true, true);
+        makeRightDomainPresence(existing, domainUID, d, true, true, true);
         break;
 
       case "ERROR":
@@ -460,7 +460,7 @@ public class DomainProcessor {
           return;
         }
         // Has the spec actually changed? We will get watch events for status updates
-        if (!isDeleting && !explicitRecheck && spec != null && spec.equals(current.getSpec())) {
+        if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
           // nothing in the spec has changed, but status likely did; update current
           existing.setDomain(dom);
           LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
