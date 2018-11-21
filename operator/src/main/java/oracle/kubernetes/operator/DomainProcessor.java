@@ -82,7 +82,7 @@ public class DomainProcessor {
               case "DELETED":
                 sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
                 V1Pod oldPod = sko.getPod().getAndSet(null);
-                if (oldPod != null) {
+                if (oldPod != null && !info.isDeleting()) {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(
                       MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
@@ -150,7 +150,7 @@ public class DomainProcessor {
               if (sko != null) {
                 if (channelName != null) {
                   V1Service oldService = sko.getChannels().remove(channelName);
-                  if (oldService != null) {
+                  if (oldService != null && !info.isDeleting()) {
                     // Service was deleted, but sko still contained a non-null entry
                     LOGGER.info(
                         MessageKeys.SERVER_SERVICE_DELETED,
@@ -214,7 +214,7 @@ public class DomainProcessor {
               break;
             case "DELETED":
               V1beta1Ingress oldIngress = info.getIngresses().remove(clusterName);
-              if (oldIngress != null) {
+              if (oldIngress != null && !info.isDeleting()) {
                 // Ingress was deleted, but sko still contained a non-null entry
                 LOGGER.info(
                     MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
@@ -288,13 +288,18 @@ public class DomainProcessor {
     Domain d;
     String domainUID;
     DomainPresenceInfo existing;
+    boolean added = false;
     switch (item.type) {
       case "ADDED":
+        added = true;
       case "MODIFIED":
         d = item.object;
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
+        if (existing != null && added) {
+          existing.setDeleting(false);
+        }
         makeRightDomainPresence(existing, d, false, false, true);
         break;
 
@@ -303,6 +308,9 @@ public class DomainProcessor {
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
+        if (existing != null) {
+          existing.setDeleting(true);
+        }
         makeRightDomainPresence(existing, d, false, true, true);
         break;
 
