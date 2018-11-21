@@ -43,29 +43,22 @@ public class DeleteDomainStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    Step serverDownStep;
+    Step serverDownStep =
+        Step.chain(
+            removeDomainPresenceInfo(),
+            deletePods(),
+            deleteServices(),
+            deleteIngresses(),
+            deletePersistentVolumes(),
+            deletePersistentVolumeClaims());
     if (info != null) {
       cancelDomainStatusUpdating(info);
       Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
       serversToStop.addAll(info.getServers().entrySet());
-      serverDownStep =
-          Step.chain(
-              new ServerDownIteratorStep(serversToStop, null),
-              // Preserving the manual delete as a failsafe and to delete cluster services
-              deletePods(),
-              deleteServices());
-    } else {
-      serverDownStep = Step.chain(deletePods(), deleteServices());
+      serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
     }
 
-    return doNext(
-        Step.chain(
-            serverDownStep,
-            deleteIngresses(),
-            deletePersistentVolumes(),
-            deletePersistentVolumeClaims(),
-            removeDomainPresenceInfo()),
-        packet);
+    return doNext(serverDownStep, packet);
   }
 
   private Step removeDomainPresenceInfo() {
