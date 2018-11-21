@@ -482,7 +482,9 @@ public class DomainProcessor {
     if (isDeleting || !Main.isNamespaceStopping(ns).get()) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
       Step.StepAndPacket plan =
-          isDeleting ? createDomainDownPlan(existing, ns, domainUID) : createDomainUpPlan(dom, ns);
+          isDeleting || (existing != null && existing.isDeleting())
+              ? createDomainDownPlan(existing, ns, domainUID)
+              : createDomainUpPlan(dom, ns);
 
       runDomainPlan(dom, domainUID, plan, isDeleting, isWillInterrupt);
     }
