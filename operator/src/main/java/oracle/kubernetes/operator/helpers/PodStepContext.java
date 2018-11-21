@@ -33,8 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -287,20 +285,6 @@ public abstract class PodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
-  AtomicBoolean getExplicitRestartAdmin() {
-    return info.getExplicitRestartAdmin();
-  }
-
-  abstract void updateRestartForNewPod();
-
-  abstract void updateRestartForReplacedPod();
-
-  Set<String> getExplicitRestartClusters() {
-    return info.getExplicitRestartClusters();
-  }
-
-  protected abstract boolean isExplicitRestartThisServer();
-
   Step createCyclePodStep(Step next) {
     return new CyclePodStep(next);
   }
@@ -319,7 +303,7 @@ public abstract class PodStepContext {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
-    return !isExplicitRestartThisServer() && isCurrentPodValid(getPodModel(), currentPod);
+    return isCurrentPodValid(getPodModel(), currentPod);
   }
 
   // We want to detect changes that would require replacing an existing Pod
@@ -393,10 +377,6 @@ public abstract class PodStepContext {
     return false;
   }
 
-  Set<String> getExplicitRestartServers() {
-    return info.getExplicitRestartServers();
-  }
-
   private class VerifyPodStep extends Step {
 
     VerifyPodStep(Step next) {
@@ -407,7 +387,6 @@ public abstract class PodStepContext {
     public NextAction apply(Packet packet) {
       V1Pod currentPod = getSko().getPod().get();
       if (currentPod == null) {
-        updateRestartForNewPod();
         return doNext(createNewPod(getNext()), packet);
       } else if (canUseCurrentPod(currentPod)) {
         logPodExists();
@@ -461,7 +440,6 @@ public abstract class PodStepContext {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
-      updateRestartForReplacedPod();
       return doNext(replacePod(getNext()), packet);
     }
   }
