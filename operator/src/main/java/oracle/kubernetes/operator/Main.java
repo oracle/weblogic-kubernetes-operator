@@ -5,23 +5,20 @@
 package oracle.kubernetes.operator;
 
 import io.kubernetes.client.JSON;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.models.V1beta1Ingress;
+import io.kubernetes.client.models.V1beta1IngressList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -29,13 +26,9 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -45,40 +38,25 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
-import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.helpers.StorageHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
-import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
-import oracle.kubernetes.operator.steps.DeleteDomainStep;
-import oracle.kubernetes.operator.steps.DomainPresenceStep;
-import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
-import oracle.kubernetes.operator.steps.ListPersistentVolumeClaimStep;
-import oracle.kubernetes.operator.steps.ManagedServersUpStep;
-import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.Engine;
-import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -89,7 +67,7 @@ public class Main {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final TuningParameters tuningAndConfig;
+  static final TuningParameters tuningAndConfig;
 
   static {
     try {
@@ -122,16 +100,16 @@ public class Main {
                 callBuilderFactory));
   }
 
-  private static final Engine engine = new Engine(wrappedExecutorService);
-  private static final FiberGate FIBER_GATE = new FiberGate(engine);
+  static final Engine engine = new Engine(wrappedExecutorService);
 
-  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
 
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
+
+  static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
 
   private static final String operatorNamespace = getOperatorNamespace();
 
@@ -227,7 +205,7 @@ public class Main {
   }
 
   private static void completeBegin() {
-    deleteStrandedResources();
+    DomainProcessor.deleteStrandedResources();
 
     try {
       // start the REST server
@@ -243,6 +221,14 @@ public class Main {
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
+  }
+
+  static KubernetesVersion getVersion() {
+    return version;
+  }
+
+  static String getPrincipal() {
+    return principal;
   }
 
   private static class StartNamespacesStep extends Step {
@@ -299,28 +285,17 @@ public class Main {
     }
   }
 
-  static void deleteStrandedResources() {
-    for (Map.Entry<String, DomainPresenceInfo> entry :
-        DomainPresenceInfoManager.getDomainPresenceInfos().entrySet()) {
-      String domainUID = entry.getKey();
-      DomainPresenceInfo info = entry.getValue();
-      if (info != null && info.getDomain() == null) {
-        deleteDomainPresence(info.getNamespace(), domainUID, null);
-      }
-    }
-  }
-
   private static final AtomicBoolean UNINITIALIZED_NS_STOPPING = new AtomicBoolean(true);
 
-  private static AtomicBoolean isNamespaceStopping(String ns) {
+  static AtomicBoolean isNamespaceStopping(String ns) {
     return isNamespaceStopping.getOrDefault(ns, UNINITIALIZED_NS_STOPPING);
   }
 
-  private static void runSteps(Step firstStep) {
+  static void runSteps(Step firstStep) {
     runSteps(firstStep, null);
   }
 
-  private static void runSteps(Step firstStep, Runnable completionAction) {
+  static void runSteps(Step firstStep, Runnable completionAction) {
     engine.createFiber().start(firstStep, new Packet(), andThenDo(completionAction));
   }
 
@@ -337,7 +312,7 @@ public class Main {
       namespacesToStop.removeAll(targetNamespaces);
       stopNamespaces(namespacesToStop);
 
-      runSteps(new StartNamespacesStep(targetNamespaces), Main::deleteStrandedResources);
+      runSteps(new StartNamespacesStep(targetNamespaces), DomainProcessor::deleteStrandedResources);
     };
   }
 
@@ -376,7 +351,7 @@ public class Main {
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
     return new ConfigMapAfterStep(
-        ns, configMapWatchers, isNamespaceStopping(ns), Main::dispatchConfigMapWatch);
+        ns, configMapWatchers, isNamespaceStopping(ns), DomainProcessor::dispatchConfigMapWatch);
   }
 
   // -----------------------------------------------------------------------------
@@ -385,395 +360,6 @@ public class Main {
   // after watch events are received.
   //
   // -----------------------------------------------------------------------------
-
-  /**
-   * Restarts the admin server, if already running
-   *
-   * @param principal Service principal
-   * @param domainUID Domain UID
-   */
-  public static void doRestartAdmin(String principal, String domainUID) {
-    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-    if (info != null) {
-      Domain dom = info.getDomain();
-      if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, true, null, null, false);
-      }
-    }
-  }
-
-  /**
-   * Restarts the listed servers, if already running. Singleton servers will be immediately
-   * restarted. Clustered servers will be rolled so that the cluster maintains minimal availability,
-   * if possible.
-   *
-   * @param principal Service principal
-   * @param domainUID Domain UID
-   * @param servers Servers to roll
-   */
-  public static void doRollingRestartServers(
-      String principal, String domainUID, List<String> servers) {
-    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-    if (info != null) {
-      Domain dom = info.getDomain();
-      if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, false, servers, null, false);
-      }
-    }
-  }
-
-  /**
-   * Restarts the listed clusters, if member servers are running. Member servers will be restarted
-   * in a rolling fashion in order to maintain minimal availability, if possible.
-   *
-   * @param principal Service principal
-   * @param domainUID Domain UID
-   * @param clusters Clusters to roll
-   */
-  public static void doRollingRestartClusters(
-      String principal, String domainUID, List<String> clusters) {
-    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-    if (info != null) {
-      Domain dom = info.getDomain();
-      if (dom != null) {
-        doCheckAndCreateDomainPresence(dom, false, false, null, clusters, false);
-      }
-    }
-  }
-
-  private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-    AtomicInteger unchangedCount = new AtomicInteger(0);
-    AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
-    Runnable command =
-        new Runnable() {
-          public void run() {
-            try {
-              Runnable r = this; // resolve visibility
-              Packet packet = new Packet();
-              packet
-                  .getComponents()
-                  .put(
-                      ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                      Component.createFor(info, version));
-              MainTuning main = tuningAndConfig.getMainTuning();
-              Step strategy =
-                  DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
-              engine
-                  .createFiber()
-                  .start(
-                      strategy,
-                      packet,
-                      new CompletionCallback() {
-                        @Override
-                        public void onCompletion(Packet packet) {
-                          Boolean isStatusUnchanged =
-                              (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-                          ScheduledFuture<?> existing = null;
-                          if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                            if (unchangedCount.incrementAndGet()
-                                == main.unchangedCountToDelayStatusRecheck) {
-                              // slow down retries because of sufficient unchanged statuses
-                              existing =
-                                  statusUpdater.getAndSet(
-                                      engine
-                                          .getExecutor()
-                                          .scheduleWithFixedDelay(
-                                              r,
-                                              main.eventualLongDelay,
-                                              main.eventualLongDelay,
-                                              TimeUnit.SECONDS));
-                            }
-                          } else {
-                            // reset to trying after shorter delay because of changed status
-                            unchangedCount.set(0);
-                            existing =
-                                statusUpdater.getAndSet(
-                                    engine
-                                        .getExecutor()
-                                        .scheduleWithFixedDelay(
-                                            r,
-                                            main.initialShortDelay,
-                                            main.initialShortDelay,
-                                            TimeUnit.SECONDS));
-                            if (existing != null) {
-                              existing.cancel(false);
-                            }
-                          }
-                          if (existing != null) {
-                            existing.cancel(false);
-                          }
-                        }
-
-                        @Override
-                        public void onThrowable(Packet packet, Throwable throwable) {
-                          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                          // retry to trying after shorter delay because of exception
-                          unchangedCount.set(0);
-                          ScheduledFuture<?> existing =
-                              statusUpdater.getAndSet(
-                                  engine
-                                      .getExecutor()
-                                      .scheduleWithFixedDelay(
-                                          r,
-                                          main.initialShortDelay,
-                                          main.initialShortDelay,
-                                          TimeUnit.SECONDS));
-                          if (existing != null) {
-                            existing.cancel(false);
-                          }
-                        }
-                      });
-            } catch (Throwable t) {
-              LOGGER.severe(MessageKeys.EXCEPTION, t);
-            }
-          }
-        };
-
-    MainTuning main = tuningAndConfig.getMainTuning();
-    ScheduledFuture<?> existing =
-        statusUpdater.getAndSet(
-            engine
-                .getExecutor()
-                .scheduleWithFixedDelay(
-                    command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
-
-    if (existing != null) {
-      existing.cancel(false);
-    }
-  }
-
-  private static void doCheckAndCreateDomainPresence(Domain dom, boolean isWillInterrupt) {
-    doCheckAndCreateDomainPresence(dom, false, false, null, null, isWillInterrupt);
-  }
-
-  private static void doCheckAndCreateDomainPresence(
-      Domain dom,
-      boolean explicitRecheck,
-      boolean explicitRestartAdmin,
-      List<String> explicitRestartServers,
-      List<String> explicitRestartClusters,
-      boolean isWillInterrupt) {
-    LOGGER.entering();
-
-    boolean hasExplicitRestarts =
-        explicitRestartAdmin || explicitRestartServers != null || explicitRestartClusters != null;
-
-    DomainSpec spec = dom.getSpec();
-    DomainPresenceControl.normalizeDomainSpec(spec);
-    String domainUID = spec.getDomainUID();
-
-    boolean existingDomain = DomainPresenceInfoManager.lookup(domainUID) != null;
-    DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
-    // Has the spec actually changed? We will get watch events for status updates
-    Domain current = info.getDomain();
-    if (existingDomain && current != null) {
-      if (isOlderResourceVersion(current, dom)
-          || (!explicitRecheck && !hasExplicitRestarts && spec.equals(current.getSpec()))) {
-        // nothing in the spec has changed or we received an outdated watch event
-        LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
-        return;
-      }
-    }
-    info.setDomain(dom);
-
-    if (explicitRestartAdmin) {
-      LOGGER.info(MessageKeys.RESTART_ADMIN_STARTING, domainUID);
-      info.getExplicitRestartAdmin().set(true);
-    }
-    if (explicitRestartServers != null) {
-      LOGGER.info(MessageKeys.RESTART_SERVERS_STARTING, domainUID, explicitRestartServers);
-      info.getExplicitRestartServers().addAll(explicitRestartServers);
-    }
-    if (explicitRestartClusters != null) {
-      LOGGER.info(MessageKeys.ROLLING_CLUSTERS_STARTING, domainUID, explicitRestartClusters);
-      info.getExplicitRestartClusters().addAll(explicitRestartClusters);
-    }
-
-    checkAndCreateDomainPresence(info, isWillInterrupt);
-  }
-
-  private static void checkAndCreateDomainPresence(
-      DomainPresenceInfo info, boolean isWillInterrupt) {
-    Domain dom = info.getDomain();
-    DomainSpec spec = dom.getSpec();
-    String domainUID = spec.getDomainUID();
-
-    String ns = dom.getMetadata().getNamespace();
-    if (!isNamespaceStopping(ns).get()) {
-      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
-      Step.StepAndPacket plan = createDomainUpPlan(info, ns);
-
-      CompletionCallback cc =
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {
-              info.complete();
-            }
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-
-              FIBER_GATE.startFiberIfLastFiberMatches(
-                  domainUID,
-                  Fiber.getCurrentIfSet(),
-                  DomainStatusUpdater.createFailedStep(throwable, null),
-                  plan.packet,
-                  new CompletionCallback() {
-                    @Override
-                    public void onCompletion(Packet packet) {
-                      // no-op
-                    }
-
-                    @Override
-                    public void onThrowable(Packet packet, Throwable throwable) {
-                      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                    }
-                  });
-
-              FIBER_GATE
-                  .getExecutor()
-                  .schedule(
-                      () -> checkAndCreateDomainPresence(info, false),
-                      DomainPresence.getDomainPresenceFailureRetrySeconds(),
-                      TimeUnit.SECONDS);
-            }
-          };
-
-      if (isWillInterrupt) {
-        FIBER_GATE.startFiber(domainUID, plan.step, plan.packet, cc);
-      } else {
-        FIBER_GATE.startFiberIfNoCurrentFiber(domainUID, plan.step, plan.packet, cc);
-      }
-
-      scheduleDomainStatusUpdating(info);
-    }
-    LOGGER.exiting();
-  }
-
-  static boolean isOlderResourceVersion(Domain current, Domain dom) {
-    return Integer.parseInt(dom.getMetadata().getResourceVersion())
-        < Integer.parseInt(current.getMetadata().getResourceVersion());
-  }
-
-  static Step.StepAndPacket createDomainUpPlan(DomainPresenceInfo info, String ns) {
-    PodWatcher pw = podWatchers.get(ns);
-    Step managedServerStrategy =
-        bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(null));
-    Step adminServerStrategy = bringAdminServerUp(info, managedServerStrategy);
-
-    Step strategy =
-        DomainStatusUpdater.createProgressingStep(
-            DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
-            true,
-            DomainPresenceStep.createDomainPresenceStep(
-                info, adminServerStrategy, managedServerStrategy));
-
-    Packet p = new Packet();
-    p.getComponents()
-        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(info, version, pw));
-    p.put(ProcessingConstants.PRINCIPAL, principal);
-
-    return new Step.StepAndPacket(strategy, p);
-  }
-
-  // pre-conditions: DomainPresenceInfo SPI
-  // "principal"
-  private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
-    return StorageHelper.insertStorageSteps(
-        info,
-        Step.chain(
-            new ListPersistentVolumeClaimStep(null),
-            PodHelper.createAdminPodStep(null),
-            new BeforeAdminServiceStep(null),
-            ServiceHelper.createForServerStep(null),
-            new WatchPodReadyAdminStep(podWatchers, null),
-            WlsRetriever.readConfigStep(null),
-            new ExternalAdminChannelsStep(next)));
-  }
-
-  private static Step bringManagedServersUp(Step next) {
-    return new ManagedServersUpStep(next);
-  }
-
-  private static void deleteDomainPresence(Domain dom) {
-    V1ObjectMeta meta = dom.getMetadata();
-    DomainSpec spec = dom.getSpec();
-    String namespace = meta.getNamespace();
-
-    String domainUID = spec.getDomainUID();
-
-    deleteDomainPresence(namespace, domainUID, meta.getCreationTimestamp());
-  }
-
-  private static DateTime getDomainCreationTimeStamp(DomainPresenceInfo domainPresenceInfo) {
-    if (domainPresenceInfo != null
-        && domainPresenceInfo.getDomain() != null
-        && domainPresenceInfo.getDomain().getMetadata() != null) {
-      return domainPresenceInfo.getDomain().getMetadata().getCreationTimestamp();
-    }
-    return null;
-  }
-
-  /**
-   * Delete DomainPresentInfo from DomainPresenceInfoManager iff there is DomainPresentInfo with the
-   * same domainUID and with a creationTimeStamp that is on or after the provided
-   * deleteDomainDateTime.
-   *
-   * @param domainUID domainUID of the DomainPresenceInfo to be deleted
-   * @param creationDateTime only delete DomainPresenceInfo from DomainPresenceInfoManager if its
-   *     creationTimeStamp is on or after the given creationDateTime
-   * @return The deleted DomainPresenceInfo that met the domainUID and creationDateTime criteria, or
-   *     null otherwise
-   */
-  static DomainPresenceInfo deleteDomainPresenceWithTimeCheck(
-      String domainUID, DateTime creationDateTime) {
-    DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-    if (info != null) {
-      DateTime infoDateTime = getDomainCreationTimeStamp(info);
-      if (infoDateTime != null
-          && creationDateTime != null
-          && creationDateTime.isBefore(infoDateTime)) {
-        LOGGER.exiting("Domain to be deleted is too old");
-        return null;
-      }
-      info = DomainPresenceInfoManager.remove(domainUID);
-      if (info == null) {
-        LOGGER.exiting("Domain already deleted by another Fiber");
-        return null;
-      }
-    }
-    return info;
-  }
-
-  private static void deleteDomainPresence(
-      String namespace, String domainUID, DateTime deleteDomainDateTime) {
-    LOGGER.entering();
-
-    DomainPresenceInfo info = deleteDomainPresenceWithTimeCheck(domainUID, deleteDomainDateTime);
-    if (info == null) {
-      return;
-    }
-    DomainPresenceControl.cancelDomainStatusUpdating(info);
-
-    FIBER_GATE.startFiber(
-        domainUID,
-        new DeleteDomainStep(namespace, domainUID),
-        new Packet(),
-        new CompletionCallback() {
-          @Override
-          public void onCompletion(Packet packet) {
-            // no-op
-          }
-
-          @Override
-          public void onThrowable(Packet packet, Throwable throwable) {
-            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-          }
-        });
-
-    LOGGER.exiting();
-  }
 
   /**
    * Obtain the list of target namespaces
@@ -836,40 +422,8 @@ public class Main {
         ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
-        Main::dispatchEventWatch,
+        DomainProcessor::dispatchEventWatch,
         isNamespaceStopping(ns));
-  }
-
-  private static void dispatchEventWatch(Watch.Response<V1Event> item) {
-    V1Event e = item.object;
-    if (e != null) {
-      switch (item.type) {
-        case "ADDED":
-        case "MODIFIED":
-          onEvent(e);
-          break;
-        case "DELETED":
-        case "ERROR":
-        default:
-      }
-    }
-  }
-
-  private static void onEvent(V1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-    if (ref != null) {
-      String name = ref.getName();
-      String message = event.getMessage();
-      if (message != null) {
-        if (message.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE)) {
-          ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(name);
-          if (sko != null) {
-            int idx = message.lastIndexOf(':');
-            sko.getLastKnownStatus().set(message.substring(idx + 1).trim());
-          }
-        }
-      }
-    }
   }
 
   private static PodWatcher createPodWatcher(String ns, String initialResourceVersion) {
@@ -877,52 +431,8 @@ public class Main {
         getThreadFactory(),
         ns,
         initialResourceVersion,
-        Main::dispatchPodWatch,
+        DomainProcessor::dispatchPodWatch,
         isNamespaceStopping(ns));
-  }
-
-  private static void dispatchPodWatch(Watch.Response<V1Pod> item) {
-    V1Pod p = item.object;
-    if (p != null) {
-      V1ObjectMeta metadata = p.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
-      if (domainUID != null) {
-        DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-        if (info != null && serverName != null) {
-          ServerKubernetesObjects sko =
-              ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
-          if (sko != null) {
-            switch (item.type) {
-              case "ADDED":
-                sko.getPod().set(p);
-                break;
-              case "MODIFIED":
-                V1Pod skoPod = sko.getPod().get();
-                if (skoPod != null) {
-                  // If the skoPod is null then the operator deleted this pod
-                  // and modifications are to the terminating pod
-                  sko.getPod().compareAndSet(skoPod, p);
-                }
-                break;
-              case "DELETED":
-                sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
-                V1Pod oldPod = sko.getPod().getAndSet(null);
-                if (oldPod != null) {
-                  // Pod was deleted, but sko still contained a non-null entry
-                  LOGGER.info(
-                      MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                  doCheckAndCreateDomainPresence(info.getDomain(), true);
-                }
-                break;
-
-              case "ERROR":
-              default:
-            }
-          }
-        }
-      }
-    }
   }
 
   private static ServiceWatcher createServiceWatcher(String ns, String initialResourceVersion) {
@@ -930,7 +440,7 @@ public class Main {
         getThreadFactory(),
         ns,
         initialResourceVersion,
-        Main::dispatchServiceWatch,
+        DomainProcessor::dispatchServiceWatch,
         isNamespaceStopping(ns));
   }
 
@@ -1074,7 +584,7 @@ public class Main {
     }
   }
 
-  private static String getOperatorNamespace() {
+  static String getOperatorNamespace() {
     String namespace = System.getenv("OPERATOR_NAMESPACE");
     if (namespace == null) {
       namespace = "default";
@@ -1107,8 +617,14 @@ public class Main {
       Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
-          domainUIDs.add(dom.getSpec().getDomainUID());
-          doCheckAndCreateDomainPresence(dom, false);
+          String domainUID = dom.getSpec().getDomainUID();
+          domainUIDs.add(domainUID);
+          DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
+          if (isNamespaceStopping(dom.getMetadata().getNamespace()).get()) {
+            // Update domain here if namespace is not yet running
+            info.setDomain(dom);
+          }
+          DomainProcessor.makeRightDomainPresence(info, dom, true, false, false);
         }
       }
 
@@ -1141,7 +657,7 @@ public class Main {
           getThreadFactory(),
           ns,
           initialResourceVersion,
-          Main::dispatchDomainWatch,
+          DomainProcessor::dispatchDomainWatch,
           isNamespaceStopping(ns));
     }
   }
@@ -1208,11 +724,8 @@ public class Main {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
       V1EventList result = callResponse.getResult();
-      if (result != null) {
-        for (V1Event event : result.getItems()) {
-          onEvent(event);
-        }
-      }
+      // don't bother processing pre-existing events
+
       if (!eventWatchers.containsKey(ns)) {
         eventWatchers.put(ns, createEventWatcher(ns, getInitialResourceVersion(result)));
       }

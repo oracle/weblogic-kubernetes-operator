@@ -14,9 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -37,10 +35,6 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ServerMap();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-
-  private final AtomicBoolean explicitRestartAdmin = new AtomicBoolean(false);
-  private final Set<String> explicitRestartServers = new CopyOnWriteArraySet<>();
-  private final Set<String> explicitRestartClusters = new CopyOnWriteArraySet<>();
 
   private V1PersistentVolumeClaimList claims = null;
 
@@ -254,6 +248,17 @@ public class DomainPresenceInfo {
             String.format(
                 "DomainPresenceInfo{uid=%s, namespace=%s",
                 getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
+    Domain d = getDomain();
+    if (d != null) {
+      sb.append(
+          String.format(
+              "uid=%s, namespace=%s",
+              getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    } else {
+      sb.append(", namespace=").append(namespace);
+    }
+    
     sb.append("}");
 
     return sb.toString();
@@ -403,10 +408,8 @@ public class DomainPresenceInfo {
     @Override
     public ServerKubernetesObjects putIfAbsent(String key, ServerKubernetesObjects value) {
       ServerKubernetesObjects result = delegate.putIfAbsent(key, value);
-      DomainPresenceMonitor.putIfAbsent(key, result);
       if (result == null) {
         Domain d = domain.get();
-        DomainPresenceMonitor.putIfAbsentDomain(d);
         if (d != null) {
           ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
         }

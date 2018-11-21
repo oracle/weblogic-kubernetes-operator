@@ -127,7 +127,6 @@ public class ITOperator extends BaseTest {
     }
     // create domain3
     Domain domain3 = testDomainCreation(domain3YamlFile);
-
     testWLDFScaling(operator1, domain3);
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
@@ -219,8 +218,6 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test8WlsLivenessProbe() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
     logTestBegin("test8WlsLivenessProbe");
     logger.info("Checking if operator1 is running, if not creating");
@@ -299,9 +296,13 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain & verifing the domain creation");
     // create domain1
     Domain domain = testDomainCreation(domainYamlFile);
-    testDomainLifecyle(operator, domain);
+    if (System.getenv("QUICKTEST") == null
+        || (System.getenv("QUICKTEST") != null
+            && !System.getenv("QUICKTEST").equalsIgnoreCase("true"))) {
+      testDomainLifecyle(operator, domain);
+      testOperatorLifecycle(operator, domain);
+    }
     testClusterScaling(operator, domain);
-    testOperatorLifecycle(operator, domain);
     return domain;
   }
 
