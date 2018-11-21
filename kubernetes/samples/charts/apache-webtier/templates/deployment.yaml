@@ -23,8 +23,16 @@ spec:
     spec:
       serviceAccountName: {{ template "apache.serviceAccountName" . }}
       terminationGracePeriodSeconds: 60
-{{- if .Values.volumePath }}
+{{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.volumePath) }}
       volumes:
+{{- end }}
+{{- if and (.Values.virtualHostName) (.Values.customCert) }}
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: {{ template "apache.fullname" . }}-cert
+{{- end }}
+{{- if .Values.volumePath }}
       - name: {{ template "apache.fullname" . }}
         hostPath:
           path: {{ .Values.volumePath | quote }}
@@ -33,10 +41,39 @@ spec:
       - name: {{ template "apache.fullname" . }}
         image: "{{ .Values.imageRegistry }}/{{ .Values.image }}:{{ .Values.imageTag }}"
         imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
-{{- if .Values.volumePath }}
+{{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.volumePath) }}
         volumeMounts:
+{{- end }}
+{{- if and (.Values.virtualHostName) (.Values.customCert) }}
+        - name: serving-cert
+          mountPath: "/var/serving-cert"
+{{- end }}
+{{- if .Values.volumePath }}
         - name: {{ template "apache.fullname" . }}
           mountPath: "/config"
+{{- end }}
+{{- if or (not (.Values.volumePath)) (.Values.virtualHostName) }}
+        env:
+{{- end }}
+{{- if not (.Values.volumePath) }}
+          - name: WEBLOGIC_CLUSTER
+            value: "{{ .Values.domainUID | replace "_" "-" | lower }}-cluster-{{ .Values.clusterName | replace "_" "-" | lower }}:{{ .Values.managedServerPort }}"
+          - name: LOCATION
+            value: {{ .Values.location | quote }}
+          - name: WEBLOGIC_HOST
+            value: "{{ .Values.domainUID | replace "_" "-" | lower }}-{{ .Values.adminServerName | replace "_" "-" | lower }}"
+          - name: WEBLOGIC_PORT
+            value: {{ .Values.adminPort | quote }}
+{{- end }}
+{{- if .Values.virtualHostName }}
+          - name: VIRTUAL_HOST_NAME
+            value: {{ .Values.virtualHostName | quote }}
+{{- if .Values.customCert }}
+          - name: SSL_CERT_FILE
+            value: "/var/serving-cert/tls.crt"
+          - name: SSL_CERT_KEY_FILE
+            value: "/var/serving-cert/tls.key"
+{{- end }}
 {{- end }}
         readinessProbe:
           tcpSocket:
