@@ -11,11 +11,15 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1IngressList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -39,15 +43,25 @@ public class DeleteDomainStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
+    Step serverDownStep;
     if (info != null) {
       cancelDomainStatusUpdating(info);
+      Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
+      serversToStop.addAll(info.getServers().entrySet());
+      serverDownStep =
+          Step.chain(
+              new ServerDownIteratorStep(serversToStop, null),
+              // Preserving the manual delete as a failsafe and to delete cluster services
+              deletePods(),
+              deleteServices());
+    } else {
+      serverDownStep = Step.chain(deletePods(), deleteServices());
     }
 
     return doNext(
         Step.chain(
+            serverDownStep,
             deleteIngresses(),
-            deleteServices(),
-            deletePods(),
             deletePersistentVolumes(),
             deletePersistentVolumeClaims(),
             removeDomainPresenceInfo()),
