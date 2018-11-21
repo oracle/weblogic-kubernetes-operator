@@ -63,4 +63,4 @@ wh1.setAlarmResetPeriod(60000)
 wh1.addNotification(scriptAct)
 
 save()
-activate()
+activate(block='true')
