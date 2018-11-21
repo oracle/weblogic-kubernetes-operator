@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-
-import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;

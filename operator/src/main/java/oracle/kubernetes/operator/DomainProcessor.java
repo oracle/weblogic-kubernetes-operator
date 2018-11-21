@@ -10,7 +10,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -182,43 +181,6 @@ public class DomainProcessor {
                       clusterName);
                   makeRightDomainPresence(info, info.getDomain(), false, false, true);
                 }
-              }
-              break;
-
-            case "ERROR":
-            default:
-          }
-        }
-      }
-    }
-  }
-
-  static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
-    V1beta1Ingress i = item.object;
-    if (i != null) {
-      V1ObjectMeta metadata = i.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-      if (domainUID != null) {
-        DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-        if (info != null && clusterName != null) {
-          switch (item.type) {
-            case "ADDED":
-              info.getIngresses().put(clusterName, i);
-              break;
-            case "MODIFIED":
-              V1beta1Ingress skoIngress = info.getIngresses().get(clusterName);
-              if (skoIngress != null) {
-                info.getIngresses().replace(clusterName, skoIngress, i);
-              }
-              break;
-            case "DELETED":
-              V1beta1Ingress oldIngress = info.getIngresses().remove(clusterName);
-              if (oldIngress != null) {
-                // Ingress was deleted, but sko still contained a non-null entry
-                LOGGER.info(
-                    MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-                makeRightDomainPresence(info, info.getDomain(), false, false, true);
               }
               break;
 
