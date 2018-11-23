@@ -202,8 +202,6 @@ public class Main {
   }
 
   private static void completeBegin() {
-    DomainProcessor.deleteStrandedResources();
-
     try {
       // start the REST server
       startRestServer(principal, isNamespaceStopping.keySet());
@@ -309,7 +307,7 @@ public class Main {
       namespacesToStop.removeAll(targetNamespaces);
       stopNamespaces(namespacesToStop);
 
-      runSteps(new StartNamespacesStep(targetNamespaces), DomainProcessor::deleteStrandedResources);
+      runSteps(new StartNamespacesStep(targetNamespaces));
     };
   }
 
@@ -481,20 +479,18 @@ public class Main {
             // Update domain here if namespace is not yet running
             info.setDomain(dom);
           }
-          DomainProcessor.makeRightDomainPresence(info, dom, true, false, false);
+          DomainProcessor.makeRightDomainPresence(info, domainUID, dom, true, false, false);
         }
       }
 
       getDomainPresenceInfos()
           .forEach(
               (key, value) -> {
-                Domain d = value.getDomain();
-                if (d != null && ns.equals(d.getMetadata().getNamespace())) {
-                  if (!domainUIDs.contains(d.getSpec().getDomainUID())) {
-                    // This is a stranded DomainPresenceInfo. Clear the Domain reference
-                    // so that stranded resources are marked for clean-up.
-                    value.setDomain(null);
-                  }
+                if (!domainUIDs.contains(key)) {
+                  // This is a stranded DomainPresenceInfo.
+                  value.setDeleting(true);
+                  Domain dom = value.getDomain();
+                  DomainProcessor.makeRightDomainPresence(value, key, dom, true, true, false);
                 }
               });
 
