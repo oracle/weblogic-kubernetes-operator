@@ -351,19 +351,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addPersistentVolumeResource(UID, "volume1");
     addPersistentVolumeClaimResource(UID, NS, "claim1");
 
-    readExistingResources();
-
-    testSupport
-        .createCannedResponse("deleteCollection")
-        .withNamespace(NS)
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .returning(new V1Status());
-
-    testSupport
-        .createCannedResponse("listService")
-        .withNamespace(NS)
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .returning(services);
     testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
@@ -376,6 +363,19 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName("ms1")
         .ignoringBody()
         .returning(new V1Status());
+
+    testSupport
+        .createCannedResponse("listService")
+        .withNamespace(NS)
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(services);
+
+    testSupport
+        .createCannedResponse("deleteCollection")
+        .withNamespace(NS)
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(new V1Status());
+
     testSupport
         .createCannedResponse("listPersistentVolume")
         .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
@@ -398,7 +398,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .ignoringBody()
         .returning(new V1Status());
 
-    DomainProcessor.deleteStrandedResources();
+    readExistingResources();
 
     testSupport.verifyAllDefinedResponsesInvoked();
   }

@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
-import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,11 +80,11 @@ public class DomainProcessor {
               case "DELETED":
                 sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
                 V1Pod oldPod = sko.getPod().getAndSet(null);
-                if (oldPod != null) {
+                if (oldPod != null && !info.isDeleting()) {
                   // Pod was deleted, but sko still contained a non-null entry
                   LOGGER.info(
                       MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                  makeRightDomainPresence(info, info.getDomain(), false, false, true);
+                  makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
                 }
                 break;
 
@@ -149,14 +148,14 @@ public class DomainProcessor {
               if (sko != null) {
                 if (channelName != null) {
                   V1Service oldService = sko.getChannels().remove(channelName);
-                  if (oldService != null) {
+                  if (oldService != null && !info.isDeleting()) {
                     // Service was deleted, but sko still contained a non-null entry
                     LOGGER.info(
                         MessageKeys.SERVER_SERVICE_DELETED,
                         domainUID,
                         metadata.getNamespace(),
                         serverName);
-                    makeRightDomainPresence(info, info.getDomain(), false, false, true);
+                    makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
                   }
                 } else {
                   V1Service oldService = sko.getService().getAndSet(null);
@@ -167,7 +166,7 @@ public class DomainProcessor {
                         domainUID,
                         metadata.getNamespace(),
                         serverName);
-                    makeRightDomainPresence(info, info.getDomain(), false, false, true);
+                    makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
                   }
                 }
               } else if (clusterName != null) {
@@ -179,7 +178,7 @@ public class DomainProcessor {
                       domainUID,
                       metadata.getNamespace(),
                       clusterName);
-                  makeRightDomainPresence(info, info.getDomain(), false, false, true);
+                  makeRightDomainPresence(info, domainUID, info.getDomain(), false, false, true);
                 }
               }
               break;
@@ -250,14 +249,19 @@ public class DomainProcessor {
     Domain d;
     String domainUID;
     DomainPresenceInfo existing;
+    boolean added = false;
     switch (item.type) {
       case "ADDED":
+        added = true;
       case "MODIFIED":
         d = item.object;
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
-        makeRightDomainPresence(existing, d, false, false, true);
+        if (existing != null && added) {
+          existing.setDeleting(false);
+        }
+        makeRightDomainPresence(existing, domainUID, d, added, false, true);
         break;
 
       case "DELETED":
@@ -265,7 +269,10 @@ public class DomainProcessor {
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
-        makeRightDomainPresence(existing, d, false, true, true);
+        if (existing != null) {
+          existing.setDeleting(true);
+        }
+        makeRightDomainPresence(existing, domainUID, d, true, true, true);
         break;
 
       case "ERROR":
@@ -389,15 +396,22 @@ public class DomainProcessor {
 
   static void makeRightDomainPresence(
       DomainPresenceInfo existing,
+      String domainUID,
       Domain dom,
       boolean explicitRecheck,
       boolean isDeleting,
       boolean isWillInterrupt) {
     LOGGER.entering();
 
-    DomainSpec spec = dom.getSpec();
-    DomainPresenceControl.normalizeDomainSpec(spec);
-    String domainUID = spec.getDomainUID();
+    DomainSpec spec = null;
+    String ns;
+    if (dom != null) {
+      spec = dom.getSpec();
+      DomainPresenceControl.normalizeDomainSpec(spec);
+      ns = dom.getMetadata().getNamespace();
+    } else {
+      ns = existing.getNamespace();
+    }
 
     if (existing != null) {
       Domain current = existing.getDomain();
@@ -408,7 +422,7 @@ public class DomainProcessor {
           return;
         }
         // Has the spec actually changed? We will get watch events for status updates
-        if (!explicitRecheck && spec.equals(current.getSpec())) {
+        if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
           // nothing in the spec has changed, but status likely did; update current
           existing.setDomain(dom);
           LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
@@ -417,8 +431,7 @@ public class DomainProcessor {
       }
     }
 
-    internalMakeRightDomainPresence(
-        existing, dom, domainUID, dom.getMetadata().getNamespace(), isDeleting, isWillInterrupt);
+    internalMakeRightDomainPresence(existing, dom, domainUID, ns, isDeleting, isWillInterrupt);
   }
 
   private static void internalMakeRightDomainPresence(
@@ -431,7 +444,9 @@ public class DomainProcessor {
     if (isDeleting || !Main.isNamespaceStopping(ns).get()) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
       Step.StepAndPacket plan =
-          isDeleting ? createDomainDownPlan(existing, ns, domainUID) : createDomainUpPlan(dom, ns);
+          isDeleting || (existing != null && existing.isDeleting())
+              ? createDomainDownPlan(existing, ns, domainUID)
+              : createDomainUpPlan(dom, ns);
 
       runDomainPlan(dom, domainUID, plan, isDeleting, isWillInterrupt);
     }
@@ -542,7 +557,7 @@ public class DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(info, Main.getVersion(), pw));
+              Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
       packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
       scheduleDomainStatusUpdating(info);
       return doNext(packet);
@@ -566,7 +581,7 @@ public class DomainProcessor {
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(info, Main.getVersion(), pw));
+              Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
       packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
       return doNext(packet);
     }
@@ -598,32 +613,5 @@ public class DomainProcessor {
 
   private static Step bringManagedServersUp(Step next) {
     return new ManagedServersUpStep(next);
-  }
-
-  static void deleteStrandedResources() {
-    for (Map.Entry<String, DomainPresenceInfo> entry :
-        DomainPresenceInfoManager.getDomainPresenceInfos().entrySet()) {
-      String domainUID = entry.getKey();
-      DomainPresenceInfo existing = entry.getValue();
-      if (existing != null) {
-        Domain current = existing.getDomain();
-        internalMakeRightDomainPresence(
-            existing, current, domainUID, existing.getNamespace(), true, false);
-      }
-    }
-  }
-
-  static void deleteDomainPresence(Domain dom) {
-    String domainUID = dom.getSpec().getDomainUID();
-    DomainPresenceInfo existing = DomainPresenceInfoManager.lookup(domainUID);
-    Domain current = null;
-    if (existing != null) {
-      current = existing.getDomain();
-      if (current != null && isOutdatedWatchEvent(current.getMetadata(), dom.getMetadata())) {
-        return;
-      }
-    }
-    internalMakeRightDomainPresence(
-        existing, current, domainUID, dom.getMetadata().getNamespace(), true, true);
   }
 }

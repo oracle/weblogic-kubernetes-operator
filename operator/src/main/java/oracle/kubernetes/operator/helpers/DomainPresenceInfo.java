@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -30,6 +31,7 @@ import org.joda.time.DateTime;
 public class DomainPresenceInfo {
   private final String namespace;
   private final AtomicReference<Domain> domain;
+  private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicReference<ScheduledFuture<?>> statusUpdater;
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
@@ -64,6 +66,14 @@ public class DomainPresenceInfo {
     this.namespace = namespace;
     this.serverStartupInfo = new AtomicReference<>(null);
     this.statusUpdater = new AtomicReference<>(null);
+  }
+
+  public boolean isDeleting() {
+    return isDeleting.get();
+  }
+
+  public void setDeleting(boolean deleting) {
+    isDeleting.set(deleting);
   }
 
   /**
