@@ -39,3 +39,45 @@ httpNodePort: 30305
 
 # NodePort to expose for https access
 httpsNodePort: 30443
+
+# The VirtualHostName of the Apache HTTP server. It is used to enable custom SSL configuration.
+# If it is set, the Apache HTTP Server is configured to listen to port 4433 for SSL traffic.
+virtualHostName:
+
+# The customer supplied certificate to use for Apache webtier SSL configuration.
+# The value must be a string containing a base64 encoded certificate.
+# If 'virtualHostName' is set, the custom certificate and private key are not provided,
+# the default built-in auto-generated sample certificate and private key in the apache image will be used.
+# This parameter is ignored if 'virtualHostName' is not set.
+customCert:
+
+# The customer supplied private key to use for Apache webtier SSL configuration.
+# The value must be a string containing a base64 encoded key.
+# If 'virtualHostName' is set, the custom certificate and private key are not provided,
+# the default built-in auto-generated sample certificate and private key in the apache image will be used.
+# This parameter is ignored if 'virtualHostName' is not set.
+customKey:
+
+# Unique ID identifying a domain.
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+domainUID: "domain1"
+
+# Cluster name
+clusterName: "cluster-1"
+
+# Name of the admin server
+adminServerName: "admin-server"
+
+# Port number for admin server
+adminPort: 7001
+
+# Port number for each managed server
+managedServerPort: 8001
+
+# Prepath for all application deployed on WebLogic cluster.
+# For example, if it is set to '/weblogic', all applications deployed on the cluster can be accessed via 
+# http://myhost:myport/weblogic/application_end_url
+# where 'myhost' is the IP of the machine that runs the Apache web tier, and 
+#       'myport' is the port that the Apache web tier is publicly exposed to.
+location: "/weblogic"
+
