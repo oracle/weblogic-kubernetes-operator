@@ -545,10 +545,12 @@ public class Main {
           .forEach(
               (key, value) -> {
                 if (!domainUIDs.contains(key)) {
-                  // This is a stranded DomainPresenceInfo.
-                  value.setDeleting(true);
-                  Domain dom = value.getDomain();
-                  DomainProcessor.makeRightDomainPresence(value, key, dom, true, true, false);
+                  if (ns.equals(value.getNamespace())) {
+                    // This is a stranded DomainPresenceInfo.
+                    value.setDeleting(true);
+                    Domain dom = value.getDomain();
+                    DomainProcessor.makeRightDomainPresence(value, key, dom, true, true, false);
+                  }
                 }
               });
 
