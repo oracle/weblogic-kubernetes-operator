@@ -65,6 +65,11 @@ public abstract class Step {
     return s;
   }
 
+  String getName() {
+    String name = getClass().getSimpleName();
+    return name.endsWith("Step") ? name.substring(0, name.length() - 4) : name;
+  }
+
   /**
    * Invokes step using the packet as input/output context. The next action directs further
    * processing of the {@link Fiber}.
