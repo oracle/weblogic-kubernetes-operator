@@ -53,6 +53,7 @@ public class DeleteDomainStep extends Step {
             deletePersistentVolumeClaims());
     if (info != null) {
       cancelDomainStatusUpdating(info);
+
       Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
       serversToStop.addAll(info.getServers().entrySet());
       serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);

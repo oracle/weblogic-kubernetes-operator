@@ -12,10 +12,13 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -46,6 +49,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import org.joda.time.DateTime;
 
 public class DomainProcessor {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -60,38 +64,73 @@ public class DomainProcessor {
       V1ObjectMeta metadata = p.getMetadata();
       String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
+      DomainPresenceInfo info;
+      ServerKubernetesObjects sko;
       if (domainUID != null) {
-        DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-        if (info != null && serverName != null) {
-          ServerKubernetesObjects sko =
-              ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
-          if (sko != null) {
-            switch (item.type) {
-              case "ADDED":
-                sko.getPod().set(p);
-                break;
-              case "MODIFIED":
-                V1Pod skoPod = sko.getPod().get();
-                if (skoPod != null) {
-                  // If the skoPod is null then the operator deleted this pod
-                  // and modifications are to the terminating pod
-                  sko.getPod().compareAndSet(skoPod, p);
+        if (serverName != null) {
+          switch (item.type) {
+            case "ADDED":
+              info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+              sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
+              sko.getPod()
+                  .accumulateAndGet(
+                      p,
+                      (current, ob) -> {
+                        if (current != null) {
+                          if (isOutdated(current.getMetadata(), metadata)) {
+                            return current;
+                          }
+                        }
+                        return ob;
+                      });
+              break;
+            case "MODIFIED":
+              info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+              sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
+              sko.getPod()
+                  .accumulateAndGet(
+                      p,
+                      (current, ob) -> {
+                        if (current != null) {
+                          // If the skoPod is null then the operator deleted this pod
+                          // and modifications are to the terminating pod
+                          if (!isOutdated(current.getMetadata(), metadata)) {
+                            return ob;
+                          }
+                        }
+                        return current;
+                      });
+              break;
+            case "DELETED":
+              info = DomainPresenceInfoManager.lookup(domainUID);
+              if (info != null) {
+                sko = ServerKubernetesObjectsManager.lookup(metadata.getName());
+                if (sko != null) {
+                  V1Pod oldPod =
+                      sko.getPod()
+                          .getAndAccumulate(
+                              p,
+                              (current, ob) -> {
+                                if (current != null) {
+                                  if (!isOutdated(current.getMetadata(), metadata)) {
+                                    sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
+                                    return null;
+                                  }
+                                }
+                                return current;
+                              });
+                  if (oldPod != null && !info.isDeleting()) {
+                    // Pod was deleted, but sko still contained a non-null entry
+                    LOGGER.info(
+                        MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
+                    makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
+                  }
                 }
-                break;
-              case "DELETED":
-                sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
-                V1Pod oldPod = sko.getPod().getAndSet(null);
-                if (oldPod != null && !info.isDeleting()) {
-                  // Pod was deleted, but sko still contained a non-null entry
-                  LOGGER.info(
-                      MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                  makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
-                }
-                break;
+              }
+              break;
 
-              case "ERROR":
-              default:
-            }
+            case "ERROR":
+            default:
           }
         }
       }
@@ -106,79 +145,223 @@ public class DomainProcessor {
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       String channelName = metadata.getLabels().get(LabelConstants.CHANNELNAME_LABEL);
       String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
+      DomainPresenceInfo info;
+      ServerKubernetesObjects sko;
       if (domainUID != null) {
-        DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-        ServerKubernetesObjects sko = null;
-        if (info != null) {
-          if (serverName != null) {
-            sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
-          }
-          switch (item.type) {
-            case "ADDED":
-              if (sko != null) {
-                if (channelName != null) {
-                  sko.getChannels().put(channelName, s);
-                } else {
-                  sko.getService().set(s);
-                }
-              } else if (clusterName != null) {
-                info.getClusters().put(clusterName, s);
+        switch (item.type) {
+          case "ADDED":
+            info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+            if (clusterName != null) {
+              info.getClusters()
+                  .compute(
+                      clusterName,
+                      (key, current) -> {
+                        if (current != null) {
+                          if (isOutdated(current.getMetadata(), metadata)) {
+                            return current;
+                          }
+                        }
+                        return s;
+                      });
+            } else if (serverName != null) {
+              sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
+              if (channelName != null) {
+                sko.getChannels()
+                    .compute(
+                        channelName,
+                        (key, current) -> {
+                          if (current != null) {
+                            if (isOutdated(current.getMetadata(), metadata)) {
+                              return current;
+                            }
+                          }
+                          return s;
+                        });
+              } else {
+                sko.getService()
+                    .accumulateAndGet(
+                        s,
+                        (current, ob) -> {
+                          if (current != null) {
+                            if (isOutdated(current.getMetadata(), metadata)) {
+                              return current;
+                            }
+                          }
+                          return ob;
+                        });
               }
-              break;
-            case "MODIFIED":
-              if (sko != null) {
-                if (channelName != null) {
-                  V1Service skoService = sko.getChannels().get(channelName);
-                  if (skoService != null) {
-                    sko.getChannels().replace(channelName, skoService, s);
-                  }
-                } else {
-                  V1Service skoService = sko.getService().get();
-                  if (skoService != null) {
-                    sko.getService().compareAndSet(skoService, s);
-                  }
-                }
-              } else if (clusterName != null) {
-                V1Service clusterService = info.getClusters().get(clusterName);
-                if (clusterService != null) {
-                  info.getClusters().replace(clusterName, clusterService, s);
-                }
+            }
+            break;
+          case "MODIFIED":
+            info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+            if (clusterName != null) {
+              info.getClusters()
+                  .compute(
+                      clusterName,
+                      (key, current) -> {
+                        if (current != null) {
+                          if (!isOutdated(current.getMetadata(), metadata)) {
+                            return s;
+                          }
+                        }
+                        return current;
+                      });
+            } else if (serverName != null) {
+              sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
+              if (channelName != null) {
+                sko.getChannels()
+                    .compute(
+                        channelName,
+                        (key, current) -> {
+                          if (current != null) {
+                            if (!isOutdated(current.getMetadata(), metadata)) {
+                              return s;
+                            }
+                          }
+                          return current;
+                        });
+              } else {
+                sko.getService()
+                    .accumulateAndGet(
+                        s,
+                        (current, ob) -> {
+                          if (current != null) {
+                            if (!isOutdated(current.getMetadata(), metadata)) {
+                              return ob;
+                            }
+                          }
+                          return current;
+                        });
               }
-              break;
-            case "DELETED":
-              if (sko != null) {
-                if (channelName != null) {
-                  V1Service oldService = sko.getChannels().remove(channelName);
-                  if (oldService != null && !info.isDeleting()) {
-                    // Service was deleted, but sko still contained a non-null entry
-                    LOGGER.info(
-                        MessageKeys.SERVER_SERVICE_DELETED,
-                        domainUID,
-                        metadata.getNamespace(),
-                        serverName);
-                    makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
-                  }
-                } else {
-                  V1Service oldService = sko.getService().getAndSet(null);
-                  if (oldService != null) {
-                    // Service was deleted, but sko still contained a non-null entry
-                    LOGGER.info(
-                        MessageKeys.SERVER_SERVICE_DELETED,
-                        domainUID,
-                        metadata.getNamespace(),
-                        serverName);
-                    makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
-                  }
-                }
-              } else if (clusterName != null) {
-                V1Service oldService = info.getClusters().remove(clusterName);
-                if (oldService != null) {
+            }
+            break;
+          case "DELETED":
+            info = DomainPresenceInfoManager.lookup(domainUID);
+            if (info != null) {
+              if (clusterName != null) {
+                boolean removed =
+                    removeIfPresentAnd(
+                        info.getClusters(),
+                        clusterName,
+                        (current) -> {
+                          return isOutdated(current.getMetadata(), metadata);
+                        });
+                if (removed && !info.isDeleting()) {
                   // Service was deleted, but clusters still contained a non-null entry
                   LOGGER.info(
                       MessageKeys.CLUSTER_SERVICE_DELETED,
                       domainUID,
                       metadata.getNamespace(),
                       clusterName);
+                  makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
+                }
+              } else if (serverName != null) {
+                sko = ServerKubernetesObjectsManager.lookup(metadata.getName());
+                if (sko != null) {
+                  if (channelName != null) {
+                    boolean removed =
+                        removeIfPresentAnd(
+                            sko.getChannels(),
+                            channelName,
+                            (current) -> {
+                              return isOutdated(current.getMetadata(), metadata);
+                            });
+                    if (removed && !info.isDeleting()) {
+                      // Service was deleted, but sko still contained a non-null entry
+                      LOGGER.info(
+                          MessageKeys.SERVER_SERVICE_DELETED,
+                          domainUID,
+                          metadata.getNamespace(),
+                          serverName);
+                      makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
+                    }
+                  } else {
+                    V1Service oldService =
+                        sko.getService()
+                            .getAndAccumulate(
+                                s,
+                                (current, ob) -> {
+                                  if (current != null) {
+                                    if (!isOutdated(current.getMetadata(), metadata)) {
+                                      return null;
+                                    }
+                                  }
+                                  return current;
+                                });
+                    if (oldService != null && !info.isDeleting()) {
+                      // Service was deleted, but sko still contained a non-null entry
+                      LOGGER.info(
+                          MessageKeys.SERVER_SERVICE_DELETED,
+                          domainUID,
+                          metadata.getNamespace(),
+                          serverName);
+                      makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
+                    }
+                  }
+                }
+              }
+            }
+            break;
+
+          case "ERROR":
+          default:
+        }
+      }
+    }
+  }
+
+  static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
+    V1beta1Ingress i = item.object;
+    if (i != null) {
+      V1ObjectMeta metadata = i.getMetadata();
+      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
+      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
+      DomainPresenceInfo info;
+      if (domainUID != null) {
+        if (clusterName != null) {
+          switch (item.type) {
+            case "ADDED":
+              info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+              info.getIngresses()
+                  .compute(
+                      clusterName,
+                      (key, current) -> {
+                        if (current != null) {
+                          if (isOutdated(current.getMetadata(), metadata)) {
+                            return current;
+                          }
+                        }
+                        return i;
+                      });
+              break;
+            case "MODIFIED":
+              info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+              info.getIngresses()
+                  .compute(
+                      clusterName,
+                      (key, current) -> {
+                        if (current != null) {
+                          if (!isOutdated(current.getMetadata(), metadata)) {
+                            return i;
+                          }
+                        }
+                        return current;
+                      });
+              break;
+            case "DELETED":
+              info = DomainPresenceInfoManager.lookup(domainUID);
+              if (info != null) {
+                boolean removed =
+                    removeIfPresentAnd(
+                        info.getIngresses(),
+                        clusterName,
+                        (current) -> {
+                          return isOutdated(current.getMetadata(), metadata);
+                        });
+                if (removed && !info.isDeleting()) {
+                  // Ingress was deleted, but sko still contained a non-null entry
+                  LOGGER.info(
+                      MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
                   makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
                 }
               }
@@ -192,41 +375,19 @@ public class DomainProcessor {
     }
   }
 
-  static void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
-    V1beta1Ingress i = item.object;
-    if (i != null) {
-      V1ObjectMeta metadata = i.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-      if (domainUID != null) {
-        DomainPresenceInfo info = DomainPresenceInfoManager.lookup(domainUID);
-        if (info != null && clusterName != null) {
-          switch (item.type) {
-            case "ADDED":
-              info.getIngresses().put(clusterName, i);
-              break;
-            case "MODIFIED":
-              V1beta1Ingress skoIngress = info.getIngresses().get(clusterName);
-              if (skoIngress != null) {
-                info.getIngresses().replace(clusterName, skoIngress, i);
-              }
-              break;
-            case "DELETED":
-              V1beta1Ingress oldIngress = info.getIngresses().remove(clusterName);
-              if (oldIngress != null && !info.isDeleting()) {
-                // Ingress was deleted, but sko still contained a non-null entry
-                LOGGER.info(
-                    MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-                makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
-              }
-              break;
-
-            case "ERROR":
-            default:
-          }
+  private static <K, V> boolean removeIfPresentAnd(
+      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
+    Objects.requireNonNull(predicateFunction);
+    for (V oldValue; (oldValue = map.get(key)) != null; ) {
+      if (predicateFunction.test(oldValue)) {
+        if (map.remove(key, oldValue)) {
+          return true;
         }
+      } else {
+        return false;
       }
     }
+    return false;
   }
 
   static void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
@@ -296,9 +457,6 @@ public class DomainProcessor {
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
-        if (existing != null && added) {
-          existing.setDeleting(false);
-        }
         makeRightDomainPresence(existing, domainUID, d, added, false, true);
         break;
 
@@ -308,9 +466,8 @@ public class DomainProcessor {
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
         existing = DomainPresenceInfoManager.lookup(domainUID);
         if (existing != null) {
-          existing.setDeleting(true);
+          makeRightDomainPresence(existing, domainUID, d, true, true, true);
         }
-        makeRightDomainPresence(existing, domainUID, d, true, true, true);
         break;
 
       case "ERROR":
@@ -323,12 +480,23 @@ public class DomainProcessor {
    * event for a resource that was deleted, but has since been recreated, and 2)
    * a MODIFIED event for an object that has already had subsequent modifications.
    */
-  static boolean isOutdatedWatchEvent(V1ObjectMeta current, V1ObjectMeta ob) {
-    return ob == null
-        || (current != null
-            && (Integer.parseInt(ob.getResourceVersion())
-                    < Integer.parseInt(current.getResourceVersion())
-                || ob.getCreationTimestamp().isBefore(current.getCreationTimestamp())));
+  static boolean isOutdated(V1ObjectMeta current, V1ObjectMeta ob) {
+    if (ob == null) {
+      return true;
+    }
+    if (current == null) {
+      return false;
+    }
+
+    DateTime obTime = ob.getCreationTimestamp();
+    DateTime cuTime = current.getCreationTimestamp();
+
+    if (obTime.isAfter(cuTime)) {
+      return false;
+    }
+    return Integer.parseInt(ob.getResourceVersion())
+            < Integer.parseInt(current.getResourceVersion())
+        || obTime.isBefore(cuTime);
   }
 
   private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
@@ -455,7 +623,7 @@ public class DomainProcessor {
       Domain current = existing.getDomain();
       if (current != null) {
         // Is this an outdated watch event?
-        if (isOutdatedWatchEvent(current.getMetadata(), dom.getMetadata())) {
+        if (isOutdated(current.getMetadata(), dom.getMetadata())) {
           LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
           return;
         }
@@ -482,9 +650,7 @@ public class DomainProcessor {
     if (isDeleting || !Main.isNamespaceStopping(ns).get()) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
       Step.StepAndPacket plan =
-          isDeleting || (existing != null && existing.isDeleting())
-              ? createDomainDownPlan(existing, ns, domainUID)
-              : createDomainUpPlan(dom, ns);
+          isDeleting ? createDomainDownPlan(existing, ns, domainUID) : createDomainUpPlan(dom, ns);
 
       runDomainPlan(dom, domainUID, plan, isDeleting, isWillInterrupt);
     }
@@ -590,6 +756,7 @@ public class DomainProcessor {
     public NextAction apply(Packet packet) {
       PodWatcher pw = Main.podWatchers.get(ns);
       DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
+      info.setDeleting(false);
       info.setDomain(dom);
       packet
           .getComponents()
@@ -614,6 +781,7 @@ public class DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
+      info.setDeleting(true);
       PodWatcher pw = Main.podWatchers.get(ns);
       packet
           .getComponents()
