@@ -66,7 +66,7 @@ public class DeleteDomainStep extends Step {
     return new Step() {
       @Override
       public NextAction apply(Packet packet) {
-        DomainPresenceInfoManager.remove(domainUID);
+        DomainPresenceInfoManager.remove(namespace, domainUID);
         return doNext(packet);
       }
     };

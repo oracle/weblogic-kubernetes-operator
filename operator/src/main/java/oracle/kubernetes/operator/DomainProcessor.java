@@ -92,19 +92,21 @@ public class DomainProcessor {
                       p,
                       (current, ob) -> {
                         if (current != null) {
-                          // If the skoPod is null then the operator deleted this pod
-                          // and modifications are to the terminating pod
                           if (!isOutdated(current.getMetadata(), metadata)) {
                             return ob;
                           }
                         }
+                        // If the skoPod is null then the operator deleted this pod
+                        // and modifications are to the terminating pod
                         return current;
                       });
               break;
             case "DELETED":
-              info = DomainPresenceInfoManager.lookup(domainUID);
+              info = DomainPresenceInfoManager.lookup(metadata.getNamespace(), domainUID);
               if (info != null) {
-                sko = ServerKubernetesObjectsManager.lookup(metadata.getName());
+                sko =
+                    ServerKubernetesObjectsManager.lookup(
+                        metadata.getNamespace(), metadata.getName());
                 if (sko != null) {
                   V1Pod oldPod =
                       sko.getPod()
@@ -236,7 +238,7 @@ public class DomainProcessor {
             }
             break;
           case "DELETED":
-            info = DomainPresenceInfoManager.lookup(domainUID);
+            info = DomainPresenceInfoManager.lookup(metadata.getNamespace(), domainUID);
             if (info != null) {
               if (clusterName != null) {
                 boolean removed =
@@ -256,7 +258,9 @@ public class DomainProcessor {
                   makeRightDomainPresence(info, domainUID, info.getDomain(), true, false, true);
                 }
               } else if (serverName != null) {
-                sko = ServerKubernetesObjectsManager.lookup(metadata.getName());
+                sko =
+                    ServerKubernetesObjectsManager.lookup(
+                        metadata.getNamespace(), metadata.getName());
                 if (sko != null) {
                   if (channelName != null) {
                     boolean removed =
@@ -349,7 +353,7 @@ public class DomainProcessor {
                       });
               break;
             case "DELETED":
-              info = DomainPresenceInfoManager.lookup(domainUID);
+              info = DomainPresenceInfoManager.lookup(metadata.getNamespace(), domainUID);
               if (info != null) {
                 boolean removed =
                     removeIfPresentAnd(
@@ -429,7 +433,8 @@ public class DomainProcessor {
       String message = event.getMessage();
       if (message != null) {
         if (message.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE)) {
-          ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(name);
+          ServerKubernetesObjects sko =
+              ServerKubernetesObjectsManager.lookup(event.getMetadata().getNamespace(), name);
           if (sko != null) {
             int idx = message.lastIndexOf(':');
             sko.getLastKnownStatus().set(message.substring(idx + 1).trim());
@@ -456,7 +461,7 @@ public class DomainProcessor {
         d = item.object;
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
-        existing = DomainPresenceInfoManager.lookup(domainUID);
+        existing = DomainPresenceInfoManager.lookup(d.getMetadata().getNamespace(), domainUID);
         makeRightDomainPresence(existing, domainUID, d, added, false, true);
         break;
 
@@ -464,7 +469,7 @@ public class DomainProcessor {
         d = item.object;
         domainUID = d.getSpec().getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
-        existing = DomainPresenceInfoManager.lookup(domainUID);
+        existing = DomainPresenceInfoManager.lookup(d.getMetadata().getNamespace(), domainUID);
         if (existing != null) {
           makeRightDomainPresence(existing, domainUID, d, true, true, true);
         }
@@ -652,13 +657,14 @@ public class DomainProcessor {
       Step.StepAndPacket plan =
           isDeleting ? createDomainDownPlan(existing, ns, domainUID) : createDomainUpPlan(dom, ns);
 
-      runDomainPlan(dom, domainUID, plan, isDeleting, isWillInterrupt);
+      runDomainPlan(dom, domainUID, ns, plan, isDeleting, isWillInterrupt);
     }
   }
 
   static void runDomainPlan(
       Domain dom,
       String domainUID,
+      String ns,
       Step.StepAndPacket plan,
       boolean isDeleting,
       boolean isWillInterrupt) {
@@ -694,7 +700,7 @@ public class DomainProcessor {
                 .getExecutor()
                 .schedule(
                     () -> {
-                      DomainPresenceInfo existing = DomainPresenceInfoManager.lookup(domainUID);
+                      DomainPresenceInfo existing = DomainPresenceInfoManager.lookup(ns, domainUID);
                       if (existing != null) {
                         internalMakeRightDomainPresence(
                             existing, dom, domainUID, existing.getNamespace(), isDeleting, false);
