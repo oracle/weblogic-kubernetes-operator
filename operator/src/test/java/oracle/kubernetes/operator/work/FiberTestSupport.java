@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -119,6 +120,24 @@ public class FiberTestSupport {
    */
   public Packet runSteps(Step step) {
     fiber.start(step, packet, completionCallback);
+
+    return packet;
+  }
+
+  /**
+   * Starts a unit-test fiber with the specified step and runs until the fiber is done
+   *
+   * @param step the first step to run
+   */
+  public Packet runStepsToCompletion(Step step) {
+    fiber.start(step, packet, completionCallback);
+
+    // Wait for fiber to finish
+    try {
+      fiber.get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
     return packet;
   }
 
