@@ -31,6 +31,7 @@ import org.joda.time.DateTime;
  */
 public class DomainPresenceInfo {
   private final String namespace;
+  private final String domainUID;
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicReference<ScheduledFuture<?>> statusUpdater;
@@ -54,6 +55,7 @@ public class DomainPresenceInfo {
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
+    this.domainUID = domain.getSpec().getDomainUID();
     this.serverStartupInfo = new AtomicReference<>(null);
     this.statusUpdater = new AtomicReference<>(null);
   }
@@ -63,9 +65,10 @@ public class DomainPresenceInfo {
    *
    * @param namespace Namespace
    */
-  DomainPresenceInfo(String namespace) {
+  DomainPresenceInfo(String namespace, String domainUID) {
     this.domain = new AtomicReference<>(null);
     this.namespace = namespace;
+    this.domainUID = domainUID;
     this.serverStartupInfo = new AtomicReference<>(null);
     this.statusUpdater = new AtomicReference<>(null);
   }
@@ -165,9 +168,21 @@ public class DomainPresenceInfo {
     if (old == null) {
       for (Map.Entry<String, ServerKubernetesObjects> entry : servers.entrySet()) {
         ServerKubernetesObjectsManager.register(
-            domain.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
+            domain.getMetadata().getNamespace(),
+            domain.getSpec().getDomainUID(),
+            entry.getKey(),
+            entry.getValue());
       }
     }
+  }
+
+  /**
+   * Gets the Domain UID
+   *
+   * @return Domain UID
+   */
+  public String getDomainUID() {
+    return domainUID;
   }
 
   /**
@@ -342,41 +357,29 @@ public class DomainPresenceInfo {
 
     @Override
     public ServerKubernetesObjects put(String key, ServerKubernetesObjects value) {
-      Domain d = domain.get();
-      if (d != null) {
-        ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
-      }
+      ServerKubernetesObjectsManager.register(namespace, domainUID, key, value);
       return delegate.put(key, value);
     }
 
     @Override
     public ServerKubernetesObjects remove(Object key) {
-      Domain d = domain.get();
-      if (d != null) {
-        ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-      }
+      ServerKubernetesObjectsManager.unregister(namespace, domainUID, (String) key);
       return delegate.remove(key);
     }
 
     @Override
     public void putAll(Map<? extends String, ? extends ServerKubernetesObjects> m) {
-      Domain d = domain.get();
-      if (d != null) {
-        for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : m.entrySet()) {
-          ServerKubernetesObjectsManager.register(
-              d.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
-        }
+      for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : m.entrySet()) {
+        ServerKubernetesObjectsManager.register(
+            namespace, domainUID, entry.getKey(), entry.getValue());
       }
       delegate.putAll(m);
     }
 
     @Override
     public void clear() {
-      Domain d = domain.get();
-      if (d != null) {
-        for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : entrySet()) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), entry.getKey());
-        }
+      for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : entrySet()) {
+        ServerKubernetesObjectsManager.unregister(namespace, domainUID, entry.getKey());
       }
       delegate.clear();
     }
@@ -400,10 +403,7 @@ public class DomainPresenceInfo {
     public ServerKubernetesObjects putIfAbsent(String key, ServerKubernetesObjects value) {
       ServerKubernetesObjects result = delegate.putIfAbsent(key, value);
       if (result == null) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
-        }
+        ServerKubernetesObjectsManager.register(namespace, domainUID, key, value);
       }
       return result;
     }
@@ -412,10 +412,7 @@ public class DomainPresenceInfo {
     public boolean remove(Object key, Object value) {
       boolean result = delegate.remove(key, value);
       if (result) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-        }
+        ServerKubernetesObjectsManager.unregister(namespace, domainUID, (String) key);
       }
       return result;
     }
@@ -425,10 +422,7 @@ public class DomainPresenceInfo {
         String key, ServerKubernetesObjects oldValue, ServerKubernetesObjects newValue) {
       boolean result = delegate.replace(key, oldValue, newValue);
       if (result) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-        }
+        ServerKubernetesObjectsManager.unregister(namespace, domainUID, (String) key);
       }
       return result;
     }
@@ -437,10 +431,7 @@ public class DomainPresenceInfo {
     public ServerKubernetesObjects replace(String key, ServerKubernetesObjects value) {
       ServerKubernetesObjects result = delegate.replace(key, value);
       if (result == null) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-        }
+        ServerKubernetesObjectsManager.unregister(namespace, domainUID, (String) key);
       }
       return result;
     }
