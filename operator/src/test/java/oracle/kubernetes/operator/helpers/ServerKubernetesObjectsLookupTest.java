@@ -26,6 +26,7 @@ import org.junit.Test;
 
 public class ServerKubernetesObjectsLookupTest {
 
+  private static final String NS = "ns1";
   private List<Memento> mementos = new ArrayList<>();
 
   @Before
@@ -52,12 +53,12 @@ public class ServerKubernetesObjectsLookupTest {
 
   @Test
   public void whenNoPreexistingDomains_createEmptyServerKubernetesObjectsMap() {
-    assertThat(ServerKubernetesObjectsManager.getServerKubernetesObjects(), is(anEmptyMap()));
+    assertThat(ServerKubernetesObjectsManager.getServerKubernetesObjects(NS), is(anEmptyMap()));
   }
 
   @Test
   public void whenK8sHasDomainWithOneServer_canLookupFromServerKubernetesObjectsFactory() {
-    Domain domain = createDomain("UID1", "ns1");
+    Domain domain = createDomain("UID1", NS);
     DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
 
     ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, "admin");
@@ -74,7 +75,7 @@ public class ServerKubernetesObjectsLookupTest {
   @Test
   public void
       whenK8sHasDomainAndServerIsRemoved_canNoLongerLookupFromServerKubernetesObjectsFactory() {
-    Domain domain = createDomain("UID1", "ns1");
+    Domain domain = createDomain("UID1", NS);
     DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(domain);
 
     ServerKubernetesObjects sko = ServerKubernetesObjectsManager.getOrCreate(info, "admin");
@@ -83,6 +84,6 @@ public class ServerKubernetesObjectsLookupTest {
 
     assertThat(info.getServers(), is(anEmptyMap()));
 
-    assertThat(ServerKubernetesObjectsManager.getServerKubernetesObjects(), is(anEmptyMap()));
+    assertThat(ServerKubernetesObjectsManager.getServerKubernetesObjects(NS), is(anEmptyMap()));
   }
 }
