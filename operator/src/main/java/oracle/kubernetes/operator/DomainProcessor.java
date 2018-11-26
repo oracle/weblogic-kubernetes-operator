@@ -85,21 +85,26 @@ public class DomainProcessor {
                       });
               break;
             case "MODIFIED":
-              info = DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
-              sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
-              sko.getPod()
-                  .accumulateAndGet(
-                      p,
-                      (current, ob) -> {
-                        if (current != null) {
-                          if (!isOutdated(current.getMetadata(), metadata)) {
-                            return ob;
+              info =
+                  PodWatcher.isTerminating(p)
+                      ? DomainPresenceInfoManager.lookup(metadata.getNamespace(), domainUID)
+                      : DomainPresenceInfoManager.getOrCreate(metadata.getNamespace(), domainUID);
+              if (info != null) {
+                sko = ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
+                sko.getPod()
+                    .accumulateAndGet(
+                        p,
+                        (current, ob) -> {
+                          if (current != null) {
+                            if (!isOutdated(current.getMetadata(), metadata)) {
+                              return ob;
+                            }
                           }
-                        }
-                        // If the skoPod is null then the operator deleted this pod
-                        // and modifications are to the terminating pod
-                        return current;
-                      });
+                          // If the skoPod is null then the operator deleted this pod
+                          // and modifications are to the terminating pod
+                          return current;
+                        });
+              }
               break;
             case "DELETED":
               info = DomainPresenceInfoManager.lookup(metadata.getNamespace(), domainUID);
