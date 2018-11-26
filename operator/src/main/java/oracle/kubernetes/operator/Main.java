@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +67,8 @@ public class Main {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  private static final String NS_STARTING_NOW = "NS_STARTING_NOW";
+
   static final TuningParameters tuningAndConfig;
 
   static {
@@ -101,7 +104,8 @@ public class Main {
 
   static final Engine engine = new Engine(wrappedExecutorService);
 
-  static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  static final ConcurrentMap<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
+  static final ConcurrentMap<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
 
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
@@ -121,12 +125,12 @@ public class Main {
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
-  static Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
-    return DomainPresenceInfoManager.getDomainPresenceInfos();
+  static Map<String, DomainPresenceInfo> getDomainPresenceInfos(String ns) {
+    return DomainPresenceInfoManager.getDomainPresenceInfos(ns);
   }
 
-  static ServerKubernetesObjects getKubernetesObjects(String serverLegalName) {
-    return ServerKubernetesObjectsManager.lookup(serverLegalName);
+  static Map<String, ServerKubernetesObjects> getKubernetesObjects(String ns) {
+    return ServerKubernetesObjectsManager.getServerKubernetesObjects(ns);
   }
 
   /**
@@ -205,8 +209,6 @@ public class Main {
   }
 
   private static void completeBegin() {
-    DomainProcessor.deleteStrandedResources();
-
     try {
       // start the REST server
       startRestServer(principal, isNamespaceStopping.keySet());
@@ -263,7 +265,11 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (isNamespaceStopping.putIfAbsent(ns, new AtomicBoolean(false)) == null) {
+      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+      boolean startingNow = !a.getAndSet(true);
+      packet.put(NS_STARTING_NOW, (Boolean) startingNow);
+
+      if (startingNow) {
         try {
           HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
         } catch (Throwable e) {
@@ -282,13 +288,12 @@ public class Main {
       if (stopping != null) {
         stopping.set(true);
       }
+      isNamespaceStarted.remove(ns);
     }
   }
 
-  private static final AtomicBoolean UNINITIALIZED_NS_STOPPING = new AtomicBoolean(true);
-
   static AtomicBoolean isNamespaceStopping(String ns) {
-    return isNamespaceStopping.getOrDefault(ns, UNINITIALIZED_NS_STOPPING);
+    return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
   static void runSteps(Step firstStep) {
@@ -312,7 +317,7 @@ public class Main {
       namespacesToStop.removeAll(targetNamespaces);
       stopNamespaces(namespacesToStop);
 
-      runSteps(new StartNamespacesStep(targetNamespaces), DomainProcessor::deleteStrandedResources);
+      runSteps(new StartNamespacesStep(targetNamespaces));
     };
   }
 
@@ -529,30 +534,33 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
+      Boolean startingNow = (Boolean) packet.get(NS_STARTING_NOW);
+      if (startingNow == null) {
+        startingNow = Boolean.TRUE;
+      }
+
       Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
           String domainUID = dom.getSpec().getDomainUID();
           domainUIDs.add(domainUID);
           DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
-          if (isNamespaceStopping(dom.getMetadata().getNamespace()).get()) {
+          if (startingNow) {
             // Update domain here if namespace is not yet running
             info.setDomain(dom);
           }
-          DomainProcessor.makeRightDomainPresence(info, dom, true, false, false);
+          DomainProcessor.makeRightDomainPresence(info, domainUID, dom, true, false, false);
         }
       }
 
-      getDomainPresenceInfos()
+      getDomainPresenceInfos(ns)
           .forEach(
               (key, value) -> {
-                Domain d = value.getDomain();
-                if (d != null && ns.equals(d.getMetadata().getNamespace())) {
-                  if (!domainUIDs.contains(d.getSpec().getDomainUID())) {
-                    // This is a stranded DomainPresenceInfo. Clear the Domain reference
-                    // so that stranded resources are marked for clean-up.
-                    value.setDomain(null);
-                  }
+                if (!domainUIDs.contains(key)) {
+                  // This is a stranded DomainPresenceInfo.
+                  value.setDeleting(true);
+                  Domain dom = value.getDomain();
+                  DomainProcessor.makeRightDomainPresence(value, key, dom, true, true, false);
                 }
               });
 
@@ -594,23 +602,66 @@ public class Main {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
       V1ServiceList result = callResponse.getResult();
+
+      Set<String> serviceNames = new HashSet<>();
+      Set<String> channelNames = new HashSet<>();
+      Set<String> clusterNames = new HashSet<>();
       if (result != null) {
         for (V1Service service : result.getItems()) {
           String domainUID = ServiceWatcher.getServiceDomainUID(service);
           String serverName = ServiceWatcher.getServiceServerName(service);
           String channelName = ServiceWatcher.getServiceChannelName(service);
-          if (domainUID != null && serverName != null) {
+          String clusterName = ServiceWatcher.getServiceClusterName(service);
+          if (domainUID != null) {
             DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(ns, domainUID);
-            ServerKubernetesObjects sko =
-                ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
-            if (channelName != null) {
-              sko.getChannels().put(channelName, service);
-            } else {
-              sko.getService().set(service);
+            if (clusterName != null) {
+              clusterNames.add(clusterName);
+              info.getClusters().put(clusterName, service);
+            } else if (serverName != null) {
+              ServerKubernetesObjects sko =
+                  ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
+              if (channelName != null) {
+                channelNames.add(channelName);
+                sko.getChannels().put(channelName, service);
+              } else {
+                serviceNames.add(service.getMetadata().getName());
+                sko.getService().set(service);
+              }
             }
           }
         }
       }
+
+      getDomainPresenceInfos(ns)
+          .forEach(
+              (key, value) -> {
+                ConcurrentMap<String, V1Service> map = value.getClusters();
+                map.forEach(
+                    (ckey, cvalue) -> {
+                      map.compute(
+                          ckey,
+                          (k, current) -> {
+                            return clusterNames.contains(ckey) ? current : null;
+                          });
+                    });
+              });
+      getKubernetesObjects(ns)
+          .forEach(
+              (key, value) -> {
+                if (!serviceNames.contains(key)) {
+                  value.getService().set(null);
+                }
+                ConcurrentMap<String, V1Service> map = value.getChannels();
+                map.forEach(
+                    (ckey, cvalue) -> {
+                      map.compute(
+                          ckey,
+                          (k, current) -> {
+                            return channelNames.contains(ckey) ? current : null;
+                          });
+                    });
+              });
+
       if (!serviceWatchers.containsKey(ns)) {
         serviceWatchers.put(ns, createServiceWatcher(ns, getInitialResourceVersion(result)));
       }
@@ -669,11 +720,14 @@ public class Main {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
       V1PodList result = callResponse.getResult();
+
+      Set<String> podNames = new HashSet<>();
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
           String domainUID = PodWatcher.getPodDomainUID(pod);
           String serverName = PodWatcher.getPodServerName(pod);
           if (domainUID != null && serverName != null) {
+            podNames.add(pod.getMetadata().getName());
             DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(ns, domainUID);
             ServerKubernetesObjects sko =
                 ServerKubernetesObjectsManager.getOrCreate(info, domainUID, serverName);
@@ -681,6 +735,15 @@ public class Main {
           }
         }
       }
+
+      getKubernetesObjects(ns)
+          .forEach(
+              (key, value) -> {
+                if (!podNames.contains(key)) {
+                  value.getPod().set(null);
+                }
+              });
+
       if (!podWatchers.containsKey(ns)) {
         podWatchers.put(ns, createPodWatcher(ns, getInitialResourceVersion(result)));
       }
