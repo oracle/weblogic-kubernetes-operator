@@ -150,7 +150,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
     if (LOGGER.isFineEnabled()) {
       breadCrumbs = new ArrayList<>();
-      addBreadCrumb(na);
       LOGGER.fine("{0} started", new Object[] {getName()});
     }
 
@@ -615,8 +614,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         return false;
       }
 
-      if (LOGGER.isFineEnabled()) {
-        LOGGER.fine("{0} {1} returned with {2}", new Object[] {getName(), na.next, result});
+      if (LOGGER.isFinerEnabled()) {
+        LOGGER.finer("{0} {1} returned with {2}", new Object[] {getName(), na.next, result});
       }
 
       // If resume is called before suspend, then make sure

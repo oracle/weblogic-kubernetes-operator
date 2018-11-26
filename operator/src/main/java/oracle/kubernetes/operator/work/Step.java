@@ -66,7 +66,11 @@ public abstract class Step {
   }
 
   String getName() {
-    String name = getClass().getSimpleName();
+    String name = getClass().getName();
+    int idx = name.lastIndexOf('.');
+    if (idx >= 0) {
+      name = name.substring(idx + 1, name.length());
+    }
     return name.endsWith("Step") ? name.substring(0, name.length() - 4) : name;
   }
 
