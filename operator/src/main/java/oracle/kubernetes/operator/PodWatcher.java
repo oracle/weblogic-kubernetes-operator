@@ -34,7 +34,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /** Watches for Pods to become Ready or leave Ready state */
-public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
+public class PodWatcher extends Watcher<V1Pod>
+    implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String ns;
@@ -93,7 +94,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         Boolean isReady = isReady(pod);
         String podName = pod.getMetadata().getName();
         Container c = ContainerResolver.getInstance().getContainer();
-        ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(podName);
+        ServerKubernetesObjects sko =
+            ServerKubernetesObjectsManager.lookup(pod.getMetadata().getNamespace(), podName);
         if (sko != null) {
           sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
         }

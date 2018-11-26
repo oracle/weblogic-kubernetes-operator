@@ -301,9 +301,11 @@ public class RestBackendImpl implements RestBackend {
    *     domain UID. This method returns an empty configuration object if no configuration is found.
    */
   WlsDomainConfig getWlsDomainConfig(String domainUID) {
-    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(domainUID);
-    if (domainPresenceInfo != null && domainPresenceInfo.getScan() != null) {
-      return domainPresenceInfo.getScan();
+    for (String ns : targetNamespaces) {
+      DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(ns, domainUID);
+      if (domainPresenceInfo != null && domainPresenceInfo.getScan() != null) {
+        return domainPresenceInfo.getScan();
+      }
     }
     return new WlsDomainConfig(null);
   }
