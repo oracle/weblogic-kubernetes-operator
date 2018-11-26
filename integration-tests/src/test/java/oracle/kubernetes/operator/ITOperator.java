@@ -160,7 +160,7 @@ public class ITOperator extends BaseTest {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
     // if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1YamlFile);
+    domain1 = TestUtils.createDomain(domain1YamlFile);
     // }
     logger.info("Checking if operator2 is running, if not creating");
     if (operator2 == null) {
