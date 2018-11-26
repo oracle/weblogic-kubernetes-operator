@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
@@ -79,13 +80,15 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private List<Memento> mementos = new ArrayList<>();
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
+  private Map<String, AtomicBoolean> isNamespaceStopping;
 
   @Before
   public void setUp() throws Exception {
     getDomainPresenceInfoMap().clear();
 
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(installStub(ServerKubernetesObjectsManager.class, "serverMap", new HashMap<>()));
+    mementos.add(
+        installStub(ServerKubernetesObjectsManager.class, "serverMap", new ConcurrentHashMap<>()));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
@@ -93,8 +96,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(
         installStub(DomainProcessor.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
-    Map<String, AtomicBoolean> isNamespaceStopping = getStoppingVariable();
-    isNamespaceStopping.forEach((key, value) -> value.set(true));
+    getStartedVariable();
+    isNamespaceStopping = getStoppingVariable();
+    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
   }
 
   private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
@@ -107,6 +111,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
+  private Map<String, AtomicBoolean> getStartedVariable() throws NoSuchFieldException {
+    Memento startedMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStarted");
+    return startedMemento.getOriginalValue();
+  }
+
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
     Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStopping");
     return stoppingMemento.getOriginalValue();
@@ -114,6 +123,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @After
   public void tearDown() throws Exception {
+    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
 
     for (Memento memento : mementos) memento.revert();
@@ -125,12 +135,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
     readExistingResources();
 
-    assertThat(Main.getDomainPresenceInfos(), is(anEmptyMap()));
+    assertThat(Main.getDomainPresenceInfos(NS), is(anEmptyMap()));
   }
 
   private void readExistingResources() {
     createCannedListDomainResponses();
-    testSupport.runSteps(Main.readExistingResources("operator", NS));
+    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
   @Test
@@ -141,7 +151,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     readExistingResources();
 
     assertThat(
-        Main.getDomainPresenceInfos(),
+        Main.getDomainPresenceInfos(NS),
         hasValue(domain(UID).withNamespace(NS).withIngressForCluster("cluster1")));
   }
 
@@ -169,9 +179,15 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private V1ObjectMeta createIngressMetaData(String uid, String namespace, String clusterName) {
     return new V1ObjectMeta()
-        .name("TEST-" + clusterName)
+        .name(LegalNames.toIngressName(uid, clusterName))
         .namespace(namespace)
         .labels(createMap(DOMAINUID_LABEL, uid, CLUSTERNAME_LABEL, clusterName));
+  }
+
+  private Map<String, String> createMap(String key1, String value1) {
+    Map<String, String> map = new HashMap<>();
+    map.put(key1, value1);
+    return map;
   }
 
   private Map<String, String> createMap(String key1, String value1, String key2, String value2) {
@@ -195,7 +211,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private ServerKubernetesObjects getServerKubernetesObjects(String uid, String serverName) {
-    return Main.getDomainPresenceInfos().get(uid).getServers().get(serverName);
+    return Main.getDomainPresenceInfos(NS).get(uid).getServers().get(serverName);
   }
 
   private V1Service addServiceResource(
@@ -212,24 +228,32 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return new V1Service().metadata(metadata);
   }
 
+  private V1ObjectMeta createMetadata(String uid, String namespace, String name) {
+    return createMetadata(uid, name).namespace(namespace);
+  }
+
+  private V1ObjectMeta createMetadata(String uid, String name) {
+    return new V1ObjectMeta().name(name).labels(createMap(DOMAINUID_LABEL, uid));
+  }
+
   private V1ObjectMeta createServerMetadata(String uid, String namespace, String serverName) {
     return createServerMetadata(uid, serverName).namespace(namespace);
   }
 
   private V1ObjectMeta createServerMetadata(String uid, String name) {
     return new V1ObjectMeta()
-        .name(name)
+        .name(LegalNames.toServerName(uid, name))
         .labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, name));
   }
 
   private void addPersistentVolumeResource(String uid, String name) {
-    V1PersistentVolume volume = new V1PersistentVolume().metadata(createServerMetadata(uid, name));
+    V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(uid, name));
     persistentVolumes.getItems().add(volume);
   }
 
   private void addPersistentVolumeClaimResource(String uid, String namespace, String name) {
     V1PersistentVolumeClaim claim =
-        new V1PersistentVolumeClaim().metadata(createServerMetadata(uid, namespace, name));
+        new V1PersistentVolumeClaim().metadata(createMetadata(uid, namespace, name));
     claims.getItems().add(claim);
   }
 
@@ -395,12 +419,17 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addPersistentVolumeResource(UID, "volume1");
     addPersistentVolumeClaimResource(UID, NS, "claim1");
 
-    readExistingResources();
-
     testSupport
-        .createCannedResponse("deleteCollection")
+        .createCannedResponse("deleteService")
         .withNamespace(NS)
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .withName(LegalNames.toServerName(UID, "admin"))
+        .ignoringBody()
+        .returning(new V1Status());
+    testSupport
+        .createCannedResponse("deleteService")
+        .withNamespace(NS)
+        .withName(LegalNames.toServerName(UID, "ms1"))
+        .ignoringBody()
         .returning(new V1Status());
 
     testSupport
@@ -408,17 +437,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withNamespace(NS)
         .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
         .returning(services);
+
     testSupport
-        .createCannedResponse("deleteService")
+        .createCannedResponse("deleteCollection")
         .withNamespace(NS)
-        .withName("admin")
-        .ignoringBody()
-        .returning(new V1Status());
-    testSupport
-        .createCannedResponse("deleteService")
-        .withNamespace(NS)
-        .withName("ms1")
-        .ignoringBody()
+        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
         .returning(new V1Status());
 
     testSupport
@@ -429,13 +452,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport
         .createCannedResponse("deleteIngress")
         .withNamespace(NS)
-        .withName("TEST-cluster1")
+        .withName(LegalNames.toIngressName(UID, "cluster1"))
         .ignoringBody()
         .returning(new V1Status());
     testSupport
         .createCannedResponse("deleteIngress")
         .withNamespace(NS)
-        .withName("TEST-cluster2")
+        .withName(LegalNames.toIngressName(UID, "cluster2"))
         .ignoringBody()
         .returning(new V1Status());
 
@@ -461,7 +484,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .ignoringBody()
         .returning(new V1Status());
 
-    DomainProcessor.deleteStrandedResources();
+    isNamespaceStopping.get(NS).set(false);
+
+    readExistingResources();
 
     testSupport.verifyAllDefinedResponsesInvoked();
   }

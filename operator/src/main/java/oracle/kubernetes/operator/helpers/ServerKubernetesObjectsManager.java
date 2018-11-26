@@ -7,10 +7,12 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ServerKubernetesObjectsManager {
-  /** A map of pod names to ServerKubernetesObjects */
-  private static final Map<String, ServerKubernetesObjects> serverMap = new ConcurrentHashMap<>();
+  /** A map of pod names to ServerKubernetesObjects per namespace */
+  private static final ConcurrentMap<String, Map<String, ServerKubernetesObjects>> serverMap =
+      new ConcurrentHashMap<>();
 
   private ServerKubernetesObjectsManager() {}
 
@@ -29,19 +31,37 @@ public class ServerKubernetesObjectsManager {
     return (current == null) ? created : current;
   }
 
-  public static ServerKubernetesObjects lookup(String serverLegalName) {
-    return serverMap.get(serverLegalName);
+  public static ServerKubernetesObjects lookup(String ns, String serverLegalName) {
+    Map<String, ServerKubernetesObjects> map = serverMap.get(ns);
+    return map != null ? map.get(serverLegalName) : null;
   }
 
-  static void register(String domainUID, String serverName, ServerKubernetesObjects sko) {
-    serverMap.put(LegalNames.toServerName(domainUID, serverName), sko);
+  static void register(
+      String ns, String domainUID, String serverName, ServerKubernetesObjects sko) {
+    Map<String, ServerKubernetesObjects> map =
+        serverMap.computeIfAbsent(ns, k -> new ConcurrentHashMap<>());
+    map.put(LegalNames.toServerName(domainUID, serverName), sko);
   }
 
-  static void unregister(String domainUID, String serverName) {
-    serverMap.remove(LegalNames.toServerName(domainUID, serverName));
+  static void unregister(String ns, String domainUID, String serverName) {
+    Map<String, ServerKubernetesObjects> map = serverMap.get(ns);
+    if (map != null) {
+      map.remove(LegalNames.toServerName(domainUID, serverName));
+    }
   }
 
-  static Map<String, ServerKubernetesObjects> getServerKubernetesObjects() {
-    return Collections.unmodifiableMap(serverMap);
+  static void unregister(String ns, String serverLegalName) {
+    Map<String, ServerKubernetesObjects> map = serverMap.get(ns);
+    if (map != null) {
+      map.remove(serverLegalName);
+    }
+  }
+
+  public static Map<String, ServerKubernetesObjects> getServerKubernetesObjects(String ns) {
+    Map<String, ServerKubernetesObjects> map = serverMap.get(ns);
+    if (map != null) {
+      return Collections.unmodifiableMap(map);
+    }
+    return Collections.emptyMap();
   }
 }
