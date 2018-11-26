@@ -123,6 +123,10 @@ public class PodWatcher extends Watcher<V1Pod>
     LOGGER.exiting();
   }
 
+  static boolean isTerminating(V1Pod pod) {
+    return pod.getMetadata().getDeletionTimestamp() != null;
+  }
+
   static boolean isReady(V1Pod pod) {
     return isReady(pod, false);
   }
