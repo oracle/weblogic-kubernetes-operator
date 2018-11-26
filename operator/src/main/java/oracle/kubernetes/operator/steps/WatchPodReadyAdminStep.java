@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.steps;
 
 import io.kubernetes.client.models.V1Pod;
 import java.util.Map;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -30,7 +31,9 @@ public class WatchPodReadyAdminStep extends Step {
     PodWatcher pw = podWatchers.get(adminPod.getMetadata().getNamespace());
     packet
         .getComponents()
-        .put(ProcessingConstants.PODWATCHER_COMPONENT_NAME, Component.createFor(pw));
+        .put(
+            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+            Component.createFor(PodAwaiterStepFactory.class, pw));
 
     return doNext(pw.waitForReady(adminPod, getNext()), packet);
   }

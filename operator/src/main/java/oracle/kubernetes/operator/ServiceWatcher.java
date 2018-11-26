@@ -74,4 +74,13 @@ public class ServiceWatcher extends Watcher<V1Service> {
     }
     return null;
   }
+
+  static String getServiceClusterName(V1Service service) {
+    V1ObjectMeta meta = service.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.CLUSTERNAME_LABEL);
+    }
+    return null;
+  }
 }
