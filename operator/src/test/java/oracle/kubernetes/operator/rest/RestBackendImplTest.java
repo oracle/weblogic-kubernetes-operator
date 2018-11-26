@@ -184,7 +184,7 @@ public class RestBackendImplTest {
 
   @Test
   public void verify_getWlsDomainConfig_doesNotReturnNull_whenScanIsNull() {
-    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(UID);
+    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(NS, UID);
     domainPresenceInfo.setScan(null);
 
     WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
@@ -215,13 +215,13 @@ public class RestBackendImplTest {
 
   void resetDomainPresenceInfoManager() {
     Map<String, DomainPresenceInfo> domainPresenceInfos =
-        DomainPresenceInfoManager.getDomainPresenceInfos();
+        DomainPresenceInfoManager.getDomainPresenceInfos(NS);
     if (domainPresenceInfos != null) {
       for (String domainUID : domainPresenceInfos.keySet()) {
-        DomainPresenceInfoManager.remove(domainUID);
+        DomainPresenceInfoManager.remove(NS, domainUID);
       }
     }
-    domainPresenceInfos = DomainPresenceInfoManager.getDomainPresenceInfos();
+    domainPresenceInfos = DomainPresenceInfoManager.getDomainPresenceInfos(NS);
     assertThat(
         "DomainPresenceInfoManager should contains no entries",
         domainPresenceInfos.isEmpty(),
