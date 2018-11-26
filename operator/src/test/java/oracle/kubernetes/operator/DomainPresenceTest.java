@@ -96,7 +96,9 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(
         installStub(DomainProcessor.class, "FIBER_GATE", testSupport.createFiberGateStub()));
 
+    getStartedVariable();
     isNamespaceStopping = getStoppingVariable();
+    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
   }
 
   private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
@@ -109,6 +111,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
+  private Map<String, AtomicBoolean> getStartedVariable() throws NoSuchFieldException {
+    Memento startedMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStarted");
+    return startedMemento.getOriginalValue();
+  }
+
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
     Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStopping");
     return stoppingMemento.getOriginalValue();
@@ -116,7 +123,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @After
   public void tearDown() throws Exception {
-    isNamespaceStopping.forEach((key, value) -> value.set(true));
+    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
 
     for (Memento memento : mementos) memento.revert();
@@ -133,7 +140,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private void readExistingResources() {
     createCannedListDomainResponses();
-    testSupport.runSteps(Main.readExistingResources("operator", NS));
+    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
   @Test
@@ -476,6 +483,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName("claim1")
         .ignoringBody()
         .returning(new V1Status());
+
+    isNamespaceStopping.get(NS).set(false);
 
     readExistingResources();
 

@@ -612,8 +612,6 @@ public class DomainProcessor {
       boolean explicitRecheck,
       boolean isDeleting,
       boolean isWillInterrupt) {
-    LOGGER.entering();
-
     DomainSpec spec = null;
     String ns;
     if (dom != null) {
@@ -624,25 +622,27 @@ public class DomainProcessor {
       ns = existing.getNamespace();
     }
 
-    if (existing != null) {
-      Domain current = existing.getDomain();
-      if (current != null) {
-        // Is this an outdated watch event?
-        if (isOutdated(current.getMetadata(), dom.getMetadata())) {
-          LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
-          return;
-        }
-        // Has the spec actually changed? We will get watch events for status updates
-        if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
-          // nothing in the spec has changed, but status likely did; update current
-          existing.setDomain(dom);
-          LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
-          return;
+    if (!Main.isNamespaceStopping(ns).get()) {
+      if (existing != null) {
+        Domain current = existing.getDomain();
+        if (current != null) {
+          // Is this an outdated watch event?
+          if (isOutdated(current.getMetadata(), dom.getMetadata())) {
+            LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
+            return;
+          }
+          // Has the spec actually changed? We will get watch events for status updates
+          if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
+            // nothing in the spec has changed, but status likely did; update current
+            existing.setDomain(dom);
+            LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
+            return;
+          }
         }
       }
-    }
 
-    internalMakeRightDomainPresence(existing, dom, domainUID, ns, isDeleting, isWillInterrupt);
+      internalMakeRightDomainPresence(existing, dom, domainUID, ns, isDeleting, isWillInterrupt);
+    }
   }
 
   private static void internalMakeRightDomainPresence(

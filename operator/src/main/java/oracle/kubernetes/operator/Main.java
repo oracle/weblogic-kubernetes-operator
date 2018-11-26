@@ -67,6 +67,8 @@ public class Main {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  private static final String NS_STARTING_NOW = "NS_STARTING_NOW";
+
   static final TuningParameters tuningAndConfig;
 
   static {
@@ -102,6 +104,7 @@ public class Main {
 
   static final Engine engine = new Engine(wrappedExecutorService);
 
+  static final ConcurrentMap<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
   static final ConcurrentMap<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
 
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
@@ -262,7 +265,11 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (isNamespaceStopping(ns).get()) {
+      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+      boolean startingNow = !a.getAndSet(true);
+      packet.put(NS_STARTING_NOW, (Boolean) startingNow);
+
+      if (startingNow) {
         try {
           HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
         } catch (Throwable e) {
@@ -281,11 +288,12 @@ public class Main {
       if (stopping != null) {
         stopping.set(true);
       }
+      isNamespaceStarted.remove(ns);
     }
   }
 
   static AtomicBoolean isNamespaceStopping(String ns) {
-    return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(true));
+    return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
   static void runSteps(Step firstStep) {
@@ -526,7 +534,10 @@ public class Main {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      boolean starting = isNamespaceStopping.putIfAbsent(ns, new AtomicBoolean(false)) == null;
+      Boolean startingNow = (Boolean) packet.get(NS_STARTING_NOW);
+      if (startingNow == null) {
+        startingNow = Boolean.TRUE;
+      }
 
       Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
@@ -534,7 +545,7 @@ public class Main {
           String domainUID = dom.getSpec().getDomainUID();
           domainUIDs.add(domainUID);
           DomainPresenceInfo info = DomainPresenceInfoManager.getOrCreate(dom);
-          if (starting) {
+          if (startingNow) {
             // Update domain here if namespace is not yet running
             info.setDomain(dom);
           }
