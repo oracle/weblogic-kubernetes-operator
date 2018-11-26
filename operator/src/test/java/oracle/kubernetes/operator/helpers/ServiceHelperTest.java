@@ -145,7 +145,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().returning(new V1Status());
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -173,7 +173,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -183,7 +183,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().failingWithStatus(HTTP_BAD_REQUEST);
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     testSupport.verifyCompletionThrowable(ApiException.class);
   }
@@ -192,7 +192,7 @@ public class ServiceHelperTest {
   public void whenDeleteServiceStepRunWithNoService_doNotSendDeleteCall() {
     ServerKubernetesObjects sko = createSko(null);
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -201,7 +201,7 @@ public class ServiceHelperTest {
   public void afterDeleteServiceStepRun_runSpecifiedNextStep() {
     ServerKubernetesObjects sko = createSko(null);
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
   }
