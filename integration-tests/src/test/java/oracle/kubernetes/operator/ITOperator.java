@@ -237,7 +237,7 @@ public class ITOperator extends BaseTest {
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
       // create domain on existing dir
-      // domain1.destroy();
+      domain1.destroy();
     }
     logger.info("domain1 " + domain1);
     domain1.createDomainOnExistingDirectory();
