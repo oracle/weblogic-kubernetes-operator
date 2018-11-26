@@ -159,9 +159,11 @@ public class ITOperator extends BaseTest {
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
-    // if (domain1 == null) {
-    domain1 = TestUtils.createDomain(domain1YamlFile);
-    // }
+    if (domain1 == null) {
+    	domain1 = TestUtils.createDomain(domain1YamlFile);
+    } else {
+    	domain1.create();
+    }
     logger.info("Checking if operator2 is running, if not creating");
     if (operator2 == null) {
       operator2 = TestUtils.createOperator(op2YamlFile);
@@ -234,10 +236,10 @@ public class ITOperator extends BaseTest {
     }
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
+      // create domain on existing dir
+      // domain1.destroy();
     }
     logger.info("domain1 " + domain1);
-    // create domain on existing dir
-    // domain1.destroy();
     domain1.createDomainOnExistingDirectory();
     logger.info("SUCCESS - test9CreateDomainOnExistingDir");
   }
