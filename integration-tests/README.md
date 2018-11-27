@@ -268,6 +268,12 @@ mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS" -DfailIfNoTests=
 
 mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS+test7CreateDomainPVReclaimPolicyRecycle" -DfailIfNoTests=false integration-test -P java-integration-tests
 
+# How to run cleanup script
+
+cleanup script deletes the k8s artifacts, local test tmp directory, delete all helm charts and the potentially remote domain pv directories.
+cd weblogic-kubernetes-operator
+src/integration-tests/bash/cleanup.sh
+
 # Logging/Archiving
 
 Java utils logging is used, writes all the messages to console and java_test_suite.out in $RESULT_ROOT/acceptance_test_tmp directory.
