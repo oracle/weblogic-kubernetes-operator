@@ -717,6 +717,27 @@ public class TestUtils {
     logger.info("Command returned " + outputStr);
   }
 
+  public static void deleteWeblogicDomainResources(String domainUid) throws Exception {
+    StringBuilder cmd =
+        new StringBuilder(BaseTest.getProjectRoot())
+            .append("/kubernetes/delete-weblogic-domain-resources.sh ")
+            .append("-d ")
+            .append(domainUid);
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
   private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
       throws Exception {
     // get operator external certificate from weblogic-operator.yaml
