@@ -510,6 +510,13 @@ public class Domain {
     return domainUid;
   }
 
+  public void testWlsLivenessProbe() throws Exception {
+
+    // test managed server1 pod auto restart
+    String serverName = managedServerNameBase + "1";
+    TestUtils.testWlsLivenessProbe(domainUid, serverName, domainNS);
+  }
+
   private int getAdminSericeLBNodePort() throws Exception {
 
     String adminServerLBNodePortService = domainUid + "-apache-webtier";
