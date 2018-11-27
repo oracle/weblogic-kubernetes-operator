@@ -32,7 +32,7 @@ public class DomainPresenceInfo {
   private final String domainUID;
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
-  private final AtomicBoolean isPopulated = new AtomicBoolean(false); // FIXME: use
+  private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicReference<ScheduledFuture<?>> statusUpdater;
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
