@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -28,6 +29,7 @@ public class ITOperator extends BaseTest {
   // property file used to customize operator properties for operator inputs yaml
   private static String op1YamlFile = "operator1.yaml";
   private static String op2YamlFile = "operator2.yaml";
+  private static final String opForDelYamlFile = "operator_del.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -38,12 +40,18 @@ public class ITOperator extends BaseTest {
   private static String domain6YamlFile = "domain6.yaml";
   private static String domain7YamlFile = "domain7.yaml";
   private static String domain8YamlFile = "domain8.yaml";
+  private static final String domain1ForDelValueYamlFile = "domain_del_1.yaml";
+  private static final String domain2ForDelValueYamlFile = "domain_del_2.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
 
   private static Operator operator1, operator2;
   private static Domain domain1;
+
+  private static Operator operatorForDel;
+
+  private K8sTestUtils k8sTestUtils = new K8sTestUtils();
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -286,6 +294,100 @@ public class ITOperator extends BaseTest {
     // create domain8
     testAllUseCasesForADomain(operator1, domain8YamlFile);
     logger.info("SUCCESS - testBCreateDomainWithDefaultValuesInSampleInputs");
+  }
+
+  @Test
+  public void testDeleteOneDomain() throws Exception {
+    logTestBegin("Deleting one domain.");
+
+    if (operatorForDel == null) {
+      logger.info("About to create operator");
+      operatorForDel = TestUtils.createOperator("operator_del.yaml");
+    }
+    final Domain domain = TestUtils.createDomain(domain1ForDelValueYamlFile);
+    verifyBeforeDeletion(domain);
+
+    logger.info("About to delete domain: " + domain.getDomainUid());
+    TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+
+    verifyAfterDeletion(domain);
+  }
+
+  @Test
+  public void testDeleteTwoDomains() throws Exception {
+    logTestBegin("Deleting two domains.");
+
+    if (operatorForDel == null) {
+      logger.info("About to create operator");
+      operatorForDel = TestUtils.createOperator("operator_del.yaml");
+    }
+    final Domain domain1 = TestUtils.createDomain(domain1ForDelValueYamlFile);
+    final Domain domain2 = TestUtils.createDomain(domain2ForDelValueYamlFile);
+
+    verifyBeforeDeletion(domain1);
+    verifyBeforeDeletion(domain2);
+
+    final String domainUidsToBeDeleted = domain1.getDomainUid() + "," + domain2.getDomainUid();
+    logger.info("About to delete domains: " + domainUidsToBeDeleted);
+    TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+
+    verifyAfterDeletion(domain1);
+    verifyAfterDeletion(domain2);
+  }
+
+  private void verifyBeforeDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("Before deletion of domain: " + domainUid);
+
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, true);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 5);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyIngresses(domainNs, domainUid, domain1LabelSelector, 1);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 1);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+  }
+
+  private void verifyAfterDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("After deletion of domain: " + domainUid);
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, false);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 0);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyIngresses(domainNs, domainUid, domain1LabelSelector, 0);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 0);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
   private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
