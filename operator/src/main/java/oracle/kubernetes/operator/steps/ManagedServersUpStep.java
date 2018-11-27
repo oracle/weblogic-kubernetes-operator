@@ -28,7 +28,8 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String SERVERS_UP_MSG = "Running servers for domain with UID: %s, running list: %s";
+  static final String SERVERS_UP_MSG =
+      "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, servers, next) ->
           scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
@@ -56,6 +57,10 @@ public class ManagedServersUpStep extends Step {
       ServerSpec server = domain.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
+
+        // TEST
+        LOGGER.fine("Adding server: " + serverName);
+
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
@@ -135,8 +140,16 @@ public class ManagedServersUpStep extends Step {
 
     List<String> serversToIgnore = new ArrayList<>(servers);
     if (info.getDomain().isShuttingDown()) {
+
+      // TEST
+      LOGGER.fine("HERE*** 1");
+
       insert(steps, createAvailableHookStep());
     } else {
+
+      // TEST
+      LOGGER.fine("HERE*** 2");
+
       serversToIgnore.add(info.getDomain().getAsName());
     }
 
