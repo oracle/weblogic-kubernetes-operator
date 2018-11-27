@@ -162,7 +162,7 @@ public class ServiceHelper {
     ServerServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-      sko = ServerKubernetesObjectsManager.getOrCreate(info, getServerName());
+      sko = info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
     }
 
     @Override
