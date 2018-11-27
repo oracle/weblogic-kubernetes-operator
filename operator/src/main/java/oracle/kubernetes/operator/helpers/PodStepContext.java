@@ -33,8 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -108,6 +106,10 @@ public abstract class PodStepContext {
   private Step getConflictStep() {
     return new ConflictStep();
   }
+
+  abstract Map<String, String> getPodLabels();
+
+  abstract Map<String, String> getPodAnnotations();
 
   private class ConflictStep extends Step {
 
@@ -194,7 +196,7 @@ public abstract class PodStepContext {
   }
 
   ServerKubernetesObjects getSko() {
-    return ServerKubernetesObjectsManager.getOrCreate(info, getServerName());
+    return info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
   }
 
   // ----------------------- step methods ------------------------------
@@ -283,20 +285,6 @@ public abstract class PodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
-  AtomicBoolean getExplicitRestartAdmin() {
-    return info.getExplicitRestartAdmin();
-  }
-
-  abstract void updateRestartForNewPod();
-
-  abstract void updateRestartForReplacedPod();
-
-  Set<String> getExplicitRestartClusters() {
-    return info.getExplicitRestartClusters();
-  }
-
-  protected abstract boolean isExplicitRestartThisServer();
-
   Step createCyclePodStep(Step next) {
     return new CyclePodStep(next);
   }
@@ -315,7 +303,7 @@ public abstract class PodStepContext {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
-    return !isExplicitRestartThisServer() && isCurrentPodValid(getPodModel(), currentPod);
+    return isCurrentPodValid(getPodModel(), currentPod);
   }
 
   // We want to detect changes that would require replacing an existing Pod
@@ -389,10 +377,6 @@ public abstract class PodStepContext {
     return false;
   }
 
-  Set<String> getExplicitRestartServers() {
-    return info.getExplicitRestartServers();
-  }
-
   private class VerifyPodStep extends Step {
 
     VerifyPodStep(Step next) {
@@ -403,7 +387,6 @@ public abstract class PodStepContext {
     public NextAction apply(Packet packet) {
       V1Pod currentPod = getSko().getPod().get();
       if (currentPod == null) {
-        updateRestartForNewPod();
         return doNext(createNewPod(getNext()), packet);
       } else if (canUseCurrentPod(currentPod)) {
         logPodExists();
@@ -457,7 +440,6 @@ public abstract class PodStepContext {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
-      updateRestartForReplacedPod();
       return doNext(replacePod(getNext()), packet);
     }
   }
@@ -559,16 +541,24 @@ public abstract class PodStepContext {
   }
 
   protected V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(getPodName())
-            .namespace(getNamespace())
-            .putLabelsItem(
-                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
-            .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
-            .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+    // Add custom labels
+    getPodLabels().forEach((k, v) -> metadata.putLabelsItem(k, v));
+
+    // Add internal labels. This will overwrite any custom labels that conflict with internal
+    // labels.
+    metadata
+        .putLabelsItem(
+            LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
+        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+        .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+
+    // Add custom annotations
+    getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));
+
+    // Add prometheus annotations. This will overwrite any custom annotations with same name.
     AnnotationHelper.annotateForPrometheus(metadata, getPort());
     return metadata;
   }
