@@ -17,7 +17,7 @@ public class ServerKubernetesObjects {
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final ConcurrentMap<String, V1Service> channels = new ConcurrentHashMap<>();
 
-  ServerKubernetesObjects() {}
+  public ServerKubernetesObjects() {}
 
   /**
    * The Pod
