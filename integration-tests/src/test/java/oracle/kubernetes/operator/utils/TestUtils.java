@@ -230,7 +230,10 @@ public class TestUtils {
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
-      kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      ExecResult result = kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      logger.info("kill server process command exitValue " + result.exitValue());
+      logger.info(
+          "kill server process command result " + result.stdout() + " stderr " + result.stderr());
       Thread.sleep(2 * 1000);
     }
     // one more time so that liveness probe restarts
@@ -241,6 +244,7 @@ public class TestUtils {
     while (true) {
       long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
+      logger.info("initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
         logger.info("WLS liveness probe test is successful.");
         break;
@@ -301,6 +305,8 @@ public class TestUtils {
         .append(" ")
         .append(scriptPath);
 
+    ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
+    logger.info("get pods before killing the server " + result.stdout() + "\n " + result.stderr());
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
@@ -526,11 +532,11 @@ public class TestUtils {
                 + " to try renew the lease. "
                 + "Some of the potential reasons for this failure are that another run"
                 + "may have obtained the lease, the lease may have been externally "
-                + "deleted, or the caller of run.sh may have forgotten to obtain the"
-                + "lease before calling run.sh (using 'lease.sh -o \"$LEASE_ID\"'). "
+                + "deleted, or the caller of the test may have forgotten to obtain the "
+                + "lease before calling the test (using 'lease.sh -o \"$LEASE_ID\"'). "
                 + "To force delete a lease no matter who owns the lease,"
                 + "call 'lease.sh -f' or 'kubernetes delete cm acceptance-test-lease'"
-                + "(this should only be done when sure there's no current run.sh "
+                + "(this should only be done when sure there's no current java tests "
                 + "that owns the lease).  To view the current lease holder,"
                 + "use 'lease.sh -s'.  To disable this lease check, do not set"
                 + "the LEASE_ID environment variable.");
