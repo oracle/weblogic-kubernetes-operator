@@ -57,10 +57,6 @@ public class ManagedServersUpStep extends Step {
       ServerSpec server = domain.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
-
-        // TEST
-        LOGGER.fine("Adding server: " + serverName);
-
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
@@ -140,16 +136,8 @@ public class ManagedServersUpStep extends Step {
 
     List<String> serversToIgnore = new ArrayList<>(servers);
     if (info.getDomain().isShuttingDown()) {
-
-      // TEST
-      LOGGER.fine("HERE*** 1");
-
       insert(steps, createAvailableHookStep());
     } else {
-
-      // TEST
-      LOGGER.fine("HERE*** 2");
-
       serversToIgnore.add(info.getDomain().getAsName());
     }
 
