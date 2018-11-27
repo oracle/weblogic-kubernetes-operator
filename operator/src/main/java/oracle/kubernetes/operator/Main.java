@@ -84,7 +84,6 @@ public class Main {
   private static final Container container = new Container();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-  private static final DomainProcessor processor = DomainProcessor.getInstance();
 
   static {
     container
@@ -102,6 +101,7 @@ public class Main {
   }
 
   static final Engine engine = new Engine(wrappedExecutorService);
+  private static final DomainProcessor processor = DomainProcessor.getInstance();
 
   static final ConcurrentMap<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
   static final ConcurrentMap<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
