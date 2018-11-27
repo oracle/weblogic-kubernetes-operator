@@ -654,7 +654,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           // Has the spec actually changed? We will get watch events for status updates
           if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
             // nothing in the spec has changed, but status likely did; update current
-            info.setDomain(dom);
+            existing.setDomain(dom);
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
             return;
           }
@@ -696,8 +696,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      register(info);
-      Step strategy = getNext();
+      Step strategy = new RegisterStep(info, getNext());
       if (!info.isPopulated()) {
         strategy =
             Step.chain(
@@ -707,6 +706,21 @@ public class DomainProcessorImpl implements DomainProcessor {
                 strategy);
       }
       return doNext(strategy, packet);
+    }
+  }
+
+  private static class RegisterStep extends Step {
+    private final DomainPresenceInfo info;
+
+    public RegisterStep(DomainPresenceInfo info, Step next) {
+      super(next);
+      this.info = info;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      register(info);
+      return doNext(packet);
     }
   }
 
