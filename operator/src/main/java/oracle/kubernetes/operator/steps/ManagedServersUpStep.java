@@ -28,7 +28,8 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String SERVERS_UP_MSG = "Running servers for domain with UID: %s, running list: %s";
+  static final String SERVERS_UP_MSG =
+      "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, servers, next) ->
           scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
@@ -99,8 +100,6 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
 
-    updateExplicitRestart(info);
-
     for (WlsServerConfig serverConfig : info.getScan().getServerConfigs().values()) {
       factory.addServerIfNeeded(serverConfig, null);
     }
@@ -117,18 +116,6 @@ public class ManagedServersUpStep extends Step {
         NEXT_STEP_FACTORY.createServerStep(
             info, factory.servers, factory.createNextStep(getNext())),
         packet);
-  }
-
-  private void updateExplicitRestart(DomainPresenceInfo info) {
-    for (String clusterName : info.getExplicitRestartClusters()) {
-      WlsClusterConfig cluster = info.getScan().getClusterConfig(clusterName);
-      if (cluster != null) {
-        for (WlsServerConfig server : cluster.getServerConfigs()) {
-          info.getExplicitRestartServers().add(server.getName());
-        }
-      }
-    }
-    info.getExplicitRestartClusters().clear();
   }
 
   private Collection<String> getRunningServers(DomainPresenceInfo info) {

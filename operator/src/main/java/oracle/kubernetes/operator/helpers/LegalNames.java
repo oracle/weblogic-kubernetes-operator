@@ -14,7 +14,7 @@ public class LegalNames {
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
   private static final String NAP_PATTERN = "%s-%s-extchannel-%s";
 
-  static String toIngressName(String domainUID, String clusterName) {
+  public static String toIngressName(String domainUID, String clusterName) {
     return toDNS1123LegalName(String.format(INGRESS_PATTERN, domainUID, clusterName));
   }
 

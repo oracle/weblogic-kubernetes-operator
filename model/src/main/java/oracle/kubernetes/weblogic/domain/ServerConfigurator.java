@@ -37,4 +37,8 @@ public interface ServerConfigurator {
   ServerConfigurator withAdditionalVolume(String name, String path);
 
   ServerConfigurator withAdditionalVolumeMount(String name, String path);
+
+  ServerConfigurator withPodLabel(String name, String value);
+
+  ServerConfigurator withPodAnnotation(String name, String value);
 }

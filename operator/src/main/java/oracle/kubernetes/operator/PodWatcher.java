@@ -21,20 +21,18 @@ import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /** Watches for Pods to become Ready or leave Ready state */
-public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
+public class PodWatcher extends Watcher<V1Pod>
+    implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String ns;
@@ -92,22 +90,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         V1Pod pod = item.object;
         Boolean isReady = isReady(pod);
         String podName = pod.getMetadata().getName();
-        Container c = ContainerResolver.getInstance().getContainer();
-        ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(podName);
-        if (sko != null) {
-          sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
-        }
         if (isReady) {
-          if (sko != null) {
-            sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-          }
           OnReady ready = readyCallbackRegistrations.remove(podName);
           if (ready != null) {
             ready.onReady();
-          }
-        } else {
-          if (sko != null) {
-            sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
           }
         }
         break;
@@ -119,6 +105,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
     listener.receivedResponse(item);
 
     LOGGER.exiting();
+  }
+
+  static boolean isTerminating(V1Pod pod) {
+    return pod.getMetadata().getDeletionTimestamp() != null;
   }
 
   static boolean isReady(V1Pod pod) {

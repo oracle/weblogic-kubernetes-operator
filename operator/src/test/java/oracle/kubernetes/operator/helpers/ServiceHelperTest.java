@@ -31,7 +31,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REP
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -145,7 +144,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().returning(new V1Status());
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -173,7 +172,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -183,7 +182,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().failingWithStatus(HTTP_BAD_REQUEST);
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     testSupport.verifyCompletionThrowable(ApiException.class);
   }
@@ -192,7 +191,7 @@ public class ServiceHelperTest {
   public void whenDeleteServiceStepRunWithNoService_doNotSendDeleteCall() {
     ServerKubernetesObjects sko = createSko(null);
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -201,7 +200,7 @@ public class ServiceHelperTest {
   public void afterDeleteServiceStepRun_runSpecifiedNextStep() {
     ServerKubernetesObjects sko = createSko(null);
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -420,7 +419,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
   }
 
@@ -477,7 +475,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(service));
     assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
   }
 
@@ -493,7 +490,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
@@ -516,10 +512,6 @@ public class ServiceHelperTest {
     verifyServerServiceReplaced(
         withNodePort(createServerService(), BAD_PORT),
         withNodePort(createServerService(), TEST_NODE_PORT));
-  }
-
-  private ServerKubernetesObjects getServerKubernetesObjects() {
-    return ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, TEST_SERVER_NAME);
   }
 
   private V1ServiceSpec createServerServiceSpec() {
@@ -586,7 +578,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
   }
 
@@ -618,7 +609,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, service));
     assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
   }
 
@@ -639,7 +629,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
