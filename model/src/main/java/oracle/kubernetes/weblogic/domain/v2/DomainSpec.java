@@ -33,6 +33,9 @@ public class DomainSpec extends BaseConfiguration {
   /** The pattern for computing the default persistent volume claim name. */
   private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
 
+  /** The pattern for computing the default shared logs directory. */
+  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
+
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
   @SerializedName("domainUID")
   @Expose
@@ -143,7 +146,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("domainHomeInImage")
   @Expose
-  private boolean domainHomeInImage;
+  @Description(
+      "Flag indicating whether the domain home is part of the image. Default value is true. ")
+  private boolean domainHomeInImage = true;
 
   /** The definition of the storage used for this domain. */
   @SerializedName("storage")
@@ -203,6 +208,29 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   @Description("Configuration for the clusters")
   protected Map<String, Cluster> clusters = new HashMap<>();
+
+  /**
+   * The log home.
+   *
+   * @since 2.0
+   */
+  @SerializedName("logHome")
+  @Expose
+  @Description("The folder for the log files (Not required). Defaults to /shared/logs/domainUID. ")
+  protected String logHome;
+
+  /**
+   * Whether the log home is enabled.
+   *
+   * @since 2.0
+   */
+  @SerializedName("logHomeEnabled")
+  @Expose
+  @Description(
+      "Specified whether the log home folder is enabled (Not required). "
+          + "Defaults to true if domainHomeInImage is false. "
+          + "Defaults to false if domainHomeInImage is true. ")
+  private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   public AdminServer getOrCreateAdminServer(String adminServerName) {
     if (adminServer != null) return adminServer;
@@ -301,6 +329,49 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setDomainHome(String domainHome) {
     this.domainHome = domainHome;
+  }
+
+  /**
+   * Log home
+   *
+   * @since 2.0
+   * @return log home
+   */
+  public String getLogHome() {
+    return Optional.ofNullable(logHome).orElse(String.format(LOG_HOME_DEFAULT_PATTERN, domainUID));
+  }
+
+  /**
+   * Log home
+   *
+   * @since 2.0
+   * @param logHome log home
+   */
+  public void setLogHome(String logHome) {
+    this.logHome = logHome;
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @return log home enabled
+   */
+  public boolean getLogHomeEnabled() {
+    if (logHomeEnabled == null) {
+      return !isDomainHomeInImage();
+    }
+    return logHomeEnabled.booleanValue();
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @param logHomeEnabled log home enabled
+   */
+  public void setLogHomeEnabled(boolean logHomeEnabled) {
+    this.logHomeEnabled = new Boolean(logHomeEnabled);
   }
 
   /*
