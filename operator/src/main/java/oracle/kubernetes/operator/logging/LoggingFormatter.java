@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
+import oracle.kubernetes.operator.work.Fiber;
 
 /** Custom log formatter to format log messages in JSON format. */
 public class LoggingFormatter extends Formatter {
@@ -27,6 +28,7 @@ public class LoggingFormatter extends Formatter {
   private static final String LOG_LEVEL = "level";
   private static final String TIMESTAMP = "timestamp";
   private static final String THREAD = "thread";
+  private static final String FIBER = "fiber";
   private static final String SOURCE_CLASS = "class";
   private static final String SOURCE_METHOD = "method";
   private static final String TIME_IN_MILLIS = "timeInMillis";
@@ -100,9 +102,11 @@ public class LoggingFormatter extends Formatter {
     long rawTime = record.getMillis();
     final String dateString = dateFormat.format(new Date(rawTime));
     long thread = Thread.currentThread().getId();
+    Fiber fiber = Fiber.getCurrentIfSet();
 
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
+    map.put(FIBER, fiber != null ? fiber.toString() : "");
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
     map.put(SOURCE_METHOD, sourceMethodName);
