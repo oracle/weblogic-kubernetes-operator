@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Test;
@@ -22,9 +21,7 @@ public class MainTest {
   final String DOMAIN_UID = "domain-uid-for-testing";
 
   @After
-  public void tearDown() {
-    DomainPresenceInfoManager.remove(NS, DOMAIN_UID);
-  }
+  public void tearDown() {}
 
   @Test
   public void getTargetNamespaces_withEmptyValue_should_return_default()
@@ -88,7 +85,7 @@ public class MainTest {
 
     V1ObjectMeta domain2Meta = createMetadata(CREATION_DATETIME);
 
-    assertFalse(DomainProcessor.isOutdated(domainMeta, domain2Meta));
+    assertFalse(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
   }
 
   @Test
@@ -99,7 +96,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.plusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertFalse(DomainProcessor.isOutdated(domainMeta, domain2Meta));
+    assertFalse(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
   }
 
   @Test
@@ -110,7 +107,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.minusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertTrue(DomainProcessor.isOutdated(domainMeta, domain2Meta));
+    assertTrue(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
   }
 
   Method getTargetNamespaces;

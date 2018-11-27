@@ -27,8 +27,8 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -302,9 +302,12 @@ public class RestBackendImpl implements RestBackend {
    */
   WlsDomainConfig getWlsDomainConfig(String domainUID) {
     for (String ns : targetNamespaces) {
-      DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(ns, domainUID);
-      if (domainPresenceInfo != null && domainPresenceInfo.getScan() != null) {
-        return domainPresenceInfo.getScan();
+      Scan scan = ScanCache.INSTANCE.lookupScan(ns, domainUID);
+      if (scan != null) {
+        WlsDomainConfig config = scan.getWlsDomainConfig();
+        if (config != null) {
+          return config;
+        }
       }
     }
     return new WlsDomainConfig(null);
