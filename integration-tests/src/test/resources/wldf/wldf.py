@@ -3,6 +3,7 @@ from java.util import Properties
 from java.io import File
 import sys, socket
 import os
+import time as systime
 hostname = socket.gethostname()
 
 k8s_master_host=os.environ.get('KUBERNETES_SERVICE_HOST')
@@ -63,4 +64,22 @@ wh1.setAlarmResetPeriod(60000)
 wh1.addNotification(scriptAct)
 
 save()
-activate()
+activate(block='true')
+
+print "wait for harvester watch to become active"
+
+domainRuntime()
+
+cd('ServerRuntimes/admin-server/WLDFRuntime/WLDFRuntime/WLDFWatchNotificationRuntime/WatchNotification')
+
+numWatchEval=cmo.getTotalHarvesterWatchEvaluations()
+maxwait=300
+
+while(numWatchEval < 1) and (maxwait > 0):
+  print numWatchEval
+  maxwait -= 1
+  systime.sleep(1)
+  numWatchEval=cmo.getTotalHarvesterWatchEvaluations()
+
+print "wldf.py done numWatchEval is ", numWatchEval, " maxwait is ", maxwait
+
