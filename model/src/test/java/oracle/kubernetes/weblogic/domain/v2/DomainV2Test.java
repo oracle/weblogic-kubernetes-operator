@@ -1222,6 +1222,55 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDefaultConfiguration_domainHomeInImage() {
+    configureDomain(domain);
+
+    assertThat(domain.getSpec().isDomainHomeInImage(), is(true));
+  }
+
+  @Test
+  public void whenDomainHomeInImageSpecified_useValue() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getSpec().isDomainHomeInImage(), is(false));
+  }
+
+  @Test
+  public void whenLogHomeNotSet_useDefault() {
+    configureDomain(domain);
+
+    assertThat(domain.getSpec().getLogHome(), equalTo("/shared/logs/uid1"));
+  }
+
+  @Test
+  public void whenLogHomeSet_useValue() {
+    configureDomain(domain).withLogHome("/custom/logs");
+
+    assertThat(domain.getSpec().getLogHome(), equalTo("/custom/logs"));
+  }
+
+  @Test
+  public void whenDomainHomeInImage_logHomeNotEnabled() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(false));
+  }
+
+  @Test
+  public void whenDomainHomeNotInImage_logHomeEnabled() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  public void whenLogHomeEnabledSet_useValue() {
+    configureDomain(domain).withLogHomeEnabled(true);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
+  }
+
+  @Test
   public void domainHomeTest_standardHome2() {
     configureDomain(domain).withDomainHomeInImage(false);
 
