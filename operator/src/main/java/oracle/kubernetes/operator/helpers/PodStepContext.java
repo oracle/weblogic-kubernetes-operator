@@ -196,7 +196,7 @@ public abstract class PodStepContext {
   }
 
   ServerKubernetesObjects getSko() {
-    return ServerKubernetesObjectsManager.getOrCreate(info, getServerName());
+    return info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
   }
 
   // ----------------------- step methods ------------------------------
