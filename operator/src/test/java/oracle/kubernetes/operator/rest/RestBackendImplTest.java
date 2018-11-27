@@ -19,13 +19,12 @@ import io.kubernetes.client.models.V1UserInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import javax.ws.rs.WebApplicationException;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.BodyMatcher;
 import oracle.kubernetes.operator.helpers.CallTestSupport;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -35,6 +34,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,8 +82,8 @@ public class RestBackendImplTest {
     configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
 
-    resetDomainPresenceInfoManager();
-    setupDomainPresenceInfoManager();
+    resetScanCache();
+    setupScanCache();
   }
 
   private void expectSecurityCalls() {
@@ -117,7 +117,7 @@ public class RestBackendImplTest {
   public void tearDown() {
     for (Memento memento : mementos) memento.revert();
     testSupport.verifyAllDefinedResponsesInvoked();
-    resetDomainPresenceInfoManager();
+    resetScanCache();
   }
 
   @Test(expected = WebApplicationException.class)
@@ -184,8 +184,7 @@ public class RestBackendImplTest {
 
   @Test
   public void verify_getWlsDomainConfig_doesNotReturnNull_whenScanIsNull() {
-    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.lookup(NS, UID);
-    domainPresenceInfo.setScan(null);
+    ScanCache.INSTANCE.registerScan(NS, UID, null);
 
     WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
 
@@ -213,23 +212,12 @@ public class RestBackendImplTest {
     }
   }
 
-  void resetDomainPresenceInfoManager() {
-    Map<String, DomainPresenceInfo> domainPresenceInfos =
-        DomainPresenceInfoManager.getDomainPresenceInfos(NS);
-    if (domainPresenceInfos != null) {
-      for (String domainUID : domainPresenceInfos.keySet()) {
-        DomainPresenceInfoManager.remove(NS, domainUID);
-      }
-    }
-    domainPresenceInfos = DomainPresenceInfoManager.getDomainPresenceInfos(NS);
-    assertThat(
-        "DomainPresenceInfoManager should contains no entries",
-        domainPresenceInfos.isEmpty(),
-        equalTo(true));
+  void resetScanCache() {
+    ScanCache.INSTANCE.registerScan(NS, UID, null);
   }
 
-  void setupDomainPresenceInfoManager() {
-    DomainPresenceInfo domainPresenceInfo = DomainPresenceInfoManager.getOrCreate(NS, UID);
-    domainPresenceInfo.setScan(configSupport.createDomainConfig());
+  void setupScanCache() {
+    ScanCache.INSTANCE.registerScan(
+        NS, UID, new Scan(configSupport.createDomainConfig(), new DateTime()));
   }
 }

@@ -19,7 +19,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -46,7 +45,6 @@ public class DeleteDomainStep extends Step {
   public NextAction apply(Packet packet) {
     Step serverDownStep =
         Step.chain(
-            removeDomainPresenceInfo(),
             deletePods(),
             deleteServices(),
             deleteIngresses(),
@@ -62,16 +60,6 @@ public class DeleteDomainStep extends Step {
     }
 
     return doNext(serverDownStep, packet);
-  }
-
-  private Step removeDomainPresenceInfo() {
-    return new Step() {
-      @Override
-      public NextAction apply(Packet packet) {
-        DomainPresenceInfoManager.remove(namespace, domainUID);
-        return doNext(packet);
-      }
-    };
   }
 
   private Step deleteIngresses() {

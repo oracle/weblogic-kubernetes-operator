@@ -274,8 +274,8 @@ public class ConfigMapHelper {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
-        info.setScan(wlsDomainConfig);
-        info.setLastScanTime(new DateTime());
+        ScanCache.INSTANCE.registerScan(
+            info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),

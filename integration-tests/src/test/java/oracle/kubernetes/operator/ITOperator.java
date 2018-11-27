@@ -297,12 +297,8 @@ public class ITOperator extends BaseTest {
     // create domain1
     Domain domain = testDomainCreation(domainYamlFile);
     testClusterScaling(operator, domain);
-    if (System.getenv("QUICKTEST") == null
-        || (System.getenv("QUICKTEST") != null
-            && !System.getenv("QUICKTEST").equalsIgnoreCase("true"))) {
-      testDomainLifecyle(operator, domain);
-      testOperatorLifecycle(operator, domain);
-    }
+    testDomainLifecyle(operator, domain);
+    testOperatorLifecycle(operator, domain);
     return domain;
   }
 
