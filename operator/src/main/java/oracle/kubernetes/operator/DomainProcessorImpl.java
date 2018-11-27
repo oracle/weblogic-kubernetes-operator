@@ -90,9 +90,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         DomainPresenceInfo existing = getExisting(metadata.getNamespace(), domainUID);
         if (existing != null) {
           ServerKubernetesObjects sko =
-              existing
-                  .getServers()
-                  .computeIfAbsent(metadata.getName(), k -> new ServerKubernetesObjects());
+              existing.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
           if (sko != null) {
             switch (item.type) {
               case "ADDED":
@@ -189,7 +187,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                 ServerKubernetesObjects sko =
                     existing
                         .getServers()
-                        .computeIfAbsent(metadata.getName(), k -> new ServerKubernetesObjects());
+                        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
                 if (channelName != null) {
                   sko.getChannels()
                       .compute(
@@ -235,7 +233,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                 ServerKubernetesObjects sko =
                     existing
                         .getServers()
-                        .computeIfAbsent(metadata.getName(), k -> new ServerKubernetesObjects());
+                        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
                 if (channelName != null) {
                   sko.getChannels()
                       .compute(
@@ -282,7 +280,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   makeRightDomainPresence(existing, true, false, true);
                 }
               } else if (serverName != null) {
-                ServerKubernetesObjects sko = existing.getServers().get(metadata.getName());
+                ServerKubernetesObjects sko = existing.getServers().get(serverName);
                 if (sko != null) {
                   if (channelName != null) {
                     boolean removed =
@@ -456,11 +454,15 @@ public class DomainProcessorImpl implements DomainProcessor {
           ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
           if (map != null) {
             for (DomainPresenceInfo d : map.values()) {
-              ServerKubernetesObjects sko = d.getServers().get(name);
-              if (sko != null) {
-                int idx = message.lastIndexOf(':');
-                sko.getLastKnownStatus().set(message.substring(idx + 1).trim());
-                break;
+              String domainUIDPlusDash = d.getDomainUID() + "-";
+              if (name.startsWith(domainUIDPlusDash)) {
+                String serverName = name.substring(domainUIDPlusDash.length());
+                ServerKubernetesObjects sko = d.getServers().get(serverName);
+                if (sko != null) {
+                  int idx = message.lastIndexOf(':');
+                  sko.getLastKnownStatus().set(message.substring(idx + 1).trim());
+                  break;
+                }
               }
             }
           }
@@ -632,14 +634,14 @@ public class DomainProcessorImpl implements DomainProcessor {
       boolean explicitRecheck,
       boolean isDeleting,
       boolean isWillInterrupt) {
+    Domain domain = info.getDomain();
     DomainSpec spec = null;
-    String ns = info.getNamespace();
-    String domainUID = info.getDomainUID();
-    Domain dom = info.getDomain();
-    if (dom != null) {
-      spec = dom.getSpec();
+    if (domain != null) {
+      spec = domain.getSpec();
       DomainPresenceControl.normalizeDomainSpec(spec);
     }
+    String ns = info.getNamespace();
+    String domainUID = info.getDomainUID();
 
     if (!Main.isNamespaceStopping(ns).get()) {
       DomainPresenceInfo existing = getExisting(ns, domainUID);
@@ -647,14 +649,14 @@ public class DomainProcessorImpl implements DomainProcessor {
         Domain current = existing.getDomain();
         if (current != null) {
           // Is this an outdated watch event?
-          if (isOutdated(current.getMetadata(), dom.getMetadata())) {
+          if (domain != null && isOutdated(current.getMetadata(), domain.getMetadata())) {
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
             return;
           }
           // Has the spec actually changed? We will get watch events for status updates
           if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
             // nothing in the spec has changed, but status likely did; update current
-            existing.setDomain(dom);
+            existing.setDomain(domain);
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
             return;
           }
