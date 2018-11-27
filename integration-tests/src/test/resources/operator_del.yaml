@@ -7,4 +7,5 @@ serviceAccount: weblogic-operator
 namespace: weblogic-operator-4-del
 domainNamespaces: [ "domain-ns-4-del-1", "domain-ns-4-del-2" ]
 externalRestEnabled: true
+externalRestHttpsPort: 33001
 javaLoggingLevel: FINE

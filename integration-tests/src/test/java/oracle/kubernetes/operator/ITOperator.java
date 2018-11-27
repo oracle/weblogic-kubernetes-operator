@@ -299,7 +299,7 @@ public class ITOperator extends BaseTest {
 
     if (operatorForDel == null) {
       logger.info("About to create operator");
-      operatorForDel = TestUtils.createOperator("operator_del.yaml");
+      operatorForDel = TestUtils.createOperator(opForDelYamlFile);
     }
     final Domain domain = TestUtils.createDomain(domain1ForDelValueYamlFile);
     verifyBeforeDeletion(domain);
@@ -316,7 +316,7 @@ public class ITOperator extends BaseTest {
 
     if (operatorForDel == null) {
       logger.info("About to create operator");
-      operatorForDel = TestUtils.createOperator("operator_del.yaml");
+      operatorForDel = TestUtils.createOperator(opForDelYamlFile);
     }
     final Domain domain1 = TestUtils.createDomain(domain1ForDelValueYamlFile);
     final Domain domain2 = TestUtils.createDomain(domain2ForDelValueYamlFile);
