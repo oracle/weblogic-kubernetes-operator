@@ -47,6 +47,7 @@ import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
@@ -58,20 +59,32 @@ import oracle.kubernetes.weblogic.domain.v2.DomainList;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
-
-  private static ThreadFactory getThreadFactory() {
-    return ThreadFactorySingleton.getInstance();
-  }
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String DPI_MAP = "DPI_MAP";
+
+  private static final Container container = new Container();
+
+  private static class WrappedThreadFactory implements ThreadFactory {
+    private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
+
+    @Override
+    public Thread newThread(Runnable r) {
+      return delegate.newThread(
+          () -> {
+            ContainerResolver.getDefault().enterContainer(container);
+            r.run();
+          });
+    }
+  }
+
+  private static final ThreadFactory threadFactory = new WrappedThreadFactory();
 
   static final TuningParameters tuningAndConfig;
 
   static {
     try {
-      TuningParameters.initializeInstance(getThreadFactory(), "/operator/config");
+      TuningParameters.initializeInstance(threadFactory, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -81,7 +94,6 @@ public class Main {
 
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
 
-  private static final Container container = new Container();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
 
@@ -96,7 +108,7 @@ public class Main {
                 TuningParameters.class,
                 tuningAndConfig,
                 ThreadFactory.class,
-                getThreadFactory(),
+                threadFactory,
                 callBuilderFactory));
   }
 
@@ -428,7 +440,7 @@ public class Main {
 
   private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
     return EventWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
@@ -438,7 +450,7 @@ public class Main {
 
   private static PodWatcher createPodWatcher(String ns, String initialResourceVersion) {
     return PodWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         initialResourceVersion,
         processor::dispatchPodWatch,
@@ -447,7 +459,7 @@ public class Main {
 
   private static ServiceWatcher createServiceWatcher(String ns, String initialResourceVersion) {
     return ServiceWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         initialResourceVersion,
         processor::dispatchServiceWatch,
@@ -456,10 +468,19 @@ public class Main {
 
   private static IngressWatcher createIngressWatcher(String ns, String initialResourceVersion) {
     return IngressWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         initialResourceVersion,
         processor::dispatchIngressWatch,
+        isNamespaceStopping(ns));
+  }
+
+  private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
+    return DomainWatcher.create(
+        threadFactory,
+        ns,
+        initialResourceVersion,
+        processor::dispatchDomainWatch,
         isNamespaceStopping(ns));
   }
 
@@ -581,15 +602,6 @@ public class Main {
 
     String getResourceVersion(DomainList result) {
       return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-
-    private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
-      return DomainWatcher.create(
-          getThreadFactory(),
-          ns,
-          initialResourceVersion,
-          processor::dispatchDomainWatch,
-          isNamespaceStopping(ns));
     }
   }
 
