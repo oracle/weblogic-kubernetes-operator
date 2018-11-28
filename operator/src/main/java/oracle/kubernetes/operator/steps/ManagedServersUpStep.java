@@ -28,7 +28,8 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String SERVERS_UP_MSG = "Running servers for domain with UID: %s, running list: %s";
+  static final String SERVERS_UP_MSG =
+      "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, servers, next) ->
           scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
