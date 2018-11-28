@@ -39,7 +39,6 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -126,8 +125,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void addRunningServer(String serverName) {
-    ServerKubernetesObjects sko =
-        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", serverName);
+    ServerKubernetesObjects sko = addServer(domainPresenceInfo, serverName);
     sko.getPod().set(new V1Pod());
   }
 
@@ -469,19 +467,26 @@ public class ManagedServersUpStepTest {
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
+  private static ServerKubernetesObjects addServer(
+      DomainPresenceInfo domainPresenceInfo, String serverName) {
+    return domainPresenceInfo
+        .getServers()
+        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+  }
+
   @Test
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
+    addServer(domainPresenceInfo, "server1");
 
     assertThat(createNextStep(), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
   public void whenExclusionsSpecified_doNotAddToListOfServers() {
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server2");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server3");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", ADMIN);
+    addServer(domainPresenceInfo, "server1");
+    addServer(domainPresenceInfo, "server2");
+    addServer(domainPresenceInfo, "server3");
+    addServer(domainPresenceInfo, ADMIN);
 
     assertStoppingServers(createNextStepWithout("server2"), "server1", "server3");
   }
@@ -490,10 +495,10 @@ public class ManagedServersUpStepTest {
   public void whenShuttingDown_allowAdminServerNameInListOfServers() {
     configurator.setShuttingDown(true);
 
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server2");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server3");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", ADMIN);
+    addServer(domainPresenceInfo, "server1");
+    addServer(domainPresenceInfo, "server2");
+    addServer(domainPresenceInfo, "server3");
+    addServer(domainPresenceInfo, ADMIN);
 
     assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
   }

@@ -31,7 +31,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REP
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -420,7 +419,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
   }
 
@@ -477,7 +475,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(service));
     assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
   }
 
@@ -493,7 +490,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
@@ -516,10 +512,6 @@ public class ServiceHelperTest {
     verifyServerServiceReplaced(
         withNodePort(createServerService(), BAD_PORT),
         withNodePort(createServerService(), TEST_NODE_PORT));
-  }
-
-  private ServerKubernetesObjects getServerKubernetesObjects() {
-    return ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, TEST_SERVER_NAME);
   }
 
   private V1ServiceSpec createServerServiceSpec() {
@@ -586,7 +578,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
   }
 
@@ -618,7 +609,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, service));
     assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
   }
 
@@ -639,7 +629,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
