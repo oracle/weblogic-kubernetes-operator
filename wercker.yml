@@ -178,7 +178,7 @@ integration-test-java:
     goals: clean verify
     version: 3.5.2
     profiles: java-integration-tests
-
+    
   after-steps:
   - script:
     name: cleanup and store
