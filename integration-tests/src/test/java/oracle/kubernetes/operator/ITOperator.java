@@ -42,6 +42,7 @@ public class ITOperator extends BaseTest {
   private static String domain8YamlFile = "domain8.yaml";
   private static final String domain1ForDelValueYamlFile = "domain_del_1.yaml";
   private static final String domain2ForDelValueYamlFile = "domain_del_2.yaml";
+  private static final String domain3ForDelValueYamlFile = "domain_del_3.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -318,18 +319,19 @@ public class ITOperator extends BaseTest {
       logger.info("About to create operator");
       operatorForDel = TestUtils.createOperator(opForDelYamlFile);
     }
-    final Domain domain1 = TestUtils.createDomain(domain1ForDelValueYamlFile);
-    final Domain domain2 = TestUtils.createDomain(domain2ForDelValueYamlFile);
+    final Domain domainDel1 = TestUtils.createDomain(domain2ForDelValueYamlFile);
+    final Domain domainDel2 = TestUtils.createDomain(domain3ForDelValueYamlFile);
 
-    verifyBeforeDeletion(domain1);
-    verifyBeforeDeletion(domain2);
+    verifyBeforeDeletion(domainDel1);
+    verifyBeforeDeletion(domainDel2);
 
-    final String domainUidsToBeDeleted = domain1.getDomainUid() + "," + domain2.getDomainUid();
+    final String domainUidsToBeDeleted =
+        domainDel1.getDomainUid() + "," + domainDel2.getDomainUid();
     logger.info("About to delete domains: " + domainUidsToBeDeleted);
     TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
 
-    verifyAfterDeletion(domain1);
-    verifyAfterDeletion(domain2);
+    verifyAfterDeletion(domainDel1);
+    verifyAfterDeletion(domainDel2);
   }
 
   private void verifyBeforeDeletion(Domain domain) throws Exception {

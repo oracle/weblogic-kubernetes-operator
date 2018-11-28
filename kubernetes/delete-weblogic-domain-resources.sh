@@ -304,5 +304,4 @@ if [ ! -x "$(command -v kubectl)" ]; then
 fi
 
 deleteDomains "${domains}" "${maxwaitsecs:-$default_maxwaitsecs}"
-# getDomainResources "${domains}" "/tmp/$(basename $0).tmp.$$"
 
