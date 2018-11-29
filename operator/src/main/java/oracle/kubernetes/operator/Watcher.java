@@ -29,10 +29,10 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 abstract class Watcher<T> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String IGNORED_RESOURCE_VERSION = "0";
+  private static final long IGNORED_RESOURCE_VERSION = 0;
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
-  private String resourceVersion;
+  private Long resourceVersion;
   private AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
@@ -45,7 +45,8 @@ abstract class Watcher<T> {
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
   Watcher(String resourceVersion, AtomicBoolean stopping) {
-    this.resourceVersion = resourceVersion;
+    this.resourceVersion =
+        !isNullOrEmptyString(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
     this.stopping = stopping;
   }
 
@@ -110,7 +111,8 @@ abstract class Watcher<T> {
   }
 
   private void watchForEvents() {
-    try (WatchI<T> watch = initiateWatch(new WatchBuilder().withResourceVersion(resourceVersion))) {
+    try (WatchI<T> watch =
+        initiateWatch(new WatchBuilder().withResourceVersion(resourceVersion.toString()))) {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 
@@ -152,7 +154,8 @@ abstract class Watcher<T> {
       if (index1 > 0) {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
-          resourceVersion = message.substring(index1 + 1, index2);
+          String val = message.substring(index1 + 1, index2);
+          resourceVersion = !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
         }
       }
     }
@@ -170,27 +173,27 @@ abstract class Watcher<T> {
     updateResourceVersion(getNewResourceVersion(type, object));
   }
 
-  private String getNewResourceVersion(String type, Object object) {
-    if (type.equalsIgnoreCase("DELETED"))
-      return Integer.toString(1 + Integer.parseInt(resourceVersion));
-    else return getResourceVersionFromMetadata(object);
+  private long getNewResourceVersion(String type, Object object) {
+    long newResourceVersion = getResourceVersionFromMetadata(object);
+    if (type.equalsIgnoreCase("DELETED")) return 1 + newResourceVersion;
+    else return newResourceVersion;
   }
 
-  private String getResourceVersionFromMetadata(Object object) {
+  private long getResourceVersionFromMetadata(Object object) {
     try {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
-      return metadata.getResourceVersion();
+      String val = metadata.getResourceVersion();
+      return !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;
     }
   }
 
-  private void updateResourceVersion(String newResourceVersion) {
-    if (isNullOrEmptyString(resourceVersion)) resourceVersion = newResourceVersion;
-    else if (newResourceVersion.compareTo(resourceVersion) > 0)
-      resourceVersion = newResourceVersion;
+  private void updateResourceVersion(long newResourceVersion) {
+    if (resourceVersion == 0) resourceVersion = newResourceVersion;
+    else if (newResourceVersion > resourceVersion) resourceVersion = newResourceVersion;
   }
 
   private static boolean isNullOrEmptyString(String s) {
