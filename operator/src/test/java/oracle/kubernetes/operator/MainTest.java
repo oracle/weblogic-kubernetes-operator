@@ -11,38 +11,36 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Test;
 
 public class MainTest {
 
+  private static final String NS = "default";
   final String DOMAIN_UID = "domain-uid-for-testing";
 
   @After
-  public void tearDown() {
-    DomainPresenceInfoManager.remove(DOMAIN_UID);
-  }
+  public void tearDown() {}
 
   @Test
   public void getTargetNamespaces_withEmptyValue_should_return_default()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("", "default");
+    Collection<String> namespaces = invoke_getTargetNamespaces("", NS);
     assertTrue(namespaces.contains("default"));
   }
 
   @Test
   public void getTargetNamespaces_withNonEmptyValue_should_not_return_default()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain", "default");
+    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain", NS);
     assertFalse(namespaces.contains("default"));
   }
 
   @Test
   public void getTargetNamespaces_with_single_target_should_return_it()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain", "default");
+    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain", NS);
     assertTrue(namespaces.contains("dev-domain"));
   }
 
@@ -50,7 +48,7 @@ public class MainTest {
   public void getTargetNamespaces_with_multiple_targets_should_include_all()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Collection<String> namespaces =
-        invoke_getTargetNamespaces("dev-domain,domain1,test-domain", "default");
+        invoke_getTargetNamespaces("dev-domain,domain1,test-domain", NS);
     assertTrue(namespaces.contains("dev-domain"));
     assertTrue(namespaces.contains("domain1"));
     assertTrue(namespaces.contains("test-domain"));
@@ -59,8 +57,7 @@ public class MainTest {
   @Test
   public void getTargetNamespaces_should_remove_leading_spaces()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces =
-        invoke_getTargetNamespaces(" test-domain, dev-domain", "default");
+    Collection<String> namespaces = invoke_getTargetNamespaces(" test-domain, dev-domain", NS);
     assertTrue(namespaces.contains("dev-domain"));
     assertTrue(namespaces.contains("test-domain"));
   }
@@ -68,8 +65,7 @@ public class MainTest {
   @Test
   public void getTargetNamespaces_should_remove_trailing_spaces()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Collection<String> namespaces =
-        invoke_getTargetNamespaces("dev-domain ,test-domain ", "default");
+    Collection<String> namespaces = invoke_getTargetNamespaces("dev-domain ,test-domain ", NS);
     assertTrue(namespaces.contains("dev-domain"));
     assertTrue(namespaces.contains("test-domain"));
   }
@@ -77,7 +73,7 @@ public class MainTest {
   private V1ObjectMeta createMetadata(DateTime creationTimestamp) {
     return new V1ObjectMeta()
         .name(DOMAIN_UID)
-        .namespace("default")
+        .namespace(NS)
         .creationTimestamp(creationTimestamp)
         .resourceVersion("1");
   }
@@ -89,7 +85,7 @@ public class MainTest {
 
     V1ObjectMeta domain2Meta = createMetadata(CREATION_DATETIME);
 
-    assertFalse(DomainProcessor.isOutdatedWatchEvent(domainMeta, domain2Meta));
+    assertFalse(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
   }
 
   @Test
@@ -100,7 +96,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.plusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertFalse(DomainProcessor.isOutdatedWatchEvent(domainMeta, domain2Meta));
+    assertFalse(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
   }
 
   @Test
@@ -111,7 +107,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.minusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertTrue(DomainProcessor.isOutdatedWatchEvent(domainMeta, domain2Meta));
+    assertTrue(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
   }
 
   Method getTargetNamespaces;

@@ -17,17 +17,12 @@ import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public class DeleteDomainStep extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final DomainPresenceInfo info;
   private final String namespace;
   private final String domainUID;
@@ -41,38 +36,21 @@ public class DeleteDomainStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    Step serverDownStep;
+    Step serverDownStep =
+        Step.chain(
+            deletePods(),
+            deleteServices(),
+            deletePersistentVolumes(),
+            deletePersistentVolumeClaims());
     if (info != null) {
       cancelDomainStatusUpdating(info);
+
       Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
       serversToStop.addAll(info.getServers().entrySet());
-      serverDownStep =
-          Step.chain(
-              new ServerDownIteratorStep(serversToStop, null),
-              // Preserving the manual delete as a failsafe and to delete cluster services
-              deletePods(),
-              deleteServices());
-    } else {
-      serverDownStep = Step.chain(deletePods(), deleteServices());
+      serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
     }
 
-    return doNext(
-        Step.chain(
-            serverDownStep,
-            deletePersistentVolumes(),
-            deletePersistentVolumeClaims(),
-            removeDomainPresenceInfo()),
-        packet);
-  }
-
-  private Step removeDomainPresenceInfo() {
-    return new Step() {
-      @Override
-      public NextAction apply(Packet packet) {
-        DomainPresenceInfoManager.remove(domainUID);
-        return doNext(packet);
-      }
-    };
+    return doNext(serverDownStep, packet);
   }
 
   static void cancelDomainStatusUpdating(DomainPresenceInfo info) {

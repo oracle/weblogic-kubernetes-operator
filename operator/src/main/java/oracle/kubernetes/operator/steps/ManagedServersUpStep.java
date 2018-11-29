@@ -4,13 +4,7 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -28,7 +22,8 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String SERVERS_UP_MSG = "Running servers for domain with UID: %s, running list: %s";
+  static final String SERVERS_UP_MSG =
+      "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, servers, next) ->
           scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
@@ -99,14 +94,18 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
 
-    for (WlsServerConfig serverConfig : info.getScan().getServerConfigs().values()) {
-      factory.addServerIfNeeded(serverConfig, null);
-    }
+    Set<String> clusteredServers = new HashSet<>();
 
     for (WlsClusterConfig clusterConfig : info.getScan().getClusterConfigs().values()) {
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
+        clusteredServers.add(serverConfig.getName());
       }
+    }
+
+    for (WlsServerConfig serverConfig : info.getScan().getServerConfigs().values()) {
+      if (!clusteredServers.contains(serverConfig.getName()))
+        factory.addServerIfNeeded(serverConfig, null);
     }
 
     info.setServerStartupInfo(factory.getStartupInfos());

@@ -94,6 +94,9 @@ public class ITOperator extends BaseTest {
     logTestBegin("test1CreateFirstOperatorAndDomain");
     testCreateOperatorManagingDefaultAndTest1NS();
     domain1 = testAllUseCasesForADomain(operator1, domain1YamlFile);
+    domain1.testWlsLivenessProbe();
+    domain1.destroy();
+
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
 
@@ -128,6 +131,7 @@ public class ITOperator extends BaseTest {
     // create domain3
     Domain domain3 = testDomainCreation(domain3YamlFile);
     testWLDFScaling(operator1, domain3);
+    domain3.destroy();
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
 
@@ -157,6 +161,8 @@ public class ITOperator extends BaseTest {
     }
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
+    } else {
+      domain1.create();
     }
     logger.info("Checking if operator2 is running, if not creating");
     if (operator2 == null) {
@@ -179,6 +185,8 @@ public class ITOperator extends BaseTest {
 
     logger.info("Verify no impact on domain4");
     domain4.verifyDomainCreated();
+    domain4.destroy();
+    domain1.destroy();
     logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
   }
 
@@ -194,7 +202,8 @@ public class ITOperator extends BaseTest {
     }
     logger.info("Creating Domain domain5 & verifing the domain creation");
     // create domain5
-    TestUtils.createDomain(domain5YamlFile);
+    Domain domain5 = TestUtils.createDomain(domain5YamlFile);
+    domain5.destroy();
     logger.info("SUCCESS - test6CreateDomainWithStartPolicyAdminOnly");
   }
 
@@ -217,25 +226,6 @@ public class ITOperator extends BaseTest {
   }
 
   @Test
-  public void test8WlsLivenessProbe() throws Exception {
-
-    logTestBegin("test8WlsLivenessProbe");
-    logger.info("Checking if operator1 is running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(op1YamlFile);
-    }
-    if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1YamlFile);
-    }
-    // test managed server1 pod auto restart
-    String domain = domain1.getDomainUid();
-    String namespace = domain1.getDomainMap().get("namespace").toString();
-    String serverName = domain1.getDomainMap().get("managedServerNameBase").toString() + "1";
-    TestUtils.testWlsLivenessProbe(domain, serverName, namespace);
-    logger.info("SUCCESS - test8WlsLivenessProbe");
-  }
-
-  @Test
   public void test9CreateDomainOnExistingDir() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
@@ -246,10 +236,10 @@ public class ITOperator extends BaseTest {
     }
     if (domain1 == null) {
       domain1 = TestUtils.createDomain(domain1YamlFile);
+      // create domain on existing dir
+      domain1.destroy();
     }
     logger.info("domain1 " + domain1);
-    // create domain on existing dir
-    domain1.destroy();
     domain1.createDomainOnExistingDirectory();
     logger.info("SUCCESS - test9CreateDomainOnExistingDir");
   }
@@ -267,6 +257,7 @@ public class ITOperator extends BaseTest {
     // create domain7
     Domain domain7 = TestUtils.createDomain(domain7YamlFile);
     domain7.verifyAdminConsoleViaLB();
+    domain7.destroy();
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
 
@@ -281,7 +272,8 @@ public class ITOperator extends BaseTest {
     }
 
     // create domain8
-    testAllUseCasesForADomain(operator1, domain8YamlFile);
+    Domain domain8 = testAllUseCasesForADomain(operator1, domain8YamlFile);
+    domain8.destroy();
     logger.info("SUCCESS - testBCreateDomainWithDefaultValuesInSampleInputs");
   }
 
@@ -296,13 +288,9 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain & verifing the domain creation");
     // create domain1
     Domain domain = testDomainCreation(domainYamlFile);
-    if (System.getenv("QUICKTEST") == null
-        || (System.getenv("QUICKTEST") != null
-            && !System.getenv("QUICKTEST").equalsIgnoreCase("true"))) {
-      testDomainLifecyle(operator, domain);
-      testOperatorLifecycle(operator, domain);
-    }
     testClusterScaling(operator, domain);
+    testDomainLifecyle(operator, domain);
+    testOperatorLifecycle(operator, domain);
     return domain;
   }
 

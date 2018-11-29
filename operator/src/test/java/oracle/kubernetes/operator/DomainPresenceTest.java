@@ -21,6 +21,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import com.meterware.simplestub.Stub;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
@@ -40,14 +41,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfoManager;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
@@ -73,32 +74,32 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private List<Memento> mementos = new ArrayList<>();
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
+  private Map<String, AtomicBoolean> isNamespaceStopping;
 
   @Before
   public void setUp() throws Exception {
-    getDomainPresenceInfoMap().clear();
-
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(installStub(ServerKubernetesObjectsManager.class, "serverMap", new HashMap<>()));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(
-        installStub(DomainProcessor.class, "FIBER_GATE", testSupport.createFiberGateStub()));
+        installStub(DomainProcessorImpl.class, "FIBER_GATE", testSupport.createFiberGateStub()));
+    testSupport.addContainerComponent("TF", ThreadFactory.class, this);
 
-    Map<String, AtomicBoolean> isNamespaceStopping = getStoppingVariable();
-    isNamespaceStopping.forEach((key, value) -> value.set(true));
-  }
-
-  private Map getDomainPresenceInfoMap() throws NoSuchFieldException {
-    Memento domains = StaticStubSupport.preserve(DomainPresenceInfoManager.class, "domains");
-    return domains.getOriginalValue();
+    getStartedVariable();
+    isNamespaceStopping = getStoppingVariable();
+    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
   }
 
   private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
       throws NoSuchFieldException {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
+  }
+
+  private Map<String, AtomicBoolean> getStartedVariable() throws NoSuchFieldException {
+    Memento startedMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStarted");
+    return startedMemento.getOriginalValue();
   }
 
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
@@ -108,6 +109,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @After
   public void tearDown() throws Exception {
+    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
 
     for (Memento memento : mementos) memento.revert();
@@ -115,16 +117,36 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.throwOnCompletionFailure();
   }
 
+  public abstract static class DomainProcessorStub implements DomainProcessor {
+    private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
+
+    public Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
+      return dpis;
+    }
+
+    @Override
+    public void makeRightDomainPresence(
+        DomainPresenceInfo info,
+        boolean explicitRecheck,
+        boolean isDeleting,
+        boolean isWillInterrupt) {
+      dpis.put(info.getDomainUID(), info);
+    }
+  }
+
   @Test
   public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
+    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
     readExistingResources();
 
-    assertThat(Main.getDomainPresenceInfos(), is(anEmptyMap()));
+    assertThat(dp.getDomainPresenceInfos(), is(anEmptyMap()));
   }
 
   private void readExistingResources() {
     createCannedListDomainResponses();
-    testSupport.runSteps(Main.readExistingResources("operator", NS));
+    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
   private void addDomainResource(String uid, String namespace) {
@@ -141,6 +163,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .creationTimestamp(DateTime.now()));
   }
 
+  private Map<String, String> createMap(String key1, String value1) {
+    Map<String, String> map = new HashMap<>();
+    map.put(key1, value1);
+    return map;
+  }
+
   private Map<String, String> createMap(String key1, String value1, String key2, String value2) {
     Map<String, String> map = new HashMap<>();
     map.put(key1, value1);
@@ -153,16 +181,20 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addDomainResource(UID, NS);
     V1Service serviceResource = addServiceResource(UID, NS, "admin", "channel1");
 
+    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
     readExistingResources();
 
     String serverName = "admin";
     assertThat(
-        getServerKubernetesObjects(UID, serverName).getChannels(),
+        getServerKubernetesObjects(dp, UID, serverName).getChannels(),
         hasEntry(equalTo("channel1"), sameInstance(serviceResource)));
   }
 
-  private ServerKubernetesObjects getServerKubernetesObjects(String uid, String serverName) {
-    return Main.getDomainPresenceInfos().get(uid).getServers().get(serverName);
+  private ServerKubernetesObjects getServerKubernetesObjects(
+      DomainProcessorStub dp, String uid, String serverName) {
+    return dp.getDomainPresenceInfos().get(uid).getServers().get(serverName);
   }
 
   private V1Service addServiceResource(
@@ -179,24 +211,32 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return new V1Service().metadata(metadata);
   }
 
+  private V1ObjectMeta createMetadata(String uid, String namespace, String name) {
+    return createMetadata(uid, name).namespace(namespace);
+  }
+
+  private V1ObjectMeta createMetadata(String uid, String name) {
+    return new V1ObjectMeta().name(name).labels(createMap(DOMAINUID_LABEL, uid));
+  }
+
   private V1ObjectMeta createServerMetadata(String uid, String namespace, String serverName) {
     return createServerMetadata(uid, serverName).namespace(namespace);
   }
 
   private V1ObjectMeta createServerMetadata(String uid, String name) {
     return new V1ObjectMeta()
-        .name(name)
+        .name(LegalNames.toServerName(uid, name))
         .labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, name));
   }
 
   private void addPersistentVolumeResource(String uid, String name) {
-    V1PersistentVolume volume = new V1PersistentVolume().metadata(createServerMetadata(uid, name));
+    V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(uid, name));
     persistentVolumes.getItems().add(volume);
   }
 
   private void addPersistentVolumeClaimResource(String uid, String namespace, String name) {
     V1PersistentVolumeClaim claim =
-        new V1PersistentVolumeClaim().metadata(createServerMetadata(uid, namespace, name));
+        new V1PersistentVolumeClaim().metadata(createMetadata(uid, namespace, name));
     claims.getItems().add(claim);
   }
 
@@ -205,10 +245,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addDomainResource(UID, NS);
     V1Service serviceResource = addServiceResource(UID, NS, "admin");
 
+    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
     readExistingResources();
 
     assertThat(
-        getServerKubernetesObjects(UID, "admin").getService().get(), equalTo(serviceResource));
+        getServerKubernetesObjects(dp, UID, "admin").getService().get(), equalTo(serviceResource));
   }
 
   private V1Service addServiceResource(String uid, String namespace, String serverName) {
@@ -226,9 +269,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addDomainResource(UID, NS);
     V1Pod podResource = addPodResource(UID, NS, "admin");
 
+    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
     readExistingResources();
 
-    assertThat(getServerKubernetesObjects(UID, "admin").getPod().get(), equalTo(podResource));
+    assertThat(getServerKubernetesObjects(dp, UID, "admin").getPod().get(), equalTo(podResource));
   }
 
   private V1Pod addPodResource(String uid, String namespace, String serverName) {
@@ -248,10 +294,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addPodResource(UID, NS, "admin");
     addEventResource(UID, "admin", READINESS_PROBE_NOT_READY_STATE + "do something!");
 
+    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
     readExistingResources();
 
     assertThat(
-        getServerKubernetesObjects(UID, "admin").getLastKnownStatus().get(),
+        getServerKubernetesObjects(dp, UID, "admin").getLastKnownStatus().get(),
         equalTo("do something!"));
   }
 
@@ -261,9 +310,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     addPodResource(UID, NS, "admin");
     addEventResource(UID, "admin", "ignore this event");
 
+    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
     readExistingResources();
 
-    assertThat(getServerKubernetesObjects(UID, "admin").getLastKnownStatus().get(), nullValue());
+    assertThat(
+        getServerKubernetesObjects(dp, UID, "admin").getLastKnownStatus().get(), nullValue());
   }
 
   private void addEventResource(String uid, String serverName, String message) {
@@ -354,13 +407,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
-        .withName("admin")
+        .withName(LegalNames.toServerName(UID, "admin"))
         .ignoringBody()
         .returning(new V1Status());
     testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
-        .withName("ms1")
+        .withName(LegalNames.toServerName(UID, "ms1"))
         .ignoringBody()
         .returning(new V1Status());
 
@@ -397,6 +450,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName("claim1")
         .ignoringBody()
         .returning(new V1Status());
+
+    isNamespaceStopping.get(NS).set(false);
 
     readExistingResources();
 

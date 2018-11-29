@@ -38,7 +38,7 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   }
 
   private String getDomainUID(DomainPresenceInfo item) {
-    return item.getDomain().getDomainUID();
+    return item.getDomainUID();
   }
 
   private boolean mismatchedUID(Description description, String actualDomainUID) {
@@ -47,7 +47,7 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   }
 
   private String getNamespace(DomainPresenceInfo item) {
-    return item.getDomain().getMetadata().getNamespace();
+    return item.getNamespace();
   }
 
   private boolean mismatchedNamespace(Description description, String actualNamespace) {
