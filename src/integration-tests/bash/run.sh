@@ -875,6 +875,10 @@ function dom_define {
     eval export DOM_${DOM_KEY}_STARTUP_CONTROL="$5"
     eval export DOM_${DOM_KEY}_WL_CLUSTER_NAME="$6"
     eval export DOM_${DOM_KEY}_WL_CLUSTER_TYPE="$7"
+    if [ "$CONFIGURED_CLUSTER_ONLY" = "true" ] && [ "$7" = "DYNAMIC" ]; then
+      trace "Warning: Forcing domain uid '$4' to be CONFIGURED instead of DYNAMIC, as CONFIGURED_CLUSTER_ONLY=true"
+      eval export DOM_${DOM_KEY}_WL_CLUSTER_TYPE="CONFIGURED"
+    fi
     eval export DOM_${DOM_KEY}_MS_BASE_NAME="$8"
     eval export DOM_${DOM_KEY}_ADMIN_PORT="$9"
     eval export DOM_${DOM_KEY}_ADMIN_WLST_PORT="${10}"
@@ -1196,7 +1200,7 @@ function create_domain_pv_pvc_load_balancer {
 
     # Common inputs file for creating a domain
     local inputs="$tmp_dir/create-weblogic-domain-inputs.yaml"
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       cp $PROJECT_ROOT/kubernetes/charts/weblogic-domain/values.yaml $inputs
     else
       cp $PROJECT_ROOT/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml $inputs
@@ -2021,7 +2025,7 @@ function test_mvn_integration_local {
     [ "$?" = "0" ] || fail "Error: Could not find mvn in path."
 
     local mstart=`date +%s`
-    mvn -P integration-tests clean install 2>&1 | opt_tee $RESULT_DIR/mvn.out
+    mvn clean install -Dmaven.test.skip=true 2>&1 | opt_tee $RESULT_DIR/mvn.out
 
     local mend=`date +%s`
     local msecs=$((mend-mstart))
@@ -2518,7 +2522,7 @@ function verify_domain_created {
 
     # Prepend "+" to detailed debugging to make it easy to filter out
 
-    kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get all -n $NAMESPACE $show_all 2>&1 | sed 's/^/+/' 2>&1
 
     kubectl get domains  -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
@@ -2622,7 +2626,7 @@ function verify_domain_deleted {
 
     # Prepend "+" to detailed debugging to make it easy to filter out
 
-    kubectl get all -n $NAMESPACE --show-all 2>&1 | sed 's/^/+/' 2>&1
+    kubectl get all -n $NAMESPACE $show_all 2>&1 | sed 's/^/+/' 2>&1
 
     kubectl get domains -n $NAMESPACE 2>&1 | sed 's/^/+/' 2>&1
 
@@ -2656,7 +2660,7 @@ function shutdown_domain {
 
     local replicas=`get_cluster_replicas $DOM_KEY`
 
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       trace "calling helm delete ${DOM_KEY} --purge"
       helm delete ${DOM_KEY} --purge
     else
@@ -2677,7 +2681,7 @@ function startup_domain {
     local TMP_DIR="`dom_get $1 TMP_DIR`"
     local NAMESPACE="`dom_get $1 NAMESPACE`"
 
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       local inputs=$TMP_DIR/create-weblogic-domain-inputs.yaml
       local outfile="$TMP_DIR/startup-weblogic-domain.out"
       cd $PROJECT_ROOT/kubernetes/charts
@@ -2958,7 +2962,7 @@ function test_cluster_scale {
 
     trace "test cluster scale-up from 2 to 3"
     local domainCR="$TMP_DIR/domain-custom-resource.yaml"
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       kubectl get domain $DOM_KEY -n $NAMESPACE -o yaml > $domainCR
     fi
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 3/"  $domainCR
@@ -2968,7 +2972,7 @@ function test_cluster_scale {
     verify_webapp_load_balancing $DOM_KEY 3
 
     trace "test cluster scale-down from 3 to 2"
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       kubectl get domain $DOM_KEY -n $NAMESPACE -o yaml > $domainCR
     fi
     sed -i -e "0,/replicas:/s/replicas:.*/replicas: 2/"  $domainCR
@@ -3006,6 +3010,7 @@ function test_suite_init {
                    VERBOSE \
                    DEBUG_OUT \
                    QUICKTEST \
+                   QUICKTEST2 \
                    NODEPORT_HOST \
                    JVM_ARGS \
                    BRANCH_NAME \
@@ -3018,7 +3023,8 @@ function test_suite_init {
                    IMAGE_PULL_SECRET_NAME_WEBLOGIC \
                    WERCKER \
                    JENKINS \
-                   USE_HELM \
+                   USE_HELM_FOR_DOMAIN \
+                   CONFIGURED_CLUSTER_ONLY \
                    LEASE_ID;
     do
       trace "Customizable env var before: $varname=${!varname}"
@@ -3049,13 +3055,9 @@ function test_suite_init {
       export DEBUG_OUT="false"
     fi
 
-    # Test installation using helm charts if helm is available
-    #
+    USE_HELM_FOR_DOMAIN="${USE_HELM_FOR_DOMAIN:-false}"
     if [ -x "$(command -v helm)" ]; then
-      trace 'helm is installed, assume user wants to use helm if USE_HELM is not set'
-      USE_HELM="${USE_HELM:-true}"
-    else
-      trace 'helm is not installed and USE_HELM="$USE_HELM", if USE_HELM is true future steps may try install helm'
+      trace 'helm is not installed, future steps may try install helm'
     fi
 
     # The following customizable exports are currently only customized by WERCKER
@@ -3077,6 +3079,7 @@ function test_suite_init {
                    VERBOSE \
                    DEBUG_OUT \
                    QUICKTEST \
+                   QUICKTEST2 \
                    NODEPORT_HOST \
                    JVM_ARGS \
                    BRANCH_NAME \
@@ -3089,7 +3092,8 @@ function test_suite_init {
                    IMAGE_PULL_SECRET_NAME_WEBLOGIC \
                    WERCKER \
                    JENKINS \
-                   USE_HELM \
+                   USE_HELM_FOR_DOMAIN \
+                   CONFIGURED_CLUSTER_ONLY \
                    LEASE_ID;
     do
       trace "Customizable env var after: $varname=${!varname}"
@@ -3122,6 +3126,17 @@ function test_suite_init {
     declare_new_test 1 "$@"
 
     cd $PROJECT_ROOT || fail "Could not cd to $PROJECT_ROOT"
+ 
+    # Handle '--show-all' deprecation for 'kubectl get jobs' and 'kubectl get pods'.
+    # --show-all yields a deprecation warning in stderr in 1.10 in later, since
+    # it isn't needed in 1.10 and later.
+ 
+    k8s_minor=`kubectl version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
+    k8s_major=`kubectl version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
+    export show_all="--show-all"
+    if [ $k8s_major -gt 1 ] || [ $k8s_minor -gt 9 ]; then
+      export show_all=""
+    fi
    
     if [ "$WERCKER" = "true" ]; then 
       trace "Test Suite is running locally on Wercker and k8s is running on remote nodes."
@@ -3229,7 +3244,7 @@ function test_suite {
 
     # TODO: we need to figure out how to support invalid characters in the helm use cases
     # for now, invalid characters are only tested in the none helm cases
-    if [ "$USE_HELM" = "true" ]; then
+    if [ "$USE_HELM_FOR_DOMAIN" = "true" ]; then
       dom_define domain2  oper1   default   domain2    AUTO            cluster-1       DYNAMIC          managed-server 7011       30031           30702           8021    30306                  30316
       dom_define domain3  oper1   test1     domain3    AUTO            cluster-1       DYNAMIC          managed-server 7021       30041           30703           8031    30307                  30317
     else
@@ -3271,6 +3286,8 @@ function test_suite {
 
     # create first domain in default namespace and verify it
     test_domain_creation domain1 
+
+    if [ ! "${QUICKTEST2}" = true ]; then
 
     # test shutting down and restarting a domain 
     test_domain_lifecycle domain1 
@@ -3323,6 +3340,7 @@ function test_suite {
       test_shutdown_domain domain1
 
     fi 
+    fi
 
     local duration=$SECONDS
     trace "Running integration tests spent $(($duration / 60)) minutes and $(($duration % 60)) seconds."
