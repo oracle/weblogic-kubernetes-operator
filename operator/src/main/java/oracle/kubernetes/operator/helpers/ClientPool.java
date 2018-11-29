@@ -8,7 +8,6 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -25,6 +24,8 @@ public class ClientPool extends Pool<ApiClient> {
   public static ClientPool getInstance() {
     return SINGLETON;
   }
+
+  private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
   private ClientPool() {}
 
@@ -52,10 +53,10 @@ public class ClientPool extends Pool<ApiClient> {
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
-    LOGGER.info(MessageKeys.K8S_MASTER_URL, client != null ? client.getBasePath() : null);
 
-    // Ensure that client doesn't time out before call or watch
-    client.getHttpClient().setReadTimeout(5, TimeUnit.MINUTES);
+    if (isFirst.compareAndSet(true, false)) {
+      LOGGER.info(MessageKeys.K8S_MASTER_URL, client != null ? client.getBasePath() : null);
+    }
 
     LOGGER.exiting(client);
     return client;
