@@ -1242,6 +1242,103 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(domain.getDomainHome(), equalTo("/custom/domain/home"));
   }
 
+  @Test
+  public void whenPodLabelsAppliedOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withPodLabel("label1", "domain-label-value1")
+        .withPodLabel("label2", "domain-label-value2");
+    configureCluster("cluster1")
+        .withPodLabel("label3", "cluster-label-value1")
+        .withPodLabel("label4", "cluster-label-value2");
+    configureServer("server1").withPodLabel("label5", "server-label-value1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label1", "domain-label-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label2", "domain-label-value2"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label3", "cluster-label-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label4", "cluster-label-value2"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label5", "server-label-value1"));
+  }
+
+  @Test
+  public void whenPodAnnotationsAppliedOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withPodAnnotation("annotation1", "domain-annotation-value1")
+        .withPodAnnotation("annotation2", "domain-annotation-value2");
+    configureCluster("cluster1")
+        .withPodAnnotation("annotation3", "cluster-annotation-value1")
+        .withPodAnnotation("annotation4", "cluster-annotation-value2");
+    configureServer("server1").withPodAnnotation("annotation5", "server-annotation-value1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation1", "domain-annotation-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation2", "domain-annotation-value2"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation3", "cluster-annotation-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation4", "cluster-annotation-value2"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation5", "server-annotation-value1"));
+  }
+
+  @Test
+  public void whenDuplicatePodLabelsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withPodLabel("label1", "domain-label-value1")
+        .withPodLabel("label2", "domain-label-value2");
+    configureCluster("cluster1")
+        .withPodLabel("label2", "cluster-label-value1")
+        .withPodLabel("label3", "cluster-label-value2");
+    ;
+    configureServer("server1").withPodLabel("label3", "server-label-value1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label1", "domain-label-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label2", "cluster-label-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodLabels(),
+        hasEntry("label3", "server-label-value1"));
+  }
+
+  @Test
+  public void whenDuplicatePodAnnotationsConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain)
+        .withPodAnnotation("annotation1", "domain-annotation-value1")
+        .withPodAnnotation("annotation2", "domain-annotation-value2");
+    configureCluster("cluster1")
+        .withPodAnnotation("annotation2", "cluster-annotation-value1")
+        .withPodAnnotation("annotation3", "cluster-annotation-value2");
+    configureServer("server1").withPodAnnotation("annotation3", "server-annotation-value1");
+
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation1", "domain-annotation-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation2", "cluster-annotation-value1"));
+    assertThat(
+        domain.getServer("server1", "cluster1").getPodAnnotations(),
+        hasEntry("annotation3", "server-annotation-value1"));
+  }
+
   private V1Volume volume(String name, String path) {
     return new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path));
   }

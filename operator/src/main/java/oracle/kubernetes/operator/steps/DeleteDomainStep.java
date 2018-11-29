@@ -11,8 +11,15 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1IngressList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -23,25 +30,36 @@ import oracle.kubernetes.operator.work.Step;
 public class DeleteDomainStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  private final DomainPresenceInfo info;
   private final String namespace;
   private final String domainUID;
 
-  public DeleteDomainStep(String namespace, String domainUID) {
+  public DeleteDomainStep(DomainPresenceInfo info, String namespace, String domainUID) {
     super(null);
+    this.info = info;
     this.namespace = namespace;
     this.domainUID = domainUID;
   }
 
   @Override
   public NextAction apply(Packet packet) {
-    return doNext(
+    Step serverDownStep =
         Step.chain(
-            deleteIngresses(),
-            deleteServices(),
             deletePods(),
+            deleteServices(),
+            deleteIngresses(),
             deletePersistentVolumes(),
-            deletePersistentVolumeClaims()),
-        packet);
+            deletePersistentVolumeClaims(),
+            ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
+    if (info != null) {
+      cancelDomainStatusUpdating(info);
+
+      Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
+      serversToStop.addAll(info.getServers().entrySet());
+      serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
+    }
+
+    return doNext(serverDownStep, packet);
   }
 
   private Step deleteIngresses() {
@@ -56,6 +74,13 @@ public class DeleteDomainStep extends Step {
                 return new DeleteIngressListStep(result.getItems(), next);
               }
             });
+  }
+
+  static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
+    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
+    if (statusUpdater != null) {
+      statusUpdater.cancel(true);
+    }
   }
 
   private Step deleteServices() {

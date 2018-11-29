@@ -38,8 +38,7 @@ public class DomainUpPlanTest {
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
 
   private DomainPresenceStep getDomainPresenceStep() {
-    return DomainPresenceStep.createDomainPresenceStep(
-        domainPresenceInfo, adminStep, managedServersStep);
+    return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
   }
 
   @Before
@@ -88,38 +87,43 @@ public class DomainUpPlanTest {
   public void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
-    assertThat(plan.step, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
+    assertThat(plan, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
   }
 
   @Test
   public void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         both(hasChainWithStep("ManagedServersUpStep"))
             .and(not(hasChainWithStep("AdminServerStep"))));
   }
 
   @Test
   public void useSequenceBeforeAdminServerStep() {
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         hasChainWithStepsInOrder(
             "ProgressingHookStep",
             "DomainPresenceStep",
             "ListPersistentVolumeClaimStep",
+            "DeleteIntrospectorJobStep",
+            "DomainIntrospectorJobStep",
+            "WatchDomainIntrospectorJobReadyStep",
+            "ReadDomainIntrospectorPodStep",
+            "ReadDomainIntrospectorPodLogStep",
+            "SitConfigMapStep",
             "AdminPodStep",
             "BeforeAdminServiceStep",
             "ForServerStep",
             "WatchPodReadyAdminStep",
-            "ReadStep",
             "ExternalAdminChannelsStep",
             "ManagedServersUpStep",
             "EndProgressingStep"));
@@ -129,10 +133,10 @@ public class DomainUpPlanTest {
   public void whenOperatorCreatedStorageConfigured_createBeforeListingClaims() {
     configurator.withNfsStorage("myhost", "/path");
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         hasChainWithStepsInOrder(
             "ProgressingHookStep",
             "PersistentVolumeStep",
