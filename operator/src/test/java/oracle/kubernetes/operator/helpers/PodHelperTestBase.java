@@ -508,13 +508,17 @@ public abstract class PodHelperTestBase {
 
     assertThat(logRecords, containsFine(getPodExistsMessageKey()));
     ServerKubernetesObjects sko =
-        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, getServerName());
+        domainPresenceInfo
+            .getServers()
+            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
     assertThat(sko.getPod().get(), equalTo(createPodModel()));
   }
 
   void initializeExistingPod(V1Pod pod) {
     ServerKubernetesObjects sko =
-        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, getServerName());
+        domainPresenceInfo
+            .getServers()
+            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
     sko.getPod().set(pod);
   }
 

@@ -87,29 +87,29 @@ public class DomainUpPlanTest {
   public void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
-    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
-    assertThat(plan.step, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
+    assertThat(plan, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
   }
 
   @Test
   public void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
-    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         both(hasChainWithStep("ManagedServersUpStep"))
             .and(not(hasChainWithStep("AdminServerStep"))));
   }
 
   @Test
   public void useSequenceBeforeAdminServerStep() {
-    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         hasChainWithStepsInOrder(
             "ProgressingHookStep",
             "DomainPresenceStep",
@@ -128,10 +128,10 @@ public class DomainUpPlanTest {
   public void whenOperatorCreatedStorageConfigured_createBeforeListingClaims() {
     configurator.withNfsStorage("myhost", "/path");
 
-    Step.StepAndPacket plan = DomainProcessor.createDomainUpPlan(domain, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         hasChainWithStepsInOrder(
             "ProgressingHookStep",
             "PersistentVolumeStep",

@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -96,6 +97,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedServiceCall(
@@ -138,6 +142,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
@@ -180,6 +187,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedEventCall(
@@ -222,6 +232,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+
       try {
         return new WeblogicApi(client)
             .listWebLogicOracleV2NamespacedDomainCall(
@@ -267,6 +280,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedConfigMapCall(

@@ -9,18 +9,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
+import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
@@ -28,18 +18,13 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -54,7 +39,6 @@ import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -126,8 +110,7 @@ public class ManagedServersUpStepTest {
   }
 
   private void addRunningServer(String serverName) {
-    ServerKubernetesObjects sko =
-        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", serverName);
+    ServerKubernetesObjects sko = addServer(domainPresenceInfo, serverName);
     sko.getPod().set(new V1Pod());
   }
 
@@ -430,7 +413,6 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  @Ignore
   public void whenWlsClusterNotInDomainSpec_recordServerAndClusterConfigs() {
     setCluster1Replicas(3);
     addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
@@ -442,6 +424,17 @@ public class ManagedServersUpStepTest {
     assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
     assertThat(getServerStartupInfo("ms1").getEnvironment(), empty());
     assertThat(getServerStartupInfo("ms1").getNodePort(), nullValue());
+  }
+
+  @Test
+  public void whenWlsClusterNotInDomainSpec_startUpToLimit() {
+    setCluster1Replicas(3);
+    addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
+    addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
   }
 
   @Test
@@ -469,19 +462,26 @@ public class ManagedServersUpStepTest {
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
+  private static ServerKubernetesObjects addServer(
+      DomainPresenceInfo domainPresenceInfo, String serverName) {
+    return domainPresenceInfo
+        .getServers()
+        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+  }
+
   @Test
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
+    addServer(domainPresenceInfo, "server1");
 
     assertThat(createNextStep(), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
   public void whenExclusionsSpecified_doNotAddToListOfServers() {
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server2");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server3");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", ADMIN);
+    addServer(domainPresenceInfo, "server1");
+    addServer(domainPresenceInfo, "server2");
+    addServer(domainPresenceInfo, "server3");
+    addServer(domainPresenceInfo, ADMIN);
 
     assertStoppingServers(createNextStepWithout("server2"), "server1", "server3");
   }
@@ -490,10 +490,10 @@ public class ManagedServersUpStepTest {
   public void whenShuttingDown_allowAdminServerNameInListOfServers() {
     configurator.setShuttingDown(true);
 
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server1");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server2");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", "server3");
-    ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, "", ADMIN);
+    addServer(domainPresenceInfo, "server1");
+    addServer(domainPresenceInfo, "server2");
+    addServer(domainPresenceInfo, "server3");
+    addServer(domainPresenceInfo, ADMIN);
 
     assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
   }
