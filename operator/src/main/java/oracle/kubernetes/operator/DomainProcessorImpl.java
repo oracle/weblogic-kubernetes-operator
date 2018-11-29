@@ -15,6 +15,8 @@ import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.Watch;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,6 +31,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -44,7 +47,6 @@ import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
 import oracle.kubernetes.operator.steps.ListPersistentVolumeClaimStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -990,16 +992,21 @@ public class DomainProcessorImpl implements DomainProcessor {
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   private static Step bringAdminServerUp(Domain dom, Step next) {
-    return StorageHelper.insertStorageSteps(
-        dom,
-        Step.chain(
-            new ListPersistentVolumeClaimStep(null),
-            PodHelper.createAdminPodStep(null),
-            new BeforeAdminServiceStep(null),
-            ServiceHelper.createForServerStep(null),
-            new WatchPodReadyAdminStep(Main.podWatchers, null),
-            WlsRetriever.readConfigStep(null),
-            new ExternalAdminChannelsStep(next)));
+    return StorageHelper.insertStorageSteps(dom, Step.chain(bringAdminServerUpSteps(dom, next)));
+  }
+
+  private static Step[] bringAdminServerUpSteps(Domain dom, Step next) {
+    List<Step> resources = new ArrayList<>();
+    resources.add(new ListPersistentVolumeClaimStep(null));
+    resources.add(
+        JobHelper.deleteDomainIntrospectorJobStep(
+            dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
+    resources.add(JobHelper.createDomainIntrospectorJobStep(PodHelper.createAdminPodStep(null)));
+    resources.add(new BeforeAdminServiceStep(null));
+    resources.add(ServiceHelper.createForServerStep(null));
+    resources.add(new WatchPodReadyAdminStep(Main.podWatchers, null));
+    resources.add(new ExternalAdminChannelsStep(next));
+    return resources.toArray(new Step[0]);
   }
 
   private static Step bringManagedServersUp(Step next) {
