@@ -22,7 +22,10 @@
 #   WERCKER      Set this to true if you want cleanup to delete
 #                tiller (the WERCKER path in run.sh sets up tiller).
 #
-# See the acceptance test 'run.sh' for more details on each of the above.
+#   DELETE_FILES Delete local test files, and launch a job to delete PV 
+#                hosted test files (default true).
+#
+# See the acceptance test 'run.sh' for more details on most of the above.
 #
 # --------------------
 # Detailed Description
@@ -314,7 +317,9 @@ mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 # first, if helm is installed, delete all installed helm charts
 if [ -x "$(command -v helm)" ]; then
   echo @@ Deleting installed helm charts
-  helm list --short | xargs -L1 --no-run-if-empty helm delete --purge
+  helm list --short | while read helm_name; do
+     helm delete --purge  $helm_name
+  done
 
   # cleanup tiller artifacts that are created in run.sh
   if [ "$WERCKER" = "true" ]; then
@@ -339,20 +344,24 @@ echo @@ Starting genericDelete
 genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier"
 SUCCESS="$?"
 
-# Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
+if [ "${DELETE_FILES:-true}" = "true" ]; then
 
-echo @@ Launching job to delete all pv contents.  This runs in the k8s cluster, /scratch mounts PV_ROOT.
-$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
-[ "$?" = "0" ] || SUCCESS="1"
+  # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
 
-# Delete old test files owned by the current user.  
+  echo @@ Launching job to delete all pv contents.  This runs in the k8s cluster, /scratch mounts PV_ROOT.
+  $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  [ "$?" = "0" ] || SUCCESS="1"
 
-echo @@ Deleting local $RESULT_DIR contents.
-rm -fr $RESULT_ROOT/acceptance_test_tmp
-[ "$?" = "0" ] || SUCCESS="1"
+  # Delete old test files owned by the current user.  
 
-echo @@ Deleting /tmp/test_suite.\* files.
-rm -f /tmp/test_suite.*
+  echo @@ Deleting local $RESULT_DIR contents.
+  rm -fr $RESULT_ROOT/acceptance_test_tmp
+  [ "$?" = "0" ] || SUCCESS="1"
+
+  echo @@ Deleting /tmp/test_suite.\* files.
+  rm -f /tmp/test_suite.*
+
+fi
 
 # Bye
 

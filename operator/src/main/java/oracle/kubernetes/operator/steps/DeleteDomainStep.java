@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -48,7 +49,8 @@ public class DeleteDomainStep extends Step {
             deleteServices(),
             deleteIngresses(),
             deletePersistentVolumes(),
-            deletePersistentVolumeClaims());
+            deletePersistentVolumeClaims(),
+            ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
     if (info != null) {
       cancelDomainStatusUpdating(info);
 

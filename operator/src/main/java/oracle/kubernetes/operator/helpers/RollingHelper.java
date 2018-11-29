@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -190,15 +191,17 @@ public class RollingHelper {
         StepAndPacket current = it.next();
         serversThatCanRestartNow.add(current);
 
-        WlsServerConfig scan =
+        WlsServerConfig serverConfig =
             (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-        servers.add(scan != null ? scan.getName() : dom.getSpec().getAsName());
+        servers.add(serverConfig != null ? serverConfig.getName() : dom.getSpec().getAsName());
 
         // See if we can restart more now
         if (it.hasNext()) {
           // we are already pending a restart of one server, so start count at -1
           int countReady = -1;
-          WlsClusterConfig cluster = info.getScan().getClusterConfig(clusterName);
+          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+          WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+          WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
           if (cluster != null) {
             List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
             if (serversConfigs != null) {
@@ -216,8 +219,8 @@ public class RollingHelper {
           // availability
           while (countReady-- > MINIMUM_FOR_CLUSTER) {
             current = it.next();
-            scan = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-            servers.add(scan != null ? scan.getName() : dom.getSpec().getAsName());
+            serverConfig = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
+            servers.add(serverConfig != null ? serverConfig.getName() : dom.getSpec().getAsName());
             serversThatCanRestartNow.add(current);
             if (!it.hasNext()) {
               break;
