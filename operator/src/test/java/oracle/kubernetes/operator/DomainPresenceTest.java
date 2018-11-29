@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
@@ -90,6 +91,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(
         installStub(DomainProcessorImpl.class, "FIBER_GATE", testSupport.createFiberGateStub()));
+    testSupport.addContainerComponent("TF", ThreadFactory.class, this);
 
     getStartedVariable();
     isNamespaceStopping = getStoppingVariable();
@@ -489,6 +491,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .createCannedResponse("deleteIngress")
         .withNamespace(NS)
         .withName(LegalNames.toIngressName(UID, "cluster2"))
+        .ignoringBody()
+        .returning(new V1Status());
+    testSupport
+        .createCannedResponse("deleteConfigMap")
+        .withNamespace(NS)
+        .withName(UID + "-weblogic-domain-introspect-cm")
         .ignoringBody()
         .returning(new V1Status());
 

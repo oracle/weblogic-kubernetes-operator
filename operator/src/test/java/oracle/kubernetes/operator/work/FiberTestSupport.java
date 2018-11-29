@@ -36,6 +36,7 @@ public class FiberTestSupport {
   private CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
 
+  private static Container container = new Container();
   private Engine engine = new Engine(schedule);
   private Fiber fiber = engine.createFiber();
   private Packet packet = new Packet();
@@ -103,6 +104,11 @@ public class FiberTestSupport {
 
   public <T> FiberTestSupport addComponent(String key, Class<T> aClass, T component) {
     packet.getComponents().put(key, Component.createFor(aClass, component));
+    return this;
+  }
+
+  public <T> FiberTestSupport addContainerComponent(String key, Class<T> aClass, T component) {
+    container.getComponents().put(key, Component.createFor(aClass, component));
     return this;
   }
 
@@ -206,7 +212,13 @@ public class FiberTestSupport {
 
     private void runNextRunnable() {
       while (null != (current = queue.poll())) {
-        current.run();
+        ThreadLocalContainerResolver cr = ContainerResolver.getDefault();
+        Container old = cr.enterContainer(container);
+        try {
+          current.run();
+        } finally {
+          cr.exitContainer(old);
+        }
         current = null;
       }
     }
