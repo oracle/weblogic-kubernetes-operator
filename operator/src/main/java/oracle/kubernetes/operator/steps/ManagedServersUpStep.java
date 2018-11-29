@@ -4,21 +4,18 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -28,7 +25,8 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String SERVERS_UP_MSG = "Running servers for domain with UID: %s, running list: %s";
+  static final String SERVERS_UP_MSG =
+      "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, servers, next) ->
           scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
@@ -99,16 +97,21 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
 
-    updateExplicitRestart(info);
+    Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+    WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
 
-    for (WlsServerConfig serverConfig : info.getScan().getServerConfigs().values()) {
-      factory.addServerIfNeeded(serverConfig, null);
-    }
+    Set<String> clusteredServers = new HashSet<>();
 
-    for (WlsClusterConfig clusterConfig : info.getScan().getClusterConfigs().values()) {
+    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
+        clusteredServers.add(serverConfig.getName());
       }
+    }
+
+    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
+      if (!clusteredServers.contains(serverConfig.getName()))
+        factory.addServerIfNeeded(serverConfig, null);
     }
 
     info.setServerStartupInfo(factory.getStartupInfos());
@@ -117,18 +120,6 @@ public class ManagedServersUpStep extends Step {
         NEXT_STEP_FACTORY.createServerStep(
             info, factory.servers, factory.createNextStep(getNext())),
         packet);
-  }
-
-  private void updateExplicitRestart(DomainPresenceInfo info) {
-    for (String clusterName : info.getExplicitRestartClusters()) {
-      WlsClusterConfig cluster = info.getScan().getClusterConfig(clusterName);
-      if (cluster != null) {
-        for (WlsServerConfig server : cluster.getServerConfigs()) {
-          info.getExplicitRestartServers().add(server.getName());
-        }
-      }
-    }
-    info.getExplicitRestartClusters().clear();
   }
 
   private Collection<String> getRunningServers(DomainPresenceInfo info) {

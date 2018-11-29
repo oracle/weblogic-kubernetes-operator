@@ -9,10 +9,12 @@ import java.util.Map;
 /** Contains configuration for a Network Access Point */
 public class NetworkAccessPoint {
 
-  final String name;
-  final String protocol;
-  final Integer listenPort;
-  final Integer publicPort;
+  String name;
+  String protocol;
+  Integer listenPort;
+  Integer publicPort;
+
+  public NetworkAccessPoint() {}
 
   NetworkAccessPoint(Map<String, Object> networkAccessPointConfigMap) {
     this(

@@ -225,6 +225,7 @@ function initialize {
 
   # Parse the commonn inputs file
   parseCommonInputs
+
   validateInputParamsSpecified \
     adminServerName \
     domainUID \
@@ -233,6 +234,7 @@ function initialize {
     weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
+    includeServerOutInPodLog \
     version 
 
   validateIntegerInputParamsSpecified \
@@ -246,7 +248,8 @@ function initialize {
   validateBooleanInputParamsSpecified \
     productionModeEnabled \
     exposeAdminT3Channel \
-    exposeAdminNodePort
+    exposeAdminNodePort \
+    includeServerOutInPodLog
 
   export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
   validateVersion 
@@ -285,12 +288,6 @@ function createYamlFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  # For backward compatability, default to "store/oracle/weblogic:12.2.1.3" if not defined in
-  # create-domain-inputs.yaml
-  if [ -z "${image}" ]; then
-    image="store/oracle/weblogic:12.2.1.3"
-  fi
-  
   domainName=${domainUID}
 
   # Use the default value if not defined.
@@ -395,6 +392,8 @@ function createYamlFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed

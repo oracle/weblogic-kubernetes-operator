@@ -8,13 +8,12 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 
 public class StorageHelper {
-  public static Step insertStorageSteps(DomainPresenceInfo info, Step next) {
-    if (info.getDomain().getRequiredPersistentVolumeClaim() != null)
-      next = new PersistentVolumeClaimStep(next);
-    if (info.getDomain().getRequiredPersistentVolume() != null)
-      next = new PersistentVolumeStep(next);
+  public static Step insertStorageSteps(Domain dom, Step next) {
+    if (dom.getRequiredPersistentVolumeClaim() != null) next = new PersistentVolumeClaimStep(next);
+    if (dom.getRequiredPersistentVolume() != null) next = new PersistentVolumeStep(next);
     return next;
   }
 
