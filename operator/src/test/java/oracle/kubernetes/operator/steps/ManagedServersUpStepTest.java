@@ -418,7 +418,7 @@ public class ManagedServersUpStepTest {
   @Test
   public void whenWlsClusterNotInDomainSpec_recordServerAndClusterConfigs() {
     setCluster1Replicas(3);
-    // addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
+    addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
     invokeStep();
@@ -432,7 +432,7 @@ public class ManagedServersUpStepTest {
   @Test
   public void whenWlsClusterNotInDomainSpec_startUpToLimit() {
     setCluster1Replicas(3);
-    // addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
+    addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
     invokeStep();
