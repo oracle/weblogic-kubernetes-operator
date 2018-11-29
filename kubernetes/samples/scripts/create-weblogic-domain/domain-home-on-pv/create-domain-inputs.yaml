@@ -59,6 +59,15 @@ productionModeEnabled: true
 # The name must be lowercase
 weblogicCredentialsSecretName: domain1-weblogic-credentials
 
+# Whether to include server .out to the pod's stdout, default is true
+includeServerOutInPodLog: true
+
+# The in-pod name of the directory to store the domain, node manager, server logs, and server .out
+# files in.
+# If not specified or empty, domain log file, server logs, server out, and node manager log files
+# will be stored in the default logHome location of /shared/logs/<domainUID>/.
+#logHome: /shared/logs
+
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
 

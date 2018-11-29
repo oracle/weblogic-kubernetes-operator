@@ -43,6 +43,8 @@ spec:
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"
+        - name: "weblogic-operator-debug-cm-volume"
+          mountPath: "/operator/debug-config"
         - name: "weblogic-operator-secrets-volume"
           mountPath: "/operator/secrets"
           readOnly: true
@@ -79,6 +81,10 @@ spec:
       - name: "weblogic-operator-cm-volume"
         configMap:
           name: "weblogic-operator-cm"
+      - name: "weblogic-operator-debug-cm-volume"
+        configMap:
+          name: "weblogic-operator-debug-cm"
+          optional: true
       - name: "weblogic-operator-secrets-volume"
         secret:
           secretName: "weblogic-operator-secrets"

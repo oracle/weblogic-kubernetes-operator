@@ -493,6 +493,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName(LegalNames.toIngressName(UID, "cluster2"))
         .ignoringBody()
         .returning(new V1Status());
+    testSupport
+        .createCannedResponse("deleteConfigMap")
+        .withNamespace(NS)
+        .withName(UID + "-weblogic-domain-introspect-cm")
+        .ignoringBody()
+        .returning(new V1Status());
 
     testSupport
         .createCannedResponse("listPersistentVolume")
