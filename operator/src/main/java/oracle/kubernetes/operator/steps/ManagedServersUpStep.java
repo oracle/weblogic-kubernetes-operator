@@ -4,13 +4,7 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -109,10 +103,18 @@ public class ManagedServersUpStep extends Step {
       factory.addServerIfNeeded(serverConfig, null);
     }
 
+    Set<String> clusteredServers = new HashSet<>();
+
     for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
+        clusteredServers.add(serverConfig.getName());
       }
+    }
+
+    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
+      if (!clusteredServers.contains(serverConfig.getName()))
+        factory.addServerIfNeeded(serverConfig, null);
     }
 
     info.setServerStartupInfo(factory.getStartupInfos());
