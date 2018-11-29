@@ -99,9 +99,6 @@ public class ManagedServersUpStep extends Step {
 
     Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
     WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
-    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
-      factory.addServerIfNeeded(serverConfig, null);
-    }
 
     Set<String> clusteredServers = new HashSet<>();
 
