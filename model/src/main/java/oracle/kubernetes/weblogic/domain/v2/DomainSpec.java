@@ -98,6 +98,19 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   private String logHome;
 
+  /**
+   * Whether the log home is enabled.
+   *
+   * @since 2.0
+   */
+  @SerializedName("logHomeEnabled")
+  @Expose
+  @Description(
+      "Specified whether the log home folder is enabled (Not required). "
+          + "Defaults to true if domainHomeInImage is false. "
+          + "Defaults to false if domainHomeInImage is true. ")
+  private Boolean logHomeEnabled; // Boolean object, null if unspecified
+
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @SerializedName("includeServerOutInPodLog")
   @Expose
@@ -223,29 +236,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters")
   protected Map<String, Cluster> clusters = new HashMap<>();
 
-  /**
-   * The log home.
-   *
-   * @since 2.0
-   */
-  @SerializedName("logHome")
-  @Expose
-  @Description("The folder for the log files (Not required). Defaults to /shared/logs/domainUID. ")
-  protected String logHome;
-
-  /**
-   * Whether the log home is enabled.
-   *
-   * @since 2.0
-   */
-  @SerializedName("logHomeEnabled")
-  @Expose
-  @Description(
-      "Specified whether the log home folder is enabled (Not required). "
-          + "Defaults to true if domainHomeInImage is false. "
-          + "Defaults to false if domainHomeInImage is true. ")
-  private Boolean logHomeEnabled; // Boolean object, null if unspecified
-
   public AdminServer getOrCreateAdminServer(String adminServerName) {
     if (adminServer != null) return adminServer;
 
@@ -343,49 +333,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setDomainHome(String domainHome) {
     this.domainHome = domainHome;
-  }
-
-  /**
-   * Log home
-   *
-   * @since 2.0
-   * @return log home
-   */
-  public String getLogHome() {
-    return Optional.ofNullable(logHome).orElse(String.format(LOG_HOME_DEFAULT_PATTERN, domainUID));
-  }
-
-  /**
-   * Log home
-   *
-   * @since 2.0
-   * @param logHome log home
-   */
-  public void setLogHome(String logHome) {
-    this.logHome = logHome;
-  }
-
-  /**
-   * Log home enabled
-   *
-   * @since 2.0
-   * @return log home enabled
-   */
-  public boolean getLogHomeEnabled() {
-    if (logHomeEnabled == null) {
-      return !isDomainHomeInImage();
-    }
-    return logHomeEnabled.booleanValue();
-  }
-
-  /**
-   * Log home enabled
-   *
-   * @since 2.0
-   * @param logHomeEnabled log home enabled
-   */
-  public void setLogHomeEnabled(boolean logHomeEnabled) {
-    this.logHomeEnabled = new Boolean(logHomeEnabled);
   }
 
   /*
@@ -532,7 +479,7 @@ public class DomainSpec extends BaseConfiguration {
    *     server .out files in.
    */
   public String getLogHome() {
-    return logHome;
+    return Optional.ofNullable(logHome).orElse(String.format(LOG_HOME_DEFAULT_PATTERN, domainUID));
   }
 
   public void setLogHome(String logHome) {
@@ -542,6 +489,29 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withLogHome(String logHome) {
     this.logHome = logHome;
     return this;
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @return log home enabled
+   */
+  public boolean getLogHomeEnabled() {
+    if (logHomeEnabled == null) {
+      return !isDomainHomeInImage();
+    }
+    return logHomeEnabled.booleanValue();
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @param logHomeEnabled log home enabled
+   */
+  public void setLogHomeEnabled(boolean logHomeEnabled) {
+    this.logHomeEnabled = new Boolean(logHomeEnabled);
   }
 
   /**
