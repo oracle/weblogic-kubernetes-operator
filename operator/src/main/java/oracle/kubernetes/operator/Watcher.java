@@ -141,11 +141,9 @@ abstract class Watcher<T> {
   }
 
   private void handleRegularUpdate(Watch.Response<T> item) {
-    if (isFresh(item.type, item.object)) {
-      LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
-      trackResourceVersion(item.type, item.object);
-      if (listener != null) listener.receivedResponse(item);
-    }
+    LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
+    trackResourceVersion(item.type, item.object);
+    if (listener != null) listener.receivedResponse(item);
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
@@ -176,8 +174,9 @@ abstract class Watcher<T> {
   }
 
   private long getNewResourceVersion(String type, Object object) {
-    if (type.equalsIgnoreCase("DELETED")) return 1 + resourceVersion;
-    else return getResourceVersionFromMetadata(object);
+    long newResourceVersion = getResourceVersionFromMetadata(object);
+    if (type.equalsIgnoreCase("DELETED")) return 1 + newResourceVersion;
+    else return newResourceVersion;
   }
 
   private long getResourceVersionFromMetadata(Object object) {
@@ -190,14 +189,6 @@ abstract class Watcher<T> {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;
     }
-  }
-
-  private boolean isFresh(String type, Object object) {
-    if (resourceVersion == 0) return true;
-    long newResourceVersion = getResourceVersionFromMetadata(object);
-    return type.equalsIgnoreCase("DELETED")
-        ? newResourceVersion >= resourceVersion
-        : newResourceVersion > resourceVersion;
   }
 
   private void updateResourceVersion(long newResourceVersion) {

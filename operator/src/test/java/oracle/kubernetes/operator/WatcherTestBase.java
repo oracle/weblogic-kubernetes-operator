@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
+import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -112,7 +113,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
-    assertThat(callBacks, contains(modifyEvent(object2)));
+    assertThat(callBacks, contains(addEvent(object1), modifyEvent(object2)));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
