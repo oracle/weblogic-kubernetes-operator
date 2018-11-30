@@ -442,7 +442,18 @@ class TopologyGenerator(Generator):
     self.writeln("- name: " + name)
     self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
+    self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+    self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
+    self.addSSL(server)
     self.addNetworkAccessPoints(server)
+
+  def addSSL(self, server):
+    ssl = server.getSSL()
+    if ssl is not None:
+      self.indent()
+      self.writeln("sslListenPort: " + str(ssl.getListenPort()))
+      self.writeln("sslPortEnabled: " + self.booleanToString(ssl.isEnabled()))
+      self.undent()
 
   def addServerTemplates(self):
     serverTemplates = self.env.getDomain().getServerTemplates()
@@ -513,6 +524,9 @@ class TopologyGenerator(Generator):
     self.writeln("- name: " + name)
     self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
+    self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+    self.writeln("  adminPortEnabled: " + str(server.isAdministrationPortEnabled()))
+    self.addSSL(server)
     self.addNetworkAccessPoints(server)
 
   def addNetworkAccessPoints(self, server):
@@ -532,6 +546,10 @@ class TopologyGenerator(Generator):
     self.writeln("    listenPort: " + str(nap.getListenPort()))
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
 
+  def booleanToString(self, bool):
+    if bool == 0:
+      return "false"
+    return "true"
 
 class BootPropertiesGenerator(Generator):
 
