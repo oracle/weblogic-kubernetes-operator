@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.Map;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.IngressHelper;
 import oracle.kubernetes.operator.helpers.Scan;
 import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -45,9 +44,7 @@ public class ClusterServicesStep extends Step {
           break;
         }
 
-        startDetails.add(
-            new StepAndPacket(
-                ServiceHelper.createForClusterStep(IngressHelper.createClusterStep(null)), p));
+        startDetails.add(new StepAndPacket(ServiceHelper.createForClusterStep(null), p));
       }
     }
 

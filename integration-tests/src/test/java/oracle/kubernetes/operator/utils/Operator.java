@@ -202,16 +202,46 @@ public class Operator {
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
+      reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+  }
+
+  private void reportHelmInstallFailure(String cmd, ExecResult result) throws Exception {
+    String cause = getExecFailure(cmd, result);
+    if (result.stderr().contains("Error: Job failed: BackoffLimitExceeded")) {
+      // The operator helm chart pre-install hook probably failed.
+      // This is probably because there is a problem with the values passed in,
+      // for example a listed domain namespace does not exist.
+      // Fetch the pre-install hook's results and return it too.
+      String hookResults = getOperatorHelmChartHookResults("pre-install");
+      cause = cause + "\n pre-install-hook returned\n" + hookResults;
+    }
+    throw new RuntimeException(cause);
+  }
+
+  private String getOperatorHelmChartHookResults(String hookType) throws Exception {
+    String cmd =
+        "kubectl logs job/"
+            + operatorMap.get("releaseName")
+            + "-weblogic-operator-"
+            + hookType
+            + "-hook -n kube-system";
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      return getExecFailure(cmd, result);
+    }
+    return result.stdout();
+  }
+
+  private String getExecFailure(String cmd, ExecResult result) throws Exception {
+    return "FAILURE: command "
+        + cmd
+        + " failed, stdout:\n"
+        + result.stdout()
+        + "stderr:\n"
+        + result.stderr();
   }
 
   private void generateInputYaml() throws Exception {
