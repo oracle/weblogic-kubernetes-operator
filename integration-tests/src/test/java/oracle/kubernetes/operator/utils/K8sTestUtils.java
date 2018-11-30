@@ -16,10 +16,12 @@ import io.kubernetes.client.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1ConfigMapList;
+import io.kubernetes.client.models.V1DeploymentList;
 import io.kubernetes.client.models.V1JobList;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1ReplicaSetList;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleList;
 import io.kubernetes.client.models.V1SecretList;
@@ -114,47 +116,33 @@ public class K8sTestUtils {
   }
 
   public void verifyNoDeployments(String labelSelectors) throws Exception {
-    try {
-      appsV1Api.listDeploymentForAllNamespaces(
-          null,
-          null,
-          Boolean.TRUE,
-          labelSelectors,
-          null,
-          Boolean.FALSE.toString(),
-          null,
-          null,
-          Boolean.FALSE);
-      assertTrue("No deployments", false);
-    } catch (ApiException aex) {
-      if (aex.getCode() == 404) {
-        assertTrue("No deployements: ", true);
-      } else {
-        throw aex;
-      }
-    }
+    V1DeploymentList v1DeploymentList =
+        appsV1Api.listDeploymentForAllNamespaces(
+            null,
+            null,
+            Boolean.TRUE,
+            labelSelectors,
+            null,
+            Boolean.FALSE.toString(),
+            null,
+            null,
+            Boolean.FALSE);
+    assertEquals("No deployments", v1DeploymentList.getItems().size(), 0);
   }
 
   public void verifyNoReplicaSets(String labelSelectors) throws Exception {
-    try {
-      appsV1Api.listReplicaSetForAllNamespaces(
-          null,
-          null,
-          Boolean.TRUE,
-          labelSelectors,
-          null,
-          Boolean.FALSE.toString(),
-          null,
-          null,
-          Boolean.FALSE);
-      assertTrue("No ReplicaSets", false);
-    } catch (ApiException aex) {
-      if (aex.getCode() == 404) {
-        assertTrue("No ReplicaSets: ", true);
-      } else {
-        throw aex;
-      }
-    }
+    V1ReplicaSetList v1ReplicaSetList =
+        appsV1Api.listReplicaSetForAllNamespaces(
+            null,
+            null,
+            Boolean.TRUE,
+            labelSelectors,
+            null,
+            Boolean.FALSE.toString(),
+            null,
+            null,
+            Boolean.FALSE);
+    assertEquals("No ReplicaSets", v1ReplicaSetList.getItems().size(), 0);
   }
 
   public void verifyServices(String labelSelectors, int expected) throws Exception {

@@ -78,7 +78,6 @@ EOF
 #
 function getDomainResources {
   local domain_regex=''
-  local secret_regex=''
   if [ "$1" = "all" ]; then
     LABEL_SELECTOR="weblogic.domainUID"
   else
@@ -87,10 +86,8 @@ function getDomainResources {
     for i in "${!UIDS[@]}"; do
       if [ $i -gt 0 ]; then
         domain_regex="$domain_regex|"
-        secret_regex="$secret_regex|"
       fi
-      domain_regex="$domain_regex^Domain ${UIDS[$i]}"
-      secret_regex="$secret_regex^Secret ${UIDS[$i]}"
+      domain_regex="$domain_regex^Domain ${UIDS[$i]} "
     done
   fi
 
@@ -100,7 +97,7 @@ function getDomainResources {
   fi
 
   # first, let's get all namespaced types with -l $LABEL_SELECTOR
-  NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding"
+  NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
   kubectl get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
@@ -115,14 +112,9 @@ function getDomainResources {
             --all-namespaces=true | egrep "$domain_regex" >> $2
   fi
 
-  # all secrets
-  kubectl get secret \
-          -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
-          --all-namespaces=true | egrep "$secret_regex" >> $2
-
   # now, get all non-namespaced types with -l $LABEL_SELECTOR
 
-  NOT_NAMESPACED_TYPES="pv,crd,clusterroles,clusterrolebindings"
+  NOT_NAMESPACED_TYPES="pv,clusterroles,clusterrolebindings"
 
   kubectl get $NOT_NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
@@ -247,8 +239,8 @@ function deleteDomains {
       fi
     fi
 
-    # Delete domains and secretes, if any
-    cat $tempfile | egrep "^Secret |^Domain " | while read line; do
+    # Delete domains, if any
+    cat $tempfile | grep "^Domain " | while read line; do
       if [ "$test_mode" = "true" ]; then
         echo kubectl delete $line
       else

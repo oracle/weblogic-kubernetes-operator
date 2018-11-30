@@ -29,7 +29,8 @@ public class ITOperator extends BaseTest {
   // property file used to customize operator properties for operator inputs yaml
   private static String op1YamlFile = "operator1.yaml";
   private static String op2YamlFile = "operator2.yaml";
-  private static final String opForDelYamlFile = "operator_del.yaml";
+  private static final String opForDelYamlFile1 = "operator_del1.yaml";
+  private static final String opForDelYamlFile2 = "operator_del2.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -50,7 +51,8 @@ public class ITOperator extends BaseTest {
   private static Operator operator1, operator2;
   private static Domain domain1;
 
-  private static Operator operatorForDel;
+  private static Operator operatorForDel1;
+  private static Operator operatorForDel2;
 
   private K8sTestUtils k8sTestUtils = new K8sTestUtils();
 
@@ -298,9 +300,9 @@ public class ITOperator extends BaseTest {
   public void testDeleteOneDomain() throws Exception {
     logTestBegin("Deleting one domain.");
 
-    if (operatorForDel == null) {
+    if (operatorForDel1 == null) {
       logger.info("About to create operator");
-      operatorForDel = TestUtils.createOperator(opForDelYamlFile);
+      operatorForDel1 = TestUtils.createOperator(opForDelYamlFile1);
     }
     final Domain domain = TestUtils.createDomain(domain1ForDelValueYamlFile);
     verifyBeforeDeletion(domain);
@@ -315,9 +317,9 @@ public class ITOperator extends BaseTest {
   public void testDeleteTwoDomains() throws Exception {
     logTestBegin("Deleting two domains.");
 
-    if (operatorForDel == null) {
+    if (operatorForDel2 == null) {
       logger.info("About to create operator");
-      operatorForDel = TestUtils.createOperator(opForDelYamlFile);
+      operatorForDel2 = TestUtils.createOperator(opForDelYamlFile2);
     }
     final Domain domainDel1 = TestUtils.createDomain(domain2ForDelValueYamlFile);
     final Domain domainDel2 = TestUtils.createDomain(domain3ForDelValueYamlFile);
