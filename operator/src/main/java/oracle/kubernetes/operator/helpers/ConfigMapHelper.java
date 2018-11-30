@@ -39,7 +39,7 @@ public class ConfigMapHelper {
   private static final String SCRIPT_LOCATION = "/scripts";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
-  private static FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
+  private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 
   private ConfigMapHelper() {}
 
