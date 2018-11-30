@@ -33,6 +33,13 @@ spec:
   asName: "%ADMIN_SERVER_NAME%"
   # The Admin Server's ListenPort
   asPort: %ADMIN_PORT%
+  # Whether to include the server out file into the pod's stdout, default is true
+  includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
+  # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
+  # files in.
+  # If not specified or empty, domain log file, server logs, server out, and node manager log files 
+  # will be stored in the default logHome location of /shared/logs/<domainUID>/.
+  logHome: %LOG_HOME%
   # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "ALWAYS" will start up all defined servers

@@ -13,13 +13,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WebLogic server */
 public class WlsServerConfig {
-  final String name;
-  final Integer listenPort;
-  final String listenAddress;
-  final Integer sslListenPort;
-  final boolean sslPortEnabled;
-  final String machineName;
-  final List<NetworkAccessPoint> networkAccessPoints;
+  String name;
+  Integer listenPort;
+  String listenAddress;
+  String clusterName;
+  Integer sslListenPort;
+  boolean sslPortEnabled;
+  String machineName;
+  List<NetworkAccessPoint> networkAccessPoints;
+
+  public WlsServerConfig() {}
 
   /**
    * Return the name of this WLS server
@@ -84,6 +87,14 @@ public class WlsServerConfig {
    */
   public List<NetworkAccessPoint> getNetworkAccessPoints() {
     return networkAccessPoints;
+  }
+
+  public String getClusterName() {
+    return this.clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
   }
 
   /**

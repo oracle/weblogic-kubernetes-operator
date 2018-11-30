@@ -25,8 +25,12 @@ public interface KubernetesConstants {
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
 
+  String DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = "true";
+
   String CONTAINER_NAME = "weblogic-server";
 
   String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-cm";
+  String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
   String API_VERSION_ORACLE_V2 = "weblogic.oracle/v2";
+  String INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX = "-weblogic-domain-introspect-cm";
 }

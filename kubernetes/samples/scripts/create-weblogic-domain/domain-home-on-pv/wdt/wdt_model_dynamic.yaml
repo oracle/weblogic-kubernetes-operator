@@ -17,8 +17,6 @@ topology:
     Server:
         '@@PROP:adminServerName@@':
             ListenAddress: '@@PROP:domainUID@@-@@PROP:adminServerName@@'
-            Log:
-                FileName: '/shared/logs/@@PROP:domainUID@@/@@PROP:adminServerName@@.log'
             NetworkAccessPoint:
                 T3Channel:
                     ListenAddress: '@@PROP:domainUID@@-@@PROP:adminServerName@@'
@@ -30,7 +28,5 @@ topology:
             Cluster: '@@PROP:clusterName@@'
             ListenAddress: '@@PROP:domainUID@@-@@PROP:managedServerNameBase@@${id}'
             ListenPort: '@@PROP:managedServerPort@@'
-            Log:
-                FileName: '/shared/logs/@@PROP:domainUID@@/@@PROP:managedServerNameBase@@${id}.log'
             JTAMigratableTarget:
                 Cluster: '@@PROP:clusterName@@'

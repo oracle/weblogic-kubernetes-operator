@@ -1,0 +1,49 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    weblogic.createdByOperator: "true"
+    weblogic.domainUID: ${DOMAIN_UID}
+    weblogic.resourceVersion: domain-v2
+  name: ${JOB_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 60
+      containers:
+      - command:
+        - ${JOB_SCRIPT}
+        env:
+        - name: DOMAIN_UID
+          value: "${DOMAIN_UID}"
+        image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
+        imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
+        name: weblogic-server
+        volumeMounts:
+        - name: weblogic-domain-cm-volume
+          mountPath: /weblogic-operator/scripts
+          readOnly: true
+        - name: test-script-cm-volume
+          mountPath: /test-scripts
+          readOnly: true
+        - mountPath: /pv-root
+          name: pv-root-volume
+      volumes:
+      - name: weblogic-domain-cm-volume
+        configMap:
+          defaultMode: 365
+          name: weblogic-domain-cm
+      - name: test-script-cm-volume
+        configMap:
+          defaultMode: 365
+          name: test-script-cm
+      - name: pv-root-volume
+        persistentVolumeClaim:
+          claimName: ${DOMAIN_UID}-test-root-pvc

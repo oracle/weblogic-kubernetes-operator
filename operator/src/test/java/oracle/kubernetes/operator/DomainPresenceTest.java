@@ -4,8 +4,10 @@
 
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.DomainPresenceInfoMatcher.domain;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
@@ -14,6 +16,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_R
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasValue;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -427,6 +430,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .createCannedResponse("deleteCollection")
         .withNamespace(NS)
         .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
+        .returning(new V1Status());
+
+    testSupport
+        .createCannedResponse("deleteConfigMap")
+        .withNamespace(NS)
+        .withName(UID + "-weblogic-domain-introspect-cm")
+        .ignoringBody()
         .returning(new V1Status());
 
     testSupport
