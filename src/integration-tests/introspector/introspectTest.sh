@@ -120,6 +120,7 @@ export ADMIN_NAME=${ADMIN_NAME:-"admin-server"}
 export ADMIN_PORT=${ADMIN_PROT:-7001}
 export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
 export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
+export ADMINISTRATION_PORT=${ADMINISTRATION_PORT:-7099}
 
 #############################################################################
 #
