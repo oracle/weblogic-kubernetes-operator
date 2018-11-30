@@ -26,6 +26,7 @@ import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,28 +52,14 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
-public abstract class PodStepContext {
+public abstract class PodStepContext implements StepContextConstants {
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  private static final String SECRETS_VOLUME = "weblogic-credentials-volume";
-  private static final String SCRIPTS_VOLUME = "weblogic-domain-cm-volume";
-  private static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";
-  private static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
-  private static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
-  private static final String STORAGE_MOUNT_PATH = "/shared";
-  private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String LOG_HOME = "/shared/logs";
-  private static final int FAILURE_THRESHOLD = 1;
-
-  @SuppressWarnings("OctalInteger")
-  private static final int ALL_READ_AND_EXECUTE = 0555;
 
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String READINESS_PROBE = "/weblogic-operator/scripts/readinessProbe.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
-
-  private static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   private final DomainPresenceInfo info;
   private final Step conflictStep;
@@ -167,6 +154,27 @@ public abstract class PodStepContext {
 
   Integer getAsPort() {
     return getDomain().getAsPort();
+  }
+
+  String getLogHome() {
+    return getDomain().getLogHome();
+  }
+
+  protected boolean isDomainHomeInImage() {
+    return getDomain().isDomainHomeInImage();
+  }
+
+  String getEffectiveLogHome() {
+    String logHome = getLogHome();
+    if (logHome == null || "".equals(logHome.trim())) {
+      // logHome not specified, use default value
+      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+    }
+    return logHome;
+  }
+
+  String getIncludeServerOutInPodLog() {
+    return getDomain().getIncludeServerOutInPodLog();
   }
 
   abstract Integer getPort();
@@ -581,6 +589,24 @@ public abstract class PodStepContext {
                         new V1ConfigMapVolumeSource()
                             .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
                             .defaultMode(ALL_READ_AND_EXECUTE)))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(DEBUG_CM_VOLUME)
+                    .configMap(
+                        new V1ConfigMapVolumeSource()
+                            .name(
+                                getDomainUID() + KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX)
+                            .defaultMode(ALL_READ_AND_EXECUTE)
+                            .optional(Boolean.TRUE)))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(getSitConfigMapVolumeName(getDomainUID()))
+                    .configMap(
+                        new V1ConfigMapVolumeSource()
+                            .name(
+                                ConfigMapHelper.SitConfigMapContext.getConfigMapName(
+                                    getDomainUID()))
+                            .defaultMode(ALL_READ_AND_EXECUTE)))
             .nodeSelector(getServerSpec().getNodeSelectors())
             .securityContext(getServerSpec().getPodSecurityContext());
 
@@ -620,6 +646,7 @@ public abstract class PodStepContext {
             .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+            .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
@@ -627,7 +654,14 @@ public abstract class PodStepContext {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
 
+    v1Container.addVolumeMountsItem(
+        volumeMount(getSitConfigMapVolumeName(getDomainUID()), "/weblogic-operator/introspector"));
+
     return v1Container;
+  }
+
+  private static String getSitConfigMapVolumeName(String domainUID) {
+    return domainUID + SIT_CONFIG_MAP_VOLUME_SUFFIX;
   }
 
   private String getImageName() {
@@ -657,7 +691,8 @@ public abstract class PodStepContext {
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
-    addEnvVar(vars, "LOG_HOME", LOG_HOME + "/" + getDomainUID());
+    addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
+    addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));

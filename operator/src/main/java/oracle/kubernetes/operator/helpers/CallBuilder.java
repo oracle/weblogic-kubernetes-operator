@@ -13,7 +13,6 @@ import io.kubernetes.client.apis.AuthenticationV1Api;
 import io.kubernetes.client.apis.AuthorizationV1Api;
 import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -35,8 +34,6 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.models.VersionInfo;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -489,6 +486,54 @@ public class CallBuilder {
         CREATE_CONFIGMAP);
   }
 
+  private com.squareup.okhttp.Call deleteConfigMapAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      V1DeleteOptions body,
+      ApiCallback<V1Status> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .deleteNamespacedConfigMapAsync(
+            name,
+            namespace,
+            body,
+            pretty,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_CONFIG_MAP =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              deleteConfigMapAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for deleting config map
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteConfigMapAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deleteConfigMap", namespace, name, deleteOptions),
+        DELETE_CONFIG_MAP);
+  }
+
   private com.squareup.okhttp.Call replaceConfigMapAsync(
       ApiClient client,
       String name,
@@ -720,6 +765,30 @@ public class CallBuilder {
         responseStep, new RequestParams("createJob", namespace, null, body), CREATE_JOB);
   }
 
+  private final CallFactory<V1Job> READ_JOB =
+      (requestParams, usage, cont, callback) ->
+          wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
+
+  private com.squareup.okhttp.Call readJobAsync(
+      ApiClient client, String name, String namespace, ApiCallback<V1Job> callback)
+      throws ApiException {
+    return new BatchV1Api(client)
+        .readNamespacedJobAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading job
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readJobAsync(String name, String namespace, ResponseStep<V1Job> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readJob", namespace, name, null), READ_JOB);
+  }
+
   private com.squareup.okhttp.Call deleteJobAsync(
       ApiClient client,
       String name,
@@ -757,9 +826,13 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step deleteJobAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
+  public Step deleteJobAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, null), DELETE_JOB);
+        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions), DELETE_JOB);
   }
 
   /* Services */
@@ -1493,228 +1566,55 @@ public class CallBuilder {
     return executeSynchronousCall(requestParams, CREATE_TOKEN_REVIEW_CALL);
   }
 
-  /* Ingress */
-
-  private com.squareup.okhttp.Call listIngressAsync(
-      ApiClient client,
-      String namespace,
-      String _continue,
-      ApiCallback<V1beta1IngressList> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .listNamespacedIngressAsync(
-            namespace,
-            pretty,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            callback);
-  }
-
-  private final CallFactory<V1beta1IngressList> LIST_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(listIngressAsync(usage, requestParams.namespace, cont, callback));
-
-  /**
-   * Asynchronous step for listing ingress
-   *
-   * @param namespace Namespace
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step listIngressAsync(String namespace, ResponseStep<V1beta1IngressList> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("listIngress", namespace, null, null), LIST_INGRESS);
-  }
-
-  /**
-   * Read ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @return Read ingress
-   * @throws ApiException API Exception
-   */
-  public V1beta1Ingress readIngress(String name, String namespace) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new ExtensionsV1beta1Api(client)
-          .readNamespacedIngress(name, namespace, pretty, exact, export);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  private com.squareup.okhttp.Call readIngressAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1beta1Ingress> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .readNamespacedIngressAsync(name, namespace, pretty, exact, export, callback);
-  }
-
-  private final CallFactory<V1beta1Ingress> READ_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(readIngressAsync(usage, requestParams.name, requestParams.namespace, callback));
-
-  /**
-   * Asynchronous step for reading ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step readIngressAsync(
-      String name, String namespace, ResponseStep<V1beta1Ingress> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("readIngress", namespace, name, null), READ_INGRESS);
-  }
-
-  private com.squareup.okhttp.Call createIngressAsync(
-      ApiClient client, String namespace, V1beta1Ingress body, ApiCallback<V1beta1Ingress> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .createNamespacedIngressAsync(namespace, body, pretty, callback);
-  }
-
-  private final CallFactory<V1beta1Ingress> CREATE_INGRESS =
+  private final CallFactory<String> READ_POD_LOG =
       (requestParams, usage, cont, callback) ->
           wrap(
-              createIngressAsync(
-                  usage, requestParams.namespace, (V1beta1Ingress) requestParams.body, callback));
-
-  /**
-   * Asynchronous step for creating ingress
-   *
-   * @param namespace Namespace
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step createIngressAsync(
-      String namespace, V1beta1Ingress body, ResponseStep<V1beta1Ingress> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("createIngress", namespace, null, body), CREATE_INGRESS);
-  }
-
-  private com.squareup.okhttp.Call replaceIngressAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1beta1Ingress body,
-      ApiCallback<V1beta1Ingress> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .replaceNamespacedIngressAsync(name, namespace, body, pretty, callback);
-  }
-
-  private final CallFactory<V1beta1Ingress> REPLACE_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceIngressAsync(
+              readPodLogAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (V1beta1Ingress) requestParams.body,
+                  null,
+                  null,
+                  null,
+                  pretty,
+                  null,
+                  null,
+                  null,
+                  null,
                   callback));
 
-  /**
-   * Asynchronous step for replacing ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step replaceIngressAsync(
-      String name,
-      String namespace,
-      V1beta1Ingress body,
-      ResponseStep<V1beta1Ingress> responseStep) {
+  public Step readPodLogAsync(String name, String namespace, ResponseStep<String> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceIngress", namespace, name, body), REPLACE_INGRESS);
+        responseStep, new RequestParams("readPodLog", namespace, name, null), READ_POD_LOG);
   }
 
-  /**
-   * Delete ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param deleteOptions Delete options
-   * @return Status of deletion
-   * @throws ApiException API Exception
-   */
-  public V1Status deleteIngress(String name, String namespace, V1DeleteOptions deleteOptions)
-      throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new ExtensionsV1beta1Api(client)
-          .deleteNamespacedIngress(
-              name,
-              namespace,
-              deleteOptions,
-              pretty,
-              gracePeriodSeconds,
-              orphanDependents,
-              propagationPolicy);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  private com.squareup.okhttp.Call deleteIngressAsync(
+  private com.squareup.okhttp.Call readPodLogAsync(
       ApiClient client,
       String name,
       String namespace,
-      V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
+      String container,
+      Boolean follow,
+      Integer limitBytes,
+      String pretty,
+      Boolean previous,
+      Integer sinceSeconds,
+      Integer tailLines,
+      Boolean timestamps,
+      ApiCallback<String> callback)
       throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .deleteNamespacedIngressAsync(
+    return new CoreV1Api(client)
+        .readNamespacedPodLogAsync(
             name,
             namespace,
-            deleteOptions,
+            container,
+            follow,
+            limitBytes,
             pretty,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            previous,
+            sinceSeconds,
+            tailLines,
+            timestamps,
             callback);
-  }
-
-  private final CallFactory<V1Status> DELETE_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deleteIngressAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
-
-  /**
-   * Asynchronous step for deleting ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param deleteOptions Delete options
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step deleteIngressAsync(
-      String name,
-      String namespace,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("deleteIngress", namespace, name, deleteOptions),
-        DELETE_INGRESS);
   }
 
   static AsyncRequestStepFactory setStepFactory(AsyncRequestStepFactory newFactory) {

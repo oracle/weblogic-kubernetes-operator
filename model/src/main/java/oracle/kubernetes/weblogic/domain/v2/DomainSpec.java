@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -87,9 +88,22 @@ public class DomainSpec extends BaseConfiguration {
   private Integer asPort;
 
   /**
+   * The in-pod name of the directory to store the domain, node manager, server logs, and server
+   * .out files in.
+   */
+  @SerializedName("logHome")
+  @Expose
+  private String logHome;
+
+  /** Whether to include the server .out file to the pod's stdout. Default is true. */
+  @SerializedName("includeServerOutInPodLog")
+  @Expose
+  private String includeServerOutInPodLog;
+
+  /**
    * The WebLogic Docker image.
    *
-   * <p>Defaults to store/oracle/weblogic:12.2.1.3.
+   * <p>Defaults to store/oracle/weblogic:12.2.1.3
    */
   @Description(
       "The Weblogic Docker image; required when domainHomeInImage is true; "
@@ -155,7 +169,7 @@ public class DomainSpec extends BaseConfiguration {
   private DomainStorage storage;
 
   /**
-   * The name of the Kubernetes configmap used in the WebLogic Configuration overrides.
+   * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
@@ -165,7 +179,7 @@ public class DomainSpec extends BaseConfiguration {
   private String configOverrides;
 
   /**
-   * The list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
+   * A list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
    *
    * @since 2.0
    */
@@ -441,6 +455,49 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Log Home
+   *
+   * @return The in-pod name of the directory to store the domain, node manager, server logs, and
+   *     server .out files in.
+   */
+  public String getLogHome() {
+    return logHome;
+  }
+
+  public void setLogHome(String logHome) {
+    this.logHome = logHome;
+  }
+
+  public DomainSpec withLogHome(String logHome) {
+    this.logHome = logHome;
+    return this;
+  }
+
+  /**
+   * Whether to include server .out to the pod's stdout
+   *
+   * @return whether server .out should be included in pod's stdout.
+   * @since 2.0
+   */
+  public String getIncludeServerOutInPodLog() {
+    return Optional.ofNullable(getConfiguredIncludeServerOutInPodLog())
+        .orElse(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG);
+  }
+
+  String getConfiguredIncludeServerOutInPodLog() {
+    return includeServerOutInPodLog;
+  }
+
+  public void setIncludeServerOutInPodLog(String includeServerOutInPodLog) {
+    this.includeServerOutInPodLog = includeServerOutInPodLog;
+  }
+
+  public DomainSpec withIncludeServerOutInPodLog(String includeServerOutInPodLog) {
+    this.includeServerOutInPodLog = includeServerOutInPodLog;
+    return this;
+  }
+
+  /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *
    * @return true or false
@@ -519,6 +576,11 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrides = overridess;
   }
 
+  public DomainSpec withConfigOverrides(@Nullable String overridess) {
+    this.configOverrides = overridess;
+    return this;
+  }
+
   private boolean hasConfigOverrideSecrets() {
     return configOverrideSecrets != null && configOverrideSecrets.size() != 0;
   }
@@ -531,6 +593,11 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
     this.configOverrideSecrets = overridesSecretNames;
+  }
+
+  public DomainSpec withConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
+    this.configOverrideSecrets = overridesSecretNames;
+    return this;
   }
 
   /**
@@ -573,6 +640,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("managedServers", managedServers)
             .append("clusters", clusters)
             .append("replicas", replicas)
+            .append("logHome", logHome)
+            .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets);
 
@@ -599,6 +668,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(managedServers)
             .append(clusters)
             .append(replicas)
+            .append(logHome)
+            .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets);
 
@@ -629,6 +700,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
+            .append(logHome, rhs.logHome)
+            .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets);
 

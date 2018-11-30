@@ -86,6 +86,7 @@ public abstract class PodHelperTestBase {
   private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
+  static final String INCLUDE_SERVER_OUT_IN_POD_LOG = "true";
 
   private static final String ADMIN_SECRET_NAME = "adminSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
@@ -104,6 +105,8 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
+  private static final String SIT_CONFIG_MAP_VOLUME_SUFFIX =
+      "-weblogic-domain-introspect-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final Map<String, String> NODE_SELECTOR =
       Collections.singletonMap("labelKey", "labelValue");
@@ -182,6 +185,7 @@ public abstract class PodHelperTestBase {
         .withAsName(ADMIN_SERVER)
         .withAsPort(ADMIN_PORT)
         .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+        .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }
 
@@ -269,7 +273,10 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
+            writableVolumeMount(
+                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
+            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
   }
 
@@ -348,9 +355,24 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
+            hasEnvVar("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG),
             hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
+  }
+
+  @Test
+  public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
+    final String MY_LOG_HOME = "/shared/mylogs";
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
+    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", MY_LOG_HOME)));
+  }
+
+  @Test
+  public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
+    domainPresenceInfo.getDomain().getSpec().setLogHome(null);
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -597,6 +619,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
+        .addEnvItem(envItem("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG))
         .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))

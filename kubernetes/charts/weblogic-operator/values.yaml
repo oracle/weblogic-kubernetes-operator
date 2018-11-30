@@ -3,7 +3,7 @@
 
 # serviceAccount specifies the name of the service account that the operator will use to
 # make requests to the Kubernetes API server.
-# The name must be lowercase
+# The name must be lowercase.
 serviceAccount: "default"
 
 # domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages
@@ -96,3 +96,9 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 
 # elasticSearchPort specifies the port number of where elasticsearch is running
 elasticSearchPort: 9200
+
+# tillerNamespace is the name of the namespace that tiller is configured to use.
+tillerNamespace: "kube-system"
+
+# tillerServiceAccount is the name of the service account that tiller is configured to use.
+tillerServiceAccount: "default"
