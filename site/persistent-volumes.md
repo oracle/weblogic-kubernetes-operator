@@ -14,9 +14,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 For sample YAML templates, please refer to this example.
 * [Persistent Volumes example](../kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md)
 
-## Naming conventions
-
-Persistent volumes and claims and their properties are described in YAML files. For each PV, you should create one PV YAML file and one PVC YAML file. In the example above, you will find 2 YAML templates, one for the PV and one for the PVC. The example suggest that you name the PV and PVC [domainUID]-[baseName]-pv and [domainUID]-[baseName]-pvc respectively, where domainUID is the ID of the domain resource to which the generated PV and PVC will be dedicated, and baseName is the base name of the PV and PVC.
+Persistent volumes and claims and their properties are described in YAML files. For each PV, you should create one PV YAML file and one PVC YAML file. In the example above, you will find 2 YAML templates, one for the PV and one for the PVC. They can either be dedicated to a specific domain, or shared across multiple domains. For the use cases where a dedicated for a particular domain, it is a best practice to label it with weblogic.domainUID=[domain name]. This makes it easy to search for, and clean up, resources associated with that particular domain.
 
 ## Storage locations
 PVs can point to different storage locations, for example NFS server storage or local path. Please read the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) regarding on how to configure this.
@@ -30,12 +28,6 @@ After you have written your YAML files, please use them to create the PV by crea
   kubectl create -f pvc.yaml
 
 ```
-
-## Shared versus dedicated PVC
-
-By default, the `domainUID` is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources in the same Kubernetes namespaces.
-
-For the use cases where a dedicated PV and PVC is desired for a particular domain, the `domainUID` can be set, which will cause the generated PV and PVC to be associated with the specified `domainUID`. In the per domain PV and PVC case, the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 
 # Common problems
 
@@ -55,5 +47,3 @@ To confirm that the PV and PVC were created, use these commands:
 kubectl describe pv [PV name]
 kubectl describe pvc -n NAMESPACE [PVC name]
 ```
-
-Replace `NAMESPACE` with the namespace that the PVC was created in.
