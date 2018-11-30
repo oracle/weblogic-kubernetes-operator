@@ -24,6 +24,8 @@ import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -37,6 +39,7 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -511,7 +514,10 @@ public class ManagedServersUpStepTest {
   }
 
   private Step createNextStep(List<String> servers) {
-    domainPresenceInfo.setScan(configSupport.createDomainConfig());
+    ScanCache.INSTANCE.registerScan(
+        domainPresenceInfo.getNamespace(),
+        domainPresenceInfo.getDomainUID(),
+        new Scan(configSupport.createDomainConfig(), new DateTime()));
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
     return factory.createServerStep(domainPresenceInfo, servers, nextStep);
   }
@@ -579,7 +585,10 @@ public class ManagedServersUpStepTest {
   }
 
   private void invokeStep() {
-    domainPresenceInfo.setScan(configSupport.createDomainConfig());
+    ScanCache.INSTANCE.registerScan(
+        domainPresenceInfo.getNamespace(),
+        domainPresenceInfo.getDomainUID(),
+        new Scan(configSupport.createDomainConfig(), new DateTime()));
     testSupport.runSteps(step);
   }
 

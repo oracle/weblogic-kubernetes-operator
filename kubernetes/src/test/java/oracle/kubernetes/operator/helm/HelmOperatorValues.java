@@ -31,6 +31,10 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "imagePullPolicy");
     loadFromMap(map, this::setExternalOperatorCert, "externalOperatorCert");
     loadFromMap(map, this::setExternalOperatorKey, "externalOperatorKey");
+    loadFromMap(map, this::setLogStashImage, "logStashImage");
+    loadFromMap(map, this::setElasticSearchHost, "elasticSearchHost");
+    loadFromMap(map, this::setTillerNamespace, "tillerNamespace");
+    loadFromMap(map, this::setTillerServiceAccount, "tillerServiceAccount");
 
     loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
@@ -39,6 +43,7 @@ class HelmOperatorValues extends OperatorValues {
     loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
     loadIntegerFromMap(map, this::setExternalDebugHttpPort, "externalDebugHttpPort");
     loadIntegerFromMap(map, this::setInternalDebugHttpPort, "internalDebugHttpPort");
+    loadIntegerFromMap(map, this::setElasticSearchPort, "elasticSearchPort");
 
     loadDomainNamespacesFromMap(map);
     loadImagePullSecretsFromMap(map);
@@ -95,6 +100,10 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "imagePullPolicy");
     addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
     addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");
+    addStringMapEntry(map, this::getLogStashImage, "logStashImage");
+    addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
+    addStringMapEntry(map, this::getTillerNamespace, "tillerNamespace");
+    addStringMapEntry(map, this::getTillerServiceAccount, "tillerServiceAccount");
 
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
@@ -103,6 +112,7 @@ class HelmOperatorValues extends OperatorValues {
     addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
     addMapEntry(map, this::getExternalDebugHttpPortNum, "externalDebugHttpPort");
     addMapEntry(map, this::getInternalDebugHttpPortNum, "internalDebugHttpPort");
+    addMapEntry(map, this::getElasticSearchPortNum, "elasticSearchPort");
 
     addDomainNamespaces(map);
     addImagePullSecrets(map);
@@ -149,5 +159,9 @@ class HelmOperatorValues extends OperatorValues {
 
   private Integer getInternalDebugHttpPortNum() {
     return MapUtils.integerValue(getInternalDebugHttpPort());
+  }
+
+  private Integer getElasticSearchPortNum() {
+    return MapUtils.integerValue(getElasticSearchPort());
   }
 }

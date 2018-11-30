@@ -10,8 +10,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -122,7 +120,6 @@ public class Main {
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, IngressWatcher> ingressWatchers = new ConcurrentHashMap<>();
 
   static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
 
@@ -329,7 +326,6 @@ public class Main {
         readExistingPods(ns),
         readExistingEvents(ns),
         readExistingServices(ns),
-        readExistingIngresses(ns),
         readExistingDomains(ns));
   }
 
@@ -345,12 +341,6 @@ public class Main {
   private static Step readExistingDomains(String ns) {
     LOGGER.info(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
-  }
-
-  private static Step readExistingIngresses(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(ns, new IngressListStep(ns));
   }
 
   private static Step readExistingServices(String ns) {
@@ -466,15 +456,6 @@ public class Main {
         isNamespaceStopping(ns));
   }
 
-  private static IngressWatcher createIngressWatcher(String ns, String initialResourceVersion) {
-    return IngressWatcher.create(
-        threadFactory,
-        ns,
-        initialResourceVersion,
-        processor::dispatchIngressWatch,
-        isNamespaceStopping(ns));
-  }
-
   private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
     return DomainWatcher.create(
         threadFactory,
@@ -492,53 +473,10 @@ public class Main {
     return namespace;
   }
 
-  private static Collection<String> getTargetNamespaces() {
+  public static Collection<String> getTargetNamespaces() {
     String namespace = getOperatorNamespace();
 
     return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
-  }
-
-  private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
-    private final String ns;
-
-    IngressListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
-
-      V1beta1IngressList result = callResponse.getResult();
-      if (result != null) {
-        for (V1beta1Ingress ingress : result.getItems()) {
-          String domainUID = IngressWatcher.getIngressDomainUID(ingress);
-          String clusterName = IngressWatcher.getIngressClusterName(ingress);
-          if (domainUID != null && clusterName != null) {
-            dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID))
-                .getIngresses()
-                .put(clusterName, ingress);
-          }
-        }
-      }
-
-      if (!ingressWatchers.containsKey(ns)) {
-        ingressWatchers.put(ns, createIngressWatcher(ns, getInitialResourceVersion(result)));
-      }
-      return doNext(packet);
-    }
-
-    private String getInitialResourceVersion(V1beta1IngressList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {

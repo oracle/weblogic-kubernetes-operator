@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
@@ -38,12 +36,9 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
 
   private V1PersistentVolumeClaimList claims = null;
 
-  private WlsDomainConfig domainConfig;
-  private DateTime lastScanTime;
   private DateTime lastCompletionTime;
 
   /**
@@ -104,42 +99,6 @@ public class DomainPresenceInfo {
    */
   public void setClaims(V1PersistentVolumeClaimList claims) {
     this.claims = claims;
-  }
-
-  /**
-   * Domain scan
-   *
-   * @return Domain scan
-   */
-  public WlsDomainConfig getScan() {
-    return domainConfig;
-  }
-
-  /**
-   * Sets scan
-   *
-   * @param domainConfig Scan
-   */
-  public void setScan(WlsDomainConfig domainConfig) {
-    this.domainConfig = domainConfig;
-  }
-
-  /**
-   * Last scan time
-   *
-   * @return Last scan time
-   */
-  public DateTime getLastScanTime() {
-    return lastScanTime;
-  }
-
-  /**
-   * Sets last scan time
-   *
-   * @param lastScanTime Last scan time
-   */
-  public void setLastScanTime(DateTime lastScanTime) {
-    this.lastScanTime = lastScanTime;
   }
 
   /**
@@ -211,15 +170,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Map from cluster name to Ingress
-   *
-   * @return Cluster object map
-   */
-  public ConcurrentMap<String, V1beta1Ingress> getIngresses() {
-    return ingresses;
-  }
-
-  /**
    * Server objects (Pods and Services) for admin server
    *
    * @return Server objects for admin server
@@ -259,9 +209,6 @@ public class DomainPresenceInfo {
               getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
     } else {
       sb.append(", namespace=").append(namespace);
-    }
-    if (!ingresses.isEmpty()) {
-      sb.append(", ingresses=").append(String.join(",", ingresses.keySet()));
     }
     sb.append("}");
 
