@@ -44,9 +44,7 @@ public class ClusterServicesStep extends Step {
           break;
         }
 
-        startDetails.add(
-            new StepAndPacket(
-                ServiceHelper.createForClusterStep(null), p));
+        startDetails.add(new StepAndPacket(ServiceHelper.createForClusterStep(null), p));
       }
     }
 
