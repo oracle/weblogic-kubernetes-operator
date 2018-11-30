@@ -10,8 +10,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -47,6 +45,7 @@ import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.ConfigMapAfterStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
+import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
@@ -58,20 +57,32 @@ import oracle.kubernetes.weblogic.domain.v2.DomainList;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
-
-  private static ThreadFactory getThreadFactory() {
-    return ThreadFactorySingleton.getInstance();
-  }
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String DPI_MAP = "DPI_MAP";
+
+  private static final Container container = new Container();
+
+  private static class WrappedThreadFactory implements ThreadFactory {
+    private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
+
+    @Override
+    public Thread newThread(Runnable r) {
+      return delegate.newThread(
+          () -> {
+            ContainerResolver.getDefault().enterContainer(container);
+            r.run();
+          });
+    }
+  }
+
+  private static final ThreadFactory threadFactory = new WrappedThreadFactory();
 
   static final TuningParameters tuningAndConfig;
 
   static {
     try {
-      TuningParameters.initializeInstance(getThreadFactory(), "/operator/config");
+      TuningParameters.initializeInstance(threadFactory, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -81,7 +92,6 @@ public class Main {
 
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
 
-  private static final Container container = new Container();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
 
@@ -96,7 +106,7 @@ public class Main {
                 TuningParameters.class,
                 tuningAndConfig,
                 ThreadFactory.class,
-                getThreadFactory(),
+                threadFactory,
                 callBuilderFactory));
   }
 
@@ -110,7 +120,6 @@ public class Main {
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, IngressWatcher> ingressWatchers = new ConcurrentHashMap<>();
 
   static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
 
@@ -317,7 +326,6 @@ public class Main {
         readExistingPods(ns),
         readExistingEvents(ns),
         readExistingServices(ns),
-        readExistingIngresses(ns),
         readExistingDomains(ns));
   }
 
@@ -333,12 +341,6 @@ public class Main {
   private static Step readExistingDomains(String ns) {
     LOGGER.info(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
-  }
-
-  private static Step readExistingIngresses(String ns) {
-    return new CallBuilder()
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(ns, new IngressListStep(ns));
   }
 
   private static Step readExistingServices(String ns) {
@@ -428,7 +430,7 @@ public class Main {
 
   private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
     return EventWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
@@ -438,7 +440,7 @@ public class Main {
 
   private static PodWatcher createPodWatcher(String ns, String initialResourceVersion) {
     return PodWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         initialResourceVersion,
         processor::dispatchPodWatch,
@@ -447,19 +449,19 @@ public class Main {
 
   private static ServiceWatcher createServiceWatcher(String ns, String initialResourceVersion) {
     return ServiceWatcher.create(
-        getThreadFactory(),
+        threadFactory,
         ns,
         initialResourceVersion,
         processor::dispatchServiceWatch,
         isNamespaceStopping(ns));
   }
 
-  private static IngressWatcher createIngressWatcher(String ns, String initialResourceVersion) {
-    return IngressWatcher.create(
-        getThreadFactory(),
+  private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
+    return DomainWatcher.create(
+        threadFactory,
         ns,
         initialResourceVersion,
-        processor::dispatchIngressWatch,
+        processor::dispatchDomainWatch,
         isNamespaceStopping(ns));
   }
 
@@ -471,53 +473,10 @@ public class Main {
     return namespace;
   }
 
-  private static Collection<String> getTargetNamespaces() {
+  public static Collection<String> getTargetNamespaces() {
     String namespace = getOperatorNamespace();
 
     return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
-  }
-
-  private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
-    private final String ns;
-
-    IngressListStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      @SuppressWarnings("unchecked")
-      Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
-
-      V1beta1IngressList result = callResponse.getResult();
-      if (result != null) {
-        for (V1beta1Ingress ingress : result.getItems()) {
-          String domainUID = IngressWatcher.getIngressDomainUID(ingress);
-          String clusterName = IngressWatcher.getIngressClusterName(ingress);
-          if (domainUID != null && clusterName != null) {
-            dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID))
-                .getIngresses()
-                .put(clusterName, ingress);
-          }
-        }
-      }
-
-      if (!ingressWatchers.containsKey(ns)) {
-        ingressWatchers.put(ns, createIngressWatcher(ns, getInitialResourceVersion(result)));
-      }
-      return doNext(packet);
-    }
-
-    private String getInitialResourceVersion(V1beta1IngressList result) {
-      return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {
@@ -581,15 +540,6 @@ public class Main {
 
     String getResourceVersion(DomainList result) {
       return result != null ? result.getMetadata().getResourceVersion() : "";
-    }
-
-    private static DomainWatcher createDomainWatcher(String ns, String initialResourceVersion) {
-      return DomainWatcher.create(
-          getThreadFactory(),
-          ns,
-          initialResourceVersion,
-          processor::dispatchDomainWatch,
-          isNamespaceStopping(ns));
     }
   }
 

@@ -107,12 +107,13 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void receivedEvents_areSentToListeners() {
-    Object object = createObjectWithMetaData();
-    StubWatchFactory.addCallResponses(createAddResponse(object), createModifyResponse(object));
+    Object object1 = createObjectWithMetaData();
+    Object object2 = createObjectWithMetaData();
+    StubWatchFactory.addCallResponses(createAddResponse(object1), createModifyResponse(object2));
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
-    assertThat(callBacks, contains(addEvent(object), modifyEvent(object)));
+    assertThat(callBacks, contains(addEvent(object1), modifyEvent(object2)));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -121,7 +122,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     Object object1 = createObjectWithMetaData();
     Object object2 = createObjectWithMetaData();
     Watch.Response[] firstSet = {createAddResponse(object1), createModifyResponse(object2)};
-    int resourceAfterFirstSet = resourceVersion - 1;
     StubWatchFactory.addCallResponses(firstSet);
     scheduleAddResponse(createObjectWithMetaData());
 
@@ -129,7 +129,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", Integer.toString(resourceAfterFirstSet)));
+        hasEntry("resourceVersion", String.valueOf(resourceVersion - 2)));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
