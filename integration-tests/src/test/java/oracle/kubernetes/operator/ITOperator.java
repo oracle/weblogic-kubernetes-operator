@@ -290,6 +290,8 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testDeleteOneDomain() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logTestBegin("Deleting one domain.");
 
     if (operatorForDel1 == null) {
@@ -307,6 +309,8 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testDeleteTwoDomains() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logTestBegin("Deleting two domains.");
 
     if (operatorForDel2 == null) {

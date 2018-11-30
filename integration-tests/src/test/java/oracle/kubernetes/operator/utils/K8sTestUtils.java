@@ -309,7 +309,6 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    // TODO verify {domainUID}-weblogic-sample-pv
     assertEquals("Number of PVs", v1PersistentVolumeList.getItems().size(), expected);
   }
 
