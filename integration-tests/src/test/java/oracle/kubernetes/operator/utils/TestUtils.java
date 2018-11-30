@@ -29,6 +29,8 @@ import org.yaml.snakeyaml.Yaml;
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
+  private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
+
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
    * @throws Exception
@@ -742,6 +744,61 @@ public class TestUtils {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+  }
+
+  public static void verifyBeforeDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("Before deletion of domain: " + domainUid);
+
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, true);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 5);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyIngresses(domainNs, domainUid, domain1LabelSelector, 1);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 1);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+  }
+
+  public static void verifyAfterDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("After deletion of domain: " + domainUid);
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, false);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 0);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyIngresses(domainNs, domainUid, domain1LabelSelector, 0);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 0);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
   private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
