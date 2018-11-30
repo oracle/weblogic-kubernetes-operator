@@ -7,16 +7,22 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WebLogic server */
 public class WlsServerConfig {
-  final String name;
-  final Integer listenPort;
-  final String listenAddress;
-  final Integer sslListenPort;
-  final boolean sslPortEnabled;
-  final String machineName;
-  final List<NetworkAccessPoint> networkAccessPoints;
+  String name;
+  Integer listenPort;
+  String listenAddress;
+  String clusterName;
+  Integer sslListenPort;
+  boolean sslPortEnabled;
+  String machineName;
+  List<NetworkAccessPoint> networkAccessPoints;
+
+  public WlsServerConfig() {}
 
   /**
    * Return the name of this WLS server
@@ -81,6 +87,14 @@ public class WlsServerConfig {
    */
   public List<NetworkAccessPoint> getNetworkAccessPoints() {
     return networkAccessPoints;
+  }
+
+  public String getClusterName() {
+    return this.clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
   }
 
   /**
@@ -257,25 +271,47 @@ public class WlsServerConfig {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    WlsServerConfig that = (WlsServerConfig) o;
+
+    return new EqualsBuilder()
+        .append(sslPortEnabled, that.sslPortEnabled)
+        .append(name, that.name)
+        .append(listenPort, that.listenPort)
+        .append(listenAddress, that.listenAddress)
+        .append(sslListenPort, that.sslListenPort)
+        .append(machineName, that.machineName)
+        .append(networkAccessPoints, that.networkAccessPoints)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .append(name)
+        .append(listenPort)
+        .append(listenAddress)
+        .append(sslListenPort)
+        .append(sslPortEnabled)
+        .append(machineName)
+        .append(networkAccessPoints)
+        .toHashCode();
+  }
+
+  @Override
   public String toString() {
-    return "WlsServerConfig{"
-        + "name='"
-        + name
-        + '\''
-        + ", listenPort="
-        + listenPort
-        + ", listenAddress='"
-        + listenAddress
-        + '\''
-        + ", sslListenPort="
-        + sslListenPort
-        + ", sslPortEnabled="
-        + sslPortEnabled
-        + ", machineName='"
-        + machineName
-        + '\''
-        + ", networkAccessPoints="
-        + networkAccessPoints
-        + '}';
+    return new ToStringBuilder(this)
+        .append("name", name)
+        .append("listenPort", listenPort)
+        .append("listenAddress", listenAddress)
+        .append("sslListenPort", sslListenPort)
+        .append("sslPortEnabled", sslPortEnabled)
+        .append("machineName", machineName)
+        .append("networkAccessPoints", networkAccessPoints)
+        .toString();
   }
 }

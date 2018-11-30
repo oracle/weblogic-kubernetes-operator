@@ -310,6 +310,18 @@ public class Domain {
     return spec.getDomainName();
   }
 
+  public String getLogHome() {
+    return spec.getLogHome();
+  }
+
+  public String getIncludeServerOutInPodLog() {
+    return spec.getIncludeServerOutInPodLog();
+  }
+
+  public boolean isDomainHomeInImage() {
+    return spec.isDomainHomeInImage();
+  }
+
   /**
    * Returns the domain home
    *
@@ -373,6 +385,24 @@ public class Domain {
     return spec.getStorage() == null
         ? null
         : spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID(), getNamespace());
+  }
+
+  /**
+   * Returns the name of the Kubernetes configmap that contains optional configuration overrides.
+   *
+   * @return name of the configmap
+   */
+  public String getConfigOverrides() {
+    return spec.getConfigOverrides();
+  }
+
+  /**
+   * Returns a list of Kubernetes secret names used in optional configuration overrides.
+   *
+   * @return list of Kubernetes secret names
+   */
+  public List<String> getConfigOverrideSecrets() {
+    return spec.getConfigOverrideSecrets();
   }
 
   private String getNamespace() {

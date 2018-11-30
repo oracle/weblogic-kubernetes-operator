@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -30,8 +32,9 @@ public class ExternalAdminChannelsStep extends Step {
   public NextAction apply(Packet packet) {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-    Collection<NetworkAccessPoint> validChannels =
-        adminChannelsToCreate(info.getScan(), info.getDomain());
+    Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+    WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+    Collection<NetworkAccessPoint> validChannels = adminChannelsToCreate(config, info.getDomain());
     if (validChannels != null && !validChannels.isEmpty()) {
       return doNext(new ExternalAdminChannelIteratorStep(info, validChannels, getNext()), packet);
     }
