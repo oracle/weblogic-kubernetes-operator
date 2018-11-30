@@ -9,141 +9,146 @@
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
 
-#
-# Helper fn for trace output
-# Date reported in same format as operator-log.  01-22-2018T21:49:01
-# Args $* - Information to echo
-#
-function trace {
-  echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [WL Start Script]: ""$@"
-}
+SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+source ${SCRIPTPATH}/traceUtils.sh
+[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exitOrLoop
+
+trace "Starting WebLogic Server '${SERVER_NAME}'."
 
 #
-# Helper fn to create a folder
-# Arg $1 - path of folder to create
+# Define helper fn for failure debugging
+#   If the livenessProbeSuccessOverride file is available, do not exit from startServer.sh.
+#   This will cause the pod to stay up instead of restart.
+#   (The liveness probe checks the same file.)
 #
-function createFolder {
-  mkdir -m 777 -p $1
-  if [ ! -d $1 ]; then
-    trace "Unable to create folder $1"
+
+function exitOrLoop {
+  if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
+  then
+    while true ; do sleep 60 ; done
+  else
     exit 1
   fi
 }
 
-domain_uid=${DOMAIN_UID?}
-server_name=${SERVER_NAME?}
-domain_name=${DOMAIN_NAME?}
-admin_name=${ADMIN_NAME?}
-admin_port=${ADMIN_PORT?}
-domain_home=${DOMAIN_HOME?}
-log_home=${LOG_HOME?}
-nodemgr_home=${NODEMGR_HOME?}
-service_name=${SERVICE_NAME?}
-admin_hostname=${AS_SERVICE_NAME?}
-user_mem_args=${USER_MEM_ARGS}
-java_options=${JAVA_OPTIONS}
 
-trace "Starting WebLogic Server '${server_name}'."
+#
+# Define helper fn to create a folder
+#
 
-for varname in domain_uid \
-               domain_name \
-               domain_home \
-               admin_name \
-               admin_port \
-               admin_hostname \
-               server_name \
-               service_name \
-               log_home \
-               nodemgr_home \
-               user_mem_args \
-               java_options \
-               ;
-do
-  trace "  Input $varname='${!varname}'"
-done
-trace ""
-
-
-wlDataDir=${domain_home}/servers/${server_name}/data/nodemanager
-wlStateFile=${wlDataDir}/${server_name}.state
-wlStartPropFile=${wlDataDir}/startup.properties
-nmLogFile="${log_home}/nodemanager-${server_name}.log"
-nmPropFile=${nodemgr_home}/nodemanager.properties
-
-# Check for stale state file and remove if found
-# (The liveness probe checks this file)
-
-if [ -f "$wlStateFile" ]; then
-  trace "Removing stale file $wlStateFile"
-  rm ${wlStateFile}
-fi
-
-# Create nodemanager home directory that is local to the k8s node
-
-createFolder ${nodemgr_home}
-cp ${domain_home}/nodemanager/* ${nodemgr_home}
-cp ${domain_home}/bin/startNodeManager.sh ${nodemgr_home}
-
-# Edit the start nodemanager script to use the home for the server
-
-sed -i -e "s:${domain_home}/nodemanager:${nodemgr_home}:g" ${nodemgr_home}/startNodeManager.sh
-
-# Edit the nodemanager properties file to use the home for the server
-
-sed -i -e "s:DomainsFile=.*:DomainsFile=${nodemgr_home}/nodemanager.domains:g" ${nmPropFile}
-sed -i -e "s:NodeManagerHome=.*:NodeManagerHome=${nodemgr_home}:g" ${nmPropFile}
-sed -i -e "s:ListenAddress=.*:ListenAddress=$service_name:g" ${nmPropFile}
-sed -i -e "s:LogFile=.*:LogFile=${nmLogFile}:g" ${nmPropFile}
-
-# Init JAVA_PROPERTIES used by startNodeManager script
-
-export JAVA_PROPERTIES="-DLogFile=${nmLogFile} -DNodeManagerHome=${nodemgr_home}"
-
-# Create the startup.properties used when WebLogic Server is started
-
-trace "Create startup.properties"
-createFolder ${wlDataDir}
-echo "# Server startup properties" > ${wlStartPropFile}
-echo "AutoRestart=true" >> ${wlStartPropFile}
-if [ ! "$admin_name" = "$server_name" ]; then
-  echo "AdminURL=http\://${admin_hostname}\:${admin_port}" >> ${wlStartPropFile}
-fi
-echo "RestartMax=2" >> ${wlStartPropFile}
-echo "RotateLogOnStartup=false" >> ${wlStartPropFile}
-echo "RotationType=bySize" >> ${wlStartPropFile}
-echo "RotationTimeStart=00\:00" >> ${wlStartPropFile}
-echo "RotatedFileCount=100" >> ${wlStartPropFile}
-echo "RestartDelaySeconds=0" >> ${wlStartPropFile}
-echo "FileSizeKB=5000" >> ${wlStartPropFile}
-echo "FileTimeSpanFactor=3600000" >> ${wlStartPropFile}
-echo "RestartInterval=3600" >> ${wlStartPropFile}
-echo "NumberOfFilesLimited=true" >> ${wlStartPropFile}
-echo "FileTimeSpan=24" >> ${wlStartPropFile}
-echo "NMHostName=${service_name}" >> ${wlStartPropFile}
-trace "Update JVM arguments"
-echo "Arguments=${user_mem_args} -XX\:+UnlockExperimentalVMOptions -XX\:+UseCGroupMemoryLimitForHeap ${java_options}" >> ${wlStartPropFile}
-
-# Start the nodemanager and wait until it's ready
-
-trace "Start the nodemanager and wait for it to initialize"
-rm -f ${nmLogFile}
-. ${nodemgr_home}/startNodeManager.sh &
-
-wait_count=0
-while [ $wait_count -lt 15 ]; do
-  sleep 1
-  if [ -e ${nmLogFile} ] && [ `grep -c "Plain socket listener started" ${nmLogFile}` -gt 0 ]; then
-    break
+function createFolder {
+  mkdir -m 750 -p $1
+  if [ ! -d $1 ]; then
+    trace "Unable to create folder $1"
+    exitOrLoop
   fi
-  wait_count=$((wait_count + 1))
+}
+
+#
+# Define helper fn to copy a file only if src & tgt differ
+#
+
+function copyIfChanged() {
+  [ ! -f "${1?}" ] && echo "File '$1' not found." && exit 1
+  if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
+    trace "Copying '$1' to '$2'."
+    cp $1 $2 || exitOrLoop
+    chmod 750 $2 || exitOrLoop
+  else
+    trace "Skipping copy of '$1' to '$2' -- these files already match."
+  fi
+}
+
+#
+# Check and display input env vars
+#
+
+checkEnv \
+  DOMAIN_UID \
+  DOMAIN_NAME \
+  DOMAIN_HOME \
+  NODEMGR_HOME \
+  SERVER_NAME \
+  SERVICE_NAME \
+  ADMIN_NAME \
+  ADMIN_PORT \
+  SERVER_OUT_IN_POD_LOG \
+  AS_SERVICE_NAME || exitOrLoop
+
+trace "LOG_HOME=${LOG_HOME}"
+trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
+trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
+trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
+
+#
+# Check if introspector actually ran.  This should never fail since
+# the operator shouldn't try run a wl pod if the introspector failed.
+#
+
+if [ ! -f /weblogic-operator/introspector/boot.properties ]; then
+  trace "Error:  Missing introspector file '${bootpfile}'.  Introspector failed to run."
+  exitOrLoop
+fi
+
+#
+# Copy/update domain introspector files for the domain
+#
+# - Copy introspector boot.properties to '${DOMAIN_HOME}/servers/${SERVER_NAME}/security
+# 
+# - Copy introspector situational config files to '${DOMAIN_HOME}/optconfig
+#
+# - Note:  We don't update a file when it's unchanged because a new timestamp might
+#          trigger unnecessary situational config overhead.
+#
+
+createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
+copyIfChanged /weblogic-operator/introspector/boot.properties \
+              ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
+
+createFolder ${DOMAIN_HOME}/optconfig
+for local_fname in /weblogic-operator/introspector/*.xml ; do
+  copyIfChanged $local_fname ${DOMAIN_HOME}/optconfig/`basename $local_fname`
 done
-trace "Finished waiting for the nodemanager to start"
 
-# Start the server
+#
+# Delete any old situational config files in '${DOMAIN_HOME}/optconfig' 
+# that don't have a corresponding /weblogic-operator/introspector file.
+#
 
-trace "Start the WebLogic Server via the nodemanager"
-wlst.sh -skipWLSModuleScanning /weblogic-operator/scripts/start-server.py
+for local_fname in ${DOMAIN_HOME}/optconfig/*.xml ; do
+  if [ ! -f "/weblogic-operator/introspector/`basename $local_fname`" ]; then
+    trace "Deleting '$local_fname' since it has no corresponding /weblogic-operator/introspector file."
+    rm -f $local_fname || exitOrLoop
+  fi
+done
 
-trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
-while true; do sleep 60; done
+#
+# Start NM
+#
+
+trace "Start node manager"
+# call script to start node manager in same shell 
+# $SERVER_OUT_FILE will be set in startNodeManager.sh
+. ${SCRIPTPATH}/startNodeManager.sh || exitOrLoop
+
+#
+# Start WL Server
+#
+
+# TBD We should probably || exit 1 if start-server.py itself fails, and dump NM log to stdout
+
+trace "Start WebLogic Server via the nodemanager"
+${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
+
+#
+# Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
+#
+
+if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
+  trace "Showing the server out file from ${SERVER_OUT_FILE}"
+  tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
+else
+  trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+  while true; do sleep 60; done
+fi
 

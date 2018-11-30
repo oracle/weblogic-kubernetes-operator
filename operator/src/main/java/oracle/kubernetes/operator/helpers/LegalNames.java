@@ -12,6 +12,7 @@ public class LegalNames {
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
   private static final String NAP_PATTERN = "%s-%s-extchannel-%s";
+  private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s-introspect-domain-job";
 
   public static String toServerServiceName(String domainUID, String serverName) {
     return toServerName(domainUID, serverName);
@@ -31,6 +32,10 @@ public class LegalNames {
 
   static String toNAPName(String domainUID, String serverName, NetworkAccessPoint nap) {
     return toDNS1123LegalName(String.format(NAP_PATTERN, domainUID, serverName, nap.getName()));
+  }
+
+  static String toJobIntrospectorName(String domainUID) {
+    return toDNS1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUID));
   }
 
   /**
