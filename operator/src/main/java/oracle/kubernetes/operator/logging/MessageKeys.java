@@ -123,12 +123,9 @@ public class MessageKeys {
   public static final String ROLLING_CLUSTERS_STARTING = "WLSKO-0117";
   public static final String CYCLING_SERVERS = "WLSKO-0118";
   public static final String ROLLING_SERVERS = "WLSKO-0119";
-  public static final String REMOVING_INGRESS = "WLSKO-0120";
-  public static final String LIST_INGRESS_FOR_DOMAIN = "WLSKO-0121";
   public static final String POD_DELETED = "WLSKO-0122";
   public static final String SERVER_SERVICE_DELETED = "WLSKO-0123";
   public static final String CLUSTER_SERVICE_DELETED = "WLSKO-0124";
-  public static final String INGRESS_DELETED = "WLSKO-0125";
   public static final String TUNING_PARAMETERS = "WLSKO-0126";
   public static final String WLS_HEALTH_READ_FAILED = "WLSKO-0127";
   public static final String WLS_UPDATE_CLUSTER_SIZE_STARTING = "WLSKO-0128";
@@ -138,4 +135,13 @@ public class MessageKeys {
   public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0132";
   public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0133";
   public static final String SCRIPT_LOADED = "WLSKO-0134";
+  public static final String JOB_IS_READY = "WLSKO-0135";
+  public static final String JOB_IS_FAILED = "WLSKO-0136";
+  public static final String JOB_DELETED = "WLSKO-0137";
+  public static final String WAITING_FOR_JOB_READY = "WLSKO-0138";
+  public static final String JOB_CREATED = "WLSK0-0139";
+  public static final String JOB_IS_COMPLETE = "WLSKO-0140";
+  public static final String CANNOT_PARSE_TOPOLOGY = "WLSKO-0141";
+  public static final String CANNOT_PARSE_INTROSPECTOR_RESULT = "WLSKO-0142";
+  public static final String CANNOT_PARSE_INTROSPECTOR_FILE = "WLSKO-0143";
 }
