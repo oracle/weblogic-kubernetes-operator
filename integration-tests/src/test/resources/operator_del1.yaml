@@ -2,10 +2,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #any property can be provided here from kubernetes/charts/weblogic-operator/values.yaml
-releaseName: op-4-del
+releaseName: op-4-del-1
 serviceAccount: weblogic-operator
-namespace: weblogic-operator-4-del
-domainNamespaces: [ "domain-ns-4-del-1", "domain-ns-4-del-2" ]
+namespace: weblogic-operator-4-del-1
+domainNamespaces: [ "domain-ns-4-del-1" ]
 externalRestEnabled: true
 externalRestHttpsPort: 32002
 javaLoggingLevel: FINE
