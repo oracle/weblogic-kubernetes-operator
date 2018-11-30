@@ -6,12 +6,15 @@ package oracle.kubernetes.operator.utils;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import java.nio.file.Path;
 
 /** Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
+
+  private static String OPERATOR_RELEASE = "weblogic-operator";
 
   private OperatorValues inputs;
 
@@ -23,6 +26,14 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   public ParsedWeblogicOperatorYaml(YamlReader factory, OperatorValues inputs) throws Exception {
     super(factory);
     this.inputs = inputs;
+  }
+
+  public V1Job getOperatorPreInstallHookJob() {
+    return getJobs().find(OPERATOR_RELEASE + "-weblogic-operator-pre-install-hook");
+  }
+
+  public V1Job getOperatorPreUpgradeHookJob() {
+    return getJobs().find(OPERATOR_RELEASE + "-weblogic-operator-pre-upgrade-hook");
   }
 
   public V1ConfigMap getOperatorConfigMap() {
@@ -46,7 +57,7 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   }
 
   public int getExpectedObjectCount() {
-    int rtn = 4;
+    int rtn = 6;
     if (inputs.getRemoteDebugNodePortEnabled().equals("true")
         || !(inputs.getExternalRestEnabled().equals("true"))) {
       // the external operator service is enabled if the remote debug port is enabled or external

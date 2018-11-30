@@ -22,10 +22,12 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   private static final String WRONG_TYPE = "%s must be a %s : %s";
 
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {
-    "elkIntegrationEnabled", "externalRestEnabled"
+    "externalRestEnabled", "remoteDebugNodePortEnabled", "elkIntegrationEnabled"
   };
 
-  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
+  private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {
+    "serviceAccount", "image", "tillerNamespace", "tillerServiceAccount"
+  };
 
   private static final String[] OPERATOR_LEVEL_ENUM_PROPERTIES = {
     "imagePullPolicy", "javaLoggingLevel"
@@ -47,57 +49,28 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   @Test
   public void whenStringSpecifiedForOperatorLevelProperties_reportError() throws Exception {
-    whenStringSpecifiedForBooleanProperties_reportError(OPERATOR_LEVEL_BOOLEAN_PROPERTIES);
-  }
-
-  private void whenStringSpecifiedForBooleanProperties_reportError(String[] propertyNames)
-      throws Exception {
-    for (String propertyName : propertyNames) {
+    for (String propertyName : OPERATOR_LEVEL_BOOLEAN_PROPERTIES) {
       setProperty(propertyName, "this is not a boolean");
     }
 
     String processingError = getProcessingError();
 
-    for (String propertyName : propertyNames) {
+    for (String propertyName : OPERATOR_LEVEL_BOOLEAN_PROPERTIES) {
       assertThat(processingError, containsTypeError(propertyName, "bool", "string"));
     }
   }
 
-  private void setProperty(String propertyName, Object value) {
-    overrides.put(propertyName, value);
-  }
-
-  private String getProcessingError() throws Exception {
-    return getChart(newInstallArgs(overrides)).getError();
-  }
-
-  private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
-    return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
-  }
-
   @Test
   public void whenOperatorLevelBooleanPropertiesMissing_reportError() throws Exception {
-    whenBooleanPropertiesMissing_reportError(OPERATOR_LEVEL_BOOLEAN_PROPERTIES);
-  }
-
-  private void whenBooleanPropertiesMissing_reportError(String[] propertyNames) throws Exception {
-    for (String propertyName : propertyNames) {
+    for (String propertyName : OPERATOR_LEVEL_BOOLEAN_PROPERTIES) {
       removeProperty(propertyName);
     }
 
     String processingError = getProcessingError();
 
-    for (String propertyName : propertyNames) {
+    for (String propertyName : OPERATOR_LEVEL_BOOLEAN_PROPERTIES) {
       assertThat(processingError, containsMissingBoolParameterError(propertyName));
     }
-  }
-
-  private void removeProperty(String propertyName) {
-    setProperty(propertyName, null);
-  }
-
-  private Matcher<String> containsMissingBoolParameterError(String propertyName) {
-    return containsString(String.format(MISSING, "bool", propertyName));
   }
 
   @Test
@@ -113,10 +86,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
     }
   }
 
-  private Matcher<String> containsMissingStringParameterError(String propertyName) {
-    return containsString(String.format(MISSING, "string", propertyName));
-  }
-
   @Test
   public void whenOperatorLevelEnumPropertiesMissing_reportError() throws Exception {
     for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
@@ -128,10 +97,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
     for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
       assertThat(processingError, containsMissingEnumParameterError(propertyName));
     }
-  }
-
-  private Matcher<String> containsMissingEnumParameterError(String propertyName) {
-    return containsString(String.format(MISSING, "string", propertyName));
   }
 
   @Test
@@ -148,12 +113,20 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
             containsEnumParameterError("javaLoggingLevel", badValue, LOGGING_LEVELS)));
   }
 
-  private Matcher<String> containsEnumParameterError(
-      String propertyName, String badValue, String... validValues) {
-    return containsString(
-        String.format(
-            "%s must be one of the following values [%s] : %s",
-            propertyName, String.join(" ", validValues), badValue));
+  @Test
+  public void whenExternalRestEnabled_reportMissingRelatedParameters() throws Exception {
+    setProperty("externalRestEnabled", true);
+
+    removeProperty("externalRestHttpsPort");
+    removeProperty("externalOperatorCert");
+    removeProperty("externalOperatorKey");
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsMissingIntParameterError("externalRestHttpsPort"),
+            containsMissingStringParameterError("externalOperatorCert"),
+            containsMissingStringParameterError("externalOperatorKey")));
   }
 
   @Test
@@ -163,17 +136,6 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
     removeProperty("externalRestHttpsPort");
     removeProperty("externalOperatorCert");
     removeProperty("externalOperatorKey");
-
-    assertThat(getProcessingError(), emptyString());
-  }
-
-  @Test
-  public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
-    setProperty("externalRestEnabled", false);
-
-    setProperty("externalRestHttpsPort", "Not a number");
-    setProperty("externalOperatorCert", 1234);
-    setProperty("externalOperatorKey", true);
 
     assertThat(getProcessingError(), emptyString());
   }
@@ -195,17 +157,18 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenRemoteDebugNodePortDisabled_ignoreMissingPortNumbers() throws Exception {
-    setProperty("remoteDebugNodePortEnabled", false);
+  public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
+    setProperty("externalRestEnabled", false);
 
-    removeProperty("internalDebugHttpPort");
-    removeProperty("externalDebugHttpPort");
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalOperatorCert", 1234);
+    setProperty("externalOperatorKey", true);
 
     assertThat(getProcessingError(), emptyString());
   }
 
   @Test
-  public void whenRemoteDebugNodePortDisabled_reportMissingPortNumbers() throws Exception {
+  public void whenRemoteDebugNodePortEnabled_reportMissingRelatedParameters() throws Exception {
     setProperty("remoteDebugNodePortEnabled", true);
 
     removeProperty("internalDebugHttpPort");
@@ -217,12 +180,18 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
             .and(containsMissingIntParameterError("externalDebugHttpPort")));
   }
 
-  private Matcher<String> containsMissingIntParameterError(String propertyName) {
-    return containsString(String.format(MISSING, "float64", propertyName));
+  @Test
+  public void whenRemoteDebugNodePortNotEnabled_ignoreMissingRelatedParameters() throws Exception {
+    setProperty("remoteDebugNodePortEnabled", false);
+
+    removeProperty("internalDebugHttpPort");
+    removeProperty("externalDebugHttpPort");
+
+    assertThat(getProcessingError(), emptyString());
   }
 
   @Test
-  public void whenRemoteDebugNodePortDisabled_reportNonNumericPortNumbers() throws Exception {
+  public void whenRemoteDebugNodePortEnabled_reportRelatedParameterErrors() throws Exception {
     setProperty("remoteDebugNodePortEnabled", true);
 
     setProperty("internalDebugHttpPort", true);
@@ -235,9 +204,120 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
+  public void whenRemoteDebugNodePortNotEnabled_ignoreRelatedParameterErrors() throws Exception {
+    setProperty("remoteDebugNodePortEnabled", false);
+
+    setProperty("internalDebugHttpPort", true);
+    setProperty("externalDebugHttpPort", "abcd");
+
+    assertThat(getProcessingError(), emptyString());
+  }
+
+  @Test
+  public void whenElkIntegrationEnabled_reportMissingRelatedParameters() throws Exception {
+    setProperty("elkIntegrationEnabled", true);
+
+    removeProperty("logStashImage");
+    removeProperty("elasticSearchHost");
+    removeProperty("elasticSearchPort");
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsMissingStringParameterError("logStashImage"),
+            containsMissingStringParameterError("elasticSearchHost"),
+            containsMissingIntParameterError("elasticSearchPort")));
+  }
+
+  @Test
+  public void whenElkIntegrationNotEnabled_ignoreMissingRelatedParameters() throws Exception {
+    setProperty("elkIntegrationEnabled", false);
+
+    setProperty("logStashImage", true);
+    setProperty("elasticSearchHost", 7);
+    setProperty("elasticSearchPort", false);
+
+    assertThat(getProcessingError(), emptyString());
+  }
+
+  @Test
+  public void whenElkIntegrationEnabled_reportRelatedParametersErrors() throws Exception {
+    setProperty("elkIntegrationEnabled", true);
+
+    setProperty("logStashImage", true);
+    setProperty("elasticSearchHost", 7);
+    setProperty("elasticSearchPort", false);
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsTypeError("logStashImage", "string", "bool"),
+            containsTypeError("elasticSearchHost", "string", "float64"),
+            containsTypeError("elasticSearchPort", "float64", "bool")));
+  }
+
+  @Test
+  public void whenElkIntegrationEnabled_ignoreRelatedParametersErrors() throws Exception {
+    setProperty("elkIntegrationEnabled", false);
+
+    setProperty("logStashImage", true);
+    setProperty("elasticSearchHost", 7);
+    setProperty("elasticSearchPort", false);
+
+    assertThat(getProcessingError(), emptyString());
+  }
+
+  @Test
   public void whenDomainNamespacesPrimitiveType_reportError() throws Exception {
     setProperty("domainNamespaces", true);
 
     assertThat(getProcessingError(), containsTypeError("domainNamespaces", "slice", "bool"));
+  }
+
+  @Test
+  public void whenImagePullSecretsPrimitiveType_reportError() throws Exception {
+    setProperty("imagePullSecrets", true);
+
+    assertThat(getProcessingError(), containsTypeError("imagePullSecrets", "slice", "bool"));
+  }
+
+  private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
+    return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
+  }
+
+  private Matcher<String> containsMissingEnumParameterError(String propertyName) {
+    return containsString(String.format(MISSING, "string", propertyName));
+  }
+
+  private Matcher<String> containsMissingStringParameterError(String propertyName) {
+    return containsString(String.format(MISSING, "string", propertyName));
+  }
+
+  private Matcher<String> containsMissingBoolParameterError(String propertyName) {
+    return containsString(String.format(MISSING, "bool", propertyName));
+  }
+
+  private Matcher<String> containsMissingIntParameterError(String propertyName) {
+    return containsString(String.format(MISSING, "float64", propertyName));
+  }
+
+  private Matcher<String> containsEnumParameterError(
+      String propertyName, String badValue, String... validValues) {
+    return containsString(
+        String.format(
+            "%s must be one of the following values [%s] : %s",
+            propertyName, String.join(" ", validValues), badValue));
+  }
+
+  private void setProperty(String propertyName, Object value) {
+    overrides.put(propertyName, value);
+  }
+
+  private void removeProperty(String propertyName) {
+    setProperty(propertyName, null);
+  }
+
+  private String getProcessingError() throws Exception {
+    return getChart(newInstallArgs(overrides)).getError();
   }
 }
