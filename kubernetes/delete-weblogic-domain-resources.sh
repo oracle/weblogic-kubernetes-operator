@@ -46,12 +46,7 @@ cat << EOF
               Server pods to exit normally, and then proceed
               to phase 3.
 
-    Phase 3:  Delete each domain-uid's helm chart using
-              "helm delete --purge".  This normally should clean
-              up all remaining k8s domain resources except
-              for domain secrets.
-
-    Phase 4:  Periodically delete any remaining kubernetes resources
+    Phase 3:  Periodically delete any remaining kubernetes resources
               for the specified domains, including any pods
               leftover from previous phases.  Exit and fail if
               max-seconds is exceeded and there are any leftover
