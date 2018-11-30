@@ -246,6 +246,7 @@ class TopologyGenerator(Generator):
   def validate(self):
     self.validateAdminServer()
     self.validateClusters()
+    self.validateServerCustomChannelName()
     return self.isValid()
 
   def generate(self):
@@ -290,7 +291,6 @@ class TopologyGenerator(Generator):
     cluster = adminServer.getCluster()
     if cluster != None:
       self.addError("The admin server " + self.name(adminServer) + " belongs to the cluster " + self.name(cluster) + ".")
-    self.validateServerCustomChannelName(self, adminServer)
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
@@ -359,13 +359,16 @@ class TopologyGenerator(Generator):
     if cluster.getDynamicServers().isCalculatedListenPorts() == True:
       self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
-  def validateServerCustomChannelName(self, server):
+  def validateServerCustomChannelName(self):
     reservedNames = ['default','defaultSecure','defaultAdmin']
-    naps = server.getNetworkAccessPoints()
-    for nap in naps:
-      name=self.name(nap)
-      if name in reservedNames:
-         self.addError("The custom channel " + name + " is a reserved name."
+    for server in self.env.getDomain().getServers():
+      naps = server.getNetworkAccessPoints()
+      for nap in naps:
+        name=self.name(nap)
+        if name in reservedNames:
+          self.addError("The custom channel " + name + " is a reserved name."
+
+  def validateClusterServersHaveSameCustomChannels():
 
   def isValid(self):
     return len(self.errors) == 0
