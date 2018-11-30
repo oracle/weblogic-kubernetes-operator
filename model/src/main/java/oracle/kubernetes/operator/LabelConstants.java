@@ -15,6 +15,7 @@ public interface LabelConstants {
   String CLUSTERNAME_LABEL = "weblogic.clusterName";
   String CREATEDBYOPERATOR_LABEL = "weblogic.createdByOperator";
   String OPERATORNAME_LABEL = "weblogic.operatorName";
+  String JOBNAME_LABEL = "job-name";
   String APP_LABEL = "app";
 
   static String forDomainUid(String uid) {

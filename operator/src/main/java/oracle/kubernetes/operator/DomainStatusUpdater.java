@@ -17,6 +17,8 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -130,9 +132,10 @@ public class DomainStatusUpdater {
           (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
 
       Map<String, ServerStatus> serverStatuses = new TreeMap<>();
-      WlsDomainConfig scan = info.getScan();
-      if (scan != null) {
-        for (Map.Entry<String, WlsServerConfig> entry : scan.getServerConfigs().entrySet()) {
+      Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+      WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+      if (config != null) {
+        for (Map.Entry<String, WlsServerConfig> entry : config.getServerConfigs().entrySet()) {
           String serverName = entry.getKey();
           ServerStatus ss =
               new ServerStatus()
@@ -140,7 +143,8 @@ public class DomainStatusUpdater {
                   .withServerName(serverName)
                   .withHealth(serverHealth.get(serverName));
           outer:
-          for (Map.Entry<String, WlsClusterConfig> cluster : scan.getClusterConfigs().entrySet()) {
+          for (Map.Entry<String, WlsClusterConfig> cluster :
+              config.getClusterConfigs().entrySet()) {
             for (WlsServerConfig sic : cluster.getValue().getServerConfigs()) {
               if (serverName.equals(sic.getName())) {
                 ss.setClusterName(cluster.getKey());
