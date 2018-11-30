@@ -473,7 +473,7 @@ public class Main {
     return namespace;
   }
 
-  private static Collection<String> getTargetNamespaces() {
+  public static Collection<String> getTargetNamespaces() {
     String namespace = getOperatorNamespace();
 
     return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);

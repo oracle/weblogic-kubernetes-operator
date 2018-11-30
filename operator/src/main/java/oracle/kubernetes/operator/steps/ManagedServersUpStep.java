@@ -9,10 +9,13 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.Scan;
+import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -94,16 +97,19 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
 
+    Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+    WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+
     Set<String> clusteredServers = new HashSet<>();
 
-    for (WlsClusterConfig clusterConfig : info.getScan().getClusterConfigs().values()) {
+    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
         clusteredServers.add(serverConfig.getName());
       }
     }
 
-    for (WlsServerConfig serverConfig : info.getScan().getServerConfigs().values()) {
+    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
       if (!clusteredServers.contains(serverConfig.getName()))
         factory.addServerIfNeeded(serverConfig, null);
     }

@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
@@ -40,8 +39,6 @@ public class DomainPresenceInfo {
 
   private V1PersistentVolumeClaimList claims = null;
 
-  private WlsDomainConfig domainConfig;
-  private DateTime lastScanTime;
   private DateTime lastCompletionTime;
 
   /**
@@ -102,42 +99,6 @@ public class DomainPresenceInfo {
    */
   public void setClaims(V1PersistentVolumeClaimList claims) {
     this.claims = claims;
-  }
-
-  /**
-   * Domain scan
-   *
-   * @return Domain scan
-   */
-  public WlsDomainConfig getScan() {
-    return domainConfig;
-  }
-
-  /**
-   * Sets scan
-   *
-   * @param domainConfig Scan
-   */
-  public void setScan(WlsDomainConfig domainConfig) {
-    this.domainConfig = domainConfig;
-  }
-
-  /**
-   * Last scan time
-   *
-   * @return Last scan time
-   */
-  public DateTime getLastScanTime() {
-    return lastScanTime;
-  }
-
-  /**
-   * Sets last scan time
-   *
-   * @param lastScanTime Last scan time
-   */
-  public void setLastScanTime(DateTime lastScanTime) {
-    this.lastScanTime = lastScanTime;
   }
 
   /**
