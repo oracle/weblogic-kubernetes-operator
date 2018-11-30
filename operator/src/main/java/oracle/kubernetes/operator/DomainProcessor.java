@@ -8,7 +8,6 @@ import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
@@ -30,8 +29,6 @@ public interface DomainProcessor {
   public void dispatchPodWatch(Watch.Response<V1Pod> item);
 
   public void dispatchServiceWatch(Watch.Response<V1Service> item);
-
-  public void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item);
 
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item);
 

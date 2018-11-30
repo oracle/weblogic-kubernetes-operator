@@ -10,7 +10,6 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1IngressList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -20,16 +19,11 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public class DeleteDomainStep extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final DomainPresenceInfo info;
   private final String namespace;
   private final String domainUID;
@@ -47,7 +41,6 @@ public class DeleteDomainStep extends Step {
         Step.chain(
             deletePods(),
             deleteServices(),
-            deleteIngresses(),
             deletePersistentVolumes(),
             deletePersistentVolumeClaims(),
             ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
@@ -60,20 +53,6 @@ public class DeleteDomainStep extends Step {
     }
 
     return doNext(serverDownStep, packet);
-  }
-
-  private Step deleteIngresses() {
-    LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, this.domainUID, namespace);
-    return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(
-            namespace,
-            new ActionResponseStep<V1beta1IngressList>() {
-              @Override
-              Step createSuccessStep(V1beta1IngressList result, Step next) {
-                return new DeleteIngressListStep(result.getItems(), next);
-              }
-            });
   }
 
   static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
