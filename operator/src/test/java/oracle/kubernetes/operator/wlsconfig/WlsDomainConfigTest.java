@@ -157,20 +157,6 @@ public class WlsDomainConfigTest {
     assertEquals(6, wlsDomainConfig.getServerConfigs().size());
   }
 
-  @Test
-  public void verifySuggestsUpdateToDynamicClusterIfReplicasTooHigh() {
-    createDomainConfig(JSON_STRING_MIXED_CLUSTER);
-    configureCluster("DockerCluster").withReplicas(3);
-
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsDomainConfig.validate(domain, suggestedConfigUpdates);
-
-    assertEquals(1, suggestedConfigUpdates.size());
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
-        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
-    assertEquals(3, configUpdate.targetClusterSize);
-  }
-
   private ClusterConfigurator configureCluster(String clusterName) {
     return configurator.configureCluster(clusterName);
   }

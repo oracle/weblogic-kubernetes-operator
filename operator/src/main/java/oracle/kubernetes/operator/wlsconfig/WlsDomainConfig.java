@@ -356,21 +356,14 @@ public class WlsDomainConfig implements WlsDomain {
     return null;
   }
 
-  public boolean validate(Domain domain) {
-    return validate(domain, null);
-  }
-
   /**
    * Checks the provided k8s domain spec to see if it is consistent with the configuration of the
    * WLS domain. The method also logs warning if inconsistent WLS configurations are found.
    *
    * @param domain The Domain to be validated against the WLS configuration
-   * @param suggestedConfigUpdates a List of ConfigUpdate objects containing suggested WebLogic
-   *     config updates that are necessary to make the WebLogic domain consistent with the
-   *     DomainSpec. Optional.
    * @return true if the DomainSpec has been updated, false otherwise
    */
-  public boolean validate(Domain domain, List<ConfigUpdate> suggestedConfigUpdates) {
+  public boolean validate(Domain domain) {
     LOGGER.entering();
 
     boolean updated = false;
@@ -395,7 +388,7 @@ public class WlsDomainConfig implements WlsDomain {
       if (clusterConfig.getMaxClusterSize() == 0) {
         LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
       } else {
-        clusterConfig.validateCluster(domain.getReplicaCount(clusterName), suggestedConfigUpdates);
+        clusterConfig.validateCluster(domain.getReplicaCount(clusterName));
       }
     }
 

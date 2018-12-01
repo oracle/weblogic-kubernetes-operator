@@ -10,7 +10,6 @@ import java.util.Map;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.Step;
 
 /** Contains configuration of a WLS cluster */
 public class WlsClusterConfig {
@@ -224,34 +223,11 @@ public class WlsClusterConfig {
    * kubernetes.
    *
    * @param replicas the proposed number of replicas
-   * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be
-   *     filled in by this method. Optional.
    */
-  void validateCluster(int replicas, List<ConfigUpdate> suggestedConfigUpdates) {
+  void validateCluster(int replicas) {
     // log warning if no servers are configured in the cluster
     if (getMaxClusterSize() == 0) {
       LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, getClusterName());
-    }
-
-    // make recommendations if config can be updated
-    suggestConfigUpdates(replicas, suggestedConfigUpdates);
-  }
-
-  private void suggestConfigUpdates(Integer replicas, List<ConfigUpdate> suggestedConfigUpdates) {
-    // recommend updating WLS dynamic cluster size and machines if requested to recommend
-    // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
-    // the current dynamic cluster size.
-    //
-    // Note: Never reduce the value of dynamicClusterSize even during scale down
-    if (suggestedConfigUpdates != null && this.hasDynamicServers()) {
-      if (replicas > getDynamicClusterSize()
-          && getDynamicClusterSize() < getMaxDynamicClusterSize()) {
-        // increase dynamic cluster size to satisfy replicas, but only up to the configured max
-        // dynamic cluster size
-        suggestedConfigUpdates.add(
-            new DynamicClusterSizeConfigUpdate(
-                this, Math.min(replicas, getMaxDynamicClusterSize())));
-      }
     }
   }
 
@@ -391,28 +367,5 @@ public class WlsClusterConfig {
       result = true;
     }
     return result;
-  }
-
-  /** ConfigUpdate implementation for updating a dynamic cluster size */
-  static class DynamicClusterSizeConfigUpdate implements ConfigUpdate {
-    final int targetClusterSize;
-    final WlsClusterConfig wlsClusterConfig;
-
-    public DynamicClusterSizeConfigUpdate(
-        WlsClusterConfig wlsClusterConfig, int targetClusterSize) {
-      this.targetClusterSize = targetClusterSize;
-      this.wlsClusterConfig = wlsClusterConfig;
-    }
-
-    /**
-     * Create a Step to update the cluster size of a WebLogic dynamic cluster
-     *
-     * @param next Next Step to be performed after the WebLogic configuration update
-     * @return Step to update the cluster size of a WebLogic dynamic cluster
-     */
-    @Override
-    public Step createStep(Step next) {
-      return new UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
-    }
   }
 }

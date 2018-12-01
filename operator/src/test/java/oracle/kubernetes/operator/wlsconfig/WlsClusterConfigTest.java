@@ -12,7 +12,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -30,7 +29,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class WlsClusterConfigTest {
@@ -203,7 +201,7 @@ public class WlsClusterConfigTest {
   public void verifyValidateClusterStartupWarnsIfNoServersInCluster() {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
 
-    wlsClusterConfig.validateCluster(1, null);
+    wlsClusterConfig.validateCluster(1);
 
     assertThat(logRecords, containsWarning(NO_WLS_SERVER_IN_CLUSTER, "cluster1"));
   }
@@ -214,17 +212,6 @@ public class WlsClusterConfigTest {
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
 
     assertThat(wlsClusterConfig.getMaxClusterSize(), equalTo(1));
-  }
-
-  @Test
-  public void
-      verifyValidateClusterStartupDoNotSuggestsUpdateToConfiguredClusterIfReplicasTooHigh() {
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
-    wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(2, suggestedConfigUpdates);
-    assertEquals(0, suggestedConfigUpdates.size());
   }
 
   @Test
@@ -253,156 +240,8 @@ public class WlsClusterConfigTest {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
 
-    wlsClusterConfig.validateCluster(2, null);
+    wlsClusterConfig.validateCluster(2);
     assertTrue(logRecords.isEmpty());
-  }
-
-  @Test
-  public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfReplicasTooHigh() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 2, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(2, suggestedConfigUpdates);
-
-    assertEquals(1, suggestedConfigUpdates.size());
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
-        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
-    assertEquals(2, configUpdate.targetClusterSize);
-  }
-
-  @Test
-  public void
-      verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasSameAsClusterSize() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 2, "ms-", "cluster2");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster2", wlsDynamicServersConfig);
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(1, suggestedConfigUpdates);
-
-    assertEquals(0, suggestedConfigUpdates.size());
-  }
-
-  @Test
-  public void
-      verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasLowerThanClusterSize() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 2, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(1, suggestedConfigUpdates);
-
-    assertEquals(0, suggestedConfigUpdates.size());
-  }
-
-  @Test
-  public void
-      verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfCurrentSizeAlreadyMax() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 2, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(3, suggestedConfigUpdates);
-    assertEquals(0, suggestedConfigUpdates.size());
-  }
-
-  @Test
-  public void
-      verifyValidateClusterStartupSuggestsUpdateToDynamicClusterEvenIfReplicasExceedsMaxClusterSize() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 2, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(10, suggestedConfigUpdates);
-
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
-        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
-    assertEquals(2, configUpdate.targetClusterSize);
-  }
-
-  @Ignore // we are currently not suggesting updates based on number of machines
-  @Test
-  public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfNotEnoughMachines() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 1, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-
-    Map<String, WlsClusterConfig> clusters = new HashMap<>();
-    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
-
-    WlsMachineConfig machine1 =
-        new WlsMachineConfig("domain1-cluster1-machine1", 5556, "localhost", "SSL");
-    Map<String, WlsMachineConfig> machines = new HashMap<>();
-    machines.put(machine1.getName(), machine1);
-
-    WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
-    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
-
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    wlsClusterConfig.validateCluster(2, suggestedConfigUpdates);
-
-    assertEquals(1, suggestedConfigUpdates.size());
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
-        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
-    assertEquals(2, configUpdate.targetClusterSize);
-  }
-
-  @Ignore // we are currently not suggesting updates based on number of machines
-  @Test
-  public void verifyValidateClusterStartupDoNotLowerClusterSizeIfNotEnoughMachines() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 1, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-
-    Map<String, WlsClusterConfig> clusters = new HashMap<>();
-    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
-
-    Map<String, WlsMachineConfig> machines = new HashMap<>();
-
-    WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
-    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
-
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-
-    // replica = 1, dynamicClusterSize = 2, num of machines = 0 ==> need to create one machine
-    // but need to ensure that the update will not reduce dynamicClusterSize from 2 to 1
-    wlsClusterConfig.validateCluster(1, suggestedConfigUpdates);
-    assertEquals(1, suggestedConfigUpdates.size());
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
-        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
-    assertEquals(2, configUpdate.targetClusterSize);
-  }
-
-  @Ignore // we are currently not suggesting updates based on number of machines
-  @Test
-  public void verifyValidateClusterStartupDoNotSuggestUpdateToDynamicClusterIfEnoughMachines() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-
-    Map<String, WlsClusterConfig> clusters = new HashMap<>();
-    clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
-
-    WlsMachineConfig machine1 =
-        new WlsMachineConfig("domain1-cluster1-machine1", 5556, "localhost", "SSL");
-    Map<String, WlsMachineConfig> machines = new HashMap<>();
-    machines.put(machine1.getName(), machine1);
-
-    WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
-    wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
-
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsClusterConfig.validateCluster(1, suggestedConfigUpdates);
-    assertEquals(0, suggestedConfigUpdates.size());
   }
 
   @Test
@@ -422,22 +261,6 @@ public class WlsClusterConfigTest {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     assertEquals(
         wlsClusterConfig.getUpdateDynamicClusterSizePayload(2), "{ dynamicClusterSize: 2 }");
-  }
-
-  @Test
-  public void verifyStepCreatedFromDynamicClusterSizeConfigUpdate()
-      throws NoSuchFieldException, IllegalAccessException {
-    final WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
-    final int clusterSize = 8;
-    final Step nextStep = new MockStep(null);
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate dynamicClusterSizeConfigUpdate =
-        new WlsClusterConfig.DynamicClusterSizeConfigUpdate(wlsClusterConfig, clusterSize);
-
-    UpdateDynamicClusterStep updateStep =
-        (UpdateDynamicClusterStep) dynamicClusterSizeConfigUpdate.createStep(nextStep);
-    assertSame(wlsClusterConfig, updateStep.wlsClusterConfig);
-    assertEquals(clusterSize, updateStep.targetClusterSize);
-    assertSame(nextStep, getNext(updateStep));
   }
 
   @Test
