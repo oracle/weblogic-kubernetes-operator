@@ -60,6 +60,40 @@ function copyIfChanged() {
 }
 
 #
+# Define helper fn to copy sit cfg xml files from one dir to another
+#   $src_dir files are assumed to start with $fil_prefix and end with .xml
+#   Copied $tgt_dir files are stripped of their $fil_prefix
+#   Any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
+#
+
+function copySitCfg() {
+  src_dir=${1?}
+  tgt_dir=${2?}
+  fil_prefix=${3?}
+
+  trace "Copying files starting with '$src_dir/$fil_prefix' to '$tgt_dir' without the prefix."
+
+  createFolder $tgt_dir
+
+  ls ${src_dir}/${fil_prefix}*.xml > /dev/null 2>&1
+  if [ $? = 0 ]; then
+    for local_fname in ${src_dir}/${fil_prefix}*.xml ; do
+      copyIfChanged $local_fname $tgt_dir/`basename ${local_fname/${fil_prefix}//}`
+    done
+  fi
+
+  ls ${tgt_dir}/*.xml 2>&1 > /dev/null 2>&1
+  if [ $? = 0 ]; then
+    for local_fname in ${tgt_dir}/*.xml ; do
+      if [ ! -f "$src_dir/${fil_prefix}`basename ${local_fname}`" ]; then
+        trace "Deleting '$local_fname' since it has no corresponding /weblogic-operator/introspector file."
+        # rm -f $local_fname || exitOrLoop
+      fi
+    done
+  fi
+}
+
+#
 # Check and display input env vars
 #
 
@@ -105,22 +139,9 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
-createFolder ${DOMAIN_HOME}/optconfig
-for local_fname in /weblogic-operator/introspector/*.xml ; do
-  copyIfChanged $local_fname ${DOMAIN_HOME}/optconfig/`basename $local_fname`
-done
-
-#
-# Delete any old situational config files in '${DOMAIN_HOME}/optconfig' 
-# that don't have a corresponding /weblogic-operator/introspector file.
-#
-
-for local_fname in ${DOMAIN_HOME}/optconfig/*.xml ; do
-  if [ ! -f "/weblogic-operator/introspector/`basename $local_fname`" ]; then
-    trace "Deleting '$local_fname' since it has no corresponding /weblogic-operator/introspector file."
-    rm -f $local_fname || exitOrLoop
-  fi
-done
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig       'Custom-Sit-Cfg-CFG--'
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms   'Custom-Sit-Cfg-JMS--'
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc  'Custom-Sit-Cfg-JDBC--'
 
 #
 # Start NM
@@ -135,7 +156,7 @@ trace "Start node manager"
 # Start WL Server
 #
 
-# TBD We should probably || exit 1 if start-server.py itself fails, and dump NM log to stdout
+# TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
 
 trace "Start WebLogic Server via the nodemanager"
 ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
