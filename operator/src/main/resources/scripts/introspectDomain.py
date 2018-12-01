@@ -1,6 +1,8 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
+# TODO update Description as needed
+#
 # ------------
 # Description:
 # ------------
@@ -69,16 +71,17 @@ import inspect
 import distutils.dir_util
 import os
 import shutil
+import re
 from datetime import datetime
 
 # Include this script's current directory in the import path (so we can import traceUtils, etc.)
-sys.path.append('/weblogic-operator/scripts')
+# sys.path.append('/weblogic-operator/scripts')
 
 # Alternative way to dynamically get script's current directory
-#tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
-#tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
-#tmp_scriptdir=os.path.dirname(tmp_info[0])
-#sys.path.append(tmp_scriptdir)
+tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
+tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
+tmp_scriptdir=os.path.dirname(tmp_info[0])
+sys.path.append(tmp_scriptdir)
 
 from traceUtils import *
 
@@ -91,17 +94,33 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID         = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME        = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME           = self.getEnv('LOG_HOME')
+    self.ADMIN_SECRET_NAME  = self.getEnv('ADMIN_SECRET_NAME')
 
     # initialize globals
 
+    # The following 3 globals mush match prefix hard coded in startServer.sh
+    self.CUSTOM_PREFIX_JDBC = 'Custom-Sit-Cfg-JDBC--'
+    self.CUSTOM_PREFIX_JMS  = 'Custom-Sit-Cfg-JMS--'
+    self.CUSTOM_PREFIX_CFG  = 'Custom-Sit-Cfg-CFG--'
+
     self.INTROSPECT_HOME    = '/tmp/introspect/' + self.DOMAIN_UID
     self.TOPOLOGY_FILE      = self.INTROSPECT_HOME + '/topology.yaml'
-    self.CM_FILE            = self.INTROSPECT_HOME + '/situational-config.xml'
+    self.CM_FILE            = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'situational-config.xml'
     self.BOOT_FILE          = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE    = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
 
-    # maintain a list of generated files that we print once introspection completes
+    # The following 4 env vars are for unit testing, their defaults are correct for production.
+    self.ADMIN_SECRET_PATH  = self.getEnvOrDef('ADMIN_SECRET_PATH', '/weblogic-operator/secrets')
+    self.CUSTOM_SECRET_ROOT = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
+    self.CUSTOM_SITCFG_PATH = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
+    self.NM_HOST            = self.getEnvOrDef('NM_HOST', 'localhost')
+
+    # maintain a list of errors that we include in topology.yaml on completion, if any
+
+    self.errors             = []
+
+    # maintain a list of files that we print on completion when there are no errors
 
     self.generatedFiles     = []
 
@@ -128,9 +147,6 @@ class OfflineWlstEnv(object):
   def getDomain(self):
     return self.domain
 
-  def getIntrospectHome():
-    return self.INTROSPECT_HOME
-
   def getDomainUID(self):
     return self.DOMAIN_UID
 
@@ -139,6 +155,12 @@ class OfflineWlstEnv(object):
 
   def getDomainLogHome(self):
     return self.LOG_HOME
+
+  def addError(self, error):
+    self.errors.append(error)
+
+  def getErrors(self):
+    return self.errors
 
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
@@ -191,16 +213,12 @@ class SecretManager(object):
   def __init__(self, env):
     self.env = env
 
-  def readAndEncryptSecret(self, name):
-    cleartext = self.readSecret(name)
+  def encrypt(self, cleartext):
     return self.env.encrypt(cleartext)
 
-  def readSecret(self, name):
-    path = "/weblogic-operator/secrets/" + name
-    file = open(path, 'r')
-    cleartext = file.read()
-    file.close()
-    return cleartext
+  def readAdminSecret(self, key):
+    path = self.env.ADMIN_SECRET_PATH + '/' + key
+    return self.env.readFile(path)
 
 class Generator(SecretManager):
 
@@ -225,6 +243,9 @@ class Generator(SecretManager):
   def indentPrefix(self):
     return self.indentStack[len(self.indentStack)-1]
 
+  def write(self, msg):
+    self.f.write(msg)
+
   def writeln(self, msg):
     self.f.write(self.indentPrefix() + msg + "\n")
 
@@ -241,7 +262,6 @@ class TopologyGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.TOPOLOGY_FILE)
-    self.errors = []
 
   def validate(self):
     self.validateAdminServer()
@@ -271,6 +291,7 @@ class TopologyGenerator(Generator):
     try:
       ret = cluster.getDynamicServers()
     except:
+      trace("Ignoring getDynamicServers() exception, this is expected.")
       ret = None
     return ret
 
@@ -328,7 +349,7 @@ class TopologyGenerator(Generator):
           firstPort = port
         else:
           if port != firstPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstPort) + " but its server " + self.name(server) + "'s listen port is " + str(port) + ".")
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstPort) + " but its server " + self.name(server) + "'s listen port is " + str(port) + ".  All ports for the same channel in a cluster must be the same, including the default channel and the default SSL channel.")
             return
 
   def validateDynamicCluster(self, cluster):
@@ -359,15 +380,15 @@ class TopologyGenerator(Generator):
       self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def isValid(self):
-    return len(self.errors) == 0
+    return len(self.env.getErrors()) == 0
 
   def addError(self, error):
-    self.errors.append(error)
+    self.env.addError(error)
 
   def reportErrors(self):
     self.writeln("domainValid: false")
     self.writeln("validationErrors:")
-    for error in self.errors:
+    for error in self.env.getErrors():
       self.writeln("- \"" + error.replace("\"", "\\\"") + "\"")
 
   def generateTopology(self):
@@ -548,15 +569,19 @@ class BootPropertiesGenerator(Generator):
       self.close()
 
   def addBootProperties(self):
-    self.writeln("username=" + self.readAndEncryptSecret("username"))
-    self.writeln("password=" + self.readAndEncryptSecret("password"))
+    self.writeln("username=" + self.encrypt(self.readAdminSecret("username")))
+    self.writeln("password=" + self.encrypt(self.readAdminSecret("password")))
 
 class UserConfigAndKeyGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.USERKEY_FILE)
+    self.env = env
 
   def generate(self):
+    if not self.env.NM_HOST:
+      # user config&key generation has been disabled for test purposes
+      return
     self.open()
     try:
       # first, generate UserConfig file and add it, also generate UserKey file
@@ -568,8 +593,8 @@ class UserConfigAndKeyGenerator(Generator):
       self.close()
 
   def addUserConfigAndKey(self):
-    username = self.readSecret("username")
-    password = self.readSecret("password")
+    username = self.readAdminSecret("username")
+    password = self.readAdminSecret("password")
     nm_host = 'localhost'
     nm_port = '5556' 
     domain_name = self.env.getDomain().getName()
@@ -626,8 +651,8 @@ class SitConfigGenerator(Generator):
     self.writeln("</d:domain>")
 
   def customizeNodeManagerCreds(self):
-    admin_username = self.readSecret('username')
-    admin_password = self.readAndEncryptSecret('password')
+    admin_username = self.readAdminSecret('username')
+    admin_password = self.encrypt(self.readAdminSecret('password'))
     self.writeln("<d:security-configuration>")
     self.indent()
     self.writeln("<d:node-manager-user-name f:combine-mode=\"replace\">" + admin_username + "</d:node-manager-user-name>")
@@ -649,20 +674,6 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-    if server.getSSL():
-        self.writeln("<d:ssl>")
-        self.indent()
-        self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-        self.undent()
-        self.writeln("</d:ssl>")
-    for nap in server.getNetworkAccessPoints():
-        nap_name=nap.getName()
-        self.writeln("<d:network-access-point>")
-        self.indent()
-        self.writeln("<d:name f:combine-mode=\"replace\">" + nap_name + "</d:name>")
-        self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-        self.undent()
-        self.writeln("</d:network-access-point>")
     self.customizeLog(name)
     self.undent()
     self.writeln("</d:server>")
@@ -692,6 +703,169 @@ class SitConfigGenerator(Generator):
       self.undent()
       self.writeln("</d:log>")
 
+class CustomSitConfigIntrospector(SecretManager):
+
+  def __init__(self, env):
+    SecretManager.__init__(self, env)
+    self.env = env
+    self.macroMap={}
+    self.macroStr=''
+    self.jdbcModuleMap={}
+    self.jdbcModuleStr=''
+    self.jmsModuleMap={}
+    self.jmsModuleStr=''
+
+    # Populate macro map with known secrets and env vars, log them
+    #   env macro format:         'env:<somename>'
+    #   plain text secret macro:  'secret:<somename>'
+    #   encrypted secret macro:   'secret:<somename>:encrypt'
+
+    # TODO factor common part of these two blocks into a helper fn:
+
+    if os.path.exists(self.env.CUSTOM_SECRET_ROOT):
+      for the_secret in os.listdir(self.env.CUSTOM_SECRET_ROOT):
+        the_secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, the_secret)
+        for the_file in os.listdir(the_secret_path):
+          the_file_path = os.path.join(the_secret_path, the_file)
+          if os.path.isfile(the_file_path):
+            val=self.env.readFile(the_file_path)
+            key='secret:' + the_secret + "." + the_file
+            self.macroMap[key] = val
+            self.macroMap[key + ':encrypt'] = self.env.encrypt(val)
+
+    for the_file in os.listdir(self.env.ADMIN_SECRET_PATH):
+      the_file_path = os.path.join(self.env.ADMIN_SECRET_PATH, the_file)
+      if os.path.isfile(the_file_path):
+        val=self.env.readFile(the_file_path)
+        key='secret:' + self.env.ADMIN_SECRET_NAME + "." + the_file
+        self.macroMap[key] = val
+        self.macroMap[key + ':encrypt'] = self.env.encrypt(val)
+
+    self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
+
+    self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
+    self.macroMap['env:DOMAIN_HOME'] = self.env.DOMAIN_HOME
+    self.macroMap['env:LOG_HOME']    = self.env.LOG_HOME
+
+    keys=self.macroMap.keys()
+    keys.sort()
+    for key in keys:
+      val=self.macroMap[key]
+      if self.macroStr:
+        self.macroStr+=', '
+      self.macroStr+='${' + key + '}'
+
+    trace("available macros: '" + self.macroStr + "'")
+
+    # Populate module maps with known module files and names, log them
+
+    # TODO factor common part of these two blocks into a helper fn:
+
+    for module in self.env.getDomain().getJMSSystemResources():
+      mfile=module.getDescriptorFileName()
+      mname=module.getName()
+      self.jmsModuleMap[mfile] = mname
+      if self.jmsModuleStr:
+        self.jmsModuleStr+=', '
+      self.jmsModuleStr+='(name=' + mname +', file=' + mfile + ')'
+
+    trace('Available JMS modules: ' + self.jmsModuleStr)
+
+    for module in self.env.getDomain().getJDBCSystemResources():
+      mfile=module.getDescriptorFileName()
+      mname=module.getName()
+      self.jdbcModuleMap[mfile] = mname
+      if self.jdbcModuleStr:
+        self.jdbcModuleStr+=', '
+      self.jdbcModuleStr+='(name=' + mname +', file=' + mfile + ')'
+
+    trace('Available JDBC modules: ' + self.jdbcModuleStr)
+
+  
+  # validateUnresolvedMacros() 
+  #   Add a validation error if file contents have any unresolved macros
+  #   that contain a ":" in their name. This step is performed after all
+  #   known macros  are  already resolved.  (Other macros are considered 
+  #   valid server template  macros in config.xml,  so we assume they're 
+  #   supposed to remain in the final sit-cfg xml).
+
+  def validateUnresolvedMacros(self, file, filestr):
+
+    errstr=''
+    for unknown_macro in re.findall('\${[a-zA-Z0-9_-]*:[:a-zA-Z0-9_-]*}', filestr):
+      if errstr:
+        errstr=errstr + ", "
+      errstr=errstr + "'" + unknown_macro + "'"
+    if errstr:
+      self.env.addError("Error, unresolvable macro(s) '" + errstr + "'" 
+                        + " in custom sit config file '" + file + "'"
+                        + " Known macros are '" + self.macroStr + "'.")
+
+  # validateFile()
+  #   Add a validation error if a custom sit config file name contains
+  #   a 'jdbc' or a 'jms' but has  no corresponding module file in the
+  #   config.xml in the 'jdbc/' or 'jms/' directories.
+
+  def validateFile(self, file):
+
+    if file.find('jdbc')!=-1 and not self.jdbcModuleMap.has_key('jdbc/' + file):
+      self.env.addError("Error, custom sit config file '" + file + "'" 
+                        + " has no matching config.xml module (a.k.a. 'system resource') configured at location 'jdbc/" + file + "'."
+                        + " Custom sit config files for a jdbc module must have a corresponding 'jdbc/' module file in config.xml."
+                        + " Known jdbc modules are '" + self.jdbcModuleStr + "'.")
+
+    if file.find('jms')!=-1 and not self.jmsModuleMap.has_key('jms/' + file):
+      self.env.addError("Error, custom sit config file '" + file + "'" 
+                        + " has no matching config.xml module (a.k.a. 'system resource') configured at location 'jms/" + file + "'."
+                        + " Custom sit config files for a jdbc module must have a corresponding 'jms/' module file in config.xml."
+                        + " Known jms modules are '" + self.jmsModuleStr + "'.")
+
+  # generateAndValidate()
+  #   For each custom sit-cfg template, generate a file using macro substitution,
+  #   validate that it has a correponding jdbc/jms module if it's a jdbc/jms file,
+  #   and validate that all of its 'secret:' and 'env:' macros are resolvable.
+
+  def generateAndValidate(self):
+    if not os.path.exists(self.env.CUSTOM_SITCFG_PATH):
+      # Directory may not exist if no custom cfg been specified.
+      return
+
+    for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
+
+      the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
+
+      if os.path.isfile(the_file_path):
+
+        trace("Processing custom sit config file '" + the_file + "'")
+
+        # Note/TODO, it might work to use 'substitute' command instead 
+        # of multiple replaces.  See http://www.jython.org/docs/library/string.html,
+        # substitute takes a map and a template str, and replaces macros in the template
+        # using the map values...
+
+        file_str = self.env.readFile(the_file_path)
+        file_str_orig = 'dummyvalue'
+
+        while file_str != file_str_orig:
+          file_str_orig = file_str
+          for key,val in self.macroMap.items():
+            file_str=file_str.replace('${'+key+'}',val)
+
+        filePrefix=self.env.CUSTOM_PREFIX_CFG
+        if the_file.find('jdbc')!=-1:
+          filePrefix=self.env.CUSTOM_PREFIX_JDBC
+        if the_file.find('jms')!=-1:
+          filePrefix=self.env.CUSTOM_PREFIX_JMS
+         
+        gen = Generator(self.env, self.env.INTROSPECT_HOME + '/' + filePrefix + the_file)
+        gen.open()
+        gen.write(file_str)
+        gen.close()
+        gen.addGeneratedFile()
+
+        self.validateFile(the_file)
+        self.validateUnresolvedMacros(the_file, file_str)
+
 class DomainIntrospector(SecretManager):
 
   def __init__(self, env):
@@ -700,10 +874,13 @@ class DomainIntrospector(SecretManager):
 
   def introspect(self):
     tg = TopologyGenerator(self.env)
+
     if tg.validate():
       SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
+
+    CustomSitConfigIntrospector(self.env).generateAndValidate()
 
     # If the topology is invalid, the generated topology
     # file contains a list of one or more validation errors
