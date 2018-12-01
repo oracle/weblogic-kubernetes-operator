@@ -74,6 +74,16 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
+  public Map<String, String> getServiceLabels() {
+    return server.getServiceLabels();
+  }
+
+  @Override
+  public Map<String, String> getServiceAnnotations() {
+    return server.getServiceAnnotations();
+  }
+
+  @Override
   public String getDesiredState() {
     return Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
   }
