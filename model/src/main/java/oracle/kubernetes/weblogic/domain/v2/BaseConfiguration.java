@@ -194,6 +194,22 @@ public abstract class BaseConfiguration {
     serverPod.addPodAnnotations(name, value);
   }
 
+  public Map<String, String> getServiceLabels() {
+    return serverPod.getServiceLabels();
+  }
+
+  void addServiceLabels(String name, String value) {
+    serverPod.addServiceLabel(name, value);
+  }
+
+  public Map<String, String> getServiceAnnotations() {
+    return serverPod.getServiceAnnotations();
+  }
+
+  void addServiceAnnotations(String name, String value) {
+    serverPod.addServiceAnnotations(name, value);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
