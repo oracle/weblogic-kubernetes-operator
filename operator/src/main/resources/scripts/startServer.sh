@@ -139,9 +139,10 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig       'Custom-Sit-Cfg-CFG--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms   'Custom-Sit-Cfg-JMS--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc  'Custom-Sit-Cfg-JDBC--'
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig       'Sit-Cfg-CFG--'
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms   'Sit-Cfg-JMS--'
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc  'Sit-Cfg-JDBC--'
+copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/wldf  'Sit-Cfg-WLDF--'
 
 #
 # Start NM
