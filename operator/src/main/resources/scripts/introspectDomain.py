@@ -99,13 +99,14 @@ class OfflineWlstEnv(object):
     # initialize globals
 
     # The following 3 globals mush match prefix hard coded in startServer.sh
-    self.CUSTOM_PREFIX_JDBC = 'Custom-Sit-Cfg-JDBC--'
-    self.CUSTOM_PREFIX_JMS  = 'Custom-Sit-Cfg-JMS--'
-    self.CUSTOM_PREFIX_CFG  = 'Custom-Sit-Cfg-CFG--'
+    self.CUSTOM_PREFIX_JDBC = 'Sit-Cfg-JDBC--'
+    self.CUSTOM_PREFIX_JMS  = 'Sit-Cfg-JMS--'
+    self.CUSTOM_PREFIX_WLDF = 'Sit-Cfg-WLDF--'
+    self.CUSTOM_PREFIX_CFG  = 'Sit-Cfg-CFG--'
 
     self.INTROSPECT_HOME    = '/tmp/introspect/' + self.DOMAIN_UID
     self.TOPOLOGY_FILE      = self.INTROSPECT_HOME + '/topology.yaml'
-    self.CM_FILE            = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'situational-config.xml'
+    self.CM_FILE            = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'introspector-situational-config.xml'
     self.BOOT_FILE          = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE    = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
@@ -710,38 +711,21 @@ class CustomSitConfigIntrospector(SecretManager):
     self.env = env
     self.macroMap={}
     self.macroStr=''
-    self.jdbcModuleMap={}
-    self.jdbcModuleStr=''
-    self.jmsModuleMap={}
-    self.jmsModuleStr=''
+    self.moduleMap={}
+    self.moduleStr=''
 
     # Populate macro map with known secrets and env vars, log them
     #   env macro format:         'env:<somename>'
     #   plain text secret macro:  'secret:<somename>'
     #   encrypted secret macro:   'secret:<somename>:encrypt'
 
-    # TODO factor common part of these two blocks into a helper fn:
-
     if os.path.exists(self.env.CUSTOM_SECRET_ROOT):
-      for the_secret in os.listdir(self.env.CUSTOM_SECRET_ROOT):
-        the_secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, the_secret)
-        for the_file in os.listdir(the_secret_path):
-          the_file_path = os.path.join(the_secret_path, the_file)
-          if os.path.isfile(the_file_path):
-            val=self.env.readFile(the_file_path)
-            key='secret:' + the_secret + "." + the_file
-            self.macroMap[key] = val
-            self.macroMap[key + ':encrypt'] = self.env.encrypt(val)
+      for secret_name in os.listdir(self.env.CUSTOM_SECRET_ROOT):
+        secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, secret_name)
+        self.addSecretsFromDirectory(secret_path, secret_name)
 
-    for the_file in os.listdir(self.env.ADMIN_SECRET_PATH):
-      the_file_path = os.path.join(self.env.ADMIN_SECRET_PATH, the_file)
-      if os.path.isfile(the_file_path):
-        val=self.env.readFile(the_file_path)
-        key='secret:' + self.env.ADMIN_SECRET_NAME + "." + the_file
-        self.macroMap[key] = val
-        self.macroMap[key + ':encrypt'] = self.env.encrypt(val)
-
-    self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
+    self.addSecretsFromDirectory(self.env.ADMIN_SECRET_PATH, 
+                                 self.env.ADMIN_SECRET_NAME)
 
     self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
     self.macroMap['env:DOMAIN_HOME'] = self.env.DOMAIN_HOME
@@ -759,112 +743,155 @@ class CustomSitConfigIntrospector(SecretManager):
 
     # Populate module maps with known module files and names, log them
 
-    # TODO factor common part of these two blocks into a helper fn:
+    self.jdbcModuleStr = self.buildModuleTable(
+                           'jdbc', 
+                           self.env.getDomain().getJDBCSystemResources(),
+                           self.env.CUSTOM_PREFIX_JDBC)
 
-    for module in self.env.getDomain().getJMSSystemResources():
-      mfile=module.getDescriptorFileName()
+    self.jmsModuleStr = self.buildModuleTable(
+                           'jms', 
+                           self.env.getDomain().getJMSSystemResources(),
+                           self.env.CUSTOM_PREFIX_JMS)
+
+    self.wldfModuleStr = self.buildModuleTable(
+                           'wldf', 
+                           self.env.getDomain().getWLDFSystemResources(),
+                           self.env.CUSTOM_PREFIX_WLDF)
+
+    trace('Available modules: ' + self.moduleStr)
+
+
+  def addSecretsFromDirectory(self, secret_path, secret_name):
+    for the_file in os.listdir(secret_path):
+      the_file_path = os.path.join(secret_path, the_file)
+      if os.path.isfile(the_file_path):
+        val=self.env.readFile(the_file_path)
+        key='secret:' + secret_name + "." + the_file
+        self.macroMap[key] = val
+        self.macroMap[key + ':encrypt'] = self.env.encrypt(val)
+
+
+  def buildModuleTable(self, moduleTypeStr, moduleResourceBeans, customPrefix):
+
+    # - Populate global 'moduleMap' with key of 'moduletype-modulename.xml'
+    #   andvalue of 'module system resource file name' + '-situational-config.xml'.
+    # - Populate global 'moduleStr' with list of known modules.
+    # - Generate validation error if a module is not located in a config subdirectory
+    #   that matches its type (e.g. jdbc modules are expected to be in directory 'jdbc').
+
+    if self.moduleStr:
+      self.moduleStr += ', '
+    self.moduleStr += 'type.' + moduleTypeStr + "=("
+    firstModule=true
+
+    for module in moduleResourceBeans:
+
       mname=module.getName()
-      self.jmsModuleMap[mfile] = mname
-      if self.jmsModuleStr:
-        self.jmsModuleStr+=', '
-      self.jmsModuleStr+='(name=' + mname +', file=' + mfile + ')'
-
-    trace('Available JMS modules: ' + self.jmsModuleStr)
-
-    for module in self.env.getDomain().getJDBCSystemResources():
       mfile=module.getDescriptorFileName()
-      mname=module.getName()
-      self.jdbcModuleMap[mfile] = mname
-      if self.jdbcModuleStr:
-        self.jdbcModuleStr+=', '
-      self.jdbcModuleStr+='(name=' + mname +', file=' + mfile + ')'
 
-    trace('Available JDBC modules: ' + self.jdbcModuleStr)
+      if os.path.dirname(mfile) != moduleTypeStr:
+        self.env.addError(
+          "Error, the operator expects module files of type '" + moduleTypeStr + "'"
+          + " to be located in directory '" + moduleTypeStr + "/'"
+          + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
+          + " is configured with DescriptorFileName='" + mfile + "'.")      
 
-  
-  # validateUnresolvedMacros() 
-  #   Add a validation error if file contents have any unresolved macros
-  #   that contain a ":" in their name. This step is performed after all
-  #   known macros  are  already resolved.  (Other macros are considered 
-  #   valid server template  macros in config.xml,  so we assume they're 
-  #   supposed to remain in the final sit-cfg xml).
+      if mfile.count(".xml") != 1 or mfile.find(".xml") + 4 != len(mfile):
+        self.env.AddError(
+          "Error, the operator expects system resource module files"
+          + " to end in '.xml'"
+          + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
+          + " is configured with DescriptorFileName='" + mfile + "'.")      
+
+      if not firstModule:
+        self.moduleStr += ", "
+      firstModule=false
+      self.moduleStr += "'" + mname + "'";
+
+      mfile=os.path.basename(mfile)
+      mfile=mfile.replace(".xml","-situational-config.xml")
+      mfile=customPrefix + mfile
+
+      self.moduleMap[moduleTypeStr + '-' + mname + '.xml'] = mfile
+
+    # end of for loop
+
+    self.moduleStr += ')' 
+
 
   def validateUnresolvedMacros(self, file, filestr):
 
-    errstr=''
-    for unknown_macro in re.findall('\${[a-zA-Z0-9_-]*:[:a-zA-Z0-9_-]*}', filestr):
+    # Add a validation error if file contents have any unresolved macros
+    # that contain a ":" or "." in  their name.  This step  is performed
+    # after all known macros  are  already resolved.  (Other  macros are
+    # considered  valid  server  template  macros in  config.xml,  so we
+    # assume they're supposed to remain in the final sit-cfg xml).
+
+    errstr = ''
+    for unknown_macro in re.findall('\${[^}]*(:|.)[^}]*}', filestr):
       if errstr:
-        errstr=errstr + ", "
-      errstr=errstr + "'" + unknown_macro + "'"
+        errstr += ","
+      errstr += unknown_macro
     if errstr:
       self.env.addError("Error, unresolvable macro(s) '" + errstr + "'" 
-                        + " in custom sit config file '" + file + "'"
+                        + " in custom sit config file '" + file + "'."
                         + " Known macros are '" + self.macroStr + "'.")
 
-  # validateFile()
-  #   Add a validation error if a custom sit config file name contains
-  #   a 'jdbc' or a 'jms' but has  no corresponding module file in the
-  #   config.xml in the 'jdbc/' or 'jms/' directories.
-
-  def validateFile(self, file):
-
-    if file.find('jdbc')!=-1 and not self.jdbcModuleMap.has_key('jdbc/' + file):
-      self.env.addError("Error, custom sit config file '" + file + "'" 
-                        + " has no matching config.xml module (a.k.a. 'system resource') configured at location 'jdbc/" + file + "'."
-                        + " Custom sit config files for a jdbc module must have a corresponding 'jdbc/' module file in config.xml."
-                        + " Known jdbc modules are '" + self.jdbcModuleStr + "'.")
-
-    if file.find('jms')!=-1 and not self.jmsModuleMap.has_key('jms/' + file):
-      self.env.addError("Error, custom sit config file '" + file + "'" 
-                        + " has no matching config.xml module (a.k.a. 'system resource') configured at location 'jms/" + file + "'."
-                        + " Custom sit config files for a jdbc module must have a corresponding 'jms/' module file in config.xml."
-                        + " Known jms modules are '" + self.jmsModuleStr + "'.")
-
-  # generateAndValidate()
-  #   For each custom sit-cfg template, generate a file using macro substitution,
-  #   validate that it has a correponding jdbc/jms module if it's a jdbc/jms file,
-  #   and validate that all of its 'secret:' and 'env:' macros are resolvable.
 
   def generateAndValidate(self):
+
+    # For each custom sit-cfg template, generate a file using macro substitution,
+    # validate that it has a correponding module if it's a module override file,
+    # and validate that all of its 'secret:' and 'env:' macros are resolvable.
+
     if not os.path.exists(self.env.CUSTOM_SITCFG_PATH):
-      # Directory may not exist if no custom cfg been specified.
       return
 
     for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
 
       the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
 
-      if os.path.isfile(the_file_path):
+      if not os.path.isfile(the_file_path):
+        continue
 
-        trace("Processing custom sit config file '" + the_file + "'")
+      trace("Processing custom sit config file '" + the_file + "'")
 
-        # Note/TODO, it might work to use 'substitute' command instead 
-        # of multiple replaces.  See http://www.jython.org/docs/library/string.html,
-        # substitute takes a map and a template str, and replaces macros in the template
-        # using the map values...
+      # check if file name corresponds with config.xml or a module
 
-        file_str = self.env.readFile(the_file_path)
-        file_str_orig = 'dummyvalue'
+      if not self.moduleMap.has_key(the_file) and the_file != "config.xml":
+        self.env.addError("Error, custom sit config override file '" + the_file + "'" 
+          + " is not named 'config.xml' or has no matching system resource"
+          + " module. Custom sit config files must be named 'config.xml'"
+          + " to override config.xml or 'moduletype-modulename.xml' to override"
+          + " a module. Known module names for each type: " + self.moduleStr + ".")
+        continue
 
-        while file_str != file_str_orig:
-          file_str_orig = file_str
-          for key,val in self.macroMap.items():
-            file_str=file_str.replace('${'+key+'}',val)
+      # substitute macros and validate unresolved macros
 
-        filePrefix=self.env.CUSTOM_PREFIX_CFG
-        if the_file.find('jdbc')!=-1:
-          filePrefix=self.env.CUSTOM_PREFIX_JDBC
-        if the_file.find('jms')!=-1:
-          filePrefix=self.env.CUSTOM_PREFIX_JMS
-         
-        gen = Generator(self.env, self.env.INTROSPECT_HOME + '/' + filePrefix + the_file)
-        gen.open()
-        gen.write(file_str)
-        gen.close()
-        gen.addGeneratedFile()
+      file_str = self.env.readFile(the_file_path)
+      file_str_orig = 'dummyvalue'
+      while file_str != file_str_orig:
+        file_str_orig = file_str
+        for key,val in self.macroMap.items():
+          file_str=file_str.replace('${'+key+'}',val)
 
-        self.validateFile(the_file)
-        self.validateUnresolvedMacros(the_file, file_str)
+      self.validateUnresolvedMacros(the_file, file_str)
+
+      # put resolved template into a file
+
+      genfile = self.env.INTROSPECT_HOME + '/';
+
+      if the_file == 'config.xml':
+        genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml' 
+      else:
+        genfile += self.moduleMap[the_file]
+
+      gen = Generator(self.env, genfile)
+      gen.open()
+      gen.write(file_str)
+      gen.close()
+      gen.addGeneratedFile()
+
 
 class DomainIntrospector(SecretManager):
 
