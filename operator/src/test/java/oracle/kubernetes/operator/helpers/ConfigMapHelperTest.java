@@ -58,7 +58,6 @@ public class ConfigMapHelperTest {
   private static final String DOMAIN_UID = "domainUID1";
   static final String[] SCRIPT_NAMES = {
     "livenessProbe.sh",
-    "readinessProbe.sh",
     "readState.sh",
     "start-server.py",
     "startServer.sh",
