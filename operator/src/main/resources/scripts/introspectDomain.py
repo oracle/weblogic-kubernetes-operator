@@ -1,26 +1,20 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-# TODO update Description as needed
-#
 # ------------
 # Description:
 # ------------
 #
 #   This code reads the configuration in a WL domain's domain home, and generates
 #   multiple files that are copied to stdout.  It also checks whether the domain
-#   configuration is 'valid' (suitable for running in k8s).
+#   configuration is 'valid' (suitable for running in k8s).  Finally, it 
+#   populates customer supplied 'configOverrides' templates.
 #
 #   This code is used by the operator to introspect and validate an arbitrary
-#   WL domain before its pods are started.  It generates topology information that's
+#   WL domain before its pods are started.  It generates information that's
 #   useful for running the domain, setting up its networking, and for overriding
 #   specific parts of its configuration so that it can run in k8s.
 # 
-#   The configuration overrides are specified via situational config file(s), and 
-#   include listen addresses, log file locations, etc.  Additional information
-#   is provided in other files -- including encrypted credentials, domain
-#   topology (server names, etc), and any validation warnings/errors.
-#
 #   For more details, see the Description in instrospectDomain.sh (which
 #   calls this script).
 #
@@ -38,10 +32,17 @@
 #     /weblogic-operator/secrets/username 
 #     /weblogic-operator/secrets/password
 #
+#   Optional custom sit cfg 'configOverrides' templates in:
+#     /weblogic-operator/config-overrides-secrets
+#
+#   Optional custom sit cfg 'configOverridesSecrets' in:
+#     /weblogic-operator/config-overrides-secrets/<secret-name>/<key>
+#
 #   The following env vars:
-#     DOMAIN_UID  - completely unique id for this domain
-#     DOMAIN_HOME - path for the domain configuration
-#     LOG_HOME    - path to override WebLogic server log locations
+#     DOMAIN_UID         - completely unique id for this domain
+#     DOMAIN_HOME        - path for the domain configuration
+#     LOG_HOME           - path to override WebLogic server log locations
+#     ADMIN_SECRET_NAME  - name of secret containing admin credentials
 #
 # ---------------------------------
 # Outputs (files copied to stdout):
@@ -50,17 +51,29 @@
 #   topology.yaml                  -- Domain configuration summary for operator (server names, etc).
 #                                           -and/or-
 #                                     Domain validation warnings/errors. 
-#   situational-config.xml         -- Overrides for domain configuration (listen addresses, etc).
+#
+#   Sit-Cfg-CFG--introspector-situational-config.xml  
+#                                  -- Automatic sit cfg overrides for domain configuration
+#                                     (listen addresses, etc).
+#
+#   Sit-Cfg-*                      -- Expanded optional configOverrides sit cfg templates
+#
 #   boot.properties                -- Encoded credentials for starting WL.
 #   userConfigNodeManager.secure   -- Encoded credentials for starting NM in a WL pod.
-#   userKeyNodeManager.secure'     -- Encoded credentials for starting NM in a WL pod.
+#   userKeyNodeManager.secure      -- Encoded credentials for starting NM in a WL pod.
 #
+# 
 # Note:
 #
 #   This code partly depends on a node manager so that we can use it to encrypt 
 #   the username and password and put them into files that can be used to connect
 #   to the node manager later in the server pods (so that the server pods don't
 #   have to mount the secret containing the username and password).
+#
+#   The configuration overrides are specified via situational config file(s), and 
+#   include listen addresses, log file locations, etc.  Additional information
+#   is provided in other files -- including encrypted credentials, domain
+#   topology (server names, etc), and any validation warnings/errors.
 #
 
 
@@ -828,7 +841,11 @@ class CustomSitConfigIntrospector(SecretManager):
     # assume they're supposed to remain in the final sit-cfg xml).
 
     errstr = ''
-    for unknown_macro in re.findall('\${[^}]*(:|.)[^}]*}', filestr):
+    for unknown_macro in re.findall('\${[^}]*:[^}]*}', filestr):
+      if errstr:
+        errstr += ","
+      errstr += unknown_macro
+    for unknown_macro in re.findall('\${[^}]*[.][^}]*}', filestr):
       if errstr:
         errstr += ","
       errstr += unknown_macro
