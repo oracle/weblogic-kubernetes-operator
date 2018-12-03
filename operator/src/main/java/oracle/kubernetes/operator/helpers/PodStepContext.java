@@ -6,12 +6,14 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
+import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -58,8 +60,9 @@ public abstract class PodStepContext implements StepContextConstants {
 
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
-  private static final String READINESS_PROBE = "/weblogic-operator/scripts/readinessProbe.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
+
+  private static final String READINESS_PATH = "/weblogic";
 
   private final DomainPresenceInfo info;
   private final Step conflictStep;
@@ -647,8 +650,11 @@ public abstract class PodStepContext implements StepContextConstants {
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
-            .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+
+    if (!mockWLS()) {
+      v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));
+    }
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
@@ -696,7 +702,7 @@ public abstract class PodStepContext implements StepContextConstants {
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
-    if (Boolean.getBoolean("mockWLS")) {
+    if (mockWLS()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }
     hideAdminUserCredentials(vars);
@@ -765,8 +771,14 @@ public abstract class PodStepContext implements StepContextConstants {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
-        .exec(execAction(READINESS_PROBE));
+        .httpGet(httpGetAction(READINESS_PATH, getPort()));
     return readinessProbe;
+  }
+
+  private V1HTTPGetAction httpGetAction(String path, int port) {
+    V1HTTPGetAction getAction = new V1HTTPGetAction();
+    getAction.path(path).port(new IntOrString(port));
+    return getAction;
   }
 
   private int getReadinessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
@@ -806,5 +818,9 @@ public abstract class PodStepContext implements StepContextConstants {
   private int getLivenessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getPeriodSeconds())
         .orElse(tuning.livenessProbePeriodSeconds);
+  }
+
+  private boolean mockWLS() {
+    return Boolean.getBoolean("mockWLS");
   }
 }
