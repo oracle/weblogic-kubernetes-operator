@@ -472,7 +472,6 @@ public class ConfigMapHelperTest {
           + "validationErrors:\n"
           + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
 
-
   @Test
   public void parseDomainTopologyYaml() {
     ConfigMapHelper.DomainTopology domainTopology =
@@ -597,7 +596,8 @@ public class ConfigMapHelperTest {
 
     assertNotNull(domainTopology.getValidationErrors());
     assertFalse(domainTopology.getDomainValid());
-    assertEquals("The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",domainTopology.getValidationErrors().get(0));
-
+    assertEquals(
+        "The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",
+        domainTopology.getValidationErrors().get(0));
   }
-  }
+}
