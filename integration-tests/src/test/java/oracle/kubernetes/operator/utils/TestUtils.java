@@ -359,11 +359,13 @@ public class TestUtils {
           logger.info("Sleeping 5 more seconds and try again");
           Thread.sleep(5 * 1000);
           continue;
+        } else {
+          throw ex;
         }
       }
       break;
     }
-    logger.info("response: " + response.toString());
+    logger.info("response: " + response);
 
     int returnCode = response.getStatus();
     // Verify
@@ -373,10 +375,8 @@ public class TestUtils {
     } else {
       throw new RuntimeException("Response " + response.readEntity(String.class));
     }
-
     response.close();
     // javaClient.close();
-
     return returnCode;
   }
 

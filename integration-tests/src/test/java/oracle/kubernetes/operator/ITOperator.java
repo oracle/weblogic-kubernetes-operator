@@ -43,12 +43,13 @@ public class ITOperator extends BaseTest {
   private static final String domain1ForDelValueYamlFile = "domain_del_1.yaml";
   private static final String domain2ForDelValueYamlFile = "domain_del_2.yaml";
   private static final String domain3ForDelValueYamlFile = "domain_del_3.yaml";
+  private static String domain9YamlFile = "domain9.yaml";
+  private static String domain10YamlFile = "domain10.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
 
   private static Operator operator1, operator2;
-  private static Domain domain1;
 
   private static Operator operatorForDel1;
   private static Operator operatorForDel2;
@@ -101,9 +102,9 @@ public class ITOperator extends BaseTest {
 
     logTestBegin("test1CreateFirstOperatorAndDomain");
     testCreateOperatorManagingDefaultAndTest1NS();
-    domain1 = testAllUseCasesForADomain(operator1, domain1YamlFile);
+    Domain domain1 = testAllUseCasesForADomain(operator1, domain1YamlFile);
     domain1.testWlsLivenessProbe();
-    domain1.destroy();
+    domain1.shutdownUsingServerStartPolicy();
 
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
@@ -167,34 +168,31 @@ public class ITOperator extends BaseTest {
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
-    if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1YamlFile);
-    } else {
-      domain1.create();
-    }
+    Domain domain4 = TestUtils.createDomain(domain4YamlFile);
+
     logger.info("Checking if operator2 is running, if not creating");
     if (operator2 == null) {
       operator2 = TestUtils.createOperator(op2YamlFile);
     }
-    // create domain4
-    Domain domain4 = testDomainCreation(domain4YamlFile);
+    // create domain5 with configured cluster
+    Domain domain5 = testDomainCreation(domain5YamlFile);
 
-    logger.info("Verify the only remaining running domain domain1 is unaffected");
-    domain1.verifyDomainCreated();
-
-    testClusterScaling(operator2, domain4);
-
-    logger.info("Verify the only remaining running domain domain1 is unaffected");
-    domain1.verifyDomainCreated();
-
-    logger.info("Destroy and create domain1 and verify no impact on domain4");
-    domain1.destroy();
-    domain1.create();
-
-    logger.info("Verify no impact on domain4");
+    logger.info("Verify the only remaining running domain domain4 is unaffected");
     domain4.verifyDomainCreated();
+
+    testClusterScaling(operator2, domain5);
+
+    logger.info("Verify the only remaining running domain domain4 is unaffected");
+    domain4.verifyDomainCreated();
+
+    logger.info("Destroy and create domain4 and verify no impact on domain5");
     domain4.destroy();
-    domain1.destroy();
+    domain4.create();
+
+    logger.info("Verify no impact on domain5");
+    domain5.verifyDomainCreated();
+    domain5.destroy();
+    domain4.destroy();
     logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
   }
 
@@ -208,10 +206,10 @@ public class ITOperator extends BaseTest {
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
-    logger.info("Creating Domain domain5 & verifing the domain creation");
-    // create domain5
-    Domain domain5 = TestUtils.createDomain(domain5YamlFile);
-    domain5.destroy();
+    logger.info("Creating Domain domain6 & verifing the domain creation");
+    // create domain6
+    Domain domain6 = TestUtils.createDomain(domain6YamlFile);
+    domain6.destroy();
     logger.info("SUCCESS - test6CreateDomainWithStartPolicyAdminOnly");
   }
 
@@ -225,31 +223,30 @@ public class ITOperator extends BaseTest {
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
-    logger.info("Creating Domain domain6 & verifing the domain creation");
-    // create domain6
-    Domain domain6 = TestUtils.createDomain(domain6YamlFile);
-    domain6.shutdown();
-    domain6.deletePVCAndCheckPVReleased();
+    logger.info("Creating Domain domain7 & verifing the domain creation");
+    // create domain7
+    Domain domain7 = TestUtils.createDomain(domain7YamlFile);
+    domain7.shutdown();
+    domain7.deletePVCAndCheckPVReleased();
     logger.info("SUCCESS - test7CreateDomainPVReclaimPolicyRecycle");
   }
 
   @Test
-  public void test9CreateDomainOnExistingDir() throws Exception {
+  public void test8CreateDomainOnExistingDir() throws Exception {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
 
-    logTestBegin("test9CreateDomainOnExistingDir");
+    logTestBegin("test8CreateDomainOnExistingDir");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
-    if (domain1 == null) {
-      domain1 = TestUtils.createDomain(domain1YamlFile);
-      // create domain on existing dir
-      domain1.destroy();
-    }
-    logger.info("domain1 " + domain1);
-    domain1.createDomainOnExistingDirectory();
-    logger.info("SUCCESS - test9CreateDomainOnExistingDir");
+
+    Domain domain8 = TestUtils.createDomain(domain8YamlFile);
+    // create domain on existing dir
+    domain8.destroy();
+
+    domain8.createDomainOnExistingDirectory();
+    logger.info("SUCCESS - test8CreateDomainOnExistingDir");
   }
 
   // @Test
@@ -257,15 +254,15 @@ public class ITOperator extends BaseTest {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logTestBegin("testACreateDomainApacheLB");
-    logger.info("Creating Domain domain7 & verifing the domain creation");
+    logger.info("Creating Domain domain9 & verifing the domain creation");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
 
     // create domain7
-    Domain domain7 = TestUtils.createDomain(domain7YamlFile);
-    domain7.verifyAdminConsoleViaLB();
-    domain7.destroy();
+    Domain domain9 = TestUtils.createDomain(domain9YamlFile);
+    domain9.verifyAdminConsoleViaLB();
+    domain9.destroy();
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
 
@@ -274,14 +271,14 @@ public class ITOperator extends BaseTest {
     Assume.assumeFalse(
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
     logTestBegin("testBCreateDomainWithDefaultValuesInSampleInputs");
-    logger.info("Creating Domain domain8 & verifing the domain creation");
+    logger.info("Creating Domain domain10 & verifing the domain creation");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
 
-    // create domain8
-    Domain domain8 = testAllUseCasesForADomain(operator1, domain8YamlFile);
-    domain8.destroy();
+    // create domain10
+    Domain domain10 = testAllUseCasesForADomain(operator1, domain10YamlFile);
+    domain10.destroy();
     logger.info("SUCCESS - testBCreateDomainWithDefaultValuesInSampleInputs");
   }
 
