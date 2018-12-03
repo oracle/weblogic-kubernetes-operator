@@ -28,6 +28,8 @@ public class ITOperator extends BaseTest {
   // property file used to customize operator properties for operator inputs yaml
   private static String op1YamlFile = "operator1.yaml";
   private static String op2YamlFile = "operator2.yaml";
+  private static final String opForDelYamlFile1 = "operator_del1.yaml";
+  private static final String opForDelYamlFile2 = "operator_del2.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -38,6 +40,9 @@ public class ITOperator extends BaseTest {
   private static String domain6YamlFile = "domain6.yaml";
   private static String domain7YamlFile = "domain7.yaml";
   private static String domain8YamlFile = "domain8.yaml";
+  private static final String domain1ForDelValueYamlFile = "domain_del_1.yaml";
+  private static final String domain2ForDelValueYamlFile = "domain_del_2.yaml";
+  private static final String domain3ForDelValueYamlFile = "domain_del_3.yaml";
   private static String domain9YamlFile = "domain9.yaml";
   private static String domain10YamlFile = "domain10.yaml";
 
@@ -45,6 +50,9 @@ public class ITOperator extends BaseTest {
   private static String appPropsFile = "OperatorIT.properties";
 
   private static Operator operator1, operator2;
+
+  private static Operator operatorForDel1;
+  private static Operator operatorForDel2;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -272,6 +280,50 @@ public class ITOperator extends BaseTest {
     Domain domain10 = testAllUseCasesForADomain(operator1, domain10YamlFile);
     domain10.destroy();
     logger.info("SUCCESS - testBCreateDomainWithDefaultValuesInSampleInputs");
+  }
+
+  @Test
+  public void testDeleteOneDomain() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    logTestBegin("Deleting one domain.");
+
+    if (operatorForDel1 == null) {
+      logger.info("About to create operator");
+      operatorForDel1 = TestUtils.createOperator(opForDelYamlFile1);
+    }
+    final Domain domain = TestUtils.createDomain(domain1ForDelValueYamlFile);
+    TestUtils.verifyBeforeDeletion(domain);
+
+    logger.info("About to delete domain: " + domain.getDomainUid());
+    TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+
+    TestUtils.verifyAfterDeletion(domain);
+  }
+
+  @Test
+  public void testDeleteTwoDomains() throws Exception {
+    Assume.assumeFalse(
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    logTestBegin("Deleting two domains.");
+
+    if (operatorForDel2 == null) {
+      logger.info("About to create operator");
+      operatorForDel2 = TestUtils.createOperator(opForDelYamlFile2);
+    }
+    final Domain domainDel1 = TestUtils.createDomain(domain2ForDelValueYamlFile);
+    final Domain domainDel2 = TestUtils.createDomain(domain3ForDelValueYamlFile);
+
+    TestUtils.verifyBeforeDeletion(domainDel1);
+    TestUtils.verifyBeforeDeletion(domainDel2);
+
+    final String domainUidsToBeDeleted =
+        domainDel1.getDomainUid() + "," + domainDel2.getDomainUid();
+    logger.info("About to delete domains: " + domainUidsToBeDeleted);
+    TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+
+    TestUtils.verifyAfterDeletion(domainDel1);
+    TestUtils.verifyAfterDeletion(domainDel2);
   }
 
   private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
