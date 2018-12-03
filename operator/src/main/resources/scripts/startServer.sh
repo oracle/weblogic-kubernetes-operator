@@ -86,7 +86,7 @@ function copySitCfg() {
   if [ $? = 0 ]; then
     for local_fname in ${tgt_dir}/*.xml ; do
       if [ ! -f "$src_dir/${fil_prefix}`basename ${local_fname}`" ]; then
-        trace "Deleting '$local_fname' since it has no corresponding /weblogic-operator/introspector file."
+        trace "Deleting '$local_fname' since it has no corresponding '$src_dir' file."
         rm -f $local_fname || exitOrLoop
       fi
     done
