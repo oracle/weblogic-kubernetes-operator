@@ -636,12 +636,27 @@ public class Domain {
   }
 
   private void createSecret() throws Exception {
-    new Secret(
-        domainNS,
-        domainMap.getOrDefault("secretName", domainUid + "-weblogic-credentials").toString(),
-        BaseTest.getUsername(),
-        BaseTest.getPassword());
-    domainMap.put("weblogicCredentialsSecretName", domainUid + "-weblogic-credentials");
+    Secret secret =
+        new Secret(
+            domainNS,
+            domainMap.getOrDefault("secretName", domainUid + "-weblogic-credentials").toString(),
+            BaseTest.getUsername(),
+            BaseTest.getPassword());
+    domainMap.put("weblogicCredentialsSecretName", secret.getSecretName());
+    final String labelCmd =
+        String.format(
+            "kubectl label secret %s weblogic.domainUID=%s -n %s",
+            secret.getSecretName(), domainUid, domainNS);
+    ExecResult result = ExecCommand.exec(labelCmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to label secret \""
+              + labelCmd
+              + "\" failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
   }
 
   private void generateInputYaml() throws Exception {
