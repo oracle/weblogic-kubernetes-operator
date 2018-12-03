@@ -12,11 +12,17 @@ DN=${DOMAIN_NAME?}
 SN=${SERVER_NAME?}
 DH=${DOMAIN_HOME?}
 
-STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
+if [ -z $MOCK_WLS ]; then
+  exit 0
+fi
 
-if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
-  echo "Error: WebLogic NodeManager process not found."
-  exit 1
+STATEFILE=${DH}/servers/${SN}/data/nodemanager/${SN}.state
+
+if [ "${MOCK_WLS}" != 'true' ]; then
+  if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
+    echo "Error: WebLogic NodeManager process not found."
+    exit $RETVAL
+  fi
 fi
 
 if [ ! -f ${STATEFILE} ]; then
