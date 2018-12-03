@@ -24,7 +24,6 @@ import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
@@ -183,10 +182,6 @@ public abstract class PodStepContext implements StepContextConstants {
   abstract Integer getPort();
 
   abstract String getServerName();
-
-  private String getAdminSecretName() {
-    return getDomain().getAdminSecret().getName();
-  }
 
   private List<V1PersistentVolumeClaim> getClaims() {
     return info.getClaims().getItems();
@@ -583,10 +578,6 @@ public abstract class PodStepContext implements StepContextConstants {
                     .securityContext(getServerSpec().getContainerSecurityContext()))
             .addVolumesItem(
                 new V1Volume()
-                    .name(SECRETS_VOLUME)
-                    .secret(new V1SecretVolumeSource().secretName(getAdminSecretName())))
-            .addVolumesItem(
-                new V1Volume()
                     .name(SCRIPTS_VOLUME)
                     .configMap(
                         new V1ConfigMapVolumeSource()
@@ -647,7 +638,6 @@ public abstract class PodStepContext implements StepContextConstants {
             .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
             .lifecycle(createLifecycle())
             .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
