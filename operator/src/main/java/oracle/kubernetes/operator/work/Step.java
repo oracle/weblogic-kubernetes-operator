@@ -71,7 +71,13 @@ public abstract class Step {
     if (idx >= 0) {
       name = name.substring(idx + 1, name.length());
     }
-    return name.endsWith("Step") ? name.substring(0, name.length() - 4) : name;
+    name = name.endsWith("Step") ? name.substring(0, name.length() - 4) : name;
+    String detail = getDetail();
+    return detail != null ? name + "(" + detail + ")" : name;
+  }
+
+  protected String getDetail() {
+    return null;
   }
 
   /**
