@@ -467,6 +467,12 @@ public class ConfigMapHelperTest {
           + "      listenPort: 7001\n"
           + "      listenAddress: \"domain1-admin-server\"\n";
 
+  private static final String INVALID_TOPOLOGY =
+      "domainValid: false\n"
+          + "validationErrors:\n"
+          + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
+
+
   @Test
   public void parseDomainTopologyYaml() {
     ConfigMapHelper.DomainTopology domainTopology =
@@ -583,4 +589,15 @@ public class ConfigMapHelperTest {
     assertEquals(3, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(5, wlsClusterConfig.getServerConfigs().size());
   }
-}
+
+  @Test
+  public void parseInvalidTopologyYamlWithValidationErrors() {
+    ConfigMapHelper.DomainTopology domainTopology =
+        ConfigMapHelper.parseDomainTopologyYaml(INVALID_TOPOLOGY);
+
+    assertNotNull(domainTopology.getValidationErrors());
+    assertFalse(domainTopology.getDomainValid());
+    assertEquals("The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",domainTopology.getValidationErrors().get(0));
+
+  }
+  }
