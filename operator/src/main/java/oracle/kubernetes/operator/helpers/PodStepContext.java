@@ -696,6 +696,9 @@ public abstract class PodStepContext implements StepContextConstants {
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
+    if (Boolean.getBoolean("mockWLS")) {
+      addEnvVar(vars, "MOCK_WLS", "true");
+    }
     hideAdminUserCredentials(vars);
   }
 
