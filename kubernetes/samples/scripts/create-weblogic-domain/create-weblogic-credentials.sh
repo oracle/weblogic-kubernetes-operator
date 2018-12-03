@@ -9,11 +9,7 @@
 #    * The kubernetes namespace must already be created
 #
 
-# Initialize
 script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-# source ${scriptDir}/../common/utility.sh
-# source ${scriptDir}/../common/validate.sh
 
 #
 # Function to exit and print an error message
@@ -23,7 +19,7 @@ function fail {
   exit 1
 }
 
-# try to execute kubectl to see whether kubectl is available
+# Try to execute kubectl to see whether kubectl is available
 function validateKubectlAvailable {
   if ! [ -x "$(command -v kubectl)" ]; then
     fail "kubectl is not installed"
@@ -31,7 +27,7 @@ function validateKubectlAvailable {
 }
 
 function usage {
-  echo usage: ${script} -u userName -p password [-d domainUID] [-n name] [-h]
+  echo usage: ${script} -u username -p password [-d domainUID] [-n namespace] [-h]
   echo "  -u username, must be specified."
   echo "  -p password, must be specified."
   echo "  -n namespace, optional."
