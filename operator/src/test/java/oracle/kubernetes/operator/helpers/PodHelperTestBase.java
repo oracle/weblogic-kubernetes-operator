@@ -34,6 +34,7 @@ import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Lifecycle;
@@ -303,9 +304,9 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
-    assertThat(
-        getCreatedPodSpecContainer().getReadinessProbe().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/readinessProbe.sh"));
+    V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
+    assertThat(getAction.getPath(), equalTo("/weblogic"));
+    assertThat(getAction.getPort().getIntValue(), equalTo(listenPort));
   }
 
   @Test
