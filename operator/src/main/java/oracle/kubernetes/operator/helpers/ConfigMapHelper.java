@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -534,6 +535,7 @@ public class ConfigMapHelper {
   public static class DomainTopology {
     private boolean domainValid;
     private WlsDomainConfig domain;
+    private List<String> validationErrors;
 
     public boolean getDomainValid() {
       return this.domainValid;
@@ -550,6 +552,14 @@ public class ConfigMapHelper {
 
     public void setDomain(WlsDomainConfig domain) {
       this.domain = domain;
+    }
+
+    public List<String> getValidationErrors() {
+      return validationErrors;
+    }
+
+    public void setValidationErrors(List<String> validationErrors) {
+      this.validationErrors = validationErrors;
     }
   }
 }

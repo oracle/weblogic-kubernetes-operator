@@ -364,11 +364,10 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       naps = server.getNetworkAccessPoints()
       for nap in naps:
-        name=self.name(nap)
-        if name in reservedNames:
-          self.addError("The custom channel " + name + " is a reserved name."
+        if nap.getName() in reservedNames:
+          self.addError("The custom channel " + self.name(nap) + " is a reserved name.")
 
-  def validateClusterServersHaveSameCustomChannels():
+  #def validateClusterServersHaveSameCustomChannels():
 
   def isValid(self):
     return len(self.errors) == 0
