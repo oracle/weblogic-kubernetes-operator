@@ -170,6 +170,26 @@ public class Domain {
         TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
       }
     }
+    // check no additional servers are started
+    if (domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY")) {
+      initialManagedServerReplicas = 0;
+    }
+    String additionalManagedServer =
+        domainUid + "-" + managedServerNameBase + (initialManagedServerReplicas + 1);
+    logger.info(
+        "Checking if managed server " + additionalManagedServer + " is started, it should not be");
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(additionalManagedServer).append(" -n ").append(domainNS);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+
+    if (result.exitValue() == 0 && result.stdout().contains("1/1")) {
+      throw new RuntimeException(
+          "FAILURE: Managed Server "
+              + additionalManagedServer
+              + " is started, but its not expected.");
+    } else {
+      logger.info(additionalManagedServer + " is not running, which is expected behaviour");
+    }
   }
   /**
    * verify nodeport by accessing admin REST endpoint
@@ -391,6 +411,7 @@ public class Domain {
   }
 
   public void shutdown() throws Exception {
+    int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd = "kubectl delete domain " + domainUid + " -n " + domainNS;
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
@@ -399,7 +420,27 @@ public class Domain {
     }
     String output = result.stdout().trim();
     logger.info("command to delete domain " + cmd + " \n returned " + output);
+    verifyDomainDeleted(replicas);
   }
+
+  public void shutdownUsingServerStartPolicy() throws Exception {
+    int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}' --type merge";
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("command to shutdown domain " + cmd + " \n returned " + output);
+    verifyServerPodsDeleted(replicas);
+  }
+
   /**
    * verify domain is deleted
    *
@@ -409,8 +450,11 @@ public class Domain {
   public void verifyDomainDeleted(int replicas) throws Exception {
     logger.info("Inside verifyDomainDeleted, replicas " + replicas);
     TestUtils.checkDomainDeleted(domainUid, domainNS);
-    TestUtils.checkPodDeleted(domainUid + "-" + adminServerName, domainNS);
+    verifyServerPodsDeleted(replicas);
+  }
 
+  public void verifyServerPodsDeleted(int replicas) throws Exception {
+    TestUtils.checkPodDeleted(domainUid + "-" + adminServerName, domainNS);
     for (int i = 1; i <= replicas; i++) {
       TestUtils.checkPodDeleted(domainUid + "-" + managedServerNameBase + i, domainNS);
     }
@@ -592,12 +636,27 @@ public class Domain {
   }
 
   private void createSecret() throws Exception {
-    new Secret(
-        domainNS,
-        domainMap.getOrDefault("secretName", domainUid + "-weblogic-credentials").toString(),
-        BaseTest.getUsername(),
-        BaseTest.getPassword());
-    domainMap.put("weblogicCredentialsSecretName", domainUid + "-weblogic-credentials");
+    Secret secret =
+        new Secret(
+            domainNS,
+            domainMap.getOrDefault("secretName", domainUid + "-weblogic-credentials").toString(),
+            BaseTest.getUsername(),
+            BaseTest.getPassword());
+    domainMap.put("weblogicCredentialsSecretName", secret.getSecretName());
+    final String labelCmd =
+        String.format(
+            "kubectl label secret %s weblogic.domainUID=%s -n %s",
+            secret.getSecretName(), domainUid, domainNS);
+    ExecResult result = ExecCommand.exec(labelCmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to label secret \""
+              + labelCmd
+              + "\" failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
   }
 
   private void generateInputYaml() throws Exception {
