@@ -828,13 +828,13 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         BreadCrumb previous = null;
         while (it.hasNext()) {
           BreadCrumb bc = it.next();
-          if (previous != null) {
-            sb.append(previous.isMarker() ? "][" : ",");
-          }
-          previous = bc;
           if (!bc.isMarker()) {
+            if (previous != null) {
+              sb.append(previous.isMarker() ? "][" : ",");
+            }
             bc.writeTo(sb);
           }
+          previous = bc;
         }
         sb.append(']');
       }
