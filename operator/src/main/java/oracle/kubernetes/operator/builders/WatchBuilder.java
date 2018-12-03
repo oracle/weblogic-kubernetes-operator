@@ -189,6 +189,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+
       try {
         return new BatchV1Api(client)
             .listNamespacedJobCall(
