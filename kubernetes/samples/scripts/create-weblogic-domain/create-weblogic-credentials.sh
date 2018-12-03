@@ -73,48 +73,24 @@ if [ "${missingRequiredOption}" == "true" ]; then
   usage 1
 fi
 
-#
-# Function to validate the domain secret
-#
-function validateDomainSecret {
-  # Verify the secret exists
-  local SECRET=`kubectl get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    fail "The secret ${secretName} was not found in namespace ${namespace}"
-  fi
-
-  # Verify the secret contains a username
-  SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    fail "The domain secret ${secretName} in namespace ${namespace} does contain a username"
-  fi
-
-  # Verify the secret contains a password
-  SECRET=`kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    fail "The domain secret ${secretName} in namespace ${namespace} does contain a password"
-  fi
-  echo "The secret ${secretName} has been successfully created in namespace ${namespace}"
-}
-
-#
-# Perform the following sequence of steps to create a domain
-#
-
+# check and see if the secret already exists
 result=`kubectl get secret ${secretName} -n ${namespace} --ignore-not-found=true | grep ${secretName} | wc | awk ' { print $1; }'`
 if [ "${result:=Error}" != "0" ]; then
   fail "The secret ${secretName} already exists in namespace ${namespace}."
 fi
 
+# create the secret
 kubectl -n $namespace create secret generic $secretName \
   --from-literal=username=$username \
   --from-literal=password=$password
 
+# label the secret with domainUID
 kubectl label secret ${secretName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainUID
 
-validateDomainSecret
+# Verify the secret exists
+SECRET=`kubectl get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
+if [ "${SECRET}" != "1" ]; then
+  fail "The secret ${secretName} was not found in namespace ${namespace}"
+fi
 
-echo 
-echo Completed
-
-
+echo "The secret ${secretName} has been successfully created in namespace ${namespace}"
