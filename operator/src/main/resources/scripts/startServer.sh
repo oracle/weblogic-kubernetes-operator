@@ -90,7 +90,7 @@ function mockWLS() {
   STATEFILE_DIR=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager
   STATEFILE=${STATEFILE_DIR}/${SERVER_NAME}.state
 
-  mkdir -p $STATEFILE_DIR
+  createFolder $STATEFILE_DIR
   echo "RUNNING:Y:N" > $STATEFILE
 }
 
