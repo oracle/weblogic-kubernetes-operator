@@ -104,7 +104,6 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_PERIOD = 35;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final String SIT_CONFIG_MAP_VOLUME_SUFFIX =
       "-weblogic-domain-introspect-cm-volume";
@@ -276,7 +275,6 @@ public abstract class PodHelperTestBase {
             writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
             writableVolumeMount(
                 UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
-            readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
   }
@@ -416,13 +414,6 @@ public abstract class PodHelperTestBase {
     V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
 
     assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("predefined"));
-  }
-
-  @Test
-  public void createdPod_hasCredentialsVolume() {
-    V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CREDENTIALS_VOLUME_NAME);
-
-    assertThat(credentialsVolume.getSecret().getSecretName(), equalTo(ADMIN_SECRET_NAME));
   }
 
   @Test
