@@ -18,6 +18,9 @@ import java.util.List;
 import org.junit.Test;
 
 public class HelmOperatorValuesTest {
+
+  private static final String OPERATOR_CHART = "weblogic-operator";
+
   private final int intValue = getRandomInt();
   private final String stringValue = Integer.toString(intValue);
 
@@ -454,5 +457,38 @@ public class HelmOperatorValuesTest {
     assertThat(values.getServiceAccount(), equalTo("test-account"));
     assertThat(values.getWeblogicOperatorImage(), equalTo("test-image"));
     assertThat(values.getJavaLoggingLevel(), equalTo("FINE"));
+  }
+
+  @Test
+  public void operatorHelmChartDefault_areCorrect() throws Exception {
+    assertThat(
+        getActualOperatorHelmChartDefaultValues(),
+        equalTo(getExpectedOperatorHelmChartDefaultValues()));
+  }
+
+  private String getExpectedOperatorHelmChartDefaultValues() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("domainNamespaces:\n")
+        .append("- default\n")
+        .append("elasticSearchHost: elasticsearch.default.svc.cluster.local\n")
+        .append("elasticSearchPort: 9200\n")
+        .append("elkIntegrationEnabled: false\n")
+        .append("externalDebugHttpPort: 30999\n")
+        .append("externalRestEnabled: false\n")
+        .append("externalRestHttpsPort: 31001\n")
+        .append("image: weblogic-kubernetes-operator:1.1\n")
+        .append("imagePullPolicy: IfNotPresent\n")
+        .append("internalDebugHttpPort: 30999\n")
+        .append("javaLoggingLevel: INFO\n")
+        .append("logStashImage: logstash:5\n")
+        .append("remoteDebugNodePortEnabled: false\n")
+        .append("serviceAccount: default\n")
+        .append("tillerNamespace: kube-system\n")
+        .append("tillerServiceAccount: default\n");
+    return sb.toString();
+  }
+
+  private String getActualOperatorHelmChartDefaultValues() throws Exception {
+    return (new ChartDefaultValues(OPERATOR_CHART)).getDefaultValuesAsYaml();
   }
 }

@@ -12,8 +12,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
@@ -336,68 +334,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  public void dispatchIngressWatch(Watch.Response<V1beta1Ingress> item) {
-    V1beta1Ingress i = item.object;
-    if (i != null) {
-      V1ObjectMeta metadata = i.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-      if (domainUID != null && clusterName != null) {
-        DomainPresenceInfo existing = getExisting(metadata.getNamespace(), domainUID);
-        if (existing != null) {
-          switch (item.type) {
-            case "ADDED":
-              existing
-                  .getIngresses()
-                  .compute(
-                      clusterName,
-                      (key, current) -> {
-                        if (current != null) {
-                          if (isOutdated(current.getMetadata(), metadata)) {
-                            return current;
-                          }
-                        }
-                        return i;
-                      });
-              break;
-            case "MODIFIED":
-              existing
-                  .getIngresses()
-                  .compute(
-                      clusterName,
-                      (key, current) -> {
-                        if (current != null) {
-                          if (!isOutdated(current.getMetadata(), metadata)) {
-                            return i;
-                          }
-                        }
-                        return current;
-                      });
-              break;
-            case "DELETED":
-              boolean removed =
-                  removeIfPresentAnd(
-                      existing.getIngresses(),
-                      clusterName,
-                      (current) -> {
-                        return isOutdated(current.getMetadata(), metadata);
-                      });
-              if (removed && !existing.isDeleting()) {
-                // Ingress was deleted, but sko still contained a non-null entry
-                LOGGER.info(
-                    MessageKeys.INGRESS_DELETED, domainUID, metadata.getNamespace(), clusterName);
-                makeRightDomainPresence(existing, true, false, true);
-              }
-              break;
-
-            case "ERROR":
-            default:
-          }
-        }
-      }
-    }
-  }
-
   private static <K, V> boolean removeIfPresentAnd(
       ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
     Objects.requireNonNull(predicateFunction);
@@ -702,12 +638,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       Step strategy = new RegisterStep(info, getNext());
       if (!info.isPopulated()) {
-        strategy =
-            Step.chain(
-                readExistingPods(info),
-                readExistingServices(info),
-                readExistingIngresses(info),
-                strategy);
+        strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
       }
       return doNext(strategy, packet);
     }
@@ -734,14 +665,6 @@ public class DomainProcessorImpl implements DomainProcessor {
             LabelConstants.forDomainUid(info.getDomainUID()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listPodAsync(info.getNamespace(), new PodListStep(info));
-  }
-
-  private static Step readExistingIngresses(DomainPresenceInfo info) {
-    return new CallBuilder()
-        .withLabelSelectors(
-            LabelConstants.forDomainUid(info.getDomainUID()),
-            LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(info.getNamespace(), new IngressListStep(info));
   }
 
   private static Step readExistingServices(DomainPresenceInfo info) {
@@ -779,36 +702,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         }
       }
-      return doNext(packet);
-    }
-  }
-
-  private static class IngressListStep extends ResponseStep<V1beta1IngressList> {
-    private final DomainPresenceInfo info;
-
-    IngressListStep(DomainPresenceInfo info) {
-      this.info = info;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1beta1IngressList> callResponse) {
-      V1beta1IngressList result = callResponse.getResult();
-      if (result != null) {
-        for (V1beta1Ingress ingress : result.getItems()) {
-          String clusterName = IngressWatcher.getIngressClusterName(ingress);
-          if (clusterName != null) {
-            info.getIngresses().put(clusterName, ingress);
-          }
-        }
-      }
-
       return doNext(packet);
     }
   }

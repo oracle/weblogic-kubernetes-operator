@@ -32,6 +32,11 @@ public class ServerDownIteratorStep extends Step {
   }
 
   @Override
+  protected String getDetail() {
+    return String.join(",", getServersToStop());
+  }
+
+  @Override
   public NextAction apply(Packet packet) {
     Collection<StepAndPacket> startDetails = new ArrayList<>();
 
