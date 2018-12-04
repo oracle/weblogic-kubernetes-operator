@@ -384,6 +384,8 @@ public class ConfigMapHelperTest {
           + "    - name: \"admin-server\"\n"
           + "      listenPort: 7001\n"
           + "      listenAddress: \"domain1-admin-server\"\n"
+          + "      adminPort: 7099\n"
+          + "      adminPortEnabled: true\n"
           + "    - name: \"server1\"\n"
           + "      listenPort: 9003\n"
           + "      listenAddress: \"domain1-managed-server1\"\n"
@@ -500,6 +502,9 @@ public class ConfigMapHelperTest {
     assertTrue(serverConfigMap.containsKey("admin-server"));
     assertTrue(serverConfigMap.containsKey("server1"));
     assertTrue(serverConfigMap.containsKey("server2"));
+    WlsServerConfig adminServerConfig = serverConfigMap.get("admin-server");
+    assertEquals(7099, adminServerConfig.getAdminPort().intValue());
+    assertTrue(adminServerConfig.isAdminPortEnabled());
 
     WlsServerConfig server2Config = serverConfigMap.get("server2");
     assertEquals("domain1-managed-server2", server2Config.getListenAddress());

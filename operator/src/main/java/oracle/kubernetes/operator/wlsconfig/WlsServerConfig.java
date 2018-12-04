@@ -20,6 +20,8 @@ public class WlsServerConfig {
   Integer sslListenPort;
   boolean sslPortEnabled;
   String machineName;
+  Integer adminPort;
+  boolean adminPortEnabled;
   List<NetworkAccessPoint> networkAccessPoints;
 
   public WlsServerConfig() {}
@@ -97,6 +99,20 @@ public class WlsServerConfig {
     this.clusterName = clusterName;
   }
 
+  public Integer getAdminPort() {
+    return adminPort;
+  }
+
+  public void setAdminPort(Integer adminPort) {
+    this.adminPort = adminPort;
+  }
+  public boolean isAdminPortEnabled() {
+    return adminPortEnabled;
+  }
+
+  public void setAdminPortEnabled(boolean adminPortEnabled) {
+    this.adminPortEnabled = adminPortEnabled;
+  }
   /**
    * Creates a WLSServerConfig object using an "servers" or "serverTemplates" item parsed from JSON
    * result from WLS REST call
