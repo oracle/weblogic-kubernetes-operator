@@ -9,6 +9,8 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
 *	Create WebLogic domains on a Kubernetes persistent volume. This persistent volume can reside in an NFS.
+* Create a WebLogic domain in a Docker image.
+* Override certain aspects of the WebLogic domain configuration when it is in a Docker image.
 *	Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
 *	Start servers based on declarative startup parameters and desired states.
 * Manage WebLogic configured or dynamic clusters.
@@ -18,7 +20,7 @@ In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Ope
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the Quick Start Guide, or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), try out the [samples](kubernetes/samples/README.md), or check us out on our public Slack channel. To join our channel, [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/). The invitation email will include details on how to access our Slack workspace. After you are logged in, please come to #operator and say, "hello!"
+The fastest way to experience the operator is to follow the Quick Start Guide, or you can peruse our [documentation](site), read our blogs, try out the [samples](kubernetes/samples/README.md), or check us out on our public Slack channel.
 
 
 # Important terms
@@ -39,11 +41,11 @@ This documentation uses several important terms which are intended to have a spe
 
 # Getting started
 
-Before using the operator, you might want to read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.
+Before using the operator, you might want to read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also, worth reading are the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
 
 ## Prerequisites
 
-*	Kubernetes 1.9.0+, 1.10.0, 1.11.0  (check with `kubectl version`).
+*	Kubernetes 1.10+, 1.11+, and 1.12.0+  (check with `kubectl version`).
 *	Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
@@ -64,25 +66,18 @@ Use these [scripts and Helm charts](kubernetes/samples/README.md) to install Tra
 
 ### Configuring Kibana and Elasticsearch
 
-Use this [sample script](samples/scripts/elasticsearch_and_kibana.yaml) to configure Elasticsearch and Kibana deployments and services.
+You can send the operator logs to Elasticsearch, to be displayed in Kibana. Use this [sample script](samples/scripts/elasticsearch_and_kibana.yaml) to configure Elasticsearch and Kibana deployments and services.
 
 ## Create and manage the operator
 
-(Need a paragraph that describes the WebLogic Kubernetes Operator and roles including where to find the Operator image.)
+An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The WebLogic Kubernetes Operator follows the standard Kubernetes Operator pattern, and simplifies the management and operation of WebLogic domains and deployments. You can find the operator image in [Docker Hub](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/).
 
-In your Kubernetes cluster you can have one or more operators that manage one or more WebLogic domains (running in the cluster). We provide a Helm chart to create the operator. (Point to documentation and sample that describes how to do the steps below.)
+In your Kubernetes cluster you can have one or more operators that manage one or more WebLogic domains (running in a cluster). We provide a Helm chart to create the operator. (Point to the documentation and sample that describes how to do the steps below.)
 
-### Operator details
-Learn more about the operator from these docs:
-* The [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
-
-* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
-
-* [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
 ### Starting the operator
 
-* Create the namespace and service account for the operator
+* Create the namespace and service account for the operator (See the script and doc that describe how to do these.)
 * Edit the operator input YAML
 * Start the operator with a Helm chart
 
@@ -91,7 +86,7 @@ Learn more about the operator from these docs:
 (images, RBAC roles, ...)
 
 ### Shutting down the operator
-
+(See the operator sample README section that describes how to shutdown and delete all resources for the operator.)
 
 ## Create and manage WebLogic domains
 
@@ -123,8 +118,8 @@ To create and manage a WebLogic domain in Kubernetes we create a deployment type
 
 ### Managing lifecycle operations
 
-In Operator 2.0 you can perform lifecycle operations to the WebLogic servers, cluster, or domain.
-* Point to the documentation how to manage lifecycle operations.
+In Operator 2.0 you can perform lifecycle operations on WebLogic servers, clusters, or domains.
+* Point to the documentation on how to manage lifecycle operations.
 
 ### Modifying domain configurations
 You can modify the WebLogic domain configuration for both domain in PV and domain in image:
@@ -138,6 +133,25 @@ You can modify the WebLogic domain configuration for both domain in PV and domai
 
 ###  Deleting the domain
 (Point to sample)
+
+# Developer guide
+
+Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
+
+Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
+
+## API documentation
+
+Documentation for APIs is provided here:
+
+* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
+
+* [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
+
+## Need more help?
+
+We have a public Slack channel where you can get in touch with us to ask questions about using the operator.  To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to #operator and say, "hello!"
+
 
 # Contributing to the operator
 
