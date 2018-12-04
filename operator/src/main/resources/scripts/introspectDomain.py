@@ -332,7 +332,6 @@ class TopologyGenerator(Generator):
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
-    self.validateClusterServersHaveSameCustomChannels(cluster)
     if self.getDynamicServersWA(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
@@ -402,9 +401,6 @@ class TopologyGenerator(Generator):
       for nap in naps:
         if nap.getName() in reservedNames:
           self.addError("The custom channel " + self.name(nap) + " is a reserved name.")
-
-  #def validateClusterServersHaveSameCustomChannels():
-
 
   def isValid(self):
     return len(self.env.getErrors()) == 0
