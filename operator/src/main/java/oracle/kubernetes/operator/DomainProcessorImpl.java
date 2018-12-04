@@ -49,6 +49,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.FiberGate;
+import oracle.kubernetes.operator.work.FiberGateFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -62,7 +63,15 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final FiberGate FIBER_GATE = new FiberGate(Main.engine);
+  private static final FiberGateFactory FACTORY =
+      () -> {
+        return new FiberGate(Main.engine);
+      };
+  private static final ConcurrentMap<String, FiberGate> fiberGates = new ConcurrentHashMap<>();
+
+  private static FiberGate getFiberGate(String ns) {
+    return fiberGates.computeIfAbsent(ns, k -> FACTORY.get());
+  }
 
   // Map from namespace to map of domainUID to Domain
   private static final ConcurrentMap<String, ConcurrentMap<String, DomainPresenceInfo>> domains =
@@ -754,6 +763,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step.StepAndPacket plan,
       boolean isDeleting,
       boolean isWillInterrupt) {
+    FiberGate gate = getFiberGate(ns);
     CompletionCallback cc =
         new CompletionCallback() {
           @Override
@@ -765,7 +775,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           public void onThrowable(Packet packet, Throwable throwable) {
             LOGGER.severe(MessageKeys.EXCEPTION, throwable);
 
-            FIBER_GATE.startFiberIfLastFiberMatches(
+            gate.startFiberIfLastFiberMatches(
                 domainUID,
                 Fiber.getCurrentIfSet(),
                 DomainStatusUpdater.createFailedStep(throwable, null),
@@ -782,8 +792,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   }
                 });
 
-            FIBER_GATE
-                .getExecutor()
+            gate.getExecutor()
                 .schedule(
                     () -> {
                       DomainPresenceInfo existing = getExisting(ns, domainUID);
@@ -798,9 +807,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         };
 
     if (isWillInterrupt) {
-      FIBER_GATE.startFiber(domainUID, plan.step, plan.packet, cc);
+      gate.startFiber(domainUID, plan.step, plan.packet, cc);
     } else {
-      FIBER_GATE.startFiberIfNoCurrentFiber(domainUID, plan.step, plan.packet, cc);
+      gate.startFiberIfNoCurrentFiber(domainUID, plan.step, plan.packet, cc);
     }
   }
 
