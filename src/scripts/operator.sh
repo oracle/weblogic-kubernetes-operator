@@ -54,6 +54,10 @@ if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
   fi
 fi
 
+if [ "${MOCK_WLS}" == 'true' ]; then
+  MOCKING_WLS="-DmockWLS=true"
+fi
+
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
 mkdir -m 777 -p /logs
 cp /operator/logstash.conf /logs/logstash.conf
@@ -61,6 +65,6 @@ cp /operator/logstash.conf /logs/logstash.conf
 # the logstash container/pod.
 
 # Start operator
-java $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID
