@@ -763,7 +763,7 @@ public class TestUtils {
     k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
     k8sTestUtils.verifyServices(domain1LabelSelector, 5);
     k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
-    k8sTestUtils.verifyIngresses(domainNs, domainUid, domain1LabelSelector, 1);
+    k8sTestUtils.verifyIngresses(domainNs, domainUid, domain1LabelSelector, 0);
     k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 1);
     k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
     k8sTestUtils.verifyNoRoles(domain1LabelSelector);
