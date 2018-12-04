@@ -29,8 +29,8 @@ cat << EOF
   or all resources were deleted (default $default_maxwaitsecs seconds).
 
   The domains can be specified as a comma-separated list of 
-  domain-uids (no spaces), or the keyword 'all'.  The domains can be
-  located in any kubernetes namespace.
+  domain-uids (no spaces).  The domains can be located in any
+  kubernetes namespace.
 
   Specify '-t' to run the script in a test mode which will
   show kubernetes commands but not actually perform them.
@@ -73,18 +73,14 @@ EOF
 #
 function getDomainResources {
   local domain_regex=''
-  if [ "$1" = "all" ]; then
-    LABEL_SELECTOR="weblogic.domainUID"
-  else
-    LABEL_SELECTOR="weblogic.domainUID in ($1)"
-    IFS=',' read -ra UIDS <<< "$1"
-    for i in "${!UIDS[@]}"; do
-      if [ $i -gt 0 ]; then
-        domain_regex="$domain_regex|"
-      fi
-      domain_regex="$domain_regex^Domain ${UIDS[$i]} "
-    done
-  fi
+  LABEL_SELECTOR="weblogic.domainUID in ($1)"
+  IFS=',' read -ra UIDS <<< "$1"
+  for i in "${!UIDS[@]}"; do
+    if [ $i -gt 0 ]; then
+      domain_regex="$domain_regex|"
+    fi
+    domain_regex="$domain_regex^Domain ${UIDS[$i]} "
+  done
 
   # clean the output file
   if [ -e $2 ]; then
@@ -122,7 +118,6 @@ function getDomainResources {
 #
 # Usage:
 #   deleteDomains domainA,domainB,... maxwaitsecs
-#   deleteDomains all maxwaitsecs
 #
 # Internal helper function
 #   This function first sets the serverStartPolicy of each Domain to NEVER
@@ -131,9 +126,7 @@ function getDomainResources {
 #   any remaining k8s resources for domain $1 (including any remaining pods)
 #   and retries these direct deletes up to $2 seconds.
 #
-#   If $1 has special value "all", it deletes all domains in all namespaces.
-#
-#   If global $test_mode is true, it shows candidate actions but doesn't 
+#   If global $test_mode is true, it shows candidate actions but doesn't
 #   actually perform them
 #
 function deleteDomains {
