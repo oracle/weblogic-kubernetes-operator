@@ -49,6 +49,7 @@ import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.work.FiberGateFactoryStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
@@ -83,8 +84,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(
-        installStub(DomainProcessorImpl.class, "FIBER_GATE", testSupport.createFiberGateStub()));
+    mementos.add(FiberGateFactoryStub.install(testSupport));
     testSupport.addContainerComponent("TF", ThreadFactory.class, this);
 
     getStartedVariable();
