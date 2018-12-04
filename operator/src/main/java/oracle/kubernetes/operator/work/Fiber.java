@@ -808,7 +808,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   private synchronized void recordBreadCrumb() {
     if (breadCrumbs != null) {
-      if (parent == null || parent.isDone()) {
+      if (parent == null) {
         StringBuilder sb = new StringBuilder();
         writeBreadCrumb(sb);
 
@@ -822,22 +822,20 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   private synchronized void writeBreadCrumb(StringBuilder sb) {
     if (breadCrumbs != null) {
-      if (parent == null || parent.isDone()) {
-        sb.append('[');
-        Iterator<BreadCrumb> it = breadCrumbs.iterator();
-        BreadCrumb previous = null;
-        while (it.hasNext()) {
-          BreadCrumb bc = it.next();
-          if (!bc.isMarker()) {
-            if (previous != null) {
-              sb.append(previous.isMarker() ? "][" : ",");
-            }
-            bc.writeTo(sb);
+      sb.append('[');
+      Iterator<BreadCrumb> it = breadCrumbs.iterator();
+      BreadCrumb previous = null;
+      while (it.hasNext()) {
+        BreadCrumb bc = it.next();
+        if (!bc.isMarker()) {
+          if (previous != null) {
+            sb.append(previous.isMarker() ? "][" : ",");
           }
-          previous = bc;
+          bc.writeTo(sb);
         }
-        sb.append(']');
+        previous = bc;
       }
+      sb.append(']');
     }
   }
 
@@ -887,7 +885,15 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
     @Override
     public void writeTo(StringBuilder sb) {
-      child.writeBreadCrumb(sb);
+      sb.append("{child-");
+      sb.append(child.id);
+      sb.append(": ");
+      if (child.status.get() == NOT_COMPLETE) {
+        sb.append("not-complete");
+      } else {
+        child.writeBreadCrumb(sb);
+      }
+      sb.append("}");
     }
   }
 
