@@ -13,6 +13,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
@@ -51,6 +52,18 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
   }
 
   @Override
+  protected V1Job getExpectedWeblogicOperatorHookJob(String hookType) {
+    V1Job expected = super.getExpectedWeblogicOperatorHookJob(hookType);
+    expected
+        .getSpec()
+        .getTemplate()
+        .getSpec()
+        .addImagePullSecretsItem(
+            newLocalObjectReference().name(getInputs().getWeblogicOperatorImagePullSecretName()));
+    return expected;
+  }
+
+  @Override
   public ExtensionsV1beta1Deployment getExpectedWeblogicOperatorDeployment() {
     ExtensionsV1beta1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
     V1Container operatorContainer =
@@ -66,14 +79,17 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         .addContainersItem(
             newContainer()
                 .name("logstash")
-                .image("logstash:5")
+                .image(getInputs().getLogStashImage())
                 .addArgsItem("-f")
                 .addArgsItem("/logs/logstash.conf")
                 .addEnvItem(
                     newEnvVar()
                         .name("ELASTICSEARCH_HOST")
-                        .value("elasticsearch.default.svc.cluster.local"))
-                .addEnvItem(newEnvVar().name("ELASTICSEARCH_PORT").value("9200"))
+                        .value(getInputs().getElasticSearchHost()))
+                .addEnvItem(
+                    newEnvVar()
+                        .name("ELASTICSEARCH_PORT")
+                        .value(getInputs().getElasticSearchPort()))
                 .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs")))
         .addVolumesItem(
             newVolume().name("log-dir").emptyDir(newEmptyDirVolumeSource().medium("Memory")))

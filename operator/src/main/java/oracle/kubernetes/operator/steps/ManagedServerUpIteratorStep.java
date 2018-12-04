@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -29,6 +30,15 @@ public class ManagedServerUpIteratorStep extends Step {
   public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> c, Step next) {
     super(next);
     this.c = c;
+  }
+
+  @Override
+  protected String getDetail() {
+    List<String> serversToStart = new ArrayList<>();
+    for (ServerStartupInfo ssi : c) {
+      serversToStart.add(ssi.serverConfig.getName());
+    }
+    return String.join(",", serversToStart);
   }
 
   @Override

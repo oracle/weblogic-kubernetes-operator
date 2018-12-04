@@ -45,13 +45,15 @@ class FileGroupReader {
    * @return a map of file paths to string contents.
    */
   Map<String, String> loadFilesFromClasspath() {
-    try {
-      try (ScriptPath scriptPath = getScriptPath()) {
-        return loadContents(scriptPath.getScriptsDir());
+    synchronized (FileGroupReader.class) {
+      try {
+        try (ScriptPath scriptPath = getScriptPath()) {
+          return loadContents(scriptPath.getScriptsDir());
+        }
+      } catch (Exception e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
       }
-    } catch (Exception e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-      throw new RuntimeException(e);
     }
   }
 

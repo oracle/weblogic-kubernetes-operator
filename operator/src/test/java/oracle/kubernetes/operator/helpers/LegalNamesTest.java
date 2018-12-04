@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.toClusterServiceName;
-import static oracle.kubernetes.operator.helpers.LegalNames.toIngressName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toNAPName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toServerServiceName;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,12 +14,6 @@ import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import org.junit.Test;
 
 public class LegalNamesTest {
-  @Test
-  public void namecreateValidIngressNames() throws Exception {
-    assertThat(toIngressName("abc", "cls1"), equalTo("abc-cls1"));
-    assertThat(toIngressName("Abc", "cLs1"), equalTo("abc-cls1"));
-    assertThat(toIngressName("Abc", "cls_1"), equalTo("abc-cls-1"));
-  }
 
   @Test
   public void createValidServerServiceNames() throws Exception {
