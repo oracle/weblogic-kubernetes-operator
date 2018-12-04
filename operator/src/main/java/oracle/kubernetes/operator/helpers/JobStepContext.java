@@ -63,7 +63,7 @@ public abstract class JobStepContext implements StepContextConstants {
 
   abstract String getJobName();
 
-  private String getAdminSecretName() {
+  String getAdminSecretName() {
     return getDomain().getAdminSecret().getName();
   }
 
