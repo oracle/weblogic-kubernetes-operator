@@ -46,42 +46,15 @@ cat << EOF
               Server pods to exit normally, and then proceed
               to phase 3.
 
-    Phase 3:  Delete each domain-uid's helm chart using
-              "helm delete --purge".  This normally should clean
-              up all remaining k8s domain resources except
-              for domain secrets.
-
-    Phase 4:  Periodically delete any remaining kubernetes resources
+    Phase 3:  Periodically delete any remaining kubernetes resources
               for the specified domains, including any pods
               leftover from previous phases.  Exit and fail if
               max-seconds is exceeded and there are any leftover
               kubernetes resources.
 
-    Phase 5:  Delete any singleton Voyager load balancer resources
-              if there are no kubernetes resources left with
-              a domainUID for any domain (not just the domains
-              deleted by this script).
-
   This script exits with a zero status on success, and a 
   non-zero status on failure.
 EOF
-}
-
-function deleteVoyager {
-  local VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
-  kubectl get crd $VOYAGER_ING_NAME > /dev/null 2>&1
-  if [ ! $? -eq 0 ]; then
-    # voyager not installed, so skip its cleanup
-    return
-  fi
-  if [ `kubectl get $VOYAGER_ING_NAME -l weblogic.domainName --all-namespaces=true | grep "voyager" | wc -l` -eq 0 ]; then
-    echo @@ There are no voyager ingress, about to uninstall voyager.
-    if [ "$test_mode" = "true" ]; then
-      echo "Test mode:  Since we are in test mode, skipping external call to deleteVoyagerOperator in imported script ${scriptDir}/internal/utility.sh"
-    else
-      deleteVoyagerOperator
-    fi
-  fi
 }
 
 #
@@ -99,10 +72,18 @@ function deleteVoyager {
 #    PersistentVolume domain1-pv 
 #
 function getDomainResources {
+  local domain_regex=''
   if [ "$1" = "all" ]; then
     LABEL_SELECTOR="weblogic.domainUID"
   else
     LABEL_SELECTOR="weblogic.domainUID in ($1)"
+    IFS=',' read -ra UIDS <<< "$1"
+    for i in "${!UIDS[@]}"; do
+      if [ $i -gt 0 ]; then
+        domain_regex="$domain_regex|"
+      fi
+      domain_regex="$domain_regex^Domain ${UIDS[$i]} "
+    done
   fi
 
   # clean the output file
@@ -113,27 +94,22 @@ function getDomainResources {
   # first, let's get all namespaced types with -l $LABEL_SELECTOR
   NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
-  # if domain crd exists, look for domains too:
-  kubectl get crd domains.weblogic.oracle > /dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    NAMESPACED_TYPES="domain,$NAMESPACED_TYPES"
-  fi
-
-  # if voyager crd exists, look for voyager artifacts too:
-  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
-  kubectl get crd $VOYAGER_ING_NAME > /dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    NAMESPACED_TYPES="$VOYAGER_ING_NAME,$NAMESPACED_TYPES"
-  fi
-
   kubectl get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
           --all-namespaces=true >> $2
 
+  # if domain crd exists, look for domains too:
+  kubectl get crd domains.weblogic.oracle > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    kubectl get domain \
+            -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
+            --all-namespaces=true | egrep "$domain_regex" >> $2
+  fi
+
   # now, get all non-namespaced types with -l $LABEL_SELECTOR
 
-  NOT_NAMESPACED_TYPES="pv,crd,clusterroles,clusterrolebindings"
+  NOT_NAMESPACED_TYPES="pv,clusterroles,clusterrolebindings"
 
   kubectl get $NOT_NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
@@ -190,10 +166,6 @@ function deleteDomains {
     # Exit if all k8s resources deleted or max wait seconds exceeded.
 
     if [ $allcount -eq 0 ]; then
-      # The following 'deleteVoyager' function deletes remaining voyager LB resources,
-      # but first makes sure that no other domains are still using it.
-      deleteVoyager
-
       echo @@ Success.
       rm -f $tempfile
       exit 0
@@ -240,33 +212,7 @@ function deleteDomains {
       fi
     fi
 
-    # In phase 3, helm delete the given domainUids.
-
-    if [ $phase -eq 3 ]; then
-      phase=4
-      if [ ! -x "$(command -v helm)" ]; then
-        echo @@ "Skipping helm delete because helm not installed"
-        continue
-      fi
-      echo "@@ About to do helm delete(s) (if any)."
-      if [ "$1" = "all" ]; then
-        # helm delete all domain-uids that have chart name "weblogic-domain"
-        helm list | grep weblogic-domain | awk '{ print $1 }' | xargs -L1 --no-run-if-empty echo helm delete --purge
-        if [ ! "$test_mode" = "true" ]; then
-          helm list | grep weblogic-domain | awk '{ print $1 }' | xargs -L1 --no-run-if-empty helm delete --purge
-        fi
-      else
-        # helm delete the comma separated list of domain-uids in $1
-        echo -n "$1" | xargs -d, -L1 --no-run-if-empty echo helm delete --purge
-        if [ ! "$test_mode" = "true" ]; then
-          echo -n "$1" | xargs -d, -L1 --no-run-if-empty helm delete --purge
-        fi
-      fi
-      sleep 3
-      continue
-    fi
-
-    # In phase 4, directly delete remaining k8s resources for the given domainUids
+    # In phase 3, directly delete remaining k8s resources for the given domainUids
     # (including any leftover WLS pods from previous phases).
 
     # for each namespace with leftover resources, try delete them
@@ -287,6 +233,15 @@ function deleteDomains {
         kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
       fi
     fi
+
+    # Delete domains, if any
+    cat $tempfile | grep "^Domain " | while read line; do
+      if [ "$test_mode" = "true" ]; then
+        echo kubectl delete $line
+      else
+        kubectl delete $line
+      fi
+    done
 
     sleep 3
   done
