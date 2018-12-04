@@ -295,6 +295,10 @@ function createYamlFiles {
     domainPVMountPath="/shared"
   fi
 
+  if [ -z "${logHome}" ]; then
+    logHome="/shared/logs/${domainUID}"
+  fi
+
   # Use the default value if not defined.
   if [ -z "${createDomainScriptsMountPath}" ]; then
     createDomainScriptsMountPath="/u01/weblogic"
