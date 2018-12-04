@@ -144,9 +144,9 @@ Please take a look at our [wish list](https://github.com/oracle/weblogic-kuberne
 
 Documentation for APIs is provided here:
 
-* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
+* The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md). Also, see the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
-* [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
+* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
 ## Need more help?
 
