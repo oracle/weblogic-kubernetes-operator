@@ -150,6 +150,8 @@ public class WlsServerConfig {
         (String) serverConfigMap.get("listenAddress"),
         sslListenPort,
         sslPortEnabled,
+        (Integer) serverConfigMap.get("adminPort"),
+        (boolean) serverConfigMap.get("adminPortEnabled"),
         getMachineNameFromJsonMap(serverConfigMap),
         networkAccessPoints);
   }
@@ -162,6 +164,8 @@ public class WlsServerConfig {
    * @param listenAddress Configured listen address for this WLS server
    * @param sslListenPort Configured SSL listen port for this WLS server
    * @param sslPortEnabled boolean indicating whether the SSL listen port should be enabled
+   * @param adminPort Configured domain wide administration port
+   * @param adminPortEnabled boolean indicating whether administration port should be enabled
    * @param machineName Configured machine name for this WLS server
    * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
    *     WLS server
@@ -172,6 +176,8 @@ public class WlsServerConfig {
       String listenAddress,
       Integer sslListenPort,
       boolean sslPortEnabled,
+      Integer adminPort,
+      boolean adminPortEnabled,
       String machineName,
       List<NetworkAccessPoint> networkAccessPoints) {
     this.name = name;
@@ -180,6 +186,8 @@ public class WlsServerConfig {
     this.networkAccessPoints = networkAccessPoints;
     this.sslListenPort = sslListenPort;
     this.sslPortEnabled = sslPortEnabled;
+    this.adminPort = adminPort;
+    this.adminPortEnabled = adminPortEnabled;
     this.machineName = machineName;
   }
 
@@ -301,6 +309,8 @@ public class WlsServerConfig {
         .append(listenPort, that.listenPort)
         .append(listenAddress, that.listenAddress)
         .append(sslListenPort, that.sslListenPort)
+        .append(adminPort, that.adminPort)
+        .append(adminPortEnabled, that.adminPortEnabled)
         .append(machineName, that.machineName)
         .append(networkAccessPoints, that.networkAccessPoints)
         .isEquals();
@@ -314,6 +324,8 @@ public class WlsServerConfig {
         .append(listenAddress)
         .append(sslListenPort)
         .append(sslPortEnabled)
+        .append(adminPort)
+        .append(adminPortEnabled)
         .append(machineName)
         .append(networkAccessPoints)
         .toHashCode();
@@ -327,6 +339,8 @@ public class WlsServerConfig {
         .append("listenAddress", listenAddress)
         .append("sslListenPort", sslListenPort)
         .append("sslPortEnabled", sslPortEnabled)
+        .append("adminPort", adminPort)
+        .append("adminPortEnabled", adminPortEnabled)
         .append("machineName", machineName)
         .append("networkAccessPoints", networkAccessPoints)
         .toString();
