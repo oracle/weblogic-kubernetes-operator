@@ -106,6 +106,7 @@ public class WlsServerConfig {
   public void setAdminPort(Integer adminPort) {
     this.adminPort = adminPort;
   }
+
   public boolean isAdminPortEnabled() {
     return adminPortEnabled;
   }
