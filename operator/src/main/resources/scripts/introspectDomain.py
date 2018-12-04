@@ -332,6 +332,7 @@ class TopologyGenerator(Generator):
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
+    self.validateClusterServersHaveSameCustomChannels(cluster)
     if self.getDynamicServersWA(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
@@ -403,6 +404,7 @@ class TopologyGenerator(Generator):
           self.addError("The custom channel " + self.name(nap) + " is a reserved name.")
 
   #def validateClusterServersHaveSameCustomChannels():
+
 
   def isValid(self):
     return len(self.env.getErrors()) == 0
@@ -486,16 +488,18 @@ class TopologyGenerator(Generator):
   def addClusteredServer(self, cluster, server):
     name=self.name(server)
     self.writeln("- name: " + name)
-    self.writeln("  listenPort: " + str(server.getListenPort()))
+    if server.isListenPortEnabled():
+      self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
-    self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-    self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
+    if server.isAdministrationPortEnabled():
+      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+      self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
     self.addSSL(server)
     self.addNetworkAccessPoints(server)
 
   def addSSL(self, server):
     ssl = server.getSSL()
-    if ssl is not None:
+    if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
       self.writeln("sslPortEnabled: " + self.booleanToString(ssl.isEnabled()))
@@ -514,7 +518,8 @@ class TopologyGenerator(Generator):
   def addServerTemplate(self, serverTemplate):
     name=self.name(serverTemplate)
     self.writeln("- name: " + name)
-    self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
+    if serverTemplate.isListenPortEnabled():
+      self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
     listenAddress=serverTemplate.getListenAddress()
     if listenAddress is not None:
@@ -568,10 +573,12 @@ class TopologyGenerator(Generator):
   def addNonClusteredServer(self, server):
     name=self.name(server)
     self.writeln("- name: " + name)
-    self.writeln("  listenPort: " + str(server.getListenPort()))
+    if server.isListenPortEnabled():
+      self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
-    self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-    self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
+    if server.isAdministrationPortEnabled():
+      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+      self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
     self.addSSL(server)
     self.addNetworkAccessPoints(server)
 
