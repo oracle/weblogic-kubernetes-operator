@@ -40,6 +40,10 @@ spec:
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
         {{- end }}
+        {{- if .mockWLS }}
+        - name: "MOCK_WLS"
+          value: "true"
+        {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"

@@ -2,6 +2,7 @@
 
 ## Sample scripts
 
+* [Sample Secret for WebLogic Amin Credentials](scripts/create-weblogic-domain/create-weblogic-credentials.sh) for creating a Kubernetes secret that contains the admin server credentials. This secret can then be used in creating a WebLogic domain custom resource.
 * [Sample PV and PVC](scripts/create-weblogic-domain-pv-pvc/README.md) for creating a PV or PVC that can be used by a domain custom resource as the persistent storage for the WebLogic domain home or log files.
 * [Sample domain home on a persistent volume](scripts/create-weblogic-domain/domain-home-on-pv/README.md) for creating a WebLogic domain home on an existing PV or PVC, and the domain customer resource YAML file for deploying the generated WebLogic domain.
 * [Sample Elasticsearch and Kibana configuration](scripts/elasticsearch_and_kibana.yaml) for configuring the Elasticsearch and Kibana deployments and services for the operator's logs.
