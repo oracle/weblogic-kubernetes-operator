@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Use this Quick Start Guide to create a WebLogic Kubernetes deployment in a Kubernetes cluster.
+Use this Quick Start Guide to create a WebLogic deployment in a Kubernetes cluster.
 (Maybe add what users would do with this set up.)  
 
 (Add link to page that describes a very specific deployment following our [samples flow](http://aseng-wiki.us.oracle.com/asengwiki/display/ASDevWLS/2.0+Samples+Flow) with a Traefik load balancer and just one domain. RM, I'm not sure that this is needed in the Quick Start Guide. **This is a tutorial. What we need are the actual commands for each step listed.**)
@@ -16,8 +16,8 @@ Invoke the script to create these. (Again, list the commands here using an examp
 
 ## 4. Install the operator.
 * Create a namespace and service account for the operator (point to sample script that does this.)
-* Invoke the script to generate the credentials for the operator and add to the Operator YAML, (all the values can be left as default)
-* Create the operator using 'helm install', and passing in the namespace, service account, and location of Elasticsearch (Point to Helm.)
+* Invoke the script to generate the credentials for the operator and add it to the the operator YAML file (all the values can be left as default).
+* Create the operator using `helm install`, and passing in the namespace, service account, and location of Elasticsearch (Point to Helm.)
 
 ## 5. Prepare your environment for a domain.
 * Create a domain namespace
@@ -27,7 +27,7 @@ Invoke the script to create these. (Again, list the commands here using an examp
 * Configure the Traefik load balancer to manage the domains in the domain namespace.
   * Use `helm upgrade` to configure the load balancer to monitor the Ingresses in the domain namespace
 * Create the domain home
-* Create the Docker image for the domain home in the image or use WebLogic binary image.
+* Create the Docker image for the domain home in the image or use the WebLogic binary image.
   * Run WLST to create the domain in PV (remember to apply patch).
 
 ## 6. Create a domain.
@@ -35,9 +35,9 @@ Invoke the script to create these. (Again, list the commands here using an examp
 * Create the domain home for the domain
   * For a domain home on PV – as in sample
   * For a domain home in image, use the sample in the Docker GitHub project
-* Optionally, create a situational configuration template and any additional Kubernetes secrets it needs (for example, to override the domain home configuration of a database URL, username, and password).
+* Optionally, create a configuration overrides template and any additional Kubernetes secrets it needs (for example, to override the domain home configuration of a database URL, username, and password).
 * Create a domain resource in the domain namespace
-  * Specify the following information: domain UID, service account, secret name, and domain home details
+  * Specify the following information: domain UID, service account, secret name, the domain home details, and optionally, the configuration overrides template name.
 * Configure the operator to know about the domain
 * Configure the Traefik load balancer to manage the domain as follows:
   * Create an Ingress for the domain in the domain namespace (it contains the routing rules for the domain)
@@ -47,12 +47,12 @@ Invoke the script to create these. (Again, list the commands here using an examp
 (Removing the domain, operator, and such, isn't really needed in a quick start guide. We can point them to the user's instructions for how to remove the domain, operator, and all the other related resources.)
 
 ## 7. Remove a domain.
-* Remove the domain's Kubernetes artifacts (domain resource, secrets, ingress, ...)
+* Remove the domain's Kubernetes resources (domain, secrets, ingress, ...)
   * If they are all tagged with a `weblogicUID` label, then the sample delete domain script will remove them all  
-  * The operator will notice that the domain's domain resource has been removed and will kill the pods
-* Configure the Traefik Load Balancer to stop managing the domain
-  * The delete script will have deleted the Ingress which will tell the load balancer to stop managing the domain
-* Remove the domain home if it's on a pv
+  * The operator will notice that the domain's domain resource has been removed and will then kill the pods
+* Configure the Traefik load balancer to stop managing the domain
+  * The delete script will have deleted the Ingress which will inform the load balancer to stop managing the domain
+* Remove the domain home if it's on a PV.
 
 ## 8. Remove the domain namespace.
 * Configure the Traefik load balancer to stop managing the domain namespace. Use `helm upgrade` to remove the domain namespace from the list of namespaces.
@@ -60,11 +60,11 @@ Invoke the script to create these. (Again, list the commands here using an examp
 * Remove the PV & PVC for the domain namespace
 * Remove the domain namespace
 
-## 9 Remove the operator.
+## 9. Remove the operator.
 * `helm delete --purge`
 * Remove the operator namespace
 
-## 10 Remove other resources.
+## 10. Remove other resources.
 * Optionally, remove Kibana and Elasticsearch
 * Remove the Traefik load balancer, using `helm delete --purge`
 * Remove the Traefik namespace
