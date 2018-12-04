@@ -244,7 +244,8 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
             hasEnvVar("LOG_HOME", LOG_HOME),
             hasEnvVar("INTROSPECT_HOME", getDomainHome()),
-            hasEnvVar("SERVER_OUT_IN_POD_LOG", "true")));
+            hasEnvVar("SERVER_OUT_IN_POD_LOG", "true"),
+            hasEnvVar("ADMIN_SECRET_NAME", ADMIN_SECRET_NAME)));
   }
 
   V1Container getCreatedJobSpecContainer() {
@@ -430,6 +431,7 @@ public class DomainIntrospectorJobTest {
     addEnvVar(envVarList, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(envVarList, "LOG_HOME", LOG_HOME);
     addEnvVar(envVarList, "INTROSPECT_HOME", getDomainHome());
+    addEnvVar(envVarList, "ADMIN_SECRET_NAME", ADMIN_SECRET_NAME);
     addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", "true");
 
     return envVarList;
