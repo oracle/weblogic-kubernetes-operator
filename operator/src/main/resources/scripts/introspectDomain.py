@@ -7,18 +7,14 @@
 #
 #   This code reads the configuration in a WL domain's domain home, and generates
 #   multiple files that are copied to stdout.  It also checks whether the domain
-#   configuration is 'valid' (suitable for running in k8s).
+#   configuration is 'valid' (suitable for running in k8s).  Finally, it 
+#   populates customer supplied 'configOverrides' templates.
 #
 #   This code is used by the operator to introspect and validate an arbitrary
-#   WL domain before its pods are started.  It generates topology information that's
+#   WL domain before its pods are started.  It generates information that's
 #   useful for running the domain, setting up its networking, and for overriding
 #   specific parts of its configuration so that it can run in k8s.
 # 
-#   The configuration overrides are specified via situational config file(s), and 
-#   include listen addresses, log file locations, etc.  Additional information
-#   is provided in other files -- including encrypted credentials, domain
-#   topology (server names, etc), and any validation warnings/errors.
-#
 #   For more details, see the Description in instrospectDomain.sh (which
 #   calls this script).
 #
@@ -36,10 +32,17 @@
 #     /weblogic-operator/secrets/username 
 #     /weblogic-operator/secrets/password
 #
+#   Optional custom sit cfg 'configOverrides' templates in:
+#     /weblogic-operator/config-overrides-secrets
+#
+#   Optional custom sit cfg 'configOverridesSecrets' in:
+#     /weblogic-operator/config-overrides-secrets/<secret-name>/<key>
+#
 #   The following env vars:
-#     DOMAIN_UID  - completely unique id for this domain
-#     DOMAIN_HOME - path for the domain configuration
-#     LOG_HOME    - path to override WebLogic server log locations
+#     DOMAIN_UID         - completely unique id for this domain
+#     DOMAIN_HOME        - path for the domain configuration
+#     LOG_HOME           - path to override WebLogic server log locations
+#     ADMIN_SECRET_NAME  - name of secret containing admin credentials
 #
 # ---------------------------------
 # Outputs (files copied to stdout):
@@ -48,17 +51,29 @@
 #   topology.yaml                  -- Domain configuration summary for operator (server names, etc).
 #                                           -and/or-
 #                                     Domain validation warnings/errors. 
-#   situational-config.xml         -- Overrides for domain configuration (listen addresses, etc).
+#
+#   Sit-Cfg-CFG--introspector-situational-config.xml  
+#                                  -- Automatic sit cfg overrides for domain configuration
+#                                     (listen addresses, etc).
+#
+#   Sit-Cfg-*                      -- Expanded optional configOverrides sit cfg templates
+#
 #   boot.properties                -- Encoded credentials for starting WL.
 #   userConfigNodeManager.secure   -- Encoded credentials for starting NM in a WL pod.
-#   userKeyNodeManager.secure'     -- Encoded credentials for starting NM in a WL pod.
+#   userKeyNodeManager.secure      -- Encoded credentials for starting NM in a WL pod.
 #
+# 
 # Note:
 #
 #   This code partly depends on a node manager so that we can use it to encrypt 
 #   the username and password and put them into files that can be used to connect
 #   to the node manager later in the server pods (so that the server pods don't
 #   have to mount the secret containing the username and password).
+#
+#   The configuration overrides are specified via situational config file(s), and 
+#   include listen addresses, log file locations, etc.  Additional information
+#   is provided in other files -- including encrypted credentials, domain
+#   topology (server names, etc), and any validation warnings/errors.
 #
 
 
@@ -69,16 +84,17 @@ import inspect
 import distutils.dir_util
 import os
 import shutil
+import re
 from datetime import datetime
 
 # Include this script's current directory in the import path (so we can import traceUtils, etc.)
-sys.path.append('/weblogic-operator/scripts')
+# sys.path.append('/weblogic-operator/scripts')
 
 # Alternative way to dynamically get script's current directory
-#tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
-#tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
-#tmp_scriptdir=os.path.dirname(tmp_info[0])
-#sys.path.append(tmp_scriptdir)
+tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
+tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
+tmp_scriptdir=os.path.dirname(tmp_info[0])
+sys.path.append(tmp_scriptdir)
 
 from traceUtils import *
 
@@ -91,17 +107,34 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID         = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME        = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME           = self.getEnv('LOG_HOME')
+    self.ADMIN_SECRET_NAME  = self.getEnv('ADMIN_SECRET_NAME')
 
     # initialize globals
 
+    # The following 3 globals mush match prefix hard coded in startServer.sh
+    self.CUSTOM_PREFIX_JDBC = 'Sit-Cfg-JDBC--'
+    self.CUSTOM_PREFIX_JMS  = 'Sit-Cfg-JMS--'
+    self.CUSTOM_PREFIX_WLDF = 'Sit-Cfg-WLDF--'
+    self.CUSTOM_PREFIX_CFG  = 'Sit-Cfg-CFG--'
+
     self.INTROSPECT_HOME    = '/tmp/introspect/' + self.DOMAIN_UID
     self.TOPOLOGY_FILE      = self.INTROSPECT_HOME + '/topology.yaml'
-    self.CM_FILE            = self.INTROSPECT_HOME + '/situational-config.xml'
+    self.CM_FILE            = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'introspector-situational-config.xml'
     self.BOOT_FILE          = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE    = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
 
-    # maintain a list of generated files that we print once introspection completes
+    # The following 4 env vars are for unit testing, their defaults are correct for production.
+    self.ADMIN_SECRET_PATH  = self.getEnvOrDef('ADMIN_SECRET_PATH', '/weblogic-operator/secrets')
+    self.CUSTOM_SECRET_ROOT = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
+    self.CUSTOM_SITCFG_PATH = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
+    self.NM_HOST            = self.getEnvOrDef('NM_HOST', 'localhost')
+
+    # maintain a list of errors that we include in topology.yaml on completion, if any
+
+    self.errors             = []
+
+    # maintain a list of files that we print on completion when there are no errors
 
     self.generatedFiles     = []
 
@@ -128,9 +161,6 @@ class OfflineWlstEnv(object):
   def getDomain(self):
     return self.domain
 
-  def getIntrospectHome():
-    return self.INTROSPECT_HOME
-
   def getDomainUID(self):
     return self.DOMAIN_UID
 
@@ -139,6 +169,12 @@ class OfflineWlstEnv(object):
 
   def getDomainLogHome(self):
     return self.LOG_HOME
+
+  def addError(self, error):
+    self.errors.append(error)
+
+  def getErrors(self):
+    return self.errors
 
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
@@ -191,16 +227,12 @@ class SecretManager(object):
   def __init__(self, env):
     self.env = env
 
-  def readAndEncryptSecret(self, name):
-    cleartext = self.readSecret(name)
+  def encrypt(self, cleartext):
     return self.env.encrypt(cleartext)
 
-  def readSecret(self, name):
-    path = "/weblogic-operator/secrets/" + name
-    file = open(path, 'r')
-    cleartext = file.read()
-    file.close()
-    return cleartext
+  def readAdminSecret(self, key):
+    path = self.env.ADMIN_SECRET_PATH + '/' + key
+    return self.env.readFile(path)
 
 class Generator(SecretManager):
 
@@ -225,6 +257,9 @@ class Generator(SecretManager):
   def indentPrefix(self):
     return self.indentStack[len(self.indentStack)-1]
 
+  def write(self, msg):
+    self.f.write(msg)
+
   def writeln(self, msg):
     self.f.write(self.indentPrefix() + msg + "\n")
 
@@ -241,7 +276,6 @@ class TopologyGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.TOPOLOGY_FILE)
-    self.errors = []
 
   def validate(self):
     self.validateAdminServer()
@@ -271,6 +305,7 @@ class TopologyGenerator(Generator):
     try:
       ret = cluster.getDynamicServers()
     except:
+      trace("Ignoring getDynamicServers() exception, this is expected.")
       ret = None
     return ret
 
@@ -328,7 +363,7 @@ class TopologyGenerator(Generator):
           firstPort = port
         else:
           if port != firstPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstPort) + " but its server " + self.name(server) + "'s listen port is " + str(port) + ".")
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstPort) + " but its server " + self.name(server) + "'s listen port is " + str(port) + ".  All ports for the same channel in a cluster must be the same, including the default channel and the default SSL channel.")
             return
 
   def validateDynamicCluster(self, cluster):
@@ -359,15 +394,15 @@ class TopologyGenerator(Generator):
       self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def isValid(self):
-    return len(self.errors) == 0
+    return len(self.env.getErrors()) == 0
 
   def addError(self, error):
-    self.errors.append(error)
+    self.env.addError(error)
 
   def reportErrors(self):
     self.writeln("domainValid: false")
     self.writeln("validationErrors:")
-    for error in self.errors:
+    for error in self.env.getErrors():
       self.writeln("- \"" + error.replace("\"", "\\\"") + "\"")
 
   def generateTopology(self):
@@ -548,15 +583,19 @@ class BootPropertiesGenerator(Generator):
       self.close()
 
   def addBootProperties(self):
-    self.writeln("username=" + self.readAndEncryptSecret("username"))
-    self.writeln("password=" + self.readAndEncryptSecret("password"))
+    self.writeln("username=" + self.encrypt(self.readAdminSecret("username")))
+    self.writeln("password=" + self.encrypt(self.readAdminSecret("password")))
 
 class UserConfigAndKeyGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.USERKEY_FILE)
+    self.env = env
 
   def generate(self):
+    if not self.env.NM_HOST:
+      # user config&key generation has been disabled for test purposes
+      return
     self.open()
     try:
       # first, generate UserConfig file and add it, also generate UserKey file
@@ -568,8 +607,8 @@ class UserConfigAndKeyGenerator(Generator):
       self.close()
 
   def addUserConfigAndKey(self):
-    username = self.readSecret("username")
-    password = self.readSecret("password")
+    username = self.readAdminSecret("username")
+    password = self.readAdminSecret("password")
     nm_host = 'localhost'
     nm_port = '5556' 
     domain_name = self.env.getDomain().getName()
@@ -626,8 +665,8 @@ class SitConfigGenerator(Generator):
     self.writeln("</d:domain>")
 
   def customizeNodeManagerCreds(self):
-    admin_username = self.readSecret('username')
-    admin_password = self.readAndEncryptSecret('password')
+    admin_username = self.readAdminSecret('username')
+    admin_password = self.encrypt(self.readAdminSecret('password'))
     self.writeln("<d:security-configuration>")
     self.indent()
     self.writeln("<d:node-manager-user-name f:combine-mode=\"replace\">" + admin_username + "</d:node-manager-user-name>")
@@ -650,19 +689,19 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:name>" + name + "</d:name>")
     self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
     if server.getSSL():
-        self.writeln("<d:ssl>")
-        self.indent()
-        self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-        self.undent()
-        self.writeln("</d:ssl>")
+      self.writeln("<d:ssl>")
+      self.indent()
+      self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
+      self.undent()
+      self.writeln("</d:ssl>")
     for nap in server.getNetworkAccessPoints():
-        nap_name=nap.getName()
-        self.writeln("<d:network-access-point>")
-        self.indent()
-        self.writeln("<d:name f:combine-mode=\"replace\">" + nap_name + "</d:name>")
-        self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-        self.undent()
-        self.writeln("</d:network-access-point>")
+      nap_name=nap.getName()
+      self.writeln("<d:network-access-point>")
+      self.indent()
+      self.writeln("<d:name>" + nap_name + "</d:name>")
+      self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
+      self.undent()
+      self.writeln("</d:network-access-point>")
     self.customizeLog(name)
     self.undent()
     self.writeln("</d:server>")
@@ -692,6 +731,199 @@ class SitConfigGenerator(Generator):
       self.undent()
       self.writeln("</d:log>")
 
+class CustomSitConfigIntrospector(SecretManager):
+
+  def __init__(self, env):
+    SecretManager.__init__(self, env)
+    self.env = env
+    self.macroMap={}
+    self.macroStr=''
+    self.moduleMap={}
+    self.moduleStr=''
+
+    # Populate macro map with known secrets and env vars, log them
+    #   env macro format:         'env:<somename>'
+    #   plain text secret macro:  'secret:<somename>'
+    #   encrypted secret macro:   'secret:<somename>:encrypt'
+
+    if os.path.exists(self.env.CUSTOM_SECRET_ROOT):
+      for secret_name in os.listdir(self.env.CUSTOM_SECRET_ROOT):
+        secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, secret_name)
+        self.addSecretsFromDirectory(secret_path, secret_name)
+
+    self.addSecretsFromDirectory(self.env.ADMIN_SECRET_PATH, 
+                                 self.env.ADMIN_SECRET_NAME)
+
+    self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
+    self.macroMap['env:DOMAIN_HOME'] = self.env.DOMAIN_HOME
+    self.macroMap['env:LOG_HOME']    = self.env.LOG_HOME
+
+    keys=self.macroMap.keys()
+    keys.sort()
+    for key in keys:
+      val=self.macroMap[key]
+      if self.macroStr:
+        self.macroStr+=', '
+      self.macroStr+='${' + key + '}'
+
+    trace("available macros: '" + self.macroStr + "'")
+
+    # Populate module maps with known module files and names, log them
+
+    self.jdbcModuleStr = self.buildModuleTable(
+                           'jdbc', 
+                           self.env.getDomain().getJDBCSystemResources(),
+                           self.env.CUSTOM_PREFIX_JDBC)
+
+    self.jmsModuleStr = self.buildModuleTable(
+                           'jms', 
+                           self.env.getDomain().getJMSSystemResources(),
+                           self.env.CUSTOM_PREFIX_JMS)
+
+    self.wldfModuleStr = self.buildModuleTable(
+                           'wldf', 
+                           self.env.getDomain().getWLDFSystemResources(),
+                           self.env.CUSTOM_PREFIX_WLDF)
+
+    trace('Available modules: ' + self.moduleStr)
+
+
+  def addSecretsFromDirectory(self, secret_path, secret_name):
+    for the_file in os.listdir(secret_path):
+      the_file_path = os.path.join(secret_path, the_file)
+      if os.path.isfile(the_file_path):
+        val=self.env.readFile(the_file_path)
+        key='secret:' + secret_name + "." + the_file
+        self.macroMap[key] = val
+        self.macroMap[key + ':encrypt'] = self.env.encrypt(val)
+
+
+  def buildModuleTable(self, moduleTypeStr, moduleResourceBeans, customPrefix):
+
+    # - Populate global 'moduleMap' with key of 'moduletype-modulename.xml'
+    #   andvalue of 'module system resource file name' + '-situational-config.xml'.
+    # - Populate global 'moduleStr' with list of known modules.
+    # - Generate validation error if a module is not located in a config subdirectory
+    #   that matches its type (e.g. jdbc modules are expected to be in directory 'jdbc').
+
+    if self.moduleStr:
+      self.moduleStr += ', '
+    self.moduleStr += 'type.' + moduleTypeStr + "=("
+    firstModule=true
+
+    for module in moduleResourceBeans:
+
+      mname=module.getName()
+      mfile=module.getDescriptorFileName()
+
+      if os.path.dirname(mfile) != moduleTypeStr:
+        self.env.addError(
+          "Error, the operator expects module files of type '" + moduleTypeStr + "'"
+          + " to be located in directory '" + moduleTypeStr + "/'"
+          + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
+          + " is configured with DescriptorFileName='" + mfile + "'.")      
+
+      if mfile.count(".xml") != 1 or mfile.find(".xml") + 4 != len(mfile):
+        self.env.AddError(
+          "Error, the operator expects system resource module files"
+          + " to end in '.xml'"
+          + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
+          + " is configured with DescriptorFileName='" + mfile + "'.")      
+
+      if not firstModule:
+        self.moduleStr += ", "
+      firstModule=false
+      self.moduleStr += "'" + mname + "'";
+
+      mfile=os.path.basename(mfile)
+      mfile=mfile.replace(".xml","-situational-config.xml")
+      mfile=customPrefix + mfile
+
+      self.moduleMap[moduleTypeStr + '-' + mname + '.xml'] = mfile
+
+    # end of for loop
+
+    self.moduleStr += ')' 
+
+
+  def validateUnresolvedMacros(self, file, filestr):
+
+    # Add a validation error if file contents have any unresolved macros
+    # that contain a ":" or "." in  their name.  This step  is performed
+    # after all known macros  are  already resolved.  (Other  macros are
+    # considered  valid  server  template  macros in  config.xml,  so we
+    # assume they're supposed to remain in the final sit-cfg xml).
+
+    errstr = ''
+    for unknown_macro in re.findall('\${[^}]*:[^}]*}', filestr):
+      if errstr:
+        errstr += ","
+      errstr += unknown_macro
+    for unknown_macro in re.findall('\${[^}]*[.][^}]*}', filestr):
+      if errstr:
+        errstr += ","
+      errstr += unknown_macro
+    if errstr:
+      self.env.addError("Error, unresolvable macro(s) '" + errstr + "'" 
+                        + " in custom sit config file '" + file + "'."
+                        + " Known macros are '" + self.macroStr + "'.")
+
+
+  def generateAndValidate(self):
+
+    # For each custom sit-cfg template, generate a file using macro substitution,
+    # validate that it has a correponding module if it's a module override file,
+    # and validate that all of its 'secret:' and 'env:' macros are resolvable.
+
+    if not os.path.exists(self.env.CUSTOM_SITCFG_PATH):
+      return
+
+    for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
+
+      the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
+
+      if not os.path.isfile(the_file_path):
+        continue
+
+      trace("Processing custom sit config file '" + the_file + "'")
+
+      # check if file name corresponds with config.xml or a module
+
+      if not self.moduleMap.has_key(the_file) and the_file != "config.xml":
+        self.env.addError("Error, custom sit config override file '" + the_file + "'" 
+          + " is not named 'config.xml' or has no matching system resource"
+          + " module. Custom sit config files must be named 'config.xml'"
+          + " to override config.xml or 'moduletype-modulename.xml' to override"
+          + " a module. Known module names for each type: " + self.moduleStr + ".")
+        continue
+
+      # substitute macros and validate unresolved macros
+
+      file_str = self.env.readFile(the_file_path)
+      file_str_orig = 'dummyvalue'
+      while file_str != file_str_orig:
+        file_str_orig = file_str
+        for key,val in self.macroMap.items():
+          file_str=file_str.replace('${'+key+'}',val)
+
+      self.validateUnresolvedMacros(the_file, file_str)
+
+      # put resolved template into a file
+
+      genfile = self.env.INTROSPECT_HOME + '/';
+
+      if the_file == 'config.xml':
+        genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml' 
+      else:
+        genfile += self.moduleMap[the_file]
+
+      gen = Generator(self.env, genfile)
+      gen.open()
+      gen.write(file_str)
+      gen.close()
+      gen.addGeneratedFile()
+
+
 class DomainIntrospector(SecretManager):
 
   def __init__(self, env):
@@ -700,10 +932,13 @@ class DomainIntrospector(SecretManager):
 
   def introspect(self):
     tg = TopologyGenerator(self.env)
+
     if tg.validate():
       SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
+
+    CustomSitConfigIntrospector(self.env).generateAndValidate()
 
     # If the topology is invalid, the generated topology
     # file contains a list of one or more validation errors

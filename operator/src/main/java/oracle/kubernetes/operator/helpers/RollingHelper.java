@@ -64,6 +64,11 @@ public class RollingHelper {
     }
 
     @Override
+    protected String getDetail() {
+      return String.join(",", rolling.keySet());
+    }
+
+    @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
