@@ -1,6 +1,13 @@
-Weblogic operator supports three types load balancers: TRAEFIK, VOYAGER, APACHE. We provide samples for each type to demostrate how to install and configure load balancer. Samples are located in following folders:
-traefik
-voyager
-ingress-per-domain
-apache-samples
-Note: apache-webtier is helm chart. It is used in apache-samples.
+# WebLogic Operator Load Balancer Samples
+
+## Load balancer sample scripts
+
+The Oracle WebLogic Server Kubernetes Operator supports three load balancers: TRAEFIK, VOYAGER, and APACHE. We provide samples that demonstrate how to install and configure each one. The samples are located in following folders:
+
+* [traefik](traefik/README.md)
+* [voyager](voyager/README.md)
+* [apache-samples](apache-samples/README.md)
+* [ingress-per-domain](ingress-per-domain/README.md)
+* [apache-webtier](apache-webtier/README.md)
+
+**Note**: The apache-webtier script contains a Helm chart that is used in the Apache samples.

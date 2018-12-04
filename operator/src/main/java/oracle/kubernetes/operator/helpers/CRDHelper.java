@@ -152,9 +152,10 @@ public class CRDHelper {
     }
 
     Step updateCRD(Step next, V1beta1CustomResourceDefinition existingCRD) {
+      model.getMetadata().setResourceVersion(existingCRD.getMetadata().getResourceVersion());
       return new CallBuilder()
           .replaceCustomResourceDefinitionAsync(
-              model.getMetadata().getName(), createModel(), createReplaceResponseStep(next));
+              model.getMetadata().getName(), model, createReplaceResponseStep(next));
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createReplaceResponseStep(Step next) {
