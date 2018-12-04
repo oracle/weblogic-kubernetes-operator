@@ -54,6 +54,20 @@ public class ITOperator extends BaseTest {
   private static Operator operatorForDel1;
   private static Operator operatorForDel2;
 
+  private static boolean QUICKTEST;
+  private static boolean SMOKETEST;
+
+  // Set QUICKTEST env var to true to run a small subset of tests.
+  // Set SMOKETEST env var to true to run an even smaller subset
+  // of tests, plus leave domain1 up and running when the test completes.
+  static {
+    QUICKTEST =
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+    SMOKETEST =
+        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
+    if (SMOKETEST) QUICKTEST = true;
+  }
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -103,16 +117,15 @@ public class ITOperator extends BaseTest {
     logTestBegin("test1CreateFirstOperatorAndDomain");
     testCreateOperatorManagingDefaultAndTest1NS();
     Domain domain1 = testAllUseCasesForADomain(operator1, domain1YamlFile);
-    domain1.testWlsLivenessProbe();
-    domain1.shutdownUsingServerStartPolicy();
+    if (!SMOKETEST) domain1.testWlsLivenessProbe();
+    if (!SMOKETEST) domain1.shutdownUsingServerStartPolicy();
 
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
 
   @Test
   public void test2CreateAnotherDomainInDefaultNS() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test2CreateAnotherDomainInDefaultNS");
     logger.info("Creating Domain domain2 & verifing the domain creation");
@@ -129,8 +142,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test3CreateDomainInTest1NS() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test3CreateDomainInTest1NS");
     logger.info("Creating Domain domain3 & verifing the domain creation");
@@ -146,8 +158,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test4CreateAnotherOperatorManagingTest2NS() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test4CreateAnotherOperatorManagingTest2NS");
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -158,8 +169,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test5CreateConfiguredDomainInTest2NS() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test5CreateConfiguredDomainInTest2NS");
     logger.info("Creating Domain domain4 & verifing the domain creation");
@@ -198,8 +208,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test6CreateDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test6CreateDomainWithStartPolicyAdminOnly");
     logger.info("Checking if operator1 is running, if not creating");
@@ -215,8 +224,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test7CreateDomainPVReclaimPolicyRecycle() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test7CreateDomainPVReclaimPolicyRecycle");
     logger.info("Checking if operator1 is running, if not creating");
@@ -233,8 +241,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void test8CreateDomainOnExistingDir() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("test8CreateDomainOnExistingDir");
     if (operator1 == null) {
@@ -251,8 +258,8 @@ public class ITOperator extends BaseTest {
 
   // @Test
   public void testACreateDomainApacheLB() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
+
     logTestBegin("testACreateDomainApacheLB");
     logger.info("Creating Domain domain9 & verifing the domain creation");
     if (operator1 == null) {
@@ -268,8 +275,8 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testBCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
+
     logTestBegin("testBCreateDomainWithDefaultValuesInSampleInputs");
     logger.info("Creating Domain domain10 & verifing the domain creation");
     if (operator1 == null) {
@@ -284,8 +291,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testDeleteOneDomain() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
     logTestBegin("Deleting one domain.");
 
     if (operatorForDel1 == null) {
@@ -303,8 +309,7 @@ public class ITOperator extends BaseTest {
 
   @Test
   public void testDeleteTwoDomains() throws Exception {
-    Assume.assumeFalse(
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true"));
+    Assume.assumeFalse(QUICKTEST);
     logTestBegin("Deleting two domains.");
 
     if (operatorForDel2 == null) {
@@ -337,9 +342,11 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain & verifing the domain creation");
     // create domain1
     Domain domain = testDomainCreation(domainYamlFile);
-    testClusterScaling(operator, domain);
-    testDomainLifecyle(operator, domain);
-    testOperatorLifecycle(operator, domain);
+    if (!SMOKETEST) {
+      testClusterScaling(operator, domain);
+      testDomainLifecyle(operator, domain);
+      testOperatorLifecycle(operator, domain);
+    }
     return domain;
   }
 
