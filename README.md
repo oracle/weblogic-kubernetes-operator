@@ -10,7 +10,7 @@ In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Ope
 
 *	Create WebLogic domains on a Kubernetes persistent volume. This persistent volume can reside in an NFS.
 * Create a WebLogic domain in a Docker image.
-* Override certain aspects of the WebLogic domain configuration when it is in a Docker image.
+* Override certain aspects of the WebLogic domain configuration.
 *	Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
 *	Start servers based on declarative startup parameters and desired states.
 * Manage WebLogic configured or dynamic clusters.
