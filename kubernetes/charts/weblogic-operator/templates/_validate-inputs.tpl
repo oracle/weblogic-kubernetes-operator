@@ -35,6 +35,7 @@
 {{- end -}}
 {{- $ignore := include "utils.verifyString" (list $scope "tillerNamespace") -}}
 {{- $ignore := include "utils.verifyString" (list $scope "tillerServiceAccount") -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore:= include "utils.endValidation" $scope -}}
 {{- include "operator.operatorVerificationHook" (list $scope "pre-upgrade") }}
 {{- include "operator.operatorVerificationHook" (list $scope "pre-install") }}

@@ -650,8 +650,11 @@ public abstract class PodStepContext implements StepContextConstants {
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
-            .readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+
+    if (!mockWLS()) {
+      v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));
+    }
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
@@ -699,6 +702,9 @@ public abstract class PodStepContext implements StepContextConstants {
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
+    if (mockWLS()) {
+      addEnvVar(vars, "MOCK_WLS", "true");
+    }
     hideAdminUserCredentials(vars);
   }
 
@@ -812,5 +818,9 @@ public abstract class PodStepContext implements StepContextConstants {
   private int getLivenessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getPeriodSeconds())
         .orElse(tuning.livenessProbePeriodSeconds);
+  }
+
+  private boolean mockWLS() {
+    return Boolean.getBoolean("mockWLS");
   }
 }
