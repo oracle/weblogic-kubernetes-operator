@@ -1105,6 +1105,13 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_serviceLabelsAndAnnotations() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+    assertThat(serverSpec.getServiceAnnotations(), hasEntry("e", "f"));
+  }
+
+  @Test
   public void whenDomain3ReadFromYaml_PredefinedStorageDefinesClaimName() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
@@ -1137,6 +1144,14 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_adminServerHasAnnotationsAndLabels() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    assertThat(domain.getAdminServerSpec().getServiceAnnotations(), hasEntry("e", "f"));
+    assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("a", "b"));
+    assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("c", "d"));
   }
 
   @Test
