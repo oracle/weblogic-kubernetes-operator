@@ -564,7 +564,13 @@ public abstract class PodStepContext implements StepContextConstants {
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+        .putLabelsItem(
+            LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
+        .putLabelsItem(
+            LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
+        .putLabelsItem(
+            LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
     // Add custom annotations
     getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));

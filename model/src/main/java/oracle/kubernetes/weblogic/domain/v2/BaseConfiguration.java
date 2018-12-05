@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl.RestartVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -67,7 +66,7 @@ public abstract class BaseConfiguration {
   @Description(
       "If preseent, every time this integer value is incremented the operator will restart"
           + " the required servers")
-  private Integer restartVersion;
+  private String restartVersion;
 
   /**
    * Fills in any undefined settings in this configuration from another configuration.
@@ -210,13 +209,11 @@ public abstract class BaseConfiguration {
     serverPod.addPodAnnotations(name, value);
   }
 
-  public Integer getRestartVersion() {
+  public String getRestartVersion() {
     return restartVersion;
   }
 
-  public abstract RestartVersion addEffectiveRestartVersion(RestartVersion restartVersion);
-
-  public void setRestartVersion(Integer restartVersion) {
+  public void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
   }
 

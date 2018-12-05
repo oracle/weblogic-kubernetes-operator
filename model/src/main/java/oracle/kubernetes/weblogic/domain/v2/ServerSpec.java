@@ -206,7 +206,11 @@ public abstract class ServerSpec {
     return null;
   }
 
-  public abstract String getRestartVersion();
+  public abstract String getDomainRestartVersion();
+
+  public abstract String getClusterRestartVersion();
+
+  public abstract String getServerRestartVersion();
 
   @Override
   public String toString() {
