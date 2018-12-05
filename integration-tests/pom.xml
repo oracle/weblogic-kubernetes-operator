@@ -66,7 +66,12 @@
             <artifactId>snakeyaml</artifactId>
             <version>1.21</version>            
         </dependency>
-	</dependencies>
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 
 	<profiles>

@@ -241,6 +241,11 @@ public class Main {
     }
 
     @Override
+    protected String getDetail() {
+      return String.join(",", targetNamespaces);
+    }
+
+    @Override
     public NextAction apply(Packet packet) {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up

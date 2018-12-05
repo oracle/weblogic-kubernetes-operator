@@ -12,15 +12,17 @@ DN=${DOMAIN_NAME?}
 SN=${SERVER_NAME?}
 DH=${DOMAIN_HOME?}
 
-STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
+STATEFILE=${DH}/servers/${SN}/data/nodemanager/${SN}.state
 
 # if the livenessProbeSuccessOverride file is available, treat failures as success
 #
 RETVAL=$(test -f /weblogic-operator/debug/livenessProbeSuccessOverride ; echo $?)
 
-if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
-  echo "Error: WebLogic NodeManager process not found."
-  exit $RETVAL
+if [ "${MOCK_WLS}" != 'true' ]; then
+  if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
+    echo "Error: WebLogic NodeManager process not found."
+    exit $RETVAL
+  fi
 fi
 if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 1 ]; then
   echo "Error: WebLogic Server state is FAILED_NOT_RESTARTABLE."
