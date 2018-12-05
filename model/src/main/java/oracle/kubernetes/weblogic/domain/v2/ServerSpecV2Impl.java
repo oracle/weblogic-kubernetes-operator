@@ -165,6 +165,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.toString())
         .append("server", server)
         .append("clusterLimit", clusterLimit)
+        .append("cluster", cluster)
         .toString();
   }
 
@@ -182,6 +183,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.equals(o))
         .append(server, that.server)
         .append(clusterLimit, that.clusterLimit)
+        .append(cluster, that.cluster)
         .isEquals();
   }
 
@@ -191,6 +193,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.hashCode())
         .append(server)
         .append(clusterLimit)
+        .append(cluster)
         .toHashCode();
   }
 }
