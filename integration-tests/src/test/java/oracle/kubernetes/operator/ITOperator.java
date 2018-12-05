@@ -45,6 +45,7 @@ public class ITOperator extends BaseTest {
   private static final String domain3ForDelValueYamlFile = "domain_del_3.yaml";
   private static String domain9YamlFile = "domain9.yaml";
   private static String domain10YamlFile = "domain10.yaml";
+  private static String domain11YamlFile = "domain11.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -329,6 +330,56 @@ public class ITOperator extends BaseTest {
 
     TestUtils.verifyAfterDeletion(domainDel1);
     TestUtils.verifyAfterDeletion(domainDel2);
+  }
+
+  @Test
+  public void testAutoSitConfigOverrides() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    logTestBegin("testAutoSitConfigOverrides");
+    try {
+      // cp py
+      StringBuffer cmd = new StringBuffer("cd ");
+      cmd.append(BaseTest.getProjectRoot())
+          .append(
+              "/integration-tests/src/test/resources/domain-home-on-pv && cp create-domain.py create-domain.py.bak");
+      logger.info("Running " + cmd);
+
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(cmd + " failed");
+      }
+
+      cmd = new StringBuffer("cd ");
+      cmd.append(BaseTest.getProjectRoot())
+          .append(
+              "/integration-tests/src/test/resources/domain-home-on-pv && cp create-domain-auto-sit-config.py create-domain.py");
+      logger.info("Running " + cmd);
+      result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(cmd + " failed");
+      }
+
+      if (operator1 == null) {
+        operator1 = TestUtils.createOperator(op1YamlFile);
+      }
+
+      testAllUseCasesForADomain(operator1, domain11YamlFile);
+
+      logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
+    } finally {
+      StringBuffer cmd = new StringBuffer("cd ");
+      cmd.append(BaseTest.getProjectRoot())
+          .append(
+              "/integration-tests/src/test/resources/domain-home-on-pv && cp create-domain.py.bak create-domain.py");
+      logger.info("Running " + cmd);
+
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(cmd + " failed");
+      }
+    }
+    // cp py back
+
   }
 
   private void testCreateOperatorManagingDefaultAndTest1NS() throws Exception {
