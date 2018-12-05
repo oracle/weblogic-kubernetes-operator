@@ -11,16 +11,16 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 * Make sure that the host directory that will be used already exists and has the appropriate file permissions set.
 
 ## Storage locations
-Persistent volumes can point to different storage locations, for example NFS servers or a local directory path. Please read the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) regarding on how to configure this.
+Persistent volumes can point to different storage locations, for example NFS servers or a local directory path. The list of available options is listed in the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
-Note regarding NFS: 
+Note regarding NFS:
 In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Server Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.
 
 Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
 
 # YAML files
 
-Persistent volumes and claims are described in YAML files. For each persistent volume, you should create one persistent volume YAML file and one persistent volume claim YAML file. In the example above, you will find 2 YAML templates, one for the persistent volume and one for the persistent volume claim. They can either be dedicated to a specific domain, or shared across multiple domains. For the use cases where a dedicated for a particular domain, it is a best practice to label it with weblogic.domainUID=[domain name]. This makes it easy to search for, and clean up, resources associated with that particular domain.
+Persistent volumes and claims are described in YAML files. For each persistent volume, you should create one persistent volume YAML file and one persistent volume claim YAML file. In the example below, you will find 2 YAML templates, one for the volume and one for the claim. As stated above, they can either be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with weblogic.domainUID=[domain name]. This makes it easy to search for, and clean up, resources associated with that particular domain.
 
 For sample YAML templates, please refer to this example.
 * [Persistent Volumes example](../kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md)
@@ -35,6 +35,16 @@ After you have written your YAML files, please use them to create the persistent
 
 ```
 
+# Verify the results
+
+To confirm that the persistent volume was created, use these commands:
+
+```
+  kubectl describe pv [persistent volume name]
+  kubectl describe pvc -n NAMESPACE [persistent volume claim name]
+
+```
+
 # Common problems
 
 This section provides details of common problems that might occur while running the script and how to resolve them.
@@ -43,16 +53,7 @@ This section provides details of common problems that might occur while running 
 
 Possibly the most common problem experienced during testing was the incorrect configuration of the persistent volume provider. The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many. If this is not the case, the persistent volume creation will fail.
 
-The simplest case is where the `HOST_PATH` provider is used.  This can be either with one Kubernetes node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount).  In this case, the path used for the persistent volume must have its permission bits set to 777.
-
-# Verify the results
-
-To confirm that the persistent volume was created, use these commands:
-
-```
-kubectl describe pv [persistent volume name]
-kubectl describe pvc -n NAMESPACE [persistent volume claim name]
-```
+The simplest case is where the `HOST_PATH` provider is used. This can be either with one Kubernetes node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount). In this case, the path used for the persistent volume must have its permission bits set to 777.
 
 # Further reading
 
