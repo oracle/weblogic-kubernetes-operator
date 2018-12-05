@@ -6,10 +6,7 @@ package oracle.kubernetes.json;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -111,6 +108,21 @@ public class SchemaGeneratorTest {
 
   @SuppressWarnings("unused")
   private TrafficLightColors colors;
+
+  @Test
+  public void generateSchemaForEnumAnnotatedString() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("direction"));
+
+    assertThat(schema, hasJsonPath("$.direction.type", equalTo("string")));
+    assertThat(
+        schema,
+        hasJsonPath(
+            "$.direction.enum", arrayContainingInAnyOrder("NORTH", "SOUTH", "EAST", "WEST")));
+  }
+
+  @SuppressWarnings("unused")
+  @EnumClass(Directions.class)
+  private String direction;
 
   @Test
   public void generateSchemaForAnnotatedDouble() throws NoSuchFieldException {

@@ -4,20 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
-
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -64,11 +56,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
+  @Nonnull
   public Map<String, String> getPodLabels() {
     return server.getPodLabels();
   }
 
   @Override
+  @Nonnull
   public Map<String, String> getPodAnnotations() {
     return server.getPodAnnotations();
   }
@@ -100,14 +94,12 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   @Override
   public boolean shouldStart(int currentReplicas) {
     switch (getEffectiveServerStartPolicy()) {
-      case START_NEVER:
-        return false;
-      case START_ALWAYS:
+      case ALWAYS:
         return true;
-      case START_IF_NEEDED:
+      case IF_NEEDED:
         return clusterLimit == null || currentReplicas < clusterLimit;
       default:
-        return clusterLimit == null;
+        return false;
     }
   }
 
@@ -115,8 +107,10 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
     return domainSpec.isStartAdminServerOnly();
   }
 
-  private String getEffectiveServerStartPolicy() {
-    return Optional.ofNullable(server.getServerStartPolicy()).orElse("undefined");
+  private ServerStartPolicy getEffectiveServerStartPolicy() {
+    return Optional.ofNullable(server.getServerStartPolicy())
+        .map(ServerStartPolicy::valueOf)
+        .orElse(ServerStartPolicy.getDefaultPolicy());
   }
 
   @Nonnull
