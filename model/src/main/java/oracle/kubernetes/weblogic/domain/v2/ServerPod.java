@@ -155,6 +155,26 @@ class ServerPod {
   @Description("Annotations applied to pods")
   private Map<String, String> podAnnotations = new HashMap<String, String>();
 
+  /**
+   * The labels to be attached to Service.
+   *
+   * @since 2.0
+   */
+  @SerializedName("serviceLabels")
+  @Expose
+  @Description("Labels applied to services")
+  private Map<String, String> serviceLabels = new HashMap<String, String>();
+
+  /**
+   * The annotations to be attached to Service.
+   *
+   * @since 2.0
+   */
+  @SerializedName("serviceAnnotations")
+  @Expose
+  @Description("Annotations applied to services")
+  private Map<String, String> serviceAnnotations = new HashMap<String, String>();
+
   ProbeTuning getReadinessProbeTuning() {
     return this.readinessProbeTuning;
   }
@@ -185,6 +205,8 @@ class ServerPod {
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
     serverPod1.getPodLabels().forEach((k, v) -> addPodLabelIfMissing(k, v));
     serverPod1.getPodAnnotations().forEach((k, v) -> addPodAnnotationIfMissing(k, v));
+    serverPod1.getServiceAnnotations().forEach((k, v) -> addServiceAnnotationIfMissing(k, v));
+    serverPod1.getServiceLabels().forEach((k, v) -> addServiceLabelIfMissing(k, v));
     serverPod1.nodeSelectorMap.forEach(nodeSelectorMap::putIfAbsent);
     copyValues(resourceRequirements, serverPod1.resourceRequirements);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
@@ -293,6 +315,14 @@ class ServerPod {
     if (!podAnnotations.containsKey(name)) podAnnotations.put(name, value);
   }
 
+  private void addServiceLabelIfMissing(String name, String value) {
+    if (!serviceLabels.containsKey(name)) serviceLabels.put(name, value);
+  }
+
+  private void addServiceAnnotationIfMissing(String name, String value) {
+    if (!serviceAnnotations.containsKey(name)) serviceAnnotations.put(name, value);
+  }
+
   List<V1EnvVar> getEnv() {
     return this.env;
   }
@@ -391,6 +421,22 @@ class ServerPod {
     return podAnnotations;
   }
 
+  void addServiceLabel(String name, String value) {
+    serviceLabels.put(name, value);
+  }
+
+  void addServiceAnnotations(String name, String value) {
+    serviceAnnotations.put(name, value);
+  }
+
+  public Map<String, String> getServiceLabels() {
+    return serviceLabels;
+  }
+
+  public Map<String, String> getServiceAnnotations() {
+    return serviceAnnotations;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -401,6 +447,8 @@ class ServerPod {
         .append("additionalVolumeMounts", additionalVolumeMounts)
         .append("podLabels", podLabels)
         .append("podAnnotations", podAnnotations)
+        .append("serviceLabels", serviceLabels)
+        .append("serviceAnnotations", serviceAnnotations)
         .append("nodeSelector", nodeSelectorMap)
         .append("resourceRequirements", resourceRequirements)
         .append("podSecurityContext", podSecurityContext)
@@ -424,6 +472,8 @@ class ServerPod {
         .append(additionalVolumeMounts, that.additionalVolumeMounts)
         .append(podLabels, that.podLabels)
         .append(podAnnotations, that.podAnnotations)
+        .append(serviceLabels, that.serviceLabels)
+        .append(serviceAnnotations, that.serviceAnnotations)
         .append(nodeSelectorMap, that.nodeSelectorMap)
         .append(resourceRequirements, that.resourceRequirements)
         .append(podSecurityContext, that.podSecurityContext)
@@ -441,6 +491,8 @@ class ServerPod {
         .append(additionalVolumeMounts)
         .append(podLabels)
         .append(podAnnotations)
+        .append(serviceLabels)
+        .append(serviceAnnotations)
         .append(nodeSelectorMap)
         .append(resourceRequirements)
         .append(podSecurityContext)
