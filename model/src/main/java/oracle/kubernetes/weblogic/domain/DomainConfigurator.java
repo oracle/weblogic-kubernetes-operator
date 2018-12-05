@@ -315,5 +315,5 @@ public abstract class DomainConfigurator {
    * @param restartVersion
    * @return this object
    */
-  public abstract DomainConfigurator withRestartVersion(Integer restartVersion);
+  public abstract DomainConfigurator withRestartVersion(String restartVersion);
 }

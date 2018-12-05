@@ -21,13 +21,12 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
 public abstract class ServerSpecV2Impl extends ServerSpec {
   private final Server server;
+  private final Cluster cluster;
   private Integer clusterLimit;
-  private RestartVersion effectiveRestartVersion = new RestartVersion();
 
   /**
    * Constructs an object to return the effective configuration
@@ -38,21 +37,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
    * @param configurations the additional configurations to search for values if the server lacks
    *     them
    */
-  ServerSpecV2Impl(
-      DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
+  ServerSpecV2Impl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
-    for (BaseConfiguration configuration : configurations) {
-      this.server.fillInFrom(configuration);
-      addEfectiveRestartVersion(configuration);
-    }
-    addEfectiveRestartVersion(server);
-  }
-
-  private void addEfectiveRestartVersion(BaseConfiguration configuration) {
-    if (configuration == null) return;
-    configuration.addEffectiveRestartVersion(effectiveRestartVersion);
+    this.server.fillInFrom(cluster);
+    this.server.fillInFrom(spec);
+    this.cluster = cluster;
   }
 
   private Server getBaseConfiguration(Server server) {
@@ -76,10 +67,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
 
   @Override
   public Map<String, String> getPodLabels() {
-    Map<String, String> serverPodLabels = server.getPodLabels();
-    serverPodLabels.put(
-        ConfigurationConstants.LABEL_RESTART_VERSION, effectiveRestartVersion.toString());
-    return serverPodLabels;
+    return server.getPodLabels();
   }
 
   @Override
@@ -157,8 +145,18 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
-  public String getRestartVersion() {
-    return effectiveRestartVersion.toString();
+  public String getDomainRestartVersion() {
+    return domainSpec.getRestartVersion();
+  }
+
+  @Override
+  public String getClusterRestartVersion() {
+    return cluster != null ? cluster.getRestartVersion() : null;
+  }
+
+  @Override
+  public String getServerRestartVersion() {
+    return server.getRestartVersion();
   }
 
   @Override
@@ -167,7 +165,6 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.toString())
         .append("server", server)
         .append("clusterLimit", clusterLimit)
-        .append("effectiveRestartVersion", effectiveRestartVersion.toString())
         .toString();
   }
 
@@ -185,7 +182,6 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.equals(o))
         .append(server, that.server)
         .append(clusterLimit, that.clusterLimit)
-        .append(effectiveRestartVersion, that.effectiveRestartVersion)
         .isEquals();
   }
 
@@ -195,79 +191,6 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.hashCode())
         .append(server)
         .append(clusterLimit)
-        .append(effectiveRestartVersion)
         .toHashCode();
-  }
-
-  public class RestartVersion {
-    private Integer domainRestartVersion = 0;
-    private Integer clusterRestartVersion = 0;
-    private Integer serverRestartVersion = 0;
-
-    public RestartVersion() {
-      super();
-    }
-
-    public Integer getDomainRestartVersion() {
-      return domainRestartVersion;
-    }
-
-    public RestartVersion addDomainRestartVersion(Integer domainRestartVersion) {
-      this.domainRestartVersion = domainRestartVersion != null ? domainRestartVersion : 0;
-      return this;
-    }
-
-    public Integer getClusterRestartVersion() {
-      return clusterRestartVersion;
-    }
-
-    public RestartVersion addClusterRestartVersion(Integer clusterRestartVersion) {
-      this.clusterRestartVersion = clusterRestartVersion != null ? clusterRestartVersion : 0;
-      return this;
-    }
-
-    public Integer getServerRestartVersion() {
-      return serverRestartVersion;
-    }
-
-    public RestartVersion addServerRestartVersion(Integer serverRestartVersion) {
-      this.serverRestartVersion = serverRestartVersion != null ? serverRestartVersion : 0;
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return new ToStringBuilder(this, ToStringStyle.SIMPLE_STYLE)
-          .append("domainRestartVersion", domainRestartVersion)
-          .append("clusterRestartVersion", clusterRestartVersion)
-          .append("serverRestartVersion", serverRestartVersion)
-          .toString();
-    }
-
-    @Override
-    public int hashCode() {
-      return new HashCodeBuilder(17, 37)
-          .append(domainRestartVersion)
-          .append(clusterRestartVersion)
-          .append(serverRestartVersion)
-          .toHashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-
-      if (o == null || getClass() != o.getClass()) return false;
-
-      if (!(o instanceof RestartVersion)) return false;
-
-      RestartVersion that = (RestartVersion) o;
-
-      return new EqualsBuilder()
-          .append(domainRestartVersion, that.domainRestartVersion)
-          .append(clusterRestartVersion, that.clusterRestartVersion)
-          .append(serverRestartVersion, that.serverRestartVersion)
-          .isEquals();
-    }
   }
 }

@@ -23,7 +23,6 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl.RestartVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -622,11 +621,6 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @Override
-  public RestartVersion addEffectiveRestartVersion(RestartVersion restartVersion) {
-    return restartVersion.addDomainRestartVersion(getRestartVersion());
-  }
-
-  @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
@@ -759,9 +753,8 @@ public class DomainSpec extends BaseConfiguration {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
           getServer(serverName),
-          getClusterLimit(clusterName),
           getCluster(clusterName),
-          DomainSpec.this);
+          getClusterLimit(clusterName));
     }
 
     private Integer getClusterLimit(String clusterName) {
