@@ -381,6 +381,7 @@ function createYamlFiles {
   cp ${dcrInput} ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
