@@ -41,4 +41,6 @@ public interface ServerConfigurator {
   ServerConfigurator withPodLabel(String name, String value);
 
   ServerConfigurator withPodAnnotation(String name, String value);
+
+  ServerConfigurator withRestartVersion(Integer restartVersion);
 }

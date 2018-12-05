@@ -15,7 +15,6 @@ spec:
   asName: admin
   # The Admin Server's ListenPort
   asPort: 8001
-  # The WebLogic Domain Name
 
   adminServer:
   # the T3 endpoints to export. Each entry is an endpoint name,
@@ -32,6 +31,8 @@ spec:
     serverPod:
       nodeSelector:
         os: linux
+    # Restart version 
+    restartVersion: 1
 
   domainName: base_domain
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
