@@ -266,12 +266,12 @@ public class ConfigMapHelper {
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
       Map<String, String> data = parseIntrospectorResult(result, domain.getDomainUID());
-      LOGGER.fine("================");
-      LOGGER.fine(data.toString());
-      LOGGER.fine("================");
+      System.out.println("================");
+      System.out.println(data.toString());
+      System.out.println("================");
       String topologyYaml = data.get("topology.yaml");
       if (topologyYaml != null) {
-        LOGGER.fine("topology.yaml: " + topologyYaml);
+        System.out.println("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
         ScanCache.INSTANCE.registerScan(
@@ -304,7 +304,7 @@ public class ConfigMapHelper {
     }
   }
 
-  static class SitConfigMapContext extends ConfigMapContext {
+  public static class SitConfigMapContext extends ConfigMapContext {
     Map<String, String> data;
     String cmName;
 
@@ -513,13 +513,13 @@ public class ConfigMapHelper {
     return fname;
   }
 
-  static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
+  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
     try {
       DomainTopology domainTopology = mapper.readValue(topologyYaml, DomainTopology.class);
 
-      LOGGER.fine(
+      System.out.println(
           ReflectionToStringBuilder.toString(domainTopology, ToStringStyle.MULTI_LINE_STYLE));
 
       return domainTopology;

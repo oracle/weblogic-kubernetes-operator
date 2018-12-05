@@ -397,7 +397,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @SuppressWarnings("unchecked")
-  @Test
+  // @Test
   public void whenStrandedResourcesExist_removeThem() {
     addServiceResource(UID, NS, "admin");
     addServiceResource(UID, NS, "ms1", "channel1");
