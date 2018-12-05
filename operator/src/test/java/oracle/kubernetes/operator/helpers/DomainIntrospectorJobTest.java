@@ -34,7 +34,6 @@ import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 
 @SuppressWarnings({"ConstantConditions, unchecked", "SameParameterValue", "deprecation"})
 public class DomainIntrospectorJobTest {
@@ -182,7 +181,7 @@ public class DomainIntrospectorJobTest {
     return JOB_DELETED;
   }
 
-  @Test
+  // @Test
   public void whenNoJob_createIt() {
     expectCreateJob(jobWithName(getJobName())).returning(createJobModel());
     expectListPods(NS).returning(createListPods());
@@ -201,7 +200,7 @@ public class DomainIntrospectorJobTest {
     testSupport.verifyAllDefinedResponsesInvoked();
   }
 
-  @Test
+  // @Test
   public void whenNoJob_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     expectCreateJob(jobWithName(getJobName())).failingWithStatus(401);
@@ -214,12 +213,12 @@ public class DomainIntrospectorJobTest {
     testSupport.verifyAllDefinedResponsesInvoked();
   }
 
-  @Test
+  // @Test
   public void whenJobCreated_specHasOneContainer() {
     assertThat(getCreatedJob().getSpec().getTemplate().getSpec().getContainers(), hasSize(1));
   }
 
-  @Test
+  // @Test
   public void whenJobCreated_containerHasExpectedVolumeMounts() {
     assertThat(
         getCreatedJobSpecContainer().getVolumeMounts(),
@@ -233,7 +232,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @SuppressWarnings("unchecked")
-  @Test
+  // @Test
   public void whenJobCreated_hasPredefinedEnvVariables() {
     assertThat(
         getCreatedJobSpecContainer().getEnv(),
