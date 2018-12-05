@@ -1,27 +1,33 @@
 
 # Persistent Volumes
 
-This guide outlines how to set up a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain custom resource as a persistent storage for the WebLogic domain home or log files. A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
+In this guide, we outline how to set up Kubernetes persistent volume and persistent volume claim which can be used as storage for WebLogic domain homes and log files. A persistent volume can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
 ## Prerequisites
 
-The following prerequisites must be fulfilled before proceeding with the creation of the persistent volume.
-* Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace. Note that a PVC has to be in the same namespace as the domain resource that uses it.
-* Make sure that the host directory that will be used as the persistent volume already exists and has the appropriate file permissions set.
+The following prerequisites must be fulfilled before proceeding with the creation of the volume.
+* Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace. Note that a persistent volume claim has to be in the same namespace as the domain resource that uses it.
+* Make sure that all servers in WLS domain are able to reach the storage location.
+* Make sure that the host directory that will be used already exists and has the appropriate file permissions set.
 
-# Persistent volume YAML files
+## Storage locations
+Persistent volumes can point to different storage locations, for example NFS servers or a local directory path. Please read the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) regarding on how to configure this.
+
+Note regarding NFS: 
+In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Server Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.
+
+Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
+
+# YAML files
+
+Persistent volumes and claims are described in YAML files. For each persistent volume, you should create one persistent volume YAML file and one persistent volume claim YAML file. In the example above, you will find 2 YAML templates, one for the persistent volume and one for the persistent volume claim. They can either be dedicated to a specific domain, or shared across multiple domains. For the use cases where a dedicated for a particular domain, it is a best practice to label it with weblogic.domainUID=[domain name]. This makes it easy to search for, and clean up, resources associated with that particular domain.
 
 For sample YAML templates, please refer to this example.
 * [Persistent Volumes example](../kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md)
 
-Persistent volumes and claims and their properties are described in YAML files. For each PV, you should create one PV YAML file and one PVC YAML file. In the example above, you will find 2 YAML templates, one for the PV and one for the PVC. They can either be dedicated to a specific domain, or shared across multiple domains. For the use cases where a dedicated for a particular domain, it is a best practice to label it with weblogic.domainUID=[domain name]. This makes it easy to search for, and clean up, resources associated with that particular domain.
-
-## Storage locations
-PVs can point to different storage locations, for example NFS server storage or local path. Please read the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) regarding on how to configure this.
-
 # Kubernetes resources
 
-After you have written your YAML files, please use them to create the PV by creating Kubernetes resources using the `kubectl create -f` command.
+After you have written your YAML files, please use them to create the persistent volume by creating Kubernetes resources using the `kubectl create -f` command.
 
 ```
   kubectl create -f pv.yaml
@@ -35,15 +41,20 @@ This section provides details of common problems that might occur while running 
 
 ### Persistent volume provider not configured correctly
 
-Possibly the most common problem experienced during testing was the incorrect configuration of the persistent volume provider.  The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many.  If this is not the case, the PV/PVC creation will fail.
+Possibly the most common problem experienced during testing was the incorrect configuration of the persistent volume provider. The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many. If this is not the case, the persistent volume creation will fail.
 
 The simplest case is where the `HOST_PATH` provider is used.  This can be either with one Kubernetes node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount).  In this case, the path used for the persistent volume must have its permission bits set to 777.
 
 # Verify the results
 
-To confirm that the PV and PVC were created, use these commands:
+To confirm that the persistent volume was created, use these commands:
 
 ```
-kubectl describe pv [PV name]
-kubectl describe pvc -n NAMESPACE [PVC name]
+kubectl describe pv [persistent volume name]
+kubectl describe pvc -n NAMESPACE [persistent volume claim name]
 ```
+
+# Further reading
+
+* https://blogs.oracle.com/weblogicserver/how-to-run-weblogic-clusters-on-the-oracle-cloud-infrastructure-container-engine-for-kubernetes
+
