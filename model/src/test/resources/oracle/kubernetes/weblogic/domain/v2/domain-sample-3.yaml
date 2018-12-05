@@ -33,10 +33,10 @@ spec:
       nodeSelector:
         os: linux
       serviceLabels:
-        a: b
-        c: d
+        testKey1: testValue1
+        testKey2: testValue2
       serviceAnnotations:
-        e: f
+        testKey3: testValue3
         longer: shorter
 
   domainName: base_domain
