@@ -462,7 +462,7 @@ class TopologyGenerator(Generator):
     self.writeln("serverTemplateName: " + self.quote(dynamicServer.getServerTemplate().getName()))
     self.writeln("calculatedListenPorts: " + str(dynamicServer.isCalculatedListenPorts()))
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
-    self.writeln("dynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
+    self.writeln("dynamicClusterSize: " + str(dynamicServer.getDynamicClusterSize()))
     self.writeln("maxDynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
 
   def getClusteredServers(self, cluster):
