@@ -514,6 +514,31 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenRestartVersionConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain).withRestartVersion(1);
+    configureCluster(CLUSTER_NAME).withRestartVersion(2);
+    configureServer(SERVER1).withRestartVersion(3);
+    configureAdminServer().withRestartVersion(4);
+
+    ServerSpec clusteredServer = domain.getServer(SERVER1, CLUSTER_NAME);
+    ServerSpec nonClusteredServerWithRestartVersion = domain.getServer(SERVER1, null);
+    ServerSpec nonClusteredServerNoRestartVersion = domain.getServer("anyServer", null);
+
+    assertThat(
+        clusteredServer.getPodLabels(),
+        hasEntry(ConfigurationConstants.LABEL_RESTART_VERSION, "1,2,3"));
+    assertThat(
+        nonClusteredServerWithRestartVersion.getPodLabels(),
+        hasEntry(ConfigurationConstants.LABEL_RESTART_VERSION, "1,0,3"));
+    assertThat(
+        nonClusteredServerNoRestartVersion.getPodLabels(),
+        hasEntry(ConfigurationConstants.LABEL_RESTART_VERSION, "1,0,0"));
+    assertThat(
+        domain.getAdminServerSpec().getPodLabels(),
+        hasEntry(ConfigurationConstants.LABEL_RESTART_VERSION, "1,0,4"));
+  }
+
+  @Test
   public void whenResourceRequirementsConfiguredOnDomain() {
     configureDomainWithResourceRequirements(domain);
     assertThat(
@@ -1137,6 +1162,43 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_AdminServerRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    assertThat(domain.getAdminServerSpec().getRestartVersion(), is("0,0,1"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
+    ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
+    assertThat(clusteredServer.getRestartVersion(), is("0,0,0"));
+    assertThat(nonClusteredServer.getRestartVersion(), is("0,0,0"));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_DomainRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    assertThat(domain.getAdminServerSpec().getRestartVersion(), is("1,0,0"));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_ClusterRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec serverSpec = domain.getServer("server1", "cluster2");
+
+    assertThat(serverSpec.getRestartVersion(), is("1,2,0"));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_ServerRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec serverSpec = domain.getServer("server2", null);
+
+    assertThat(serverSpec.getRestartVersion(), is("1,0,3"));
   }
 
   @Test

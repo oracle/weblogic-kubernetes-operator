@@ -206,6 +206,8 @@ public abstract class ServerSpec {
     return null;
   }
 
+  public abstract String getRestartVersion();
+
   @Override
   public String toString() {
     return new ToStringBuilder(this).append("domainSpec", domainSpec).toString();

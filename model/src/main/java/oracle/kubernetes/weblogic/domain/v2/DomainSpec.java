@@ -23,6 +23,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl.RestartVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -618,6 +619,11 @@ public class DomainSpec extends BaseConfiguration {
   @Override
   protected String getServerStartPolicy() {
     return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
+  }
+
+  @Override
+  public RestartVersion addEffectiveRestartVersion(RestartVersion restartVersion) {
+    return restartVersion.addDomainRestartVersion(getRestartVersion());
   }
 
   @Override
