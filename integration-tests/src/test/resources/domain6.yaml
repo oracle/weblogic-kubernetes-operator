@@ -11,8 +11,8 @@ managedServerNameBase: managed-server
 #weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
 #weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
 exposeAdminT3Channel: true
-t3ChannelPort: 30071
+t3ChannelPort: 30061
 exposeAdminNodePort: true
-adminNodePort: 30706
+adminNodePort: 30705
 namespace: default
-weblogicDomainStorageReclaimPolicy: Recycle
+serverStartPolicy: ADMIN_ONLY
