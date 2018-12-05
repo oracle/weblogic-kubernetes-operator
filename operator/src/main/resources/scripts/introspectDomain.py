@@ -462,7 +462,7 @@ class TopologyGenerator(Generator):
     self.writeln("serverTemplateName: " + self.quote(dynamicServer.getServerTemplate().getName()))
     self.writeln("calculatedListenPorts: " + str(dynamicServer.isCalculatedListenPorts()))
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
-    self.writeln("dynamicClusterSize: " + str(dynamicServer.getDynamicClusterSize()))
+    self.writeln("dynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
     self.writeln("maxDynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
 
   def getClusteredServers(self, cluster):
@@ -661,7 +661,6 @@ class SitConfigGenerator(Generator):
     self.customizeDomainLogPath()
     self.customizeServers()
     self.customizeServerTemplates()
-    self.customizeClusters()
     self.undent()
     self.writeln("</d:domain>")
 
@@ -678,22 +677,6 @@ class SitConfigGenerator(Generator):
   def customizeDomainLogPath(self):
     self.customizeLog(self.env.getDomain().getName())
 
-  def customizeClusters(self):
-    for cluster in self.env.getDomain().getClusters():
-      dynamicServers = cluster.getDynamicServers();
-      if dynamicServers is not None:
-        if dynamicServers.getDynamicClusterSize() < dynamicServers.getMaxDynamicClusterSize():
-          self.writeln("<d:cluster>")
-          self.indent()
-          self.writeln("<d:name>" + cluster.getName() + "</d:name>")
-          self.writeln("<d:dynamic-servers>")
-          self.indent()
-          self.writeln("<d:dynamic-cluster-size f:combine-mode=\"replace\">" + str(dynamicServers.getMaxDynamicClusterSize()) + "</d:dynamic-cluster-size>")
-          self.undent()
-          self.writeln("</d:dynamic-servers>")
-          self.undent()
-          self.writeln("</d:cluster>")
-    
   def customizeServers(self):
     for server in self.env.getDomain().getServers():
       self.customizeServer(server)
