@@ -43,4 +43,6 @@ public interface ClusterConfigurator {
   ClusterConfigurator withPodLabel(String name, String value);
 
   ClusterConfigurator withPodAnnotation(String name, String value);
+
+  ClusterConfigurator withRestartVersion(Integer restartVersion);
 }

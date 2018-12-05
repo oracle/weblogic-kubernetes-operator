@@ -7,6 +7,7 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl.RestartVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -79,5 +80,10 @@ public class Cluster extends BaseConfiguration {
         .append(clusterName)
         .append(replicas)
         .toHashCode();
+  }
+
+  @Override
+  public RestartVersion addEffectiveRestartVersion(RestartVersion restartVersion) {
+    return restartVersion.addClusterRestartVersion(getRestartVersion());
   }
 }

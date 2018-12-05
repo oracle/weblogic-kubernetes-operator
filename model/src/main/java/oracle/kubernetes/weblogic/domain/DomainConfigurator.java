@@ -308,4 +308,12 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withPodSecurityContext(
       V1PodSecurityContext podSecurityContext);
+
+  /**
+   * Set the restart version for the Domain
+   *
+   * @param restartVersion
+   * @return this object
+   */
+  public abstract DomainConfigurator withRestartVersion(Integer restartVersion);
 }
