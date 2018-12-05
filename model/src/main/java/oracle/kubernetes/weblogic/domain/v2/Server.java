@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl.RestartVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -21,6 +20,7 @@ public class Server extends BaseConfiguration {
     Server configuration = new Server();
     configuration.fillInFrom(this);
     configuration.setNodePort(nodePort);
+    configuration.setRestartVersion(this.getRestartVersion());
     return configuration;
   }
 
@@ -30,11 +30,6 @@ public class Server extends BaseConfiguration {
 
   public Integer getNodePort() {
     return nodePort;
-  }
-
-  @Override
-  public RestartVersion addEffectiveRestartVersion(RestartVersion restartVersion) {
-    return restartVersion.addServerRestartVersion(getRestartVersion());
   }
 
   @Override

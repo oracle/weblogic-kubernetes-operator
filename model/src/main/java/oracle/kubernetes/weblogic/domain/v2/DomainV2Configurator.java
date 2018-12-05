@@ -207,7 +207,7 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withRestartVersion(Integer restartVersion) {
+  public DomainConfigurator withRestartVersion(String restartVersion) {
     ((BaseConfiguration) getDomainSpec()).setRestartVersion(restartVersion);
     return this;
   }
@@ -312,7 +312,7 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withRestartVersion(Integer restartVersion) {
+    public ServerConfigurator withRestartVersion(String restartVersion) {
       server.setRestartVersion(restartVersion);
       return this;
     }
@@ -450,7 +450,7 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withRestartVersion(Integer restartVersion) {
+    public ClusterConfigurator withRestartVersion(String restartVersion) {
       cluster.setRestartVersion(restartVersion);
       return this;
     }
