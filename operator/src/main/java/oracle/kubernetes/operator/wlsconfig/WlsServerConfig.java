@@ -150,10 +150,12 @@ public class WlsServerConfig {
         (String) serverConfigMap.get("listenAddress"),
         sslListenPort,
         sslPortEnabled,
-        (Integer) serverConfigMap.get("adminPort"),
-        (boolean) serverConfigMap.get("adminPortEnabled"),
+        /*(Integer) serverConfigMap.get("adminPort"),
+        (boolean) serverConfigMap.get("adminPortEnabled"),*/
         getMachineNameFromJsonMap(serverConfigMap),
-        networkAccessPoints);
+        networkAccessPoints,
+        null,
+        false);
   }
 
   /**
@@ -164,11 +166,10 @@ public class WlsServerConfig {
    * @param listenAddress Configured listen address for this WLS server
    * @param sslListenPort Configured SSL listen port for this WLS server
    * @param sslPortEnabled boolean indicating whether the SSL listen port should be enabled
-   * @param adminPort Configured domain wide administration port
-   * @param adminPortEnabled boolean indicating whether administration port should be enabled
    * @param machineName Configured machine name for this WLS server
    * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
-   *     WLS server
+   * @param adminPort Configured domain wide administration port
+   * @param adminPortEnabled boolean indicating whether administration port should be enabled
    */
   public WlsServerConfig(
       String name,
@@ -176,18 +177,18 @@ public class WlsServerConfig {
       String listenAddress,
       Integer sslListenPort,
       boolean sslPortEnabled,
-      Integer adminPort,
-      boolean adminPortEnabled,
       String machineName,
-      List<NetworkAccessPoint> networkAccessPoints) {
+      List<NetworkAccessPoint> networkAccessPoints,
+      Integer adminPort,
+      boolean adminPortEnabled) {
     this.name = name;
     this.listenPort = listenPort;
     this.listenAddress = listenAddress;
     this.networkAccessPoints = networkAccessPoints;
     this.sslListenPort = sslListenPort;
     this.sslPortEnabled = sslPortEnabled;
-    this.adminPort = adminPort;
-    this.adminPortEnabled = adminPortEnabled;
+    this.adminPort = this.adminPort;
+    this.adminPortEnabled = this.adminPortEnabled;
     this.machineName = machineName;
   }
 
