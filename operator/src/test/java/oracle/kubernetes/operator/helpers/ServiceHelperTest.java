@@ -120,7 +120,7 @@ public class ServiceHelperTest {
         .addToPacket(SERVER_NAME, TEST_SERVER_NAME)
         .addToPacket(PORT, TEST_PORT)
         .addDomainPresenceInfo(domainPresenceInfo);
-      registerWlsDomainConfigScan();
+    registerWlsDomainConfigScan();
   }
 
   @After
@@ -797,33 +797,20 @@ public class ServiceHelperTest {
   }
 
   private void registerWlsDomainConfigScan() {
-      ScanCache.INSTANCE.registerScan(
-              domainPresenceInfo.getNamespace(),
-              domainPresenceInfo.getDomainUID(),
-              new Scan(createWlsDomainConfig(),
-              new DateTime())
-      );
+    ScanCache.INSTANCE.registerScan(
+        domainPresenceInfo.getNamespace(),
+        domainPresenceInfo.getDomainUID(),
+        new Scan(createWlsDomainConfig(), new DateTime()));
   }
-  private WlsDomainConfig createWlsDomainConfig() {
-      Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
-      wlsServerConfigs.put(ADMIN_SERVER, new WlsServerConfig(
-              ADMIN_SERVER,
-              TEST_PORT,
-              null,
-              null,
-              false,
-              null,
-              null
 
-      ));
-      WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(
-              DOMAIN_NAME,
-              new HashMap<>(),
-              wlsServerConfigs,
-              null,
-              null
-      );
-      wlsDomainConfig.setAdminServerName(ADMIN_SERVER);
-      return wlsDomainConfig;
+  private WlsDomainConfig createWlsDomainConfig() {
+    Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
+    wlsServerConfigs.put(
+        ADMIN_SERVER, new WlsServerConfig(ADMIN_SERVER, TEST_PORT, null, null, false, null, null));
+
+    WlsDomainConfig wlsDomainConfig =
+        new WlsDomainConfig(DOMAIN_NAME, new HashMap<>(), wlsServerConfigs, null, null);
+    wlsDomainConfig.setAdminServerName(ADMIN_SERVER);
+    return wlsDomainConfig;
   }
 }

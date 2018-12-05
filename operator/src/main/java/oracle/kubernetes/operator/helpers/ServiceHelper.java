@@ -862,7 +862,7 @@ public class ServiceHelper {
           return -1;
         }
       }
-      //what to do if severConfig == null
+      // what to do if severConfig == null
       return -1;
     }
 
