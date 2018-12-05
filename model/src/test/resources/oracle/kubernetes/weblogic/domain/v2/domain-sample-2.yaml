@@ -77,6 +77,9 @@ spec:
           periodSeconds: 20
         nodeSelector:
           os: linux
+        serviceLabels:
+          testKey1: testValue1
+          testKey2: testValue2
         podSecurityContext:
           runAsGroup: 421
           runAsNonRoot: true
@@ -107,6 +110,9 @@ spec:
           periodSeconds: 18
         nodeSelector:
           os_type: oel7
+        serviceAnnotations:
+          testKey3: testValue3
+          testKey4: testValue4
         podSecurityContext:
           runAsGroup: 422
           seLinuxOptions:
