@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpecV2Impl.RestartVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -52,6 +53,21 @@ public abstract class BaseConfiguration {
       "The strategy for deciding whether to start a server. "
           + "Legal values are NEVER, ALWAYS, or IF_NEEDED.")
   private String serverStartPolicy;
+
+  /**
+   * Tells the operator whether the customer wants the to restart the pods. The value is a positive
+   * integer that customer has to increment, it can be defined in domain, cluster or server.
+   * Depending on where the value is incremented (domain, cluster or server) the pods assigned to
+   * such will be restarted.
+   *
+   * @since 2.0
+   */
+  @SerializedName("restartVersion")
+  @Expose
+  @Description(
+      "If preseent, every time this integer value is incremented the operator will restart"
+          + " the required servers")
+  private Integer restartVersion;
 
   /**
    * Fills in any undefined settings in this configuration from another configuration.
@@ -194,12 +210,23 @@ public abstract class BaseConfiguration {
     serverPod.addPodAnnotations(name, value);
   }
 
+  public Integer getRestartVersion() {
+    return restartVersion;
+  }
+
+  public abstract RestartVersion addEffectiveRestartVersion(RestartVersion restartVersion);
+
+  public void setRestartVersion(Integer restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
         .append("serverPod", serverPod)
+        .append("restartVersion", restartVersion)
         .toString();
   }
 
@@ -215,6 +242,7 @@ public abstract class BaseConfiguration {
         .append(serverPod, that.serverPod)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
+        .append(restartVersion, that.restartVersion)
         .isEquals();
   }
 
@@ -224,6 +252,7 @@ public abstract class BaseConfiguration {
         .append(serverPod)
         .append(serverStartState)
         .append(serverStartPolicy)
+        .append(restartVersion)
         .toHashCode();
   }
 }
