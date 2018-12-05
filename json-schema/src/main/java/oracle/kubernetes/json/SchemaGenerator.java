@@ -14,15 +14,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.annotation.Nonnull;
 
 @SuppressWarnings("WeakerAccess")
@@ -205,6 +197,8 @@ public class SchemaGenerator {
     sub.generateTypeIn(result, field.getType());
     String description = getDescription(field);
     if (description != null) result.put("description", description);
+    Class<? extends java.lang.Enum> enumClass = getEnumClass(field);
+    if (enumClass != null) addEnumValues(result, enumClass);
 
     return result;
   }
@@ -212,6 +206,16 @@ public class SchemaGenerator {
   private String getDescription(Field field) {
     Description description = field.getAnnotation(Description.class);
     return description != null ? description.value() : null;
+  }
+
+  private Class<? extends java.lang.Enum> getEnumClass(Field field) {
+    EnumClass annotation = field.getAnnotation(EnumClass.class);
+    return annotation != null ? annotation.value() : null;
+  }
+
+  private void addEnumValues(
+      Map<String, Object> result, Class<? extends java.lang.Enum> enumClass) {
+    result.put("enum", getEnumValues(enumClass));
   }
 
   private class SubSchemaGenerator {
