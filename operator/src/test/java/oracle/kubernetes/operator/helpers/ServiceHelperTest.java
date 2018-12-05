@@ -45,9 +45,7 @@ import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -58,6 +56,7 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.v2.Channel;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
@@ -691,5 +690,105 @@ public class ServiceHelperTest {
 
   private CallTestSupport.CannedResponse expectReadService(String serviceName) {
     return testSupport.createCannedResponse("readService").withNamespace(NS).withName(serviceName);
+  }
+
+  @Test
+  public void onAdminServiceStepRunWithNoService_createIt() {
+    configAdminService();
+    V1Service newService = createAdminService();
+    initializeAdminServiceFromRecord(null);
+    expectCreateService(newService).returning(newService);
+
+    testSupport.addToPacket(SERVER_NAME, domainPresenceInfo.getDomain().getAsName());
+    testSupport.runSteps(ServiceHelper.createForAdminServiceStep(terminalStep));
+
+    assertThat(logRecords, containsInfo(ADMIN_SERVICE_CREATED));
+  }
+
+  @Test
+  public void onAdminServiceStepRunWithNoService_retryOnFailure() {
+    configAdminService();
+    testSupport.addRetryStrategy(retryStrategy);
+    V1Service newService = createAdminService();
+    initializeAdminServiceFromRecord(null);
+    expectCreateService(newService).failingWithStatus(401);
+
+    testSupport.addToPacket(SERVER_NAME, domainPresenceInfo.getDomain().getAsName());
+    testSupport.runSteps(ServiceHelper.createForAdminServiceStep(terminalStep));
+
+    testSupport.verifyCompletionThrowable(ApiException.class);
+  }
+
+  @Test
+  public void onAdminServiceStepRunWitBadVersion_replaceIt() {
+    verifyAdminServiceReplaced(this::withBadVersion);
+  }
+
+  private void verifyAdminServiceReplaced(ServiceMutator mutator) {
+    configAdminService();
+    V1Service newService = createAdminService();
+    initializeAdminServiceFromRecord(mutator.change(createAdminService()));
+    expectDeleteServiceSuccessful(getAdminServiceName());
+    expectSuccessfulCreateService(newService);
+
+    testSupport.addToPacket(SERVER_NAME, domainPresenceInfo.getDomain().getAsName());
+    testSupport.runSteps(ServiceHelper.createForAdminServiceStep(terminalStep));
+
+    assertThat(logRecords, containsInfo(ADMIN_SERVICE_REPLACED));
+  }
+
+  @Test
+  public void onAdminServiceStepRunWithMatchingService_addToSko() {
+    configAdminService();
+    V1Service newService = createAdminService();
+    initializeAdminServiceFromRecord(newService);
+
+    testSupport.addToPacket(SERVER_NAME, domainPresenceInfo.getDomain().getAsName());
+    testSupport.runSteps(ServiceHelper.createForAdminServiceStep(terminalStep));
+
+    assertThat(logRecords, containsFine(ADMIN_SERVICE_EXISTS));
+  }
+
+  private V1Service createAdminService() {
+    return new V1Service()
+        .spec(createAdminServiceSpec())
+        .metadata(
+            new V1ObjectMeta()
+                .name(getAdminServiceName())
+                .namespace(NS)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V2)
+                .putLabelsItem(DOMAINUID_LABEL, UID)
+                .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
+                .putLabelsItem(SERVERNAME_LABEL, domainPresenceInfo.getDomain().getAsName())
+                .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"));
+  }
+
+  private V1ServiceSpec createAdminServiceSpec() {
+    return new V1ServiceSpec()
+        .putSelectorItem(DOMAINUID_LABEL, UID)
+        .putSelectorItem(SERVERNAME_LABEL, domainPresenceInfo.getDomain().getAsName())
+        .putSelectorItem(CREATEDBYOPERATOR_LABEL, "true")
+        .type("NodePort")
+        .ports(createPorts());
+  }
+
+  private String getAdminServiceName() {
+    return LegalNames.toAdminServiceName(UID, domainPresenceInfo.getDomain().getAsName());
+  }
+
+  private List<V1ServicePort> createPorts() {
+    List<V1ServicePort> ports = new ArrayList<>();
+    ports.add(new V1ServicePort().port(TEST_NODE_PORT).name("default"));
+    return ports;
+  }
+
+  private void configAdminService() {
+    configureAdminServer()
+        .configureAdminService()
+        .addChannel("default", new Channel(TEST_NODE_PORT));
+  }
+
+  private void initializeAdminServiceFromRecord(V1Service service) {
+    domainPresenceInfo.getServers().put(ADMIN_SERVER, createSko(service));
   }
 }

@@ -26,6 +26,9 @@ public class AdminServer extends Server {
   @Description("T3 network access points to export")
   private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
+  @Description("")
+  private AdminService adminService;
+
   /**
    * Configures an exported T3 network access point.
    *
@@ -52,6 +55,7 @@ public class AdminServer extends Server {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("exportedNetworkAccessPoints", exportedNetworkAccessPoints)
+        .append("adminService", adminService)
         .toString();
   }
 
@@ -66,6 +70,7 @@ public class AdminServer extends Server {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(exportedNetworkAccessPoints, that.exportedNetworkAccessPoints)
+        .append(adminService, that.adminService)
         .isEquals();
   }
 
@@ -74,6 +79,15 @@ public class AdminServer extends Server {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(exportedNetworkAccessPoints)
+        .append(adminService)
         .toHashCode();
+  }
+
+  public AdminService getAdminService() {
+    return adminService;
+  }
+
+  public void setAdminService(AdminService adminService) {
+    this.adminService = adminService;
   }
 }
