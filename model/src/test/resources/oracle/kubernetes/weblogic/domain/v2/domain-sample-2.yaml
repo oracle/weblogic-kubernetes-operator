@@ -78,8 +78,8 @@ spec:
         nodeSelector:
           os: linux
         serviceLabels:
-          a: b
-          c: d
+          testKey1: testValue1
+          testKey2: testValue2
         podSecurityContext:
           runAsGroup: 421
           runAsNonRoot: true
@@ -111,8 +111,8 @@ spec:
         nodeSelector:
           os_type: oel7
         serviceAnnotations:
-          a: b
-          e: f
+          testKey3: testValue3
+          testKey4: testValue4
         podSecurityContext:
           runAsGroup: 422
           seLinuxOptions:
