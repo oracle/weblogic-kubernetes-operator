@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -328,6 +329,10 @@ public abstract class PodStepContext implements StepContextConstants {
       return false;
     }
 
+    if (!isRestartVersionValid(build, current)) {
+      return false;
+    }
+
     List<V1Container> buildContainers = build.getSpec().getContainers();
     List<V1Container> currentContainers = current.getSpec().getContainers();
 
@@ -358,6 +363,18 @@ public abstract class PodStepContext implements StepContextConstants {
     }
 
     return true;
+  }
+
+  private static boolean isRestartVersionValid(V1Pod build, V1Pod current) {
+    V1ObjectMeta m1 = build.getMetadata();
+    V1ObjectMeta m2 = current.getMetadata();
+    return isLabelSame(m1, m2, LabelConstants.DOMAINRESTARTVERSION_LABEL)
+        && isLabelSame(m1, m2, LabelConstants.CLUSTERRESTARTVERSION_LABEL)
+        && isLabelSame(m1, m2, LabelConstants.SERVERRESTARTVERSION_LABEL);
+  }
+
+  private static boolean isLabelSame(V1ObjectMeta build, V1ObjectMeta current, String labelName) {
+    return Objects.equals(build.getLabels().get(labelName), current.getLabels().get(labelName));
   }
 
   private static V1Container getContainerWithName(List<V1Container> containers, String name) {
