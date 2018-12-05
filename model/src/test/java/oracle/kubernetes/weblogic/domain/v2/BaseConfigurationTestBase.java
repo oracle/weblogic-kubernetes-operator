@@ -84,4 +84,16 @@ public abstract class BaseConfigurationTestBase {
   private V1EnvVar env(String name, String value) {
     return new V1EnvVar().name(name).value(value);
   }
+
+  @Test
+  public void serviceLabelAndAnnotation() {
+    instance1.addServiceLabels("key", "value");
+    assertThat(instance1, not(equalTo(instance2)));
+    instance2.addServiceLabels("key", "value");
+    assertThat(instance1, equalTo(instance2));
+    instance1.addServiceAnnotations("key", "value");
+    assertThat(instance1.hashCode(), not(equalTo(instance2.hashCode())));
+    instance2.addServiceAnnotations("key", "value");
+    assertThat(instance1.hashCode(), equalTo(instance2.hashCode()));
+  }
 }
