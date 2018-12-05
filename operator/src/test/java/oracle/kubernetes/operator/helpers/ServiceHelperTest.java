@@ -51,6 +51,8 @@ import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
@@ -59,6 +61,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v2.Channel;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -117,6 +120,7 @@ public class ServiceHelperTest {
         .addToPacket(SERVER_NAME, TEST_SERVER_NAME)
         .addToPacket(PORT, TEST_PORT)
         .addDomainPresenceInfo(domainPresenceInfo);
+      registerWlsDomainConfigScan();
   }
 
   @After
@@ -778,7 +782,7 @@ public class ServiceHelperTest {
 
   private List<V1ServicePort> createPorts() {
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(TEST_NODE_PORT).name("default"));
+    ports.add(new V1ServicePort().port(TEST_PORT).nodePort(TEST_NODE_PORT).name("default"));
     return ports;
   }
 
@@ -790,5 +794,36 @@ public class ServiceHelperTest {
 
   private void initializeAdminServiceFromRecord(V1Service service) {
     domainPresenceInfo.getServers().put(ADMIN_SERVER, createSko(service));
+  }
+
+  private void registerWlsDomainConfigScan() {
+      ScanCache.INSTANCE.registerScan(
+              domainPresenceInfo.getNamespace(),
+              domainPresenceInfo.getDomainUID(),
+              new Scan(createWlsDomainConfig(),
+              new DateTime())
+      );
+  }
+  private WlsDomainConfig createWlsDomainConfig() {
+      Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
+      wlsServerConfigs.put(ADMIN_SERVER, new WlsServerConfig(
+              ADMIN_SERVER,
+              TEST_PORT,
+              null,
+              null,
+              false,
+              null,
+              null
+
+      ));
+      WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(
+              DOMAIN_NAME,
+              new HashMap<>(),
+              wlsServerConfigs,
+              null,
+              null
+      );
+      wlsDomainConfig.setAdminServerName(ADMIN_SERVER);
+      return wlsDomainConfig;
   }
 }

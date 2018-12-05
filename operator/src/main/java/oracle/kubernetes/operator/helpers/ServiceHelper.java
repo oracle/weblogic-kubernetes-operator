@@ -767,6 +767,7 @@ public class ServiceHelper {
 
     ForAdminServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
+      this.packet = packet;
     }
 
     @Override
@@ -847,18 +848,22 @@ public class ServiceHelper {
 
     private int searchAdminChannelPort(String channel) {
       WlsServerConfig serverConfig = (WlsServerConfig) packet.get(ADMIN_SERVER_CONFIG);
-      if ("default".equals(channel)) {
-        return serverConfig.getListenPort();
-      } else if ("defaultSecure".equals(channel)) {
-        return serverConfig.getSslListenPort();
-      } else {
-        for (NetworkAccessPoint nap : serverConfig.getNetworkAccessPoints()) {
-          if (nap.getName().equals(channel)) {
-            return nap.getListenPort();
+      if (serverConfig != null) {
+        if ("default".equals(channel)) {
+          return serverConfig.getListenPort();
+        } else if ("defaultSecure".equals(channel)) {
+          return serverConfig.getSslListenPort();
+        } else {
+          for (NetworkAccessPoint nap : serverConfig.getNetworkAccessPoints()) {
+            if (nap.getName().equals(channel)) {
+              return nap.getListenPort();
+            }
           }
+          return -1;
         }
-        return -1;
       }
+      //what to do if severConfig == null
+      return -1;
     }
 
     private AdminService getAdminService() {
