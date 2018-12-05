@@ -152,6 +152,10 @@ Documentation for APIs is provided here:
 
 We have a public Slack channel where you can get in touch with us to ask questions about using the operator.  To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to #operator and say, "hello!"
 
+## Recent changes
+
+See [Recent changes](site/recent-changes.md) for recent changes to the operator, including any backward incompatible changes.
+
 
 # Contributing to the operator
 
