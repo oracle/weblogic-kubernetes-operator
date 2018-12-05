@@ -682,6 +682,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("clusters", clusters)
             .append("replicas", replicas)
             .append("logHome", logHome)
+            .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets);
@@ -710,6 +711,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters)
             .append(replicas)
             .append(logHome)
+            .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets);
@@ -742,6 +744,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
+            .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets);
