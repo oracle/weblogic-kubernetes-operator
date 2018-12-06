@@ -4,19 +4,15 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -33,9 +29,9 @@ public abstract class BaseConfiguration {
   private ServerPod serverPod = new ServerPod();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
-  @SerializedName("serverStartState")
-  @Expose
-  @Description("The state in which the server is to be started")
+  @EnumClass(ServerStartState.class)
+  @Description(
+      "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.")
   private String serverStartState;
 
   /**
@@ -46,11 +42,10 @@ public abstract class BaseConfiguration {
    *
    * @since 2.0
    */
-  @SerializedName("serverStartPolicy")
-  @Expose
+  @EnumClass(ServerStartPolicy.class)
   @Description(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are NEVER, ALWAYS, or IF_NEEDED.")
+          + "Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.")
   private String serverStartPolicy;
 
   /**
@@ -72,7 +67,7 @@ public abstract class BaseConfiguration {
     return serverStartPolicy == null || other.isStartNever();
   }
 
-  public boolean isStartAdminServerOnly() {
+  boolean isStartAdminServerOnly() {
     return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_ADMIN_ONLY);
   }
 
@@ -146,23 +141,23 @@ public abstract class BaseConfiguration {
     serverPod.addLimitRequirement(resource, quantity);
   }
 
-  public V1PodSecurityContext getPodSecurityContext() {
+  V1PodSecurityContext getPodSecurityContext() {
     return serverPod.getPodSecurityContext();
   }
 
-  public V1SecurityContext getContainerSecurityContext() {
+  V1SecurityContext getContainerSecurityContext() {
     return serverPod.getContainerSecurityContext();
   }
 
-  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+  void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
     serverPod.setPodSecurityContext(podSecurityContext);
   }
 
-  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+  void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     serverPod.setContainerSecurityContext(containerSecurityContext);
   }
 
-  public List<V1Volume> getAdditionalVolumes() {
+  List<V1Volume> getAdditionalVolumes() {
     return serverPod.getAdditionalVolumes();
   }
 
@@ -170,7 +165,7 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolume(name, path);
   }
 
-  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+  List<V1VolumeMount> getAdditionalVolumeMounts() {
     return serverPod.getAdditionalVolumeMounts();
   }
 
@@ -178,7 +173,7 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolumeMount(name, path);
   }
 
-  public Map<String, String> getPodLabels() {
+  Map<String, String> getPodLabels() {
     return serverPod.getPodLabels();
   }
 
@@ -186,7 +181,7 @@ public abstract class BaseConfiguration {
     serverPod.addPodLabel(name, value);
   }
 
-  public Map<String, String> getPodAnnotations() {
+  Map<String, String> getPodAnnotations() {
     return serverPod.getPodAnnotations();
   }
 
