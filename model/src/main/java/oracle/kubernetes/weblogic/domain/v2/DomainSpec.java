@@ -34,6 +34,9 @@ public class DomainSpec extends BaseConfiguration {
   /** The pattern for computing the default persistent volume claim name. */
   private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
 
+  /** The pattern for computing the default shared logs directory. */
+  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
+
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
   @SerializedName("domainUID")
   @Expose
@@ -94,6 +97,19 @@ public class DomainSpec extends BaseConfiguration {
   @SerializedName("logHome")
   @Expose
   private String logHome;
+
+  /**
+   * Whether the log home is enabled.
+   *
+   * @since 2.0
+   */
+  @SerializedName("logHomeEnabled")
+  @Expose
+  @Description(
+      "Specified whether the log home folder is enabled (Not required). "
+          + "Defaults to true if domainHomeInImage is false. "
+          + "Defaults to false if domainHomeInImage is true. ")
+  private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @SerializedName("includeServerOutInPodLog")
@@ -157,7 +173,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @SerializedName("domainHomeInImage")
   @Expose
-  private boolean domainHomeInImage;
+  @Description(
+      "Flag indicating whether the domain home is part of the image. Default value is true. ")
+  private boolean domainHomeInImage = true;
 
   /** The definition of the storage used for this domain. */
   @SerializedName("storage")
@@ -461,7 +479,7 @@ public class DomainSpec extends BaseConfiguration {
    *     server .out files in.
    */
   public String getLogHome() {
-    return logHome;
+    return Optional.ofNullable(logHome).orElse(String.format(LOG_HOME_DEFAULT_PATTERN, domainUID));
   }
 
   public void setLogHome(String logHome) {
@@ -471,6 +489,29 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withLogHome(String logHome) {
     this.logHome = logHome;
     return this;
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @return log home enabled
+   */
+  public boolean getLogHomeEnabled() {
+    if (logHomeEnabled == null) {
+      return !isDomainHomeInImage();
+    }
+    return logHomeEnabled.booleanValue();
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @param logHomeEnabled log home enabled
+   */
+  public void setLogHomeEnabled(boolean logHomeEnabled) {
+    this.logHomeEnabled = new Boolean(logHomeEnabled);
   }
 
   /**
@@ -641,6 +682,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("clusters", clusters)
             .append("replicas", replicas)
             .append("logHome", logHome)
+            .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets);
@@ -669,6 +711,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters)
             .append(replicas)
             .append(logHome)
+            .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets);
@@ -701,6 +744,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
+            .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets);
