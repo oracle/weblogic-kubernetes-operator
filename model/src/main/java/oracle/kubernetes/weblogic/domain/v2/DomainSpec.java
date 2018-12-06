@@ -218,6 +218,17 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters")
   protected Map<String, Cluster> clusters = new HashMap<>();
 
+  /**
+   * Adds a Cluster to the DomainSpec
+   *
+   * @param cluster
+   * @return
+   */
+  public DomainSpec withCluster(Cluster cluster) {
+    clusters.put(cluster.getClusterName(), cluster);
+    return this;
+  }
+
   public AdminServer getOrCreateAdminServer(String adminServerName) {
     if (adminServer != null) return adminServer;
 
