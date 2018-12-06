@@ -5,7 +5,8 @@ import sys
 import os
 
 #
-# This program verifies that bean attr values are expected values.
+# This program verifies that bean attr values are expected values,
+# it can be used to demonstrate situational config overrides.
 # 
 # Usage:
 #
@@ -28,7 +29,40 @@ import os
 #   The program exits with a non-zero exit code on any failure
 #   (including an unexpected attribute value).
 # 
-#    
+# Sample usage in an Operator k8s WL pod:
+#   Assumptions:  
+#        Assumes a configuration with 'admin-server' listen-address of localhost, and 
+#        'managed-server1' listen-address of localhost, and assumes that these have
+#         been overridden by sit-cfg to be 'domain1-admin-server' and 
+#        'domain1-managed-server1' respectively.
+#
+#   test_home=/tmp/introspect
+#   mypod=domain1-admin-server
+#   infile=$test_home/checkBeans.input
+#   outfile=$test_home/checkBeans.output
+#   myns=default
+#   url=t3://domain1-admin-server:7001
+#   username=weblogic
+#   password=welcome1
+#
+#   echo "Info: Checking beans to see if sit-cfg took effect.  Input file '$infile', output file '$outfile'."
+#
+#   mkdir $test_home
+#   echo '/Servers/admin-server,ListenAddress,localhost,domain1-admin-server' > $infile
+#   echo '/Servers/managed-server1,ListenAddress,localhost,domain1-managed-server1' >> $infile
+#
+#   kubectl -n $myns cp $infile $mypod:/shared/checkBeans.input || exit 1
+#   kubectl -n $myns cp checkBeans.py $mypod:/shared/checkBeans.py || exit 1
+#   kubectl -n $myns exec -it $mypod \
+#     wlst.sh /shared/checkBeans.py \
+#       $username $password $url \
+#       /shared/checkBeans.input \
+#       > $outfile 2>&1
+#   if [ $? -ne 0 ]; then
+#     echo "Error:  checkBeans failed, see '$outfile'."
+#     exit 1
+#   fi
+#
 
 admin_username = sys.argv[1]
 admin_password = sys.argv[2]
