@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -251,7 +254,7 @@ public class ITOperator extends BaseTest {
       logger.info("Verify no impact on domain5");
       domain5.verifyDomainCreated();
       testCompletedSuccessfully = true;
-      logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
+
     } finally {
       if (domain4 != null && (JENKINS || testCompletedSuccessfully)) {
         domain4.destroy();
@@ -260,6 +263,7 @@ public class ITOperator extends BaseTest {
         domain5.destroy();
       }
     }
+    logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
   }
 
   @Test
@@ -459,7 +463,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - testDeleteTwoDomains");
   }
 
-  // @Test
+  @Test
   public void testAutoSitConfigOverrides() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     logTestBegin("testAutoSitConfigOverrides");
@@ -469,26 +473,30 @@ public class ITOperator extends BaseTest {
     }
     Domain domain11 = null;
     boolean testCompletedSuccessfully = false;
+    String createDomainScriptDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
     try {
+
       // cp py
-      copyCreateDomainScript();
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain-auto-sit-config.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+
       domain11 = testDomainCreation(domain11YamlFile);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
       testCompletedSuccessfully = true;
       logger.info("SUCCESS - testAutoSitConfigOverrides");
     } finally {
-
-      StringBuffer cmd = new StringBuffer("cd ");
-      cmd.append(BaseTest.getProjectRoot())
-          .append(
-              "/integration-tests/src/test/resources/domain-home-on-pv && cp create-domain.py.bak create-domain.py");
-      logger.info("Running " + cmd);
-      ExecResult result = ExecCommand.exec(cmd.toString());
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(cmd + " failed");
-      }
-
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
       }
@@ -511,28 +519,5 @@ public class ITOperator extends BaseTest {
   private void testBasicUseCases(Domain domain) throws Exception {
     testAdminT3Channel(domain);
     testAdminServerExternalService(domain);
-  }
-
-  private void copyCreateDomainScript() throws Exception {
-    String createDomainScriptPath =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
-
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(createDomainScriptPath).append(" && cp create-domain.py create-domain.py.bak");
-    logger.info("Running " + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(cmd + " failed");
-    }
-
-    cmd = new StringBuffer("cd ");
-    cmd.append(createDomainScriptPath)
-        .append(" && cp create-domain-auto-sit-config.py create-domain.py");
-    logger.info("Running " + cmd);
-    result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(cmd + " failed");
-    }
   }
 }
