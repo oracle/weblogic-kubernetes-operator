@@ -43,4 +43,8 @@ public interface ClusterConfigurator {
   ClusterConfigurator withPodLabel(String name, String value);
 
   ClusterConfigurator withPodAnnotation(String name, String value);
+
+  ClusterConfigurator withServiceLabel(String name, String value);
+
+  ClusterConfigurator withServiceAnnotation(String name, String value);
 }

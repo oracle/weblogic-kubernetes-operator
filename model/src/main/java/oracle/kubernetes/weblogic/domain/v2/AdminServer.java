@@ -52,6 +52,8 @@ public class AdminServer extends Server {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("exportedNetworkAccessPoints", exportedNetworkAccessPoints)
+        .append("nodePortLabels", nodePortLabels)
+        .append("nodePortAnnotations", nodePortAnnotations)
         .toString();
   }
 
@@ -66,6 +68,8 @@ public class AdminServer extends Server {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(exportedNetworkAccessPoints, that.exportedNetworkAccessPoints)
+        .append(nodePortLabels, that.nodePortLabels)
+        .append(nodePortAnnotations, that.nodePortAnnotations)
         .isEquals();
   }
 
@@ -74,6 +78,20 @@ public class AdminServer extends Server {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(exportedNetworkAccessPoints)
+        .append(nodePortLabels)
+        .append(nodePortAnnotations)
         .toHashCode();
+  }
+
+  private Map<String, String> nodePortLabels = new HashMap<>();
+
+  private Map<String, String> nodePortAnnotations = new HashMap<>();
+
+  void addNodePortLabels(String name, String value) {
+    nodePortLabels.put(name, value);
+  }
+
+  void addNodePortAnnotations(String name, String value) {
+    nodePortAnnotations.put(name, value);
   }
 }

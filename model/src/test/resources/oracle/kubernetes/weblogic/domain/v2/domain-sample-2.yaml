@@ -30,6 +30,9 @@ spec:
   # to be started to get to the cluster's replica count..
   serverStartPolicy: NEVER
 
+  domainHomeInImage: false
+  includeServerOutInPodLog: false
+
   # Specifies the number of replicas for any clusters which do not specify their own count:
   replicas: 3
   
@@ -77,6 +80,9 @@ spec:
           periodSeconds: 20
         nodeSelector:
           os: linux
+        serviceLabels:
+          testKey1: testValue1
+          testKey2: testValue2
         podSecurityContext:
           runAsGroup: 421
           runAsNonRoot: true
@@ -107,6 +113,9 @@ spec:
           periodSeconds: 18
         nodeSelector:
           os_type: oel7
+        serviceAnnotations:
+          testKey3: testValue3
+          testKey4: testValue4
         podSecurityContext:
           runAsGroup: 422
           seLinuxOptions:

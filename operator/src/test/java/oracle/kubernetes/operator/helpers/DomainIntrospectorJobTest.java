@@ -157,7 +157,8 @@ public class DomainIntrospectorJobTest {
 
   @SuppressWarnings("deprecation")
   private DomainSpec createDomainSpec() {
-    Cluster cluster = new Cluster().withClusterName("cluster-1");
+    Cluster cluster = new Cluster();
+    cluster.setClusterName("cluster-1");
     cluster.setReplicas(1);
     DomainSpec spec =
         new DomainSpec()
