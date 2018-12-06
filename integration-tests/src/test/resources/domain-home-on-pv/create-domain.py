@@ -48,8 +48,7 @@ setOption('DomainName', domain_name)
 # Configure the Administration Server
 # ===================================
 cd('/Servers/AdminServer')
-# Give incorrect listenaddress, introspector overrides with sit-config
-set('ListenAddress', 'junk')
+set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
 set('ListenPort', admin_port)
 set('Name', admin_server_name)
 
@@ -57,17 +56,8 @@ create('T3Channel', 'NetworkAccessPoint')
 cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
 set('PublicPort', t3_channel_port)
 set('PublicAddress', t3_public_address)
-# Give incorrect listenaddress, introspector overrides with sit-config
-set('ListenAddress', 'junk')
+set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
 set('ListenPort', t3_channel_port)
-
-cd('/Servers/%s', % admin_server_name)
-create(admin_server_name,'Log')
-cd('/Servers/%s/Log/%s' % (admin_server_name, admin_server_name))
-# Give incorrect filelog, introspector overrides with sit-config
-set('FileName', 'dirdoesnotexist')
-
-
 
 # Set the admin user's username and password
 # ==========================================
