@@ -67,10 +67,10 @@ for line in file:
 
   domainConfig()
   cd(bean_path)
-  originalActual=get(attr)
+  originalActual=str(get(attr))
   serverConfig()
   cd(bean_path)
-  overriddenActual=get(attr)
+  overriddenActual=str(get(attr))
 
   print("Info: originalActual='" + originalActual + "'")
   print("Info: overriddenActual='" + overriddenActual + "'")
