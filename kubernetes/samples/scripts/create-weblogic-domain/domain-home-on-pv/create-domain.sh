@@ -295,6 +295,10 @@ function createYamlFiles {
     domainPVMountPath="/shared"
   fi
 
+  if [ -z "${logHome}" ]; then
+    logHome="/shared/logs/${domainUID}"
+  fi
+
   # Use the default value if not defined.
   if [ -z "${createDomainScriptsMountPath}" ]; then
     createDomainScriptsMountPath="/u01/weblogic"
@@ -377,6 +381,7 @@ function createYamlFiles {
   cp ${dcrInput} ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
@@ -464,34 +469,35 @@ function createDomainHome {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $3; } '`
-    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print "pod", $1, "status is", $3; } '`
+    JOBS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME}`
+    JOB_ERRORS=`kubectl logs jobs/$JOB_NAME -n ${namespace} | grep "ERROR:" `
+    JOB_STATUS=`echo $JOBS | awk ' { print $3; } '`
+    JOB_INFO=`echo $JOBS | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
     echo "$JOB_INFO"
 
     # Terminate the retry loop when a fatal error has already occurred.  Search for "ERROR:" in the job log file
     if [ "$JOB_STATUS" != "Completed" ]; then
-      JOB_ERRORS=`kubectl logs jobs/$JOB_NAME -n ${namespace} | grep "ERROR:" `
       ERR_COUNT=`echo $JOB_ERRORS | grep "ERROR:" | wc | awk ' {print $1; }'`
       if [ "$ERR_COUNT" != "0" ]; then
-        echo A failure was detected in the log file for job $JOB_NAME
-        echo $JOB_ERRORS
-        echo Check the log output for additional information
-        fail "Exiting due to failure - the job has failed"
+        echo "A failure was detected in the log file for job $JOB_NAME."
+        echo "$JOB_ERRORS"
+        echo "Check the log output for additional information."
+        fail "Exiting due to failure - the job has failed!"
       fi
     fi
   done
 
   # Confirm the job pod is status completed
-  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   if [ "$JOB_STATUS" != "Completed" ]; then
-    echo The create domain job is not showing status completed after waiting 300 seconds
-    echo Check the log output for errors
+    echo "The create domain job is not showing status completed after waiting 300 seconds."
+    echo "Check the log output for errors."
     kubectl logs jobs/$JOB_NAME -n ${namespace}
     fail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
+  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   JOB_STS=`kubectl logs $JOB_POD -n ${namespace} | grep "Successfully Completed" | awk ' { print $1; } '`
   if [ "${JOB_STS}" != "Successfully" ]; then
     echo The log file for the create domain job does not contain a successful completion status
