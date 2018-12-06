@@ -127,11 +127,9 @@ public class JobHelper {
   private static boolean runIntrospector(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     Scan scan = ScanCache.INSTANCE.lookupScan(dom.getMetadata().getNamespace(), dom.getDomainUID());
-    System.out.println("++++++ JobHelper.runIntrospector scan: " + scan);
-    System.out.println(
-        "++++++ JobHelper.runIntrospector runningServersCount: " + runningServersCount(info));
-    System.out.println(
-        "++++++ JobHelper.runIntrospector creatingServers: " + creatingServers(info));
+    LOGGER.fine("runIntrospector scan: " + scan);
+    LOGGER.fine("runningServersCount: " + runningServersCount(info));
+    LOGGER.fine("creatingServers: " + creatingServers(info));
     if (scan == null || (runningServersCount(info) == 0 && creatingServers(info))) {
       return true;
     }
@@ -142,6 +140,12 @@ public class JobHelper {
     return ManagedServersUpStep.getRunningServers(info).size();
   }
 
+  /**
+   * TODO: Enhance determination of when we believe we're creating WLS managed server pods
+   *
+   * @param info
+   * @return
+   */
   private static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
@@ -151,11 +155,7 @@ public class JobHelper {
     // Are we starting a cluster?
     for (Cluster cluster : clusters.values()) {
       int replicaCount = cluster.getReplicas();
-      System.out.println(
-          "+++++++ JobHelper.creatingServers replicaCount: "
-              + replicaCount
-              + " for cluster: "
-              + cluster);
+      LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
       if (replicaCount > 0) {
         return true;
       }
