@@ -14,14 +14,13 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/internal/utility.sh
+source ${scriptDir}/../../internal/utility.sh
 
 function usage {
 cat << EOF
   Usage:
 
     $(basename $0) -d domain-uid,domain-uid,... [-s max-seconds] [-t]
-    $(basename $0) -d all [-s max-seconds] [-t]
     $(basename $0) -h
 
   Perform a best-effort delete of the kubernetes resources for
@@ -62,7 +61,6 @@ EOF
 #
 # Usage:
 #   getDomainResources domainA,domainB,... outfilename
-#   getDomainResources all outfilename
 #
 # Internal helper function
 #

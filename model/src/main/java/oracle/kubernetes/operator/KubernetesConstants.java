@@ -7,9 +7,8 @@ package oracle.kubernetes.operator;
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "store/oracle/weblogic:12.2.1.3";
-  String ALWAYS_IMAGEPULLPOLICY = "Always";
-  String IFNOTPRESENT_IMAGEPULLPOLICY = "IfNotPresent";
-  String NEVER_IMAGEPULLPOLICY = "Never";
+  String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
+  String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
   String LATEST_IMAGE_SUFFIX = ":latest";
 
   String EXTENSIONS_API_VERSION = "extensions/v1beta1";
@@ -25,7 +24,7 @@ public interface KubernetesConstants {
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
 
-  String DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = "true";
+  boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   String CONTAINER_NAME = "weblogic-server";
 
