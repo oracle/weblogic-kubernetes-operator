@@ -489,7 +489,6 @@ class TopologyGenerator(Generator):
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
     if server.isAdministrationPortEnabled():
       self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-      self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
     self.addSSL(server)
     self.addNetworkAccessPoints(server)
 
@@ -498,7 +497,6 @@ class TopologyGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
-      self.writeln("sslPortEnabled: " + self.booleanToString(ssl.isEnabled()))
       self.undent()
 
   def addServerTemplates(self):
@@ -574,7 +572,6 @@ class TopologyGenerator(Generator):
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
     if server.isAdministrationPortEnabled():
       self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-      self.writeln("  adminPortEnabled: " + self.booleanToString(server.isAdministrationPortEnabled()))
     self.addSSL(server)
     self.addNetworkAccessPoints(server)
 
