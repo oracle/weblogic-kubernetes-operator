@@ -15,6 +15,8 @@ import os
 #   For example:
 #      /Servers/admin-server,ListenAddress,,domain1-admin-server
 #
+#   If you don't want to check the original-val is as expected
+#   then specify an asterisk (*) instead of the expected value.
 #
 #   Then run this program:
 #      wlst.sh checkBeans admin_name admin_pass url input_file_name
@@ -75,7 +77,7 @@ for line in file:
   print("Info: originalActual='" + originalActual + "'")
   print("Info: overriddenActual='" + overriddenActual + "'")
 
-  if originalActual != originalExpected:
+  if originalExpected != '*' and originalActual != originalExpected:
     addError(
       "Error: got '" + originalActual + "'"
              + " but expected value '" + originalExpected + "'"
