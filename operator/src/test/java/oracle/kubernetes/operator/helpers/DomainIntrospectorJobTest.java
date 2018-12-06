@@ -169,7 +169,8 @@ public class DomainIntrospectorJobTest {
             .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)
-            .withImage(LATEST_IMAGE);
+            .withImage(LATEST_IMAGE)
+            .withDomainHomeInImage(false);
 
     List<String> overrideSecrets = new ArrayList();
     overrideSecrets.add(OVERRIDE_SECRET_1);

@@ -258,6 +258,10 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_containerHasExpectedVolumeMounts() {
+    domainPresenceInfo
+        .getClaims()
+        .addItemsItem(
+            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
