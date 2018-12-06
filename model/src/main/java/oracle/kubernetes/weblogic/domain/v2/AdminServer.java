@@ -26,7 +26,9 @@ public class AdminServer extends Server {
   @Description("T3 network access points to export")
   private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
-  @Description("")
+  @Description(
+      "Configures which of the admin server's WebLogic admin channels should be exposed outside"
+          + " the Kubernetes cluster via a node port service.")
   private AdminService adminService;
 
   /**

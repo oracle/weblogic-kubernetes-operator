@@ -851,9 +851,11 @@ public class ServiceHelper {
       if (serverConfig != null) {
         if ("default".equals(channel)) {
           return serverConfig.getListenPort();
-        } else if ("defaultSecure".equals(channel)) {
+        } else if ("defaultSecure".equals(channel) && serverConfig.isSslPortEnabled()) {
           return serverConfig.getSslListenPort();
-        } else {
+        } /*else if("adminSecure".equals(channel) && serverConfig.isAdminPortEnabled()){
+            return serverConfig.getAdminPort();
+          }*/ else {
           for (NetworkAccessPoint nap : serverConfig.getNetworkAccessPoints()) {
             if (nap.getName().equals(channel)) {
               return nap.getListenPort();
