@@ -211,16 +211,3 @@ else
   startWLS
   waitUntilShutdown
 fi
-
-#
-# Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
-#
-
-if [ "${MOCK_WLS}" != 'true' ] && [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
-  trace "Showing the server out file from ${SERVER_OUT_FILE}"
-  tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
-else
-  trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
-  while true; do sleep 60; done
-fi
-
