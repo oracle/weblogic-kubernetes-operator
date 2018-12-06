@@ -26,9 +26,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @SuppressWarnings("deprecation")
 public class Domain {
 
-  /** The default number of replicas for a cluster. */
-  static final int DEFAULT_REPLICA_LIMIT = 2;
-
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
@@ -45,7 +42,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resourced. Should be 'Domain'")
+  @Description("The type of resource. Should be 'Domain'")
   private String kind;
   /**
    * Standard object's metadata. More info:
