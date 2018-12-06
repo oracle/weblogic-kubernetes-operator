@@ -6,8 +6,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.*;
@@ -17,6 +15,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Pattern;
+import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -34,16 +34,12 @@ public class DomainSpec extends BaseConfiguration {
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
-  @SerializedName("domainUID")
-  @Expose
   @NotNull
+  @Pattern("^[a-z0-9_.]{1,253}$")
   private String domainUID;
 
   /** Domain name (Required) */
-  @SerializedName("domainName")
-  @Expose
-  @NotNull
-  private String domainName;
+  @NotNull private String domainName;
 
   /**
    * Domain home
@@ -54,44 +50,34 @@ public class DomainSpec extends BaseConfiguration {
       "The folder for the Weblogic Domain. (Not required)"
           + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
           + "Defaults to /shared/domains/domain if domainHomeInImage is true")
-  @SerializedName("domainHome")
-  @Expose
   private String domainHome;
 
   /**
    * Reference to secret containing domain administrator username and password. Secret must contain
    * keys names 'username' and 'password' (Required)
    */
-  @SerializedName("adminSecret")
-  @Expose
-  @Valid
-  @NotNull
-  private V1SecretReference adminSecret;
+  @Valid @NotNull private V1SecretReference adminSecret;
 
   /**
    * Admin server name. Note: Possibly temporary as we could find this value through domain home
    * inspection. (Required)
    */
-  @SerializedName("asName")
-  @Expose
-  @NotNull
-  private String asName;
+  @NotNull private String asName;
 
   /**
    * Administration server port. Note: Possibly temporary as we could find this value through domain
    * home inspection. (Required)
    */
-  @SerializedName("asPort")
-  @Expose
   @NotNull
+  @Range(minimum = 100)
   private Integer asPort;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
    * .out files in.
    */
-  @SerializedName("logHome")
-  @Expose
+  @Description(
+      "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files")
   private String logHome;
 
   /**
@@ -99,8 +85,6 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @SerializedName("logHomeEnabled")
-  @Expose
   @Description(
       "Specified whether the log home folder is enabled (Not required). "
           + "Defaults to true if domainHomeInImage is false. "
@@ -108,8 +92,6 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @SerializedName("includeServerOutInPodLog")
-  @Expose
   @Description("If true (the default), the server .out file will be included in the pod's stdout")
   private Boolean includeServerOutInPodLog;
 
@@ -121,8 +103,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "The Weblogic Docker image; required when domainHomeInImage is true; "
           + "otherwise, defaults to store/oracle/weblogic:12.2.1.3")
-  @SerializedName("image")
-  @Expose
   private String image;
 
   /**
@@ -149,8 +129,6 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("A list of image pull secrets for the WebLogic Docker image.")
-  @SerializedName("imagePullSecrets")
-  @Expose
   private List<V1LocalObjectReference> imagePullSecrets;
 
   /**
@@ -159,6 +137,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The number of managed servers to run in any cluster that does not specify a replica count")
+  @Range(minimum = 0)
   private Integer replicas;
 
   /**
