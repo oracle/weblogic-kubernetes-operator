@@ -368,13 +368,11 @@ public class ConfigMapHelperTest {
           + "        listenPort: 7003\n"
           + "        listenAddress: \"domain1-managed-server1\"\n"
           + "        sslListenPort: 7103\n"
-          + "        sslPortEnabled: true\n"
           + "        machineName: \"machine-managed-server1\"\n"
           + "      - name: \"managed-server2\"\n"
           + "        listenPort: 7004\n"
           + "        listenAddress: \"domain1-managed-server2\"\n"
           + "        sslListenPort: 7104\n"
-          + "        sslPortEnabled: false\n"
           + "        networkAccessPoints:\n"
           + "          - name: \"nap2\"\n"
           + "            protocol: \"t3\"\n"
@@ -385,18 +383,15 @@ public class ConfigMapHelperTest {
           + "      listenPort: 7001\n"
           + "      listenAddress: \"domain1-admin-server\"\n"
           + "      adminPort: 7099\n"
-          + "      adminPortEnabled: true\n"
           + "    - name: \"server1\"\n"
           + "      listenPort: 9003\n"
           + "      listenAddress: \"domain1-managed-server1\"\n"
           + "      sslListenPort: 8003\n"
-          + "      sslPortEnabled: true\n"
           + "      machineName: \"machine-managed-server1\"\n"
           + "    - name: \"server2\"\n"
           + "      listenPort: 9004\n"
           + "      listenAddress: \"domain1-managed-server2\"\n"
           + "      sslListenPort: 8004\n"
-          + "      sslPortEnabled: false\n"
           + "      networkAccessPoints:\n"
           + "        - name: \"nap2\"\n"
           + "          protocol: \"t3\"\n"
@@ -446,13 +441,11 @@ public class ConfigMapHelperTest {
           + "        listenPort: 7003\n"
           + "        listenAddress: \"domain1-managed-server1\"\n"
           + "        sslListenPort: 7103\n"
-          + "        sslPortEnabled: true\n"
           + "        machineName: \"machine-managed-server1\"\n"
           + "      - name: \"ms2\"\n"
           + "        listenPort: 7004\n"
           + "        listenAddress: \"domain1-managed-server2\"\n"
           + "        sslListenPort: 7104\n"
-          + "        sslPortEnabled: false\n"
           + "        networkAccessPoints:\n"
           + "          - name: \"nap2\"\n"
           + "            protocol: \"t3\"\n"
@@ -510,7 +503,7 @@ public class ConfigMapHelperTest {
     assertEquals("domain1-managed-server2", server2Config.getListenAddress());
     assertEquals(9004, server2Config.getListenPort().intValue());
     assertEquals(8004, server2Config.getSslListenPort().intValue());
-    assertFalse(server2Config.isSslPortEnabled());
+    assertTrue(server2Config.isSslPortEnabled());
     List<NetworkAccessPoint> server2ConfigNAPs = server2Config.getNetworkAccessPoints();
     assertEquals(1, server2ConfigNAPs.size());
 
