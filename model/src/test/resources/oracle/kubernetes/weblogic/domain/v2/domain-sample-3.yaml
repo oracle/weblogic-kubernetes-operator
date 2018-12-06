@@ -32,6 +32,12 @@ spec:
     serverPod:
       nodeSelector:
         os: linux
+      serviceLabels:
+        testKey1: testValue1
+        testKey2: testValue2
+      serviceAnnotations:
+        testKey3: testValue3
+        longer: shorter
 
   domainName: base_domain
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must

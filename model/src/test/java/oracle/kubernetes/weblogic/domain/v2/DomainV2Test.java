@@ -1105,6 +1105,13 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+    assertThat(serverSpec.getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
+  }
+
+  @Test
   public void whenDomain3ReadFromYaml_PredefinedStorageDefinesClaimName() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
@@ -1137,6 +1144,15 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_adminServerHasAnnotationsAndLabels() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    assertThat(
+        domain.getAdminServerSpec().getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
+    assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("testKey1", "testValue1"));
+    assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("testKey2", "testValue2"));
   }
 
   @Test
@@ -1219,6 +1235,55 @@ public class DomainV2Test extends DomainTestBase {
             volumeMount("name1", "/domain-test1"),
             volumeMount("name2", "/cluster-test1"),
             volumeMount("name3", "/server-test1")));
+  }
+
+  @Test
+  public void whenDefaultConfiguration_domainHomeInImage() {
+    configureDomain(domain);
+
+    assertThat(domain.getSpec().isDomainHomeInImage(), is(true));
+  }
+
+  @Test
+  public void whenDomainHomeInImageSpecified_useValue() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getSpec().isDomainHomeInImage(), is(false));
+  }
+
+  @Test
+  public void whenLogHomeNotSet_useDefault() {
+    configureDomain(domain);
+
+    assertThat(domain.getSpec().getLogHome(), equalTo("/shared/logs/uid1"));
+  }
+
+  @Test
+  public void whenLogHomeSet_useValue() {
+    configureDomain(domain).withLogHome("/custom/logs");
+
+    assertThat(domain.getSpec().getLogHome(), equalTo("/custom/logs"));
+  }
+
+  @Test
+  public void whenDomainHomeInImage_logHomeNotEnabled() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(false));
+  }
+
+  @Test
+  public void whenDomainHomeNotInImage_logHomeEnabled() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  public void whenLogHomeEnabledSet_useValue() {
+    configureDomain(domain).withLogHomeEnabled(true);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
   }
 
   @Test
