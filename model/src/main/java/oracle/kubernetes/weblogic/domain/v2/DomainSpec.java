@@ -10,25 +10,19 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainSpec is a description of a domain. */
-@SuppressWarnings("NullableProblems")
 public class DomainSpec extends BaseConfiguration {
 
   /** The pattern for computing the default persistent volume claim name. */
@@ -114,7 +108,8 @@ public class DomainSpec extends BaseConfiguration {
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @SerializedName("includeServerOutInPodLog")
   @Expose
-  private String includeServerOutInPodLog;
+  @Description("If true (the default), the server .out file will be included in the pod's stdout")
+  private Boolean includeServerOutInPodLog;
 
   /**
    * The WebLogic Docker image.
@@ -175,7 +170,7 @@ public class DomainSpec extends BaseConfiguration {
   @Expose
   @Description(
       "Flag indicating whether the domain home is part of the image. Default value is true. ")
-  private boolean domainHomeInImage = true;
+  private Boolean domainHomeInImage;
 
   /** The definition of the storage used for this domain. */
   @SerializedName("storage")
@@ -236,7 +231,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters")
   protected Map<String, Cluster> clusters = new HashMap<>();
 
-  public AdminServer getOrCreateAdminServer(String adminServerName) {
+  AdminServer getOrCreateAdminServer(String adminServerName) {
     if (adminServer != null) return adminServer;
 
     return createAdminServer(adminServerName);
@@ -249,12 +244,9 @@ public class DomainSpec extends BaseConfiguration {
     return adminServer;
   }
 
+  @SuppressWarnings("unused")
   EffectiveConfigurationFactory getEffectiveConfigurationFactory(String resourceVersionLabel) {
     return new V2EffectiveConfigurationFactory();
-  }
-
-  private boolean isVersion2Specified(String resourceVersionLabel) {
-    return VersionConstants.DOMAIN_V2.equals(resourceVersionLabel);
   }
 
   /**
@@ -321,7 +313,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @return domain home
    */
-  public String getDomainHome() {
+  String getDomainHome() {
     return domainHome;
   }
 
@@ -343,33 +335,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withImage(String image) {
     setImage(image);
-    return this;
-  }
-
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @param imagePullPolicy image pull policy
-   * @return this
-   */
-  public DomainSpec withImagePullPolicy(String imagePullPolicy) {
-    setImagePullPolicy(imagePullPolicy);
-    return this;
-  }
-
-  /**
-   * The name of the secret used to authenticate a request for an image pull.
-   *
-   * <p>More info:
-   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
-   */
-  public DomainSpec withImagePullSecretName(String imagePullSecretName) {
-    setImagePullSecret(new V1LocalObjectReference().name(imagePullSecretName));
     return this;
   }
 
@@ -398,7 +363,7 @@ public class DomainSpec extends BaseConfiguration {
     return asName;
   }
 
-  public void setAsName(String asName) {
+  private void setAsName(String asName) {
     this.asName = asName;
   }
 
@@ -486,11 +451,6 @@ public class DomainSpec extends BaseConfiguration {
     this.logHome = logHome;
   }
 
-  public DomainSpec withLogHome(String logHome) {
-    this.logHome = logHome;
-    return this;
-  }
-
   /**
    * Log home enabled
    *
@@ -520,20 +480,12 @@ public class DomainSpec extends BaseConfiguration {
    * @return whether server .out should be included in pod's stdout.
    * @since 2.0
    */
-  public String getIncludeServerOutInPodLog() {
-    return Optional.ofNullable(getConfiguredIncludeServerOutInPodLog())
+  boolean getIncludeServerOutInPodLog() {
+    return Optional.ofNullable(includeServerOutInPodLog)
         .orElse(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG);
   }
 
-  String getConfiguredIncludeServerOutInPodLog() {
-    return includeServerOutInPodLog;
-  }
-
-  public void setIncludeServerOutInPodLog(String includeServerOutInPodLog) {
-    this.includeServerOutInPodLog = includeServerOutInPodLog;
-  }
-
-  public DomainSpec withIncludeServerOutInPodLog(String includeServerOutInPodLog) {
+  public DomainSpec withIncludeServerOutInPodLog(boolean includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
     return this;
   }
@@ -544,26 +496,17 @@ public class DomainSpec extends BaseConfiguration {
    * @return true or false
    * @since 2.0
    */
-  public boolean isDomainHomeInImage() {
-    return domainHomeInImage;
-  }
-
-  /** @param domainHomeInImage */
-  public void setDomainHomeInImage(boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
+  boolean isDomainHomeInImage() {
+    return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
   /**
-   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
-   * configured in clusters. Provided so that administrators can scale the Domain resource.
+   * Specifies whether the domain home is stored in the image
    *
-   * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective setting.
-   * @return replicas
+   * @param domainHomeInImage true if the domain home is in the image
    */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  public Integer getReplicas() {
-    return replicas != null ? replicas : 0;
+  public void setDomainHomeInImage(boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
   }
 
   /**
@@ -572,7 +515,6 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param replicas replicas
    */
-  @SuppressWarnings("deprecation")
   public void setReplicas(Integer replicas) {
     this.replicas = replicas;
   }
@@ -584,7 +526,6 @@ public class DomainSpec extends BaseConfiguration {
    * @param replicas replicas
    * @return this
    */
-  @SuppressWarnings("deprecation")
   public DomainSpec withReplicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -609,11 +550,11 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @Nullable
-  public String getConfigOverrides() {
+  String getConfigOverrides() {
     return configOverrides;
   }
 
-  public void setConfigOverrides(@Nullable String overridess) {
+  void setConfigOverrides(@Nullable String overridess) {
     this.configOverrides = overridess;
   }
 
@@ -627,18 +568,13 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @Nullable
-  public List<String> getConfigOverrideSecrets() {
+  List<String> getConfigOverrideSecrets() {
     if (hasConfigOverrideSecrets()) return configOverrideSecrets;
     else return Collections.emptyList();
   }
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
     this.configOverrideSecrets = overridesSecretNames;
-  }
-
-  public DomainSpec withConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
-    this.configOverrideSecrets = overridesSecretNames;
-    return this;
   }
 
   /**
@@ -770,15 +706,15 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getReplicas() != null;
   }
 
-  public AdminServer getAdminServer() {
+  private AdminServer getAdminServer() {
     return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
 
-  public void setAdminServer(AdminServer adminServer) {
+  private void setAdminServer(AdminServer adminServer) {
     this.adminServer = adminServer;
   }
 
-  public Map<String, ManagedServer> getManagedServers() {
+  Map<String, ManagedServer> getManagedServers() {
     return managedServers;
   }
 
