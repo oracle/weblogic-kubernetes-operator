@@ -6,10 +6,7 @@ package oracle.kubernetes.json;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -111,6 +108,67 @@ public class SchemaGeneratorTest {
 
   @SuppressWarnings("unused")
   private TrafficLightColors colors;
+
+  @Test
+  public void generateSchemaForEnumAnnotatedString() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("colorString"));
+
+    assertThat(schema, hasJsonPath("$.colorString.type", equalTo("string")));
+    assertThat(
+        schema,
+        hasJsonPath("$.colorString.enum", arrayContainingInAnyOrder("RED", "YELLOW", "GREEN")));
+  }
+
+  @SuppressWarnings("unused")
+  @EnumClass(TrafficLightColors.class)
+  private String colorString;
+
+  @Test
+  public void whenIntegerAnnotatedWithMinimumOnly_addToSchema() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("valueWithMinimum"));
+
+    assertThat(schema, hasJsonPath("$.valueWithMinimum.minimum", equalTo(7)));
+    assertThat(schema, hasNoJsonPath("$.valueWithMinimum.maximum"));
+  }
+
+  @SuppressWarnings("unused")
+  @Range(minimum = 7)
+  private int valueWithMinimum;
+
+  @Test
+  public void whenIntegerAnnotatedWithMaximumOnly_addToSchema() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("valueWithMaximum"));
+
+    assertThat(schema, hasNoJsonPath("$.valueWithMaximum.minimum"));
+    assertThat(schema, hasJsonPath("$.valueWithMaximum.maximum", equalTo(43)));
+  }
+
+  @SuppressWarnings("unused")
+  @Range(maximum = 43)
+  private int valueWithMaximum;
+
+  @Test
+  public void whenIntegerAnnotatedWithRange_addToSchema() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("valueWithRange"));
+
+    assertThat(schema, hasJsonPath("$.valueWithRange.minimum", equalTo(12)));
+    assertThat(schema, hasJsonPath("$.valueWithRange.maximum", equalTo(85)));
+  }
+
+  @SuppressWarnings("unused")
+  @Range(minimum = 12, maximum = 85)
+  private int valueWithRange;
+
+  @Test
+  public void whenStringAnnotatedWithPatterne_addToSchema() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("codeName"));
+
+    assertThat(schema, hasJsonPath("$.codeName.pattern", equalTo("[A-Z][a-zA-Z_]*")));
+  }
+
+  @SuppressWarnings("unused")
+  @Pattern("[A-Z][a-zA-Z_]*")
+  private String codeName;
 
   @Test
   public void generateSchemaForAnnotatedDouble() throws NoSuchFieldException {

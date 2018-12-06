@@ -122,7 +122,7 @@ public class ManagedServersUpStep extends Step {
         packet);
   }
 
-  private Collection<String> getRunningServers(DomainPresenceInfo info) {
+  public static Collection<String> getRunningServers(DomainPresenceInfo info) {
     Collection<String> runningList = new ArrayList<>();
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       ServerKubernetesObjects sko = entry.getValue();

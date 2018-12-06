@@ -254,7 +254,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
-            hasEnvVar("item1", "find uid1 at /shared/domains/uid1"),
+            hasEnvVar("item1", "find uid1 at /shared/domain"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 
