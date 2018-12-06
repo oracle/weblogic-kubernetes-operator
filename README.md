@@ -20,7 +20,7 @@ In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Ope
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the Quick Start Guide, or you can peruse our [documentation](site), read our blogs, try out the [samples](kubernetes/samples/README.md), or check us out on our public Slack channel.
+The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our blogs, or try out the [samples](kubernetes/samples/README.md).
 
 
 # Important terms
@@ -45,7 +45,7 @@ Before using the operator, you might want to read the [design philosophy](site/d
 
 ## Prerequisites
 
-*	Kubernetes 1.10+, 1.11+, and 1.12.0+  (check with `kubectl version`).
+*	Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
 *	Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
 *	Docker 17.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
@@ -81,7 +81,7 @@ In your Kubernetes cluster you can have one or more operators that manage one or
 * Edit the operator input YAML
 * Start the operator with a Helm chart
 
-### Modifying the Operator
+### Modifying the operator
 
 (images, RBAC roles, ...)
 
@@ -91,16 +91,17 @@ In your Kubernetes cluster you can have one or more operators that manage one or
 ## Create and manage WebLogic domains
 
 In this version of the operator, a WebLogic domain can be persisted either to a persistent volume (PV) or in a Docker image.
-(We can add a paragraph that describes the pros and cons of both these approaches.)
+(Describe the pros and cons of both these approaches.)
 
-You can create the WebLogic domain inside of a Docker image or in a PV using WebLogic Scripting Tool (WLST) or WebLogic Deploy Tooling (WDT).  
-* Advantages of using WDT.  (See samples, Domain in image WDT, Domain in image WLST, Domain in PV WDT, Domain in PV WLST)
-
-(What images do we need before we get started? Operator 2.0 requires you to patch your WebLogic image 12.2.1.3 with patch #.)
 * WebLogic binary image when domain is persisted to a PV (as in Operator v1.1)
 * WebLogic domain image where the domain is persisted to a Docker image (new for Operator v2.0).  The WebLogic domain image will contain the WebLogic binaries, domain configuration, and applications.
 
-### Preparing the Kubernetes cluster to run the WebLogic domain
+You create the WebLogic domain inside of a Docker image or in a PV using WebLogic Scripting Tool (WLST) or WebLogic Deploy Tooling (WDT).  
+* (Describe the advantages of using WDT. See samples, Domain in image WDT, Domain in image WLST, Domain in PV WDT, Domain in PV WLST.)
+
+(What images do we need before we get started? Operator 2.0 requires you to patch your WebLogic image 12.2.1.3 with patch #.)
+
+### Preparing the Kubernetes cluster to run WebLogic domains
 
 Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 
@@ -110,9 +111,9 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 * Optionally, [create a PV & persistent volume claim (PVC)](kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md) which can hold the domain home, logs, and application binaries.
 * [Configure a load balancer](kubernetes/samples/charts/README.md) to manage the domains and ingresses.
 
-### Creating and managing the WebLogic domain
+### Creating and managing WebLogic domains
 
-To create and manage a WebLogic domain in Kubernetes we create a deployment type, the domain custom resource.   The operator always looks at the custom resource and manages the domain deployment to adjust to the definitions in the custom resource.   This custom resource can also be managed using the Kubernetes command-line interface `kubectl`.  
+To create and manage a WebLogic domain in Kubernetes we create a deployment type, the domain custom resource.   The operator introspects the custom resource and manages the domain deployment to adjust to the definitions in the custom resource.   This custom resource can also be managed using the Kubernetes command-line interface `kubectl`.  
 * (Point to documentation how to edit the domain inputs YAML and how to create the domain custom resource.)
 * Create Ingress controllers if you are using a load balancer that supports them, such as Traefik or Voyager.
 
@@ -122,16 +123,16 @@ In Operator 2.0 you can perform lifecycle operations on WebLogic servers, cluste
 * Point to the documentation on how to manage lifecycle operations.
 
 ### Modifying domain configurations
-You can modify the WebLogic domain configuration for both domain in PV and domain in image:
+You can modify the WebLogic domain configuration for both the domain in PV and the domain in image:
 
 * When the domain is in a PV, use WLST or WDT to change the configuration.
-* Use configuration overrides when using the domain in image.  (Point to the documentation.)
+* Use configuration overrides when using the domain in image.(Check with Tom B, "The automatic and custom overrides apply to all domains - not just domain-in-image domains." Point to the documentation.)
 
 ### Patching WebLogic and performing application updates
 
-###  Shutting down the domain
+###  Shutting down domains
 
-###  Deleting the domain
+###  Deleting domains
 (Point to sample)
 
 # Developer guide
@@ -144,7 +145,9 @@ Please take a look at our [wish list](https://github.com/oracle/weblogic-kuberne
 
 Documentation for APIs is provided here:
 
-* The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md). Also, see the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
+* The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md).
+
+* See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
 * [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
@@ -154,12 +157,12 @@ We have a public Slack channel where you can get in touch with us to ask questio
 
 ## Recent changes
 
-See [Recent changes](site/recent-changes.md) for recent changes to the operator, including any backward incompatible changes.
+See [Recent changes](site/recent-changes.md) for changes to the operator, including any backward incompatible changes.
 
 
 # Contributing to the operator
 
-Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator, or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.
+Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.
 
 If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.
 

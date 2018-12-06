@@ -137,6 +137,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
+    public AdminServerConfigurator withNodePortLabel(String name, String value) {
+      adminServer.addNodePortLabels(name, value);
+      return this;
+    }
+
+    @Override
+    public AdminServerConfigurator withNodePortAnnotation(String name, String value) {
+      adminServer.addNodePortAnnotations(name, value);
+      return this;
+    }
+
+    @Override
     public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
       for (String name : names) {
         adminServer.addExportedNetworkAccessPoint(name);
@@ -304,6 +316,18 @@ public class DomainV2Configurator extends DomainConfigurator {
       server.addPodAnnotations(name, value);
       return this;
     }
+
+    @Override
+    public ServerConfigurator withServiceLabel(String name, String value) {
+      server.addServiceLabels(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withServiceAnnotation(String name, String value) {
+      server.addServiceAnnotations(name, value);
+      return this;
+    }
   }
 
   @Override
@@ -434,6 +458,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withPodAnnotation(String name, String value) {
       cluster.addPodAnnotations(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withServiceLabel(String name, String value) {
+      cluster.addServiceLabels(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withServiceAnnotation(String name, String value) {
+      cluster.addServiceAnnotations(name, value);
       return this;
     }
   }
