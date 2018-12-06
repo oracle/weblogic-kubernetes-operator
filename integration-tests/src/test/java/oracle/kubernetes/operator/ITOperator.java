@@ -125,9 +125,10 @@ public class ITOperator extends BaseTest {
 
     logTestBegin("test1CreateFirstOperatorAndDomain");
     logger.info("Creating Operator & waiting for the script to complete execution");
-    Domain domain1 = null;
     // create operator1
     operator1 = TestUtils.createOperator(op1YamlFile);
+    Domain domain1 = null;
+    boolean testCompletedSuccessfully = false;
     try {
       domain1 = testDomainCreation(domain1YamlFile);
       domain1.verifyDomainCreated();
@@ -135,9 +136,11 @@ public class ITOperator extends BaseTest {
       testAdvancedUseCasesForADomain(operator1, domain1);
 
       if (!SMOKETEST) domain1.testWlsLivenessProbe();
+      testCompletedSuccessfully = true;
     } finally {
 
-      if (domain1 != null && JENKINS) domain1.shutdownUsingServerStartPolicy();
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully))
+        domain1.shutdownUsingServerStartPolicy();
     }
 
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
@@ -150,7 +153,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("test2CreateAnotherDomainInDefaultNS");
     logger.info("Creating Domain domain2 & verifing the domain creation");
     Domain domain2 = null;
-
+    boolean testCompletedSuccessfully = false;
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
@@ -159,8 +162,9 @@ public class ITOperator extends BaseTest {
       domain2 = testDomainCreation(domain2YamlFile);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
+      testCompletedSuccessfully = true;
     } finally {
-      if (domain2 != null && JENKINS) {
+      if (domain2 != null && (JENKINS || testCompletedSuccessfully)) {
         logger.info("Destroy domain2");
         domain2.destroy();
       }
@@ -178,14 +182,16 @@ public class ITOperator extends BaseTest {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
     Domain domain3 = null;
+    boolean testCompletedSuccessfully = false;
     try {
       // create domain3
       domain3 = testDomainCreation(domain3YamlFile);
       domain3.verifyDomainCreated();
       testBasicUseCases(domain3);
       testWLDFScaling(operator1, domain3);
+      testCompletedSuccessfully = true;
     } finally {
-      if (domain3 != null && JENKINS) {
+      if (domain3 != null && (JENKINS || testCompletedSuccessfully)) {
         domain3.destroy();
       }
     }
@@ -217,7 +223,7 @@ public class ITOperator extends BaseTest {
     }
 
     Domain domain4 = null, domain5 = null;
-
+    boolean testCompletedSuccessfully = false;
     try {
       domain4 = testDomainCreation(domain4YamlFile);
       domain4.verifyDomainCreated();
@@ -244,12 +250,13 @@ public class ITOperator extends BaseTest {
 
       logger.info("Verify no impact on domain5");
       domain5.verifyDomainCreated();
+      testCompletedSuccessfully = true;
       logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
     } finally {
-      if (domain4 != null && JENKINS) {
+      if (domain4 != null && (JENKINS || testCompletedSuccessfully)) {
         domain4.destroy();
       }
-      if (domain5 != null && JENKINS) {
+      if (domain5 != null && (JENKINS || testCompletedSuccessfully)) {
         domain5.destroy();
       }
     }
@@ -267,12 +274,13 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain6
     Domain domain6 = null;
-
+    boolean testCompletedSuccessfully = false;
     try {
       domain6 = testDomainCreation(domain6YamlFile);
       domain6.verifyDomainCreated();
+      testCompletedSuccessfully = true;
     } finally {
-      if (domain6 != null && JENKINS) domain6.destroy();
+      if (domain6 != null && (JENKINS || testCompletedSuccessfully)) domain6.destroy();
     }
 
     logger.info("SUCCESS - test6CreateDomainWithStartPolicyAdminOnly");
@@ -290,6 +298,7 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain domain7 & verifing the domain creation");
     // create domain7
     Domain domain7 = null;
+
     try {
       domain7 = testDomainCreation(domain7YamlFile);
       domain7.verifyDomainCreated();
@@ -315,7 +324,7 @@ public class ITOperator extends BaseTest {
       domain8 = testDomainCreation(domain8YamlFile);
       domain8.verifyDomainCreated();
     } finally {
-      if (domain8 != null && JENKINS) {
+      if (domain8 != null) {
         // create domain on existing dir
         domain8.destroy();
       }
@@ -334,15 +343,16 @@ public class ITOperator extends BaseTest {
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
-
+    boolean testCompletedSuccessfully = false;
     // create domain9
     Domain domain9 = null;
     try {
       domain9 = testDomainCreation(domain9YamlFile);
       domain9.verifyDomainCreated();
       domain9.verifyAdminConsoleViaLB();
+      testCompletedSuccessfully = true;
     } finally {
-      if (domain9 != null && JENKINS) domain9.destroy();
+      if (domain9 != null && (JENKINS || testCompletedSuccessfully)) domain9.destroy();
     }
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
@@ -359,13 +369,15 @@ public class ITOperator extends BaseTest {
 
     // create domain10
     Domain domain10 = null;
+    boolean testCompletedSuccessfully = false;
     try {
       domain10 = testDomainCreation(domain10YamlFile);
       domain10.verifyDomainCreated();
       testBasicUseCases(domain10);
       testAdvancedUseCasesForADomain(operator1, domain10);
+      testCompletedSuccessfully = true;
     } finally {
-      if (domain10 != null && JENKINS) domain10.destroy();
+      if (domain10 != null && (JENKINS || testCompletedSuccessfully)) domain10.destroy();
     }
 
     logger.info("SUCCESS - testBCreateDomainWithDefaultValuesInSampleInputs");
@@ -381,6 +393,7 @@ public class ITOperator extends BaseTest {
       operatorForDel1 = TestUtils.createOperator(opForDelYamlFile1);
     }
     Domain domain = null;
+    boolean testCompletedSuccessfully = false;
     try {
       domain = testDomainCreation(domain1ForDelValueYamlFile);
       domain.verifyDomainCreated();
@@ -390,8 +403,9 @@ public class ITOperator extends BaseTest {
       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
 
       TestUtils.verifyAfterDeletion(domain);
+      testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && JENKINS) domain.destroy();
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
     }
     logger.info("SUCCESS - testDeleteOneDomain");
   }
@@ -406,6 +420,7 @@ public class ITOperator extends BaseTest {
       operatorForDel2 = TestUtils.createOperator(opForDelYamlFile2);
     }
     Domain domainDel1 = null, domainDel2 = null;
+    boolean testCompletedSuccessfully = false;
     try {
       domainDel1 = testDomainCreation(domain2ForDelValueYamlFile);
       domainDel1.verifyDomainCreated();
@@ -422,9 +437,10 @@ public class ITOperator extends BaseTest {
 
       TestUtils.verifyAfterDeletion(domainDel1);
       TestUtils.verifyAfterDeletion(domainDel2);
+      testCompletedSuccessfully = true;
     } finally {
-      if (domainDel1 != null && JENKINS) domainDel1.destroy();
-      if (domainDel2 != null && JENKINS) domainDel2.destroy();
+      if (domainDel1 != null && (JENKINS || testCompletedSuccessfully)) domainDel1.destroy();
+      if (domainDel2 != null && (JENKINS || testCompletedSuccessfully)) domainDel2.destroy();
     }
     logger.info("SUCCESS - testDeleteTwoDomains");
   }
@@ -438,12 +454,14 @@ public class ITOperator extends BaseTest {
       operator1 = TestUtils.createOperator(op1YamlFile);
     }
     Domain domain11 = null;
+    boolean testCompletedSuccessfully = false;
     try {
       // cp py
       copyCreateDomainScript();
       domain11 = testDomainCreation(domain11YamlFile);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
+      testCompletedSuccessfully = true;
       logger.info("SUCCESS - testAutoSitConfigOverrides");
     } finally {
 
@@ -457,7 +475,7 @@ public class ITOperator extends BaseTest {
         throw new RuntimeException(cmd + " failed");
       }
 
-      if (domain11 != null && JENKINS) {
+      if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
       }
     }
