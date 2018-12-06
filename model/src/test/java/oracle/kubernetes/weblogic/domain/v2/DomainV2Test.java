@@ -9,29 +9,13 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Capabilities;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SELinuxOptions;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Sysctl;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.io.IOException;
 import java.util.Map;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
@@ -806,6 +790,34 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+
+    assertThat(domain.isDomainHomeInImage(), is(true));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_domainHomeInImageIsDisabled() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.isDomainHomeInImage(), is(false));
+  }
+
+  @Test
+  public void whenDomainReadFromYamlWithNoSetting_defaultsToServerOutInPodLog() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+
+    assertThat(domain.isIncludeServerOutInPodLog(), is(true));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_serverOutInPodLogIsSet() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.isIncludeServerOutInPodLog(), is(false));
+  }
+
+  @Test
   public void whenDomainReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
@@ -1238,7 +1250,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDefaultConfiguration_domainHomeInImage() {
+  public void whenDefaultConfiguration_domainHomeInImageIsTrue() {
     configureDomain(domain);
 
     assertThat(domain.getSpec().isDomainHomeInImage(), is(true));
