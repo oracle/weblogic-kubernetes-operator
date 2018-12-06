@@ -5,11 +5,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -128,7 +124,7 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   String getIncludeServerOutInPodLog() {
-    return getDomain().getIncludeServerOutInPodLog();
+    return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
   protected String getIntrospectHome() {
