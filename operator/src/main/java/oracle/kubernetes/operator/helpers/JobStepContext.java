@@ -213,7 +213,6 @@ public abstract class JobStepContext implements StepContextConstants {
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
-
     if (getClaimName() != null) {
       podSpec.addVolumesItem(
           new V1Volume()
@@ -246,9 +245,13 @@ public abstract class JobStepContext implements StepContextConstants {
             .imagePullPolicy(getImagePullPolicy())
             .command(getContainerCommand())
             .env(getEnvironmentVariables(tuningParameters))
-            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
+            //           .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+
+    if (getClaimName() != null) {
+      container.addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH));
+    }
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
@@ -282,7 +285,7 @@ public abstract class JobStepContext implements StepContextConstants {
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
 
   protected String getDomainHome() {
-    return "/shared/domains/" + getDomainUID();
+    return getDomain().getDomainHome();
   }
 
   static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
