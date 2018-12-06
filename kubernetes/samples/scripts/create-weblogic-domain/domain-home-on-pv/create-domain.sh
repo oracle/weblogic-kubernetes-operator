@@ -296,7 +296,7 @@ function createYamlFiles {
   fi
 
   if [ -z "${logHome}" ]; then
-    logHome="/shared/logs/${domainUID}"
+    logHome="${domainPVMountPath}/logs/${domainUID}"
   fi
 
   # Use the default value if not defined.
@@ -406,7 +406,7 @@ function createYamlFiles {
 }
 
 # create domain configmap using what is in the createDomainFilesDir
-function create_domain_configmap {
+function createDomainConfigmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -448,12 +448,20 @@ function create_domain_configmap {
 }
 
 #
+# Function to delete the create domain job config map and fail
+#
+function cleanupAndFail {
+  deleteDomainConfigmap
+  fail $1
+}
+
+#
 # Function to run the job that creates the domain
 #
 function createDomainHome {
 
   # create the config map for the job
-  create_domain_configmap
+  createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
@@ -482,7 +490,7 @@ function createDomainHome {
         echo A failure was detected in the log file for job $JOB_NAME
         echo $JOB_ERRORS
         echo Check the log output for additional information
-        fail "Exiting due to failure - the job has failed"
+        cleanupAndFail "Exiting due to failure - the job has failed"
       fi
     fi
   done
@@ -493,7 +501,7 @@ function createDomainHome {
     echo The create domain job is not showing status completed after waiting 300 seconds
     echo Check the log output for errors
     kubectl logs jobs/$JOB_NAME -n ${namespace}
-    fail "Exiting due to failure - the job status is not Completed!"
+    cleanupAndFail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
@@ -502,11 +510,22 @@ function createDomainHome {
     echo The log file for the create domain job does not contain a successful completion status
     echo Check the log output for errors
     kubectl logs $JOB_POD -n ${namespace}
-    fail "Exiting due to failure - the job log file does not contain a successful completion status!"
+    cleanupAndFail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
+
+  # Delete the configmap for the create domain job
+  deleteDomainConfigmap
 
 }
 
+#
+# Function to delete the config map used by the job
+#
+function deleteDomainConfigmap {
+  # delete the configmap
+  local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
+  kubectl delete configmap ${cmName} -n $namespace
+}
 
 #
 # Function to output to the console a summary of the work completed
