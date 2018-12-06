@@ -84,7 +84,7 @@ function initAndValidateOutputDir {
     create-domain-inputs.yaml \
     create-domain-job.yaml \
     delete-domain-job.yaml \
-    domain-custom-resource.yaml
+    domain.yaml
 }
 
 #
@@ -216,7 +216,7 @@ function initialize {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
-  dcrInput="${scriptDir}/domain-custom-resource-template.yaml"
+  dcrInput="${scriptDir}/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
@@ -283,7 +283,7 @@ function createYamlFiles {
 
   createJobOutput="${domainOutputDir}/create-domain-job.yaml"
   deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
-  dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
+  dcrOutput="${domainOutputDir}/domain.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature

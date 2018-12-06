@@ -370,7 +370,7 @@ public class Domain {
     cmd.append(userProjectsDir)
         .append("/weblogic-domains/")
         .append(domainUid)
-        .append("/domain-custom-resource.yaml");
+        .append("/domain.yaml");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -399,7 +399,7 @@ public class Domain {
     cmd.append(userProjectsDir)
         .append("/weblogic-domains/")
         .append(domainUid)
-        .append("/domain-custom-resource.yaml");
+        .append("/domain.yaml");
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
