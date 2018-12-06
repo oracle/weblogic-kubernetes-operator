@@ -44,5 +44,9 @@ public interface ClusterConfigurator {
 
   ClusterConfigurator withPodAnnotation(String name, String value);
 
+  ClusterConfigurator withServiceLabel(String name, String value);
+
+  ClusterConfigurator withServiceAnnotation(String name, String value);
+
   ClusterConfigurator withRestartVersion(String restartVersion);
 }

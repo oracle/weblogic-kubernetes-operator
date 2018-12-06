@@ -7,29 +7,18 @@ package oracle.kubernetes.operator.helpers;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.*;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
@@ -51,6 +40,7 @@ import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,7 +77,7 @@ public abstract class PodHelperTestBase {
   private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
-  static final String INCLUDE_SERVER_OUT_IN_POD_LOG = "true";
+  private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   private static final String ADMIN_SECRET_NAME = "adminSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
@@ -178,7 +168,6 @@ public abstract class PodHelperTestBase {
     return new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(createDomainSpec());
   }
 
-  @SuppressWarnings("deprecation")
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
         .withDomainName(DOMAIN_NAME)
@@ -202,7 +191,6 @@ public abstract class PodHelperTestBase {
     return body -> body instanceof V1Pod && getPodName((V1Pod) body).equals(podName);
   }
 
-  @SuppressWarnings("deprecation")
   private void defineDomainImage(String image) {
     configureDomain().withDefaultImage(image);
   }
@@ -348,7 +336,7 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(),
         allOf(
             hasEnvVar("DOMAIN_NAME", DOMAIN_NAME),
-            hasEnvVar("DOMAIN_HOME", "/shared/domains/" + UID),
+            hasEnvVar("DOMAIN_HOME", "/shared/domain"),
             hasEnvVar("ADMIN_NAME", ADMIN_SERVER),
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
@@ -356,7 +344,7 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
-            hasEnvVar("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG),
+            hasEnvVar("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)),
             hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
@@ -460,7 +448,7 @@ public abstract class PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getAnnotations(),
         allOf(
-            hasEntry("prometheus.io/port", "" + Integer.toString(listenPort)),
+            hasEntry("prometheus.io/port", Integer.toString(listenPort)),
             hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
             hasEntry("prometheus.io/scrape", "true")));
   }
@@ -586,7 +574,7 @@ public abstract class PodHelperTestBase {
         .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
-        .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/shared/domains/" + UID)
+        .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/shared/domain")
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
@@ -612,7 +600,7 @@ public abstract class PodHelperTestBase {
                 .readOnly(true))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
-        .addEnvItem(envItem("DOMAIN_HOME", "/shared/domains/" + UID))
+        .addEnvItem(envItem("DOMAIN_HOME", "/shared/domain"))
         .addEnvItem(envItem("ADMIN_NAME", ADMIN_SERVER))
         .addEnvItem(envItem("ADMIN_PORT", Integer.toString(ADMIN_PORT)))
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
@@ -620,7 +608,8 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
-        .addEnvItem(envItem("SERVER_OUT_IN_POD_LOG", INCLUDE_SERVER_OUT_IN_POD_LOG))
+        .addEnvItem(
+            envItem("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)))
         .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
@@ -635,7 +624,7 @@ public abstract class PodHelperTestBase {
     return new V1PodSpec().containers(Collections.singletonList(createPodSpecContainer()));
   }
 
-  Map<String, String> createNodeSelector() {
+  private Map<String, String> createNodeSelector() {
     return NODE_SELECTOR;
   }
 

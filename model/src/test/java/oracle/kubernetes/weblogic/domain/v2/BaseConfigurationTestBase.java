@@ -84,4 +84,30 @@ public abstract class BaseConfigurationTestBase {
   private V1EnvVar env(String name, String value) {
     return new V1EnvVar().name(name).value(value);
   }
+
+  @Test
+  public void whenServiceLabelsDiffer_objectsAreNotEqual() {
+    instance1.addServiceLabels("key", "value");
+    assertThat(instance1, not(equalTo(instance2)));
+  }
+
+  @Test
+  public void whenServiceLabelsDoNotDiffer_objectsAreEqual() {
+    instance1.addServiceLabels("key", "value");
+    instance2.addServiceLabels("key", "value");
+    assertThat(instance1, equalTo(instance2));
+  }
+
+  @Test
+  public void whenserviceAnnotationsDiffer_hashCodesAreNotEqual() {
+    instance1.addServiceAnnotations("key", "value");
+    assertThat(instance1.hashCode(), not(equalTo(instance2.hashCode())));
+  }
+
+  @Test
+  public void whenserviceAnnotationsDoNotDiffer_hashCodesAreEqual() {
+    instance1.addServiceAnnotations("key", "value");
+    instance2.addServiceAnnotations("key", "value");
+    assertThat(instance1.hashCode(), equalTo(instance2.hashCode()));
+  }
 }

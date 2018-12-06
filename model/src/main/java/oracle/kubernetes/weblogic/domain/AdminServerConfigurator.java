@@ -16,4 +16,8 @@ public interface AdminServerConfigurator extends ServerConfigurator {
   AdminServerConfigurator withExportedNetworkAccessPoints(String... names);
 
   ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName);
+
+  AdminServerConfigurator withNodePortLabel(String name, String value);
+
+  AdminServerConfigurator withNodePortAnnotation(String name, String value);
 }

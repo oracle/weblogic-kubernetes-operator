@@ -4,9 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -18,13 +18,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class Cluster extends BaseConfiguration {
   /** The name of the cluster. Required. */
-  @SerializedName("clusterName")
-  @Expose
+  @Description("The name of this cluster. Required")
+  @Nonnull
   private String clusterName;
 
   /** The number of replicas to run in the cluster, if specified. */
-  @SerializedName("replicas")
-  @Expose
+  @Description("The number of managed servers to run in this cluster")
+  @Range(minimum = 0)
   private Integer replicas;
 
   public String getClusterName() {
@@ -35,7 +35,7 @@ public class Cluster extends BaseConfiguration {
     this.clusterName = clusterName;
   }
 
-  public Cluster withClusterName(@Nonnull String clusterName) {
+  Cluster withClusterName(@Nonnull String clusterName) {
     setClusterName(clusterName);
     return this;
   }

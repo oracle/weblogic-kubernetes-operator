@@ -31,7 +31,12 @@ spec:
     serverPod:
       nodeSelector:
         os: linux
-    # Restart version 
+      serviceLabels:
+        testKey1: testValue1
+        testKey2: testValue2
+      serviceAnnotations:
+        testKey3: testValue3
+        longer: shorter
     restartVersion: 1
 
   domainName: base_domain
