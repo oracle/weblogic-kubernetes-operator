@@ -94,6 +94,32 @@ function mockWLS() {
   echo "RUNNING:Y:N" > $STATEFILE
 }
 
+function waitUntilShutdown() {
+  #
+  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
+  #
+  if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
+    trace "Showing the server out file from ${SERVER_OUT_FILE}"
+    tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
+  else
+    trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+    while true; do sleep 60; done
+  fi
+}
+
+function mockWaitUntilShutdown() {
+  #
+  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
+  #
+  trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+  while true; do
+    if [ -e /u01/doShutdown ] ; then
+      exit 0
+    fi
+    sleep 5
+  done
+}
+
 # Define helper fn to copy sit cfg xml files from one dir to another
 #   $src_dir files are assumed to start with $fil_prefix and end with .xml
 #   Copied $tgt_dir files are stripped of their $fil_prefix
@@ -180,8 +206,10 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/wldf  'Sit-C
 
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS
+  mockWaitUntilShutdown
 else
   startWLS
+  waitUntilShutdown
 fi
 
 #
