@@ -393,20 +393,24 @@ public class ITOperator extends BaseTest {
       operatorForDel1 = TestUtils.createOperator(opForDelYamlFile1);
     }
     Domain domain = null;
-    boolean testCompletedSuccessfully = false;
     try {
       domain = testDomainCreation(domain1ForDelValueYamlFile);
       domain.verifyDomainCreated();
       TestUtils.verifyBeforeDeletion(domain);
-
-      logger.info("About to delete domain: " + domain.getDomainUid());
-      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-
-      TestUtils.verifyAfterDeletion(domain);
-      testCompletedSuccessfully = true;
-    } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+    } catch (Exception ex) {
+      if (domain != null && JENKINS) {
+        try {
+          domain.destroy();
+        } catch (Exception ignore) {
+        }
+      }
+      throw ex;
     }
+
+    logger.info("About to delete domain: " + domain.getDomainUid());
+    TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+
+    TestUtils.verifyAfterDeletion(domain);
     logger.info("SUCCESS - testDeleteOneDomain");
   }
 
@@ -420,7 +424,7 @@ public class ITOperator extends BaseTest {
       operatorForDel2 = TestUtils.createOperator(opForDelYamlFile2);
     }
     Domain domainDel1 = null, domainDel2 = null;
-    boolean testCompletedSuccessfully = false;
+
     try {
       domainDel1 = testDomainCreation(domain2ForDelValueYamlFile);
       domainDel1.verifyDomainCreated();
@@ -429,19 +433,29 @@ public class ITOperator extends BaseTest {
 
       TestUtils.verifyBeforeDeletion(domainDel1);
       TestUtils.verifyBeforeDeletion(domainDel2);
+    } catch (Exception ex) {
 
-      final String domainUidsToBeDeleted =
-          domainDel1.getDomainUid() + "," + domainDel2.getDomainUid();
-      logger.info("About to delete domains: " + domainUidsToBeDeleted);
-      TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
-
-      TestUtils.verifyAfterDeletion(domainDel1);
-      TestUtils.verifyAfterDeletion(domainDel2);
-      testCompletedSuccessfully = true;
-    } finally {
-      if (domainDel1 != null && (JENKINS || testCompletedSuccessfully)) domainDel1.destroy();
-      if (domainDel2 != null && (JENKINS || testCompletedSuccessfully)) domainDel2.destroy();
+      if (domainDel1 != null && JENKINS) {
+        try {
+          domainDel1.destroy();
+        } catch (Exception ignore) {
+        }
+      }
+      if (domainDel2 != null && JENKINS) {
+        try {
+          domainDel2.destroy();
+        } catch (Exception ignore) {
+        }
+      }
+      throw ex;
     }
+    final String domainUidsToBeDeleted =
+        domainDel1.getDomainUid() + "," + domainDel2.getDomainUid();
+    logger.info("About to delete domains: " + domainUidsToBeDeleted);
+    TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+
+    TestUtils.verifyAfterDeletion(domainDel1);
+    TestUtils.verifyAfterDeletion(domainDel2);
     logger.info("SUCCESS - testDeleteTwoDomains");
   }
 
