@@ -10,9 +10,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Supplies a description for a field to be inserted into the generated JSON schema. */
+/** Specifies an enum class whose values match the permitted values for the field. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
-public @interface Description {
-  String value();
+public @interface EnumClass {
+  Class<? extends java.lang.Enum> value();
 }

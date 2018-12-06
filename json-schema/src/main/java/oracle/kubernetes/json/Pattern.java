@@ -10,9 +10,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Supplies a description for a field to be inserted into the generated JSON schema. */
+/** Supplies an ECMA 262 regular expression that the field must match. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
-public @interface Description {
+public @interface Pattern {
   String value();
 }

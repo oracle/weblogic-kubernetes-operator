@@ -6,11 +6,11 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_OPERATOR_VERSION;
 
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import io.kubernetes.client.models.*;
 import java.util.Collections;
+import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 /** Helper class to ensure Domain CRD is created */
 public class CRDHelper {
@@ -82,12 +83,35 @@ public class CRDHelper {
           .group(KubernetesConstants.DOMAIN_GROUP)
           .version(KubernetesConstants.DOMAIN_VERSION)
           .scope("Namespaced")
-          .names(
-              new V1beta1CustomResourceDefinitionNames()
-                  .plural(KubernetesConstants.DOMAIN_PLURAL)
-                  .singular(KubernetesConstants.DOMAIN_SINGULAR)
-                  .kind(KubernetesConstants.DOMAIN)
-                  .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
+          .names(getCRDNames())
+          .validation(createSchemaValidation());
+    }
+
+    private V1beta1CustomResourceDefinitionNames getCRDNames() {
+      return new V1beta1CustomResourceDefinitionNames()
+          .plural(KubernetesConstants.DOMAIN_PLURAL)
+          .singular(KubernetesConstants.DOMAIN_SINGULAR)
+          .kind(KubernetesConstants.DOMAIN)
+          .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT));
+    }
+
+    private V1beta1CustomResourceValidation createSchemaValidation() {
+      return new V1beta1CustomResourceValidation().openAPIV3Schema(createOpenAPIV3Schema());
+    }
+
+    private V1beta1JSONSchemaProps createOpenAPIV3Schema() {
+      Gson gson = new Gson();
+      JsonElement jsonElement = gson.toJsonTree(createSchemaGenerator().generate(DomainSpec.class));
+      V1beta1JSONSchemaProps spec = gson.fromJson(jsonElement, V1beta1JSONSchemaProps.class);
+      return new V1beta1JSONSchemaProps().putPropertiesItem("spec", spec);
+    }
+
+    private SchemaGenerator createSchemaGenerator() {
+      SchemaGenerator generator = new SchemaGenerator();
+      generator.setIncludeAdditionalProperties(false);
+      generator.setSupportObjectReferences(false);
+      generator.setIncludeDeprecated(true);
+      return generator;
     }
 
     Step verifyCRD(Step next) {
