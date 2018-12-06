@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.weblogic.domain.v2.Cluster;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.hamcrest.Matcher;
@@ -156,6 +157,9 @@ public class DomainIntrospectorJobTest {
 
   @SuppressWarnings("deprecation")
   private DomainSpec createDomainSpec() {
+    Cluster cluster = new Cluster();
+    cluster.setClusterName("cluster-1");
+    cluster.setReplicas(1);
     DomainSpec spec =
         new DomainSpec()
             .withDomainName(DOMAIN_NAME)
@@ -164,6 +168,7 @@ public class DomainIntrospectorJobTest {
             .withAsPort(ADMIN_PORT)
             .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
+            .withCluster(cluster)
             .withImage(LATEST_IMAGE);
 
     List<String> overrideSecrets = new ArrayList();
