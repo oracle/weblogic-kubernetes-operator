@@ -241,7 +241,7 @@ function deployYamlTemplate() {
   if [ -f "{test_home}/${yaml_file}" ]; then
     kubectl -n $NAMESPACE delete -f ${test_home}/${yaml_file} \
       --ignore-not-found \
-      2>&1 | tracePipe "kubectl output: "
+      2>&1 | tracePipe "Info: kubectl output: "
     rm -f ${test_home}/${yaml_file}
   fi
 
@@ -250,7 +250,7 @@ function deployYamlTemplate() {
   ${SCRIPTPATH}/util_subst.sh -g ${yaml_file}t ${test_home}/${yaml_file} || exit 1
 
   kubectl create -f ${test_home}/${yaml_file} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 }
 
 #############################################################################
@@ -265,13 +265,13 @@ createConfigMapFromDir() {
 
   kubectl -n $NAMESPACE create cm ${cm_name} \
     --from-file ${cm_dir} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 
   kubectl -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
     weblogic.resourceVersion=domain-v2 \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 }
 
 
@@ -300,7 +300,7 @@ function deployDomainConfigMap() {
 
   kubectl -n $NAMESPACE delete cm weblogic-domain-cm \
     --ignore-not-found  \
-    2>&1 | tracePipe "kubectl output: "
+    2>&1 | tracePipe "Info: kubectl output: "
 
   createConfigMapFromDir weblogic-domain-cm ${SOURCEPATH}/operator/src/main/resources/scripts
 }
@@ -329,7 +329,7 @@ function deployTestScriptConfigMap() {
   
   kubectl -n $NAMESPACE delete cm test-script-cm \
     --ignore-not-found  \
-    2>&1 | tracePipe "kubectl output: "
+    2>&1 | tracePipe "Info: kubectl output: "
 
   createConfigMapFromDir test-script-cm ${test_home}/test-scripts
 
@@ -413,7 +413,7 @@ function deployIntrospectJob() {
 
   kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
     --ignore-not-found  \
-    2>&1 | tracePipe "kubectl output: "
+    2>&1 | tracePipe "Info: kubectl output: "
 
   # run introspection job
 
@@ -452,7 +452,7 @@ function deployPod() {
   if [ -f "${target_yaml}" ]; then
     kubectl -n $NAMESPACE delete -f ${target_yaml} \
       --ignore-not-found \
-      2>&1 | tracePipe "kubectl output: "
+      2>&1 | tracePipe "Info: kubectl output: "
     rm -f ${target_yaml}
   fi
 
@@ -460,18 +460,23 @@ function deployPod() {
 
   ( 
     export SERVER_NAME=${server_name}
-    # TBD SERVER_NAME should be derived from introspect results
+    # TBD SERVER_NAME, ADMIN_PORT, MANAGED_SERVER_PORT should be derived from introspect results
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
+    if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
+      export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
+    else
+      export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
+    fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
   kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 
   # Wait for pod to come up successfully
 
-  tracen "Waiting for pod readiness"
+  tracen "Info: Waiting for pod readiness"
   local status="0/1"
   local startsecs=$SECONDS
   local maxsecs=180
@@ -504,7 +509,7 @@ function deploySinglePodService() {
   if [ -f "${target_yaml}" ]; then
     kubectl -n $NAMESPACE delete -f ${target_yaml} \
       --ignore-not-found \
-      2>&1 | tracePipe "kubectl output: "
+      2>&1 | tracePipe "Info: kubectl output: "
     rm -f ${target_yaml}
   fi
 
@@ -517,7 +522,7 @@ function deploySinglePodService() {
   )
 
   kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 
   local svc=""
   local startsecs=$SECONDS
@@ -561,14 +566,23 @@ deployIntrospectJob
 #     topology file
 #
 
-deployPod ${ADMIN_NAME}
+deployPod ${ADMIN_NAME?}
 
-deploySinglePodService ${ADMIN_NAME} 7001 30701
+deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
 
-deployPod ${MANAGED_SERVER_NAME_BASE}1
+deployPod ${MANAGED_SERVER_NAME_BASE?}1
+
+deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
 
 #
 # TBD potentially add additional checks to verify wl pods are healthy
 #
+
+# TBD 1 weblogic/welcome1 should be deduced via a base64 of the admin secret
+# TBD 2 generate checkBeans.input instead of using a hard coded file, add more beans to check, and check mgd servers too
+
+kubectl cp checkBeans.input domain1-admin-server:/shared/checkBeans.input
+kubectl cp checkBeans.py domain1-admin-server:/shared/checkBeans.py
+kubectl exec -it domain1-admin-server wlst.sh /shared/checkBeans.py weblogic welcome1 /shared/checkBeans.input
 
 trace "Info: success!"
