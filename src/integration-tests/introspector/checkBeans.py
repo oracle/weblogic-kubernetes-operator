@@ -15,6 +15,10 @@ import os
 #   For example:
 #      /Servers/admin-server,ListenAddress,,domain1-admin-server
 #
+#
+#   Then run this program:
+#      wlst.sh checkBeans admin_name admin_pass url input_file_name
+#
 #   The program will check that the original-val matches the value
 #   in the 'domainConfig' mbean tree and that the overridden-val
 #   matches the value in the 'serverConfig' mbean tree.
@@ -26,13 +30,10 @@ import os
 
 admin_username = sys.argv[1]
 admin_password = sys.argv[2]
-input_file = sys.argv[3]
+url = sys.argv[3]
+input_file = sys.argv[4]
 
-admin_port=os.getenv('LOCAL_SERVER_DEFAULT_PORT')
-
-service_name=os.getenv('SERVICE_NAME')
-
-connect(admin_username,admin_password,"t3://" + service_name + ":" + admin_port)
+connect(admin_username,admin_password,url)
 
 errors=[]
 def addError(err):
@@ -48,8 +49,9 @@ for line in file:
   if len(line)>0 and line[0]=='#':
     continue
   words=line.split(',')
-  if (len(words) == 1 and line != '') or len(words) != 4:
-    addError("Error in line syntax line#=" + str(line_no) + " line='"+line+"'")
+  if len(words) != 4:
+    if line != '':
+      addError("Error in line syntax line#=" + str(line_no) + " line='"+line+"'")
     continue
   bean_path=words[0]
   attr=words[1]
@@ -95,3 +97,5 @@ if len(errors) > 0:
   for err in errors:
     print " --> " + err
   exit(exitcode=1)
+
+print "Test Passed!"

@@ -581,8 +581,17 @@ deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 308
 # TBD 1 weblogic/welcome1 should be deduced via a base64 of the admin secret
 # TBD 2 generate checkBeans.input instead of using a hard coded file, add more beans to check, and check mgd servers too
 
-kubectl cp checkBeans.input domain1-admin-server:/shared/checkBeans.input
-kubectl cp checkBeans.py domain1-admin-server:/shared/checkBeans.py
-kubectl exec -it domain1-admin-server wlst.sh /shared/checkBeans.py weblogic welcome1 /shared/checkBeans.input
+trace "Info: Checking beans to see if sit-cfg took effect.  Input file 'checkBeans.input', output file '$test_home/checkBeans.out'."
+kubectl cp checkBeans.input domain1-admin-server:/shared/checkBeans.input || exit 1
+kubectl cp checkBeans.py domain1-admin-server:/shared/checkBeans.py || exit 1
+kubectl exec -it domain1-admin-server \
+  wlst.sh /shared/checkBeans.py \
+    weblogic welcome1 t3://domain1-admin-server:7001 \
+    /shared/checkBeans.input \
+    > $test_home/checkBeans.out 2>&1
+if [ $? -ne 0 ]; then
+  trace "Error:  checkBeans failed, see '$test_home/checkBeans.out'."
+  exit 1
+fi
 
 trace "Info: success!"
