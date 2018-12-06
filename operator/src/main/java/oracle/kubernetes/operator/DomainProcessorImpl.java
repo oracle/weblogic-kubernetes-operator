@@ -920,9 +920,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      System.out.println(
-          "ReadSituConfigMapStep.onFailure callResponse.getStatusCode: "
-              + callResponse.getStatusCode());
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
           ? onSuccess(packet, callResponse)
           : super.onFailure(packet, callResponse);
@@ -931,12 +928,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
       V1ConfigMap result = callResponse.getResult();
-      System.out.println("ReadSituConfigMapStep.onSuccess result: " + result);
       if (result != null) {
         Map<String, String> data = result.getData();
         String topologyYaml = data.get("topology.yaml");
         if (topologyYaml != null) {
-          System.out.println("topology.yaml: " + topologyYaml);
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
           WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
