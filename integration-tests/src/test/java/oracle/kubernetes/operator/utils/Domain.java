@@ -612,7 +612,7 @@ public class Domain {
     weblogicDomainStorageSize = (String) pvMap.get("weblogicDomainStorageSize");
 
     // test NFS for domain5 on JENKINS
-    if (domainUid.equals("domain5")
+    if (domainUid.equals("domain6")
         && (System.getenv("JENKINS") != null
             && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
       pvMap.put("weblogicDomainStorageType", "NFS");
@@ -863,7 +863,9 @@ public class Domain {
     }
 
     domainMap.put("domainHome", "/shared/domains/" + domainUid);
-
+    /* domainMap.put(
+    "createDomainFilesDir",
+    BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
