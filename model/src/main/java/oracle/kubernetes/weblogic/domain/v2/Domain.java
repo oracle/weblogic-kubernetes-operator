@@ -314,7 +314,7 @@ public class Domain {
     return spec.getLogHome();
   }
 
-  public String getIncludeServerOutInPodLog() {
+  public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
   }
 
