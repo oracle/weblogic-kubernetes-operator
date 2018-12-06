@@ -10,9 +10,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Supplies a description for a field to be inserted into the generated JSON schema. */
+/** Specifies minimum and/or maximum permitted values for the field. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
-public @interface Description {
-  String value();
+public @interface Range {
+  int minimum() default Integer.MIN_VALUE;
+
+  int maximum() default Integer.MAX_VALUE;
 }
