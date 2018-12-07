@@ -37,7 +37,7 @@ spec:
       serviceAnnotations:
         testKey3: testValue3
         longer: shorter
-    restartVersion: 1
+    restartVersion: "1"
 
   domainName: base_domain
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must

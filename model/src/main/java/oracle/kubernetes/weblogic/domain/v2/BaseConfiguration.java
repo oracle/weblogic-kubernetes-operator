@@ -49,11 +49,11 @@ public abstract class BaseConfiguration {
   private String serverStartPolicy;
 
   /**
-   * Tells the operator whether the customer wants the to restart the pods. The value can be any
-   * String and it can be defined in domain, cluster or server to restart the different pods. After
-   * the value is added, the corresponding pods will be terminated and created again, if customer
-   * modify the value again after the pods were recreated, then pods will again be terminated and
-   * recreated.
+   * Tells the operator whether the customer wants to restart the server pods. The value can be any
+   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again. If customer
+   * modifies the value again after the pods were recreated, then the pods will again be terminated
+   * and recreated.
    *
    * @since 2.0
    */
