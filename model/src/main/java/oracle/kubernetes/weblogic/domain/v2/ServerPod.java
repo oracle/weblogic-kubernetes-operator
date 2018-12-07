@@ -6,22 +6,9 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static java.util.Collections.emptyList;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Capabilities;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import io.kubernetes.client.models.*;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -38,8 +25,6 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("env")
-  @Expose
   @Valid
   @Description("A list of environment variables to add to a server")
   private List<V1EnvVar> env = new ArrayList<>();
@@ -50,10 +35,8 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("livenessProbe")
-  @Expose
   @Description("Settings for the liveness probe associated with a server")
-  private ProbeTuning livenessProbeTuning = new ProbeTuning();
+  private ProbeTuning livenessProbe = new ProbeTuning();
 
   /**
    * Defines the settings for the readiness probe. Any that are not specified will default to the
@@ -61,10 +44,8 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("readinessProbe")
-  @Expose
   @Description("Settings for the readiness probe associated with a server")
-  private ProbeTuning readinessProbeTuning = new ProbeTuning();
+  private ProbeTuning readinessProbe = new ProbeTuning();
 
   /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
@@ -72,24 +53,18 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("nodeSelector")
-  @Expose
   @Description(
       "Selector which must match a node's labels for the pod to be scheduled on that node.")
-  private Map<String, String> nodeSelectorMap = new HashMap<String, String>(1);
+  private Map<String, String> nodeSelector = new HashMap<>();
 
   /**
    * Defines the requirements and limits for the pod server
    *
    * @since 2.0
    */
-  @SerializedName("resources")
-  @Expose
   @Description("Memory and cpu minimum requirements and limits for the server")
-  private V1ResourceRequirements resourceRequirements =
-      new V1ResourceRequirements()
-          .limits(new HashMap<String, Quantity>())
-          .requests(new HashMap<String, Quantity>());
+  private V1ResourceRequirements resources =
+      new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
   /**
    * PodSecurityContext holds pod-level security attributes and common container settings. Some
@@ -98,9 +73,7 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("podSecurityContext")
-  @Expose
-  @Description("")
+  @Description("Pod-level security attributes")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
 
   /**
@@ -110,9 +83,8 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("containerSecurityContext")
-  @Expose
-  @Description("SecurityContext holds security configuration that will be applied to a container.")
+  @Description(
+      "Container-level security attributes. Will override any matching pod-level attributes")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   /**
@@ -120,58 +92,66 @@ class ServerPod {
    *
    * @since 2.0
    */
-  @SerializedName("volumes")
-  @Expose
-  @Description("Additional volumes")
-  private List<V1Volume> additionalVolumes = new ArrayList<>();
+  @Description("Additional volumes to be created in the server pod")
+  private List<V1Volume> volumes = new ArrayList<>();
 
   /**
    * The additional volume mounts.
    *
    * @since 2.0
    */
-  @SerializedName("volumeMounts")
-  @Expose
-  @Description("Additional volume mounts")
-  private List<V1VolumeMount> additionalVolumeMounts = new ArrayList<>();
+  @Description("Additional volume mounts for the server pod")
+  private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   /**
    * The labels to be attached to pods.
    *
    * @since 2.0
    */
-  @SerializedName("podLabels")
-  @Expose
   @Description("Labels applied to pods")
-  private Map<String, String> podLabels = new HashMap<String, String>();
+  private Map<String, String> podLabels = new HashMap<>();
 
   /**
    * The annotations to be attached to pods.
    *
    * @since 2.0
    */
-  @SerializedName("podAnnotations")
-  @Expose
   @Description("Annotations applied to pods")
-  private Map<String, String> podAnnotations = new HashMap<String, String>();
+  private Map<String, String> podAnnotations = new HashMap<>();
+
+  /**
+   * The labels to be attached to Service.
+   *
+   * @since 2.0
+   */
+  @Description("Labels applied to services")
+  private Map<String, String> serviceLabels = new HashMap<>();
+
+  /**
+   * The annotations to be attached to Service.
+   *
+   * @since 2.0
+   */
+  @Description("Annotations applied to services")
+  private Map<String, String> serviceAnnotations = new HashMap<>();
 
   ProbeTuning getReadinessProbeTuning() {
-    return this.readinessProbeTuning;
+    return this.readinessProbe;
   }
 
   void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period) {
-    this.readinessProbeTuning
+    this.readinessProbe
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
   }
 
   ProbeTuning getLivenessProbeTuning() {
-    return this.livenessProbeTuning;
+    return this.livenessProbe;
   }
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    this.livenessProbeTuning
+    this.livenessProbe
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
@@ -179,18 +159,21 @@ class ServerPod {
 
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
-    livenessProbeTuning.copyValues(serverPod1.livenessProbeTuning);
-    readinessProbeTuning.copyValues(serverPod1.readinessProbeTuning);
+    livenessProbe.copyValues(serverPod1.livenessProbe);
+    readinessProbe.copyValues(serverPod1.readinessProbe);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
-    serverPod1.getPodLabels().forEach((k, v) -> addPodLabelIfMissing(k, v));
-    serverPod1.getPodAnnotations().forEach((k, v) -> addPodAnnotationIfMissing(k, v));
-    serverPod1.nodeSelectorMap.forEach(nodeSelectorMap::putIfAbsent);
-    copyValues(resourceRequirements, serverPod1.resourceRequirements);
+    serverPod1.getPodLabels().forEach(this::addPodLabelIfMissing);
+    serverPod1.getPodAnnotations().forEach(this::addPodAnnotationIfMissing);
+    serverPod1.getServiceAnnotations().forEach(this::addServiceAnnotationIfMissing);
+    serverPod1.getServiceLabels().forEach(this::addServiceLabelIfMissing);
+    serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
+    copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
   }
 
+  @SuppressWarnings("Duplicates")
   private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
     if (to.isRunAsNonRoot() == null) to.runAsNonRoot(from.isRunAsNonRoot());
     if (to.getFsGroup() == null) to.fsGroup(from.getFsGroup());
@@ -201,6 +184,7 @@ class ServerPod {
     if (to.getSysctls() == null) to.sysctls(from.getSysctls());
   }
 
+  @SuppressWarnings("Duplicates")
   private void copyValues(V1SecurityContext to, V1SecurityContext from) {
     if (to.isAllowPrivilegeEscalation() == null)
       to.allowPrivilegeEscalation(from.isAllowPrivilegeEscalation());
@@ -220,7 +204,7 @@ class ServerPod {
 
   private void copyValues(V1Capabilities to, V1Capabilities from) {
     if (from.getAdd() != null) {
-      List<String> allAddCapabilities = new ArrayList<String>();
+      List<String> allAddCapabilities = new ArrayList<>();
       if (to.getAdd() != null) {
         allAddCapabilities =
             Stream.concat(to.getAdd().stream(), from.getAdd().stream())
@@ -231,7 +215,7 @@ class ServerPod {
     }
 
     if (from.getDrop() != null) {
-      List<String> allDropCapabilities = new ArrayList<String>();
+      List<String> allDropCapabilities = new ArrayList<>();
       if (to.getDrop() != null) {
         allDropCapabilities =
             Stream.concat(to.getDrop().stream(), from.getDrop().stream())
@@ -264,7 +248,7 @@ class ServerPod {
   }
 
   private boolean hasVolumeName(String name) {
-    for (V1Volume var : additionalVolumes) {
+    for (V1Volume var : volumes) {
       if (var.getName().equals(name)) return true;
     }
     return false;
@@ -275,7 +259,7 @@ class ServerPod {
   }
 
   private boolean hasVolumeMountName(String name) {
-    for (V1VolumeMount var : additionalVolumeMounts) {
+    for (V1VolumeMount var : volumeMounts) {
       if (var.getName().equals(name)) return true;
     }
     return false;
@@ -293,6 +277,14 @@ class ServerPod {
     if (!podAnnotations.containsKey(name)) podAnnotations.put(name, value);
   }
 
+  private void addServiceLabelIfMissing(String name, String value) {
+    if (!serviceLabels.containsKey(name)) serviceLabels.put(name, value);
+  }
+
+  private void addServiceAnnotationIfMissing(String name, String value) {
+    if (!serviceAnnotations.containsKey(name)) serviceAnnotations.put(name, value);
+  }
+
   List<V1EnvVar> getEnv() {
     return this.env;
   }
@@ -307,46 +299,38 @@ class ServerPod {
   }
 
   Map<String, String> getNodeSelector() {
-    return nodeSelectorMap;
+    return nodeSelector;
   }
 
   void addNodeSelector(String labelKey, String labelValue) {
-    this.nodeSelectorMap.put(labelKey, labelValue);
+    this.nodeSelector.put(labelKey, labelValue);
   }
 
-  void setNodeSelector(@Nullable Map<String, String> nodeSelectors) {
-    this.nodeSelectorMap = nodeSelectors;
+  V1ResourceRequirements getResourceRequirements() {
+    return resources;
   }
 
-  public V1ResourceRequirements getResourceRequirements() {
-    return resourceRequirements;
+  void addRequestRequirement(String resource, String quantity) {
+    resources.putRequestsItem(resource, Quantity.fromString(quantity));
   }
 
-  public void setResourceRequirements(V1ResourceRequirements resourceRequirements) {
-    this.resourceRequirements = resourceRequirements;
+  void addLimitRequirement(String resource, String quantity) {
+    resources.putLimitsItem(resource, Quantity.fromString(quantity));
   }
 
-  public void addRequestRequirement(String resource, String quantity) {
-    resourceRequirements.putRequestsItem(resource, Quantity.fromString(quantity));
-  }
-
-  public void addLimitRequirement(String resource, String quantity) {
-    resourceRequirements.putLimitsItem(resource, Quantity.fromString(quantity));
-  }
-
-  public V1PodSecurityContext getPodSecurityContext() {
+  V1PodSecurityContext getPodSecurityContext() {
     return podSecurityContext;
   }
 
-  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+  void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
     this.podSecurityContext = podSecurityContext;
   }
 
-  public V1SecurityContext getContainerSecurityContext() {
+  V1SecurityContext getContainerSecurityContext() {
     return containerSecurityContext;
   }
 
-  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+  void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     this.containerSecurityContext = containerSecurityContext;
   }
 
@@ -356,7 +340,7 @@ class ServerPod {
   }
 
   private void addAdditionalVolume(V1Volume var) {
-    additionalVolumes.add(var);
+    volumes.add(var);
   }
 
   void addAdditionalVolumeMount(String name, String path) {
@@ -364,15 +348,15 @@ class ServerPod {
   }
 
   private void addAdditionalVolumeMount(V1VolumeMount var) {
-    additionalVolumeMounts.add(var);
+    volumeMounts.add(var);
   }
 
-  public List<V1Volume> getAdditionalVolumes() {
-    return additionalVolumes;
+  List<V1Volume> getAdditionalVolumes() {
+    return volumes;
   }
 
-  public List<V1VolumeMount> getAdditionalVolumeMounts() {
-    return additionalVolumeMounts;
+  List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return volumeMounts;
   }
 
   void addPodLabel(String name, String value) {
@@ -383,26 +367,44 @@ class ServerPod {
     podAnnotations.put(name, value);
   }
 
-  public Map<String, String> getPodLabels() {
+  Map<String, String> getPodLabels() {
     return podLabels;
   }
 
-  public Map<String, String> getPodAnnotations() {
+  Map<String, String> getPodAnnotations() {
     return podAnnotations;
+  }
+
+  void addServiceLabel(String name, String value) {
+    serviceLabels.put(name, value);
+  }
+
+  void addServiceAnnotations(String name, String value) {
+    serviceAnnotations.put(name, value);
+  }
+
+  Map<String, String> getServiceLabels() {
+    return serviceLabels;
+  }
+
+  Map<String, String> getServiceAnnotations() {
+    return serviceAnnotations;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("env", env)
-        .append("livenessProbe", livenessProbeTuning)
-        .append("readinessProbe", readinessProbeTuning)
-        .append("additionalVolumes", additionalVolumes)
-        .append("additionalVolumeMounts", additionalVolumeMounts)
+        .append("livenessProbe", livenessProbe)
+        .append("readinessProbe", readinessProbe)
+        .append("additionalVolumes", volumes)
+        .append("additionalVolumeMounts", volumeMounts)
         .append("podLabels", podLabels)
         .append("podAnnotations", podAnnotations)
-        .append("nodeSelector", nodeSelectorMap)
-        .append("resourceRequirements", resourceRequirements)
+        .append("serviceLabels", serviceLabels)
+        .append("serviceAnnotations", serviceAnnotations)
+        .append("nodeSelector", nodeSelector)
+        .append("resourceRequirements", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
         .toString();
@@ -418,14 +420,16 @@ class ServerPod {
 
     return new EqualsBuilder()
         .append(env, that.env)
-        .append(livenessProbeTuning, that.livenessProbeTuning)
-        .append(readinessProbeTuning, that.readinessProbeTuning)
-        .append(additionalVolumes, that.additionalVolumes)
-        .append(additionalVolumeMounts, that.additionalVolumeMounts)
+        .append(livenessProbe, that.livenessProbe)
+        .append(readinessProbe, that.readinessProbe)
+        .append(volumes, that.volumes)
+        .append(volumeMounts, that.volumeMounts)
         .append(podLabels, that.podLabels)
         .append(podAnnotations, that.podAnnotations)
-        .append(nodeSelectorMap, that.nodeSelectorMap)
-        .append(resourceRequirements, that.resourceRequirements)
+        .append(serviceLabels, that.serviceLabels)
+        .append(serviceAnnotations, that.serviceAnnotations)
+        .append(nodeSelector, that.nodeSelector)
+        .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
         .append(containerSecurityContext, that.containerSecurityContext)
         .isEquals();
@@ -435,14 +439,16 @@ class ServerPod {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .append(env)
-        .append(livenessProbeTuning)
-        .append(readinessProbeTuning)
-        .append(additionalVolumes)
-        .append(additionalVolumeMounts)
+        .append(livenessProbe)
+        .append(readinessProbe)
+        .append(volumes)
+        .append(volumeMounts)
         .append(podLabels)
         .append(podAnnotations)
-        .append(nodeSelectorMap)
-        .append(resourceRequirements)
+        .append(serviceLabels)
+        .append(serviceAnnotations)
+        .append(nodeSelector)
+        .append(resources)
         .append(podSecurityContext)
         .append(containerSecurityContext)
         .toHashCode();

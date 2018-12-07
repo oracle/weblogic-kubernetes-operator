@@ -60,6 +60,66 @@ function copyIfChanged() {
 }
 
 #
+# Define function to start weblogic
+#
+
+function startWLS() {
+  #
+  # Start NM
+  #
+
+  trace "Start node manager"
+  # call script to start node manager in same shell
+  # $SERVER_OUT_FILE will be set in startNodeManager.sh
+  . ${SCRIPTPATH}/startNodeManager.sh || exitOrLoop
+
+  #
+  # Start WL Server
+  #
+
+  # TBD We should probably || exit 1 if start-server.py itself fails, and dump NM log to stdout
+
+  trace "Start WebLogic Server via the nodemanager"
+  ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
+}
+
+function mockWLS() {
+
+  trace "Mocking WebLogic Server"
+
+  STATEFILE_DIR=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager
+  STATEFILE=${STATEFILE_DIR}/${SERVER_NAME}.state
+
+  createFolder $STATEFILE_DIR
+  echo "RUNNING:Y:N" > $STATEFILE
+}
+
+function waitUntilShutdown() {
+  #
+  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
+  #
+  if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
+    trace "Showing the server out file from ${SERVER_OUT_FILE}"
+    tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
+  else
+    trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+    while true; do sleep 60; done
+  fi
+}
+
+function mockWaitUntilShutdown() {
+  #
+  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
+  #
+  trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+  while true; do
+    if [ -e /u01/doShutdown ] ; then
+      exit 0
+    fi
+    sleep 5
+  done
+}
+
 # Define helper fn to copy sit cfg xml files from one dir to another
 #   $src_dir files are assumed to start with $fil_prefix and end with .xml
 #   Copied $tgt_dir files are stripped of their $fil_prefix
@@ -144,33 +204,10 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms   'Sit-C
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc  'Sit-Cfg-JDBC--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/wldf  'Sit-Cfg-WLDF--'
 
-#
-# Start NM
-#
-
-trace "Start node manager"
-# call script to start node manager in same shell 
-# $SERVER_OUT_FILE will be set in startNodeManager.sh
-. ${SCRIPTPATH}/startNodeManager.sh || exitOrLoop
-
-#
-# Start WL Server
-#
-
-# TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
-
-trace "Start WebLogic Server via the nodemanager"
-${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
-
-#
-# Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
-#
-
-if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
-  trace "Showing the server out file from ${SERVER_OUT_FILE}"
-  tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
+if [ "${MOCK_WLS}" == 'true' ]; then
+  mockWLS
+  mockWaitUntilShutdown
 else
-  trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
-  while true; do sleep 60; done
+  startWLS
+  waitUntilShutdown
 fi
-

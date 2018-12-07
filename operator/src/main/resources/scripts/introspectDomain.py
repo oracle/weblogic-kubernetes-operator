@@ -698,7 +698,7 @@ class SitConfigGenerator(Generator):
       nap_name=nap.getName()
       self.writeln("<d:network-access-point>")
       self.indent()
-      self.writeln("<d:name f:combine-mode=\"replace\">" + nap_name + "</d:name>")
+      self.writeln("<d:name>" + nap_name + "</d:name>")
       self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
       self.undent()
       self.writeln("</d:network-access-point>")
@@ -878,7 +878,27 @@ class CustomSitConfigIntrospector(SecretManager):
     if not os.path.exists(self.env.CUSTOM_SITCFG_PATH):
       return
 
+    # We expect the user to include a 'version.txt' file in their situational
+    # config directory.
+    #
+    # That file is expected to contain '2.0'
+    #
+    versionPath=os.path.join(self.env.CUSTOM_SITCFG_PATH,"version.txt")
+    if not os.path.exists(versionPath):
+        self.env.addError("Error, Required file, '"+versionPath+"', does not exist")
+    else:
+        version=self.env.readFile(versionPath).strip()
+        if not version == "2.0":
+            # truncate and ellipsify at 75 characters
+            version = version[:75] + (version[75:] and '...')
+            self.env.addError("Error, "+versionPath+" does not have the value of"
+                              + " '2.0'. The current content: '" + version 
+                              + "' is not valid.")
+
     for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
+
+      if the_file == "version.txt":
+        continue  
 
       the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
 
