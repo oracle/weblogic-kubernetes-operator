@@ -13,4 +13,4 @@
 * [Sample Traefik Helm chart](charts/traefik/README.md) for setting up a Traefik load balancer for WebLogic clusters.
 * [Sample Voyager Helm chart](charts/voyager/README.md) for setting up a Voyager load balancer for WebLogic clusters.
 * [Sample Ingress Helm chart](charts/ingress-per-domain/README.md) for setting up a Kubernetes Ingress for each WebLogic cluster using Traefik or Voyager load balancer.
-* [Sample Apache  Helm chart](charts/README.md) for setting up a load balancer for WebLogic clusters using the Apache HTTP Server with WebLogic Server Plugins.
+* [Sample Apache  Helm chart](charts/apache-webtier/README.md) and [Apache samples using the defaulg or custom comfigurations](charts/aoache-samples/README.md) for setting up a load balancer for WebLogic clusters using the Apache HTTP Server with WebLogic Server Plugins.
