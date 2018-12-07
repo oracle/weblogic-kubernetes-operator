@@ -7,7 +7,7 @@ The sample scripts demonstrate the creation of a WebLogic domain home on an exis
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic Operator is running.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
-* Create in the same Kubernetes namespace, the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
+* In the same Kubernetes namespace, create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
 
 ## Using the script to create a domain
