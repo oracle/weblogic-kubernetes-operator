@@ -355,17 +355,59 @@ class TopologyGenerator(Generator):
 
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
     firstServer = None
-    firstPort = None
+    firstListenPort = None
+    firstListenPortEnabled = None
+    firstSslListenPort = None
+    firstSslListenPortEnabled = None
+    firstAdminPort = None
+    firstAdminPortEnabled = None
     for server in self.env.getDomain().getServers():
       if cluster is server.getCluster():
-        port = server.getListenPort()
+        listenPort = server.getListenPort()
+        listenPortEnabled = server.isListenPortEnabled()
+        ssl = server.getSSL()
+        sslListenPort = None
+        sslListenPortEnabled = None
+        if ssl is not None:
+              sslListenPort = ssl.getListenPort()
+              sslListenPortEnabled = ssl.isEnabled()
+        adminPort = server.getAdministrationPort()
+        adminPortEnabled = server.isAdministrationPortEnabled()
         if firstServer is None:
           firstServer = server
-          firstPort = port
+          firstListenPort = defaultPort
+          firstListenPortEnabled = listenPortEnabled
+          firstSslListenPort = sslListenPort
+          firstSslListenPortEnabled = sslListenPortEnabled
+          firstAdminPort = adminPort
+          firstAdminPortEnabled = adminPortEnabled
         else:
-          if port != firstPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstPort) + " but its server " + self.name(server) + "'s listen port is " + str(port) + ".  All ports for the same channel in a cluster must be the same, including the default channel and the default SSL channel.")
-            return
+          if listenPort != firstListenPort:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
+          if listenPortEnabled != firstListenPortEnabled:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + str(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + str(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+          if sslListenPort != firstSslListenPort:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+          if sslListenPortEnabled != firstSslListenPortEnabled:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + str(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + str(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+          if adminPort != firstAdminListenPort:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
+          if adminPortEnabled != firstAdminPortEnabled:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + str(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + str(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+          return
+
+   def NonDynamicClusterServerChannelsHaveSameProtocol(self, cluster):
+     serverNap = {}
+     for server in self.env.getDomain().getServers():
+       if cluster is server.getCluster():
+         for nap in server.getNetworkAccessPoints():
+           if nap.getName() in serverNap
+             if serverNap[nap.getName()] != nap.getProtocol()
+               self.addError("The non-dynamic cluster " + self.name(cluster) + " has network access point " + self.name(nap.getName()) + " with conflicting protocols : " + self.name(nap.getProtocol()) + ", " +self.name(serverNap[nap.getName()]) + ". All protocols for the same network access point in a cluster must be the same.")
+               return
+           else:
+             serverNap[nap.getName()] = nap.getProtocol()
+
 
   def validateDynamicCluster(self, cluster):
     self.validateDynamicClusterReferencedByOneServerTemplate(cluster)
