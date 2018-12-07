@@ -878,6 +878,19 @@ class CustomSitConfigIntrospector(SecretManager):
     if not os.path.exists(self.env.CUSTOM_SITCFG_PATH):
       return
 
+    # We expect the user to include a 'version.txt' file in their situational
+    # config directory.
+    #
+    # That file is expected to contain '2.0'
+    #
+    versionPath=os.path.join(self.env.CUSTOM_SITCFG_PATH,"version.txt")
+    if not os.path.exists(versionPath):
+        self.env.addError("Error, Required file, "+versionPath+", does not exist")
+    else:
+        version=self.env.readFile(versionPath).strip()
+        if not version == "2.0":
+            self.env.addError("Error, "+versionPath+" does not have the value of '2.0'.")
+
     for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
 
       the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
@@ -889,7 +902,7 @@ class CustomSitConfigIntrospector(SecretManager):
 
       # check if file name corresponds with config.xml or a module
 
-      if not self.moduleMap.has_key(the_file) and the_file != "config.xml":
+      if not self.moduleMap.has_key(the_file) and the_file != "config.xml" and the_file != "version.txt":
         self.env.addError("Error, custom sit config override file '" + the_file + "'" 
           + " is not named 'config.xml' or has no matching system resource"
           + " module. Custom sit config files must be named 'config.xml'"
@@ -914,6 +927,8 @@ class CustomSitConfigIntrospector(SecretManager):
 
       if the_file == 'config.xml':
         genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml' 
+      elif the_file == 'version.txt':
+        genfile += self.env.CUSTOM_PREFIX_CFG + 'version.txt'
       else:
         genfile += self.moduleMap[the_file]
 
