@@ -2,7 +2,7 @@
 
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-# This is an example of how to define a Domain Custom Resource.
+# This is an example of how to define a Domain resource.
 #
 apiVersion: "weblogic.oracle/v2"
 kind: Domain
