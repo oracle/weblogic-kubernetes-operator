@@ -210,6 +210,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenExistingManagedPodRestartVersionChange() {
+    verifyRollManagedPodWhen(
+        (pod) ->
+            pod.getMetadata()
+                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "serverRestartV1"));
+  }
+
+  @Test
   public void whenDomainHasAdditionalVolumes_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-path1")
@@ -360,6 +368,24 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "cluster-label-value1"));
     assertThat(podLabels, hasEntry("label2", "cluster-label-value2"));
+  }
+
+  @Test
+  public void whenClusterHasRestartVersion_createManagedPodWithRestartVersionLabel() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(CLUSTER_NAME).withRestartVersion("clusterRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.CLUSTERRESTARTVERSION_LABEL, "clusterRestartV1"));
+  }
+
+  @Test
+  public void whenDomainHasRestartVersion_createManagedPodWithRestartVersionLabel() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().withRestartVersion("domainRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
   }
 
   @Test
