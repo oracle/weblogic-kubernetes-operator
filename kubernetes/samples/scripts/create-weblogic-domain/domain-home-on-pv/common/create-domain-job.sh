@@ -3,6 +3,13 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 
+function exitIfError {
+  if [ "$1" != "0" ]; then
+    echo "$2"
+    exit $1
+  fi
+}
+
 # Include common utility functions
 source ${CREATE_DOMAIN_SCRIPT_DIR}/utility.sh
 
@@ -15,9 +22,11 @@ prepareDomainHomeDir
 
 # Execute the script to create the domain
 source $script
+exitIfError $? "ERROR: $script failed."
 
 # Create the node manager
 wlst.sh -skipWLSModuleScanning ${CREATE_DOMAIN_SCRIPT_DIR}/setup-nodemanager.py
+exitIfError $? "ERROR: setup node manager failed."
 
 # DON'T REMOVE THIS
 # This script has to contain this log message. 
