@@ -274,6 +274,19 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreated_withNoPVC_containerHasExpectedVolumeMounts() {
+    domainPresenceInfo.getClaims().getItems().clear();
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        containsInAnyOrder(
+            writableVolumeMount(
+                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
+            readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
+            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
+            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
+  }
+
+  @Test
   public void whenPodCreated_lifecyclePreStopHasStopServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLifecycle().getPreStop().getExec().getCommand(),
