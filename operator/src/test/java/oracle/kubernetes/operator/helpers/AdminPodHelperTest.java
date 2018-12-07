@@ -417,6 +417,18 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasEntry("label1", "server-label-value1"));
   }
 
+  @Test
+  public void whenDomainAndAdminHasRestartVersion_createAdminPodWithRestartVersionLabel() {
+    getConfigurator()
+        .withRestartVersion("domainRestartV1")
+        .configureAdminServer((ADMIN_SERVER))
+          .withRestartVersion("adminRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
+    assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
+  }
+
   @Override
   protected void onAdminExpectListPersistentVolume() {
     expectListPersistentVolume().returning(createPersistentVolumeList());
