@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -203,6 +204,14 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvFrom_replaceIt() {
     verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).envFrom(Collections.emptyList()));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecContainerHasRestartVersion_replaceIt() {
+    verifyAdminPodReplacedWhen(
+        (pod) ->
+            pod.getMetadata()
+                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
   }
 
   @Test
@@ -422,11 +431,12 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withRestartVersion("domainRestartV1")
         .configureAdminServer((ADMIN_SERVER))
-          .withRestartVersion("adminRestartV1");
+        .withRestartVersion("adminRestartV1");
 
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
     assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
   }
 
   @Override
