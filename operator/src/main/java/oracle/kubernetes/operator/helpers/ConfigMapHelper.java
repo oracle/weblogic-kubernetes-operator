@@ -304,7 +304,7 @@ public class ConfigMapHelper {
     }
   }
 
-  static class SitConfigMapContext extends ConfigMapContext {
+  public static class SitConfigMapContext extends ConfigMapContext {
     Map<String, String> data;
     String cmName;
 
@@ -513,7 +513,7 @@ public class ConfigMapHelper {
     return fname;
   }
 
-  static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
+  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
     try {
