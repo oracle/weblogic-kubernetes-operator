@@ -12,7 +12,7 @@
 #  1) secretName - if specified
 #  2) domain1-weblogic-credentials - if secretName and domainUID are both not specified. This is the default out-of-the-box.
 #  3) <domainUID>-weblogic-credentials - if secretName is not specified, and domainUID is specified.
-#  4) <domainUID>-weblogic-credentials - if secretName is not specified, and domainUID is specified as "".
+#  4) weblogic-credentials - if secretName is not specified, and domainUID is specified as "".
 #
 # The generated secret will be labeled with 
 #       weblogic.domainUID=$domainUID 
