@@ -49,15 +49,16 @@ public abstract class BaseConfiguration {
   private String serverStartPolicy;
 
   /**
-   * Tells the operator whether the customer wants the to restart the pods. The value is a positive
-   * integer that customer has to increment, it can be defined in domain, cluster or server.
-   * Depending on where the value is incremented (domain, cluster or server) the pods assigned to
-   * such will be restarted.
+   * Tells the operator whether the customer wants the to restart the pods. The value can be any
+   * String and it can be defined in domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again, if customer
+   * modify the value again after the pods were recreated, then pods will again be terminated and
+   * recreated.
    *
    * @since 2.0
    */
   @Description(
-      "If preseent, every time this integer value is incremented the operator will restart"
+      "If preseent, every time this value is updated the operator will restart"
           + " the required servers")
   private String restartVersion;
 

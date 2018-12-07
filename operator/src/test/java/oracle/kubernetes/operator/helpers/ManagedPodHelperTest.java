@@ -13,6 +13,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -377,6 +378,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.CLUSTERRESTARTVERSION_LABEL, "clusterRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.DOMAINRESTARTVERSION_LABEL)));
+    assertThat(podLabels, hasKey(not(LabelConstants.SERVERRESTARTVERSION_LABEL)));
   }
 
   @Test
@@ -386,6 +389,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
+    assertThat(podLabels, hasKey(not(LabelConstants.SERVERRESTARTVERSION_LABEL)));
   }
 
   @Test
@@ -479,7 +484,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 
-  @SuppressWarnings("unchecked")
   private void verifyRollManagedPodWhen(PodMutator mutator) {
     Map<String, StepAndPacket> rolling = new HashMap<>();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
