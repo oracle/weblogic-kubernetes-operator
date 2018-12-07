@@ -160,6 +160,14 @@ public class DomainV2Configurator extends DomainConfigurator {
     public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
       return adminServer.addExportedNetworkAccessPoint(channelName);
     }
+
+    @Override
+    public AdminService configureAdminService() {
+      if (adminServer.getAdminService() == null) {
+        adminServer.setAdminService(new AdminService());
+      }
+      return adminServer.getAdminService();
+    }
   }
 
   private AdminServer getOrCreateAdminServer(String adminServerName) {
