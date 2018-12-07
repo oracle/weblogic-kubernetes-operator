@@ -65,8 +65,6 @@ public final class HealthCheckHelper {
   // default namespace or svc account name
   private static final String DEFAULT_NAMESPACE = "default";
 
-  private static final String MINIMUM_K8S_VERSION = "v1.7.5";
-
   static {
     // CRUD resources
     namespaceAccessChecks.put(AuthorizationProxy.Resource.PODS, crudOperations);
