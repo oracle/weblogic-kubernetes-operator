@@ -66,7 +66,7 @@ Use these [scripts and Helm charts](kubernetes/samples/README.md) to install Tra
 
 ### Configuring Kibana and Elasticsearch
 
-You can send the operator logs to Elasticsearch, to be displayed in Kibana. Use this [sample script](samples/scripts/elasticsearch_and_kibana.yaml) to configure Elasticsearch and Kibana deployments and services.
+You can send the operator logs to Elasticsearch, to be displayed in Kibana. Use this [sample script](kubernetes/samples/scripts/elasticsearch_and_kibana.yaml) to configure Elasticsearch and Kibana deployments and services.
 
 ## Create and manage the operator
 
