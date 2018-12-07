@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
@@ -49,14 +50,19 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    * @return Job watcher for the namespace
    */
   public static JobWatcher create(
-      ThreadFactory factory, String ns, String initialResourceVersion, AtomicBoolean isStopping) {
-    JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, isStopping);
+      ThreadFactory factory,
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      AtomicBoolean isStopping) {
+    JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, tuning, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
-  private JobWatcher(String ns, String initialResourceVersion, AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping);
+  private JobWatcher(
+      String ns, String initialResourceVersion, WatchTuning tuning, AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.ns = ns;
   }
