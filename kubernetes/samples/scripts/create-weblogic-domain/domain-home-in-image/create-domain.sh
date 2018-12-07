@@ -212,7 +212,6 @@ function initialize {
     domainUID \
     clusterName \
     managedServerNameBase \
-    weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
     includeServerOutInPodLog \
@@ -317,6 +316,10 @@ function createFiles {
   domainHome="/u01/oracle/user_projects/domains/${domainName}"
   runtimeProperties="${scriptDir}/docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_run"
 
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
+  fi
+
   cp ${dcrInput} ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
@@ -352,6 +355,7 @@ function createDomainHome {
     fail "Create domain ${domainName} failed."
   fi
 
+  cd -
   echo ""
   echo "Create domain ${domainName} successfully."
 }
@@ -383,6 +387,7 @@ function printSummary {
 # Function to create the domain custom resource
 #
 function createDomainResource {
+  pwd
   kubectl apply -f ${dcrOutput}
   DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
   if [ "${DCR_AVAIL}" != "1" ]; then
