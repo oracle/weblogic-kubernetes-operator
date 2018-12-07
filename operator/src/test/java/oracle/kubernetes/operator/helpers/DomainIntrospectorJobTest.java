@@ -26,6 +26,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -304,7 +305,7 @@ public class DomainIntrospectorJobTest {
   }
 
   FiberTestSupport.StepFactory getStepFactory() {
-    return JobHelper::createDomainIntrospectorJobStep;
+    return next -> JobHelper.createDomainIntrospectorJobStep(new WatchTuning(30), next);
   }
 
   V1PodList createListPods() {

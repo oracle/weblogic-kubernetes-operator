@@ -286,6 +286,7 @@ public class Main {
 
   private static void stopNamespaces(Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
+      processor.stopNamespace(ns);
       AtomicBoolean stopping = isNamespaceStopping.remove(ns);
       if (stopping != null) {
         stopping.set(true);
@@ -368,7 +369,11 @@ public class Main {
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
     return new ConfigMapAfterStep(
-        ns, configMapWatchers, isNamespaceStopping(ns), processor::dispatchConfigMapWatch);
+        ns,
+        configMapWatchers,
+        tuningAndConfig.getWatchTuning(),
+        isNamespaceStopping(ns),
+        processor::dispatchConfigMapWatch);
   }
 
   // -----------------------------------------------------------------------------
@@ -439,6 +444,7 @@ public class Main {
         ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchEventWatch,
         isNamespaceStopping(ns));
   }
@@ -448,6 +454,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchPodWatch,
         isNamespaceStopping(ns));
   }
@@ -457,6 +464,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchServiceWatch,
         isNamespaceStopping(ns));
   }
@@ -466,6 +474,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchDomainWatch,
         isNamespaceStopping(ns));
   }
