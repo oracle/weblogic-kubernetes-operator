@@ -17,6 +17,11 @@ trace "Stop server ${SERVER_NAME}"
 
 checkEnv SERVER_NAME || exit 1
 
+if [ "${MOCK_WLS}" == 'true' ]; then
+  touch /u01/doShutdown
+  exit 0
+fi
+
 [ ! -f "${SCRIPTPATH}/wlst.sh" ]             && trace "Error: missing file '${SCRIPTPATH}/wlst.sh'."             && exit 1
 
 ${SCRIPTDIR}/wlst.sh /weblogic-operator/scripts/stop-server.py 

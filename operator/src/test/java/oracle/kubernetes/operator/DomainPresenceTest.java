@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -358,6 +359,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName(DOMAIN_CONFIG_MAP_NAME)
         .ignoringBody()
         .returning(domainConfigMap);
+    testSupport
+        .createCannedResponse("readConfigMap")
+        .withNamespace(NS)
+        .withName(UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+        .returning(createEmptyConfigMap());
   }
 
   private DomainList createEmptyDomainList() {
