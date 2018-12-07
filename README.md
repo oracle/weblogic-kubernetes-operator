@@ -4,9 +4,7 @@ Built with [Wercker](http://www.wercker.com)
 
 [![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/develop "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
 
-Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. To enhance WebLogic taking full advantage of Kubernetes, you can persist the WebLogic domain home in a Docker image, making deployment much more portable and improving support for CI/CD deployments.
-
-In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
+Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
 *	Create WebLogic domains on a Kubernetes persistent volume. This persistent volume can reside in an NFS.
 * Create a WebLogic domain in a Docker image.
