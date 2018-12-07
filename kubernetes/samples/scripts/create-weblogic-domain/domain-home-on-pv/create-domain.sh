@@ -231,7 +231,6 @@ function initialize {
     domainUID \
     clusterName \
     managedServerNameBase \
-    weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
     includeServerOutInPodLog \
@@ -295,8 +294,16 @@ function createYamlFiles {
     domainPVMountPath="/shared"
   fi
 
+  if [ -z "${domainHome}" ]; then
+    domainHome="${domainPVMountPath}/domains/${domainUID}"
+  fi
+
   if [ -z "${logHome}" ]; then
     logHome="${domainPVMountPath}/logs/${domainUID}"
+  fi
+
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
   # Use the default value if not defined.
@@ -311,7 +318,7 @@ function createYamlFiles {
 
   # Use the default value if not defined.
   if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=weblogic-sample-domain-pvc
+    persistentVolumeClaimName=${domainUID}-weblogic-sample-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
