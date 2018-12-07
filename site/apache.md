@@ -28,9 +28,9 @@ In order to start the Apache HTTP Server for your WebLogic domain, you need to c
 
 * Create a Kubernetes NodePort service to expose the internal ports to external access.
 
-* Create a RBAC YAML file to setup security for your load balancer. This is optional.
+* Optionally create a RBAC YAML file to setup security for your load balancer. 
 
-See samples for creating Apache HTTP Server as a load balancer at [Apache load balancer helm chart](../kubernetes/samples/charts/apache-webtier/README.md) and [Apache load balance samples](../kubernetes/samples/charts/apache-samples/README.md).
+See the samples for creating Apache HTTP Server as a load balancer at [Apache load balancer helm chart](../kubernetes/samples/charts/apache-webtier/README.md) and [Apache load balance samples](../kubernetes/samples/charts/apache-samples/README.md).
 
 Note that you can choose to run one Apache HTTP Server to balance the loads from multiple domains/clusters inside the same Kubernetes cluster, as long as the Apache HTTP Server and the domains are all in the same namespace.
 
