@@ -1,13 +1,13 @@
 # WebLogic Sample Domain Home in Docker Image
 
-The sample scripts demonstrate the creation of a WebLogic domain home in docker image. The scripts also generate the domain custom resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain custom resource, and WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home in docker image. The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
 
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic Operator is running.
-* Create a Kubernetes namespace for the domain custom resource unless the intention is to use the default namespace.
-* Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain custom resource.
+* Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
+* Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
 * Build the Oracle WebLogic image oracle/weblogic:12.2.1.3-developer . Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3).
 
 ## Using the script to create a domain
@@ -22,12 +22,12 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated properties and Kubernetes YAML files for this domain.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
+* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
 * Create a proerties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
 * Build Docker image based on Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain into the Docker image. You can also run the Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) manually with the generated `domain.properties` to create domain home image. Note: Oracle recommend keeping the domain home image private in the local repository.
-* Create a Kubernetes domain custom resource YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 
-As a convenience, using the `-e` option, the script can optionally create the domain custom resource object, which in turn results in the creation of the corresponding WebLogic Server pods and services as well.
+As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services as well.
 
 The usage of the create script is as follows:
 
@@ -63,9 +63,9 @@ The following parameters can be provided in the inputs file.
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
-| `clusterType` | Type of the WebLogic cluster instance to generate for the domain. Legal values are `CONFIGURED` or `DYNAMIC`. | `DYNAMIC` |
+| `clusterType` | Type of the WebLogic Cluster. Legal values are `CONFIGURED` or `DYNAMIC`. | `DYNAMIC` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
-| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain custom resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
+| `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
@@ -78,11 +78,11 @@ The following parameters can be provided in the inputs file.
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
-| `includeServerOutInPodLog` | Whether to include server .out to the pod's stdout. | `true` |
+| `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
-The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
+The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
 
 ## Verify the results
 
@@ -98,7 +98,7 @@ The content of the generated `domain.yaml`:
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-# This is an example of how to define a Domain Custom Resource.
+# This is an example of how to define a Domain resource.
 #
 apiVersion: "weblogic.oracle/v2"
 kind: Domain
@@ -183,14 +183,14 @@ spec:
       volumeMounts:
       - name: runtime-properties
         mountPath: "/u01/oracle/properties"
-  # The number of managed servers to start from clusters not listed in clusters
+  # The number of managed servers to start for unlisted clusters
   # replicas: 1
 
 ```
 
-### Verify the domain custom resource
+### Verify the domain
 
-To confirm that the domain custom resource was created, use this command:
+To confirm that the domain was created, use this command:
 
 ```
 kubectl describe domain DOMAINUID -n NAMESPACE
@@ -331,9 +331,9 @@ domain1-managed-server1                     ClusterIP   None             <none> 
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 
-## Delete domain custom resource
+## Delete domain
 
-Th generated YAML file in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory can also be used to delete the Kubernetes resource. The following command can be used to delete domain custom resource:
+Th generated YAML file in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory can also be used to delete the Kubernetes resource. The following command can be used to delete domain:
 
 ```
 $ kubectl delete -f domain.yaml
