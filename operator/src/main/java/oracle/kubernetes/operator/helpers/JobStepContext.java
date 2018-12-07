@@ -241,7 +241,6 @@ public abstract class JobStepContext implements StepContextConstants {
             .imagePullPolicy(getImagePullPolicy())
             .command(getContainerCommand())
             .env(getEnvironmentVariables(tuningParameters))
-            //           .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
