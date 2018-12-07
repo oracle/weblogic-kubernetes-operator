@@ -1,16 +1,8 @@
-# Apache webtier
-The Apache HTTP Server load balancer for WebLogic domains on Kubernetes
+# Apache webtier Helm chart
 
-## Install
-
-```console
-$ helm install apache-webtier
-```
-
-## Introduction
-
-This chart bootstraps an Apache HTTP Server deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
-
+This Helm chart bootstraps an Apache HTTP Server deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+ 
+The chart depends on the Docker image for the Apache HTTP Server with the 12.2.1.3.0 Oracle WebLogic Server Proxy Plugin.  See the details in [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
 ## Prerequisites
 
@@ -26,7 +18,7 @@ To install the chart with the release name `my-release`:
 ```console
 $ helm install --name my-release apache-webtier
 ```
-The command deploys the Apache HTTP Server on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The command deploys the Apache HTTP Server on the Kubernetes cluster with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 > **Tip**: List all releases using `helm list`
 
