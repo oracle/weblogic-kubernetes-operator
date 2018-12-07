@@ -505,10 +505,6 @@ function createDomainHome {
     kubectl logs $JOB_POD -n ${namespace}
     fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
-
-  # Delete the configmap for the create domain job
-  deleteDomainConfigmap
-
 }
 
 #
