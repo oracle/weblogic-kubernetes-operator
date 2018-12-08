@@ -15,8 +15,8 @@ adminServerName: admin-server
 domainUID: domain1
 
 # Home of the WebLogic domain
-# By default, this is set to /shared/domains/domainUID
-domainHome: /shared/domains/domain1
+# The default is /shared/domains/<domainUID>
+domainHome: 
 
 # Type of WebLogic Cluster
 # Legal values are "CONFIGURED" or "DYNAMIC" 
@@ -56,16 +56,17 @@ imagePullPolicy: IfNotPresent
 productionModeEnabled: true
 
 # Name of the Kubernetes secret for the Admin Server's username and password
-# The name must be lowercase
-weblogicCredentialsSecretName: domain1-weblogic-credentials
+# The name must be lowercase. 
+# The default is <domainUID>-weblogic-credentials.
+weblogicCredentialsSecretName: 
 
-# Whether to include server .out to the pod's stdout, default is true
+# Whether to include server .out to the pod's stdout. 
+# The default is true.
 includeServerOutInPodLog: true
 
 # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
 # files in.
-# If not specified or empty, domain log file, server logs, server out, and node manager log files
-# will be stored in the default logHome location of /shared/logs/<domainUID>/.
+# The default is /shared/logs/<domainUID>/.
 logHome:
 
 # Port for the T3Channel of the NetworkAccessPoint
@@ -93,7 +94,8 @@ namespace: default
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
-persistentVolumeClaimName: weblogic-sample-pvc
+# The default is <domainUID>-weblogic-sample-pvc
+persistentVolumeClaimName: 
 
 # Mount path of the domain persistent volume. 
 domainPVMountPath: /shared
