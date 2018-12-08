@@ -684,6 +684,14 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getReplicas() != null;
   }
 
+  private int getMaxUnavailableFor(Cluster cluster) {
+    return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+  }
+
+  private boolean hasMaxUnavailable(Cluster cluster) {
+    return cluster != null && cluster.getMaxUnavailable() != null;
+  }
+
   private AdminServer getAdminServer() {
     return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
@@ -732,6 +740,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public void setReplicaCount(String clusterName, int replicaCount) {
       getOrCreateCluster(clusterName).setReplicas(replicaCount);
+    }
+
+    @Override
+    public int getMaxUnavailable(String clusterName) {
+      return getMaxUnavailableFor(getCluster(clusterName));
     }
 
     @Override
