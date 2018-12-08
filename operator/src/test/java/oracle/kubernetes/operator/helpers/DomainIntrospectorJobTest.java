@@ -170,7 +170,8 @@ public class DomainIntrospectorJobTest {
             .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)
-            .withImage(LATEST_IMAGE);
+            .withImage(LATEST_IMAGE)
+            .withDomainHomeInImage(false);
 
     List<String> overrideSecrets = new ArrayList();
     overrideSecrets.add(OVERRIDE_SECRET_1);
@@ -227,10 +228,27 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenJobCreated_containerHasExpectedVolumeMounts() {
+    domainPresenceInfo
+        .getClaims()
+        .addItemsItem(
+            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
     assertThat(
         getCreatedJobSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH),
+            readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH),
+            readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH),
+            readOnlyVolumeMount(OVERRIDES_CM + "-volume", OVERRIDES_CM_MOUNT_PATH),
+            readOnlyVolumeMount(OVERRIDE_SECRET_1 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH),
+            readOnlyVolumeMount(OVERRIDE_SECRET_2 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenJobCreated_withNoPVC_containerHasExpectedVolumeMounts() {
+    domainPresenceInfo.getClaims().getItems().clear();
+    assertThat(
+        getCreatedJobSpecContainer().getVolumeMounts(),
+        containsInAnyOrder(
             readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH),
             readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH),
             readOnlyVolumeMount(OVERRIDES_CM + "-volume", OVERRIDES_CM_MOUNT_PATH),
