@@ -63,6 +63,9 @@ spec:
 
   # configured wls configuration overrides secret names
   configOverrideSecrets: [overrides-secret-1, overrides-secret-2]
+  
+  # Restart version 
+  restartVersion: "1"
 
   adminServer:
     # The Admin Server's NodePort (optional)
@@ -98,7 +101,8 @@ spec:
             memory: "256Mi"
     server2:
       serverStartState: ADMIN
-        
+      restartVersion: "3"
+      
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
     cluster2:
@@ -110,3 +114,5 @@ spec:
           value: "-verbose"
         - name: USER_MEM_ARGS
           value: "-Xms64m -Xmx256m "
+      restartVersion: "2"
+      
