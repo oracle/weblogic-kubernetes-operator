@@ -218,6 +218,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withRestartVersion(String restartVersion) {
+    ((BaseConfiguration) getDomainSpec()).setRestartVersion(restartVersion);
+    return this;
+  }
+
   class ServerConfiguratorImpl implements ServerConfigurator {
     private Server server;
 
@@ -326,6 +332,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withServiceAnnotation(String name, String value) {
       server.addServiceAnnotations(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withRestartVersion(String restartVersion) {
+      server.setRestartVersion(restartVersion);
       return this;
     }
   }
@@ -470,6 +482,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withServiceAnnotation(String name, String value) {
       cluster.addServiceAnnotations(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withRestartVersion(String restartVersion) {
+      cluster.setRestartVersion(restartVersion);
       return this;
     }
   }

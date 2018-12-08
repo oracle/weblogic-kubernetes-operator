@@ -20,6 +20,7 @@ public class Server extends BaseConfiguration {
     Server configuration = new Server();
     configuration.fillInFrom(this);
     configuration.setNodePort(nodePort);
+    configuration.setRestartVersion(this.getRestartVersion());
     return configuration;
   }
 
