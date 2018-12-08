@@ -26,7 +26,7 @@ weblogicDomainStorageType: HOST_PATH
 
 # Physical path of the persistent storage.
 # The following line must be uncomment and customized:
-#weblogicDomainStoragePath: /scratch/k8s_dir
+weblogicDomainStoragePath: /scratch/k8s_dir
 
 # Reclaim policy of the persistent storage
 # The valid values are: 'Retain', 'Delete', and 'Recycle'
