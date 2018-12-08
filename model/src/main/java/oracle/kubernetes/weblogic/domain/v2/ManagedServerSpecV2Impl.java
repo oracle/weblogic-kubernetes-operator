@@ -15,8 +15,8 @@ public class ManagedServerSpecV2Impl extends ServerSpecV2Impl {
    * @param configurations the additional configurations to search for values if the server lacks
    */
   public ManagedServerSpecV2Impl(
-      DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
-    super(spec, server, clusterLimit, configurations);
+      DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
+    super(spec, server, cluster, clusterLimit);
   }
 
   @Override

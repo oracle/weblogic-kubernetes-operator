@@ -19,7 +19,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
 
 /**
  * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to

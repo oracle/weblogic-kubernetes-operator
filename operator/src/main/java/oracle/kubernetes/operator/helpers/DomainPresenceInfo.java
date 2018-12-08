@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -31,7 +30,6 @@ public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
-  private final AtomicReference<ScheduledFuture<?>> statusUpdater;
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
@@ -51,7 +49,6 @@ public class DomainPresenceInfo {
     this.namespace = domain.getMetadata().getNamespace();
     this.domainUID = domain.getSpec().getDomainUID();
     this.serverStartupInfo = new AtomicReference<>(null);
-    this.statusUpdater = new AtomicReference<>(null);
   }
 
   /**
@@ -64,7 +61,6 @@ public class DomainPresenceInfo {
     this.namespace = namespace;
     this.domainUID = domainUID;
     this.serverStartupInfo = new AtomicReference<>(null);
-    this.statusUpdater = new AtomicReference<>(null);
   }
 
   public boolean isDeleting() {
@@ -260,14 +256,5 @@ public class DomainPresenceInfo {
     public List<V1EnvVar> getEnvironment() {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
-  }
-
-  /**
-   * Domain status updater
-   *
-   * @return Domain status updater
-   */
-  public AtomicReference<ScheduledFuture<?>> getStatusUpdater() {
-    return statusUpdater;
   }
 }

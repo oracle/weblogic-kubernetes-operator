@@ -34,7 +34,7 @@ import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -286,6 +286,7 @@ public class Main {
 
   private static void stopNamespaces(Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
+      processor.stopNamespace(ns);
       AtomicBoolean stopping = isNamespaceStopping.remove(ns);
       if (stopping != null) {
         stopping.set(true);
@@ -368,7 +369,11 @@ public class Main {
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
     return new ConfigMapAfterStep(
-        ns, configMapWatchers, isNamespaceStopping(ns), processor::dispatchConfigMapWatch);
+        ns,
+        configMapWatchers,
+        tuningAndConfig.getWatchTuning(),
+        isNamespaceStopping(ns),
+        processor::dispatchConfigMapWatch);
   }
 
   // -----------------------------------------------------------------------------
@@ -439,6 +444,7 @@ public class Main {
         ns,
         READINESS_PROBE_FAILURE_EVENT_FILTER,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchEventWatch,
         isNamespaceStopping(ns));
   }
@@ -448,6 +454,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchPodWatch,
         isNamespaceStopping(ns));
   }
@@ -457,6 +464,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchServiceWatch,
         isNamespaceStopping(ns));
   }
@@ -466,6 +474,7 @@ public class Main {
         threadFactory,
         ns,
         initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         processor::dispatchDomainWatch,
         isNamespaceStopping(ns));
   }
