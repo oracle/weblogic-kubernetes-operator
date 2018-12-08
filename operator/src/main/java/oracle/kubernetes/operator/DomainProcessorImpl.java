@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
@@ -71,26 +70,78 @@ public class DomainProcessorImpl implements DomainProcessor {
       () -> {
         return new FiberGate(Main.engine);
       };
-  private static final ConcurrentMap<String, FiberGate> fiberGates = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, FiberGate> makeRightFiberGates =
+      new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, FiberGate> statusFiberGates =
+      new ConcurrentHashMap<>();
 
-  private static FiberGate getFiberGate(String ns) {
-    return fiberGates.computeIfAbsent(ns, k -> FACTORY.get());
+  private static FiberGate getMakeRightFiberGate(String ns) {
+    return makeRightFiberGates.computeIfAbsent(ns, k -> FACTORY.get());
+  }
+
+  private static FiberGate getStatusFiberGate(String ns) {
+    return statusFiberGates.computeIfAbsent(ns, k -> FACTORY.get());
   }
 
   // Map from namespace to map of domainUID to Domain
   private static final ConcurrentMap<String, ConcurrentMap<String, DomainPresenceInfo>> domains =
       new ConcurrentHashMap<>();
 
-  private DomainProcessorImpl() {}
-
-  private static DomainPresenceInfo getExisting(String ns, String domainUID) {
+  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUID) {
     return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUID);
   }
 
-  private static void register(DomainPresenceInfo info) {
+  private static void registerDomainPresenceInfo(DomainPresenceInfo info) {
     domains
         .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
         .put(info.getDomainUID(), info);
+  }
+
+  private static void unregisterPresenceInfo(String ns, String domainUID) {
+    ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+    if (map != null) {
+      map.remove(domainUID);
+    }
+  }
+
+  private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
+      statusUpdaters = new ConcurrentHashMap<>();
+
+  private static void registerStatusUpdater(
+      String ns, String domainUID, ScheduledFuture<?> future) {
+    ScheduledFuture<?> existing =
+        statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUID, future);
+    if (existing != null) {
+      existing.cancel(false);
+    }
+  }
+
+  private static void unregisterStatusUpdater(String ns, String domainUID) {
+    ConcurrentMap<String, ScheduledFuture<?>> map = statusUpdaters.get(ns);
+    if (map != null) {
+      ScheduledFuture<?> existing = map.remove(domainUID);
+      if (existing != null) {
+        existing.cancel(true);
+      }
+    }
+  }
+
+  private DomainProcessorImpl() {}
+
+  public void stopNamespace(String ns) {
+    ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+    if (map != null) {
+      for (DomainPresenceInfo dpi : map.values()) {
+        Domain dom = dpi.getDomain();
+        DomainPresenceInfo value =
+            (dom != null)
+                ? new DomainPresenceInfo(dom)
+                : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUID());
+        value.setDeleting(true);
+        value.setPopulated(true);
+        makeRightDomainPresence(value, true, true, false);
+      }
+    }
   }
 
   public void dispatchPodWatch(Watch.Response<V1Pod> item) {
@@ -100,7 +151,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       if (domainUID != null && serverName != null) {
-        DomainPresenceInfo existing = getExisting(metadata.getNamespace(), domainUID);
+        DomainPresenceInfo existing =
+            getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
         if (existing != null) {
           ServerKubernetesObjects sko =
               existing.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
@@ -179,7 +231,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       String channelName = metadata.getLabels().get(LabelConstants.CHANNELNAME_LABEL);
       String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
       if (domainUID != null) {
-        DomainPresenceInfo existing = getExisting(metadata.getNamespace(), domainUID);
+        DomainPresenceInfo existing =
+            getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
         if (existing != null) {
           switch (item.type) {
             case "ADDED":
@@ -481,7 +534,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     AtomicInteger unchangedCount = new AtomicInteger(0);
-    AtomicReference<ScheduledFuture<?>> statusUpdater = info.getStatusUpdater();
     Runnable command =
         new Runnable() {
           public void run() {
@@ -496,71 +548,64 @@ public class DomainProcessorImpl implements DomainProcessor {
               MainTuning main = Main.tuningAndConfig.getMainTuning();
               Step strategy =
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
-              Main.engine
-                  .createFiber()
-                  .start(
-                      strategy,
-                      packet,
-                      new CompletionCallback() {
-                        @Override
-                        public void onCompletion(Packet packet) {
-                          Boolean isStatusUnchanged =
-                              (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-                          ScheduledFuture<?> existing = null;
-                          if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                            if (unchangedCount.incrementAndGet()
-                                == main.unchangedCountToDelayStatusRecheck) {
-                              // slow down retries because of sufficient unchanged statuses
-                              existing =
-                                  statusUpdater.getAndSet(
-                                      Main.engine
-                                          .getExecutor()
-                                          .scheduleWithFixedDelay(
-                                              r,
-                                              main.eventualLongDelay,
-                                              main.eventualLongDelay,
-                                              TimeUnit.SECONDS));
-                            }
-                          } else {
-                            // reset to trying after shorter delay because of changed status
-                            unchangedCount.set(0);
-                            existing =
-                                statusUpdater.getAndSet(
-                                    Main.engine
-                                        .getExecutor()
-                                        .scheduleWithFixedDelay(
-                                            r,
-                                            main.initialShortDelay,
-                                            main.initialShortDelay,
-                                            TimeUnit.SECONDS));
-                            if (existing != null) {
-                              existing.cancel(false);
-                            }
-                          }
-                          if (existing != null) {
-                            existing.cancel(false);
-                          }
+              FiberGate gate = getStatusFiberGate(info.getNamespace());
+              gate.startFiberIfNoCurrentFiber(
+                  info.getDomainUID(),
+                  strategy,
+                  packet,
+                  new CompletionCallback() {
+                    @Override
+                    public void onCompletion(Packet packet) {
+                      Boolean isStatusUnchanged =
+                          (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
+                      if (Boolean.TRUE.equals(isStatusUnchanged)) {
+                        if (unchangedCount.incrementAndGet()
+                            == main.unchangedCountToDelayStatusRecheck) {
+                          // slow down retries because of sufficient unchanged statuses
+                          registerStatusUpdater(
+                              info.getNamespace(),
+                              info.getDomainUID(),
+                              Main.engine
+                                  .getExecutor()
+                                  .scheduleWithFixedDelay(
+                                      r,
+                                      main.eventualLongDelay,
+                                      main.eventualLongDelay,
+                                      TimeUnit.SECONDS));
                         }
+                      } else {
+                        // reset to trying after shorter delay because of changed status
+                        unchangedCount.set(0);
+                        registerStatusUpdater(
+                            info.getNamespace(),
+                            info.getDomainUID(),
+                            Main.engine
+                                .getExecutor()
+                                .scheduleWithFixedDelay(
+                                    r,
+                                    main.initialShortDelay,
+                                    main.initialShortDelay,
+                                    TimeUnit.SECONDS));
+                      }
+                    }
 
-                        @Override
-                        public void onThrowable(Packet packet, Throwable throwable) {
-                          LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                          // retry to trying after shorter delay because of exception
-                          unchangedCount.set(0);
-                          ScheduledFuture<?> existing =
-                              statusUpdater.getAndSet(
-                                  Main.engine
-                                      .getExecutor()
-                                      .scheduleWithFixedDelay(
-                                          r,
-                                          main.initialShortDelay,
-                                          main.initialShortDelay,
-                                          TimeUnit.SECONDS));
-                          if (existing != null) {
-                            existing.cancel(false);
-                          }
-                        }
-                      });
+                    @Override
+                    public void onThrowable(Packet packet, Throwable throwable) {
+                      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                      // retry to trying after shorter delay because of exception
+                      unchangedCount.set(0);
+                      registerStatusUpdater(
+                          info.getNamespace(),
+                          info.getDomainUID(),
+                          Main.engine
+                              .getExecutor()
+                              .scheduleWithFixedDelay(
+                                  r,
+                                  main.initialShortDelay,
+                                  main.initialShortDelay,
+                                  TimeUnit.SECONDS));
+                    }
+                  });
             } catch (Throwable t) {
               LOGGER.severe(MessageKeys.EXCEPTION, t);
             }
@@ -568,16 +613,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         };
 
     MainTuning main = Main.tuningAndConfig.getMainTuning();
-    ScheduledFuture<?> existing =
-        statusUpdater.getAndSet(
-            Main.engine
-                .getExecutor()
-                .scheduleWithFixedDelay(
-                    command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
-
-    if (existing != null) {
-      existing.cancel(false);
-    }
+    registerStatusUpdater(
+        info.getNamespace(),
+        info.getDomainUID(),
+        Main.engine
+            .getExecutor()
+            .scheduleWithFixedDelay(
+                command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
   }
 
   public void makeRightDomainPresence(
@@ -595,7 +637,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     String domainUID = info.getDomainUID();
 
     if (!Main.isNamespaceStopping(ns).get()) {
-      DomainPresenceInfo existing = getExisting(ns, domainUID);
+      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
       if (existing != null) {
         Domain current = existing.getDomain();
         if (current != null) {
@@ -668,7 +710,26 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      register(info);
+      registerDomainPresenceInfo(info);
+      return doNext(packet);
+    }
+  }
+
+  private static class UnregisterStep extends Step {
+    private final DomainPresenceInfo info;
+
+    public UnregisterStep(DomainPresenceInfo info) {
+      this(info, null);
+    }
+
+    public UnregisterStep(DomainPresenceInfo info, Step next) {
+      super(next);
+      this.info = info;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      unregisterPresenceInfo(info.getNamespace(), info.getDomainUID());
       return doNext(packet);
     }
   }
@@ -776,7 +837,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step.StepAndPacket plan,
       boolean isDeleting,
       boolean isWillInterrupt) {
-    FiberGate gate = getFiberGate(ns);
+    FiberGate gate = getMakeRightFiberGate(ns);
     CompletionCallback cc =
         new CompletionCallback() {
           @Override
@@ -808,7 +869,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getExecutor()
                 .schedule(
                     () -> {
-                      DomainPresenceInfo existing = getExisting(ns, domainUID);
+                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
                       if (existing != null) {
                         existing.setPopulated(false);
                         makeRightDomainPresence(existing, true, isDeleting, false);
@@ -844,8 +905,10 @@ public class DomainProcessorImpl implements DomainProcessor {
   static Step createDomainDownPlan(DomainPresenceInfo info) {
     String ns = info.getNamespace();
     String domainUID = info.getDomainUID();
-    Step deleteStep = new DeleteDomainStep(info, ns, domainUID);
-    return new DownHeadStep(info, ns, deleteStep);
+    return Step.chain(
+        new DownHeadStep(info, ns),
+        new DeleteDomainStep(info, ns, domainUID),
+        new UnregisterStep(info));
   }
 
   private static class UpHeadStep extends Step {
@@ -875,6 +938,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     private final DomainPresenceInfo info;
     private final String ns;
 
+    public DownHeadStep(DomainPresenceInfo info, String ns) {
+      this(info, ns, null);
+    }
+
     public DownHeadStep(DomainPresenceInfo info, String ns, Step next) {
       super(next);
       this.info = info;
@@ -884,6 +951,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction apply(Packet packet) {
       info.setDeleting(true);
+      unregisterStatusUpdater(ns, info.getDomainUID());
       PodWatcher pw = Main.podWatchers.get(ns);
       packet
           .getComponents()
@@ -951,7 +1019,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     resources.add(
         JobHelper.deleteDomainIntrospectorJobStep(
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
-    resources.add(JobHelper.createDomainIntrospectorJobStep(null));
+    resources.add(
+        JobHelper.createDomainIntrospectorJobStep(Main.tuningAndConfig.getWatchTuning(), null));
     resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(ServiceHelper.createForServerStep(null));

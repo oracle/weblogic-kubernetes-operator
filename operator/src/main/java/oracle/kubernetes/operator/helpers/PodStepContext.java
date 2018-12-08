@@ -314,6 +314,10 @@ public abstract class PodStepContext implements StepContextConstants {
       return false;
     }
 
+    if (!isRestartVersionValid(build, current)) {
+      return false;
+    }
+
     List<V1Container> buildContainers = build.getSpec().getContainers();
     List<V1Container> currentContainers = current.getSpec().getContainers();
 
@@ -344,6 +348,18 @@ public abstract class PodStepContext implements StepContextConstants {
     }
 
     return true;
+  }
+
+  private static boolean isRestartVersionValid(V1Pod build, V1Pod current) {
+    V1ObjectMeta m1 = build.getMetadata();
+    V1ObjectMeta m2 = current.getMetadata();
+    return isLabelSame(m1, m2, LabelConstants.DOMAINRESTARTVERSION_LABEL)
+        && isLabelSame(m1, m2, LabelConstants.CLUSTERRESTARTVERSION_LABEL)
+        && isLabelSame(m1, m2, LabelConstants.SERVERRESTARTVERSION_LABEL);
+  }
+
+  private static boolean isLabelSame(V1ObjectMeta build, V1ObjectMeta current, String labelName) {
+    return Objects.equals(build.getLabels().get(labelName), current.getLabels().get(labelName));
   }
 
   private static V1Container getContainerWithName(List<V1Container> containers, String name) {
@@ -550,7 +566,13 @@ public abstract class PodStepContext implements StepContextConstants {
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+        .putLabelsItem(
+            LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
+        .putLabelsItem(
+            LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
+        .putLabelsItem(
+            LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
     // Add custom annotations
     getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));
@@ -628,10 +650,13 @@ public abstract class PodStepContext implements StepContextConstants {
             .env(getEnvironmentVariables(tuningParameters))
             .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
             .lifecycle(createLifecycle())
-            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+
+    if (getClaimName() != null) {
+      v1Container.addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH));
+    }
 
     if (!mockWLS()) {
       v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));

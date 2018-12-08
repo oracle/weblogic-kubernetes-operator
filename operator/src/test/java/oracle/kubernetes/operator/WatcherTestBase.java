@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import org.junit.After;
@@ -39,6 +40,8 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
 
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
+
+  protected WatchTuning tuning = new WatchTuning(30);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
