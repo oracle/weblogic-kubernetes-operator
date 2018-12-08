@@ -706,9 +706,8 @@ public class DomainSpec extends BaseConfiguration {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
           getServer(serverName),
-          getClusterLimit(clusterName),
           getCluster(clusterName),
-          DomainSpec.this);
+          getClusterLimit(clusterName));
     }
 
     private Integer getClusterLimit(String clusterName) {
