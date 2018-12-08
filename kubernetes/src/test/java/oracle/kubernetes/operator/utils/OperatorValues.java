@@ -39,8 +39,6 @@ public class OperatorValues {
   private String logStashImage = "";
   private String elasticSearchHost = "";
   private String elasticSearchPort = "";
-  private String tillerNamespace = "";
-  private String tillerServiceAccount = "";
 
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
@@ -51,9 +49,7 @@ public class OperatorValues {
         .javaLoggingLevel("FINEST")
         .logStashImage("test-logstash-image")
         .elasticSearchHost("test-elastic-search_host")
-        .elasticSearchPort("9200")
-        .tillerNamespace("test-tiller-namespace")
-        .tillerServiceAccount("test-tiller-service-account");
+        .elasticSearchPort("9200");
   }
 
   public OperatorValues enableDebugging() {
@@ -286,7 +282,7 @@ public class OperatorValues {
   }
 
   public String getLogStashImage() {
-    return tillerNamespace;
+    return logStashImage;
   }
 
   public void setLogStashImage(String val) {
@@ -321,32 +317,6 @@ public class OperatorValues {
 
   public OperatorValues elasticSearchPort(String val) {
     setElasticSearchPort(val);
-    return this;
-  }
-
-  public String getTillerNamespace() {
-    return tillerNamespace;
-  }
-
-  public void setTillerNamespace(String val) {
-    tillerNamespace = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues tillerNamespace(String val) {
-    setTillerNamespace(val);
-    return this;
-  }
-
-  public String getTillerServiceAccount() {
-    return tillerServiceAccount;
-  }
-
-  public void setTillerServiceAccount(String val) {
-    tillerServiceAccount = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues tillerServiceAccount(String val) {
-    setTillerServiceAccount(val);
     return this;
   }
 
