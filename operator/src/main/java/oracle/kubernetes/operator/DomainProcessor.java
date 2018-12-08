@@ -33,4 +33,6 @@ public interface DomainProcessor {
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item);
 
   public void dispatchEventWatch(Watch.Response<V1Event> item);
+
+  public void stopNamespace(String ns);
 }

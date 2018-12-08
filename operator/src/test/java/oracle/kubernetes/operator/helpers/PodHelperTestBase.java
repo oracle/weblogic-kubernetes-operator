@@ -257,10 +257,26 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_containerHasExpectedVolumeMounts() {
+    domainPresenceInfo
+        .getClaims()
+        .addItemsItem(
+            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
+            writableVolumeMount(
+                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
+            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
+            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
+  }
+
+  @Test
+  public void whenPodCreated_withNoPVC_containerHasExpectedVolumeMounts() {
+    domainPresenceInfo.getClaims().getItems().clear();
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        containsInAnyOrder(
             writableVolumeMount(
                 UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),

@@ -10,9 +10,9 @@ import io.kubernetes.client.ApiClient;
 import oracle.kubernetes.operator.helpers.ClientFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 
-class ClientFactoryStub implements ClientFactory {
+public class ClientFactoryStub implements ClientFactory {
 
-  static Memento install() throws NoSuchFieldException {
+  public static Memento install() throws NoSuchFieldException {
     return StaticStubSupport.install(ClientPool.class, "FACTORY", new ClientFactoryStub());
   }
 

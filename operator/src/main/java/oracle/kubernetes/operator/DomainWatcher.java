@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 import io.kubernetes.client.ApiException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -23,9 +24,11 @@ public class DomainWatcher extends Watcher<Domain> {
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<Domain> listener,
       AtomicBoolean isStopping) {
-    DomainWatcher watcher = new DomainWatcher(ns, initialResourceVersion, listener, isStopping);
+    DomainWatcher watcher =
+        new DomainWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -33,9 +36,10 @@ public class DomainWatcher extends Watcher<Domain> {
   private DomainWatcher(
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<Domain> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping, listener);
+    super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
   }
 
