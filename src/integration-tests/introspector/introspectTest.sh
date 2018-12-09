@@ -215,7 +215,7 @@ function runJob() {
 
   # Run the job
 
-  tracen "Info: Waiting for job to complete."
+  tracen "Info: Waiting for job '$job_name' to complete."
   printdots_start
   env \
     KUBECONFIG=$KUBECONFIG \
@@ -509,7 +509,7 @@ function deployPod() {
   local status="0/1"
   local startsecs=$SECONDS
   local maxsecs=180
-  tracen "Info: Waiting up to $maxsecs seconds for pod readiness"
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
   while [ "${status}" != "1/1" ] ; do
     if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
       echo

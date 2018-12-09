@@ -31,16 +31,14 @@
 #
 
 printdots_inner() {
-  local start_pids=""
+  local start_pids="`ps $PPID 2>&1`"
   local dotsfile=$1
   local begin_sec=$SECONDS
   [ -f "$dotsfile" ] || return
   while [ 1 -eq 1 ]; do
-    [ "$start_pids" = "" ] && start_pids="`ps -o ppid=`"
     sleep ${2:-1}
-
     # if parent pids changed, then our parent died and we should exit
-    local end_pids="`ps -o ppid=`"
+    local end_pids="`ps $PPID 2>&1`"
     [ "$start_pids" = "$end_pids" ] || break
 
     # if too much time has passed, then exit
