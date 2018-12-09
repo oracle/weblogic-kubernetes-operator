@@ -43,6 +43,9 @@ spec:
         - name: weblogic-domain-cm-volume
           mountPath: /weblogic-operator/scripts
           readOnly: true
+        - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
+          mountPath: /weblogic-operator/config-overrides
+          readOnly: true
         - name: test-script-cm-volume
           mountPath: /test-scripts
           readOnly: true
@@ -57,6 +60,10 @@ spec:
         configMap:
           defaultMode: 365
           name: weblogic-domain-cm
+      - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
+        configMap:
+          defaultMode: 365
+          name: ${DOMAIN_UID}-mycustom-overrides-cm
       - name: test-script-cm-volume
         configMap:
           defaultMode: 365

@@ -337,6 +337,26 @@ function deployTestScriptConfigMap() {
 
 #############################################################################
 #
+# Deploy custom override cm
+#
+#
+
+function deployCustomOverridesConfigMap() {
+  local cmdir="${test_home}/customOverrides"
+  local cmname="${DOMAIN_UID}-mycustom-overrides-cm"
+  mkdir -p $cmdir
+  cp ${SCRIPTPATH}/jdbc-testDS.xml $cmdir || exit 1
+  cp ${SCRIPTPATH}/version.txt $cmdir || exit 1
+
+  kubectl -n $NAMESPACE delete cm $cmname \
+    --ignore-not-found  \
+    2>&1 | tracePipe "Info: kubectl output: "
+
+  createConfigMapFromDir $cmname $cmdir || exit 1
+}
+
+#############################################################################
+#
 # Create base directory for PV (uses a job)
 # (Skip if PVCOMMENT="#".)
 #
@@ -476,10 +496,10 @@ function deployPod() {
 
   # Wait for pod to come up successfully
 
-  tracen "Info: Waiting for pod readiness"
   local status="0/1"
   local startsecs=$SECONDS
   local maxsecs=180
+  tracen "Info: Waiting up to $maxsecs seconds for pod readiness"
   while [ "${status}" != "1/1" ] ; do
     if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
       echo
@@ -551,6 +571,8 @@ cleanup
 deployDomainConfigMap
 
 deployTestScriptConfigMap
+
+deployCustomOverridesConfigMap
 
 createTestRootPVDir
 
