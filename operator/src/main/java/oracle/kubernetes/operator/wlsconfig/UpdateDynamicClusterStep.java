@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -49,10 +50,14 @@ public class UpdateDynamicClusterStep extends Step {
         LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, targetClusterSize);
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        WlsDomainConfig domainTopology =
+            (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
         long startTime = System.currentTimeMillis();
 
-        String serviceURL = HttpClient.getServiceURL(info.getAdmin().getService().get());
+        String serviceURL =
+            HttpClient.getServiceURL(
+                info.getServers().get(domainTopology.getAdminServerName()).getService().get());
 
         boolean successful =
             updateDynamicClusterSizeWithServiceURL(

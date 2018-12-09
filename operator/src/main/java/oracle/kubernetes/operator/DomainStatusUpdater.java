@@ -17,8 +17,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -132,8 +130,7 @@ public class DomainStatusUpdater {
             (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
 
         Map<String, ServerStatus> serverStatuses = new TreeMap<>();
-        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
-        WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+        WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
         if (config != null) {
           for (Map.Entry<String, WlsServerConfig> entry : config.getServerConfigs().entrySet()) {
             String serverName = entry.getKey();
