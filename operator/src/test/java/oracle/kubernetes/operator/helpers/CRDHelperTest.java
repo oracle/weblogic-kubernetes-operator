@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_OPERATOR_VERSION;
 import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static org.hamcrest.Matchers.sameInstance;
@@ -38,7 +37,7 @@ public class CRDHelperTest {
   private List<LogRecord> logRecords = new ArrayList<>();
 
   private V1beta1CustomResourceDefinition defineDefaultCRD() {
-    return defineCRD(KubernetesConstants.DOMAIN_VERSION, DEFAULT_OPERATOR_VERSION);
+    return CRDHelper.CRDContext.createModel();
   }
 
   private V1beta1CustomResourceDefinition defineCRD(String version, String operatorVersion) {
