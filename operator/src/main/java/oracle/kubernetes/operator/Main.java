@@ -534,7 +534,7 @@ public class Main {
       Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
-          String domainUID = dom.getSpec().getDomainUID();
+          String domainUID = dom.getDomainUID();
           domainUIDs.add(domainUID);
           DomainPresenceInfo info =
               dpis.compute(

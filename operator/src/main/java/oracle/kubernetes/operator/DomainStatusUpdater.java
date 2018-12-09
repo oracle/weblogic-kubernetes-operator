@@ -442,7 +442,7 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getDomainUID(), status);
       LOGGER.exiting();
 
       return madeChange == true
@@ -510,7 +510,7 @@ public class DomainStatusUpdater {
         }
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getDomainUID(), status);
       LOGGER.exiting();
 
       return madeChange == true
@@ -627,7 +627,7 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getDomainUID(), status);
       LOGGER.exiting();
       return madeChange == true
           ? doDomainUpdate(dom, info, packet, AvailableStep.this, getNext())
@@ -795,7 +795,7 @@ public class DomainStatusUpdater {
         madeChange = true;
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getSpec().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, dom.getDomainUID(), status);
       LOGGER.exiting();
 
       return madeChange == true

@@ -482,19 +482,19 @@ public class DomainProcessorImpl implements DomainProcessor {
     switch (item.type) {
       case "ADDED":
         d = item.object;
-        domainUID = d.getSpec().getDomainUID();
+        domainUID = d.getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, false, true);
         break;
       case "MODIFIED":
         d = item.object;
-        domainUID = d.getSpec().getDomainUID();
+        domainUID = d.getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         makeRightDomainPresence(new DomainPresenceInfo(d), false, false, true);
         break;
       case "DELETED":
         d = item.object;
-        domainUID = d.getSpec().getDomainUID();
+        domainUID = d.getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, true, true);
         break;
