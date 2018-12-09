@@ -18,7 +18,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
@@ -40,7 +39,6 @@ import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,9 +49,11 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -140,7 +140,13 @@ public abstract class PodHelperTestBase {
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
 
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
+    testSupport
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
+        .addDomainPresenceInfo(domainPresenceInfo);
     onAdminExpectListPersistentVolume();
   }
 
@@ -170,10 +176,7 @@ public abstract class PodHelperTestBase {
 
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
-        .withDomainName(DOMAIN_NAME)
         .withDomainUID(UID)
-        .withAsName(ADMIN_SERVER)
-        .withAsPort(ADMIN_PORT)
         .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);

@@ -38,9 +38,6 @@ public class DomainSpec extends BaseConfiguration {
   @Pattern("^[a-z0-9_.]{1,253}$")
   private String domainUID;
 
-  /** Domain name (Required) */
-  @NotNull private String domainName;
-
   /**
    * Domain home
    *
@@ -57,20 +54,6 @@ public class DomainSpec extends BaseConfiguration {
    * keys names 'username' and 'password' (Required)
    */
   @Valid @NotNull private V1SecretReference adminSecret;
-
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   */
-  @NotNull private String asName;
-
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   */
-  @NotNull
-  @Range(minimum = 100)
-  private Integer asPort;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
@@ -207,14 +190,13 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  AdminServer getOrCreateAdminServer(String adminServerName) {
+  AdminServer getOrCreateAdminServer() {
     if (adminServer != null) return adminServer;
 
-    return createAdminServer(adminServerName);
+    return createAdminServer();
   }
 
-  private AdminServer createAdminServer(String adminServerName) {
-    setAsName(adminServerName);
+  private AdminServer createAdminServer() {
     AdminServer adminServer = new AdminServer();
     setAdminServer(adminServer);
     return adminServer;
@@ -251,35 +233,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withDomainUID(String domainUID) {
     this.domainUID = domainUID;
-    return this;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @return domain name
-   */
-  public String getDomainName() {
-    return domainName;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @param domainName domain name
-   */
-  public void setDomainName(String domainName) {
-    this.domainName = domainName;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @param domainName domain name
-   * @return this
-   */
-  public DomainSpec withDomainName(String domainName) {
-    this.domainName = domainName;
     return this;
   }
 
@@ -332,48 +285,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withAdminSecret(V1SecretReference adminSecret) {
     this.adminSecret = adminSecret;
-    return this;
-  }
-
-  public String getAsName() {
-    return asName;
-  }
-
-  private void setAsName(String asName) {
-    this.asName = asName;
-  }
-
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   *
-   * @param asName admin server name
-   * @return this
-   */
-  public DomainSpec withAsName(String asName) {
-    this.asName = asName;
-    return this;
-  }
-
-  public Integer getAsPort() {
-    return asPort;
-  }
-
-  @SuppressWarnings("WeakerAccess")
-  // public access is needed for yaml processing
-  public void setAsPort(Integer asPort) {
-    this.asPort = asPort;
-  }
-
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   *
-   * @param asPort admin server port
-   * @return this
-   */
-  public DomainSpec withAsPort(Integer asPort) {
-    this.asPort = asPort;
     return this;
   }
 
@@ -581,12 +492,9 @@ public class DomainSpec extends BaseConfiguration {
         new ToStringBuilder(this)
             .appendSuper(super.toString())
             .append("domainUID", domainUID)
-            .append("domainName", domainName)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("adminSecret", adminSecret)
-            .append("asName", asName)
-            .append("asPort", asPort)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
             .append("storage", storage)
@@ -610,12 +518,9 @@ public class DomainSpec extends BaseConfiguration {
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
             .append(domainUID)
-            .append(domainName)
             .append(domainHome)
             .append(domainHomeInImage)
             .append(adminSecret)
-            .append(asName)
-            .append(asPort)
             .append(image)
             .append(imagePullPolicy)
             .append(storage)
@@ -643,12 +548,9 @@ public class DomainSpec extends BaseConfiguration {
         new EqualsBuilder()
             .appendSuper(super.equals(other))
             .append(domainUID, rhs.domainUID)
-            .append(domainName, rhs.domainName)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(adminSecret, rhs.adminSecret)
-            .append(asName, rhs.asName)
-            .append(asPort, rhs.asPort)
             .append(image, rhs.image)
             .append(storage, rhs.storage)
             .append(imagePullPolicy, rhs.imagePullPolicy)

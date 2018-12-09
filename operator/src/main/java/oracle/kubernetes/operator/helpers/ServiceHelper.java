@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -199,11 +200,7 @@ public class ServiceHelper {
     }
 
     private boolean isForAdminServer() {
-      return getServerName().equals(getAsName());
-    }
-
-    private String getAsName() {
-      return info.getDomain().getAsName();
+      return getServerName().equals(domainTopology.getAdminServerName());
     }
 
     @Override
@@ -215,10 +212,12 @@ public class ServiceHelper {
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
     DomainPresenceInfo info;
+    WlsDomainConfig domainTopology;
 
     ServiceStepContext(Step conflictStep, Packet packet) {
       this.conflictStep = conflictStep;
       info = packet.getSPI(DomainPresenceInfo.class);
+      domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
 
     Step getConflictStep() {
@@ -276,7 +275,7 @@ public class ServiceHelper {
     }
 
     String getDomainName() {
-      return getDomain().getDomainName();
+      return domainTopology.getName();
     }
 
     Domain getDomain() {
