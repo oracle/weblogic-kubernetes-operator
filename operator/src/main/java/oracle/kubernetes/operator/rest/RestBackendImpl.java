@@ -159,7 +159,7 @@ public class RestBackendImpl implements RestBackend {
     Set<String> result = new TreeSet<>();
     List<Domain> domains = getDomainsList();
     for (Domain domain : domains) {
-      result.add(domain.getSpec().getDomainUID());
+      result.add(domain.getDomainUID());
     }
     LOGGER.exiting(result);
     return result;
@@ -319,7 +319,7 @@ public class RestBackendImpl implements RestBackend {
 
   private Domain findDomain(String domainUID, List<Domain> domains) {
     for (Domain domain : domains) {
-      if (domainUID.equals(domain.getSpec().getDomainUID())) {
+      if (domainUID.equals(domain.getDomainUID())) {
         return domain;
       }
     }

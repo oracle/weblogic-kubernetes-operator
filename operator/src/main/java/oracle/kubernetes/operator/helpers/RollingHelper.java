@@ -117,7 +117,7 @@ public class RollingHelper {
       }
 
       if (!servers.isEmpty()) {
-        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getSpec().getDomainUID(), servers);
+        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getDomainUID(), servers);
       }
 
       Collection<StepAndPacket> work = new ArrayList<>();
@@ -234,8 +234,7 @@ public class RollingHelper {
         }
 
         readyServers.removeAll(servers);
-        LOGGER.info(
-            MessageKeys.ROLLING_SERVERS, dom.getSpec().getDomainUID(), servers, readyServers);
+        LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
 
         return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
       }

@@ -1343,14 +1343,14 @@ public class DomainV2Test extends DomainTestBase {
   public void whenLogHomeNotSet_useDefault() {
     configureDomain(domain);
 
-    assertThat(domain.getSpec().getLogHome(), equalTo("/shared/logs/uid1"));
+    assertThat(domain.getLogHome(), equalTo("/shared/logs/uid1"));
   }
 
   @Test
   public void whenLogHomeSet_useValue() {
     configureDomain(domain).withLogHome("/custom/logs");
 
-    assertThat(domain.getSpec().getLogHome(), equalTo("/custom/logs"));
+    assertThat(domain.getLogHome(), equalTo("/custom/logs"));
   }
 
   @Test

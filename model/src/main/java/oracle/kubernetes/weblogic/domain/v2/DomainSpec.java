@@ -9,7 +9,6 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.*;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -27,14 +26,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** DomainSpec is a description of a domain. */
 public class DomainSpec extends BaseConfiguration {
 
-  /** The pattern for computing the default persistent volume claim name. */
-  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
-
-  /** The pattern for computing the default shared logs directory. */
-  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
-
-  /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
-  @NotNull
+  /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
+  @Description(
+      "Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required)"
+          + "Defaults to the value of metadata.name")
   @Pattern("^[a-z0-9_.]{1,253}$")
   private String domainUID;
 
@@ -208,7 +203,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
+   * to the value of metadata.name
    *
    * @return domain UID
    */
@@ -217,7 +213,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
+   * to the value of metadata.name
    *
    * @param domainUID domain UID
    */
@@ -331,7 +328,7 @@ public class DomainSpec extends BaseConfiguration {
    *     server .out files in.
    */
   String getLogHome() {
-    return Optional.ofNullable(logHome).orElse(String.format(LOG_HOME_DEFAULT_PATTERN, domainUID));
+    return logHome;
   }
 
   public void setLogHome(String logHome) {
@@ -464,20 +461,6 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
     this.configOverrideSecrets = overridesSecretNames;
-  }
-
-  /**
-   * Returns the name of the persistent volume claim for the logs and PV-based domain.
-   *
-   * @return volume claim
-   */
-  String getPersistentVolumeClaimName() {
-    return storage == null ? null : getConfiguredClaimName(storage);
-  }
-
-  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
-    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
-        .orElse(String.format(PVC_NAME_PATTERN, domainUID));
   }
 
   @Nullable
