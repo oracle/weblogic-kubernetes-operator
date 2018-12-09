@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -25,6 +26,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
 @SuppressWarnings("deprecation")
 public class Domain {
+  /** The pattern for computing the default persistent volume claim name. */
+  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
+
+  /** The pattern for computing the default shared logs directory. */
+  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -277,11 +283,12 @@ public class Domain {
    * @return domain UID
    */
   public String getDomainUID() {
-    return spec.getDomainUID();
+    return spec.getDomainUID() != null ? spec.getDomainUID() : getMetadata().getName();
   }
 
   public String getLogHome() {
-    return spec.getLogHome();
+    return Optional.ofNullable(spec.getLogHome())
+        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUID()));
   }
 
   public boolean isIncludeServerOutInPodLog() {
@@ -332,7 +339,12 @@ public class Domain {
    * @return volume claim
    */
   public String getPersistentVolumeClaimName() {
-    return spec.getPersistentVolumeClaimName();
+    return spec.getStorage() == null ? null : getConfiguredClaimName(spec.getStorage());
+  }
+
+  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
+    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
+        .orElse(String.format(PVC_NAME_PATTERN, getDomainUID()));
   }
 
   /**

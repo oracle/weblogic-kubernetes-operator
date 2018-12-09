@@ -46,7 +46,7 @@ public class DomainPresenceInfo {
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
-    this.domainUID = domain.getSpec().getDomainUID();
+    this.domainUID = domain.getDomainUID();
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
@@ -190,7 +190,7 @@ public class DomainPresenceInfo {
       sb.append(
           String.format(
               "uid=%s, namespace=%s",
-              getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+              getDomain().getDomainUID(), getDomain().getMetadata().getNamespace()));
     } else {
       sb.append(", namespace=").append(namespace);
     }
