@@ -272,39 +272,12 @@ public class Domain {
   }
 
   /**
-   * Returns the name of the admin server.
-   *
-   * @return admin server name
-   */
-  public String getAsName() {
-    return spec.getAsName();
-  }
-
-  /**
-   * Returns the port used by the admin server.
-   *
-   * @return admin server port
-   */
-  public Integer getAsPort() {
-    return spec.getAsPort();
-  }
-
-  /**
    * Returns the domain unique identifier.
    *
    * @return domain UID
    */
   public String getDomainUID() {
     return spec.getDomainUID();
-  }
-
-  /**
-   * Returns the domain name
-   *
-   * @return domain name
-   */
-  public String getDomainName() {
-    return spec.getDomainName();
   }
 
   public String getLogHome() {

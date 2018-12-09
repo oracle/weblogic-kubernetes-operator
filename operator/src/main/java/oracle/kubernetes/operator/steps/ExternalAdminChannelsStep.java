@@ -7,9 +7,8 @@ package oracle.kubernetes.operator.steps;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -32,11 +31,10 @@ public class ExternalAdminChannelsStep extends Step {
   public NextAction apply(Packet packet) {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
-    Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
-    WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     Collection<NetworkAccessPoint> validChannels = adminChannelsToCreate(config, info.getDomain());
     if (validChannels != null && !validChannels.isEmpty()) {
-      return doNext(new ExternalAdminChannelIteratorStep(info, validChannels, getNext()), packet);
+      return doNext(new ExternalAdminChannelIteratorStep(config, validChannels, getNext()), packet);
     }
 
     return doNext(packet);
@@ -60,7 +58,7 @@ public class ExternalAdminChannelsStep extends Step {
     Integer nodePortMin = 30000;
     Integer nodePortMax = 32767;
 
-    WlsServerConfig adminServerConfig = scan.getServerConfig(dom.getAsName());
+    WlsServerConfig adminServerConfig = scan.getServerConfig(scan.getAdminServerName());
 
     List<NetworkAccessPoint> naps = adminServerConfig.getNetworkAccessPoints();
     // This will become a list of valid channels to create services for.
@@ -77,7 +75,8 @@ public class ExternalAdminChannelsStep extends Step {
         }
       }
       if (missingChannel) {
-        LOGGER.warning(MessageKeys.EXCH_CHANNEL_NOT_DEFINED, incomingChannel, dom.getAsName());
+        LOGGER.warning(
+            MessageKeys.EXCH_CHANNEL_NOT_DEFINED, incomingChannel, scan.getAdminServerName());
       }
     }
 

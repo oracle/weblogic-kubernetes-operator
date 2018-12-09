@@ -23,6 +23,7 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -299,12 +301,26 @@ public class Main {
     return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
-  static void runSteps(Step firstStep) {
-    runSteps(firstStep, null);
+  static Fiber runSteps(Step firstStep) {
+    return runSteps(firstStep, null);
   }
 
-  static void runSteps(Step firstStep, Runnable completionAction) {
-    engine.createFiber().start(firstStep, new Packet(), andThenDo(completionAction));
+  static Fiber runSteps(Step firstStep, Runnable completionAction) {
+    Fiber f = engine.createFiber();
+    f.start(firstStep, new Packet(), andThenDo(completionAction));
+    return f;
+  }
+
+  public static Packet runStepsToCompletion(Step firstStep)
+      throws InterruptedException, ExecutionException {
+    return runStepsToCompletion(firstStep, null);
+  }
+
+  public static Packet runStepsToCompletion(Step firstStep, Runnable completionAction)
+      throws InterruptedException, ExecutionException {
+    Fiber f = runSteps(firstStep, completionAction);
+    f.get();
+    return f.getPacket();
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {

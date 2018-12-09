@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.joda.time.DateTime;
 
@@ -163,17 +162,6 @@ public class DomainPresenceInfo {
    */
   public ConcurrentMap<String, V1Service> getClusters() {
     return clusters;
-  }
-
-  /**
-   * Server objects (Pods and Services) for admin server
-   *
-   * @return Server objects for admin server
-   */
-  public ServerKubernetesObjects getAdmin() {
-    Domain dom = domain.get();
-    DomainSpec spec = dom.getSpec();
-    return servers.get(spec.getAsName());
   }
 
   /**
