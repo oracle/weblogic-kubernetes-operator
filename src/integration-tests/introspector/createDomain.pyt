@@ -93,7 +93,7 @@ def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
   create('testDriverParams','JDBCDriverParams')
   cd('JDBCDriverParams/NO_NAME_0')
   set('DriverName','oracle.jdbc.OracleDriver')
-  set('URL','jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid')
+  set('URL','jdbc:oracle:thin:@' + dsHost + ':1521:' + dsSID)
   set('PasswordEncrypted', 'manager')
   set('UseXADataSourceInterface', 'false')
  
@@ -111,7 +111,7 @@ def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
   cd('JDBCConnectionPoolParams/NO_NAME_0')
   set('TestTableName','SQL SELECT 1 FROM DUAL')
 
-createDataSource('testDS','testDS','myhost','mysid','${ADMIN_NAME}')
+createDataSource('testDS','testDS','myoriginalhostname','myoriginalsid','${ADMIN_NAME}')
 
 # Create a cluster
 # ======================
