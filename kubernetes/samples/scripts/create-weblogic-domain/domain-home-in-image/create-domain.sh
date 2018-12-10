@@ -88,14 +88,12 @@ function validateDomainSecret {
 
   # Verify the secret contains a username
   SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
-  USERNAME=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
   fi
 
   # Verify the secret contains a password
   SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
-  PASSWORD=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
   fi
@@ -352,12 +350,6 @@ function createDomainHome {
 
   cd docker-images/OracleWebLogic/samples/12213-domain-home-in-image
   
-  sed -i -e "s|myuser|${USERNAME}|g" properties/docker_build/domain_security.properties
-  sed -i -e "s|mypassword1|${PASSWORD}|g" properties/docker_build/domain_security.properties
-
-  sed -i -e "s|myuser|${USERNAME}|g" properties/docker_run/security.properties
-  sed -i -e "s|mypassword1|${PASSWORD}|g" properties/docker_run/security.properties
-
   ./build.sh
 
   if [ "$?" != "0" ]; then
