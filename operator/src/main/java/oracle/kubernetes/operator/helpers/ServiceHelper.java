@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -89,12 +90,14 @@ public class ServiceHelper {
     private final KubernetesVersion version;
     private final Integer port;
     private final Integer nodePort;
+    private final WlsServerConfig scan;
 
     ForServerStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       version = packet.getSPI(KubernetesVersion.class);
       port = (Integer) packet.get(ProcessingConstants.PORT);
       nodePort = (Integer) packet.get(ProcessingConstants.NODE_PORT);
+      scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
     }
 
     @Override
@@ -106,7 +109,21 @@ public class ServiceHelper {
       if (nodePort == null) {
         serviceSpec.clusterIP("None");
       }
+      serviceSpec.ports(createServicePorts());
       return serviceSpec;
+    }
+
+    protected List<V1ServicePort> createServicePorts() {
+      List<V1ServicePort> ports = new ArrayList<>();
+      for(NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+        V1ServicePort port = new V1ServicePort()
+                .name(nap.getName())
+                .port(nap.getListenPort())
+                .protocol(nap.getProtocol());
+        ports.add(port);
+      }
+      ports.add(createServicePort());
+      return ports;
     }
 
     @Override
