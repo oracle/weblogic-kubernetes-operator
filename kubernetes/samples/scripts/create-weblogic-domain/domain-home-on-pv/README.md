@@ -4,11 +4,10 @@ The sample scripts demonstrate the creation of a WebLogic domain home on an exis
 
 ## Prerequisites
 
-Please read this guide before proceeding.
-* [Domain Resource](../../../../site/domain-resource.md)
+Before you begin, read this guide, [Domain Resource](../../../../../site/domain-resource.md)
 
 The following prerequisites must be handled prior to running the create domain script:
-* Make sure the WebLogic Operator is running.
+* Make sure the WebLogic operator is running.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
@@ -138,7 +137,7 @@ spec:
   domainHome: /shared/domains/domain1
   # If the domain home is in the image
   domainHomeInImage: false
-  # The Operator currently does not support other images
+  # The operator currently does not support other images
   image: "store/oracle/weblogic:19.1.0.0"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
@@ -161,7 +160,7 @@ spec:
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
-  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # This determines which WebLogic Servers the operator will start up when it discovers this Domain
   # - "ALWAYS" will start up all defined servers
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
