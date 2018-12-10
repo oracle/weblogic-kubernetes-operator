@@ -1,16 +1,16 @@
-# WebLogic Sample Domain Home in Docker Image
+# WebLogic sample domain home in Docker image
 
-The sample scripts demonstrate the creation of a WebLogic domain home in docker image. The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image. The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
 
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
-* Make sure the WebLogic Operator is running.
+* Make sure the WebLogic operator is running.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
-* Build the Oracle WebLogic image oracle/weblogic:12.2.1.3-developer . Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3).
+* Build the Oracle WebLogic image `oracle/weblogic:12.2.1.3-developer`. Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3).
 
-## Using the script to create a domain
+## Use the script to create a domain
 
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
 
@@ -23,11 +23,11 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
-* Create a proerties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
-* Build Docker image based on Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain into the Docker image. You can also run the Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) manually with the generated `domain.properties` to create domain home image. Note: Oracle recommends keeping the domain home image private in the local repository.
+* Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
+* Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 
-As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services as well.
+As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services.
 
 The usage of the create script is as follows:
 
@@ -82,13 +82,13 @@ The following parameters can be provided in the inputs file.
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
-The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
+The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain YAML file can be modified to cover more use cases.
 
 ## Verify the results
 
 The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-Note that the example results below uses the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes namespace.
+Note that the example results below use the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes namespace.
 
 ### Generated YAML files with the default inputs
 
@@ -292,11 +292,11 @@ Status:
 Events:           <none>
 ```
 
-In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting Managed Servers.
+In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
-### Verify pods
+### Verify the pods
 
-The following command can be used to see the pods running the servers:
+Use the following command to see the pods running the servers:
 
 ```
 kubectl get pods -n NAMESPACE
@@ -312,9 +312,9 @@ domain1-managed-server1                      1/1       Running   0          8m
 domain1-managed-server2                      1/1       Running   0          8m
 ```
 
-### Verify services
+### Verify the services
 
-The following command can be used to see the services for the domain:
+Use the following command to see the services for the domain:
 
 ```
 kubectl get services -n NAMESPACE
@@ -331,9 +331,9 @@ domain1-managed-server1                     ClusterIP   None             <none> 
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 
-## Delete domain
+## Delete the domain
 
-Th generated YAML file in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory can also be used to delete the Kubernetes resource. The following command can be used to delete domain:
+The generated YAML file in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:
 
 ```
 $ kubectl delete -f domain.yaml
