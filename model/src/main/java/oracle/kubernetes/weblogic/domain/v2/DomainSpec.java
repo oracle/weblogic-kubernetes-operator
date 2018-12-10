@@ -9,7 +9,6 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.*;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -27,19 +26,12 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** DomainSpec is a description of a domain. */
 public class DomainSpec extends BaseConfiguration {
 
-  /** The pattern for computing the default persistent volume claim name. */
-  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
-
-  /** The pattern for computing the default shared logs directory. */
-  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
-
-  /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
-  @NotNull
+  /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
+  @Description(
+      "Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required)"
+          + "Defaults to the value of metadata.name")
   @Pattern("^[a-z0-9_.]{1,253}$")
   private String domainUID;
-
-  /** Domain name (Required) */
-  @NotNull private String domainName;
 
   /**
    * Domain home
@@ -57,20 +49,6 @@ public class DomainSpec extends BaseConfiguration {
    * keys names 'username' and 'password' (Required)
    */
   @Valid @NotNull private V1SecretReference adminSecret;
-
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   */
-  @NotNull private String asName;
-
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   */
-  @NotNull
-  @Range(minimum = 100)
-  private Integer asPort;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
@@ -207,14 +185,13 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  AdminServer getOrCreateAdminServer(String adminServerName) {
+  AdminServer getOrCreateAdminServer() {
     if (adminServer != null) return adminServer;
 
-    return createAdminServer(adminServerName);
+    return createAdminServer();
   }
 
-  private AdminServer createAdminServer(String adminServerName) {
-    setAsName(adminServerName);
+  private AdminServer createAdminServer() {
     AdminServer adminServer = new AdminServer();
     setAdminServer(adminServer);
     return adminServer;
@@ -226,7 +203,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
+   * to the value of metadata.name
    *
    * @return domain UID
    */
@@ -235,7 +213,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
+   * to the value of metadata.name
    *
    * @param domainUID domain UID
    */
@@ -251,35 +230,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withDomainUID(String domainUID) {
     this.domainUID = domainUID;
-    return this;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @return domain name
-   */
-  public String getDomainName() {
-    return domainName;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @param domainName domain name
-   */
-  public void setDomainName(String domainName) {
-    this.domainName = domainName;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @param domainName domain name
-   * @return this
-   */
-  public DomainSpec withDomainName(String domainName) {
-    this.domainName = domainName;
     return this;
   }
 
@@ -335,48 +285,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public String getAsName() {
-    return asName;
-  }
-
-  private void setAsName(String asName) {
-    this.asName = asName;
-  }
-
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   *
-   * @param asName admin server name
-   * @return this
-   */
-  public DomainSpec withAsName(String asName) {
-    this.asName = asName;
-    return this;
-  }
-
-  public Integer getAsPort() {
-    return asPort;
-  }
-
-  @SuppressWarnings("WeakerAccess")
-  // public access is needed for yaml processing
-  public void setAsPort(Integer asPort) {
-    this.asPort = asPort;
-  }
-
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   *
-   * @param asPort admin server port
-   * @return this
-   */
-  public DomainSpec withAsPort(Integer asPort) {
-    this.asPort = asPort;
-    return this;
-  }
-
   @Nullable
   public String getImage() {
     return image;
@@ -420,7 +328,7 @@ public class DomainSpec extends BaseConfiguration {
    *     server .out files in.
    */
   String getLogHome() {
-    return Optional.ofNullable(logHome).orElse(String.format(LOG_HOME_DEFAULT_PATTERN, domainUID));
+    return logHome;
   }
 
   public void setLogHome(String logHome) {
@@ -480,6 +388,11 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setDomainHomeInImage(boolean domainHomeInImage) {
     this.domainHomeInImage = domainHomeInImage;
+  }
+
+  public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
+    setDomainHomeInImage(domainHomeInImage);
+    return this;
   }
 
   /**
@@ -550,20 +463,6 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
-  /**
-   * Returns the name of the persistent volume claim for the logs and PV-based domain.
-   *
-   * @return volume claim
-   */
-  String getPersistentVolumeClaimName() {
-    return storage == null ? null : getConfiguredClaimName(storage);
-  }
-
-  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
-    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
-        .orElse(String.format(PVC_NAME_PATTERN, domainUID));
-  }
-
   @Nullable
   @Override
   protected String getServerStartPolicy() {
@@ -576,12 +475,9 @@ public class DomainSpec extends BaseConfiguration {
         new ToStringBuilder(this)
             .appendSuper(super.toString())
             .append("domainUID", domainUID)
-            .append("domainName", domainName)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("adminSecret", adminSecret)
-            .append("asName", asName)
-            .append("asPort", asPort)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
             .append("storage", storage)
@@ -605,12 +501,9 @@ public class DomainSpec extends BaseConfiguration {
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
             .append(domainUID)
-            .append(domainName)
             .append(domainHome)
             .append(domainHomeInImage)
             .append(adminSecret)
-            .append(asName)
-            .append(asPort)
             .append(image)
             .append(imagePullPolicy)
             .append(storage)
@@ -638,12 +531,9 @@ public class DomainSpec extends BaseConfiguration {
         new EqualsBuilder()
             .appendSuper(super.equals(other))
             .append(domainUID, rhs.domainUID)
-            .append(domainName, rhs.domainName)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(adminSecret, rhs.adminSecret)
-            .append(asName, rhs.asName)
-            .append(asPort, rhs.asPort)
             .append(image, rhs.image)
             .append(storage, rhs.storage)
             .append(imagePullPolicy, rhs.imagePullPolicy)
@@ -679,6 +569,14 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getReplicas() != null;
   }
 
+  private int getMaxUnavailableFor(Cluster cluster) {
+    return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+  }
+
+  private boolean hasMaxUnavailable(Cluster cluster) {
+    return cluster != null && cluster.getMaxUnavailable() != null;
+  }
+
   private AdminServer getAdminServer() {
     return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
@@ -706,9 +604,8 @@ public class DomainSpec extends BaseConfiguration {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
           getServer(serverName),
-          getClusterLimit(clusterName),
           getCluster(clusterName),
-          DomainSpec.this);
+          getClusterLimit(clusterName));
     }
 
     private Integer getClusterLimit(String clusterName) {
@@ -728,6 +625,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public void setReplicaCount(String clusterName, int replicaCount) {
       getOrCreateCluster(clusterName).setReplicas(replicaCount);
+    }
+
+    @Override
+    public int getMaxUnavailable(String clusterName) {
+      return getMaxUnavailableFor(getCluster(clusterName));
     }
 
     @Override

@@ -9,8 +9,6 @@ import oracle.kubernetes.weblogic.domain.v2.ExportedNetworkAccessPoint;
 @SuppressWarnings("UnusedReturnValue")
 public interface AdminServerConfigurator extends ServerConfigurator {
 
-  AdminServerConfigurator withPort(int port);
-
   AdminServerConfigurator withNodePort(int nodePort);
 
   AdminServerConfigurator withExportedNetworkAccessPoints(String... names);
