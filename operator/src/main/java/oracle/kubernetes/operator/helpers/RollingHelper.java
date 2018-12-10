@@ -35,8 +35,6 @@ import oracle.kubernetes.weblogic.domain.v2.ServerStatus;
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final int MINIMUM_FOR_CLUSTER = 2;
-
   private RollingHelper() {}
 
   /**
@@ -221,7 +219,7 @@ public class RollingHelper {
 
           // then add as many as possible next() entries leaving at least minimum cluster
           // availability
-          while (countReady-- > MINIMUM_FOR_CLUSTER) {
+          while (countReady-- > dom.getMinAvailable(clusterName)) {
             current = it.next();
             serverConfig = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
             servers.add(
