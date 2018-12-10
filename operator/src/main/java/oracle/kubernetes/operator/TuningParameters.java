@@ -6,13 +6,13 @@ package oracle.kubernetes.operator;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ScheduledExecutorService;
 
 public interface TuningParameters extends Map<String, String> {
 
-  static TuningParameters initializeInstance(ThreadFactory factory, String mountPoint)
-      throws IOException {
-    return TuningParametersImpl.initializeInstance(factory, mountPoint);
+  static TuningParameters initializeInstance(
+      ScheduledExecutorService executorService, String mountPoint) throws IOException {
+    return TuningParametersImpl.initializeInstance(executorService, mountPoint);
   }
 
   public static TuningParameters getInstance() {
