@@ -66,7 +66,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
   @Override
   protected JobWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return JobWatcher.create(this, ns, Integer.toString(rv), stopping);
+    return JobWatcher.create(this, ns, Integer.toString(rv), tuning, stopping);
   }
 
   @Test
@@ -125,7 +125,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   public void waitForReady_returnsAStep() {
     AtomicBoolean stopping = new AtomicBoolean(true);
     JobWatcher watcher =
-        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), stopping);
+        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
 
     assertThat(watcher.waitForReady(job, null), Matchers.instanceOf(Step.class));
   }
@@ -134,7 +134,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   public void WhenWaitForReadyAppliedToReadyJob_performNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher =
-        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), stopping);
+        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
 
     makeJobReady(job);
 

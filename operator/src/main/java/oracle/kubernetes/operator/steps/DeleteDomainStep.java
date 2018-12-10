@@ -13,7 +13,6 @@ import io.kubernetes.client.models.V1ServiceList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -45,21 +44,12 @@ public class DeleteDomainStep extends Step {
             deletePersistentVolumeClaims(),
             ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
     if (info != null) {
-      cancelDomainStatusUpdating(info);
-
       Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
       serversToStop.addAll(info.getServers().entrySet());
       serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
     }
 
     return doNext(serverDownStep, packet);
-  }
-
-  static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
-    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
-    if (statusUpdater != null) {
-      statusUpdater.cancel(true);
-    }
   }
 
   private Step deleteServices() {
@@ -77,7 +67,7 @@ public class DeleteDomainStep extends Step {
   private Step deletePods() {
     return new CallBuilder()
         .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
-        .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(getNext()));
+        .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 
   private Step deletePersistentVolumes() {

@@ -45,4 +45,6 @@ public interface ServerConfigurator {
   ServerConfigurator withServiceLabel(String name, String value);
 
   ServerConfigurator withServiceAnnotation(String name, String value);
+
+  ServerConfigurator withRestartVersion(String restartVersion);
 }

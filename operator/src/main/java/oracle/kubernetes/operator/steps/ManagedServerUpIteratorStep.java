@@ -20,7 +20,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -64,7 +63,6 @@ public class ManagedServerUpIteratorStep extends Step {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
-      DomainSpec spec = dom.getSpec();
 
       Collection<String> serverList = new ArrayList<>();
       for (ServerStartupInfo ssi : c) {
@@ -72,7 +70,7 @@ public class ManagedServerUpIteratorStep extends Step {
       }
       LOGGER.fine(
           "Starting or validating servers for domain with UID: "
-              + spec.getDomainUID()
+              + dom.getDomainUID()
               + ", server list: "
               + serverList);
     }

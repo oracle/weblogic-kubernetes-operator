@@ -17,6 +17,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** The effective configuration for a server configured by the version 2 domain model. */
 public abstract class ServerSpecV2Impl extends ServerSpec {
   private final Server server;
+  private final Cluster cluster;
   private Integer clusterLimit;
 
   /**
@@ -28,12 +29,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
    * @param configurations the additional configurations to search for values if the server lacks
    *     them
    */
-  ServerSpecV2Impl(
-      DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
+  ServerSpecV2Impl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
-    for (BaseConfiguration configuration : configurations) this.server.fillInFrom(configuration);
+    this.server.fillInFrom(cluster);
+    this.server.fillInFrom(spec);
+    this.cluster = cluster;
   }
 
   private Server getBaseConfiguration(Server server) {
@@ -147,11 +149,27 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
+  public String getDomainRestartVersion() {
+    return domainSpec.getRestartVersion();
+  }
+
+  @Override
+  public String getClusterRestartVersion() {
+    return cluster != null ? cluster.getRestartVersion() : null;
+  }
+
+  @Override
+  public String getServerRestartVersion() {
+    return server.getRestartVersion();
+  }
+
+  @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("server", server)
         .append("clusterLimit", clusterLimit)
+        .append("cluster", cluster)
         .toString();
   }
 
@@ -169,6 +187,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.equals(o))
         .append(server, that.server)
         .append(clusterLimit, that.clusterLimit)
+        .append(cluster, that.cluster)
         .isEquals();
   }
 
@@ -178,6 +197,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.hashCode())
         .append(server)
         .append(clusterLimit)
+        .append(cluster)
         .toHashCode();
   }
 }

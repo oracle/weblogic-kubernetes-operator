@@ -10,6 +10,7 @@ import io.kubernetes.client.models.V1Service;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -25,9 +26,11 @@ public class ServiceWatcher extends Watcher<V1Service> {
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1Service> listener,
       AtomicBoolean isStopping) {
-    ServiceWatcher watcher = new ServiceWatcher(ns, initialResourceVersion, listener, isStopping);
+    ServiceWatcher watcher =
+        new ServiceWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -35,9 +38,10 @@ public class ServiceWatcher extends Watcher<V1Service> {
   private ServiceWatcher(
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1Service> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping, listener);
+    super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
   }
 
