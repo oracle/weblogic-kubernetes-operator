@@ -1,6 +1,2 @@
 /Servers/admin-server,ListenAddress,,domain1-admin-server
-#/Servers/admin-server,ListenAddress,foob,domain1-admin-server
-#/Servers/admin-server,ListenAddress,,foob
-#/Servers/admin-server,ListenAddress,,
-#,
-
+/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid

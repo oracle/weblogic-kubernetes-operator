@@ -40,6 +40,8 @@ public class WlsClusterConfigTest {
     NO_WLS_SERVER_IN_CLUSTER, REPLICA_MORE_THAN_WLS_SERVERS
   };
 
+  private static final String ADMIN_SERVER = "admin-server";
+
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
 
@@ -341,7 +343,7 @@ public class WlsClusterConfigTest {
     machines.put(machine1.getName(), machine1);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
@@ -367,7 +369,7 @@ public class WlsClusterConfigTest {
     Map<String, WlsMachineConfig> machines = new HashMap<>();
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
@@ -397,7 +399,7 @@ public class WlsClusterConfigTest {
     machines.put(machine1.getName(), machine1);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
@@ -482,7 +484,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     assertTrue(wlsClusterConfig.verifyMachinesConfigured("domain1-machine", 2));
@@ -503,7 +505,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     assertFalse(wlsClusterConfig.verifyMachinesConfigured("domain1-machine", 3));
@@ -534,7 +536,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     assertNotNull(wlsClusterConfig.getWlsDomainConfig());
@@ -556,7 +558,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     String names[] = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 4);
@@ -582,7 +584,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, machines);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     String names[] = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 3);
@@ -616,7 +618,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, null);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, null);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
     String[] names = wlsClusterConfig.getMachineNamesForDynamicServers(null, 2);
@@ -634,7 +636,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, null);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, null);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
     String[] names = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 0);
     assertEquals(0, names.length);
@@ -652,7 +654,7 @@ public class WlsClusterConfigTest {
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
     WlsDomainConfig wlsDomainConfig =
-        new WlsDomainConfig("base_domain", clusters, null, null, null);
+        new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, null);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
     String[] names = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 2);
     assertEquals(2, names.length);

@@ -247,7 +247,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefined_returnChannelNames() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator.withExportedNetworkAccessPoints("channel1", "channel2");
 
     assertThat(
@@ -263,7 +263,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefinedWithLabels_returnChannelNames() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator
         .configureExportedNetworkAccessPoint("channel1")
         .addLabel("label1", "value1")
@@ -279,7 +279,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefinedWithLabels_returnLabels() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator
         .configureExportedNetworkAccessPoint("channel1")
         .addLabel("label1", "value1")
@@ -290,7 +290,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefinedWithAnnotations_returnAnnotations() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator
         .configureExportedNetworkAccessPoint("channel1")
         .addAnnotation("annotation1", "value1")
@@ -1343,14 +1343,14 @@ public class DomainV2Test extends DomainTestBase {
   public void whenLogHomeNotSet_useDefault() {
     configureDomain(domain);
 
-    assertThat(domain.getSpec().getLogHome(), equalTo("/shared/logs/uid1"));
+    assertThat(domain.getLogHome(), equalTo("/shared/logs/uid1"));
   }
 
   @Test
   public void whenLogHomeSet_useValue() {
     configureDomain(domain).withLogHome("/custom/logs");
 
-    assertThat(domain.getSpec().getLogHome(), equalTo("/custom/logs"));
+    assertThat(domain.getLogHome(), equalTo("/custom/logs"));
   }
 
   @Test

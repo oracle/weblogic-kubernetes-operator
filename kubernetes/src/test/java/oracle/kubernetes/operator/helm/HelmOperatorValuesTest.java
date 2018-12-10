@@ -482,9 +482,7 @@ public class HelmOperatorValuesTest {
         .append("javaLoggingLevel: INFO\n")
         .append("logStashImage: logstash:5\n")
         .append("remoteDebugNodePortEnabled: false\n")
-        .append("serviceAccount: default\n")
-        .append("tillerNamespace: kube-system\n")
-        .append("tillerServiceAccount: default\n");
+        .append("serviceAccount: default\n");
     return sb.toString();
   }
 

@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -25,6 +26,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
 @SuppressWarnings("deprecation")
 public class Domain {
+  /** The pattern for computing the default persistent volume claim name. */
+  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
+
+  /** The pattern for computing the default shared logs directory. */
+  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -214,6 +220,26 @@ public class Domain {
   }
 
   /**
+   * Returns the maximum number of unavailable replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMaxUnavailable(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
+  }
+
+  /**
+   * Returns the minimum number of replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMinAvailable(String clusterName) {
+    return Math.max(getReplicaCount(clusterName) - getMaxUnavailable(clusterName), 0);
+  }
+
+  /**
    * DomainSpec is a description of a domain.
    *
    * @return Specification
@@ -272,43 +298,17 @@ public class Domain {
   }
 
   /**
-   * Returns the name of the admin server.
-   *
-   * @return admin server name
-   */
-  public String getAsName() {
-    return spec.getAsName();
-  }
-
-  /**
-   * Returns the port used by the admin server.
-   *
-   * @return admin server port
-   */
-  public Integer getAsPort() {
-    return spec.getAsPort();
-  }
-
-  /**
    * Returns the domain unique identifier.
    *
    * @return domain UID
    */
   public String getDomainUID() {
-    return spec.getDomainUID();
-  }
-
-  /**
-   * Returns the domain name
-   *
-   * @return domain name
-   */
-  public String getDomainName() {
-    return spec.getDomainName();
+    return Optional.ofNullable(spec.getDomainUID()).orElse(getMetadata().getName());
   }
 
   public String getLogHome() {
-    return spec.getLogHome();
+    return Optional.ofNullable(spec.getLogHome())
+        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUID()));
   }
 
   public boolean isIncludeServerOutInPodLog() {
@@ -359,7 +359,12 @@ public class Domain {
    * @return volume claim
    */
   public String getPersistentVolumeClaimName() {
-    return spec.getPersistentVolumeClaimName();
+    return spec.getStorage() == null ? null : getConfiguredClaimName(spec.getStorage());
+  }
+
+  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
+    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
+        .orElse(String.format(PVC_NAME_PATTERN, getDomainUID()));
   }
 
   /**

@@ -285,11 +285,6 @@ function createFiles {
   echo Generating ${domainPropertiesOutput}
 
   cp ${domainPropertiesInput} ${domainPropertiesOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
   sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
