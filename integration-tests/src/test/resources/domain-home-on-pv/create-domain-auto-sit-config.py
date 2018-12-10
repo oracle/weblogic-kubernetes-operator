@@ -49,7 +49,7 @@ setOption('DomainName', domain_name)
 # ===================================
 cd('/Servers/AdminServer')
 # Give incorrect listenaddress, introspector overrides with sit-config
-set('ListenAddress', 'junk')
+set('ListenAddress', '')
 set('ListenPort', admin_port)
 set('Name', admin_server_name)
 
@@ -58,7 +58,7 @@ cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
 set('PublicPort', t3_channel_port)
 set('PublicAddress', t3_public_address)
 # Give incorrect listenaddress, introspector overrides with sit-config
-set('ListenAddress', 'junk')
+set('ListenAddress', '')
 set('ListenPort', t3_channel_port)
 
 cd('/Servers/%s' % admin_server_name)
