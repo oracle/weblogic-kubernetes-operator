@@ -13,6 +13,7 @@ import io.kubernetes.client.util.Watch;
 import java.lang.reflect.Method;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -32,6 +33,7 @@ abstract class Watcher<T> {
   private static final long IGNORED_RESOURCE_VERSION = 0;
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
+  private final WatchTuning tuning;
   private Long resourceVersion;
   private AtomicBoolean stopping;
   private WatchListener<T> listener;
@@ -42,11 +44,13 @@ abstract class Watcher<T> {
    * subclass itself.
    *
    * @param resourceVersion the oldest version to return for this watch
+   * @param tuning Watch tuning parameters
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
-  Watcher(String resourceVersion, AtomicBoolean stopping) {
+  Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
     this.resourceVersion =
         !isNullOrEmptyString(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
+    this.tuning = tuning;
     this.stopping = stopping;
   }
 
@@ -54,11 +58,16 @@ abstract class Watcher<T> {
    * Constructs a watcher with a separate listener.
    *
    * @param resourceVersion the oldest version to return for this watch
+   * @param tuning Watch tuning parameters
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    * @param listener a listener to which to dispatch watch events
    */
-  Watcher(String resourceVersion, AtomicBoolean stopping, WatchListener<T> listener) {
-    this(resourceVersion, stopping);
+  Watcher(
+      String resourceVersion,
+      WatchTuning tuning,
+      AtomicBoolean stopping,
+      WatchListener<T> listener) {
+    this(resourceVersion, tuning, stopping);
     this.listener = listener;
   }
 
@@ -112,7 +121,10 @@ abstract class Watcher<T> {
 
   private void watchForEvents() {
     try (WatchI<T> watch =
-        initiateWatch(new WatchBuilder().withResourceVersion(resourceVersion.toString()))) {
+        initiateWatch(
+            new WatchBuilder()
+                .withResourceVersion(resourceVersion.toString())
+                .withTimeoutSeconds(tuning.watchLifetime))) {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 

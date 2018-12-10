@@ -54,12 +54,8 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /**
-   * Defines a name for the domain's admin server.
-   *
-   * @param adminServerName the name of the admin server
-   */
-  public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
+  /** Defines a name for the domain's admin server. */
+  public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
     getDomainSpec().setReplicas(replicas);
@@ -246,10 +242,6 @@ public abstract class DomainConfigurator {
     return domain.getSpec();
   }
 
-  protected String getAsName() {
-    return domain.getAsName();
-  }
-
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
@@ -330,4 +322,12 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withPodSecurityContext(
       V1PodSecurityContext podSecurityContext);
+
+  /**
+   * Set the restart version for the Domain
+   *
+   * @param restartVersion
+   * @return this object
+   */
+  public abstract DomainConfigurator withRestartVersion(String restartVersion);
 }

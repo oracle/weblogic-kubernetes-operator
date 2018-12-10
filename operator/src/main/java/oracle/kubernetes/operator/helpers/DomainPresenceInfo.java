@@ -12,12 +12,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.joda.time.DateTime;
 
@@ -31,7 +29,6 @@ public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
-  private final AtomicReference<ScheduledFuture<?>> statusUpdater;
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
@@ -49,9 +46,8 @@ public class DomainPresenceInfo {
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
-    this.domainUID = domain.getSpec().getDomainUID();
+    this.domainUID = domain.getDomainUID();
     this.serverStartupInfo = new AtomicReference<>(null);
-    this.statusUpdater = new AtomicReference<>(null);
   }
 
   /**
@@ -64,7 +60,6 @@ public class DomainPresenceInfo {
     this.namespace = namespace;
     this.domainUID = domainUID;
     this.serverStartupInfo = new AtomicReference<>(null);
-    this.statusUpdater = new AtomicReference<>(null);
   }
 
   public boolean isDeleting() {
@@ -170,17 +165,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Server objects (Pods and Services) for admin server
-   *
-   * @return Server objects for admin server
-   */
-  public ServerKubernetesObjects getAdmin() {
-    Domain dom = domain.get();
-    DomainSpec spec = dom.getSpec();
-    return servers.get(spec.getAsName());
-  }
-
-  /**
    * Server startup info
    *
    * @return Server startup info
@@ -206,7 +190,7 @@ public class DomainPresenceInfo {
       sb.append(
           String.format(
               "uid=%s, namespace=%s",
-              getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
+              getDomain().getDomainUID(), getDomain().getMetadata().getNamespace()));
     } else {
       sb.append(", namespace=").append(namespace);
     }
@@ -260,14 +244,5 @@ public class DomainPresenceInfo {
     public List<V1EnvVar> getEnvironment() {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
-  }
-
-  /**
-   * Domain status updater
-   *
-   * @return Domain status updater
-   */
-  public AtomicReference<ScheduledFuture<?>> getStatusUpdater() {
-    return statusUpdater;
   }
 }

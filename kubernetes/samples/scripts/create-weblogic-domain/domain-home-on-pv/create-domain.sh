@@ -231,7 +231,6 @@ function initialize {
     domainUID \
     clusterName \
     managedServerNameBase \
-    weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
     includeServerOutInPodLog \
@@ -295,8 +294,16 @@ function createYamlFiles {
     domainPVMountPath="/shared"
   fi
 
+  if [ -z "${domainHome}" ]; then
+    domainHome="${domainPVMountPath}/domains/${domainUID}"
+  fi
+
   if [ -z "${logHome}" ]; then
-    logHome="/shared/logs/${domainUID}"
+    logHome="${domainPVMountPath}/logs/${domainUID}"
+  fi
+
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
   # Use the default value if not defined.
@@ -311,7 +318,7 @@ function createYamlFiles {
 
   # Use the default value if not defined.
   if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=weblogic-sample-domain-pvc
+    persistentVolumeClaimName=${domainUID}-weblogic-sample-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
@@ -383,13 +390,10 @@ function createYamlFiles {
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
@@ -406,7 +410,7 @@ function createYamlFiles {
 }
 
 # create domain configmap using what is in the createDomainFilesDir
-function create_domain_configmap {
+function createDomainConfigmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -453,7 +457,7 @@ function create_domain_configmap {
 function createDomainHome {
 
   # create the config map for the job
-  create_domain_configmap
+  createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
@@ -505,9 +509,7 @@ function createDomainHome {
     kubectl logs $JOB_POD -n ${namespace}
     fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
-
 }
-
 
 #
 # Function to output to the console a summary of the work completed
