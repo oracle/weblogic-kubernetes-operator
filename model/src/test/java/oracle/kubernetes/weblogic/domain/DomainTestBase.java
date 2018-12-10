@@ -290,6 +290,34 @@ public abstract class DomainTestBase {
   }
 
   @Test
+  public void afterReplicaCountMaxUnavailableSetForCluster_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5).withMaxUnavailable(2);
+
+    assertThat(domain.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
+  public void afterReplicaCountSetForCluster_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getMinAvailable("cluster1"), equalTo(4));
+  }
+
+  @Test
+  public void afterReplicaCountMaxUnavailableSetForCluster_zeroMin() {
+    configureCluster("cluster1").withReplicas(3).withMaxUnavailable(10);
+
+    assertThat(domain.getMinAvailable("cluster1"), equalTo(0));
+  }
+
+  @Test
+  public void afterMaxUnavailableSetForCluster_canReadIt() {
+    configureCluster("cluster1").withMaxUnavailable(5);
+
+    assertThat(domain.getMaxUnavailable("cluster1"), equalTo(5));
+  }
+
+  @Test
   public void whenServerNotConfigured_nodePortIsNull() {
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 

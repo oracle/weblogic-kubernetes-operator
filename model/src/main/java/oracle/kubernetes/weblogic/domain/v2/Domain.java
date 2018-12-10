@@ -220,6 +220,26 @@ public class Domain {
   }
 
   /**
+   * Returns the maximum number of unavailable replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMaxUnavailable(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
+  }
+
+  /**
+   * Returns the minimum number of replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMinAvailable(String clusterName) {
+    return Math.max(getReplicaCount(clusterName) - getMaxUnavailable(clusterName), 0);
+  }
+
+  /**
    * DomainSpec is a description of a domain.
    *
    * @return Specification
