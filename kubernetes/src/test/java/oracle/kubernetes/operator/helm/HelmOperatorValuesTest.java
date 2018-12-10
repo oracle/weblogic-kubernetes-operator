@@ -476,7 +476,7 @@ public class HelmOperatorValuesTest {
         .append("externalDebugHttpPort: 30999\n")
         .append("externalRestEnabled: false\n")
         .append("externalRestHttpsPort: 31001\n")
-        .append("image: weblogic-kubernetes-operator:1.1\n")
+        .append("image: weblogic-kubernetes-operator:2.0\n")
         .append("imagePullPolicy: IfNotPresent\n")
         .append("internalDebugHttpPort: 30999\n")
         .append("javaLoggingLevel: INFO\n")
