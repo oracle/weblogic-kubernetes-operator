@@ -147,7 +147,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    createCannedListDomainResponses();
+    readExistingResources(false);
+  }
+
+  private void readExistingResources(boolean isDelete) {
+    createCannedListDomainResponses(isDelete);
     testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
@@ -332,7 +336,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @SuppressWarnings("unchecked")
-  private void createCannedListDomainResponses() {
+  private void createCannedListDomainResponses(boolean isDelete) {
     testSupport.createCannedResponse("listDomain").withNamespace(NS).returning(domains);
     testSupport
         .createCannedResponse("listService")
@@ -360,11 +364,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName(DOMAIN_CONFIG_MAP_NAME)
         .ignoringBody()
         .returning(domainConfigMap);
-    testSupport
-        .createCannedResponse("readConfigMap")
-        .withNamespace(NS)
-        .withName(UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
-        .returning(createEmptyConfigMap());
+    if (!isDelete) {
+      testSupport
+          .createCannedResponse("readConfigMap")
+          .withNamespace(NS)
+          .withName(UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+          .returning(createEmptyConfigMap());
+    }
   }
 
   private DomainList createEmptyDomainList() {
@@ -467,7 +473,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     isNamespaceStopping.get(NS).set(false);
 
-    readExistingResources();
+    readExistingResources(true);
 
     testSupport.verifyAllDefinedResponsesInvoked();
   }

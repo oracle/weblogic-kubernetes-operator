@@ -687,10 +687,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      Step strategy =
-          Step.chain(
-              ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
-              new RegisterStep(info, getNext()));
+      Step strategy = getNext();
       if (!info.isPopulated()) {
         strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
       }
@@ -890,12 +887,17 @@ public class DomainProcessorImpl implements DomainProcessor {
                     info,
                     new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy)))));
 
-    return new UpHeadStep(
-        info,
-        DomainStatusUpdater.createProgressingStep(
-            DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
-            true,
-            DomainPresenceStep.createDomainPresenceStep(dom, strategy, managedServerStrategy)));
+    strategy =
+        new UpHeadStep(
+            info,
+            DomainStatusUpdater.createProgressingStep(
+                DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
+                true,
+                DomainPresenceStep.createDomainPresenceStep(dom, strategy, managedServerStrategy)));
+
+    return Step.chain(
+        ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
+        new RegisterStep(info, strategy));
   }
 
   static Step createDomainDownPlan(DomainPresenceInfo info) {
