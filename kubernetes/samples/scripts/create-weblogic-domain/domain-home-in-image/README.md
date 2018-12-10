@@ -16,6 +16,8 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 ```
   ./create-domain.sh \
+  -u <username> \
+  -p <password> \
   -i create-domain-inputs.yaml \
   -o /path/to/output-directory
 ```
@@ -24,6 +26,8 @@ The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
 * Create a proerties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
+* Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
+* Replace the built-in username and password in the properties/docker_build/domain_security.properties file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
 * Build Docker image based on Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain into the Docker image. You can also run the Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) manually with the generated `domain.properties` to create domain home image. Note: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 
@@ -33,10 +37,12 @@ The usage of the create script is as follows:
 
 ```
 $ sh create-domain.sh -h
-usage: create-domain.sh -o dir -i file [-e] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-e] [-h]
   -i Parameter inputs file, must be specified.
-  -o Output directory for the generated properties and YAML files, must be specified.
-  -e Also create the resources in the generated YAML file, optional.
+  -o Ouput directory for the generated properties and YAML files, must be specified.
+  -u Username used in building the Docker image for WebLogic domain in image.
+  -p Password used in building the Docker image for WebLogic domain in image.
+  -e Also create the resources in the generated YAML files, optional.
   -h Help
 
 ```
