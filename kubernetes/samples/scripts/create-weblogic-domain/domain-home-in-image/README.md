@@ -27,7 +27,7 @@ The script will perform the following steps:
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
 * Create a proerties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
 * Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
-* Replace the built-in username and password in the properties/docker_build/domain_security.properties file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
+* Replace the built-in username and password in the `properties/docker_build/domain_security.properties` file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
 * Build Docker image based on Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain into the Docker image. You can also run the Docker sample [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) manually with the generated `domain.properties` to create domain home image. Note: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 
@@ -74,6 +74,7 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
+| `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
@@ -84,7 +85,6 @@ The following parameters can be provided in the inputs file.
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
-| `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
@@ -147,6 +147,12 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
+  # an (optional) list of environment variable to be set on the servers
+  env:
+  - name: JAVA_OPTIONS
+    value: "-Dweblogic.StdoutDebugEnabled=false"
+  - name: USER_MEM_ARGS
+    value: "-Xms64m -Xmx256m "
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
   # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -158,37 +164,12 @@ spec:
     # Uncomment to export the T3Channel as a service
     # exportedNetworkAccessPoints:
     #   T3Channel: {}
-    # an (optional) list of environment variable to be set on the server
-    env:
-    - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
-    - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
-    volumes:
-    - name: runtime-properties
-      hostPath:
-        path: "/scratch/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_run"
-    volumeMounts:
-    - name: runtime-properties
-      mountPath: "/u01/oracle/properties"
   # clusters is used to configure the desired behavior for starting member servers of a cluster.  
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
     cluster-1:
       desiredState: "RUNNING"
       replicas: 2
-      env:
-      - name: JAVA_OPTIONS
-        value: "-Dweblogic.StdoutDebugEnabled=false"
-      - name: USER_MEM_ARGS
-        value: "-Xms64m -Xmx256m "
-      volumes:
-      - name: runtime-properties
-        hostPath:
-          path: "/scratch/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_run"
-      volumeMounts:
-      - name: runtime-properties
-        mountPath: "/u01/oracle/properties"
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
 
