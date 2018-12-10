@@ -283,7 +283,7 @@ public class Domain {
    * @return domain UID
    */
   public String getDomainUID() {
-    return spec.getDomainUID() != null ? spec.getDomainUID() : getMetadata().getName();
+    return Optional.ofNullable(spec.getDomainUID()).orElse(getMetadata().getName());
   }
 
   public String getLogHome() {
