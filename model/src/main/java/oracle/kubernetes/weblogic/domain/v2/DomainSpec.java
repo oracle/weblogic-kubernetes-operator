@@ -482,6 +482,11 @@ public class DomainSpec extends BaseConfiguration {
     this.domainHomeInImage = domainHomeInImage;
   }
 
+  public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
+    setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -706,9 +711,8 @@ public class DomainSpec extends BaseConfiguration {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
           getServer(serverName),
-          getClusterLimit(clusterName),
           getCluster(clusterName),
-          DomainSpec.this);
+          getClusterLimit(clusterName));
     }
 
     private Integer getClusterLimit(String clusterName) {
