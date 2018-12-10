@@ -349,7 +349,6 @@ function createDomainHome {
   cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_build
 
   cd docker-images/OracleWebLogic/samples/12213-domain-home-in-image
-  
   ./build.sh
 
   if [ "$?" != "0" ]; then
