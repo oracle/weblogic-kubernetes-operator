@@ -49,6 +49,20 @@ public abstract class BaseConfiguration {
   private String serverStartPolicy;
 
   /**
+   * Tells the operator whether the customer wants to restart the server pods. The value can be any
+   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again. If customer
+   * modifies the value again after the pods were recreated, then the pods will again be terminated
+   * and recreated.
+   *
+   * @since 2.0
+   */
+  @Description(
+      "If preseent, every time this value is updated the operator will restart"
+          + " the required servers")
+  private String restartVersion;
+
+  /**
    * Fills in any undefined settings in this configuration from another configuration.
    *
    * @param other the other configuration which can override this one
@@ -205,12 +219,21 @@ public abstract class BaseConfiguration {
     serverPod.addServiceAnnotations(name, value);
   }
 
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
         .append("serverPod", serverPod)
+        .append("restartVersion", restartVersion)
         .toString();
   }
 
@@ -226,6 +249,7 @@ public abstract class BaseConfiguration {
         .append(serverPod, that.serverPod)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
+        .append(restartVersion, that.restartVersion)
         .isEquals();
   }
 
@@ -235,6 +259,7 @@ public abstract class BaseConfiguration {
         .append(serverPod)
         .append(serverStartState)
         .append(serverStartPolicy)
+        .append(restartVersion)
         .toHashCode();
   }
 }

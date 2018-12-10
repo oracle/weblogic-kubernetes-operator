@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -93,16 +94,19 @@ public class JobHelper {
    * @param next Next processing step
    * @return Step for creating job
    */
-  public static Step createDomainIntrospectorJobStep(Step next) {
+  public static Step createDomainIntrospectorJobStep(WatchTuning tuning, Step next) {
 
     // return new DomainIntrospectorJobStep(
     //    readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
-    return new DomainIntrospectorJobStep(next);
+    return new DomainIntrospectorJobStep(tuning, next);
   }
 
   static class DomainIntrospectorJobStep extends Step {
-    public DomainIntrospectorJobStep(Step next) {
+    private final WatchTuning tuning;
+
+    public DomainIntrospectorJobStep(WatchTuning tuning, Step next) {
       super(next);
+      this.tuning = tuning;
     }
 
     @Override
@@ -116,7 +120,7 @@ public class JobHelper {
         return doNext(
             context.createNewJob(
                 readDomainIntrospectorPodLogStep(
-                    ConfigMapHelper.createSitConfigMapStep(getNext()))),
+                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()))),
             packet);
       }
 
@@ -217,8 +221,8 @@ public class JobHelper {
     }
   }
 
-  private static Step createWatchDomainIntrospectorJobReadyStep(Step next) {
-    return new WatchDomainIntrospectorJobReadyStep(next);
+  private static Step createWatchDomainIntrospectorJobReadyStep(WatchTuning tuning, Step next) {
+    return new WatchDomainIntrospectorJobReadyStep(tuning, next);
   }
 
   /**
@@ -227,9 +231,9 @@ public class JobHelper {
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod log
    */
-  public static Step readDomainIntrospectorPodLogStep(Step next) {
+  public static Step readDomainIntrospectorPodLogStep(WatchTuning tuning, Step next) {
     return createWatchDomainIntrospectorJobReadyStep(
-        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
+        tuning, readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
   }
 
   private static class ReadDomainIntrospectorPodLogStep extends Step {
