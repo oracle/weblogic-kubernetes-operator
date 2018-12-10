@@ -115,12 +115,15 @@ public class ServiceHelper {
 
     protected List<V1ServicePort> createServicePorts() {
       List<V1ServicePort> ports = new ArrayList<>();
-      for(NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-        V1ServicePort port = new V1ServicePort()
-                .name(nap.getName())
-                .port(nap.getListenPort())
-                .protocol(nap.getProtocol());
-        ports.add(port);
+      if (scan != null) {
+        for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+          V1ServicePort port =
+              new V1ServicePort()
+                  .name(nap.getName())
+                  .port(nap.getListenPort())
+                  .protocol(nap.getProtocol());
+          ports.add(port);
+        }
       }
       ports.add(createServicePort());
       return ports;
