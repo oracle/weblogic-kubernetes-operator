@@ -376,6 +376,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
+    public ClusterConfigurator withMaxUnavailable(int maxUnavailable) {
+      cluster.setMaxUnavailable(maxUnavailable);
+      return this;
+    }
+
+    @Override
     public ClusterConfigurator withDesiredState(String state) {
       cluster.setServerStartState(state);
       return this;
