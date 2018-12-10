@@ -222,6 +222,12 @@ public abstract class ServerSpec {
     return null;
   }
 
+  public abstract String getDomainRestartVersion();
+
+  public abstract String getClusterRestartVersion();
+
+  public abstract String getServerRestartVersion();
+
   @Override
   public String toString() {
     return new ToStringBuilder(this).append("domainSpec", domainSpec).toString();
