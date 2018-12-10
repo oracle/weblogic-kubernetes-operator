@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <name>testDS</name>
+    <jdbc-driver-params>
+      <url f:combine-mode="replace">jdbc:oracle:thin:@mynewhost:1521:mynewsid</url>
+    </jdbc-driver-params>
+</jdbc-data-source>

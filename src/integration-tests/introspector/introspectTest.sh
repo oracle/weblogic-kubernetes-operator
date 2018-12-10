@@ -42,6 +42,7 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
 traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
 source ${traceFile}
+source ${SCRIPTPATH}/util_dots.sh
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
 
 # Set TRACE_INCLUDE_FILE to true to cause tracing to include filename & line number.
@@ -172,11 +173,15 @@ function cleanup() {
   #   2 - delete contents of k8s weblogic domain PV/PVC
   #       (if CREATE_DOMAIN has been set to "true")
 
+  tracen "Info: Waiting for cleanup.sh to complete."
+  printdots_start
   DELETE_FILES=${CREATE_DOMAIN:-false} \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
     ${test_home}/cleanup.out
+  status=$?
+  printdots_end
 
-  if [ $? -ne 0 ]; then
+  if [ $status -ne 0 ]; then
     trace "Error:  cleanup failed.   Cleanup output:"
     cat ${test_home}/cleanup.out
     exit 1
@@ -210,6 +215,8 @@ function runJob() {
 
   # Run the job
 
+  tracen "Info: Waiting for job '$job_name' to complete."
+  printdots_start
   env \
     KUBECONFIG=$KUBECONFIG \
     JOB_YAML=${test_home}/${yaml_file} \
@@ -217,8 +224,11 @@ function runJob() {
     NAMESPACE=$NAMESPACE \
     ${SCRIPTPATH}/util_job.sh \
     2>&1 > ${test_home}/job-${1}.out
+  local status=$?
+  printdots_end
 
-  if [ ! $? -eq 0 ]; then
+  if [ ! $status -eq 0 ]; then
+    printdots_end
     trace "Error:  job failed, job contents"
     cat ${test_home}/job-${1}.out
     trace "Error:  end of failed job contents"
@@ -333,6 +343,26 @@ function deployTestScriptConfigMap() {
 
   createConfigMapFromDir test-script-cm ${test_home}/test-scripts
 
+}
+
+#############################################################################
+#
+# Deploy custom override cm
+#
+#
+
+function deployCustomOverridesConfigMap() {
+  local cmdir="${test_home}/customOverrides"
+  local cmname="${DOMAIN_UID}-mycustom-overrides-cm"
+  mkdir -p $cmdir
+  cp ${SCRIPTPATH}/jdbc-testDS.xml $cmdir || exit 1
+  cp ${SCRIPTPATH}/version.txt $cmdir || exit 1
+
+  kubectl -n $NAMESPACE delete cm $cmname \
+    --ignore-not-found  \
+    2>&1 | tracePipe "Info: kubectl output: "
+
+  createConfigMapFromDir $cmname $cmdir || exit 1
 }
 
 #############################################################################
@@ -476,10 +506,10 @@ function deployPod() {
 
   # Wait for pod to come up successfully
 
-  tracen "Info: Waiting for pod readiness"
   local status="0/1"
   local startsecs=$SECONDS
   local maxsecs=180
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
   while [ "${status}" != "1/1" ] ; do
     if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
       echo
@@ -493,7 +523,7 @@ function deployPod() {
     sleep 1
     status=`kubectl get pods -n $NAMESPACE 2>&1 | egrep $pod_name | awk '{print $2}'`
   done
-  echo
+  echo "  ($((SECONDS - startsecs)) seconds)"
 }
 
 function deploySinglePodService() {
@@ -552,6 +582,8 @@ deployDomainConfigMap
 
 deployTestScriptConfigMap
 
+deployCustomOverridesConfigMap
+
 createTestRootPVDir
 
 deployWebLogic_PV_PVC_and_Secret
@@ -584,12 +616,16 @@ deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 308
 trace "Info: Checking beans to see if sit-cfg took effect.  Input file 'checkBeans.input', output file '$test_home/checkBeans.out'."
 kubectl cp checkBeans.input domain1-admin-server:/shared/checkBeans.input || exit 1
 kubectl cp checkBeans.py domain1-admin-server:/shared/checkBeans.py || exit 1
+tracen "Info: Waiting for WLST checkBeans.py to complete."
+printdots_start
 kubectl exec -it domain1-admin-server \
   wlst.sh /shared/checkBeans.py \
     weblogic welcome1 t3://domain1-admin-server:7001 \
     /shared/checkBeans.input \
     > $test_home/checkBeans.out 2>&1
-if [ $? -ne 0 ]; then
+status=$?
+printdots_end
+if [ $status -ne 0 ]; then
   trace "Error:  checkBeans failed, see '$test_home/checkBeans.out'."
   exit 1
 fi

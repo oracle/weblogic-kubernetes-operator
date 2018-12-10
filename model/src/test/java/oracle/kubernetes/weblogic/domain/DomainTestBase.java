@@ -38,14 +38,11 @@ public abstract class DomainTestBase {
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
-  private static final int AS_PORT = 8000;
   private static final String NS = "test-namespace";
-  private static final String DOMAIN_NAME = "test";
   private static final String DOMAIN_UID = "uid1";
   private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
-  private static final String AS_NAME = "admin";
   protected static final String CLUSTER_NAME = "cluster1";
   protected static final String SERVER1 = "ms1";
   protected static final String SERVER2 = "ms2";
@@ -54,13 +51,7 @@ public abstract class DomainTestBase {
   protected static Domain createDomain() {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(NS))
-        .withSpec(
-            new DomainSpec()
-                .withAdminSecret(SECRET)
-                .withAsName(AS_NAME)
-                .withAsPort(AS_PORT)
-                .withDomainName(DOMAIN_NAME)
-                .withDomainUID(DOMAIN_UID));
+        .withSpec(new DomainSpec().withAdminSecret(SECRET).withDomainUID(DOMAIN_UID));
   }
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
@@ -75,14 +66,11 @@ public abstract class DomainTestBase {
 
   @Test
   public void canGetAdminServerInfoFromDomain() {
-    assertThat(domain.getAsName(), equalTo(AS_NAME));
-    assertThat(domain.getAsPort(), equalTo(AS_PORT));
     assertThat(domain.getAdminSecret(), equalTo(SECRET));
   }
 
   @Test
   public void canGetDomainInfoFromDomain() {
-    assertThat(domain.getDomainName(), equalTo(DOMAIN_NAME));
     assertThat(domain.getDomainUID(), equalTo(DOMAIN_UID));
   }
 
@@ -203,7 +191,7 @@ public abstract class DomainTestBase {
   }
 
   protected AdminServerConfigurator configureAdminServer() {
-    return configureDomain(domain).configureAdminServer(AS_NAME).withPort(AS_PORT);
+    return configureDomain(domain).configureAdminServer();
   }
 
   private V1EnvVar[] createEnvironment() {
@@ -299,6 +287,34 @@ public abstract class DomainTestBase {
 
     domain.setReplicaCount("cluster1", 4);
     assertThat(domain.getReplicaCount("cluster1"), equalTo(4));
+  }
+
+  @Test
+  public void afterReplicaCountMaxUnavailableSetForCluster_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5).withMaxUnavailable(2);
+
+    assertThat(domain.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
+  public void afterReplicaCountSetForCluster_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5);
+
+    assertThat(domain.getMinAvailable("cluster1"), equalTo(4));
+  }
+
+  @Test
+  public void afterReplicaCountMaxUnavailableSetForCluster_zeroMin() {
+    configureCluster("cluster1").withReplicas(3).withMaxUnavailable(10);
+
+    assertThat(domain.getMinAvailable("cluster1"), equalTo(0));
+  }
+
+  @Test
+  public void afterMaxUnavailableSetForCluster_canReadIt() {
+    configureCluster("cluster1").withMaxUnavailable(5);
+
+    assertThat(domain.getMaxUnavailable("cluster1"), equalTo(5));
   }
 
   @Test

@@ -101,9 +101,3 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # elasticSearchPort specifies the port number of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
-
-# tillerNamespace is the name of the namespace that tiller is configured to use.
-tillerNamespace: "kube-system"
-
-# tillerServiceAccount is the name of the service account that tiller is configured to use.
-tillerServiceAccount: "default"
