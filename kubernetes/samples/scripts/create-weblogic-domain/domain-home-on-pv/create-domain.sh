@@ -231,7 +231,6 @@ function initialize {
     domainUID \
     clusterName \
     managedServerNameBase \
-    weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
     includeServerOutInPodLog \
@@ -295,8 +294,16 @@ function createYamlFiles {
     domainPVMountPath="/shared"
   fi
 
+  if [ -z "${domainHome}" ]; then
+    domainHome="${domainPVMountPath}/domains/${domainUID}"
+  fi
+
   if [ -z "${logHome}" ]; then
-    logHome="/shared/logs/${domainUID}"
+    logHome="${domainPVMountPath}/logs/${domainUID}"
+  fi
+
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
   # Use the default value if not defined.
@@ -311,7 +318,7 @@ function createYamlFiles {
 
   # Use the default value if not defined.
   if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=weblogic-sample-domain-pvc
+    persistentVolumeClaimName=${domainUID}-weblogic-sample-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
@@ -406,7 +413,7 @@ function createYamlFiles {
 }
 
 # create domain configmap using what is in the createDomainFilesDir
-function create_domain_configmap {
+function createDomainConfigmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -453,7 +460,7 @@ function create_domain_configmap {
 function createDomainHome {
 
   # create the config map for the job
-  create_domain_configmap
+  createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
@@ -505,9 +512,7 @@ function createDomainHome {
     kubectl logs $JOB_POD -n ${namespace}
     fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
-
 }
-
 
 #
 # Function to output to the console a summary of the work completed
