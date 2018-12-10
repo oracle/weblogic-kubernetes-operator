@@ -79,12 +79,14 @@ public class Main {
   }
 
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
+  private static final ScheduledExecutorService wrappedExecutorService =
+      Engine.wrappedExecutorService("operator", container);
 
   static final TuningParameters tuningAndConfig;
 
   static {
     try {
-      TuningParameters.initializeInstance(threadFactory, "/operator/config");
+      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -93,9 +95,6 @@ public class Main {
   }
 
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
-
-  private static final ScheduledExecutorService wrappedExecutorService =
-      Engine.wrappedExecutorService("operator", container);
 
   static {
     container
@@ -435,9 +434,8 @@ public class Main {
 
   private static void startLivenessThread() {
     LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
-    livenessThread = new OperatorLiveness();
-    livenessThread.setDaemon(true);
-    livenessThread.start();
+    // every five seconds we need to update the last modified time on the liveness file
+    wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
   }
 
   private static void waitForDeath() {
