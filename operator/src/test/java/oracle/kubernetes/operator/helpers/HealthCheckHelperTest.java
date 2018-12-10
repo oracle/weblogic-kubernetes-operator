@@ -2,38 +2,17 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator;
+package oracle.kubernetes.operator.helpers;
 
 import static java.util.Collections.singletonList;
-import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.get;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.list;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.patch;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.update;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.watch;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.K8S_MIN_VERSION_CHECK_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK;
-import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
-import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
-import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.*;
+import static oracle.kubernetes.operator.logging.MessageKeys.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ResourceAttributes;
-import io.kubernetes.client.models.V1ResourceRule;
-import io.kubernetes.client.models.V1SelfSubjectAccessReview;
-import io.kubernetes.client.models.V1SelfSubjectRulesReview;
-import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
-import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
-import io.kubernetes.client.models.VersionInfo;
+import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,11 +20,9 @@ import java.util.List;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
-import oracle.kubernetes.operator.helpers.CallTestSupport;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper;
-import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -55,9 +32,6 @@ public class HealthCheckHelperTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-    K8S_MIN_VERSION_CHECK_FAILED,
-    K8S_VERSION_CHECK,
-    K8S_VERSION_CHECK_FAILURE,
     DOMAIN_UID_UNIQUENESS_FAILED,
     PV_ACCESS_MODE_FAILED,
     PV_NOT_FOUND_FOR_DOMAIN_UID,
@@ -105,135 +79,29 @@ public class HealthCheckHelperTest {
   private static final String POD_LOGS = "pods/log";
   private static final String DOMAINS = "domains//weblogic.oracle";
   private static final String NAMESPACES = "namespaces";
-  private static final HealthCheckHelper.KubernetesVersion MINIMAL_KUBERNETES_VERSION =
-      new HealthCheckHelper.KubernetesVersion(1, 7);
-  private static final HealthCheckHelper.KubernetesVersion RULES_REVIEW_VERSION =
-      new HealthCheckHelper.KubernetesVersion(1, 8);
+  private static final KubernetesVersion MINIMAL_KUBERNETES_VERSION = new KubernetesVersion(1, 7);
+  private static final KubernetesVersion RULES_REVIEW_VERSION = new KubernetesVersion(1, 8);
 
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
-  private TestUtils.ConsoleHandlerMemento consoleControl;
   private CallTestSupport testSupport = new CallTestSupport();
   private AccessChecks accessChecks = new AccessChecks();
 
   @Before
   public void setUp() throws Exception {
-    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
-    mementos.add(consoleControl);
+    mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
     mementos.add(ClientFactoryStub.install());
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     for (Memento memento : mementos) memento.revert();
   }
 
   @Test
-  public void whenK8sMajorVersionLessThanOne_returnVersionZeroZero() {
-    ignoreMessage(K8S_MIN_VERSION_CHECK_FAILED);
-    specifyK8sVersion("0", "", "");
-
-    assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(0, 0));
-  }
-
-  @SuppressWarnings("unchecked")
-  private void specifyK8sVersion(String majorVersion, String minorVersion, String gitVersion) {
-    testSupport
-        .createCannedResponse("getVersion")
-        .returning(createVersionInfo(majorVersion, minorVersion, gitVersion));
-  }
-
-  private static VersionInfo createVersionInfo(
-      String majorVersion, String minorVersion, String gitVersion) {
-    VersionInfo versionInfo;
-    versionInfo = new VersionInfo().major(majorVersion).minor(minorVersion);
-    versionInfo.setGitVersion(majorVersion + "." + minorVersion + "." + gitVersion);
-    return versionInfo;
-  }
-
-  private void ignoreMessage(String message) {
-    consoleControl.ignoreMessage(message);
-  }
-
-  private Matcher<HealthCheckHelper.KubernetesVersion> returnsVersion(int major, int minor) {
-    return equalTo(new HealthCheckHelper.KubernetesVersion(major, minor));
-  }
-
-  @Test
-  public void whenK8sMajorVersionLessThanOne_warnOfVersionTooLow() {
-    specifyK8sVersion("0", "", "");
-
-    HealthCheckHelper.performK8sVersionCheck();
-
-    assertThat(logRecords, containsWarning(K8S_MIN_VERSION_CHECK_FAILED));
-  }
-
-  @Test // todo this doesn't seem correct behavior; shouldn't it return (2, 7)?
-  public void whenK8sMajorVersionGreaterThanOne_returnVersionTwoZero() {
-    ignoreMessage(K8S_VERSION_CHECK);
-
-    specifyK8sVersion("2", "7", "");
-
-    assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(2, 0));
-  }
-
-  @Test
-  public void whenK8sMajorVersionGreaterThanOne_logGitVersion() {
-    specifyK8sVersion("2", "", "");
-
-    HealthCheckHelper.performK8sVersionCheck();
-
-    assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
-  }
-
-  @Test
-  public void whenK8sMinorLessThanSeven_warnOfVersionTooLow() {
-    specifyK8sVersion("1", "6+", "");
-
-    HealthCheckHelper.performK8sVersionCheck();
-
-    assertThat(logRecords, containsWarning(K8S_MIN_VERSION_CHECK_FAILED));
-  }
-
-  @Test
-  public void whenK8sMinorGreaterThanSeven_returnVersionObject() {
-    ignoreMessage(K8S_VERSION_CHECK);
-    specifyK8sVersion("1", "8", "3");
-
-    assertThat(HealthCheckHelper.performK8sVersionCheck(), returnsVersion(1, 8));
-  }
-
-  @Test
-  public void whenK8sMinorGreaterThanSeven_logGitVersion() {
-    specifyK8sVersion("1", "8", "3");
-
-    HealthCheckHelper.performK8sVersionCheck();
-
-    assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
-  }
-
-  @Test
-  public void whenK8sMinorEqualSevenAndGitVersionThirdFieldLessThanFive_warnOfVersionTooLow() {
-    specifyK8sVersion("1", "7", "1+coreos.0");
-
-    HealthCheckHelper.performK8sVersionCheck();
-
-    assertThat(logRecords, containsWarning(K8S_MIN_VERSION_CHECK_FAILED));
-  }
-
-  @Test
-  public void whenK8sMinorEqualSevenAndGitVersionThirdFieldAtLeastFive_logGitVersion() {
-    specifyK8sVersion("1", "7", "5+coreos.0");
-
-    HealthCheckHelper.performK8sVersionCheck();
-
-    assertThat(logRecords, containsInfo(K8S_VERSION_CHECK));
-  }
-
-  @Test
   @Ignore
-  public void whenRulesReviewNotSupported_requestsAccessReviewForEverything() throws Exception {
+  public void whenRulesReviewNotSupported_requestsAccessReviewForEverything() {
     expectAccessChecks();
 
     for (String ns : TARGET_NAMESPACES) {
@@ -243,13 +111,13 @@ public class HealthCheckHelperTest {
     assertThat(accessChecks.getExpectedAccessChecks(), empty());
   }
 
-  private void expectAccessChecks() throws NoSuchFieldException {
+  private void expectAccessChecks() {
     TARGET_NAMESPACES.forEach(this::expectAccessReviewsByNamespace);
     expectClusterAccessChecks();
   }
 
   @Test
-  public void whenRulesReviewNotSupportedAndNoNamespaceAccess_logWarning() throws Exception {
+  public void whenRulesReviewNotSupportedAndNoNamespaceAccess_logWarning() {
     expectAccessChecks();
     accessChecks.setMayAccessNamespace(false);
     testSupport
@@ -264,7 +132,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenRulesReviewNotSupportedAndNoClusterAccess_logWarning() throws Exception {
+  public void whenRulesReviewNotSupportedAndNoClusterAccess_logWarning() {
     expectAccessChecks();
     accessChecks.setMayAccessCluster(false);
     testSupport
@@ -279,7 +147,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenRulesReviewSupported_accessGrantedForEverything() throws Exception {
+  public void whenRulesReviewSupported_accessGrantedForEverything() {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
@@ -288,7 +156,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() throws Exception {
+  public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() {
     accessChecks.setMayAccessNamespace(false);
     expectSelfSubjectRulesReview();
 

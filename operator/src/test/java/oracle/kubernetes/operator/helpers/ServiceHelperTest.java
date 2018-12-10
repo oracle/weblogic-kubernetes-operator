@@ -424,7 +424,7 @@ public class ServiceHelperTest {
 
   @Test
   public void whenSupported_createServerServiceWithPublishNotReadyAddresses() {
-    testSupport.addVersion(new HealthCheckHelper.KubernetesVersion(1, 8));
+    testSupport.addVersion(new KubernetesVersion(1, 8));
 
     verifyMissingServerServiceCreated(withPublishNotReadyAddresses(createServerService()));
   }

@@ -8,6 +8,18 @@
 #  The following pre-requisites must be handled prior to running this script:
 #    * The kubernetes namespace must already be created
 #
+# Secret name determination
+#  1) secretName - if specified
+#  2) domain1-weblogic-credentials - if secretName and domainUID are both not specified. This is the default out-of-the-box.
+#  3) <domainUID>-weblogic-credentials - if secretName is not specified, and domainUID is specified.
+#  4) weblogic-credentials - if secretName is not specified, and domainUID is specified as "".
+#
+# The generated secret will be labeled with 
+#       weblogic.domainUID=$domainUID 
+# and
+#       weblogic.domainName=$domainUID 
+# Where the $domainUID is the value of the -d command line option, unless the value supplied is an empty String ""
+#
 
 script="${BASH_SOURCE[0]}"
 
@@ -27,11 +39,12 @@ function validateKubectlAvailable {
 }
 
 function usage {
-  echo usage: ${script} -u username -p password [-d domainUID] [-n namespace] [-h]
+  echo usage: ${script} -u username -p password [-d domainUID] [-n namespace] [-s sercretName] [-h]
   echo "  -u username, must be specified."
   echo "  -p password, must be specified."
-  echo "  -n namespace, optional."
-  echo "  -d domainUID, optional."
+  echo "  -n namespace, optional. The value is default if not specified"
+  echo "  -d domainUID, optional. The default value is `domain1`. When specified, the secret will be label with the domainUID unless the given value is an empty string."
+  echo "  -s secretName, optional. When not specified, the secret name will be determined based on the domainUID option"
   echo "  -h Help"
   exit $1
 }
@@ -41,7 +54,7 @@ function usage {
 #
 domainUID=domain1
 namespace=default
-while getopts "hu:p:n:d:" opt; do
+while getopts "hu:p:n:d:s:" opt; do
   case $opt in
     u) username="${OPTARG}"
     ;;
@@ -51,13 +64,22 @@ while getopts "hu:p:n:d:" opt; do
     ;;
     d) domainUID="${OPTARG}"
     ;;
+    s) secretName="${OPTARG}"
+    ;;
     h) usage 0
     ;;
     *) usage 1
     ;;
   esac
 done
-secretName=$domainUID-weblogic-credentials
+
+if [ -z $secretName ]; then
+  if [ -z $domainUID ]; then
+    secretName=weblogic-credentials
+  else 
+    secretName=$domainUID-weblogic-credentials
+  fi
+fi
 
 if [ -z ${username} ]; then
   echo "${script}: -u must be specified."
@@ -84,8 +106,10 @@ kubectl -n $namespace create secret generic $secretName \
   --from-literal=username=$username \
   --from-literal=password=$password
 
-# label the secret with domainUID
-kubectl label secret ${secretName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainUID
+# label the secret with domainUID if needed
+if [ ! -z $domainUID ]; then
+  kubectl label secret ${secretName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainUID
+fi
 
 # Verify the secret exists
 SECRET=`kubectl get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
@@ -93,4 +117,4 @@ if [ "${SECRET}" != "1" ]; then
   fail "The secret ${secretName} was not found in namespace ${namespace}"
 fi
 
-echo "The secret ${secretName} has been successfully created in namespace ${namespace}"
+echo "The secret ${secretName} has been successfully created in the ${namespace} namespace."

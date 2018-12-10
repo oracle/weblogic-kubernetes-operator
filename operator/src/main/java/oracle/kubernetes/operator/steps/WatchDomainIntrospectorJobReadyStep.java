@@ -8,19 +8,19 @@ import io.kubernetes.client.models.V1Job;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 
 public class WatchDomainIntrospectorJobReadyStep extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private final WatchTuning tuning;
 
-  public WatchDomainIntrospectorJobReadyStep(Step next) {
+  public WatchDomainIntrospectorJobReadyStep(WatchTuning tuning, Step next) {
     super(next);
+    this.tuning = tuning;
   }
 
   @Override
@@ -38,6 +38,7 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
               ThreadFactorySingleton.getInstance(),
               namespace,
               initialResourceVersion,
+              tuning,
               new AtomicBoolean(false));
 
       return doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);
