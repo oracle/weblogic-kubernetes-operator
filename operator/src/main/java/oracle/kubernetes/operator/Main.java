@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -128,7 +129,6 @@ public class Main {
 
   private static String principal;
   private static RestServer restServer = null;
-  private static Thread livenessThread = null;
   private static KubernetesVersion version = null;
 
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
@@ -438,10 +438,20 @@ public class Main {
     wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
   }
 
+  private static final Semaphore shutdownSignal = new Semaphore(0);
+
   private static void waitForDeath() {
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread() {
+              @Override
+              public void run() {
+                shutdownSignal.release();
+              }
+            });
 
     try {
-      livenessThread.join();
+      shutdownSignal.acquire();
     } catch (InterruptedException ignore) {
       // ignoring
     }
