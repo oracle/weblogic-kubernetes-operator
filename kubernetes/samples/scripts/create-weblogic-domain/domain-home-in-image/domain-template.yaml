@@ -11,15 +11,7 @@ metadata:
   labels:
     weblogic.resourceVersion: domain-v2
     weblogic.domainUID: %DOMAIN_UID%
-    weblogic.domainName: %DOMAIN_NAME%
 spec:
-  # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
-  # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
-  # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
-  # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
-  domainUID: %DOMAIN_UID%
-  # The WebLogic Domain Name
-  domainName: %DOMAIN_NAME%
   # The WebLogic Domain Home
   domainHome: %DOMAIN_HOME%
   # If the domain home is in the image
@@ -32,10 +24,6 @@ spec:
   # how to create that Secret at the end of this file)
   adminSecret: 
     name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
-  # The name of the Admin Server
-  asName: "%ADMIN_SERVER_NAME%"
-  # The Admin Server's ListenPort
-  asPort: %ADMIN_PORT%
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
   # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
@@ -46,9 +34,9 @@ spec:
   serverStartPolicy: "%SERVER_START_POLICY%"
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-  # serverStartState legal values are "RUNNING" or "ADMIN"
-  # "RUNNING" means the listed server will be started up to "RUNNING" mode
-  # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    # serverStartState legal values are "RUNNING" or "ADMIN"
+    # "RUNNING" means the listed server will be started up to "RUNNING" mode
+    # "ADMIN" means the listed server will be start up to "ADMIN" mode
     serverStartState: "RUNNING"
     # The Admin Server's NodePort
     %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
