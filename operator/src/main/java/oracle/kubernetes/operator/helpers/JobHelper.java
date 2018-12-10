@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -153,11 +152,11 @@ public class JobHelper {
   private static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
-    Map<String, Cluster> clusters = spec.getClusters();
-    Map<String, ManagedServer> servers = spec.getManagedServers();
+    List<Cluster> clusters = spec.getClusters();
+    List<ManagedServer> servers = spec.getManagedServers();
 
     // Are we starting a cluster?
-    for (Cluster cluster : clusters.values()) {
+    for (Cluster cluster : clusters) {
       int replicaCount = cluster.getReplicas();
       LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
       if (replicaCount > 0) {
