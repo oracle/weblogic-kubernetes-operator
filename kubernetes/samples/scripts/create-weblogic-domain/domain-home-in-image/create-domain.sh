@@ -20,9 +20,11 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file [-e] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-e] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Ouput directory for the generated properties and YAML files, must be specified."
+  echo "  -u Username used in building the Docker image for WebLogic domain in image."
+  echo "  -p Password used in building the Docker image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -h Help"
   exit $1
@@ -32,13 +34,17 @@ function usage {
 # Parse the command line options
 #
 executeIt=false
-while getopts "evhi:o:" opt; do
+while getopts "evhi:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
     ;;
     e) executeIt=true
+    ;;
+    u) username="${OPTARG}"
+    ;;
+    p) password="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -49,6 +55,16 @@ done
 
 if [ -z ${valuesInputFile} ]; then
   echo "${script}: -i must be specified."
+  missingRequiredOption="true"
+fi
+
+if [ -z ${username} ]; then
+  echo "${script}: -u must be specified."
+  missingRequiredOption="true"
+fi
+
+if [ -z ${password} ]; then
+  echo "${script}: -p must be specified."
   missingRequiredOption="true"
 fi
 
@@ -349,6 +365,10 @@ function createDomainHome {
   cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_build
 
   cd docker-images/OracleWebLogic/samples/12213-domain-home-in-image
+
+  sed -i -e "s|myuser|${username}|g" properties/docker_build/domain_security.properties
+  sed -i -e "s|mypassword1|${password}|g" properties/docker_build/domain_security.properties
+
   ./build.sh
 
   if [ "$?" != "0" ]; then

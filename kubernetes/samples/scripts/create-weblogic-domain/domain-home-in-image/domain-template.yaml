@@ -49,13 +49,6 @@ spec:
     value: "%JAVA_OPTIONS%"
   - name: USER_MEM_ARGS
     value: "-Xms64m -Xmx256m "
-  volumes:
-  - name: runtime-properties
-    hostPath:
-      path: "%RUNTIME_PROPERTIES%"
-  volumeMounts:
-  - mountPath: "/u01/oracle/properties"
-    name: runtime-properties
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
   # serverStartState legal values are "RUNNING" or "ADMIN"
