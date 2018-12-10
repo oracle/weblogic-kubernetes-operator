@@ -4,6 +4,9 @@ The sample scripts demonstrate the creation of a WebLogic domain home on an exis
 
 ## Prerequisites
 
+Please read this guide before proceeding.
+* [Domain Resource](../../../../site/domain-resource.md)
+
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic Operator is running.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
