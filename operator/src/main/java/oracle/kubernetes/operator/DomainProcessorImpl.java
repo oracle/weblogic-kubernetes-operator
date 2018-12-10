@@ -888,14 +888,13 @@ public class DomainProcessorImpl implements DomainProcessor {
                     new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy)))));
 
     strategy =
-        new UpHeadStep(
-            info,
-            DomainStatusUpdater.createProgressingStep(
-                DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
-                true,
-                DomainPresenceStep.createDomainPresenceStep(dom, strategy, managedServerStrategy)));
+        DomainStatusUpdater.createProgressingStep(
+            DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
+            true,
+            DomainPresenceStep.createDomainPresenceStep(dom, strategy, managedServerStrategy));
 
     return Step.chain(
+        new UpHeadStep(info),
         ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
         new RegisterStep(info, strategy));
   }
@@ -911,6 +910,10 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static class UpHeadStep extends Step {
     private final DomainPresenceInfo info;
+
+    public UpHeadStep(DomainPresenceInfo info) {
+      this(info, null);
+    }
 
     public UpHeadStep(DomainPresenceInfo info, Step next) {
       super(next);
