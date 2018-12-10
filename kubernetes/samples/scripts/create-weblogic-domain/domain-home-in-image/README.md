@@ -147,12 +147,6 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
-  # an (optional) list of environment variable to be set on the servers
-  env:
-  - name: JAVA_OPTIONS
-    value: "-Dweblogic.StdoutDebugEnabled=false"
-  - name: USER_MEM_ARGS
-    value: "-Xms64m -Xmx256m "
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
   # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -164,12 +158,23 @@ spec:
     # Uncomment to export the T3Channel as a service
     # exportedNetworkAccessPoints:
     #   T3Channel: {}
+    # an (optional) list of environment variable to be set on the server
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
   # clusters is used to configure the desired behavior for starting member servers of a cluster.  
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
     cluster-1:
       desiredState: "RUNNING"
       replicas: 2
+      env:
+      - name: JAVA_OPTIONS
+        value: "-Dweblogic.StdoutDebugEnabled=false"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
 
