@@ -10,8 +10,6 @@ import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -29,8 +27,6 @@ import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Pod;
@@ -95,8 +91,6 @@ public abstract class PodHelperTestBase {
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
-  private static final String SIT_CONFIG_MAP_VOLUME_SUFFIX =
-      "-weblogic-domain-introspect-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final Map<String, String> NODE_SELECTOR =
       Collections.singletonMap("labelKey", "labelValue");
@@ -165,7 +159,6 @@ public abstract class PodHelperTestBase {
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
-    domainPresenceInfo.setClaims(new V1PersistentVolumeClaimList());
     return domainPresenceInfo;
   }
 
@@ -256,34 +249,6 @@ public abstract class PodHelperTestBase {
     configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
-  }
-
-  @Test
-  public void whenPodCreated_containerHasExpectedVolumeMounts() {
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        containsInAnyOrder(
-            writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
-            writableVolumeMount(
-                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
-            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
-  }
-
-  @Test
-  public void whenPodCreated_withNoPVC_containerHasExpectedVolumeMounts() {
-    domainPresenceInfo.getClaims().getItems().clear();
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        containsInAnyOrder(
-            writableVolumeMount(
-                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
-            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
   }
 
   @Test
@@ -396,31 +361,6 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenDomainPresenceLacksClaims_adminPodSpecHasNoDomainStorageVolume() {
     assertThat(getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME), nullValue());
-  }
-
-  @Test
-  public void whenDomainPresenceHasClaim_podSpecHasDomainStorageVolume() {
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-
-    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
-
-    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("claim-name"));
-  }
-
-  @Test
-  public void whenDomainSpecifiesClaimName_podSpecUsesIt() {
-    configurator.withPredefinedClaim("predefined");
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-
-    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
-
-    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("predefined"));
   }
 
   @Test

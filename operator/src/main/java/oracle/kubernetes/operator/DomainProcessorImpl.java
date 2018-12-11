@@ -33,7 +33,6 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.helpers.StorageHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -41,7 +40,6 @@ import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
-import oracle.kubernetes.operator.steps.ListPersistentVolumeClaimStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.work.Component;
@@ -880,12 +878,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
 
     Step strategy =
-        StorageHelper.insertStorageSteps(
-            info.getDomain(),
-            Step.chain(
-                domainIntrospectionSteps(
-                    info,
-                    new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy)))));
+        Step.chain(
+            domainIntrospectionSteps(
+                info, new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy))));
 
     strategy =
         DomainStatusUpdater.createProgressingStep(
@@ -996,7 +991,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
     Domain dom = info.getDomain();
     List<Step> resources = new ArrayList<>();
-    resources.add(new ListPersistentVolumeClaimStep(null));
     resources.add(
         JobHelper.deleteDomainIntrospectorJobStep(
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
