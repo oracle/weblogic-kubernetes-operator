@@ -30,6 +30,16 @@ class ServerPod {
   private List<V1EnvVar> env = new ArrayList<>();
 
   /**
+   * A shortcut for setting the JAVA_OPTIONS environment variable.
+   *
+   * @since 2.0
+   */
+  @Valid
+  @Description(
+      "Values to add to the JAVA_OPTIONS environment variable. Ignored if the JAVA_OPTIONS variable is set explicitly as part of 'env'")
+  private String javaOptions;
+
+  /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
    * runtime liveness probe tuning settings.
    *
@@ -159,6 +169,7 @@ class ServerPod {
 
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
+    Optional.ofNullable(serverPod1.javaOptions).ifPresent(this::addJavaOptionsIfMissing);
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
@@ -171,6 +182,11 @@ class ServerPod {
     copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
+  }
+
+  private void addJavaOptionsIfMissing(String javaOptions) {
+    if (!hasEnvVar("JAVA_OPTIONS"))
+      addEnvVar(new V1EnvVar().name("JAVA_OPTIONS").value(javaOptions));
   }
 
   @SuppressWarnings("Duplicates")

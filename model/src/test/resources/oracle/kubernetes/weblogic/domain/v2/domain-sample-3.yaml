@@ -16,6 +16,8 @@ spec:
   # The Admin Server's ListenPort
   asPort: 8001
 
+  serverPod:
+    javaOptions: "-add-this"
   adminServer:
   # the T3 endpoints to export. Each entry is an endpoint name,
   # optionally with labels and annotations to be added to the generated external channel service.
@@ -29,6 +31,9 @@ spec:
         annotations:
           time: midnight
     serverPod:
+      env:
+      - name: JAVA_OPTIONS
+        value: "-server"
       nodeSelector:
         os: linux
       serviceLabels:

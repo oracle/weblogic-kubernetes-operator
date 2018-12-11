@@ -1216,6 +1216,24 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain3ReadFromYaml_managedServerHasJavaOptionFromDomain() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+
+    assertThat(
+        domain.getServer("server1", null).getEnvironmentVariables(),
+        contains(envVar("JAVA_OPTIONS", "-add-this")));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_adminServerHasOverridenJavaOption() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+
+    assertThat(
+        domain.getAdminServerSpec().getEnvironmentVariables(),
+        contains(envVar("JAVA_OPTIONS", "-server")));
+  }
+
+  @Test
   public void whenDomainReadFromYaml_DomainRestartVersion() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     assertThat(domain.getAdminServerSpec().getDomainRestartVersion(), is("1"));
