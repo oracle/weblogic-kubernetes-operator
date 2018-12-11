@@ -687,26 +687,12 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
+      registerDomainPresenceInfo(info);
       Step strategy = getNext();
       if (!info.isPopulated()) {
         strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
       }
       return doNext(strategy, packet);
-    }
-  }
-
-  private static class RegisterStep extends Step {
-    private final DomainPresenceInfo info;
-
-    public RegisterStep(DomainPresenceInfo info, Step next) {
-      super(next);
-      this.info = info;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      registerDomainPresenceInfo(info);
-      return doNext(packet);
     }
   }
 
@@ -896,7 +882,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(
         new UpHeadStep(info),
         ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
-        new RegisterStep(info, strategy));
+        strategy);
   }
 
   static Step createDomainDownPlan(DomainPresenceInfo info) {
