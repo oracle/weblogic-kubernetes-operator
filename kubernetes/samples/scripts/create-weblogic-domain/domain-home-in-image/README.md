@@ -286,15 +286,15 @@ Status:
       Activation Time:  2018-12-10T23:37:25.738Z
       Overall Health:   ok
       Subsystems:
-    Node Name:     slc16ffk
+    Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
-    Node Name:     slc16ffk
+    Node Name:     xxxxxxxx
     Server Name:   managed-server1
     State:         
     Cluster Name:  cluster-1
-    Node Name:     slc16ffk
+    Node Name:     xxxxxxxx
     Server Name:   managed-server2
     State:         
   Start Time:      2018-12-10T23:36:23.908Z
