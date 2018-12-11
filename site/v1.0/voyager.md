@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Load balancing with Voyager/HAProxy
 
 This document explains how to set up Voyager to use the HAProxy as a load balancer for WebLogic domains running in Kubernetes.

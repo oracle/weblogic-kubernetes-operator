@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Shutting down a domain
 
 To shut down a domain, issue the following command:

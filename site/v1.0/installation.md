@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Installation
 
 Note that there is a short video demonstration of the installation process available [here](https://youtu.be/B5UmY2xAJnk).
