@@ -64,7 +64,7 @@ public class CRDHelper {
       this.model = createModel();
     }
 
-    private V1beta1CustomResourceDefinition createModel() {
+    static V1beta1CustomResourceDefinition createModel() {
       return new V1beta1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1beta1")
           .kind("CustomResourceDefinition")
@@ -72,13 +72,13 @@ public class CRDHelper {
           .spec(createSpec());
     }
 
-    private V1ObjectMeta createMetadata() {
+    static V1ObjectMeta createMetadata() {
       return new V1ObjectMeta()
           .name(KubernetesConstants.CRD_NAME)
           .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_OPERATOR_VERSION);
     }
 
-    private V1beta1CustomResourceDefinitionSpec createSpec() {
+    static V1beta1CustomResourceDefinitionSpec createSpec() {
       return new V1beta1CustomResourceDefinitionSpec()
           .group(KubernetesConstants.DOMAIN_GROUP)
           .version(KubernetesConstants.DOMAIN_VERSION)
@@ -87,7 +87,7 @@ public class CRDHelper {
           .validation(createSchemaValidation());
     }
 
-    private V1beta1CustomResourceDefinitionNames getCRDNames() {
+    static V1beta1CustomResourceDefinitionNames getCRDNames() {
       return new V1beta1CustomResourceDefinitionNames()
           .plural(KubernetesConstants.DOMAIN_PLURAL)
           .singular(KubernetesConstants.DOMAIN_SINGULAR)
@@ -95,18 +95,18 @@ public class CRDHelper {
           .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT));
     }
 
-    private V1beta1CustomResourceValidation createSchemaValidation() {
+    static V1beta1CustomResourceValidation createSchemaValidation() {
       return new V1beta1CustomResourceValidation().openAPIV3Schema(createOpenAPIV3Schema());
     }
 
-    private V1beta1JSONSchemaProps createOpenAPIV3Schema() {
+    static V1beta1JSONSchemaProps createOpenAPIV3Schema() {
       Gson gson = new Gson();
       JsonElement jsonElement = gson.toJsonTree(createSchemaGenerator().generate(DomainSpec.class));
       V1beta1JSONSchemaProps spec = gson.fromJson(jsonElement, V1beta1JSONSchemaProps.class);
       return new V1beta1JSONSchemaProps().putPropertiesItem("spec", spec);
     }
 
-    private SchemaGenerator createSchemaGenerator() {
+    static SchemaGenerator createSchemaGenerator() {
       SchemaGenerator generator = new SchemaGenerator();
       generator.setIncludeAdditionalProperties(false);
       generator.setSupportObjectReferences(false);
@@ -218,9 +218,19 @@ public class CRDHelper {
       // For later versions of the product, we will want to do a complete comparison
       // of the version, supporting alpha and beta variants, e.g. v3alpha1 format, but
       // for now we just need to replace v1.
-      return actual.getSpec().getVersion().equals("v1");
+      return actual.getSpec().getVersion().equals("v1")
+          || (actual.getSpec().getVersion().equals("v2")
+              && (getSchemaValidation(actual) == null
+                  || !getSchemaValidation(expected).equals(getSchemaValidation(actual))));
       // Similarly, we will later want to check:
       // VersionHelper.matchesResourceVersion(existingCRD.getMetadata(), DEFAULT_OPERATOR_VERSION)
+    }
+
+    private V1beta1JSONSchemaProps getSchemaValidation(V1beta1CustomResourceDefinition crd) {
+      if (crd != null && crd.getSpec() != null && crd.getSpec().getValidation() != null) {
+        return crd.getSpec().getValidation().getOpenAPIV3Schema();
+      }
+      return null;
     }
   }
 }

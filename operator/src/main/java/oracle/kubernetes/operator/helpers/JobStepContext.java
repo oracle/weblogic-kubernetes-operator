@@ -49,10 +49,6 @@ public abstract class JobStepContext implements StepContextConstants {
     return info.getDomain();
   }
 
-  String getDomainName() {
-    return getDomain().getDomainName();
-  }
-
   private String getDomainResourceName() {
     return info.getDomain().getMetadata().getName();
   }
@@ -179,7 +175,6 @@ public abstract class JobStepContext implements StepContextConstants {
             .namespace(getNamespace())
             .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
             .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
-            .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     return metadata;
   }
