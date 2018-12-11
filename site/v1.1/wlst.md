@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Using WLST
 
 Note that a video demonstration of using WLST to create a data source is available [here](https://youtu.be/eY-KXEk8rI4).
