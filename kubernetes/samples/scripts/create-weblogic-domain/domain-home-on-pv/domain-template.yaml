@@ -41,12 +41,20 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
-  # an (optional) list of environment variable to be set on the server
-  env:
-  - name: JAVA_OPTIONS
-    value: "%JAVA_OPTIONS%"
-  - name: USER_MEM_ARGS
-    value: "-Xms64m -Xmx256m "
+  serverPod:
+    # an (optional) list of environment variable to be set on the server
+    env:
+    - name: JAVA_OPTIONS
+      value: "%JAVA_OPTIONS%"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+    volumes:
+    - name: weblogic-domain-storage-volume
+      persistentVolumeClaim:
+        claimName: %DOMAIN_PVC_NAME%
+    volumeMounts:
+    - mountPath: %DOMAIN_ROOT_DIR%
+      name: weblogic-domain-storage-volume
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -65,6 +73,3 @@ spec:
       replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
-  storage:
-    predefined:
-      claim: %DOMAIN_PVC_NAME%
