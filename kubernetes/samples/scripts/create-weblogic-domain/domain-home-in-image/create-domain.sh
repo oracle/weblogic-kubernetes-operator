@@ -330,7 +330,6 @@ function createFiles {
   fi
 
   domainHome="/u01/oracle/user_projects/domains/${domainName}"
-  runtimeProperties="${scriptDir}/docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_run"
 
   if [ -z "${weblogicCredentialsSecretName}" ]; then
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
@@ -350,7 +349,6 @@ function createFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%RUNTIME_PROPERTIES%:${runtimeProperties}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
  
