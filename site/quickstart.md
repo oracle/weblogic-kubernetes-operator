@@ -69,7 +69,7 @@ $ docker pull store/oracle/weblogic:12.2.1.3-dev
    * Create a directory for the generated Kubernetes YAML files for this domain. The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/`.
    * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
    * Run and wait for the job to finish.
-   * Create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. You can use this YAML file to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
+   * Create a Kubernetes domain resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. You can use this YAML file to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
 
 ```
           ./create-domain.sh
