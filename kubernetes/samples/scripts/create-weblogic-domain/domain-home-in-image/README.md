@@ -114,15 +114,7 @@ metadata:
   labels:
     weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
-    weblogic.domainName: domain1
 spec:
-  # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
-  # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
-  # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
-  # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
-  domainUID: domain1
-  # The WebLogic Domain Name
-  domainName: domain1
   # The WebLogic Domain Home
   domainHome: /u01/oracle/user_projects/domains/domain1
   # If the domain home is in the image
@@ -135,10 +127,6 @@ spec:
   # how to create that Secret at the end of this file)
   adminSecret:
     name: domain1-weblogic-credentials
-  # The name of the Admin Server
-  asName: "admin-server"
-  # The Admin Server's ListenPort
-  asPort: 7001
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
   # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
@@ -191,19 +179,18 @@ Here is an example of the output of this command:
 $ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
-Labels:       weblogic.domainName=domain1
-              weblogic.domainUID=domain1
+Labels:       weblogic.domainUID=domain1
               weblogic.resourceVersion=domain-v2
 Annotations:  <none>
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
   Cluster Name:        
-  Creation Timestamp:  2018-12-10T23:36:23Z
+  Creation Timestamp:  2018-12-11T01:33:27Z
   Generation:          1
-  Resource Version:    726255
+  Resource Version:    46624
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 67b7437c-fcd4-11e8-b751-fa163e855ac8
+  UID:                 c1f7be60-fce4-11e8-bc6c-0021f6985fb7
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
@@ -228,8 +215,6 @@ Spec:
       Volume Mounts:
       Volumes:
     Server Start State:  RUNNING
-  As Name:               admin-server
-  As Port:               7001
   Clusters:
     Cluster - 1:
       Replicas:  2
@@ -252,8 +237,6 @@ Spec:
       Server Start State:         RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/domain1
   Domain Home In Image:           true
-  Domain Name:                    domain1
-  Domain UID:                     domain1
   Image:                          12213-domain-home-in-image:latest
   Image Pull Policy:              Never
   Include Server Out In Pod Log:  true
@@ -277,27 +260,35 @@ Spec:
   Server Start Policy:  IF_NEEDED
 Status:
   Conditions:
-    Last Transition Time:  2018-12-10T23:37:47.599Z
+    Last Transition Time:  2018-12-11T01:35:23.652Z
     Reason:                ServersReady
     Status:                True
     Type:                  Available
   Servers:
     Health:
-      Activation Time:  2018-12-10T23:37:25.738Z
+      Activation Time:  2018-12-11T01:34:59.546Z
       Overall Health:   ok
       Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
+    Health:
+      Activation Time:  2018-12-11T01:36:46.132Z
+      Overall Health:   ok
+      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server1
-    State:         
+    State:         RUNNING
     Cluster Name:  cluster-1
+    Health:
+      Activation Time:  2018-12-11T01:36:47.865Z
+      Overall Health:   ok
+      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server2
-    State:         
-  Start Time:      2018-12-10T23:36:23.908Z
+    State:        RUNNING
+  Start Time:     2018-12-11T01:33:27.339Z
 Events:            <none>
 ```
 
