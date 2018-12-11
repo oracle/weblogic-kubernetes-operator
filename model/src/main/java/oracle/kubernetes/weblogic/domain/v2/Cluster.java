@@ -27,6 +27,11 @@ public class Cluster extends BaseConfiguration {
   @Range(minimum = 0)
   private Integer replicas;
 
+  @Description(
+      "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.")
+  @Range(minimum = 1)
+  private Integer maxUnavailable;
+
   public String getClusterName() {
     return clusterName;
   }
@@ -48,12 +53,21 @@ public class Cluster extends BaseConfiguration {
     this.replicas = replicas;
   }
 
+  public Integer getMaxUnavailable() {
+    return maxUnavailable;
+  }
+
+  public void setMaxUnavailable(Integer maxUnavailable) {
+    this.maxUnavailable = maxUnavailable;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("clusterName", clusterName)
         .append("replicas", replicas)
+        .append("maxUnavailable", maxUnavailable)
         .toString();
   }
 
@@ -69,6 +83,7 @@ public class Cluster extends BaseConfiguration {
         .appendSuper(super.equals(o))
         .append(clusterName, cluster.clusterName)
         .append(replicas, cluster.replicas)
+        .append(maxUnavailable, cluster.maxUnavailable)
         .isEquals();
   }
 
@@ -78,6 +93,7 @@ public class Cluster extends BaseConfiguration {
         .appendSuper(super.hashCode())
         .append(clusterName)
         .append(replicas)
+        .append(maxUnavailable)
         .toHashCode();
   }
 }

@@ -70,22 +70,48 @@ cmo.setPassword(admin_password)
 # ==============================================
 setOption('OverwriteDomain', 'true')
 
-# Configure the node manager
-# ==========================
-# cd('/NMProperties')
-# set('ListenAddress','0.0.0.0')
-# set('ListenPort',5556)
-# set('CrashRecoveryEnabled', 'true')
-# set('NativeVersionEnabled', 'true')
-# set('StartScriptEnabled', 'false')
-# set('SecureListener', 'false')
-# set('LogLevel', 'FINEST')
-# set('DomainsDirRemoteSharingEnabled', 'true')
+# Setup a datasource
+# ============================================
+def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
+  cd('/')
+  print 'create JDBCSystemResource'
+  create(dsName, 'JDBCSystemResource')
+  cd('/JDBCSystemResource/' + dsName)
+  #set('Target',dsTarget)
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  cmo.setName(dsName)
 
-# Set the Node Manager user name and password (domain name will change after writeDomain)
-# cd('/SecurityConfiguration/base_domain')
-# set('NodeManagerUsername', admin_username)
-# set('NodeManagerPasswordEncrypted', admin_password)
+  print 'create JDBCDataSourceParams'
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  create('testDataSourceParams','JDBCDataSourceParams')
+  cd('JDBCDataSourceParams/NO_NAME_0')
+  set('JNDIName', java.lang.String(dsJNDI))
+  set('GlobalTransactionsProtocol', java.lang.String('None'))
+
+  print 'create JDBCDriverParams'
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  create('testDriverParams','JDBCDriverParams')
+  cd('JDBCDriverParams/NO_NAME_0')
+  set('DriverName','oracle.jdbc.OracleDriver')
+  set('URL','jdbc:oracle:thin:@' + dsHost + ':1521:' + dsSID)
+  set('PasswordEncrypted', 'manager')
+  set('UseXADataSourceInterface', 'false')
+ 
+  print 'create JDBCDriverParams Properties'
+  create('testProperties','Properties')
+  cd('Properties/NO_NAME_0')
+  create('user','Property')
+  cd('Property')
+  cd('user')
+  set('Value', 'scott')
+ 
+  print 'create JDBCConnectionPoolParams'
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  create('testJdbcConnectionPoolParams','JDBCConnectionPoolParams')
+  cd('JDBCConnectionPoolParams/NO_NAME_0')
+  set('TestTableName','SQL SELECT 1 FROM DUAL')
+
+createDataSource('testDS','testDS','myoriginalhostname','myoriginalsid','${ADMIN_NAME}')
 
 # Create a cluster
 # ======================
