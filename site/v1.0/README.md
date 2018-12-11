@@ -8,10 +8,6 @@ The remainder of this document is the main README from version 1.0:
 
 # Oracle WebLogic Server Kubernetes Operator
 
-Built with [Wercker](http://www.wercker.com)
-
-[![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/develop "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
-
 Many organizations are exploring, testing, or actively moving application workloads into a cloud environment, either in house or using an external cloud provider.  Kubernetes has emerged as a leading cloud platform and is seeing widespread adoption.  But a new computing model does not necessarily mean new applications or workloads; many of the existing application workloads running in environments designed and built over many years, before the ‘cloud era’, are still mission critical today.  As such, there is a lot of interest in moving such workloads into a cloud environment, like Kubernetes, without forcing application rewrites, retesting, and additional process and cost.  There is also a desire to not just run the application in the new environment, but to run it ‘well’ – to adopt some of the idioms of the new environment and to realize some of the benefits of that new environment.
 
 Oracle has been working with the WebLogic community to find ways to make it as easy as possible for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud.  One aspect of that effort is the creation of the Oracle WebLogic Server Kubernetes Operator.  This release of the Operator provides a number of features to assist with the management of WebLogic domains in a Kubernetes environment, including:
@@ -49,7 +45,7 @@ In this documentation, several important terms are used and are intended to have
 
 # Getting started
 
-Before using the operator, it is highly recommended that you read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.  It is also worth reading the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
+Before using the operator, it is highly recommended that you read the [design philosophy](design.md) to develop an understanding of the operator's design, and the [architectural overview](architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator.  It is also worth reading the details of the [Kubernetes RBAC definitions](rbac.md) required by the operator.
 
 ## Exposing applications outside the Kubernetes cluster
 The operator can configure services to expose WebLogic applications and features outside of the Kubernetes cluster.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account. In this regard, there is no significant difference between a WebLogic domain running in a Kubernetes cluster and a domain running in a traditional data center.  The same kinds of considerations should be taken into account, for example:
@@ -108,7 +104,7 @@ Like what you see?  Read on for all the nitty-gritty details...
 
 ## Installation
 
-Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.  If you need help setting up a Kubernetes environment, please check our [cheat sheets](site/k8s_setup.md).
+Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that the requirements listed above are met.  If you need help setting up a Kubernetes environment, please check our [cheat sheets](k8s_setup.md).
 
 The overall process of installing and configuring the operator, and using it to manage WebLogic domains, consists of the following steps:
 
@@ -121,27 +117,27 @@ The overall process of installing and configuring the operator, and using it to 
 *	Customizing the domain parameters file
 *	Creating a WebLogic domain
 
-The provided scripts will perform most of these steps, but some must be performed manually. All of the [installation steps are explained in detail here](site/installation.md). Example files are provided in the `kubernetes` directory in this repository.
+The provided scripts will perform most of these steps, but some must be performed manually. All of the [installation steps are explained in detail here](installation.md). Example files are provided in the `kubernetes` directory in this repository.
 
 [comment]: # (If you need an Oracle database in your Kubernetes cluster, e.g. because your web application needs a place to keep its data, please see [this page] site/database.md for information about how to run the Oracle database in Kubernetes.)
 
 ## Creating a WebLogic domain with the operator
 
-For information about how to create a WebLogic domain with the operator, see [Creating a WebLogic domain with the operator](site/creating-domain.md).
+For information about how to create a WebLogic domain with the operator, see [Creating a WebLogic domain with the operator](creating-domain.md).
 
 [comment]: # ( Manually creating a WebLogic domain.  If preferred, a domain can be created manually, i.e. without using the scripts provided with the operator.  As long as the domain follows the guidelines, it can still be managed by the operator.  Please refer to [Manually creating a WebLogic domain] site/manually-creating-domain.md for details.  A good example of when manual domain creation may be preferred is when a user already has a set of existing WLST scripts that are used to create domains and they wish to reuse those same WLST scripts in Kubernetes, perhaps with some small modifications. )
 
 ## Using WLST
 
-When creating a domain, there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  For more information about how to use WLST with a domain running in Kubernetes, see [Using WLST](site/wlst.md) .
+When creating a domain, there is an option to expose a T3 channel outside of the Kubernetes cluster to allow remote WLST access.  For more information about how to use WLST with a domain running in Kubernetes, see [Using WLST](wlst.md) .
 
 ## Starting up the domain
 
-The operator will automatically start up domains that it is aware of, based on the configuration in the domain custom resource.  For details, see [Startup up a WebLogic domain](site/starting-domain.md).
+The operator will automatically start up domains that it is aware of, based on the configuration in the domain custom resource.  For details, see [Startup up a WebLogic domain](starting-domain.md).
 
 ## Using the operator's REST services
 
-The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md)
+The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](rest.md)
 
 ## Scaling a cluster
 
@@ -152,11 +148,11 @@ The operator provides the ability to scale up or down WebLogic clusters.  There 
 * Using a WLDF policy rule and script action to call the operator's REST `scale` API.
 * Using a Prometheus alert action to call the operator's REST `scale` API.
 
-For more information, see [Scaling a WebLogic cluster](site/scaling.md).
+For more information, see [Scaling a WebLogic cluster](scaling.md).
 
 ## Load balancing with an Ingress controller or a web server
 
-You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to [Load balancing with Voyager/HAProxy](site/voyager.md), [Load balancing with Traefik](site/traefik.md), and [Load balancing with the Apache HTTP Server](site/apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
+You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to [Load balancing with Voyager/HAProxy](voyager.md), [Load balancing with Traefik](traefik.md), and [Load balancing with the Apache HTTP Server](apache.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
@@ -167,9 +163,9 @@ For information about how to shut down a domain running in Kubernetes, see [Shut
 
 ## Removing a domain
 
-To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](kubernetes/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
+To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](/kubernetes/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
 
-The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](kubernetes/create-weblogic-domain.sh) script or the [integration tests](src/integration-tests/bash/run.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
+The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](/kubernetes/create-weblogic-domain.sh) script or the [integration tests](/src/integration-tests/bash/run.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
 
 ```
 kubectl -n <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>
@@ -202,7 +198,7 @@ To remove more than one operator, repeat these steps for each operator namespace
 
 # Developer guide
 
-Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
+Developers interested in this project are encouraged to read the [Developer guide](developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
 Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
 
@@ -216,7 +212,7 @@ Documentation for APIs is provided here:
 
 # Recent changes
 
-See [Recent changes](site/recent-changes.md) for recent changes to the operator, including any backward incompatible changes.
+See [Recent changes](recent-changes.md) for recent changes to the operator, including any backward incompatible changes.
 
 # Contributing to the operator
 
