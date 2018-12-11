@@ -65,7 +65,7 @@ To build the Javadoc for the operator, issue the following command:
 mvn javadoc:javadoc
 ```
 
-The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
+The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/v1.0/apidocs/index.html).
 
 ## Running integration tests
 
