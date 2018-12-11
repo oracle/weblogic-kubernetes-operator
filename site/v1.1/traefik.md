@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Load balancing with Traefik
 
 If the `loadBalancer` option is set to `traefik` when running the `create-weblogic-domain.sh` script to create a WebLogic domain in Kubernetes, then the Traefik Ingress Controller will be installed into the cluster and an Ingress will be created for each WebLogic cluster in the domain.

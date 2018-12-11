@@ -1,3 +1,6 @@
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+
+
 [Terraform]: https://terraform.io
 [OCI]: https://cloud.oracle.com/cloud-infrastructure
 [OCI provider]: https://github.com/oracle/terraform-provider-oci/releases

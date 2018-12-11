@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Starting a WebLogic domain
 
 Startup of the domain is controlled by settings in the domain custom resource.  If used, the domain creation job will have created a domain custom resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.

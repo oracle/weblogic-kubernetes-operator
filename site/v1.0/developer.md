@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Developer guide
 
 This guide provides information for developers who wish to understand or contribute to the code.

@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Elastic Stack integration
 
 **PLEASE NOTE**: This page is a work in progress. We have some rough notes in here and are working on writing better documentation for how to set up this integration.

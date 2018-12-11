@@ -1,3 +1,5 @@
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+
 # Manually creating a WebLogic domain
 
 **PLEASE NOTE**: This page is a work in progress. We have some rough notes here and are working on writing better documentation for how to set up this procedure.
