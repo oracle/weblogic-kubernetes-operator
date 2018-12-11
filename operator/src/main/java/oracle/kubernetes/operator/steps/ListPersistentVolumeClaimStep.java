@@ -18,7 +18,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 public class ListPersistentVolumeClaimStep extends Step {
   public ListPersistentVolumeClaimStep(Step next) {
@@ -31,10 +30,9 @@ public class ListPersistentVolumeClaimStep extends Step {
 
     Domain dom = info.getDomain();
     V1ObjectMeta meta = dom.getMetadata();
-    DomainSpec spec = dom.getSpec();
     String namespace = meta.getNamespace();
 
-    String domainUID = spec.getDomainUID();
+    String domainUID = dom.getDomainUID();
 
     Step list =
         new CallBuilder()

@@ -82,6 +82,7 @@ public class ExternalChannelTest {
   @Before
   public void setupConstants() throws NoSuchFieldException {
     wlsDomainConfig = WlsDomainConfig.create(jsonString);
+    wlsDomainConfig.setAdminServerName(ADMIN_SERVER);
 
     WlsServerConfig adminServerConfig = wlsDomainConfig.getServerConfig(ADMIN_SERVER);
     List<NetworkAccessPoint> naps = adminServerConfig.getNetworkAccessPoints();
@@ -99,7 +100,7 @@ public class ExternalChannelTest {
 
   private void configureExternalChannels(String... names) {
     DomainConfiguratorFactory.forDomain(domain)
-        .configureAdminServer(ADMIN_SERVER)
+        .configureAdminServer()
         .withExportedNetworkAccessPoints(names);
   }
 

@@ -7,28 +7,28 @@ package oracle.kubernetes.operator.steps;
 import java.util.Collection;
 import java.util.Iterator;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public class ExternalAdminChannelIteratorStep extends Step {
-  private final DomainPresenceInfo info;
+  private final WlsDomainConfig domainTopology;
   private final Iterator<NetworkAccessPoint> it;
 
   public ExternalAdminChannelIteratorStep(
-      DomainPresenceInfo info, Collection<NetworkAccessPoint> naps, Step next) {
+      WlsDomainConfig domainTopology, Collection<NetworkAccessPoint> naps, Step next) {
     super(next);
-    this.info = info;
+    this.domainTopology = domainTopology;
     this.it = naps.iterator();
   }
 
   @Override
   public NextAction apply(Packet packet) {
     if (it.hasNext()) {
-      packet.put(ProcessingConstants.SERVER_NAME, info.getDomain().getSpec().getAsName());
+      packet.put(ProcessingConstants.SERVER_NAME, domainTopology.getAdminServerName());
       packet.put(ProcessingConstants.NETWORK_ACCESS_POINT, it.next());
       Step step = ServiceHelper.createForExternalChannelStep(this);
       return doNext(step, packet);

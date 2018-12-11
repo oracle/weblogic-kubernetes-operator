@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -112,7 +113,7 @@ public class JobHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      if (runIntrospector(info)) {
+      if (runIntrospector(packet, info)) {
         JobStepContext context = new DomainIntrospectorJobStepContext(packet);
 
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
@@ -128,13 +129,12 @@ public class JobHelper {
     }
   }
 
-  private static boolean runIntrospector(DomainPresenceInfo info) {
-    Domain dom = info.getDomain();
-    Scan scan = ScanCache.INSTANCE.lookupScan(dom.getMetadata().getNamespace(), dom.getDomainUID());
-    LOGGER.fine("runIntrospector scan: " + scan);
+  private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    LOGGER.fine("runIntrospector topology: " + config);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    if (scan == null || (runningServersCount(info) == 0 && creatingServers(info))) {
+    if (config == null || (runningServersCount(info) == 0 && creatingServers(info))) {
       return true;
     }
     return false;
@@ -256,13 +256,12 @@ public class JobHelper {
       Step step =
           new CallBuilder()
               .readPodLogAsync(
-                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep<>(next));
+                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
       return step;
     }
   }
 
-  private static class ReadDomainIntrospectorPodLogResponseStep<String>
-      extends ResponseStep<String> {
+  private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
     public ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
       super(nextStep);
     }

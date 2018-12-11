@@ -7,10 +7,9 @@ package oracle.kubernetes.operator.steps;
 import java.util.*;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -28,27 +27,31 @@ public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
-      (info, servers, next) ->
-          scaleDownIfNecessary(info, servers, new ClusterServicesStep(info, next));
+      (info, config, servers, next) ->
+          scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(info, next));
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createServerStep(DomainPresenceInfo info, Collection<String> servers, Step next);
+    Step createServerStep(
+        DomainPresenceInfo info, WlsDomainConfig config, Collection<String> servers, Step next);
   }
 
   class ServersUpStepFactory {
+    WlsDomainConfig domainTopology;
     Domain domain;
     Collection<ServerStartupInfo> startupInfos;
     Collection<String> servers = new ArrayList<>();
     Map<String, Integer> replicas = new HashMap<>();
 
-    ServersUpStepFactory(Domain domain) {
+    ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain) {
+      this.domainTopology = domainTopology;
       this.domain = domain;
     }
 
     void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
-      if (servers.contains(serverName) || serverName.equals(domain.getAsName())) return;
+      if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName()))
+        return;
 
       String clusterName = clusterConfig == null ? null : clusterConfig.getClusterName();
       ServerSpec server = domain.getServer(serverName, clusterName);
@@ -91,14 +94,13 @@ public class ManagedServersUpStep extends Step {
   public NextAction apply(Packet packet) {
     LOGGER.entering();
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-    ServersUpStepFactory factory = new ServersUpStepFactory(info.getDomain());
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+
+    ServersUpStepFactory factory = new ServersUpStepFactory(config, info.getDomain());
 
     if (LOGGER.isFineEnabled()) {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
     }
-
-    Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
-    WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
 
     Set<String> clusteredServers = new HashSet<>();
 
@@ -118,7 +120,7 @@ public class ManagedServersUpStep extends Step {
     LOGGER.exiting();
     return doNext(
         NEXT_STEP_FACTORY.createServerStep(
-            info, factory.servers, factory.createNextStep(getNext())),
+            info, config, factory.servers, factory.createNextStep(getNext())),
         packet);
   }
 
@@ -134,7 +136,10 @@ public class ManagedServersUpStep extends Step {
   }
 
   private static Step scaleDownIfNecessary(
-      DomainPresenceInfo info, Collection<String> servers, Step next) {
+      DomainPresenceInfo info,
+      WlsDomainConfig domainTopology,
+      Collection<String> servers,
+      Step next) {
 
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
@@ -142,7 +147,7 @@ public class ManagedServersUpStep extends Step {
     if (info.getDomain().isShuttingDown()) {
       insert(steps, createAvailableHookStep());
     } else {
-      serversToIgnore.add(info.getDomain().getAsName());
+      serversToIgnore.add(domainTopology.getAdminServerName());
     }
 
     Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop =
