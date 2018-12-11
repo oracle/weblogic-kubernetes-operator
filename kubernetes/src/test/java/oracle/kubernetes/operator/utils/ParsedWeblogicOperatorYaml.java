@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.utils;
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import java.nio.file.Path;
@@ -26,14 +25,6 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   public ParsedWeblogicOperatorYaml(YamlReader factory, OperatorValues inputs) throws Exception {
     super(factory);
     this.inputs = inputs;
-  }
-
-  public V1Job getOperatorPreInstallHookJob() {
-    return getJobs().find(OPERATOR_RELEASE + "-weblogic-operator-pre-install-hook");
-  }
-
-  public V1Job getOperatorPreUpgradeHookJob() {
-    return getJobs().find(OPERATOR_RELEASE + "-weblogic-operator-pre-upgrade-hook");
   }
 
   public V1ConfigMap getOperatorConfigMap() {

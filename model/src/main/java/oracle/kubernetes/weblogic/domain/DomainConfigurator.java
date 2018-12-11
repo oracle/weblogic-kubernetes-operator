@@ -54,12 +54,8 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /**
-   * Defines a name for the domain's admin server.
-   *
-   * @param adminServerName the name of the admin server
-   */
-  public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
+  /** Defines a name for the domain's admin server. */
+  public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
     getDomainSpec().setReplicas(replicas);
@@ -244,10 +240,6 @@ public abstract class DomainConfigurator {
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();
-  }
-
-  protected String getAsName() {
-    return domain.getAsName();
   }
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);

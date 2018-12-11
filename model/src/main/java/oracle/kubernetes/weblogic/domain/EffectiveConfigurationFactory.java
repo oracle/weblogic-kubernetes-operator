@@ -22,6 +22,8 @@ public interface EffectiveConfigurationFactory {
 
   void setReplicaCount(String clusterName, int replicaCount);
 
+  int getMaxUnavailable(String clusterName);
+
   boolean isShuttingDown();
 
   List<String> getExportedNetworkAccessPointNames();

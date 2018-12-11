@@ -30,6 +30,7 @@ public interface ProcessingConstants {
 
   public static final String STATUS_UNCHANGED = "statusUnchanged";
 
+  public static final String DOMAIN_TOPOLOGY = "domainTopology";
   public static final String JOB_POD_NAME = "jobPodName";
   public static final String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   public static final String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
