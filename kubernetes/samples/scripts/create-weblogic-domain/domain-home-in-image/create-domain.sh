@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home in docker image, and generates the domain custom resource
+#  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
@@ -112,46 +112,6 @@ function validateDomainSecret {
 }
 
 #
-# Function to validate the weblogic image pull policy
-#
-function validateWeblogicImagePullPolicy {
-  if [ ! -z ${imagePullPolicy} ]; then
-    case ${imagePullPolicy} in
-      "IfNotPresent")
-      ;;
-      "Always")
-      ;;
-      "Never")
-      ;;
-      *)
-        validationError "Invalid value for imagePullPolicy: ${imagePullPolicy}. Valid values are IfNotPresent, Always, and Never."
-      ;;
-    esac
-  else
-    # Set the default
-    imagePullPolicy="IfNotPresent"
-  fi
-  failIfValidationErrors
-}
-
-#
-# Function to validate the weblogic image pull secret name
-#
-function validateWeblogicImagePullSecretName {
-  if [ ! -z ${imagePullSecretName} ]; then
-    validateLowerCase imagePullSecretName ${imagePullSecretName}
-    imagePullSecretPrefix=""
-    if [ "${generateOnly}" = false ]; then
-      validateWeblogicImagePullSecret
-    fi
-  else
-    # Set name blank when not specified, and comment out the yaml
-    imagePullSecretName=""
-    imagePullSecretPrefix="#"
-  fi
-}
-
-#
 # Function to validate a kubernetes secret exists
 # $1 - the name of the secret
 # $2 - namespace
@@ -161,16 +121,6 @@ function validateSecretExists {
   if [ "${SECRET}" != "1" ]; then
     validationError "The secret ${1} was not found in namespace ${2}"
   fi
-}
-
-#
-# Function to validate the weblogic image pull secret exists
-#
-function validateWeblogicImagePullSecret {
-  # The kubernetes secret for pulling images from the docker store is optional.
-  # If it was specified, make sure it exists.
-  validateSecretExists ${imagePullSecretName} ${namespace}
-  failIfValidationErrors
 }
 
 # try to execute docker to see whether docker is available
@@ -210,7 +160,7 @@ function initialize {
 
   dcrInput="${scriptDir}/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
-    validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
+    validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
 
   failIfValidationErrors
@@ -225,7 +175,6 @@ function initialize {
     managedServerNameBase \
     namespace \
     t3PublicAddress \
-    includeServerOutInPodLog \
     version 
 
   validateIntegerInputParamsSpecified \
@@ -251,8 +200,6 @@ function initialize {
   validateManagedServerNameBase
   validateClusterName
   validateWeblogicCredentialsSecretName
-  validateWeblogicImagePullPolicy
-  validateWeblogicImagePullSecretName
   validateServerStartPolicy
   validateClusterType
   failIfValidationErrors
@@ -290,9 +237,6 @@ function createFiles {
 
   domainName=${domainUID}
 
-  # Must escape the ':' value in image for sed to properly parse and replace
-  image=$(echo ${image} | sed -e "s/\:/\\\:/g")
-
   # Generate the properties file that will be used when creating the weblogic domain
   echo Generating ${domainPropertiesOutput}
 
@@ -310,7 +254,7 @@ function createFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
 
-  # Generate the yaml to create the domain custom resource
+  # Generate the yaml to create the domain resource
   echo Generating ${dcrOutput}
 
   if [ "${exposeAdminT3Channel}" = true ]; then
@@ -326,7 +270,6 @@ function createFiles {
   fi
 
   domainHome="/u01/oracle/user_projects/domains/${domainName}"
-  runtimeProperties="${scriptDir}/docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_run"
 
   if [ -z "${weblogicCredentialsSecretName}" ]; then
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
@@ -346,7 +289,6 @@ function createFiles {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%RUNTIME_PROPERTIES%:${runtimeProperties}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
  
@@ -400,14 +342,14 @@ function printSummary {
 }
 
 #
-# Function to create the domain custom resource
+# Function to create the domain resource
 #
 function createDomainResource {
   pwd
   kubectl apply -f ${dcrOutput}
   DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
   if [ "${DCR_AVAIL}" != "1" ]; then
-    fail "The domain custom resource ${domainUID} was not found"
+    fail "The domain resource ${domainUID} was not found"
   fi
 }
 
