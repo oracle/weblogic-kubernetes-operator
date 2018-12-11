@@ -12,7 +12,6 @@ import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.DomainStorage;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -125,62 +124,6 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withLogHomeEnabled(boolean logHomeEnabled) {
     getDomainSpec().setLogHomeEnabled(logHomeEnabled);
-    return this;
-  }
-
-  /**
-   * Configures the domain to use a persistent volume claim defined before the domain is created.
-   *
-   * @param claimName the name of the persistent volume claim
-   * @return this object
-   */
-  public DomainConfigurator withPredefinedClaim(String claimName) {
-    getDomainSpec().setStorage(DomainStorage.createPredefinedClaim(claimName));
-    return this;
-  }
-
-  /**
-   * Configures the domain to use storage in the local node.
-   *
-   * @param path the path to the storage
-   * @return this object
-   */
-  public DomainConfigurator withHostPathStorage(String path) {
-    getDomainSpec().setStorage(DomainStorage.createHostPathStorage(path));
-    return this;
-  }
-
-  /**
-   * Configures the domain to use storage on a remote server.
-   *
-   * @param server the server hosting the storage
-   * @param path the path to the storage
-   * @return this object
-   */
-  public DomainConfigurator withNfsStorage(String server, String path) {
-    getDomainSpec().setStorage(DomainStorage.createNfsStorage(server, path));
-    return this;
-  }
-
-  /**
-   * Defines the amount of storage to allocate for the domain.
-   *
-   * @param size the size to allocate
-   * @return this object
-   */
-  public DomainConfigurator withStorageSize(String size) {
-    getDomainSpec().getStorage().setStorageSize(size);
-    return this;
-  }
-
-  /**
-   * Defines the amount of storage to allocate for the domain.
-   *
-   * @param policy the size to allocate
-   * @return this object
-   */
-  public DomainConfigurator withStorageReclaimPolicy(String policy) {
-    getDomainSpec().getStorage().setStorageReclaimPolicy(policy);
     return this;
   }
 

@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
@@ -13,7 +12,6 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-import com.google.gson.GsonBuilder;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.*;
 import java.io.IOException;
@@ -34,8 +32,6 @@ public class DomainV2Test extends DomainTestBase {
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
-  private static final String CREATED_BY_OPERATOR_LABEL_PATH =
-      "$.metadata.labels.['weblogic.createdByOperator']";
   private static final V1Sysctl DOMAIN_SYSCTL =
       new V1Sysctl().name("net.ipv4.route.min_pmtu").value("552");
   private static final V1Sysctl CLUSTER_SYSCTL =
@@ -100,144 +96,6 @@ public class DomainV2Test extends DomainTestBase {
     configureCluster("cluster1").withReplicas(3);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
-  }
-
-  @Test
-  public void whenStorageNotConfigured_persistentVolumeClaimIsNull() {
-    assertThat(domain.getPersistentVolumeClaimName(), nullValue());
-  }
-
-  @Test
-  public void whenPredefinedStorageConfigured_storageElementSpecifiedClaimName() {
-    configureDomain(domain).withPredefinedClaim("test-pvc");
-
-    assertThat(toJson(domain), hasJsonPath("$.spec.storage.predefined.claim", equalTo("test-pvc")));
-  }
-
-  private String toJson(Object object) {
-    return new GsonBuilder().create().toJson(object);
-  }
-
-  @Test
-  public void whenPredefinedStorageConfigured_returnSpecifiedPersistentVolumeClaim() {
-    configureDomain(domain).withPredefinedClaim("test-pvc");
-
-    assertThat(domain.getPersistentVolumeClaimName(), equalTo("test-pvc"));
-  }
-
-  @Test
-  public void whenPredefinedStorageConfigured_requiredPersistentVolumeAndClaimAreNull() {
-    configureDomain(domain).withPredefinedClaim("test-pvc");
-
-    assertThat(domain.getRequiredPersistentVolume(), nullValue());
-    assertThat(domain.getRequiredPersistentVolumeClaim(), nullValue());
-  }
-
-  private String getDefaultPVCName() {
-    return getDomainUid() + "-weblogic-domain-pvc";
-  }
-
-  @Test
-  public void whenHostPathDefinedStorageConfigured_storageElementIncludesSize() {
-    configureDomain(domain).withHostPathStorage("/tmp").withStorageSize("10Gi");
-
-    String domainJson = toJson(domain);
-    assertThat(domainJson, hasJsonPath("$.spec.storage.generated.storageSize", equalTo("10Gi")));
-    assertThat(domainJson, hasJsonPath("$.spec.storage.generated.hostPath.path", equalTo("/tmp")));
-  }
-
-  @Test
-  public void whenHostPathDefinedStorageConfigured_useDefaultPersistentClaim() {
-    configureDomain(domain).withHostPathStorage("/tmp").withStorageSize("10Gi");
-
-    assertThat(domain.getPersistentVolumeClaimName(), equalTo(getDefaultPVCName()));
-  }
-
-  @Test
-  public void whenHostPathDefinedStorageConfigured_returnRequiredPersistentVolume() {
-    configureDomain(domain).withHostPathStorage("/tmp").withStorageReclaimPolicy("Delete");
-
-    String pv = toJson(domain.getRequiredPersistentVolume());
-    assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeName())));
-    assertThat(pv, hasDomainUidLabel(getDomainUid()));
-    assertThat(pv, hasCreatedByOperatorLabel());
-    assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
-    assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("10Gi")));
-    assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
-    assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Delete")));
-    assertThat(pv, hasJsonPath("$.spec.hostPath.path", equalTo("/tmp")));
-  }
-
-  private static Matcher<? super Object> hasDomainUidLabel(String domainUid) {
-    return hasJsonPath("$.metadata.labels.['weblogic.domainUID']", equalTo(domainUid));
-  }
-
-  private Matcher<? super Object> hasCreatedByOperatorLabel() {
-    return hasJsonPath(CREATED_BY_OPERATOR_LABEL_PATH, equalTo("true"));
-  }
-
-  private String getPersistentVolumeName() {
-    return getPersistentVolumeName(getDomainUid());
-  }
-
-  private String getPersistentVolumeName(String domainUid) {
-    return domainUid + "-weblogic-domain-pv";
-  }
-
-  private String getStorageClass() {
-    return getStorageClass(getDomainUid());
-  }
-
-  private String getStorageClass(String domainUid) {
-    return domainUid + "-weblogic-domain-storage-class";
-  }
-
-  @Test
-  public void whenHostPathDefinedStorageConfigured_returnRequiredPersistentVolumeClaim() {
-    configureDomain(domain).withHostPathStorage("/tmp").withStorageReclaimPolicy("Delete");
-
-    assertPersistentVolumeClaim();
-  }
-
-  private void assertPersistentVolumeClaim() {
-    String pv = toJson(domain.getRequiredPersistentVolumeClaim());
-    assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getDefaultPVCName())));
-    assertThat(pv, hasJsonPath("$.metadata.namespace", equalTo(getNamespace())));
-    assertThat(pv, hasDomainUidLabel(getDomainUid()));
-    assertThat(pv, hasCreatedByOperatorLabel());
-    assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
-    assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
-    assertThat(pv, hasJsonPath("$.spec.resources.requests.storage", equalTo("10Gi")));
-  }
-
-  @Test
-  public void whenNfsDefinedStorageConfigured_useDefaultPersistentClaim() {
-    configureDomain(domain).withNfsStorage("myserver", "/tmp").withStorageReclaimPolicy("Retain");
-
-    assertThat(domain.getPersistentVolumeClaimName(), equalTo(getDefaultPVCName()));
-  }
-
-  @Test
-  public void whenNfsDefinedStorageConfigured_returnRequiredPersistentVolume() {
-    configureDomain(domain).withNfsStorage("myserver", "/tmp").withStorageReclaimPolicy("Retain");
-
-    String pv = toJson(domain.getRequiredPersistentVolume());
-    assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeName())));
-    assertThat(pv, hasDomainUidLabel(getDomainUid()));
-    assertThat(pv, hasCreatedByOperatorLabel());
-    assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass())));
-    assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("10Gi")));
-    assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
-    assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Retain")));
-    assertThat(pv, hasJsonPath("$.spec.nfs.server", equalTo("myserver")));
-    assertThat(pv, hasJsonPath("$.spec.nfs.path", equalTo("/tmp")));
-  }
-
-  @Test
-  public void whenNfsDefinedStorageConfigured_returnRequiredPersistentVolumeClaim() {
-    configureDomain(domain).withNfsStorage("myserver", "/tmp").withStorageReclaimPolicy("Retain");
-
-    assertPersistentVolumeClaim();
   }
 
   @Test
@@ -911,22 +769,6 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_nfsStorageDefinesRequiredPV() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-
-    String pv = toJson(domain.getRequiredPersistentVolume());
-    assertThat(pv, hasJsonPath("$.metadata.name", equalTo(getPersistentVolumeName("test-domain"))));
-    assertThat(pv, hasDomainUidLabel("test-domain"));
-    assertThat(pv, hasCreatedByOperatorLabel());
-    assertThat(pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass("test-domain"))));
-    assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("8Gi")));
-    assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
-    assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Retain")));
-    assertThat(pv, hasJsonPath("$.spec.nfs.server", equalTo("thatServer")));
-    assertThat(pv, hasJsonPath("$.spec.nfs.path", equalTo("/local/path")));
-  }
-
-  @Test
   public void whenDomainReadFromYaml_AdminAndManagedOverrideDomainNodeSelectors()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
@@ -1003,19 +845,6 @@ public class DomainV2Test extends DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(serverSpec.shouldStart(0), is(false));
-  }
-
-  @Test
-  public void whenDomain2ReadFromYaml_hostPathStorageDefinesRequiredPV() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-
-    String pv = toJson(domain.getRequiredPersistentVolume());
-    assertThat(
-        pv, hasJsonPath("$.spec.storageClassName", equalTo(getStorageClass("test-domain-2"))));
-    assertThat(pv, hasJsonPath("$.spec.capacity.storage", equalTo("10Gi")));
-    assertThat(pv, hasJsonPath("$.spec.accessModes", hasItem("ReadWriteMany")));
-    assertThat(pv, hasJsonPath("$.spec.persistentVolumeReclaimPolicy", equalTo("Delete")));
-    assertThat(pv, hasJsonPath("$.spec.hostPath.path", equalTo("/other/path")));
   }
 
   @Test
@@ -1150,13 +979,6 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
     assertThat(serverSpec.getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
-  }
-
-  @Test
-  public void whenDomain3ReadFromYaml_PredefinedStorageDefinesClaimName() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
-
-    assertThat(domain.getPersistentVolumeClaimName(), equalTo("magic-drive"));
   }
 
   @Test
