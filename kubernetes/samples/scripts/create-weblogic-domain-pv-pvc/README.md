@@ -1,6 +1,6 @@
-# Sample Persistent Volume and Persistent Volume Claim
+# Sample persistent volume and persistent volume claim
 
-The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain custom resource as a persistent storage for the WebLogic domain home or log files.
+The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain resource as a persistent storage for the WebLogic domain home or log files.
 
 A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
