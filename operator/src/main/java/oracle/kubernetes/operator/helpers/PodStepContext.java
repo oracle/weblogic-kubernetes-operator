@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.helpers;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
 import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.models.*;
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -25,7 +24,6 @@ import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
@@ -37,6 +35,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -56,6 +55,7 @@ public abstract class PodStepContext implements StepContextConstants {
   private static final String READINESS_PATH = "/weblogic";
 
   private final DomainPresenceInfo info;
+  private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
   private Map<String, String> substitutionVariables = new HashMap<>();
@@ -63,6 +63,7 @@ public abstract class PodStepContext implements StepContextConstants {
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSPI(DomainPresenceInfo.class);
+    domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
   }
 
   void init() {
@@ -131,7 +132,7 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   String getDomainName() {
-    return getDomain().getDomainName();
+    return domainTopology.getName();
   }
 
   private String getDomainResourceName() {
@@ -143,11 +144,11 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   String getAsName() {
-    return getDomain().getAsName();
+    return domainTopology.getAdminServerName();
   }
 
   Integer getAsPort() {
-    return getDomain().getAsPort();
+    return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
   }
 
   String getLogHome() {
@@ -174,10 +175,6 @@ public abstract class PodStepContext implements StepContextConstants {
   abstract Integer getPort();
 
   abstract String getServerName();
-
-  private String getAdminSecretName() {
-    return getDomain().getAdminSecret().getName();
-  }
 
   private List<V1PersistentVolumeClaim> getClaims() {
     return info.getClaims().getItems();
@@ -596,10 +593,6 @@ public abstract class PodStepContext implements StepContextConstants {
                     .securityContext(getServerSpec().getContainerSecurityContext()))
             .addVolumesItem(
                 new V1Volume()
-                    .name(SECRETS_VOLUME)
-                    .secret(new V1SecretVolumeSource().secretName(getAdminSecretName())))
-            .addVolumesItem(
-                new V1Volume()
                     .name(SCRIPTS_VOLUME)
                     .configMap(
                         new V1ConfigMapVolumeSource()
@@ -659,7 +652,6 @@ public abstract class PodStepContext implements StepContextConstants {
             .env(getEnvironmentVariables(tuningParameters))
             .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
             .lifecycle(createLifecycle())
-            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
