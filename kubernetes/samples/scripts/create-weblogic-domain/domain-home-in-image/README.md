@@ -24,7 +24,7 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
+* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
 * Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
 * Replace the built-in username and password in the `properties/docker_build/domain_security.properties` file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
