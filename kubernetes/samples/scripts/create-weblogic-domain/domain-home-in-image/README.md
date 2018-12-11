@@ -186,11 +186,11 @@ API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
   Cluster Name:        
-  Creation Timestamp:  2018-12-11T01:33:27Z
+  Creation Timestamp:  2018-12-11T21:27:35Z
   Generation:          1
-  Resource Version:    46624
+  Resource Version:    814010
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 c1f7be60-fce4-11e8-bc6c-0021f6985fb7
+  UID:                 93e55739-fd8b-11e8-b751-fa163e855ac8
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
@@ -244,6 +244,10 @@ Spec:
   Server Pod:
     Container Security Context:
     Env:
+      Name:   JAVA_OPTIONS
+      Value:  -Dweblogic.StdoutDebugEnabled=false
+      Name:   USER_MEM_ARGS
+      Value:  -Xms64m -Xmx256m 
     Liveness Probe:
     Node Selector:
     Pod Annotations:
@@ -260,35 +264,27 @@ Spec:
   Server Start Policy:  IF_NEEDED
 Status:
   Conditions:
-    Last Transition Time:  2018-12-11T01:35:23.652Z
+    Last Transition Time:  2018-12-11T21:28:59.537Z
     Reason:                ServersReady
     Status:                True
     Type:                  Available
   Servers:
     Health:
-      Activation Time:  2018-12-11T01:34:59.546Z
+      Activation Time:  2018-12-11T21:28:36.983Z
       Overall Health:   ok
       Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
-    Health:
-      Activation Time:  2018-12-11T01:36:46.132Z
-      Overall Health:   ok
-      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server1
-    State:         RUNNING
+    State:         STARTING
     Cluster Name:  cluster-1
-    Health:
-      Activation Time:  2018-12-11T01:36:47.865Z
-      Overall Health:   ok
-      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server2
-    State:        RUNNING
-  Start Time:     2018-12-11T01:33:27.339Z
+    State:         STARTING
+  Start Time:      2018-12-11T21:27:35.869Z
 Events:            <none>
 ```
 

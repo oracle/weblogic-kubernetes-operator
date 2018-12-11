@@ -101,29 +101,6 @@ function validateNamespace {
 }
 
 #
-# Internal function to validate that the inputs file does not exist in the
-# outputs directory or is the same as the inputs file the script is using
-# $1 - the output directory to validate
-# $2 - the name of the input file the create script is using
-# $3 - the name of the input file that is put into the output directory
-function internalValidateInputsFileDoesNotExistOrIsTheSame {
-  local dir=$1
-  local in1=$2
-  local in2=$3
-  local f="${dir}/${in2}"
-  if [ -e ${f} ]; then
-    if [ -f ${f} ]; then
-      local differences=`diff -q ${f} ${in1}`
-      if ! [ -z "${differences}" ]; then
-        validationError "${f} is different than ${in1}"
-      fi
-    else
-      validationError "${f} exists and is not a file."
-    fi
-  fi
-}
-
-#
 # Function to validate the version of the inputs file
 #
 function validateVersion {
