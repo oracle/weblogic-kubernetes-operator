@@ -41,10 +41,6 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
-  # serverStartState legal values are "RUNNING" or "ADMIN"
-  # "RUNNING" means the listed server will be started up to "RUNNING" mode
-  # "ADMIN" means the listed server will be start up to "ADMIN" mode
-  serverStartState: "RUNNING"
   # an (optional) list of environment variable to be set on the servers
   serverPod:
     env:
@@ -54,6 +50,10 @@ spec:
       value: "-Xms64m -Xmx256m "
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
+    # serverStartState legal values are "RUNNING" or "ADMIN"
+    # "RUNNING" means the listed server will be started up to "RUNNING" mode
+    # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    serverStartState: "RUNNING"
     # The Admin Server's NodePort
     %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
     # Uncomment to export the T3Channel as a service
