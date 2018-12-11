@@ -7,6 +7,7 @@ This guide provides information for developers who wish to understand or contrib
 In addition to the requirements listed in [README](../README.md#prerequisites), the following software is also required to obtain and build the operator:
 
 *	Git (1.8 or later recommended)
+* Java Developer Kit (1.8u131 or later recommended, please use 1.8, tests will not work on 1.9 or later versions)
 *	Apache Maven (3.3 or later recommended)
 
 The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
