@@ -111,7 +111,8 @@ public class PodWatcher extends Watcher<V1Pod>
   }
 
   static boolean isTerminating(V1Pod pod) {
-    return pod.getMetadata().getDeletionTimestamp() != null;
+    return pod.getMetadata().getDeletionTimestamp() != null
+        || pod.getMetadata().getDeletionGracePeriodSeconds() != null;
   }
 
   static boolean isReady(V1Pod pod) {
