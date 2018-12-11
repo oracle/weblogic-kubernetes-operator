@@ -12,9 +12,7 @@ serviceAccount: "default"
 #
 # Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
 #
-# domainNamespaces:
-#   - namespace1
-#   - namespace2
+# domainNamespaces: ["namespace1", "namespace2"]
 domainNamespaces: [ "default" ]
 
 # image specifies the docker image containing the operator code.
