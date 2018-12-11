@@ -52,12 +52,10 @@ When the run completes successfully, the Docker image for the operator will be b
 
 ## Build the Docker image for the operator locally
 
-The following software is required to obtain and build the operator:
+In addition to the requirements listed in [README](../README.md#prerequisites), the following software is also required to obtain and build the operator:
 
 *    Git (1.8 or later recommended)
 *    Apache Maven (3.3 or later recommended)
-*    Java Developer Kit (1.8u131 or later recommended, not 1.9)
-*    Docker 17.03.1.ce
 
 To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.  The operator is built using Apache Maven, which must be installed first.  Maven may be downloaded from the [Apache Maven site](http://maven.apache.org).  The GitHub repository should be cloned locally:
 
