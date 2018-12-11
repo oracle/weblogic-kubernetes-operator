@@ -183,27 +183,16 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
     ```
     #> kubectl describe configmap weblogic-operator-cm -n weblogic-operator
 
-    ```
-    ```
-    Name:         `weblogic-operator-cm`
-      
+    Name:         `weblogic-operator-cm`      
     Namespace:    `weblogic-operator`
-      
     Labels:       `weblogic.operatorName=weblogic-operator`
-      
     Annotations:  `kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"v1","data":{"externalOperatorCert":"","internalOperatorCert":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t...`
-      
     Data
-
     ====
-
     internalOperatorCert:
-
     ----
-
     LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
-
-     ```
+    ```
 
     The scalingAction.sh script accepts a number of customizable parameters:
 
