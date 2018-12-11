@@ -73,18 +73,12 @@ fi
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initAndValidateOutputDir {
+function initOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  validateOutputDir \
-    ${domainOutputDir} \
-    ${valuesInputFile} \
-    create-domain-inputs.yaml \
-    create-domain-job.yaml \
-    delete-domain-job.yaml \
-    domain.yaml
+  rm -rf ${domainOutputDir}/*
 }
 
 #
@@ -261,10 +255,11 @@ function initialize {
   validateWeblogicCredentialsSecretName
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
-  initAndValidateOutputDir
   validateServerStartPolicy
   validateClusterType
   failIfValidationErrors
+
+  initOutputDir
 }
 
 
