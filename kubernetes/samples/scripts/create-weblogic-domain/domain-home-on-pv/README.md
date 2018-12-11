@@ -1,16 +1,16 @@
-# WebLogic Sample Domain Home on a Persistent Volume
+# WebLogic sample domain home on a persistent volume
 
-The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes Persistent Volume (PV) and Persistent Volume Claim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
 
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
-* Make sure the WebLogic Operator is running.
+* Make sure the WebLogic operator is running.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
-* In the same Kubernetes namespace, create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, refer to [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
+* In the same Kubernetes namespace, create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
 
-## Using the script to create a domain
+## Use the script to create a domain
 
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
 
@@ -24,7 +24,7 @@ The script will perform the following steps:
 
 * Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
-* Run the job and wait for the job to finish.
+* Run and wait for the job to finish.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
 
@@ -101,7 +101,7 @@ The sample demonstrates how to create a WebLogic domain home and associated Kube
 
 The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-Note that the example results below uses the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes namespace.
+Note that the example results below use the `default` Kubernetes namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes namespace.
 
 ### Generated YAML files with the default inputs
 
@@ -308,11 +308,11 @@ Events:           <none>
 
 ```
 
-In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting Managed Servers.
+In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
-### Verify pods
+### Verify the pods
 
-The following command can be used to see the pods running the servers:
+Use the following command to see the pods running the servers:
 
 ```
 kubectl get pods -n NAMESPACE
@@ -328,9 +328,9 @@ domain1-managed-server1                      1/1       Running   0          8m
 domain1-managed-server2                      1/1       Running   0          8m
 ```
 
-### Verify services
+### Verify the services
 
-The following command can be used to see the services for the domain:
+Use the following command to see the services for the domain:
 
 ```
 kubectl get services -n NAMESPACE
@@ -347,9 +347,9 @@ domain1-managed-server1                     ClusterIP   None             <none> 
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 
-## Deleting the Generated Domain Home
+## Delete the generated domain home
 
-Sometimes in production, but most likely in testing environments, you would like to remove the domain home that is generated using `create-domain.sh` script. This can be achieved by running the generated delete domain job script in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory.
+Sometimes in production, but most likely in testing environments, you might want to remove the domain home that is generated using the `create-domain.sh` script. Do this by running the generated `delete domain job` script in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory.
 
 ```
 $ kubectl create -f delete-domain-job.yaml
