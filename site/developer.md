@@ -4,12 +4,11 @@ This guide provides information for developers who wish to understand or contrib
 
 ## Requirements
 
-The following software is required to obtain and build the operator:
+In addition to the requirements listed in [README](../README.md#prerequisites), the following software is also required to obtain and build the operator:
 
 *	Git (1.8 or later recommended)
+* Java Developer Kit (1.8u131 or later recommended, please use 1.8, tests will not work on 1.9 or later versions)
 *	Apache Maven (3.3 or later recommended)
-*	Java Developer Kit (1.8u131 or later recommended, not 1.9)
-*	Docker 17.03.1.ce
 
 The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
 
@@ -27,20 +26,20 @@ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ## Operator branching model
 
-The ```master``` branch is protected and will always contain source for the latest, generally available (GA) 
+The ```master``` branch is protected and will always contain source for the latest, generally available (GA)
 release of the operator, including any critical hot fixes.  No general pull requests will be merged to this branch.
 
 Active work will be performed on the ```develop``` branch.  This branch is also protected.  Please submit pull
 requests to this branch unless you are collaborating on a feature and have another target branch.  
 Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README] (README.md).
 
-Longer running feature work will be performed on specific branches, such as ```feature/dynamic-clusters```.  Since we want 
+Longer running feature work will be performed on specific branches, such as ```feature/dynamic-clusters```.  Since we want
 to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we
-encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into 
+encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into
 their own shorter-lived branches and create pull requests to ```develop``` when these smaller work items are complete.
 
 When it is time for a release, we will branch off ```develop``` to create a per-release branch.  Here, we will update version
-numbers, rebuild javadoc, if necessary, and perform any other pre-release updates.  Finally, this release branch will be merged 
+numbers, rebuild javadoc, if necessary, and perform any other pre-release updates.  Finally, this release branch will be merged
 to ```master```.
 
 ## Building the operator
@@ -201,8 +200,8 @@ This project has the following directory structure:
 * `site`: This documentation
 * `src/main/java`: Java source code for the operator
 * `src/test/java`: Java unit-tests for the operator
-* `src-generated-swagger`: Snapshot of Java source files generated from the domain custom resource's Swagger
-* `swagger`: Swagger files for the Kubernetes API server and domain custom resource
+* `src-generated-swagger`: Snapshot of Java source files generated from the domain resource's Swagger
+* `swagger`: Swagger files for the Kubernetes API server and domain resource
 
 ### Watch package
 
