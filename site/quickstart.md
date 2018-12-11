@@ -1,6 +1,6 @@
-# Quick Start Guide
+# Quick start guide
 
-Use this Quick Start Guide to create a WebLogic deployment in a Kubernetes cluster.
+Use this quick start guide to create a WebLogic deployment in a Kubernetes cluster.
 
 ## 1.	Get the images and put them into your local registry.
 
@@ -14,13 +14,13 @@ $ docker pull traefik:latest
 ```
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
-Use Helm to install the [Traefik](kubernetes/samples/charts/traefik/README.md) load balancer.
+Use Helm to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer.
 ```
 $ helm install --name traefik-operator --namespace traefik stable/traefik
 ```
 ## 3. Configure Kibana and Elasticsearch.
 
-Use the YAML file under https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/elasticsearch_and_kibana.yaml.
+Use the [`elasticsearch_and_kibana`](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/elasticsearch_and_kibana.yaml) YAML file.
 ```
 $ kubectl apply -f kubernetes/samples/scripts/elasticsearch_and_kibana.yaml
 ```
@@ -47,7 +47,7 @@ $ kubectl create namespace weblogic-operator
 ```
 $ kubectl create namespace domain1-ns
 ```
-* Create the Kubernetes secrets for the Administration Server boot credentials by invoking the script, https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/create-weblogic-credentials.sh.
+* Create the Kubernetes secrets for the Administration Server boot credentials by invoking the [`create-weblogic-credentials` script](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/create-weblogic-credentials.sh).
 
 * Create a PV & PVC for the domain:
   * Find the `create_pv_pvc.sh script` and YAML files you'll need to edit to create the PV and PVC, in the https://github.com/oracle/weblogic-kubernetes-operator/tree/develop/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc directory.
@@ -64,12 +64,12 @@ $ kubectl create namespace domain1-ns
 ```  
 $ docker pull store/oracle/weblogic:12.2.1.3-dev
 ```
- * For reference, see https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md.
+ * For reference, see the [domain home on PV README](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md).
  * The `create-domain.sh` will:
    * Create a directory for the generated Kubernetes YAML files for this domain. The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/`.
    * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
    * Run and wait for the job to finish.
-   * Create a Kubernetes domain custom resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. You can use this YAML file to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
+   * Create a Kubernetes domain resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. You can use this YAML file to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
 
 ```
           ./create-domain.sh
@@ -104,7 +104,7 @@ $ helm install ingress-per-domain --name domain1-ingress --value values.yaml
 ## 7. Remove a domain.
 
 * Remove the domain's Kubernetes resources (domain, secrets, ingress, ...).
-  * To remove the domain and all the Kubernetes resources (labeled with the `domainUID`), invoke the script, https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/delete-weblogic-domain-resources.sh.
+  * To remove the domain and all the Kubernetes resources (labeled with the `domainUID`), invoke the [delete domain resources script](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/delete-weblogic-domain-resources.sh).
 
   * The operator will notice that the domain's domain resource has been removed and will then kill the pods.
 * Configure the Traefik load balancer to stop managing the domain.
