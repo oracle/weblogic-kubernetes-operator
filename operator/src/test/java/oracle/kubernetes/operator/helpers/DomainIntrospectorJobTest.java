@@ -163,10 +163,7 @@ public class DomainIntrospectorJobTest {
     cluster.setReplicas(1);
     DomainSpec spec =
         new DomainSpec()
-            .withDomainName(DOMAIN_NAME)
             .withDomainUID(UID)
-            .withAsName(ADMIN_SERVER)
-            .withAsPort(ADMIN_PORT)
             .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)
