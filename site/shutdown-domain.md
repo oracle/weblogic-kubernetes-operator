@@ -8,7 +8,7 @@ kubectl delete domain DOMAINUID -n NAMESPACE
 
 Replace `DOMAINUID` with the UID of the target domain and `NAMESPACE` with the namespace it is running in.
 
-This command will remove the domain custom resource for the target domain.  The operator will be notified that the custom resource has been removed, and it will initiate the following actions:
+This command will remove the domain resource for the target domain.  The operator will be notified that the custom resource has been removed, and it will initiate the following actions:
 
 *	Remove any Ingress associated with the domain.
 *	Initiate a graceful shutdown of each server in the domain, Managed Servers first and then the Administration Server last.
