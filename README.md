@@ -45,7 +45,7 @@ Before using the operator, you might want to read the [design philosophy](site/d
 
 *	Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
 *	Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
-*	Docker 17.03.1.ce (check with `docker version`)
+*	Docker 18.03.1.ce (check with `docker version`)
 *	Oracle WebLogic Server 12.2.1.3.0
 
 ## Set up your Kubernetes cluster

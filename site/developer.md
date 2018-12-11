@@ -4,12 +4,10 @@ This guide provides information for developers who wish to understand or contrib
 
 ## Requirements
 
-The following software is required to obtain and build the operator:
+In addition to the requirements listed in [README](../README.md#prerequisites), the following software is also required to obtain and build the operator:
 
 *	Git (1.8 or later recommended)
 *	Apache Maven (3.3 or later recommended)
-*	Java Developer Kit (1.8u131 or later recommended, not 1.9)
-*	Docker 17.03.1.ce
 
 The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
 
