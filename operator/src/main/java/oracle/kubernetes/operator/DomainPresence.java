@@ -8,10 +8,17 @@ import java.util.Optional;
 
 public class DomainPresence {
   private static final int DEFAULT_TIMEOUT_SECONDS = 5;
+  private static final int DEFAULT_RETRY_MAX_COUNT = 5;
 
   static int getDomainPresenceFailureRetrySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
         .map(parameters -> parameters.getMainTuning().domainPresenceFailureRetrySeconds)
         .orElse(DEFAULT_TIMEOUT_SECONDS);
+  }
+
+  static int getDomainPresenceFailureRetryMaxCount() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+        .map(parameters -> parameters.getMainTuning().domainPresenceFailureRetryMaxCount)
+        .orElse(DEFAULT_RETRY_MAX_COUNT);
   }
 }
