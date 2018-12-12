@@ -42,6 +42,15 @@ function parseYaml {
 }
 
 #
+# Function to remove a file if it exists 
+#
+function removeFileIfExists {
+  if [ -f $1 ]; then
+    rm $1
+  fi
+}
+
+#
 # Function to parse the common parameter inputs file
 #
 function parseCommonInputs {

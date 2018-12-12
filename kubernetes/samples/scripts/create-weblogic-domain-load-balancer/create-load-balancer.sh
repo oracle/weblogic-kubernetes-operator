@@ -68,10 +68,17 @@ function initOutputDir {
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in
       "TRAEFIK")
+        removeFileIfExists ${lbOutputDir}/traefik.yaml
+        removeFileIfExists ${lbOutputDir}/traefik-security.yaml
       ;;
       "APACHE")
+        removeFileIfExists ${lbOutputDir}/apache.yaml 
+        removeFileIfExists ${lbOutputDir}/apache-security.yaml 
       ;;
       "VOYAGER")
+        removeFileIfExists ${lbOutputDir}/voyager-ingress.yaml 
+        removeFileIfExists ${lbOutputDir}/voyager-operator.yaml \
+        removeFileIfExists ${lbOutputDir}/voyager-operator-security.yaml
       ;;
       "NONE")
       ;;
@@ -80,7 +87,10 @@ function initOutputDir {
       ;;
     esac
   fi
-  rm -rf ${lbOutputDir}/*
+
+  removeFileIfExists ${lbOutputDir}/${valuesInputFile}
+  removeFileIfExists ${lbOutputDir}/create-load-balancer-inputs.yaml 
+
 }
 
 #

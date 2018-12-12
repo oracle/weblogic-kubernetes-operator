@@ -78,7 +78,10 @@ function initOutputDir {
     persistentVolumeName=${domainUID}-${baseName}-pv
     persistentVolumeClaimName=${domainUID}-${baseName}-pvc
   fi
-  rm -rf ${pvOutputDir}/*
+  removeFileIfExists ${pvOutputDir}/{valuesInputFile}
+  removeFileIfExists ${pvOutputDir}/{pvOutput}
+  removeFileIfExists ${pvOutputDir}/{pvcOutput}
+  removeFileIfExists ${pvOutputDir}/create-pv-pvc-inputs.yaml
 }
 
 #

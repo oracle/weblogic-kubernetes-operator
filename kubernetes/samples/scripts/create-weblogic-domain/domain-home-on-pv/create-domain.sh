@@ -78,7 +78,10 @@ function initOutputDir {
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  rm -rf ${domainOutputDir}/*
+  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
+  removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
+  removeFileIfExists ${domainOutputDir}/domain.properties
+  removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
 #
