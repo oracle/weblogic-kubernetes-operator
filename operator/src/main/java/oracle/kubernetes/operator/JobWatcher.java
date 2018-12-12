@@ -83,7 +83,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       case "ADDED":
       case "MODIFIED":
         V1Job job = item.object;
-        Boolean isComplete = isComplete(job); // isReady(job);
+        Boolean isComplete = isComplete(job) || isFailed(job);
         String jobName = job.getMetadata().getName();
         if (isComplete) {
           Complete complete = completeCallbackRegistrations.remove(jobName);
