@@ -324,9 +324,15 @@ public abstract class DomainConfigurator {
       V1PodSecurityContext podSecurityContext);
 
   /**
-   * Set the restart version for the Domain
+   * Tells the operator whether the customer wants to restart the server pods. The value can be any
+   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again. If customer
+   * modifies the value again after the pods were recreated, then the pods will again be terminated
+   * and recreated.
    *
-   * @param restartVersion
+   * @since 2.0
+   * @param restartVersion If preseent, every time this value is updated the operator will restart
+   *     the required servers
    * @return this object
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
