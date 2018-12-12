@@ -77,13 +77,13 @@
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>1.19</version>
+      <version>${snakeyaml-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>22.0</version>
+      <version>${guava-version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
