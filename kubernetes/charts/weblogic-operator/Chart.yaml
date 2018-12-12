@@ -3,4 +3,4 @@
 
 name: weblogic-operator
 version: 2.0
-description: Helm package for creation of the Weblogic operator.
+description: Helm chart for configuring the WebLogic operator.
