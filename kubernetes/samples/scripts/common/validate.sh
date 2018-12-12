@@ -337,8 +337,6 @@ function validateCommonInputs {
   validateManagedServerNameBase
   validateClusterName
   validateWeblogicCredentialsSecretName
-  validateWeblogicImagePullPolicy
-  validateWeblogicImagePullSecretName
   validateServerStartPolicy
   validateClusterType
   failIfValidationErrors

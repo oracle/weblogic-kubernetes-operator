@@ -189,6 +189,11 @@ function initialize {
 
   validateCommonInputs
 
+  validateWeblogicImagePullPolicy
+  validateWeblogicImagePullSecretName
+
+  failIfValidationErrors
+
   initOutputDir
 }
 
