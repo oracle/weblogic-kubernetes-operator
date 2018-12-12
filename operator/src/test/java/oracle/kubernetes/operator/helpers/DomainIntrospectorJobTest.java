@@ -46,7 +46,7 @@ public class DomainIntrospectorJobTest {
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
 
-  private static final String ADMIN_SECRET_NAME = "adminSecretName";
+  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
   private static final String LATEST_IMAGE = "image:latest";
   static final String VERSIONED_IMAGE = "image:1.2.3";
@@ -164,7 +164,7 @@ public class DomainIntrospectorJobTest {
     DomainSpec spec =
         new DomainSpec()
             .withDomainUID(UID)
-            .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+            .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)
             .withImage(LATEST_IMAGE)
@@ -266,7 +266,7 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("LOG_HOME", LOG_HOME),
             hasEnvVar("INTROSPECT_HOME", getDomainHome()),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", "true"),
-            hasEnvVar("ADMIN_SECRET_NAME", ADMIN_SECRET_NAME)));
+            hasEnvVar("CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME)));
   }
 
   V1Container getCreatedJobSpecContainer() {
@@ -452,7 +452,7 @@ public class DomainIntrospectorJobTest {
     addEnvVar(envVarList, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(envVarList, "LOG_HOME", LOG_HOME);
     addEnvVar(envVarList, "INTROSPECT_HOME", getDomainHome());
-    addEnvVar(envVarList, "ADMIN_SECRET_NAME", ADMIN_SECRET_NAME);
+    addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME);
     addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", "true");
 
     return envVarList;
@@ -467,7 +467,7 @@ public class DomainIntrospectorJobTest {
   }
 
   protected V1SecretVolumeSource getSecretsVolume() {
-    return new V1SecretVolumeSource().secretName(ADMIN_SECRET_NAME).defaultMode(420);
+    return new V1SecretVolumeSource().secretName(CREDENTIALS_SECRET_NAME).defaultMode(420);
   }
 
   protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {
