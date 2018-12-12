@@ -86,7 +86,6 @@ import os
 import shutil
 import re
 from datetime import datetime
-from string import Template
 
 # Include this script's current directory in the import path (so we can import traceUtils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
