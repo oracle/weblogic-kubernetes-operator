@@ -583,8 +583,8 @@ class BootPropertiesGenerator(Generator):
       self.close()
 
   def addBootProperties(self):
-    self.writeln("username=" + self.encrypt(self.readAdminSecret("username")))
-    self.writeln("password=" + self.encrypt(self.readAdminSecret("password")))
+    self.writeln("username=" + self.encrypt(self.readCredentialsSecret("username")))
+    self.writeln("password=" + self.encrypt(self.readCredentialsSecret("password")))
 
 class UserConfigAndKeyGenerator(Generator):
 
@@ -607,8 +607,8 @@ class UserConfigAndKeyGenerator(Generator):
       self.close()
 
   def addUserConfigAndKey(self):
-    username = self.readAdminSecret("username")
-    password = self.readAdminSecret("password")
+    username = self.readCredentialsSecret("username")
+    password = self.readCredentialsSecret("password")
     nm_host = 'localhost'
     nm_port = '5556' 
     domain_name = self.env.getDomain().getName()
