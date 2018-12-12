@@ -58,12 +58,15 @@ public class ReadHealthStep extends Step {
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
 
     ServerKubernetesObjects sko = info.getServers().get(serverName);
-    String adminSecretName = spec.getAdminSecret() == null ? null : spec.getAdminSecret().getName();
+    String secretName =
+        spec.getWebLogicCredentialsSecret() == null
+            ? null
+            : spec.getWebLogicCredentialsSecret().getName();
 
     Step getClient =
         HttpClient.createAuthenticatedClientForServer(
             namespace,
-            adminSecretName,
+            secretName,
             new ReadHealthWithHttpClientStep(sko.getService().get(), getNext()));
     return doNext(getClient, packet);
   }

@@ -83,7 +83,7 @@ public class JobHelper {
       addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
       addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
       addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(envVarList, "ADMIN_SECRET_NAME", getAdminSecretName());
+      addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
 
       return envVarList;
     }
