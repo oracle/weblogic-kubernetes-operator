@@ -36,9 +36,9 @@ please consult this table of contents:
 * The [Contributing](#contributing-to-the-operator) section provides information about conribution requirements.
 
 
-# User Guide
+# User guide
 
-The [User Guide](site/user-guide.md) provides detailed information about all aspects of using the operator including:
+The [User guide](site/user-guide.md) provides detailed information about all aspects of using the operator including:
 
 * installing and configuring the operator,
 * using the operator to create and manage WebLogic domains,
