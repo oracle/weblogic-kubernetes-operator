@@ -79,7 +79,7 @@ public abstract class PodHelperTestBase {
   static final Integer ADMIN_PORT = 7001;
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
-  private static final String ADMIN_SECRET_NAME = "adminSecretName";
+  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
   private static final String LATEST_IMAGE = "image:latest";
   static final String VERSIONED_IMAGE = "image:1.2.3";
@@ -176,7 +176,7 @@ public abstract class PodHelperTestBase {
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
         .withDomainUID(UID)
-        .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+        .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }
