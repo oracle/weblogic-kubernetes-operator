@@ -45,10 +45,10 @@ public class DomainSpec extends BaseConfiguration {
   private String domainHome;
 
   /**
-   * Reference to secret containing domain administrator username and password. Secret must contain
-   * keys names 'username' and 'password' (Required)
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * contain keys names 'username' and 'password' (Required)
    */
-  @Valid @NotNull private V1SecretReference adminSecret;
+  @Valid @NotNull private V1SecretReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
@@ -127,13 +127,6 @@ public class DomainSpec extends BaseConfiguration {
       "True if this domain's home is defined in the docker image for the domain. Defaults to true")
   private Boolean domainHomeInImage;
 
-  /** The definition of the storage used for this domain. */
-  @Description(
-      "The storage used for this domain. "
-          + "Defaults to a predefined claim for a PVC whose name is "
-          + "the domain UID followed by '-weblogic-domain-pvc'")
-  private DomainStorage storage;
-
   /**
    * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
    *
@@ -164,7 +157,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the managed servers")
-  private Map<String, ManagedServer> managedServers = new HashMap<>();
+  private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
    * The configured clusters.
@@ -172,7 +165,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the clusters")
-  protected Map<String, Cluster> clusters = new HashMap<>();
+  protected List<Cluster> clusters = new ArrayList<>();
 
   /**
    * Adds a Cluster to the DomainSpec
@@ -181,7 +174,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return
    */
   public DomainSpec withCluster(Cluster cluster) {
-    clusters.put(cluster.getClusterName(), cluster);
+    clusters.add(cluster);
     return this;
   }
 
@@ -264,24 +257,24 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public V1SecretReference getAdminSecret() {
-    return adminSecret;
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  public void setAdminSecret(V1SecretReference adminSecret) {
-    this.adminSecret = adminSecret;
+  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
   /**
-   * Reference to secret containing domain administrator username and password. Secret must contain
-   * keys names 'username' and 'password' (Required)
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * contain keys names 'username' and 'password' (Required)
    *
-   * @param adminSecret admin secret
+   * @param webLogicCredentialsSecret WebLogic startup credentials secret
    * @return this
    */
-  public DomainSpec withAdminSecret(V1SecretReference adminSecret) {
-    this.adminSecret = adminSecret;
+  public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
   }
 
@@ -417,24 +410,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  /**
-   * Specifies the storage for the domain.
-   *
-   * @param storage the definition of the domain storage.
-   */
-  public void setStorage(DomainStorage storage) {
-    this.storage = storage;
-  }
-
-  /**
-   * Returns the storage for the domain.
-   *
-   * @return the definition of the domain storage.
-   */
-  public DomainStorage getStorage() {
-    return storage;
-  }
-
   @Nullable
   String getConfigOverrides() {
     return configOverrides;
@@ -477,10 +452,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUID)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
-            .append("adminSecret", adminSecret)
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
-            .append("storage", storage)
             .append("imagePullSecrets", imagePullSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
@@ -503,10 +477,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUID)
             .append(domainHome)
             .append(domainHomeInImage)
-            .append(adminSecret)
+            .append(webLogicCredentialsSecret)
             .append(image)
             .append(imagePullPolicy)
-            .append(storage)
             .append(imagePullSecrets)
             .append(adminServer)
             .append(managedServers)
@@ -533,9 +506,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUID, rhs.domainUID)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
-            .append(adminSecret, rhs.adminSecret)
+            .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
-            .append(storage, rhs.storage)
             .append(imagePullPolicy, rhs.imagePullPolicy)
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
@@ -551,12 +523,22 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
-  private Server getServer(String serverName) {
-    return managedServers.get(serverName);
+  ManagedServer getManagedServer(String serverName) {
+    if (serverName != null) {
+      for (ManagedServer s : managedServers) {
+        if (serverName.equals(s.getServerName())) return s;
+      }
+    }
+    return null;
   }
 
-  private Cluster getCluster(String clusterName) {
-    return clusters.get(clusterName);
+  Cluster getCluster(String clusterName) {
+    if (clusterName != null) {
+      for (Cluster c : clusters) {
+        if (clusterName.equals(c.getClusterName())) return c;
+      }
+    }
+    return null;
   }
 
   private int getReplicaCountFor(Cluster cluster) {
@@ -585,11 +567,11 @@ public class DomainSpec extends BaseConfiguration {
     this.adminServer = adminServer;
   }
 
-  public Map<String, ManagedServer> getManagedServers() {
+  public List<ManagedServer> getManagedServers() {
     return managedServers;
   }
 
-  public Map<String, Cluster> getClusters() {
+  public List<Cluster> getClusters() {
     return clusters;
   }
 
@@ -603,7 +585,7 @@ public class DomainSpec extends BaseConfiguration {
     public ServerSpec getServerSpec(String serverName, String clusterName) {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
-          getServer(serverName),
+          getManagedServer(serverName),
           getCluster(clusterName),
           getClusterLimit(clusterName));
     }
@@ -669,7 +651,7 @@ public class DomainSpec extends BaseConfiguration {
 
     private Cluster createClusterWithName(String clusterName) {
       Cluster cluster = new Cluster().withClusterName(clusterName);
-      clusters.put(clusterName, cluster);
+      clusters.add(cluster);
       return cluster;
     }
   }

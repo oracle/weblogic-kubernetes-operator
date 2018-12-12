@@ -42,7 +42,7 @@
 #     DOMAIN_UID         - completely unique id for this domain
 #     DOMAIN_HOME        - path for the domain configuration
 #     LOG_HOME           - path to override WebLogic server log locations
-#     ADMIN_SECRET_NAME  - name of secret containing admin credentials
+#     CREDENTIALS_SECRET_NAME  - name of secret containing credentials
 #
 # ---------------------------------
 # Outputs (files copied to stdout):
@@ -104,10 +104,10 @@ class OfflineWlstEnv(object):
 
     # before doing anything, get each env var and verify it exists 
 
-    self.DOMAIN_UID         = self.getEnv('DOMAIN_UID')
-    self.DOMAIN_HOME        = self.getEnv('DOMAIN_HOME')
-    self.LOG_HOME           = self.getEnv('LOG_HOME')
-    self.ADMIN_SECRET_NAME  = self.getEnv('ADMIN_SECRET_NAME')
+    self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
+    self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
+    self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
 
@@ -125,10 +125,10 @@ class OfflineWlstEnv(object):
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
-    self.ADMIN_SECRET_PATH  = self.getEnvOrDef('ADMIN_SECRET_PATH', '/weblogic-operator/secrets')
-    self.CUSTOM_SECRET_ROOT = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
-    self.CUSTOM_SITCFG_PATH = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
-    self.NM_HOST            = self.getEnvOrDef('NM_HOST', 'localhost')
+    self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
+    self.CUSTOM_SECRET_ROOT      = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
+    self.CUSTOM_SITCFG_PATH      = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
+    self.NM_HOST                 = self.getEnvOrDef('NM_HOST', 'localhost')
 
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
@@ -230,8 +230,8 @@ class SecretManager(object):
   def encrypt(self, cleartext):
     return self.env.encrypt(cleartext)
 
-  def readAdminSecret(self, key):
-    path = self.env.ADMIN_SECRET_PATH + '/' + key
+  def readCredentialsSecret(self, key):
+    path = self.env.CREDENTIALS_SECRET_PATH + '/' + key
     return self.env.readFile(path)
 
 class Generator(SecretManager):
@@ -583,8 +583,8 @@ class BootPropertiesGenerator(Generator):
       self.close()
 
   def addBootProperties(self):
-    self.writeln("username=" + self.encrypt(self.readAdminSecret("username")))
-    self.writeln("password=" + self.encrypt(self.readAdminSecret("password")))
+    self.writeln("username=" + self.encrypt(self.readCredentialsSecret("username")))
+    self.writeln("password=" + self.encrypt(self.readCredentialsSecret("password")))
 
 class UserConfigAndKeyGenerator(Generator):
 
@@ -607,8 +607,8 @@ class UserConfigAndKeyGenerator(Generator):
       self.close()
 
   def addUserConfigAndKey(self):
-    username = self.readAdminSecret("username")
-    password = self.readAdminSecret("password")
+    username = self.readCredentialsSecret("username")
+    password = self.readCredentialsSecret("password")
     nm_host = 'localhost'
     nm_port = '5556' 
     domain_name = self.env.getDomain().getName()
@@ -665,12 +665,12 @@ class SitConfigGenerator(Generator):
     self.writeln("</d:domain>")
 
   def customizeNodeManagerCreds(self):
-    admin_username = self.readAdminSecret('username')
-    admin_password = self.encrypt(self.readAdminSecret('password'))
+    username = self.readCredentialsSecret('username')
+    password = self.encrypt(self.readCredentialsSecret('password'))
     self.writeln("<d:security-configuration>")
     self.indent()
-    self.writeln("<d:node-manager-user-name f:combine-mode=\"replace\">" + admin_username + "</d:node-manager-user-name>")
-    self.writeln("<d:node-manager-password-encrypted f:combine-mode=\"replace\">" + admin_password + "</d:node-manager-password-encrypted>")
+    self.writeln("<d:node-manager-user-name f:combine-mode=\"replace\">" + username + "</d:node-manager-user-name>")
+    self.writeln("<d:node-manager-password-encrypted f:combine-mode=\"replace\">" + password + "</d:node-manager-password-encrypted>")
     self.undent()
     self.writeln("</d:security-configuration>")
 
@@ -751,8 +751,8 @@ class CustomSitConfigIntrospector(SecretManager):
         secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, secret_name)
         self.addSecretsFromDirectory(secret_path, secret_name)
 
-    self.addSecretsFromDirectory(self.env.ADMIN_SECRET_PATH, 
-                                 self.env.ADMIN_SECRET_NAME)
+    self.addSecretsFromDirectory(self.env.CREDENTIALS_SECRET_PATH, 
+                                 self.env.CREDENTIALS_SECRET_NAME)
 
     self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
     self.macroMap['env:DOMAIN_HOME'] = self.env.DOMAIN_HOME
