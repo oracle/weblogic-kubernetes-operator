@@ -51,7 +51,7 @@ public abstract class DomainTestBase {
   protected static Domain createDomain() {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(NS))
-        .withSpec(new DomainSpec().withAdminSecret(SECRET).withDomainUID(DOMAIN_UID));
+        .withSpec(new DomainSpec().withWebLogicCredentialsSecret(SECRET).withDomainUID(DOMAIN_UID));
   }
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
@@ -66,7 +66,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void canGetAdminServerInfoFromDomain() {
-    assertThat(domain.getAdminSecret(), equalTo(SECRET));
+    assertThat(domain.getWebLogicCredentialsSecret(), equalTo(SECRET));
   }
 
   @Test

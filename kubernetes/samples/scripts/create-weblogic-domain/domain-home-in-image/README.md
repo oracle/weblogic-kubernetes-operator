@@ -125,7 +125,7 @@ spec:
   imagePullPolicy: "Never"
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  adminSecret:
+  webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true

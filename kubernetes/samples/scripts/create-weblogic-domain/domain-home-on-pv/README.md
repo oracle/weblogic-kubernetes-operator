@@ -146,7 +146,7 @@ spec:
   #- name:
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  adminSecret:
+  webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   # The name of the Admin Server
   asName: "admin-server"
