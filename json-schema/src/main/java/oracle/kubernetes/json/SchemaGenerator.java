@@ -14,15 +14,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.annotation.Nonnull;
 
 @SuppressWarnings("WeakerAccess")
@@ -205,13 +197,54 @@ public class SchemaGenerator {
     sub.generateTypeIn(result, field.getType());
     String description = getDescription(field);
     if (description != null) result.put("description", description);
+    if (isString(field.getType())) addStringRestrictions(result, field);
+    if (isNumeric(field.getType())) addRange(result, field);
 
     return result;
+  }
+
+  private boolean isString(Class<?> type) {
+    return type.equals(String.class);
+  }
+
+  private boolean isNumeric(Class<?> type) {
+    return Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type);
   }
 
   private String getDescription(Field field) {
     Description description = field.getAnnotation(Description.class);
     return description != null ? description.value() : null;
+  }
+
+  private void addStringRestrictions(Map<String, Object> result, Field field) {
+    Class<? extends Enum> enumClass = getEnumClass(field);
+    if (enumClass != null) addEnumValues(result, enumClass);
+
+    String pattern = getPattern(field);
+    if (pattern != null) result.put("pattern", pattern);
+  }
+
+  private Class<? extends java.lang.Enum> getEnumClass(Field field) {
+    EnumClass annotation = field.getAnnotation(EnumClass.class);
+    return annotation != null ? annotation.value() : null;
+  }
+
+  private void addEnumValues(
+      Map<String, Object> result, Class<? extends java.lang.Enum> enumClass) {
+    result.put("enum", getEnumValues(enumClass));
+  }
+
+  private String getPattern(Field field) {
+    Pattern pattern = field.getAnnotation(Pattern.class);
+    return pattern == null ? null : pattern.value();
+  }
+
+  private void addRange(Map<String, Object> result, Field field) {
+    Range annotation = field.getAnnotation(Range.class);
+    if (annotation == null) return;
+
+    if (annotation.minimum() > Integer.MIN_VALUE) result.put("minimum", annotation.minimum());
+    if (annotation.maximum() < Integer.MAX_VALUE) result.put("maximum", annotation.maximum());
   }
 
   private class SubSchemaGenerator {
@@ -223,9 +256,8 @@ public class SchemaGenerator {
 
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
-      else if (Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type))
-        result.put("type", "number");
-      else if (type.equals(String.class)) result.put("type", "string");
+      else if (isNumeric(type)) result.put("type", "number");
+      else if (isString(type)) result.put("type", "string");
       else if (type.isEnum()) generateEnumTypeIn(result, type);
       else if (type.isArray()) this.generateArrayTypeIn(result, type);
       else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);

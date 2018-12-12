@@ -33,7 +33,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
         .addAnnotation("annotation1", "value2")
         .addLabel("label1", "value1");
 
-    assertThat(server1, equalTo(server1));
+    assertThat(server1, equalTo(server2));
   }
 
   @Test
@@ -58,5 +58,31 @@ public class AdminServerTest extends BaseConfigurationTestBase {
     server2.addExportedNetworkAccessPoint("nap1").addAnnotation("a", "c");
 
     assertThat(server1, not(equalTo(server2)));
+  }
+
+  @Test
+  public void whenNodePortAnnotationsDiffer_objectsAreNotEqual() {
+    server1.addNodePortAnnotations("key", "value");
+    assertThat(server1, not(equalTo(server2)));
+  }
+
+  @Test
+  public void whenNodePortAnnotationsAreSame_objectsAreEqual() {
+    server1.addNodePortAnnotations("key", "value");
+    server2.addNodePortAnnotations("key", "value");
+    assertThat(server1, equalTo(server2));
+  }
+
+  @Test
+  public void whenNodePortLabelsDiffer_hashCodesAreNotEqual() {
+    server1.addNodePortLabels("key", "value");
+    assertThat(server1.hashCode(), not(equalTo(server2.hashCode())));
+  }
+
+  @Test
+  public void whenNodePortLabelsAreSame_hashCodesAreEqual() {
+    server1.addNodePortLabels("key", "value");
+    server2.addNodePortLabels("key", "value");
+    assertThat(server1.hashCode(), equalTo(server2.hashCode()));
   }
 }

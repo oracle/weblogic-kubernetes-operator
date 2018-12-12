@@ -18,10 +18,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -42,9 +40,10 @@ public class ConfigMapConsumer implements Map<String, String> {
   private final AtomicReference<ScheduledFuture<?>> future = new AtomicReference<>(null);
   private final Runnable onUpdate;
 
-  public ConfigMapConsumer(ThreadFactory factory, String mountPoint, Runnable onUpdate)
+  public ConfigMapConsumer(
+      ScheduledExecutorService executorService, String mountPoint, Runnable onUpdate)
       throws IOException {
-    this.threadPool = Executors.newScheduledThreadPool(2, factory);
+    this.threadPool = executorService;
     this.mountPointDir = new File(mountPoint);
     this.watcher = FileSystems.getDefault().newWatchService();
     this.onUpdate = onUpdate;
