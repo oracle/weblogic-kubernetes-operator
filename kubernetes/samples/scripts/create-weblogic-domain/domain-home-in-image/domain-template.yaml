@@ -22,7 +22,7 @@ spec:
   imagePullPolicy: "Never"
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  adminSecret: 
+  webLogicCredentialsSecret: 
     name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
@@ -53,7 +53,7 @@ spec:
   # clusters is used to configure the desired behavior for starting member servers of a cluster.  
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-    %CLUSTER_NAME%:
+    - clusterName: %CLUSTER_NAME%
       serverStartState: "RUNNING"
       replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start from clusters not listed in clusters

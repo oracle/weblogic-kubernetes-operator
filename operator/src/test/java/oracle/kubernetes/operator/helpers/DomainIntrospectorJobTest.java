@@ -8,7 +8,6 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.AllOf.allOf;
@@ -46,8 +45,7 @@ public class DomainIntrospectorJobTest {
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
 
-  private static final String ADMIN_SECRET_NAME = "adminSecretName";
-  private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
+  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String LATEST_IMAGE = "image:latest";
   static final String VERSIONED_IMAGE = "image:1.2.3";
 
@@ -152,7 +150,6 @@ public class DomainIntrospectorJobTest {
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
-    domainPresenceInfo.setClaims(new V1PersistentVolumeClaimList());
     return domainPresenceInfo;
   }
 
@@ -164,13 +161,13 @@ public class DomainIntrospectorJobTest {
     DomainSpec spec =
         new DomainSpec()
             .withDomainUID(UID)
-            .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+            .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)
             .withImage(LATEST_IMAGE)
             .withDomainHomeInImage(false);
 
-    List<String> overrideSecrets = new ArrayList();
+    List<String> overrideSecrets = new ArrayList<>();
     overrideSecrets.add(OVERRIDE_SECRET_1);
     overrideSecrets.add(OVERRIDE_SECRET_2);
     spec.setConfigOverrideSecrets(overrideSecrets);
@@ -223,36 +220,6 @@ public class DomainIntrospectorJobTest {
     assertThat(getCreatedJob().getSpec().getTemplate().getSpec().getContainers(), hasSize(1));
   }
 
-  @Test
-  public void whenJobCreated_containerHasExpectedVolumeMounts() {
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-    assertThat(
-        getCreatedJobSpecContainer().getVolumeMounts(),
-        containsInAnyOrder(
-            volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH),
-            readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH),
-            readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH),
-            readOnlyVolumeMount(OVERRIDES_CM + "-volume", OVERRIDES_CM_MOUNT_PATH),
-            readOnlyVolumeMount(OVERRIDE_SECRET_1 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH),
-            readOnlyVolumeMount(OVERRIDE_SECRET_2 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH)));
-  }
-
-  @Test
-  public void whenJobCreated_withNoPVC_containerHasExpectedVolumeMounts() {
-    domainPresenceInfo.getClaims().getItems().clear();
-    assertThat(
-        getCreatedJobSpecContainer().getVolumeMounts(),
-        containsInAnyOrder(
-            readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH),
-            readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH),
-            readOnlyVolumeMount(OVERRIDES_CM + "-volume", OVERRIDES_CM_MOUNT_PATH),
-            readOnlyVolumeMount(OVERRIDE_SECRET_1 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH),
-            readOnlyVolumeMount(OVERRIDE_SECRET_2 + "-volume", OVERRIDE_SECRETS_MOUNT_PATH)));
-  }
-
   @SuppressWarnings("unchecked")
   @Test
   public void whenJobCreated_hasPredefinedEnvVariables() {
@@ -266,7 +233,7 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("LOG_HOME", LOG_HOME),
             hasEnvVar("INTROSPECT_HOME", getDomainHome()),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", "true"),
-            hasEnvVar("ADMIN_SECRET_NAME", ADMIN_SECRET_NAME)));
+            hasEnvVar("CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME)));
   }
 
   V1Container getCreatedJobSpecContainer() {
@@ -387,13 +354,6 @@ public class DomainIntrospectorJobTest {
      * domainPresenceInfo.getDomain().getSpec().getImagePullSecret(); if (imagePullSecret != null) {
      * podSpec.addImagePullSecretsItem(imagePullSecret); }
      */
-    if (!getClaims().isEmpty()) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(STORAGE_VOLUME)
-              .persistentVolumeClaim(getPersistenVolumeClaimVolumeSource(getClaimName())));
-    }
-
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       podSpec.addVolumesItem(
@@ -452,7 +412,7 @@ public class DomainIntrospectorJobTest {
     addEnvVar(envVarList, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(envVarList, "LOG_HOME", LOG_HOME);
     addEnvVar(envVarList, "INTROSPECT_HOME", getDomainHome());
-    addEnvVar(envVarList, "ADMIN_SECRET_NAME", ADMIN_SECRET_NAME);
+    addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME);
     addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", "true");
 
     return envVarList;
@@ -467,21 +427,13 @@ public class DomainIntrospectorJobTest {
   }
 
   protected V1SecretVolumeSource getSecretsVolume() {
-    return new V1SecretVolumeSource().secretName(ADMIN_SECRET_NAME).defaultMode(420);
+    return new V1SecretVolumeSource().secretName(CREDENTIALS_SECRET_NAME).defaultMode(420);
   }
 
   protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
         .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
         .defaultMode(ALL_READ_AND_EXECUTE);
-  }
-
-  private List<V1PersistentVolumeClaim> getClaims() {
-    return domainPresenceInfo.getClaims().getItems();
-  }
-
-  private String getClaimName() {
-    return getClaims().iterator().next().getMetadata().getName();
   }
 
   private List<String> getConfigOverrideSecrets() {

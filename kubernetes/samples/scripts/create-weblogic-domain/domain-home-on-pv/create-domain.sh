@@ -402,6 +402,7 @@ function createYamlFiles {
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
   sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e

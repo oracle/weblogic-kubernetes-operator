@@ -26,7 +26,7 @@ spec:
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  adminSecret: 
+  webLogicCredentialsSecret: 
     name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
@@ -41,13 +41,20 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
-  # an (optional) list of environment variable to be set on the servers
   serverPod:
+    # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
       value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
+    volumes:
+    - name: weblogic-domain-storage-volume
+      persistentVolumeClaim:
+        claimName: %DOMAIN_PVC_NAME%
+    volumeMounts:
+    - mountPath: %DOMAIN_ROOT_DIR%
+      name: weblogic-domain-storage-volume
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -62,10 +69,7 @@ spec:
   # clusters is used to configure the desired behavior for starting member servers of a cluster.  
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-    %CLUSTER_NAME%:
+    - clusterName: %CLUSTER_NAME%
       replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
-  storage:
-    predefined:
-      claim: %DOMAIN_PVC_NAME%
