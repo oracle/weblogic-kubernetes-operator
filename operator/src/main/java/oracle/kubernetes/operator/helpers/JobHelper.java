@@ -13,7 +13,6 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -101,7 +100,7 @@ public class JobHelper {
       addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
       addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
       addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(envVarList, "ADMIN_SECRET_NAME", getAdminSecretName());
+      addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
 
       return envVarList;
     }
@@ -171,11 +170,11 @@ public class JobHelper {
   private static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
-    Map<String, Cluster> clusters = spec.getClusters();
-    Map<String, ManagedServer> servers = spec.getManagedServers();
+    List<Cluster> clusters = spec.getClusters();
+    List<ManagedServer> servers = spec.getManagedServers();
 
     // Are we starting a cluster?
-    for (Cluster cluster : clusters.values()) {
+    for (Cluster cluster : clusters) {
       int replicaCount = cluster.getReplicas();
       LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
       if (replicaCount > 0) {
