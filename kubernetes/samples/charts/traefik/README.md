@@ -1,7 +1,7 @@
 # Install and configure Traefik
 ## Install the Traefik operator with a Helm chart
 The Traefik Helm chart is located in the official Helm project `charts` directory at https://github.com/helm/charts/tree/master/stable/traefik.
-The chart is in the default repository for Helm at https://kubernetes-charts.storage.googleapis.com/ and is installed by default.
+The chart is in the default repository for Helm.
 
 To install the Traefik operator in the `traefik` namespace with default settings:
 ```
@@ -20,6 +20,12 @@ curl -H 'host: traefik.example.com' http://${HOSTNAME}:30305/
 If you want, you can download the Traefik Helm chart and untar it into a local folder:
 ```
 $ helm fetch  stable/traefik --untar
+```
+
+## Update the Traefik operator
+After the Traefik operator is installed and running, if you want to change some configurations of the operator, use `helm upgrade` to achieve this.
+```
+$ helm upgrade traefik-operator stable/traefik --values values.yaml 
 ```
 
 ## Configure Traefik as a load balancer for WLS domains

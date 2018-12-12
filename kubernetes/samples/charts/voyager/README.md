@@ -37,6 +37,12 @@ If you want, you can download the Voyager Helm chart and untar it into a local f
 $ helm fetch appscode/voyager --untar --version 7.4.0
 ```
 
+## Update the Voyager operator
+After the Voyager operator is installed and running, if you want to change some configurations of the operator, use `helm upgrade` to achieve this.
+```
+$ helm upgrade voyager-operator appscode/voyager [flags]
+```
+
 ## Configure Voyager as a load balancer for WLS domains
 We'll demonstrate how to use Voyager to handle traffic to backend WLS domains.
 
