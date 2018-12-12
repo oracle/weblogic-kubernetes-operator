@@ -11,19 +11,27 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v2.Cluster;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
 
 public class JobHelper {
 
@@ -87,25 +95,82 @@ public class JobHelper {
    * @param next Next processing step
    * @return Step for creating job
    */
-  public static Step createDomainIntrospectorJobStep(Step next) {
+  public static Step createDomainIntrospectorJobStep(WatchTuning tuning, Step next) {
 
-    return new DomainIntrospectorJobStep(
-        readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
+    // return new DomainIntrospectorJobStep(
+    //    readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
+    return new DomainIntrospectorJobStep(tuning, next);
   }
 
   static class DomainIntrospectorJobStep extends Step {
-    public DomainIntrospectorJobStep(Step next) {
+    private final WatchTuning tuning;
+
+    public DomainIntrospectorJobStep(WatchTuning tuning, Step next) {
       super(next);
+      this.tuning = tuning;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      if (runIntrospector(packet, info)) {
+        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
 
-      packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
+        packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
 
-      return doNext(context.createNewJob(getNext()), packet);
+        return doNext(
+            context.createNewJob(
+                readDomainIntrospectorPodLogStep(
+                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()))),
+            packet);
+      }
+
+      return doNext(getNext(), packet);
     }
+  }
+
+  private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    LOGGER.fine("runIntrospector topology: " + config);
+    LOGGER.fine("runningServersCount: " + runningServersCount(info));
+    LOGGER.fine("creatingServers: " + creatingServers(info));
+    if (config == null || (runningServersCount(info) == 0 && creatingServers(info))) {
+      return true;
+    }
+    return false;
+  }
+
+  private static int runningServersCount(DomainPresenceInfo info) {
+    return ManagedServersUpStep.getRunningServers(info).size();
+  }
+
+  /**
+   * TODO: Enhance determination of when we believe we're creating WLS managed server pods
+   *
+   * @param info
+   * @return
+   */
+  private static boolean creatingServers(DomainPresenceInfo info) {
+    Domain dom = info.getDomain();
+    DomainSpec spec = dom.getSpec();
+    Map<String, Cluster> clusters = spec.getClusters();
+    Map<String, ManagedServer> servers = spec.getManagedServers();
+
+    // Are we starting a cluster?
+    for (Cluster cluster : clusters.values()) {
+      int replicaCount = cluster.getReplicas();
+      LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
+      if (replicaCount > 0) {
+        return true;
+      }
+    }
+
+    // Are we starting a standalone managed server?
+    // for (ManagedServer server : servers.values()) {
+    // if (server.)
+    // }
+
+    return false;
   }
 
   /**
@@ -156,8 +221,8 @@ public class JobHelper {
     }
   }
 
-  private static Step createWatchDomainIntrospectorJobReadyStep(Step next) {
-    return new WatchDomainIntrospectorJobReadyStep(next);
+  private static Step createWatchDomainIntrospectorJobReadyStep(WatchTuning tuning, Step next) {
+    return new WatchDomainIntrospectorJobReadyStep(tuning, next);
   }
 
   /**
@@ -166,9 +231,9 @@ public class JobHelper {
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod log
    */
-  public static Step readDomainIntrospectorPodLogStep(Step next) {
+  public static Step readDomainIntrospectorPodLogStep(WatchTuning tuning, Step next) {
     return createWatchDomainIntrospectorJobReadyStep(
-        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
+        tuning, readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
   }
 
   private static class ReadDomainIntrospectorPodLogStep extends Step {
@@ -191,13 +256,12 @@ public class JobHelper {
       Step step =
           new CallBuilder()
               .readPodLogAsync(
-                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep<>(next));
+                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
       return step;
     }
   }
 
-  private static class ReadDomainIntrospectorPodLogResponseStep<String>
-      extends ResponseStep<String> {
+  private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
     public ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
       super(nextStep);
     }

@@ -1,0 +1,59 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to define a Domain resource.
+#
+apiVersion: "weblogic.oracle/v2"
+kind: Domain
+metadata:
+  name: %DOMAIN_UID%
+  namespace: %NAMESPACE%
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: %DOMAIN_UID%
+spec:
+  # The WebLogic Domain Home
+  domainHome: %DOMAIN_HOME%
+  # If the domain home is in the image
+  domainHomeInImage: true
+  # The Operator currently does not support other images
+  image: "12213-domain-home-in-image:latest"
+  # imagePullPolicy defaults to "Never"
+  imagePullPolicy: "Never"
+  # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
+  # how to create that Secret at the end of this file)
+  adminSecret: 
+    name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
+  # Whether to include the server out file into the pod's stdout, default is true
+  includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
+  # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # - "ALWAYS" will start up all defined servers
+  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+  # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: "%SERVER_START_POLICY%"
+  # an (optional) list of environment variable to be set on the servers
+  env:
+  - name: JAVA_OPTIONS
+    value: "%JAVA_OPTIONS%"
+  - name: USER_MEM_ARGS
+    value: "-Xms64m -Xmx256m "
+  # adminServer is used to configure the desired behavior for starting the administration server.
+  adminServer:
+    # serverStartState legal values are "RUNNING" or "ADMIN"
+    # "RUNNING" means the listed server will be started up to "RUNNING" mode
+    # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    serverStartState: "RUNNING"
+    # The Admin Server's NodePort
+    %EXPOSE_ADMIN_PORT_PREFIX%nodePort: %ADMIN_NODE_PORT%
+    # Uncomment to export the T3Channel as a service
+    %EXPOSE_T3_CHANNEL_PREFIX%exportedNetworkAccessPoints:
+    %EXPOSE_T3_CHANNEL_PREFIX%  T3Channel: {}
+  # clusters is used to configure the desired behavior for starting member servers of a cluster.  
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
+  clusters:
+    %CLUSTER_NAME%:
+      serverStartState: "RUNNING"
+      replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
+  # The number of managed servers to start from clusters not listed in clusters
+  # replicas: 1

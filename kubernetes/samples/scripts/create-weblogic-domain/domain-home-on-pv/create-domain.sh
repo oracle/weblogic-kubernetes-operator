@@ -84,7 +84,7 @@ function initAndValidateOutputDir {
     create-domain-inputs.yaml \
     create-domain-job.yaml \
     delete-domain-job.yaml \
-    domain-custom-resource.yaml
+    domain.yaml
 }
 
 #
@@ -216,14 +216,14 @@ function initialize {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
-  dcrInput="${scriptDir}/domain-custom-resource-template.yaml"
+  dcrInput="${scriptDir}/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
   fi
 
   failIfValidationErrors
 
-  # Parse the commonn inputs file
+  # Parse the common inputs file
   parseCommonInputs
 
   validateInputParamsSpecified \
@@ -231,7 +231,6 @@ function initialize {
     domainUID \
     clusterName \
     managedServerNameBase \
-    weblogicCredentialsSecretName \
     namespace \
     t3PublicAddress \
     includeServerOutInPodLog \
@@ -283,7 +282,7 @@ function createYamlFiles {
 
   createJobOutput="${domainOutputDir}/create-domain-job.yaml"
   deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
-  dcrOutput="${domainOutputDir}/domain-custom-resource.yaml"
+  dcrOutput="${domainOutputDir}/domain.yaml"
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
@@ -293,6 +292,18 @@ function createYamlFiles {
   # Use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
+  fi
+
+  if [ -z "${domainHome}" ]; then
+    domainHome="${domainPVMountPath}/domains/${domainUID}"
+  fi
+
+  if [ -z "${logHome}" ]; then
+    logHome="${domainPVMountPath}/logs/${domainUID}"
+  fi
+
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
   # Use the default value if not defined.
@@ -307,7 +318,7 @@ function createYamlFiles {
 
   # Use the default value if not defined.
   if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=weblogic-sample-domain-pvc
+    persistentVolumeClaimName=${domainUID}-weblogic-sample-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
@@ -377,14 +388,12 @@ function createYamlFiles {
   cp ${dcrInput} ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
@@ -401,7 +410,7 @@ function createYamlFiles {
 }
 
 # create domain configmap using what is in the createDomainFilesDir
-function create_domain_configmap {
+function createDomainConfigmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -448,7 +457,7 @@ function create_domain_configmap {
 function createDomainHome {
 
   # create the config map for the job
-  create_domain_configmap
+  createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
   JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
@@ -464,34 +473,35 @@ function createDomainHome {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOB_STATUS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $3; } '`
-    JOB_INFO=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print "pod", $1, "status is", $3; } '`
+    JOBS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME}`
+    JOB_ERRORS=`kubectl logs jobs/$JOB_NAME -n ${namespace} | grep "ERROR:" `
+    JOB_STATUS=`echo $JOBS | awk ' { print $3; } '`
+    JOB_INFO=`echo $JOBS | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
     echo "$JOB_INFO"
 
     # Terminate the retry loop when a fatal error has already occurred.  Search for "ERROR:" in the job log file
     if [ "$JOB_STATUS" != "Completed" ]; then
-      JOB_ERRORS=`kubectl logs jobs/$JOB_NAME -n ${namespace} | grep "ERROR:" `
       ERR_COUNT=`echo $JOB_ERRORS | grep "ERROR:" | wc | awk ' {print $1; }'`
       if [ "$ERR_COUNT" != "0" ]; then
-        echo A failure was detected in the log file for job $JOB_NAME
-        echo $JOB_ERRORS
-        echo Check the log output for additional information
-        fail "Exiting due to failure - the job has failed"
+        echo "A failure was detected in the log file for job $JOB_NAME."
+        echo "$JOB_ERRORS"
+        echo "Check the log output for additional information."
+        fail "Exiting due to failure - the job has failed!"
       fi
     fi
   done
 
   # Confirm the job pod is status completed
-  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   if [ "$JOB_STATUS" != "Completed" ]; then
-    echo The create domain job is not showing status completed after waiting 300 seconds
-    echo Check the log output for errors
+    echo "The create domain job is not showing status completed after waiting 300 seconds."
+    echo "Check the log output for errors."
     kubectl logs jobs/$JOB_NAME -n ${namespace}
     fail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
+  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   JOB_STS=`kubectl logs $JOB_POD -n ${namespace} | grep "Successfully Completed" | awk ' { print $1; } '`
   if [ "${JOB_STS}" != "Successfully" ]; then
     echo The log file for the create domain job does not contain a successful completion status
@@ -499,9 +509,7 @@ function createDomainHome {
     kubectl logs $JOB_POD -n ${namespace}
     fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
-
 }
-
 
 #
 # Function to output to the console a summary of the work completed

@@ -17,8 +17,10 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -32,6 +34,7 @@ import org.junit.Test;
 
 public class BeforeAdminServiceStepTest {
 
+  private static final String DOMAIN_NAME = "domain";
   private static final String ADMIN_NAME = "admin";
   private static final int ADMIN_PORT_NUM = 3456;
   private static final int NODE_PORT_NUM = 5678;
@@ -65,8 +68,14 @@ public class BeforeAdminServiceStepTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.installRequestStepFactory());
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
-    configurator.configureAdminServer(ADMIN_NAME).withPort(ADMIN_PORT_NUM);
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport.addWlsServer(ADMIN_NAME, ADMIN_PORT_NUM);
+    configSupport.setAdminServerName(ADMIN_NAME);
+
+    testSupport
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
+        .addDomainPresenceInfo(domainPresenceInfo);
+    configurator.configureAdminServer();
   }
 
   @After
@@ -86,10 +95,7 @@ public class BeforeAdminServiceStepTest {
 
   @Test
   public void whenAdminServerNodePortDefined_packetContainsItAfterProcessing() {
-    configurator
-        .configureAdminServer(ADMIN_NAME)
-        .withPort(ADMIN_PORT_NUM)
-        .withNodePort(NODE_PORT_NUM);
+    configurator.configureAdminServer().withNodePort(NODE_PORT_NUM);
     Packet packet = invokeStep();
 
     assertThat(packet, hasEntry(NODE_PORT, NODE_PORT_NUM));

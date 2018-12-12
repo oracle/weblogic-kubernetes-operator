@@ -12,6 +12,8 @@ import io.kubernetes.client.models.V1SecurityContext;
 public interface ClusterConfigurator {
   ClusterConfigurator withReplicas(int replicas);
 
+  ClusterConfigurator withMaxUnavailable(int maxUnavailable);
+
   ClusterConfigurator withDesiredState(String state);
 
   ClusterConfigurator withEnvironmentVariable(String name, String value);
@@ -43,4 +45,10 @@ public interface ClusterConfigurator {
   ClusterConfigurator withPodLabel(String name, String value);
 
   ClusterConfigurator withPodAnnotation(String name, String value);
+
+  ClusterConfigurator withServiceLabel(String name, String value);
+
+  ClusterConfigurator withServiceAnnotation(String name, String value);
+
+  ClusterConfigurator withRestartVersion(String restartVersion);
 }

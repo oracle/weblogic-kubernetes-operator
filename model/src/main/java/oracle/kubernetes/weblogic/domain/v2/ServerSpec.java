@@ -179,6 +179,22 @@ public abstract class ServerSpec {
   @Nonnull
   public abstract Map<String, String> getPodAnnotations();
 
+  /**
+   * Returns the labels applied to the service.
+   *
+   * @return a map of labels
+   */
+  @Nonnull
+  public abstract Map<String, String> getServiceLabels();
+
+  /**
+   * Returns the annotations applied to the service.
+   *
+   * @return a map of annotations
+   */
+  @Nonnull
+  public abstract Map<String, String> getServiceAnnotations();
+
   @Nonnull
   public Map<String, String> getListenAddressServiceLabels() {
     return Collections.emptyMap();
@@ -205,6 +221,12 @@ public abstract class ServerSpec {
   public V1SecurityContext getContainerSecurityContext() {
     return null;
   }
+
+  public abstract String getDomainRestartVersion();
+
+  public abstract String getClusterRestartVersion();
+
+  public abstract String getServerRestartVersion();
 
   @Override
   public String toString() {
