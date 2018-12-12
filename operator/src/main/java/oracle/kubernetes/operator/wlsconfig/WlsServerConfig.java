@@ -68,7 +68,6 @@ public class WlsServerConfig {
    * @return True if the SSL listen port should be enabled, false otherwise
    */
   public boolean isSslPortEnabled() {
-    boolean s = sslListenPort != null;
     return sslListenPort != null;
   }
 
