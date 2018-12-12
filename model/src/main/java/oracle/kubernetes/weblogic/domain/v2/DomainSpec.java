@@ -127,13 +127,6 @@ public class DomainSpec extends BaseConfiguration {
       "True if this domain's home is defined in the docker image for the domain. Defaults to true")
   private Boolean domainHomeInImage;
 
-  /** The definition of the storage used for this domain. */
-  @Description(
-      "The storage used for this domain. "
-          + "Defaults to a predefined claim for a PVC whose name is "
-          + "the domain UID followed by '-weblogic-domain-pvc'")
-  private DomainStorage storage;
-
   /**
    * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
    *
@@ -417,24 +410,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  /**
-   * Specifies the storage for the domain.
-   *
-   * @param storage the definition of the domain storage.
-   */
-  public void setStorage(DomainStorage storage) {
-    this.storage = storage;
-  }
-
-  /**
-   * Returns the storage for the domain.
-   *
-   * @return the definition of the domain storage.
-   */
-  public DomainStorage getStorage() {
-    return storage;
-  }
-
   @Nullable
   String getConfigOverrides() {
     return configOverrides;
@@ -480,7 +455,6 @@ public class DomainSpec extends BaseConfiguration {
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
-            .append("storage", storage)
             .append("imagePullSecrets", imagePullSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
@@ -506,7 +480,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(webLogicCredentialsSecret)
             .append(image)
             .append(imagePullPolicy)
-            .append(storage)
             .append(imagePullSecrets)
             .append(adminServer)
             .append(managedServers)
@@ -535,7 +508,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
-            .append(storage, rhs.storage)
             .append(imagePullPolicy, rhs.imagePullPolicy)
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)

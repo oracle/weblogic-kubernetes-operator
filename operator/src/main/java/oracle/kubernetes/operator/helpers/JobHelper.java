@@ -9,6 +9,8 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.operator.JobWatcher;
@@ -44,9 +46,11 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
+    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(Packet packet) {
+    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
+      this.info = info;
 
       init();
     }
@@ -70,6 +74,20 @@ public class JobHelper {
     @Override
     String getJobName() {
       return LegalNames.toJobIntrospectorName(getDomainUID());
+    }
+
+    Domain getDomain() {
+      return info.getDomain();
+    }
+
+    @Override
+    protected List<V1Volume> getAdditionalVolumes() {
+      return getDomain().getSpec().getAdditionalVolumes();
+    }
+
+    @Override
+    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
+      return getDomain().getSpec().getAdditionalVolumeMounts();
     }
 
     @Override
@@ -113,7 +131,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
 

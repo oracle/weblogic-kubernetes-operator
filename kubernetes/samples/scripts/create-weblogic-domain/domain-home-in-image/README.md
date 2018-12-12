@@ -135,12 +135,13 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
-  # an (optional) list of environment variable to be set on the servers
-  env:
-  - name: JAVA_OPTIONS
-    value: "-Dweblogic.StdoutDebugEnabled=false"
-  - name: USER_MEM_ARGS
-    value: "-Xms64m -Xmx256m "
+  serverPod:
+    # an (optional) list of environment variable to be set on the servers
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
   # serverStartState legal values are "RUNNING" or "ADMIN"
