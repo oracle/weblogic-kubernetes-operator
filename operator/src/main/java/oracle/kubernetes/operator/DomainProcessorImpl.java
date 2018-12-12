@@ -813,7 +813,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         new CompletionCallback() {
           @Override
           public void onCompletion(Packet packet) {
-            // no-op
+            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
+            if (existing != null) {
+              existing.resetFailureCount();
+            }
           }
 
           @Override
@@ -837,17 +840,29 @@ public class DomainProcessorImpl implements DomainProcessor {
                   }
                 });
 
-            gate.getExecutor()
-                .schedule(
-                    () -> {
-                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
-                      if (existing != null) {
-                        existing.setPopulated(false);
-                        makeRightDomainPresence(existing, true, isDeleting, false);
-                      }
-                    },
-                    DomainPresence.getDomainPresenceFailureRetrySeconds(),
-                    TimeUnit.SECONDS);
+            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
+            if (existing != null) {
+              int failureCount = existing.incrementAndGetFailureCount();
+              LOGGER.finer(
+                  "Failure count for DomainPresenceInfo: " + existing + " is now: " + failureCount);
+              if (failureCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                LOGGER.warning(
+                    MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
+                    domainUID,
+                    ns,
+                    DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                    throwable);
+              } else {
+                gate.getExecutor()
+                    .schedule(
+                        () -> {
+                          existing.setPopulated(false);
+                          makeRightDomainPresence(existing, true, isDeleting, false);
+                        },
+                        DomainPresence.getDomainPresenceFailureRetrySeconds(),
+                        TimeUnit.SECONDS);
+              }
+            }
           }
         };
 
