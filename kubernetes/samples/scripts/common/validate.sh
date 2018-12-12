@@ -263,4 +263,81 @@ function validateLoadBalancer {
   fi
 }
 
+#
+# Function to validate a kubernetes secret exists
+# $1 - the name of the secret
+# $2 - namespace
+function validateSecretExists {
+  echo "Checking to see if the secret ${1} exists in namespace ${2}"
+  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The secret ${1} was not found in namespace ${2}"
+  fi
+}
+
+#
+# Function to validate the domain secret
+#
+function validateDomainSecret {
+  # Verify the secret exists
+  validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
+  failIfValidationErrors
+
+  # Verify the secret contains a username
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
+  fi
+
+  # Verify the secret contains a password
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the common input parameters
+#
+function validateCommonInputs {
+  # Parse the commonn inputs file
+  parseCommonInputs
+
+  validateInputParamsSpecified \
+    adminServerName \
+    domainUID \
+    clusterName \
+    managedServerNameBase \
+    namespace \
+    t3PublicAddress \
+    version
+
+  validateIntegerInputParamsSpecified \
+    adminPort \
+    configuredManagedServerCount \
+    initialManagedServerReplicas \
+    managedServerPort \
+    t3ChannelPort \
+    adminNodePort
+
+  validateBooleanInputParamsSpecified \
+    productionModeEnabled \
+    exposeAdminT3Channel \
+    exposeAdminNodePort \
+    includeServerOutInPodLog
+
+  export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
+  validateVersion
+
+  validateDomainUid
+  validateNamespace
+  validateAdminServerName
+  validateManagedServerNameBase
+  validateClusterName
+  validateWeblogicCredentialsSecretName
+  validateServerStartPolicy
+  validateClusterType
+  failIfValidationErrors
+}
 
