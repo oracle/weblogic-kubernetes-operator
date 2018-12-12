@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.utils;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.yaml.snakeyaml.DumperOptions;
@@ -43,6 +45,12 @@ public class YamlUtils {
     private MyRepresenter() {
       super();
       representers.put(IntOrString.class, new RepresentIntOrString());
+    }
+
+    @Override
+    protected Node representMapping(Tag tag, Map<?, ?> mapping, DumperOptions.FlowStyle flowStyle) {
+      Map<?, ?> sortedMapping = new TreeMap<>(mapping);
+      return super.representMapping(tag, sortedMapping, flowStyle);
     }
 
     private class RepresentIntOrString implements Represent {
