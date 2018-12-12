@@ -43,8 +43,8 @@ function usage {
   echo "  -u username, must be specified."
   echo "  -p password, must be specified."
   echo "  -n namespace, optional. The value is default if not specified"
-  echo "  -d domainUID, optional. The default value is `domain1`. When specified, the secret will be label with the domainUID unless the given value is an empty string."
-  echo "  -s secretName, optional. When not specified, the secret name will be determined based on the domainUID option"
+  echo "  -d domainUID, optional. The default value is domain1. When specified, the secret will be labeled with the domainUID unless the given value is an empty string."
+  echo "  -s secretName, optional. When not specified, the secret name will be determined based on the domainUID value"
   echo "  -h Help"
   exit $1
 }
