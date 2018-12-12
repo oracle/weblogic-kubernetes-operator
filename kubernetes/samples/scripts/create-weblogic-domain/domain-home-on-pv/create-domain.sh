@@ -223,7 +223,7 @@ function initialize {
 
   failIfValidationErrors
 
-  # Parse the commonn inputs file
+  # Parse the common inputs file
   parseCommonInputs
 
   validateInputParamsSpecified \
