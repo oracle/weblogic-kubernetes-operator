@@ -164,7 +164,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the managed servers")
-  private Map<String, ManagedServer> managedServers = new HashMap<>();
+  private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
    * The configured clusters.
@@ -172,7 +172,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the clusters")
-  protected Map<String, Cluster> clusters = new HashMap<>();
+  protected List<Cluster> clusters = new ArrayList<>();
 
   /**
    * Adds a Cluster to the DomainSpec
@@ -181,7 +181,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return
    */
   public DomainSpec withCluster(Cluster cluster) {
-    clusters.put(cluster.getClusterName(), cluster);
+    clusters.add(cluster);
     return this;
   }
 
@@ -551,12 +551,22 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
-  private Server getServer(String serverName) {
-    return managedServers.get(serverName);
+  ManagedServer getManagedServer(String serverName) {
+    if (serverName != null) {
+      for (ManagedServer s : managedServers) {
+        if (serverName.equals(s.getServerName())) return s;
+      }
+    }
+    return null;
   }
 
-  private Cluster getCluster(String clusterName) {
-    return clusters.get(clusterName);
+  Cluster getCluster(String clusterName) {
+    if (clusterName != null) {
+      for (Cluster c : clusters) {
+        if (clusterName.equals(c.getClusterName())) return c;
+      }
+    }
+    return null;
   }
 
   private int getReplicaCountFor(Cluster cluster) {
@@ -585,11 +595,11 @@ public class DomainSpec extends BaseConfiguration {
     this.adminServer = adminServer;
   }
 
-  public Map<String, ManagedServer> getManagedServers() {
+  public List<ManagedServer> getManagedServers() {
     return managedServers;
   }
 
-  public Map<String, Cluster> getClusters() {
+  public List<Cluster> getClusters() {
     return clusters;
   }
 
@@ -603,7 +613,7 @@ public class DomainSpec extends BaseConfiguration {
     public ServerSpec getServerSpec(String serverName, String clusterName) {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
-          getServer(serverName),
+          getManagedServer(serverName),
           getCluster(clusterName),
           getClusterLimit(clusterName));
     }
@@ -669,7 +679,7 @@ public class DomainSpec extends BaseConfiguration {
 
     private Cluster createClusterWithName(String clusterName) {
       Cluster cluster = new Cluster().withClusterName(clusterName);
-      clusters.put(clusterName, cluster);
+      clusters.add(cluster);
       return cluster;
     }
   }
