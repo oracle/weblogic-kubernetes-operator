@@ -73,3 +73,7 @@ namespace: default
 #Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
+#Base image used to build the domain home in image Docker image
+#By default, it is oracle/weblogic:12213-ptach-wls-for-k8s
+baseImage:
+
