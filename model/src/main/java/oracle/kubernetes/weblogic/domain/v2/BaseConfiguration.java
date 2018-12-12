@@ -219,11 +219,11 @@ public abstract class BaseConfiguration {
     serverPod.addServiceAnnotations(name, value);
   }
 
-  public String getRestartVersion() {
+  String getRestartVersion() {
     return restartVersion;
   }
 
-  public void setRestartVersion(String restartVersion) {
+  void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
   }
 
