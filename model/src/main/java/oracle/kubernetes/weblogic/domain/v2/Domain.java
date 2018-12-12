@@ -7,8 +7,6 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +24,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
 @SuppressWarnings("deprecation")
 public class Domain {
-  /** The pattern for computing the default persistent volume claim name. */
-  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
-
   /** The pattern for computing the default shared logs directory. */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
@@ -289,12 +284,12 @@ public class Domain {
   }
 
   /**
-   * Reference to secret containing domain administrator username and password.
+   * Reference to secret containing WebLogic startup credentials username and password.
    *
-   * @return admin secret
+   * @return credentials secret
    */
-  public V1SecretReference getAdminSecret() {
-    return spec.getAdminSecret();
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return spec.getWebLogicCredentialsSecret();
   }
 
   /**
@@ -354,42 +349,6 @@ public class Domain {
   }
 
   /**
-   * Returns the name of the persistent volume claim for the logs and PV-based domain.
-   *
-   * @return volume claim
-   */
-  public String getPersistentVolumeClaimName() {
-    return spec.getStorage() == null ? null : getConfiguredClaimName(spec.getStorage());
-  }
-
-  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
-    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
-        .orElse(String.format(PVC_NAME_PATTERN, getDomainUID()));
-  }
-
-  /**
-   * Returns the persistent volume that must be created for domain storage. May be null.
-   *
-   * @return a definition of the kubernetes resource to create
-   */
-  public V1PersistentVolume getRequiredPersistentVolume() {
-    return spec.getStorage() == null
-        ? null
-        : spec.getStorage().getRequiredPersistentVolume(getDomainUID());
-  }
-
-  /**
-   * Returns the persistent volume claim that must be created for domain storage. May be null.
-   *
-   * @return a definition of the kubernetes resource to create
-   */
-  public V1PersistentVolumeClaim getRequiredPersistentVolumeClaim() {
-    return spec.getStorage() == null
-        ? null
-        : spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID(), getNamespace());
-  }
-
-  /**
    * Returns the name of the Kubernetes configmap that contains optional configuration overrides.
    *
    * @return name of the configmap
@@ -405,10 +364,6 @@ public class Domain {
    */
   public List<String> getConfigOverrideSecrets() {
     return spec.getConfigOverrideSecrets();
-  }
-
-  private String getNamespace() {
-    return getMetadata().getNamespace();
   }
 
   @Override

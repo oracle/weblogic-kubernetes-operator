@@ -131,8 +131,6 @@ spec:
   # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
   # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
   domainUID: domain1
-  # The WebLogic Domain Name
-  domainName: domain1
   # The WebLogic Domain Home
   domainHome: /shared/domains/domain1
   # If the domain home is in the image
@@ -146,12 +144,8 @@ spec:
   #- name:
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  adminSecret:
+  webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
-  # The name of the Admin Server
-  asName: "admin-server"
-  # The Admin Server's ListenPort
-  asPort: 7001
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
   # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
@@ -165,12 +159,20 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
-  # an (optional) list of environment variable to be set on the servers
-  env:
-  - name: JAVA_OPTIONS
-    value: "-Dweblogic.StdoutDebugEnabled=false"
-  - name: USER_MEM_ARGS
-    value: "-Xms64m -Xmx256m "
+  serverPod:
+    # an (optional) list of environment variable to be set on the servers
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+    volumes:
+    - name: weblogic-domain-storage-volume
+      persistentVolumeClaim:
+        claimName: domain1-weblogic-sample-pvc
+    volumeMounts:
+    - mountPath: /shared
+      name: weblogic-domain-storage-volume
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
   # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -191,9 +193,6 @@ spec:
       replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
-  storage:
-    predefined:
-      claim: domain1-weblogic-sample-pvc
 ```
 
 ### Verify the domain
