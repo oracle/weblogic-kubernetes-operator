@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Service;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,8 +32,6 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-
-  private V1PersistentVolumeClaimList claims = null;
 
   private DateTime lastCompletionTime;
 
@@ -76,24 +73,6 @@ public class DomainPresenceInfo {
 
   public void setPopulated(boolean populated) {
     isPopulated.set(populated);
-  }
-
-  /**
-   * Claims associated with the domain
-   *
-   * @return Claims
-   */
-  public V1PersistentVolumeClaimList getClaims() {
-    return claims;
-  }
-
-  /**
-   * Sets claims
-   *
-   * @param claims Claims
-   */
-  public void setClaims(V1PersistentVolumeClaimList claims) {
-    this.claims = claims;
   }
 
   /**
