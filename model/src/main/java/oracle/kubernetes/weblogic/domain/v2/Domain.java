@@ -289,12 +289,12 @@ public class Domain {
   }
 
   /**
-   * Reference to secret containing domain administrator username and password.
+   * Reference to secret containing WebLogic startup credentials username and password.
    *
-   * @return admin secret
+   * @return credentials secret
    */
-  public V1SecretReference getAdminSecret() {
-    return spec.getAdminSecret();
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return spec.getWebLogicCredentialsSecret();
   }
 
   /**

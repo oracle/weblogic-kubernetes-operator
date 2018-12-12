@@ -9,7 +9,7 @@ metadata:
   namespace: domain_ns
 spec:
   # Identify which Secret contains the WebLogic Admin credentials
-  adminSecret:
+  webLogicCredentialsSecret:
     name: admin-secret
   adminServer:
   # the T3 endpoints to export. Each entry is an endpoint name,
