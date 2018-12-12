@@ -171,7 +171,7 @@ public abstract class BaseConfiguration {
     serverPod.setContainerSecurityContext(containerSecurityContext);
   }
 
-  List<V1Volume> getAdditionalVolumes() {
+  public List<V1Volume> getAdditionalVolumes() {
     return serverPod.getAdditionalVolumes();
   }
 
@@ -179,7 +179,7 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolume(name, path);
   }
 
-  List<V1VolumeMount> getAdditionalVolumeMounts() {
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
     return serverPod.getAdditionalVolumeMounts();
   }
 
